@@ -47,7 +47,7 @@ class BluetoothSupervisor(
 
     private var currentUser: UserHandle? = null
 
-    private var mInitialized = false
+    private var initialized = false
     val api: BluetoothManagerServiceApi = Api(BmsProvider())
 
     init {
@@ -63,7 +63,7 @@ class BluetoothSupervisor(
 
     fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {
         enforceCorrectThread()
-        if (!mInitialized) {
+        if (!initialized) {
             Log.i(TAG, "onAirplaneModeChanged before initialization - skipping")
             return
         }
@@ -72,7 +72,7 @@ class BluetoothSupervisor(
 
     fun onSatelliteModeChanged(isSatelliteModeOn: Boolean) {
         enforceCorrectThread()
-        if (!mInitialized) {
+        if (!initialized) {
             Log.i(TAG, "onSatelliteModeChanged before initialization - skipping")
             return
         }
@@ -86,18 +86,18 @@ class BluetoothSupervisor(
 
     fun onUserStarting(userHandle: UserHandle) {
         enforceCorrectThread()
-        if (mInitialized) {
+        if (initialized) {
             Log.i(TAG, "onUserStarting($userHandle) but already initialized")
             return
         }
         currentUser = userHandle
         bms.handleOnBootPhase(userHandle)
-        mInitialized = true
+        initialized = true
     }
 
     fun onUserSwitching(userHandle: UserHandle) {
         enforceCorrectThread()
-        check(mInitialized) { "Initialize did not happen" }
+        check(initialized) { "Initialize did not happen" }
         if (Flags.switchWhenCurrentUserStop()) {
             if (userHandle == currentUser) {
                 Log.i(TAG, "onUserSwitching($userHandle): Nothing to do.")

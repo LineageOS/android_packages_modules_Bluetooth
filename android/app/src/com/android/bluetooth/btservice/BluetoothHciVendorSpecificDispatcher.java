@@ -121,7 +121,6 @@ class BluetoothHciVendorSpecificDispatcher {
                 action.accept(registration.mCallback);
             } catch (NoSuchElementException e) {
                 Log.e(TAG, "Command status or complete owner not registered");
-                return;
             }
         }
     }

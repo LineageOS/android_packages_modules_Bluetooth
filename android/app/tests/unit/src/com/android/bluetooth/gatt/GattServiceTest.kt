@@ -103,7 +103,7 @@ class GattServiceTest(flags: FlagsWrapper) {
     private val CLIENT_CONN =
         ContextMap.Connection(CLIENT_CONN_ID, device, BluetoothDevice.TRANSPORT_LE, CLIENT_IF)
     private val CLIENT_CONN_LIST = listOf<ContextMap.Connection>(CLIENT_CONN)
-    private val mTimeProvider = FakeTimeProvider()
+    private val timeProvider = FakeTimeProvider()
 
     private lateinit var looper: TestLooper
     private lateinit var service: GattService
@@ -161,7 +161,7 @@ class GattServiceTest(flags: FlagsWrapper) {
                 reliableQueue,
                 companionDeviceManager,
                 looper.looper,
-                mTimeProvider,
+                timeProvider,
             )
     }
 
@@ -184,7 +184,7 @@ class GattServiceTest(flags: FlagsWrapper) {
                     reliableQueue,
                     companionDeviceManager,
                     looper.looper,
-                    mTimeProvider,
+                    timeProvider,
                 )
         }
     }
@@ -687,10 +687,10 @@ class GattServiceTest(flags: FlagsWrapper) {
     @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
     fun clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsLessThanThrottleMs() {
         service.mRssiCache[device.address] =
-            GattService.RssiCacheEntry(mTimeProvider.elapsedRealtime(), TEST_RSSI)
+            GattService.RssiCacheEntry(timeProvider.elapsedRealtime(), TEST_RSSI)
 
         // 25ms is less than the default throttle ms of 75ms
-        mTimeProvider.advanceTime(Duration.ofMillis(25))
+        timeProvider.advanceTime(Duration.ofMillis(25))
         service.readRemoteRssi(gattCallback, device)
 
         verify(gattCallback).onReadRemoteRssi(device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
@@ -701,10 +701,10 @@ class GattServiceTest(flags: FlagsWrapper) {
     @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
     fun clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsMoreThanThrottleMs() {
         service.mRssiCache[device.address] =
-            GattService.RssiCacheEntry(mTimeProvider.elapsedRealtime(), TEST_RSSI)
+            GattService.RssiCacheEntry(timeProvider.elapsedRealtime(), TEST_RSSI)
 
         // 100ms is more than the default throttle ms of 75ms
-        mTimeProvider.advanceTime(Duration.ofMillis(100))
+        timeProvider.advanceTime(Duration.ofMillis(100))
         service.readRemoteRssi(gattCallback, device)
 
         verify(nativeInterface).gattClientReadRemoteRssi(CLIENT_IF, device)

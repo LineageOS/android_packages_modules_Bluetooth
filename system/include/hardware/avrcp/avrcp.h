@@ -106,37 +106,37 @@ class MediaInterface {
 public:
   virtual void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) = 0;
 
-  using SongInfoCallback = base::Callback<void(SongInfo)>;
+  using SongInfoCallback = base::OnceCallback<void(SongInfo)>;
   virtual void GetSongInfo(SongInfoCallback info_cb) = 0;
 
-  using PlayStatusCallback = base::Callback<void(PlayStatus)>;
+  using PlayStatusCallback = base::OnceCallback<void(PlayStatus)>;
   virtual void GetPlayStatus(PlayStatusCallback status_cb) = 0;
 
   // Contains the current queue and the media ID of the currently playing item
   // in the queue
-  using NowPlayingCallback = base::Callback<void(std::string, std::vector<SongInfo>)>;
+  using NowPlayingCallback = base::OnceCallback<void(std::string, std::vector<SongInfo>)>;
   virtual void GetNowPlayingList(NowPlayingCallback now_playing_cb) = 0;
 
   // TODO (apanicke): Use a map with the ID as the key instead of vector
   // in follow up cleanup patches. This allows simplification of the
   // MediaPlayerInfo object
   using MediaListCallback =
-          base::Callback<void(uint16_t curr_player, std::vector<MediaPlayerInfo>)>;
+          base::OnceCallback<void(uint16_t curr_player, std::vector<MediaPlayerInfo>)>;
   virtual void GetMediaPlayerList(MediaListCallback list_cb) = 0;
 
-  using FolderItemsCallback = base::Callback<void(std::vector<ListItem>)>;
+  using FolderItemsCallback = base::OnceCallback<void(std::vector<ListItem>)>;
   virtual void GetFolderItems(uint16_t player_id, std::string media_id,
                               FolderItemsCallback folder_cb) = 0;
 
-  using GetAddressedPlayerCallback = base::Callback<void(uint16_t)>;
+  using GetAddressedPlayerCallback = base::OnceCallback<void(uint16_t)>;
   virtual void GetAddressedPlayer(GetAddressedPlayerCallback addressed_player) = 0;
 
   using SetBrowsedPlayerCallback =
-          base::Callback<void(bool success, std::string current_path, uint32_t num_items)>;
+          base::OnceCallback<void(bool success, std::string current_path, uint32_t num_items)>;
   virtual void SetBrowsedPlayer(uint16_t player_id, std::string current_path,
                                 SetBrowsedPlayerCallback browse_cb) = 0;
 
-  using SetAddressedPlayerCallback = base::Callback<void(uint16_t)>;
+  using SetAddressedPlayerCallback = base::OnceCallback<void(uint16_t)>;
   virtual void SetAddressedPlayer(uint16_t player_id, SetAddressedPlayerCallback new_player) = 0;
 
   virtual void PlayItem(uint16_t player_id, bool now_playing, std::string media_id) = 0;
@@ -155,7 +155,7 @@ class VolumeInterface {
 public:
   // TODO (apanicke): Investigate the best value type for volume. Right now it
   // is a value from 0-127 because thats what AVRCP uses.
-  using VolumeChangedCb = base::Callback<void(int8_t volume)>;
+  using VolumeChangedCb = base::RepeatingCallback<void(int8_t volume)>;
 
   // Indicate that a device has been connected that does not support absolute
   // volume.
@@ -177,20 +177,21 @@ public:
 
 class PlayerSettingsInterface {
 public:
-  using ListPlayerSettingsCallback = base::Callback<void(std::vector<PlayerAttribute> attributes)>;
+  using ListPlayerSettingsCallback =
+          base::OnceCallback<void(std::vector<PlayerAttribute> attributes)>;
   virtual void ListPlayerSettings(ListPlayerSettingsCallback cb) = 0;
 
   using ListPlayerSettingValuesCallback =
-          base::Callback<void(PlayerAttribute setting, std::vector<uint8_t> values)>;
+          base::OnceCallback<void(PlayerAttribute setting, std::vector<uint8_t> values)>;
   virtual void ListPlayerSettingValues(PlayerAttribute setting,
                                        ListPlayerSettingValuesCallback cb) = 0;
 
-  using GetCurrentPlayerSettingValueCallback = base::Callback<void(
+  using GetCurrentPlayerSettingValueCallback = base::OnceCallback<void(
           std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values)>;
   virtual void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
                                             GetCurrentPlayerSettingValueCallback cb) = 0;
 
-  using SetPlayerSettingValueCallback = base::Callback<void(bool success)>;
+  using SetPlayerSettingValueCallback = base::OnceCallback<void(bool success)>;
   virtual void SetPlayerSettings(std::vector<PlayerAttribute> attributes,
                                  std::vector<uint8_t> values, SetPlayerSettingValueCallback cb) = 0;
 

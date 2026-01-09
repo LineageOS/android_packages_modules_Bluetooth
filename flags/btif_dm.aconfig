@@ -10,3 +10,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+  name: "pairing_decoupled"
+  namespace: "bluetooth"
+  description: "Decouple the service discovery and pairing process"
+  bug: "474029825"
+}

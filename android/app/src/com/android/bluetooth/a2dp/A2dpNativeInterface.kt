@@ -24,10 +24,10 @@ import com.android.bluetooth.profile.NativeInterface
 
 /** A2DP Native Interface to/from JNI. */
 class A2dpNativeInterface(
-    private val mAdapterService: AdapterService,
+    private val adapterService: AdapterService,
     nativeCallback: A2dpNativeCallback,
 ) : NativeInterface<A2dpNativeCallback>(nativeCallback) {
-    private var mSupportedCodecTypes: Array<BluetoothCodecType>? = null
+    private var supportedCodecTypes: Array<BluetoothCodecType>? = null
 
     /**
      * Initializes the native interface.
@@ -50,10 +50,10 @@ class A2dpNativeInterface(
 
     /** Returns the list of locally supported codec types. */
     fun getSupportedCodecTypes(): List<BluetoothCodecType> {
-        if (mSupportedCodecTypes == null) {
-            mSupportedCodecTypes = getSupportedCodecTypesNative()
+        if (supportedCodecTypes == null) {
+            supportedCodecTypes = getSupportedCodecTypesNative()
         }
-        return mSupportedCodecTypes?.toList() ?: emptyList()
+        return supportedCodecTypes?.toList() ?: emptyList()
     }
 
     /**
@@ -114,7 +114,7 @@ class A2dpNativeInterface(
         if (device == null) {
             return Utils.getBytesFromAddress("00:00:00:00:00:00")
         }
-        return mAdapterService.getByteBrEdrAddress(device)
+        return adapterService.getByteBrEdrAddress(device)
     }
 
     private external fun initNative(

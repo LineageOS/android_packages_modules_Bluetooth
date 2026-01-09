@@ -148,6 +148,7 @@ public:
   static const std::string kRoBuildType;
   static const std::string kBtSnoopLogModeProperty;
   static const std::string kBtSnoopLogPersists;
+  static const std::string kBtSnoopSocketEnabledProperty;
   static const std::string kBtSnoopDefaultLogModeProperty;
   static const std::string kBtSnoopLogFilterHeadersProperty;
   static const std::string kBtSnoopLogFilterProfileA2dpProperty;

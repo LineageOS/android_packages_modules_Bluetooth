@@ -178,95 +178,96 @@ public:
 
   void GetSongInfo(SongInfoCallback info_cb) override {
     auto cb_lambda = [](SongInfoCallback cb, SongInfo data) {
-      do_in_main_thread(base::BindOnce(cb, data));
+      do_in_main_thread(base::BindOnce(std::move(cb), data));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, info_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(info_cb));
 
-    do_in_jni_thread(
-            base::BindOnce(&MediaInterface::GetSongInfo, base::Unretained(wrapped_), bound_cb));
+    do_in_jni_thread(base::BindOnce(&MediaInterface::GetSongInfo, base::Unretained(wrapped_),
+                                    std::move(bound_cb)));
   }
 
   void GetPlayStatus(PlayStatusCallback status_cb) override {
     auto cb_lambda = [](PlayStatusCallback cb, PlayStatus status) {
-      do_in_main_thread(base::BindOnce(cb, status));
+      do_in_main_thread(base::BindOnce(std::move(cb), status));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, status_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(status_cb));
 
-    do_in_jni_thread(
-            base::BindOnce(&MediaInterface::GetPlayStatus, base::Unretained(wrapped_), bound_cb));
+    do_in_jni_thread(base::BindOnce(&MediaInterface::GetPlayStatus, base::Unretained(wrapped_),
+                                    std::move(bound_cb)));
   }
 
   void GetNowPlayingList(NowPlayingCallback now_playing_cb) override {
     auto cb_lambda = [](NowPlayingCallback cb, std::string curr_media_id,
                         std::vector<SongInfo> song_list) {
-      do_in_main_thread(base::BindOnce(cb, curr_media_id, std::move(song_list)));
+      do_in_main_thread(
+              base::BindOnce(std::move(cb), std::move(curr_media_id), std::move(song_list)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, now_playing_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(now_playing_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::GetNowPlayingList, base::Unretained(wrapped_),
-                                    bound_cb));
+                                    std::move(bound_cb)));
   }
 
   void GetMediaPlayerList(MediaListCallback list_cb) override {
     auto cb_lambda = [](MediaListCallback cb, uint16_t curr_player,
                         std::vector<MediaPlayerInfo> player_list) {
-      do_in_main_thread(base::BindOnce(cb, curr_player, std::move(player_list)));
+      do_in_main_thread(base::BindOnce(std::move(cb), curr_player, std::move(player_list)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, list_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(list_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::GetMediaPlayerList, base::Unretained(wrapped_),
-                                    bound_cb));
+                                    std::move(bound_cb)));
   }
 
   void GetFolderItems(uint16_t player_id, std::string media_id,
                       FolderItemsCallback folder_cb) override {
     auto cb_lambda = [](FolderItemsCallback cb, std::vector<ListItem> item_list) {
-      do_in_main_thread(base::BindOnce(cb, std::move(item_list)));
+      do_in_main_thread(base::BindOnce(std::move(cb), std::move(item_list)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, folder_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(folder_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::GetFolderItems, base::Unretained(wrapped_),
-                                    player_id, media_id, bound_cb));
+                                    player_id, media_id, std::move(bound_cb)));
   }
 
   void GetAddressedPlayer(GetAddressedPlayerCallback addressed_cb) override {
     auto cb_lambda = [](GetAddressedPlayerCallback cb, uint16_t addressed_player) {
-      do_in_main_thread(base::BindOnce(cb, addressed_player));
+      do_in_main_thread(base::BindOnce(std::move(cb), addressed_player));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, addressed_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(addressed_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::GetAddressedPlayer, base::Unretained(wrapped_),
-                                    bound_cb));
+                                    std::move(bound_cb)));
   }
 
   void SetBrowsedPlayer(uint16_t player_id, std::string current_path,
                         SetBrowsedPlayerCallback browse_cb) override {
     auto cb_lambda = [](SetBrowsedPlayerCallback cb, bool success, std::string root_id,
                         uint32_t num_items) {
-      do_in_main_thread(base::BindOnce(cb, success, root_id, num_items));
+      do_in_main_thread(base::BindOnce(std::move(cb), success, root_id, num_items));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, browse_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(browse_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::SetBrowsedPlayer, base::Unretained(wrapped_),
-                                    player_id, current_path, bound_cb));
+                                    player_id, current_path, std::move(bound_cb)));
   }
 
   void SetAddressedPlayer(uint16_t player_id, SetAddressedPlayerCallback addressed_cb) override {
     auto cb_lambda = [](SetAddressedPlayerCallback cb, uint16_t new_player) {
-      do_in_main_thread(base::BindOnce(cb, new_player));
+      do_in_main_thread(base::BindOnce(std::move(cb), new_player));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, addressed_cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(addressed_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::SetAddressedPlayer, base::Unretained(wrapped_),
-                                    player_id, bound_cb));
+                                    player_id, std::move(bound_cb)));
   }
 
   void PlayItem(uint16_t player_id, bool now_playing, std::string media_id) override {
@@ -305,15 +306,15 @@ public:
 
   void DeviceConnected(const RawAddress& bdaddr, VolumeChangedCb cb) override {
     auto cb_lambda = [](VolumeChangedCb cb, int8_t volume) {
-      do_in_main_thread(base::BindOnce(cb, volume));
+      do_in_main_thread(base::BindOnce(std::move(cb), volume));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, cb);
+    auto bound_cb = base::BindRepeating(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(
             static_cast<void (VolumeInterface::*)(const RawAddress&, VolumeChangedCb)>(
                     &VolumeInterface::DeviceConnected),
-            base::Unretained(wrapped_), bdaddr, bound_cb));
+            base::Unretained(wrapped_), bdaddr, std::move(bound_cb)));
   }
 
   void DeviceDisconnected(const RawAddress& bdaddr) override {
@@ -338,55 +339,55 @@ public:
       : wrapped_(interface) {}
 
   void ListPlayerSettings(ListPlayerSettingsCallback cb) override {
-    auto cb_lambda = [](const ListPlayerSettingsCallback& cb,
-                        std::vector<PlayerAttribute> attributes) {
-      do_in_main_thread(base::BindOnce(cb, std::move(attributes)));
+    auto cb_lambda = [](ListPlayerSettingsCallback cb, std::vector<PlayerAttribute> attributes) {
+      do_in_main_thread(base::BindOnce(std::move(cb), std::move(attributes)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::ListPlayerSettings,
-                                    base::Unretained(wrapped_), bound_cb));
+                                    base::Unretained(wrapped_), std::move(bound_cb)));
   }
 
   void ListPlayerSettingValues(PlayerAttribute setting,
                                ListPlayerSettingValuesCallback cb) override {
-    auto cb_lambda = [](const ListPlayerSettingValuesCallback& cb, PlayerAttribute setting,
+    auto cb_lambda = [](ListPlayerSettingValuesCallback cb, PlayerAttribute setting,
                         std::vector<uint8_t> values) {
-      do_in_main_thread(base::BindOnce(cb, setting, std::move(values)));
+      do_in_main_thread(base::BindOnce(std::move(cb), setting, std::move(values)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::ListPlayerSettingValues,
-                                    base::Unretained(wrapped_), setting, bound_cb));
+                                    base::Unretained(wrapped_), setting, std::move(bound_cb)));
   }
 
   void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
                                     GetCurrentPlayerSettingValueCallback cb) override {
-    auto cb_lambda = [](const GetCurrentPlayerSettingValueCallback& cb,
+    auto cb_lambda = [](GetCurrentPlayerSettingValueCallback cb,
                         std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values) {
-      do_in_main_thread(base::BindOnce(cb, std::move(attributes), std::move(values)));
+      do_in_main_thread(base::BindOnce(std::move(cb), std::move(attributes), std::move(values)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::GetCurrentPlayerSettingValue,
-                                    base::Unretained(wrapped_), std::move(attributes), bound_cb));
+                                    base::Unretained(wrapped_), std::move(attributes),
+                                    std::move(bound_cb)));
   }
 
   void SetPlayerSettings(std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values,
                          SetPlayerSettingValueCallback cb) override {
     log::info("");
-    auto cb_lambda = [](const SetPlayerSettingValueCallback& cb, bool success) {
-      do_in_main_thread(base::BindOnce(cb, success));
+    auto cb_lambda = [](SetPlayerSettingValueCallback cb, bool success) {
+      do_in_main_thread(base::BindOnce(std::move(cb), success));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, cb);
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::SetPlayerSettings,
                                     base::Unretained(wrapped_), std::move(attributes),
-                                    std::move(values), bound_cb));
+                                    std::move(values), std::move(bound_cb)));
   }
 
 private:

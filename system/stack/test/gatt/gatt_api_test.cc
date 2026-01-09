@@ -20,11 +20,9 @@
 #include <gtest/gtest.h>
 
 #include "btm/btm_dev.h"
-#include "btm/btm_sec_cb.h"
+#include "btm/btm_security.h"
 #include "gatt/gatt_int.h"
 #include "osi/include/allocator.h"
-
-extern tBTM_SEC_CB btm_sec_cb;
 
 static const size_t QUEUE_SIZE_MAX = 10;
 
@@ -52,9 +50,9 @@ protected:
 
   void SetUp() override {
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-      btm_sec_cb.sec_dev_rec = list_new(osi_free);
+      BtmSecurity::Get().sec_dev_rec_ = list_new(osi_free);
     } else {
-      ::btm_sec_cb.Init(BTM_SEC_MODE_SC);  // Initialize the CB
+      ::BtmSecurity::Get().Init(BTM_SEC_MODE_SC);  // Initialize the CB
     }
 
     gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
@@ -63,9 +61,9 @@ protected:
 
   void TearDown() override {
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-      list_free(btm_sec_cb.sec_dev_rec);
+      list_free(BtmSecurity::Get().sec_dev_rec_);
     } else {
-      ::btm_sec_cb.Free();  // Free the CB
+      ::BtmSecurity::Get().Free();  // Free the CB
     }
   }
 };

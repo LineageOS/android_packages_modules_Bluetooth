@@ -65,6 +65,7 @@ import android.telecom.PhoneAccount;
 import android.telephony.SmsManager;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -316,7 +317,7 @@ class MceStateMachine extends StateMachine {
         mService.sendBroadcastMultiplePermissions(
                 intent,
                 new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                Utils.getTempBroadcastOptions());
+                Util.getTempBroadcastOptions());
     }
 
     private synchronized void setState(int state) {

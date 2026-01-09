@@ -20,14 +20,12 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
-import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.companion.AssociationInfo;
@@ -37,13 +35,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.Looper;
 import android.os.ParcelUuid;
-import android.os.PowerExemptionManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
-import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
 
@@ -87,9 +82,6 @@ public final class Utils {
         private static boolean sEnabled =
                 SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
     }
-
-    private static final String KEY_TEMP_ALLOW_LIST_DURATION_MS = "temp_allow_list_duration_ms";
-    private static final long DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000;
 
     private static int sSystemUiUid = USER_HANDLE_NULL.getIdentifier();
 
@@ -435,32 +427,6 @@ public final class Utils {
                 == BluetoothMethodProxy.getInstance()
                         .contentResolverUpdate(
                                 context.getContentResolver(), uri, values, null, null);
-    }
-
-    /** Returns broadcast options. */
-    public static @NonNull BroadcastOptions getTempBroadcastOptions() {
-        final BroadcastOptions bOptions = BroadcastOptions.makeBasic();
-        // Use the Bluetooth process identity to pass permission check when reading DeviceConfig
-        final long ident = Binder.clearCallingIdentity();
-        try {
-            final long durationMs =
-                    DeviceConfig.getLong(
-                            DeviceConfig.NAMESPACE_BLUETOOTH,
-                            KEY_TEMP_ALLOW_LIST_DURATION_MS,
-                            DEFAULT_TEMP_ALLOW_LIST_DURATION_MS);
-            bOptions.setTemporaryAppAllowlist(
-                    durationMs,
-                    TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED,
-                    PowerExemptionManager.REASON_BLUETOOTH_BROADCAST,
-                    "");
-        } finally {
-            Binder.restoreCallingIdentity(ident);
-        }
-        return bOptions;
-    }
-
-    public static @NonNull Bundle getTempBroadcastBundle() {
-        return getTempBroadcastOptions().toBundle();
     }
 
     /**

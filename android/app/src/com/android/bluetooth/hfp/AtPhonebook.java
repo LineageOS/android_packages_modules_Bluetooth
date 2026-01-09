@@ -667,7 +667,7 @@ public class AtPhonebook {
         mAdapterService.sendOrderedBroadcast(
                 intent,
                 BLUETOOTH_CONNECT,
-                Utils.getTempBroadcastBundle(),
+                Util.getTempBroadcastBundle(),
                 null,
                 null,
                 Activity.RESULT_OK,

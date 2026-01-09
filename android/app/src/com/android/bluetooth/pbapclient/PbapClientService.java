@@ -278,7 +278,6 @@ public class PbapClientService extends ConnectableProfile {
             Log.d(TAG, "Received intent to disconnect HFP with " + device);
             Account account = mPbapClientContactsStorage.getStorageAccountForDevice(device);
             mPbapClientContactsStorage.removeCallHistory(account);
-            return;
         }
     }
 

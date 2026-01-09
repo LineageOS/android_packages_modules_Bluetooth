@@ -156,7 +156,6 @@ public class AvrcpBipClient {
         } catch (IllegalStateException e) {
             // Means we haven't been started or we're already stopped. Doing this makes this call
             // always safe no matter the state.
-            return;
         }
     }
 

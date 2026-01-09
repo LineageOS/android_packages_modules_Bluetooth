@@ -46,7 +46,7 @@ import android.os.UserManager;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.VisibleForTesting;
@@ -320,7 +320,7 @@ public class PanService extends ConnectableProfile {
             intent.putExtra(
                     BluetoothPan.EXTRA_TETHERING_STATE,
                     mTetherOn ? BluetoothPan.TETHERING_STATE_ON : BluetoothPan.TETHERING_STATE_OFF);
-            sendBroadcast(intent, null, Utils.getTempBroadcastBundle());
+            sendBroadcast(intent, null, Util.getTempBroadcastBundle());
         }
     }
 

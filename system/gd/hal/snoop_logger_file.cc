@@ -26,11 +26,6 @@
 #include "hal/snoop_logger.h"
 #include "hal/snoop_logger_common.h"
 
-#ifdef __ANDROID__
-#include "hal/snoop_logger_tracing.h"
-#endif  // __ANDROID__
-#include "os/parameter_provider.h"
-
 #ifdef USE_FAKE_TIMERS
 #include "os/fake_timer/fake_timerfd.h"
 using bluetooth::os::fake_timer::fake_timerfd_get_clock;
@@ -39,6 +34,7 @@ using bluetooth::os::fake_timer::fake_timerfd_get_clock;
 namespace bluetooth::hal {
 
 #ifdef __ANDROID__
+
 // Return permission string in POSIX-style e.g. "rwxr-xr-x".
 static std::string get_permissions_string(std::filesystem::perms p) {
   std::string str;
@@ -62,27 +58,27 @@ static std::string get_permissions_string(std::filesystem::perms p) {
 
 // The expected permissions and group for the created directory is like:
 //   drwxrwxr-x bluetooth bluetooth
-bool create_log_directories() {
-  std::filesystem::path default_dir_path = os::ParameterProvider::SnoopLogDirPath();
-
-  if (std::filesystem::exists(default_dir_path)) {
-    log::info("Directory {} already exists with permission {}", default_dir_path.string(),
-              get_permissions_string(std::filesystem::status(default_dir_path).permissions()));
+bool create_log_directories(std::filesystem::path dir) {
+  if (std::filesystem::exists(dir)) {
+    log::info("Directory {} already exists with permission {}", dir.string(),
+              get_permissions_string(std::filesystem::status(dir).permissions()));
     return true;
   }
 
-  log::info("Creating directory: {}", default_dir_path.string());
+  log::info("Creating directory {}", dir.string());
+
   mode_t prevmask = umask(0002);
-  bool created = std::filesystem::create_directories(default_dir_path);
+  bool created = std::filesystem::create_directories(dir);
   umask(prevmask);
+
   if (created && geteuid() != AID_BLUETOOTH) {
     // If somehow the log directory is removed but now we're not running as AID_BLUETOOTH (e.g. HSUM
     // mode may run Bluetooth process under a namespace), we should make sure the group is
     // AID_BLUETOOTH so bluetooth users under any namespace can add/remove the files inside.
     log::warn("Not running as AID_BLUETOOTH, changing directory group");
-    if (chown(default_dir_path.c_str(), geteuid(), AID_BLUETOOTH) < 0) {
+    if (chown(dir.c_str(), geteuid(), AID_BLUETOOTH) < 0) {
       log::error("Failed to chown, error: \"{}\"", strerror(errno));
-      if (std::error_code ec; !std::filesystem::remove(default_dir_path, ec)) {
+      if (std::error_code ec; !std::filesystem::remove(dir, ec)) {
         log::error("Failed to remove directory: ", ec.message());
       }
       return false;
@@ -90,6 +86,7 @@ bool create_log_directories() {
   }
   return created;
 }
+
 #endif  // __ANDROID__
 
 SnoopLoggerFile::SnoopLoggerFile(std::filesystem::path snoop_dir_path, bool is_filtered,
@@ -108,7 +105,7 @@ void SnoopLoggerFile::OpenNextSnoopLogFile() {
   auto last_file_path = AssembleFileName(snoop_dir_path_, false, is_filtered_, true);
 
 #ifdef __ANDROID__
-  if (!create_log_directories()) {
+  if (!create_log_directories(snoop_dir_path_)) {
     log::error("Could not recreate log directory");
   }
 #endif  // __ANDROID__

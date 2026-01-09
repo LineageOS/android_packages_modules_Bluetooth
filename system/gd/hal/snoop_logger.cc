@@ -444,6 +444,8 @@ const std::string SnoopLogger::kBtSnoopLogModeProperty = "persist.bluetooth.btsn
 const std::string SnoopLogger::kBtSnoopDefaultLogModeProperty =
         "persist.bluetooth.btsnoopdefaultmode";
 const std::string SnoopLogger::kBtSnoopLogPersists = "persist.bluetooth.btsnooplogpersists";
+const std::string SnoopLogger::kBtSnoopSocketEnabledProperty =
+        "persist.bluetooth.btsnoopsocket.enabled";
 // Truncates ACL packets (non-fragment) to fixed (MAX_HCI_ACL_LEN) number of bytes
 const std::string SnoopLogger::kBtSnoopLogFilterHeadersProperty =
         "persist.bluetooth.snooplogfilter.headers.enabled";
@@ -486,12 +488,16 @@ const uint32_t SnoopLogger::L2CAP_HEADER_SIZE = 8;
 // Create the snoop logger socket listening on the provided host and port.
 // The constructor will check if the socket is enabled with the dedicated system property.
 static std::unique_ptr<SnoopLoggerSocketInterface> CreateSnoopLoggerSocket(int host, int port) {
+  // Cf b/375056207: The snoop logger socket is additionally controlled by a separate system
+  // property to ensure that security tests are not impacted by previous test execution. Security
+  // tests should not toggle system properties as it would defeat the purpose (check the default
+  // device configuration).
   auto btsnoop_mode = GetBtSnoopMode();
+  auto btsnoop_socket_enabled =
+          os::GetSystemPropertyBool(SnoopLogger::kBtSnoopSocketEnabledProperty, false);
 
-  // Cf b/375056207: The implementation must pass a security review
-  // in order to enable the snoop logger socket in user builds.
   if (btsnoop_mode == SnoopLogger::kBtSnoopLogModeDisabled ||
-      btsnoop_mode == SnoopLogger::kBtSnoopLogModeKernel || !is_debug_build()) {
+      btsnoop_mode == SnoopLogger::kBtSnoopLogModeKernel || !btsnoop_socket_enabled) {
     return nullptr;
   }
 
@@ -1250,7 +1256,7 @@ void SnoopLogger::DumpSnoozLogToFile() {
   }
 
 #ifdef __ANDROID__
-  if (!create_log_directories()) {
+  if (!create_log_directories(snooz_dir_path_)) {
     log::error("Could not recreate log directory");
   }
 #endif  // __ANDROID__

@@ -29,7 +29,7 @@ import android.bluetooth.BluetoothHeadsetClient;
 import android.content.Intent;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -179,6 +179,6 @@ class VendorCommandResponseProcessor {
         intent.putExtra(BluetoothHeadsetClient.EXTRA_VENDOR_EVENT_CODE, vendorEventCode);
         intent.putExtra(BluetoothHeadsetClient.EXTRA_VENDOR_EVENT_FULL_ARGS, vendorResponse);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 }

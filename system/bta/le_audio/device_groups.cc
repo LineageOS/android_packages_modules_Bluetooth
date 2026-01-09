@@ -2518,7 +2518,7 @@ void LeAudioDeviceGroup::Disable(int gatt_if) {
   }
 }
 
-void LeAudioDeviceGroup::Enable(int gatt_if, tBTM_BLE_CONN_TYPE reconnection_mode) {
+void LeAudioDeviceGroup::Enable(int gatt_if) {
   is_enabled_ = true;
   for (auto& device_iter : leAudioDevices_) {
     if (device_iter.lock()->autoconnect_flag_) {
@@ -2535,7 +2535,7 @@ void LeAudioDeviceGroup::Enable(int gatt_if, tBTM_BLE_CONN_TYPE reconnection_mod
               bluetooth::common::ToString(GetState()), address);
 
     if (connection_state == DeviceConnectState::DISCONNECTED) {
-      BTA_GATTC_Open(gatt_if, address, reconnection_mode, false);
+      BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
       device_iter.lock()->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
     }
   }
@@ -2569,10 +2569,11 @@ void LeAudioDeviceGroup::AddToAllowListNotConnectedGroupMembers(int gatt_if) {
   }
 }
 
-void LeAudioDeviceGroup::ApplyReconnectionMode(int gatt_if, tBTM_BLE_CONN_TYPE reconnection_mode) {
+void LeAudioDeviceGroup::ApplyReconnectionMode(int gatt_if) {
   for (const auto& device_iter : leAudioDevices_) {
     BTA_GATTC_CancelOpen(gatt_if, device_iter.lock()->address_, false);
-    BTA_GATTC_Open(gatt_if, device_iter.lock()->address_, reconnection_mode, false);
+    BTA_GATTC_Open(gatt_if, device_iter.lock()->address_,
+                   BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
     log::info("Group {} in state {}. Adding {} to default reconnection mode", group_id_,
               bluetooth::common::ToString(GetState()), device_iter.lock()->address_);
     device_iter.lock()->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);

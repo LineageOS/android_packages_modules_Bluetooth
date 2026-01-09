@@ -90,7 +90,7 @@ public class RemoteDevices {
     private static final int MESSAGE_NOTIFY_UUIDS = 1;
     private static final int MESSAGE_SERVICE_DISCOVERY_TIMEOUT = 2;
 
-    private static final int SERVICE_DISCOVERY_TIMEOUT_MS = 6000; // 6 seconds
+    @VisibleForTesting static final int SERVICE_DISCOVERY_TIMEOUT_MS = 6000; // 6 seconds
 
     private static final String LOG_SOURCE_DIS = "DIS";
 
@@ -142,7 +142,7 @@ public class RemoteDevices {
 
                     debugLog("MESSAGE_NOTIFY_UUIDS: " + device);
                     if (Flags.broadcastUuidsFromMainLooper()) {
-                        uuidsUpdated(getDeviceProperties(device), true);
+                        notifyUuids(getDeviceProperties(device), true);
                     } else {
                         DeviceProperties prop = getDeviceProperties(device);
                         sendUuidIntent(device, prop, true);
@@ -159,7 +159,7 @@ public class RemoteDevices {
 
                     debugLog("MESSAGE_SERVICE_DISCOVERY_TIMEOUT: " + device);
                     if (Flags.broadcastUuidsFromMainLooper()) {
-                        uuidsUpdated(getDeviceProperties(device), false);
+                        notifyUuids(getDeviceProperties(device), false);
                     } else {
                         DeviceProperties prop = getDeviceProperties(device);
                         sendUuidIntent(device, prop, false);
@@ -212,8 +212,7 @@ public class RemoteDevices {
                                     != BluetoothDevice.ERROR) {
                                 deviceProperties.setDisconnected(TRANSPORT_BREDR);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_BREDR);
-                                intent.putExtra(
-                                            BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
+                                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
                                 mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
                             }
                             if (deviceProperties.getConnectionHandle(TRANSPORT_LE)
@@ -830,7 +829,7 @@ public class RemoteDevices {
                 intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
                 intent.putExtra(BluetoothDevice.EXTRA_NAME, mAlias);
                 mAdapterService.sendBroadcast(
-                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                        intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
             }
         }
 
@@ -1111,6 +1110,7 @@ public class RemoteDevices {
         }
     }
 
+    // TODO (b/462533972): Remove once the flag broadcast_uuids_from_main_looper is shipped.
     private void sendUuidIntent(BluetoothDevice device, DeviceProperties prop, boolean success) {
         // Send uuids within the stack before the broadcast is sent out
         ParcelUuid[] uuids = prop == null ? null : prop.getUuids();
@@ -1122,7 +1122,7 @@ public class RemoteDevices {
         Intent intent = new Intent(BluetoothDevice.ACTION_UUID);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
-        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
 
         // SDP Sent UUID Intent here
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_SENT_UUID, 1);
@@ -1218,7 +1218,7 @@ public class RemoteDevices {
         intent.putExtra(BluetoothDevice.EXTRA_BATTERY_LEVEL, batteryLevel);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     /**
@@ -1307,7 +1307,7 @@ public class RemoteDevices {
                         intent.putExtra(BluetoothDevice.EXTRA_NAME, deviceProperties.getName());
                         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                         mAdapterService.sendBroadcast(
-                                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                                intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
                         debugLog("Remote device name is: " + deviceProperties.getName());
                     }
                     case AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME -> {
@@ -1336,7 +1336,7 @@ public class RemoteDevices {
                                 new BluetoothClass(deviceProperties.getBluetoothClass()));
                         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                         mAdapterService.sendBroadcast(
-                                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                                intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
                         debugLog(
                                 "Remote class update, device="
                                         + bdDevice
@@ -1468,9 +1468,10 @@ public class RemoteDevices {
 
         if (newUuidsFound) {
             if (Flags.broadcastUuidsFromMainLooper()) {
-                updateUuids(bdDevice); // Ensures that UUID update is propagated in main looper
+                // Ensure that UUID update is propagated in main looper
+                triggerUuidNotification(bdDevice);
             } else {
-                uuidsUpdated(deviceProperties, true);
+                notifyUuids(deviceProperties, true);
             }
         }
     }
@@ -1494,9 +1495,10 @@ public class RemoteDevices {
         deviceProperties.setBondStatus(transport, pairingAlgorithm, pairingVariant);
     }
 
-    private void uuidsUpdated(DeviceProperties deviceProperties, boolean success) {
+    // TODO (b/462533972): Remove once the flag broadcast_uuids_from_main_looper is shipped.
+    private void notifyUuids_(DeviceProperties deviceProperties, boolean success) {
         if (deviceProperties == null) {
-            errorLog("uuidsUpdated: Device Properties is null");
+            errorLog("notifyUuids_: Device Properties is null");
             return;
         }
 
@@ -1507,7 +1509,7 @@ public class RemoteDevices {
                     MetricsLogger.getInstance()
                             .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT, 1);
                     // Adding UUIDs to property cache and sending intent
-                    mAdapterService.deviceUuidUpdated(device);
+                    mAdapterService.serviceDiscoveryNotificationToBondStateMachine(device);
                 } else {
                     MetricsLogger.getInstance()
                             .cacheCount(BluetoothProtoEnums.SDP_SENDING_DELAYED_UUID, 1);
@@ -1519,11 +1521,28 @@ public class RemoteDevices {
                     MetricsLogger.getInstance()
                             .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
                     // Adding UUIDs to property cache but with no intent
-                    mAdapterService.deviceUuidUpdated(device);
+                    mAdapterService.serviceDiscoveryNotificationToBondStateMachine(device);
                 }
             }
             default -> MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
         }
+    }
+
+    private void notifyUuids(DeviceProperties deviceProperties, boolean success) {
+        if (!Flags.broadcastUuidsFromMainLooper()) {
+            notifyUuids_(deviceProperties, success);
+            return;
+        }
+
+        if (deviceProperties == null) {
+            errorLog("uuidsUpdated: Device Properties is null");
+            return;
+        }
+
+        BluetoothDevice device = deviceProperties.getDevice();
+        ParcelUuid[] uuids = deviceProperties.getUuids();
+
+        mAdapterService.deviceUuidsUpdated(device, uuids, success);
     }
 
     void deviceFoundCallback(byte[] address) {
@@ -1768,7 +1787,7 @@ public class RemoteDevices {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT)
                 .addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        final BroadcastOptions options = Utils.getTempBroadcastOptions();
+        final BroadcastOptions options = Util.getTempBroadcastOptions();
         if (Flags.coalesceAclConnectionBroadcasts()
                 && (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction())
                         || BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction()))) {
@@ -1845,7 +1864,7 @@ public class RemoteDevices {
                         mAdapterService.getString(R.string.pairing_ui_package)));
 
         Log.i(TAG, "sendPairingCancelIntent: device=" + device);
-        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     private void removeDeviceProperties(String address) {
@@ -2123,7 +2142,7 @@ public class RemoteDevices {
                 .getRemoteServices(Utils.getBytesFromAddress(device.getAddress()), transport);
     }
 
-    void updateUuids(BluetoothDevice device) {
+    void triggerUuidNotification(BluetoothDevice device) {
         Message message = mHandler.obtainMessage(MESSAGE_NOTIFY_UUIDS, device);
         mHandler.sendMessage(message);
     }
@@ -2578,7 +2597,7 @@ public class RemoteDevices {
         mAdapterService.sendOrderedBroadcast(
                 keyMissingIntent,
                 BLUETOOTH_CONNECT,
-                Utils.getTempBroadcastBundle(),
+                Util.getTempBroadcastBundle(),
                 null /* resultReceiver */,
                 null /* scheduler */,
                 Activity.RESULT_OK /* initialCode */,

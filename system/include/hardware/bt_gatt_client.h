@@ -243,7 +243,7 @@ typedef struct {
                                 uint16_t phy_options);
 
   BtStatus (*read_phy)(const RawAddress& bd_addr,
-                       base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
+                       base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
 
   /** Request a BLE subrate request procedure */
   BtStatus (*subrate_request)(const RawAddress& bd_addr, int subrate_min, int subrate_max,

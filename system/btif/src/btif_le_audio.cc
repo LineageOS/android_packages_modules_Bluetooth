@@ -142,7 +142,7 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
 
     do_in_main_thread(
             BindOnce(&LeAudioClient::Initialize, this,
-                     jni_thread_wrapper(base::Bind(&btif_storage_load_bonded_leaudio)),
+                     jni_thread_wrapper(base::BindOnce(&btif_storage_load_bonded_leaudio)),
                      base::Bind([]() -> bool { return LeAudioHalVerifier::SupportsLeAudio(); }),
                      offloading_preference));
 

@@ -39,13 +39,13 @@ import org.robolectric.RobolectricTestRunner
 class BluetoothAdapterStateTest {
     @get:Rule val testName = TestName()
 
-    lateinit var mState: BluetoothAdapterState
+    lateinit var state: BluetoothAdapterState
 
     @Before
     fun setUp() {
         BluetoothAdapterState.disableCacheForTesting = true
         Log.i("BluetoothAdapterStateTest", "\t--> setup of ${testName.methodName}")
-        mState = BluetoothAdapterState()
+        state = BluetoothAdapterState()
     }
 
     @After
@@ -55,36 +55,36 @@ class BluetoothAdapterStateTest {
 
     @Test
     fun init_isStateOff() {
-        Log.d("BluetoothAdapterStateTest", "Initial state is $mState")
-        assertThat(mState.get()).isEqualTo(State.OFF)
+        Log.d("BluetoothAdapterStateTest", "Initial state is $state")
+        assertThat(state.get()).isEqualTo(State.OFF)
     }
 
     @Test
     fun get_afterBusy_returnLastValue() {
         val max = 10
-        for (i in 0..max) mState.set(i)
-        assertThat(mState.get()).isEqualTo(max)
+        for (i in 0..max) state.set(i)
+        assertThat(state.get()).isEqualTo(max)
     }
 
     @Test
     fun immediateReturn_whenStateIsAlreadyCorrect() = runTest {
-        val state = 10
-        mState.set(state)
-        assertThat(runBlocking { mState.waitForState(100.days, state) }).isTrue()
+        val stateNow = 10
+        state.set(stateNow)
+        assertThat(runBlocking { state.waitForState(100.days, stateNow) }).isTrue()
     }
 
-    @Test fun expectTimeout() = runTest { assertThat(mState.waitForState(100.days, -1)).isFalse() }
+    @Test fun expectTimeout() = runTest { assertThat(state.waitForState(100.days, -1)).isFalse() }
 
     @Test
     fun expectTimeout_CalledJavaApi() = runTest {
-        assertThat(mState.waitForState(java.time.Duration.ofMillis(10), -1)).isFalse()
+        assertThat(state.waitForState(java.time.Duration.ofMillis(10), -1)).isFalse()
     }
 
     @Test
     fun setState_whileWaiting() = runTest {
-        val state = 42
-        val waiter = async { mState.waitForState(100.days, state) }
-        mState.set(state)
+        val stateNow = 42
+        val waiter = async { state.waitForState(100.days, stateNow) }
+        state.set(stateNow)
         assertThat(waiter.await()).isTrue()
     }
 
@@ -94,18 +94,18 @@ class BluetoothAdapterStateTest {
         val state1 = 50
         val state2 = 65
         val waiter0 =
-            async(start = CoroutineStart.UNDISPATCHED) { mState.waitForState(100.days, state0) }
+            async(start = CoroutineStart.UNDISPATCHED) { state.waitForState(100.days, state0) }
         val waiter1 =
-            async(start = CoroutineStart.UNDISPATCHED) { mState.waitForState(100.days, state1) }
+            async(start = CoroutineStart.UNDISPATCHED) { state.waitForState(100.days, state1) }
         val waiter2 =
-            async(start = CoroutineStart.UNDISPATCHED) { mState.waitForState(100.days, state2) }
+            async(start = CoroutineStart.UNDISPATCHED) { state.waitForState(100.days, state2) }
         val waiter3 =
-            async(start = CoroutineStart.UNDISPATCHED) { mState.waitForState(100.days, -1) }
-        mState.set(state0)
+            async(start = CoroutineStart.UNDISPATCHED) { state.waitForState(100.days, -1) }
+        state.set(state0)
         yield()
-        mState.set(state1)
+        state.set(state1)
         yield()
-        mState.set(state2)
+        state.set(state2)
         assertThat(waiter0.await()).isTrue()
         assertThat(waiter1.await()).isTrue()
         assertThat(waiter2.await()).isTrue()
@@ -116,11 +116,11 @@ class BluetoothAdapterStateTest {
     fun expectTimeout_waitAfterOverride() = runTest {
         val state0 = 42
         val state1 = 50
-        mState.set(state0)
+        state.set(state0)
         yield()
-        mState.set(state1)
+        state.set(state1)
         val waiter =
-            async(start = CoroutineStart.UNDISPATCHED) { mState.waitForState(100.days, state0) }
+            async(start = CoroutineStart.UNDISPATCHED) { state.waitForState(100.days, state0) }
         assertThat(waiter.await()).isFalse()
     }
 
@@ -128,8 +128,8 @@ class BluetoothAdapterStateTest {
     fun oneOf_expectMatch() {
         val state0 = 42
         val state1 = 50
-        mState.set(state0)
-        assertThat(mState.oneOf(state0, state1)).isTrue()
+        state.set(state0)
+        assertThat(state.oneOf(state0, state1)).isTrue()
     }
 
     @Test
@@ -137,7 +137,7 @@ class BluetoothAdapterStateTest {
         val state0 = 42
         val state1 = 50
         val state2 = 65
-        mState.set(state0)
-        assertThat(mState.oneOf(state1, state2)).isFalse()
+        state.set(state0)
+        assertThat(state.oneOf(state1, state2)).isFalse()
     }
 }

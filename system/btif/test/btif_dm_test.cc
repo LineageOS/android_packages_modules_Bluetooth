@@ -34,7 +34,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/hci_error_code.h"

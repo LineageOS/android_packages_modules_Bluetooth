@@ -41,8 +41,9 @@ using base::Unretained;
 
 // template specialization
 template <>
-base::Callback<void()> jni_thread_wrapper(base::Callback<void()> cb) {
-  return base::Bind([](base::Callback<void()> cb) { do_in_jni_thread(cb); }, std::move(cb));
+base::OnceCallback<void()> jni_thread_wrapper(base::OnceCallback<void()> cb) {
+  return base::BindOnce([](base::OnceCallback<void()> cb) { do_in_jni_thread(std::move(cb)); },
+                        std::move(cb));
 }
 
 namespace bluetooth::asha {
@@ -57,7 +58,7 @@ class HearingAidInterfaceImpl : public HearingAidInterface, public HearingAidCal
     this->callbacks = callbacks;
     do_in_main_thread(
             BindOnce(&HearingAid::Initialize, this,
-                     jni_thread_wrapper(base::Bind(&btif_storage_load_bonded_hearing_aids))));
+                     jni_thread_wrapper(base::BindOnce(&btif_storage_load_bonded_hearing_aids))));
   }
 
   void OnConnectionState(ConnectionState state, const RawAddress& address) override {

@@ -655,9 +655,9 @@ static BtStatus btif_gattc_set_preferred_phy(const RawAddress& bd_addr, uint8_t 
 
 static BtStatus btif_gattc_read_phy(
         const RawAddress& bd_addr,
-        base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
+        base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
-  do_in_main_thread(BindOnce(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(cb)));
+  do_in_main_thread(BindOnce(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(std::move(cb))));
   return BtifStatus();
 }
 

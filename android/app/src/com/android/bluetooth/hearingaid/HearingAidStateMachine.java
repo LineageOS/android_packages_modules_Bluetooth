@@ -58,7 +58,7 @@ import android.os.Message;
 import android.os.UserHandle;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -466,10 +466,10 @@ final class HearingAidStateMachine extends StateMachine {
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         if (Flags.onlyBroadcastToLocalUser()) {
-            mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         } else {
             mService.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         }
     }
 

@@ -20,6 +20,7 @@
 
 #include <bluetooth/types/address.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/gatt/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/rfcomm/enums.pb.h>
@@ -365,5 +366,31 @@ void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
 
 void LogMetricBluetoothRFStatsReported(uint16_t bqr_version,
                                        const bluetooth::bqr::BqrRFStatsEvent& event);
+
+/**
+ * Logs GATT Offload session state changed metrics.
+ *
+ * @param address Address of associated device
+ * @param session_id Offload session ID assigned from host stack
+ * @param gatt_role Role of the GATT connection (Client or Server)
+ * @param state State of the GATT offload session
+ * @param gatt_characteristic_properties_bitmask Bitmask representing the combined GATT
+ * Characteristic Properties for ALL characteristics included in this offload session. This is an
+ * OR'ed value of all individual characteristic properties. The bits are defined in
+ * android.bluetooth.BluetoothGattCharacteristic and are based on the Bluetooth Core
+ * Specification, Volume 3, Part G, Section 3.3.1.1.
+ * @param session_duration_ms Duration of the offload session in milliseconds
+ * @param error_code Error code of offload session failures
+ * @param uid Connection owner's UID (e.g., App UID).
+ * @param attribution_tag Tag to identify the last caller in the attribution chain, useful for
+ * shared UIDs.
+ */
+void LogGattOffloadSessionStateChanged(const hci::Address& address, int32_t session_id,
+                                       android::bluetooth::gatt::GattRoleEnum gatt_role,
+                                       android::bluetooth::gatt::GattOffloadSessionStateEnum state,
+                                       int32_t gatt_characteristic_properties_bitmask,
+                                       int64_t session_duration_ms,
+                                       android::bluetooth::gatt::GattOffloadErrorEnum error_code,
+                                       int32_t uid, const std::string& attribution_tag);
 
 }  // namespace bluetooth::metrics

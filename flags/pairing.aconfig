@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "donot_mandate_auth_along_with_encryption"
-    namespace: "bluetooth"
-    description: "Don't mandate authentication along with encryption"
-    bug: "395476774"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "smp_connection_status_handling_when_no_acl"
     namespace: "bluetooth"
     description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
@@ -275,6 +265,17 @@ flag {
     namespace: "bluetooth"
     description: "Check bond status of the device and transport before proceeding with a new pairing request"
     bug: "473128699"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+
+flag {
+    name: "force_encryption_post_successful_pairing"
+    namespace: "bluetooth"
+    description: "Force encryption after successful pairing"
+    bug: "472946151"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

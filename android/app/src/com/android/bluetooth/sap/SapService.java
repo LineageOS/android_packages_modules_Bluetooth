@@ -49,6 +49,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ConnectableProfile;
@@ -416,7 +417,7 @@ public class SapService extends ConnectableProfile
                         mIsWaitingAuthorization = true;
                         setUserTimeoutAlarm();
                         SapService.this.sendBroadcast(
-                                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                                intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
 
                         Log.v(
                                 TAG,
@@ -532,7 +533,7 @@ public class SapService extends ConnectableProfile
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     public int getState() {

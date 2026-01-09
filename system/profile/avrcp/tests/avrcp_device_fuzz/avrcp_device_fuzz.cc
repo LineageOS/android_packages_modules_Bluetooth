@@ -64,26 +64,26 @@ const CommandPdu kCommandPduVal[] = {CommandPdu::GET_CAPABILITIES,
 class FakeMediaInterface : public MediaInterface {
 public:
   FakeMediaInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void SendKeyEvent(const RawAddress&, uint8_t /* key */, KeyState /* state */) { return; }
-  using SongInfoCallback = base::Callback<void(SongInfo)>;
-  void GetSongInfo(SongInfoCallback info_cb) {
+  void SendKeyEvent(const RawAddress&, uint8_t /* key */, KeyState /* state */) override { return; }
+  using SongInfoCallback = base::OnceCallback<void(SongInfo)>;
+  void GetSongInfo(SongInfoCallback info_cb) override {
     SongInfo sInfo;
     sInfo.media_id = mFdp->ConsumeRandomLengthString(kMaxLen);
     sInfo.attributes.insert(AttributeEntry(
             Attribute(mFdp->ConsumeIntegralInRange<uint8_t>(uint8_t(Attribute::TITLE),
                                                             uint8_t(Attribute::DEFAULT_COVER_ART))),
             mFdp->ConsumeRandomLengthString(kMaxLen)));
-    info_cb.Run(sInfo);
+    std::move(info_cb).Run(sInfo);
     return;
   }
-  using PlayStatusCallback = base::Callback<void(PlayStatus)>;
-  void GetPlayStatus(PlayStatusCallback status_cb) {
+  using PlayStatusCallback = base::OnceCallback<void(PlayStatus)>;
+  void GetPlayStatus(PlayStatusCallback status_cb) override {
     PlayStatus pst;
-    status_cb.Run(pst);
+    std::move(status_cb).Run(pst);
     return;
   }
-  using NowPlayingCallback = base::Callback<void(std::string, std::vector<SongInfo>)>;
-  void GetNowPlayingList(NowPlayingCallback now_playing_cb) {
+  using NowPlayingCallback = base::OnceCallback<void(std::string, std::vector<SongInfo>)>;
+  void GetNowPlayingList(NowPlayingCallback now_playing_cb) override {
     std::string currentSongId = mFdp->ConsumeRandomLengthString(kMaxLen);
     size_t size = mFdp->ConsumeIntegralInRange<uint8_t>(kMinSize, kMaxSize);
     std::vector<SongInfo> songInfoVec;
@@ -96,12 +96,12 @@ public:
               mFdp->ConsumeRandomLengthString(kMaxLen)));
       songInfoVec.push_back(tempSongInfo);
     }
-    now_playing_cb.Run(currentSongId, songInfoVec);
+    std::move(now_playing_cb).Run(currentSongId, songInfoVec);
     return;
   }
   using MediaListCallback =
-          base::Callback<void(uint16_t curr_player, std::vector<MediaPlayerInfo>)>;
-  void GetMediaPlayerList(MediaListCallback list_cb) {
+          base::OnceCallback<void(uint16_t curr_player, std::vector<MediaPlayerInfo>)>;
+  void GetMediaPlayerList(MediaListCallback list_cb) override {
     uint16_t currentPlayer = mFdp->ConsumeIntegral<uint16_t>();
     size_t size = mFdp->ConsumeIntegralInRange<uint8_t>(kMinSize, kMaxSize);
     std::vector<MediaPlayerInfo> playerList;
@@ -112,12 +112,12 @@ public:
       tempInfo.browsing_supported = mFdp->ConsumeBool();
       playerList.push_back(tempInfo);
     }
-    list_cb.Run(currentPlayer, playerList);
+    std::move(list_cb).Run(currentPlayer, playerList);
     return;
   }
-  using FolderItemsCallback = base::Callback<void(std::vector<ListItem>)>;
+  using FolderItemsCallback = base::OnceCallback<void(std::vector<ListItem>)>;
   void GetFolderItems(uint16_t /* player_id */, std::string /* media_id */,
-                      FolderItemsCallback folder_cb) {
+                      FolderItemsCallback folder_cb) override {
     size_t size = mFdp->ConsumeIntegralInRange<uint8_t>(kMinSize, kMaxSize);
     std::vector<ListItem> list;
     for (size_t iter = 0; iter < size; ++iter) {
@@ -133,32 +133,33 @@ public:
               mFdp->ConsumeRandomLengthString(kMaxLen)));
       list.push_back(tempList);
     }
-    folder_cb.Run(list);
+    std::move(folder_cb).Run(list);
   }
-  using GetAddressedPlayerCallback = base::Callback<void(uint16_t)>;
-  void GetAddressedPlayer(GetAddressedPlayerCallback addressed_player) {
+  using GetAddressedPlayerCallback = base::OnceCallback<void(uint16_t)>;
+  void GetAddressedPlayer(GetAddressedPlayerCallback addressed_player) override {
     uint16_t currentPlayer = mFdp->ConsumeIntegral<uint16_t>();
-    addressed_player.Run(currentPlayer);
+    std::move(addressed_player).Run(currentPlayer);
   }
   using SetBrowsedPlayerCallback =
-          base::Callback<void(bool success, std::string current_path, uint32_t num_items)>;
+          base::OnceCallback<void(bool success, std::string current_path, uint32_t num_items)>;
   void SetBrowsedPlayer(uint16_t player_id, std::string /* current_path */,
-                        SetBrowsedPlayerCallback browse_cb) {
+                        SetBrowsedPlayerCallback browse_cb) override {
     std::string rootId = mFdp->ConsumeRandomLengthString(kMaxLen);
     uint32_t numItems = mFdp->ConsumeIntegral<uint32_t>();
-    browse_cb.Run(player_id, rootId, numItems);
+    std::move(browse_cb).Run(player_id, rootId, numItems);
     return;
   }
-  using SetAddressedPlayerCallback = base::Callback<void(uint16_t)>;
-  void SetAddressedPlayer(uint16_t player_id, SetAddressedPlayerCallback new_player) {
-    new_player.Run(player_id);
+  using SetAddressedPlayerCallback = base::OnceCallback<void(uint16_t)>;
+  void SetAddressedPlayer(uint16_t player_id, SetAddressedPlayerCallback new_player) override {
+    std::move(new_player).Run(player_id);
   }
-  void PlayItem(uint16_t /* player_id */, bool /* now_playing */, std::string /* media_id */) {
+  void PlayItem(uint16_t /* player_id */, bool /* now_playing */,
+                std::string /* media_id */) override {
     return;
   }
-  void SetActiveDevice(const RawAddress& /* address */) { return; }
-  void RegisterUpdateCallback(MediaCallbacks* /* callback */) { return; }
-  void UnregisterUpdateCallback(MediaCallbacks* /* callback */) { return; }
+  void SetActiveDevice(const RawAddress& /* address */) override { return; }
+  void RegisterUpdateCallback(MediaCallbacks* /* callback */) override { return; }
+  void UnregisterUpdateCallback(MediaCallbacks* /* callback */) override { return; }
 
 private:
   FuzzedDataProvider* mFdp;
@@ -167,14 +168,14 @@ private:
 class FakeVolumeInterface : public VolumeInterface {
 public:
   FakeVolumeInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void DeviceConnected(const RawAddress& /* bdaddr */) { return; }
-  void DeviceConnected(const RawAddress& /* bdaddr */, VolumeChangedCb cb) {
+  void DeviceConnected(const RawAddress& /* bdaddr */) override { return; }
+  void DeviceConnected(const RawAddress& /* bdaddr */, VolumeChangedCb cb) override {
     uint8_t volume = mFdp->ConsumeIntegral<uint8_t>();
-    cb.Run(volume);
+    std::move(cb).Run(volume);
     return;
   }
-  void DeviceDisconnected(const RawAddress& /* bdaddr */) { return; }
-  void SetVolume(int8_t /* volume */) { return; }
+  void DeviceDisconnected(const RawAddress& /* bdaddr */) override { return; }
+  void SetVolume(int8_t /* volume */) override { return; }
 
 private:
   FuzzedDataProvider* mFdp;
@@ -183,7 +184,7 @@ private:
 class FakePlayerSettingsInterface : public PlayerSettingsInterface {
 public:
   FakePlayerSettingsInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void ListPlayerSettings(ListPlayerSettingsCallback cb) {
+  void ListPlayerSettings(ListPlayerSettingsCallback cb) override {
     mFdp->ConsumeIntegral<uint8_t>();
     size_t size = mFdp->ConsumeIntegralInRange<uint8_t>(kMinSize, kMaxSize);
     std::vector<PlayerAttribute> attributes;
@@ -192,28 +193,30 @@ public:
               uint8_t(PlayerAttribute::EQUALIZER), uint8_t(PlayerAttribute::SCAN));
       attributes.push_back(playerAttr);
     }
-    cb.Run(attributes);
+    std::move(cb).Run(attributes);
     return;
   }
-  void ListPlayerSettingValues(PlayerAttribute setting, ListPlayerSettingValuesCallback cb) {
+  void ListPlayerSettingValues(PlayerAttribute setting,
+                               ListPlayerSettingValuesCallback cb) override {
     size_t size = mFdp->ConsumeIntegralInRange<size_t>(kMinSize, kMaxSize);
     std::vector<uint8_t> values = mFdp->ConsumeBytes<uint8_t>(size);
-    cb.Run(setting, values);
+    std::move(cb).Run(setting, values);
     return;
   }
   void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
-                                    GetCurrentPlayerSettingValueCallback cb) {
+                                    GetCurrentPlayerSettingValueCallback cb) override {
     std::vector<uint8_t> values(attributes.size());
     for (size_t iter = 0; iter < attributes.size(); ++iter) {
       values.push_back(mFdp->ConsumeIntegral<uint8_t>());
     }
-    cb.Run(attributes, values);
+    std::move(cb).Run(attributes, values);
     return;
   }
   void SetPlayerSettings(std::vector<PlayerAttribute> /* attributes */,
-                         std::vector<uint8_t> /* values */, SetPlayerSettingValueCallback cb) {
+                         std::vector<uint8_t> /* values */,
+                         SetPlayerSettingValueCallback cb) override {
     bool success = mFdp->ConsumeBool();
-    cb.Run(success);
+    std::move(cb).Run(success);
     return;
   }
 

@@ -655,7 +655,7 @@ public class AdapterService extends Service {
                             && mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
                         setScanMode(SCAN_MODE_CONNECTABLE, "processProfileServiceStateChanged");
-                        updateUuids();
+                        refreshBondedDeviceUuids();
                         mNativeInterface.getAdapterProperty(
                                 AbstractionLayer.BT_PROPERTY_DYNAMIC_AUDIO_BUFFER);
                         mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
@@ -1296,7 +1296,7 @@ public class AdapterService extends Service {
             // This will check other profile services.
             if (supportedProfiles.length == 0) {
                 setScanMode(SCAN_MODE_CONNECTABLE, "startProfileServices");
-                updateUuids();
+                refreshBondedDeviceUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
             } else {
                 setAllProfileServiceStates(supportedProfiles, State.ON);
@@ -1307,7 +1307,7 @@ public class AdapterService extends Service {
             // adapter initialization failures
             if (supportedProfiles.length == 1 && supportedProfiles[0] == BluetoothProfile.GATT) {
                 setScanMode(SCAN_MODE_CONNECTABLE, "startProfileServices");
-                updateUuids();
+                refreshBondedDeviceUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
             } else {
                 setAllProfileServiceStates(supportedProfiles, State.ON);
@@ -2696,7 +2696,6 @@ public class AdapterService extends Service {
                                 + ", "
                                 + groupId
                                 + ") is not pending");
-                return;
             }
         }
     }
@@ -2883,7 +2882,7 @@ public class AdapterService extends Service {
 
                 Intent intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 intent.setPackage(callingPackage);
-                sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+                sendBroadcast(intent, BLUETOOTH_SCAN, Util.getTempBroadcastBundle());
 
                 // Now start sending all the discovered devices to the new discovering package.
                 if (Flags.sendDiscoveredDevToNewPkgs()) {
@@ -3270,24 +3269,76 @@ public class AdapterService extends Service {
         return mQuietMode;
     }
 
-    public void updateUuids() {
-        Log.d(TAG, "updateUuids(): Updating UUIDs for bonded devices");
+    private void refreshBondedDeviceUuids() {
+        Log.d(TAG, "refreshBondedDeviceUuids() - Retrieving UUIDs for bonded devices");
         BluetoothDevice[] bondedDevices = getBondedDevices();
         for (BluetoothDevice device : bondedDevices) {
-            mRemoteDevices.updateUuids(device);
+            mRemoteDevices.triggerUuidNotification(device);
+        }
+    }
+
+    // TODO (b/462533972): Make it private once flag broadcast_uuids_from_main_looper is shipped.
+    public void serviceDiscoveryNotificationToBondStateMachine(BluetoothDevice device) {
+        if (Flags.broadcastUuidsFromMainLooper()) {
+            mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_UUID_UPDATE, device);
+        } else {
+            Message msg =
+                    mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_UUID_UPDATE, device);
+            mBondStateMachine.sendMessage(msg);
         }
     }
 
     /**
-     * Update device UUID changed to {@link BondStateMachine}
+     * Relays updated UUIDs to {@link BondStateMachine} and other internal modules. Also sends an
+     * ACTION_UUID intent if the adapter is ON.
      *
      * @param device remote device of interest
+     * @param uuids UUIDs of the device
+     * @param success whether the UUID update was successful
      */
-    public void deviceUuidUpdated(BluetoothDevice device) {
-        // Notify BondStateMachine for SDP complete / UUID changed.
-        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_UUID_UPDATE);
-        msg.obj = device;
-        mBondStateMachine.sendMessage(msg);
+    public void deviceUuidsUpdated(BluetoothDevice device, ParcelUuid[] uuids, boolean success) {
+        int state = getState();
+        if (state != BluetoothAdapter.STATE_ON && state != BluetoothAdapter.STATE_BLE_ON) {
+            // Silently dropping UUIDs and with no intent
+            MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
+            Log.e(TAG, "deviceUuidsUpdated: Adapter State:" + state);
+            return;
+        }
+
+        if (success) {
+            // Notify BondStateMachine
+            serviceDiscoveryNotificationToBondStateMachine(device);
+
+            // Notify all other internal modules
+            sendUuidsInternal(device, uuids);
+        }
+
+        if (state == BluetoothAdapter.STATE_BLE_ON) {
+            MetricsLogger.getInstance()
+                    .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
+            Log.w(TAG, "deviceUuidsUpdated: Adapter State: BLE_ON, not sending intent");
+            return;
+        }
+
+        MetricsLogger.getInstance()
+                .cacheCount(
+                        success
+                                ? BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT
+                                : BluetoothProtoEnums.SDP_SENDING_DELAYED_UUID,
+                        1);
+        MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_SENT_UUID, 1);
+
+        Log.i(
+                TAG,
+                "deviceUuidsUpdated: ACTION_UUID Intent: device: "
+                        + device
+                        + " count: "
+                        + (uuids != null ? uuids.length : 0));
+
+        Intent intent = new Intent(BluetoothDevice.ACTION_UUID);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     /**
@@ -4217,7 +4268,7 @@ public class AdapterService extends Service {
                 new Intent(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
                         .putExtra(BluetoothAdapter.EXTRA_SCAN_MODE, mScanMode)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+        sendBroadcast(intent, BLUETOOTH_SCAN, Util.getTempBroadcastBundle());
     }
 
     @GuardedBy("mEnergyInfoLock")
@@ -5473,9 +5524,9 @@ public class AdapterService extends Service {
             sendBroadcastMultiplePermissions(
                     intent,
                     new String[] {BLUETOOTH_SCAN, pkgInfo.getPermission()},
-                    Utils.getTempBroadcastOptions());
+                    Util.getTempBroadcastOptions());
         } else {
-            sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+            sendBroadcast(intent, BLUETOOTH_SCAN, Util.getTempBroadcastBundle());
         }
     }
 }
