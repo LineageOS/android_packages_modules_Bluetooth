@@ -86,8 +86,8 @@ tPORT* port_allocate_port(uint8_t dlci, const RawAddress& bd_addr) {
       p_port->dlci = dlci;
       p_port->bd_addr = bd_addr;
       rfc_cb.rfc.last_port_index = port_index;
-      log::verbose("rfc_cb.port.port[{}]:{} chosen, last_port_index:{}, bd_addr={}", port_index,
-                   std::format_ptr(p_port), rfc_cb.rfc.last_port_index, bd_addr);
+      log::verbose("rfc_cb.port.port[{}] chosen, last_port_index:{}, bd_addr={}", port_index,
+                   rfc_cb.rfc.last_port_index, bd_addr);
       return p_port;
     }
   }
@@ -99,8 +99,7 @@ tPORT* port_allocate_port(uint8_t dlci, const RawAddress& bd_addr) {
  *
  * Function         port_set_defaults
  *
- * Description      Set defualt port parameters
- *
+ * Description      Set default port parameters
  *
  ******************************************************************************/
 void port_set_defaults(tPORT* p_port) {
@@ -200,8 +199,8 @@ void port_select_mtu(tPORT* p_port) {
  *
  ******************************************************************************/
 void port_release_port(tPORT* p_port) {
-  log::verbose("p_port: {} state: {} keep_handle: {}", std::format_ptr(p_port),
-               p_port->rfc.sm_cb.state, p_port->keep_port_handle);
+  log::verbose("port_handle:{} state:{} keep_handle:{}", p_port->handle, p_port->rfc.sm_cb.state,
+               p_port->keep_port_handle);
 
   mutex_global_lock();
   BT_HDR* p_buf;
@@ -243,7 +242,7 @@ void port_release_port(tPORT* p_port) {
     mutex_global_unlock();
 
     if (p_port->keep_port_handle) {
-      log::verbose("Re-initialize handle: {}", p_port->handle);
+      log::verbose("Re-initialize handle:{}", p_port->handle);
 
       /* save event mask and callback */
       uint32_t mask = p_port->ev_mask;
@@ -268,7 +267,7 @@ void port_release_port(tPORT* p_port) {
       p_port->local_ctrl.modem_signal = p_port->default_signal_state;
       p_port->bd_addr = RawAddress::kAny;
     } else {
-      log::verbose("Clean-up handle: {}", p_port->handle);
+      log::verbose("Clean-up port_handle:{}", p_port->handle);
       alarm_free(p_port->rfc.port_timer);
       memset(p_port, 0, sizeof(tPORT));
     }

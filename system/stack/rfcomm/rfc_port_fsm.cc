@@ -74,13 +74,13 @@ static void rfc_set_port_settings(PortSettings* port_settings, MX_FRAME* p_frame
  *
  ******************************************************************************/
 void rfc_port_sm_execute(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
-  log::assert_that(p_port != nullptr, "NULL port, event {}", event);
+  log::assert_that(p_port != nullptr, "NULL port, event {}", rfcomm_port_event_text(event));
 
   p_port->rfc.sm_cb.last_event = event;
 
   // logs for state RFC_STATE_OPENED handled in rfc_port_sm_opened()
   if (p_port->rfc.sm_cb.state != RFC_STATE_OPENED) {
-    log::info("bd_addr:{}, handle:{}, state:{}, event:{}", p_port->bd_addr, p_port->handle,
+    log::info("bd_addr:{}, port_handle:{}, state:{}, event:{}", p_port->bd_addr, p_port->handle,
               rfcomm_port_state_text(p_port->rfc.sm_cb.state), rfcomm_port_event_text(event));
   }
   switch (p_port->rfc.sm_cb.state) {
@@ -154,7 +154,7 @@ void rfc_port_sm_state_closed(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data
       return;
 
     case RFC_PORT_EVENT_DM:
-      log::warn("RFC_EVENT_DM, handle:{}", p_port->handle);
+      log::warn("RFC_EVENT_DM, port_handle:{}", p_port->handle);
       rfc_port_closed(p_port);
       return;
 
@@ -169,7 +169,8 @@ void rfc_port_sm_state_closed(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data
 
     case RFC_PORT_EVENT_TIMEOUT:
       PORT_TimeOutCloseMux(p_port->rfc.p_mcb);
-      log::error("Port error state {} event {}", p_port->rfc.sm_cb.state, event);
+      log::error("Port error state {} event {}", rfcomm_port_state_text(p_port->rfc.sm_cb.state),
+                 rfcomm_port_event_text(event));
       return;
     default:
       log::error("Received unexpected event:{} in state:{}", rfcomm_port_event_text(event),
@@ -194,7 +195,7 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, tRFC_PORT_EVENT event, void* p_dat
   switch (event) {
     case RFC_PORT_EVENT_OPEN:
     case RFC_PORT_EVENT_ESTABLISH_RSP:
-      log::error("Port error event:{}", event);
+      log::error("Port error event:{}", rfcomm_port_event_text(event));
       return;
 
     case RFC_PORT_EVENT_CLOSE:
@@ -205,7 +206,7 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, tRFC_PORT_EVENT event, void* p_dat
       return;
 
     case RFC_PORT_EVENT_CLEAR:
-      log::warn("RFC_PORT_EVENT_CLEAR, handle:{}", p_port->handle);
+      log::warn("RFC_PORT_EVENT_CLEAR, port_handle:{}", p_port->handle);
       rfc_port_closed(p_port);
       return;
 
@@ -244,7 +245,7 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, tRFC_PORT_EVENT event, void* p_dat
       return;
 
     case RFC_PORT_EVENT_DM:
-      log::warn("RFC_EVENT_DM, handle:{}", p_port->handle);
+      log::warn("RFC_EVENT_DM, port_handle:{}", p_port->handle);
       p_port->rfc.p_mcb->is_disc_initiator = true;
       PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci, p_port->rfc.p_mcb->peer_l2cap_mtu,
                            RFCOMM_ERROR);
@@ -252,7 +253,7 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, tRFC_PORT_EVENT event, void* p_dat
       return;
 
     case RFC_PORT_EVENT_DISC:
-      log::warn("RFC_EVENT_DISC, handle:{}", p_port->handle);
+      log::warn("RFC_EVENT_DISC, port_handle:{}", p_port->handle);
       rfc_send_ua(p_port->rfc.p_mcb, p_port->dlci);
       PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci, p_port->rfc.p_mcb->peer_l2cap_mtu,
                            RFCOMM_ERROR);
@@ -308,8 +309,7 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, tRFC_PORT_EVENT event, void*
         }
       } else {
         log::debug("Security check succeeded state:{} port_handle:{}",
-                   rfcomm_port_state_text(static_cast<tRFC_PORT_STATE>(p_port->rfc.sm_cb.state)),
-                   p_port->handle);
+                   rfcomm_port_state_text(p_port->rfc.sm_cb.state), p_port->handle);
         PORT_DlcEstablishInd(p_port->rfc.p_mcb, p_port->dlci, p_port->rfc.p_mcb->peer_l2cap_mtu);
       }
       return;
@@ -320,7 +320,7 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, tRFC_PORT_EVENT event, void*
       return;
 
     case RFC_PORT_EVENT_CLEAR:
-      log::warn("RFC_PORT_EVENT_CLEAR, handle:{}", p_port->handle);
+      log::warn("RFC_PORT_EVENT_CLEAR, port_handle:{}", p_port->handle);
       btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
       rfc_port_closed(p_port);
       return;
@@ -400,14 +400,14 @@ void rfc_port_sm_orig_wait_sec_check(tPORT* p_port, tRFC_PORT_EVENT event, void*
   switch (event) {
     case RFC_PORT_EVENT_SEC_COMPLETE:
       if (*((tBTM_STATUS*)p_data) != tBTM_STATUS::BTM_SUCCESS) {
-        log::error("Security check failed result:{} state:{} handle:{}",
+        log::error("Security check failed result:{} state:{} port_handle:{}",
                    btm_status_text(*((tBTM_STATUS*)p_data)),
                    rfcomm_port_state_text(p_port->rfc.sm_cb.state), p_port->handle);
         p_port->rfc.p_mcb->is_disc_initiator = true;
         PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci, 0, RFCOMM_SECURITY_ERR);
         rfc_port_closed(p_port);
       } else {
-        log::debug("Security check succeeded state:{} handle:{}",
+        log::debug("Security check succeeded state:{} port_handle:{}",
                    rfcomm_port_state_text(p_port->rfc.sm_cb.state), p_port->handle);
         rfc_send_sabme(p_port->rfc.p_mcb, p_port->dlci);
         rfc_port_timer_start(p_port, RFC_PORT_T1_TIMEOUT);
@@ -421,7 +421,7 @@ void rfc_port_sm_orig_wait_sec_check(tPORT* p_port, tRFC_PORT_EVENT event, void*
       return;
 
     case RFC_PORT_EVENT_CLOSE:
-      log::warn("RFC_PORT_EVENT_CLOSE, handle:{}", p_port->handle);
+      log::warn("RFC_PORT_EVENT_CLOSE, port_handle:{}", p_port->handle);
       btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
       rfc_port_closed(p_port);
       return;
@@ -652,7 +652,7 @@ void rfc_process_pn(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
   /* If we are not awaiting response just ignore it */
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if ((p_port == nullptr) || !(p_port->rfc.expected_rsp & RFC_RSP_PN)) {
-    log::warn(": Ignore unwanted response, p_mcb={}, bd_addr={}, dlci={}", std::format_ptr(p_mcb),
+    log::warn("Ignore unwanted response, p_mcb={}, bd_addr={}, dlci={}", std::format_ptr(p_mcb),
               p_mcb->bd_addr, dlci);
     return;
   }
