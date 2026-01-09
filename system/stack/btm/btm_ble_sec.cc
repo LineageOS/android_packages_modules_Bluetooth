@@ -1549,8 +1549,7 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
 
   if (p_device == nullptr) {
     log::warn("Unexpected event '{}' for unknown device.", smp_evt_to_text(event));
-    if (com_android_bluetooth_flags_clear_pairing_state_when_no_devrec() &&
-        bd_addr == BtmSecurity::Get().link_spec_.addrt.bda && event == SMP_COMPLT_EVT) {
+    if (bd_addr == BtmSecurity::Get().link_spec_.addrt.bda && event == SMP_COMPLT_EVT) {
       if (com_android_bluetooth_flags_btm_le_pairing_state_reset()) {
         BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
       } else {
