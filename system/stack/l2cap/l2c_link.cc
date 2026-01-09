@@ -349,9 +349,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
      */
     if (p_lcb->transport == BT_TRANSPORT_LE) {
       btm_acl_removed(handle);
-      if (com_android_bluetooth_flags_invalidate_hci_handle_on_acl_removal()) {
-        p_lcb->InvalidateHandle();
-      }
+      p_lcb->InvalidateHandle();
     } else {
       /* If we are going to re-use the LCB without dropping it, release all
       fixed channels
