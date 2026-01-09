@@ -177,12 +177,12 @@ void BtIntf::bluetooth_init(bool guest_mode, bool is_common_criteria_mode,
                    &internal::bt_os_callouts);
 }
 
-int BtIntf::enable() const {
+void BtIntf::bluetooth_enable() const {
   // TODO(b/470303514): Pass the local name string
-  return intf_->enable("");
+  return ::bluetooth_enable("");
 }
 
-int BtIntf::disable() const { return intf_->disable(); }
+void BtIntf::bluetooth_disable() const { return ::bluetooth_disable(); }
 
 void BtIntf::cleanup() const { return intf_->cleanup(); }
 

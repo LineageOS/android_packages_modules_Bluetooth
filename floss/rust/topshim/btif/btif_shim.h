@@ -42,8 +42,8 @@ public:
   void set_adapter_index(int adapter_index) const;
   void bluetooth_init(bool guest_mode, bool is_common_criteria_mode, int config_compare_result,
                       bool is_atv, const ::rust::String hci_instance_name) const;
-  int enable() const;
-  int disable() const;
+  void bluetooth_enable() const;
+  void bluetooth_disable() const;
   void cleanup() const;
   int get_adapter_properties() const;
   int get_adapter_property(bt_property_type_t type) const;
