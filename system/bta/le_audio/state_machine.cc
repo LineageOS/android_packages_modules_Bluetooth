@@ -1862,10 +1862,30 @@ private:
       }
     }
 
-    if ((sdu_interval_mtos == 0 && sdu_interval_stom == 0) ||
-        (max_trans_lat_mtos == bluetooth::le_audio::types::kMaxTransportLatencyMin &&
-         max_trans_lat_stom == bluetooth::le_audio::types::kMaxTransportLatencyMin) ||
-        (max_sdu_size_mtos == 0 && max_sdu_size_stom == 0)) {
+    /* Make sure, the parameters makes sense and CIG which is about to be created is useful in any
+     * sense. e.g. Any direction is enabled, there is no logical mistakes in the parameters.
+     */
+    bool no_direction_enabled_due_to_sdu_interval =
+            (sdu_interval_mtos == 0 && sdu_interval_stom == 0);
+    bool no_direction_enabled_due_max_latencies_setting =
+            (max_trans_lat_mtos == bluetooth::le_audio::types::kMaxTransportLatencyMin &&
+             max_trans_lat_stom == bluetooth::le_audio::types::kMaxTransportLatencyMin);
+    bool no_direction_enabled_due_max_sdu_sizes_zero =
+            (max_sdu_size_mtos == 0 && max_sdu_size_stom == 0);
+
+    /* The mismatch where one of the sdu size or sdu interval is 0 while the other parameter is 0 is
+     * a non-sense configuration. We should catch that and avoid creating such a CIG.
+     */
+    bool is_sdu_config_mismatch_fix_enabled =
+            com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig();
+    bool is_mtos_sdu_config_mismatched = ((max_sdu_size_mtos == 0) != (sdu_interval_mtos == 0));
+    bool is_stom_sdu_config_mismatched = ((max_sdu_size_stom == 0) != (sdu_interval_stom == 0));
+
+    if (no_direction_enabled_due_to_sdu_interval ||
+        no_direction_enabled_due_max_latencies_setting ||
+        no_direction_enabled_due_max_sdu_sizes_zero ||
+        (is_sdu_config_mismatch_fix_enabled &&
+         (is_mtos_sdu_config_mismatched || is_stom_sdu_config_mismatched))) {
       log::error("Trying to create invalid group");
       group->PrintDebugState();
       return false;
