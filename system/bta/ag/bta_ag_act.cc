@@ -74,6 +74,11 @@ using namespace metrics;
 
 /* SLC TIMER exception for IOT devices */
 #define SLC_EXCEPTION_TIMEOUT_MS 10000
+
+/* Collision jitter in milliseconds */
+#define BTA_AG_COLLISION_MIN_DELAY_MS 50
+#define BTA_AG_COLLISION_JITTER_MS 450
+
 const uint16_t bta_ag_uuid[BTA_AG_NUM_IDX] = {UUID_SERVCLASS_HEADSET_AUDIO_GATEWAY,
                                               UUID_SERVCLASS_AG_HANDSFREE};
 
@@ -169,7 +174,7 @@ void bta_ag_deregister(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /*data*/) {
   /* remove rfcomm servers */
   bta_ag_close_servers(p_scb, p_scb->reg_services);
 
-    /* reset sco state */
+  /* reset sco state */
   bta_ag_sco_reset(p_scb);
   /* dealloc */
   bta_ag_scb_dealloc(p_scb);
@@ -239,7 +244,7 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 void bta_ag_disc_int_res(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   uint16_t event = BTA_AG_DISC_FAIL_EVT;
 
-  log::verbose("bta_ag_disc_int_res: Status: {}", data.disc_result.status);
+  log::verbose("Status: {}", data.disc_result.status);
 
   /* if found service */
   if (data.disc_result.status == tSDP_STATUS::SDP_SUCCESS ||
@@ -390,6 +395,8 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   /*Clear the BD address*/
   p_scb->peer_addr = RawAddress::kEmpty;
 
+  alarm_cancel(p_scb->collision_timer);
+
   /* reopen registered servers */
   bta_ag_start_servers(p_scb, p_scb->reg_services);
 
@@ -443,6 +450,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   /* stop timers */
   alarm_cancel(p_scb->ring_timer);
   alarm_cancel(p_scb->codec_negotiation_timer);
+  alarm_cancel(p_scb->collision_timer);
 
   close.hdr.handle = bta_ag_scb_to_idx(p_scb);
   close.hdr.app_id = p_scb->app_id;
@@ -561,7 +569,7 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     ag_conn_timeout = SLC_EXCEPTION_TIMEOUT_MS;
   }
 
-  log::verbose("bta_ag_rfc_open: ag_conn_timeout: {}", ag_conn_timeout);
+  log::verbose("ag_conn_timeout: {}", ag_conn_timeout);
   if (p_scb->conn_service == BTA_AG_HFP) {
     /* if hfp start timer for service level conn */
     bta_sys_start_timer(p_scb->ring_timer, ag_conn_timeout, BTA_AG_SVC_TIMEOUT_EVT,
@@ -570,6 +578,138 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     /* else service level conn is open */
     bta_ag_svc_conn_open(p_scb, data);
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_ag_setup_and_open
+ *
+ * Description      Encapsulate the "Success" logic from the end of bta_ag_rfc_acp_open
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_ag_setup_and_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
+  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+      p_scb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION, false, 0);
+
+  uint16_t hfp_version = 0;
+  p_scb->conn_handle = 0;
+
+  /* determine connected service from port handle */
+  for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
+    log::verbose("i = {} serv_handle = {} port_handle = {}", i,
+                 p_scb->serv_handle[i], data.rfc.port_handle);
+
+    if (p_scb->serv_handle[i] == data.rfc.port_handle) {
+      p_scb->conn_service = i;
+      p_scb->conn_handle = data.rfc.port_handle;
+      break;
+    }
+  }
+
+  if (p_scb->conn_handle == 0) {
+    log::error("Failed to find service for port handle {}", data.rfc.port_handle);
+    bta_ag_rfc_fail(p_scb, data);
+    return;
+  }
+
+  log::verbose("conn_service = {} conn_handle = {}", p_scb->conn_service, p_scb->conn_handle);
+
+  bta_ag_close_servers(p_scb, (p_scb->reg_services & ~bta_ag_svc_mask[p_scb->conn_service]));
+
+  size_t version_value_size = sizeof(hfp_version);
+  bool get_version = btif_config_get_bin(p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
+                                         (uint8_t*)&hfp_version, &version_value_size);
+
+  if (p_scb->conn_service == BTA_AG_HFP && get_version) {
+    DEVICE_IOT_CONFIG_ADDR_SET_HEX_IF_GREATER(p_scb->peer_addr, IOT_CONF_KEY_HFP_VERSION,
+                                              hfp_version, IOT_CONF_BYTE_NUM_2);
+  }
+
+  bta_ag_do_disc(p_scb, bta_ag_svc_mask[p_scb->conn_service]);
+  bta_ag_rfc_open(p_scb, data);
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_ag_rfc_collision_timer_cback
+ *
+ * Description      Handle the collision timer expiration
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_ag_rfc_collision_timer_cback(void* data) {
+  // Unpack data: [High 16 bits: SCB Index] [Low 16 bits: Incoming Port Handle]
+  uintptr_t val = (uintptr_t)data;
+  uint16_t scb_idx = (val >> 16) & 0xFFFF;
+  uint16_t incoming_handle = val & 0xFFFF;
+
+  tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(scb_idx);
+
+  // 1. Basic Safety
+  if (!p_scb || !p_scb->in_use) {
+      log::warn("Collision timer expired but SCB {} is invalid.", scb_idx);
+      return;
+  }
+
+  // 2. Shutdown Protection (Fix for Stress Test Hang)
+  // If the stack is shutting down, we must NOT try to open a connection.
+  if (p_scb->state != BTA_AG_OPEN_ST && p_scb->state != BTA_AG_OPENING_ST) {
+      log::warn("Collision timer expired but state is {}, aborting.",
+                 bta_ag_state_str(p_scb->state));
+      return;
+  }
+
+  // 3. Check Incoming Connection Health
+  // If the peer yielded (closed Incoming) while we waited, this check will fail.
+  RawAddress temp_addr;
+  int port_status = PORT_CheckConnection(incoming_handle, &temp_addr, nullptr);
+
+  if (port_status != PORT_SUCCESS) {
+      log::info("Collision timer expired. Incoming handle {} is invalid. Keeping Outgoing.",
+                 incoming_handle);
+      return;
+  }
+
+  // 4. Find the OUTGOING connection (the one we might close)
+  uint16_t handle = bta_ag_idx_by_bdaddr(&p_scb->peer_addr);
+  tBTA_AG_SCB* ag_scb = bta_ag_scb_by_idx(handle);
+
+  // [CRITICAL CHECK] "Self-Discovery"
+  // If the Outgoing connection (Channel 3) was already closed by the peer,
+  // bta_ag_idx_by_bdaddr will find US (p_scb/Channel 4) because we are the only one left.
+  // We must NOT close ourselves!
+  if (ag_scb == p_scb) {
+      log::info("Collision timer expired. Outgoing connection is already gone");
+      ag_scb = nullptr;
+  }
+
+  // 5. Collision Resolution: We Lose.
+  // Only close if we found a DISTINCT valid Outgoing connection.
+  if (ag_scb && ag_scb->in_use && ag_scb->conn_handle > 0 && p_scb->in_use) {
+      log::info("Collision timer expired. Yielding. Closing outgoing handle {}",
+                 ag_scb->conn_handle);
+
+      bluetooth::metrics::LogBluetoothEvent(
+          p_scb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION,
+          bluetooth::metrics::State::COLLISION_DETECTED_ACCEPT_INCOMING, 0);
+
+      if (RFCOMM_RemoveConnection(ag_scb->conn_handle) != PORT_SUCCESS) {
+          log::warn("RFCOMM_RemoveConnection failed for handle {}", ag_scb->conn_handle);
+      }
+  }
+
+  // 6. Finalize the Incoming Connection
+  tBTA_AG_DATA open_data = {.rfc = {.port_handle = incoming_handle}};
+
+  bta_ag_setup_and_open(p_scb, open_data);
+
+  log::info("Flushing RFCOMM data after collision resolution");
+  bta_ag_rfc_data(p_scb, open_data);
 }
 
 /*******************************************************************************
@@ -588,10 +728,9 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   p_scb->role = BTA_AG_ACP;
 
   /* get bd addr of peer */
-  uint16_t lcid = 0;
   uint16_t hfp_version = 0;
   RawAddress dev_addr = RawAddress::kEmpty;
-  int status = PORT_CheckConnection(data.rfc.port_handle, &dev_addr, &lcid);
+  int status = PORT_CheckConnection(data.rfc.port_handle, &dev_addr, nullptr);
   if (status != PORT_SUCCESS) {
     log::error("PORT_CheckConnection returned {}", status);
     bta_ag_rfc_fail(p_scb, tBTA_AG_DATA::kEmpty);
@@ -610,23 +749,36 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       }
     }
     if (dev_addr == ag_scb.peer_addr && p_scb != &ag_scb) {
-      log::info("close outgoing connection before accepting {} with conn_handle={}",
-                ag_scb.peer_addr, ag_scb.conn_handle);
+      log::info("Collision detected with {}", dev_addr);
 
-      // If client port is opened, close it, state machine will handle rfcomm
-      // closed in opening state as failure and pass to upper layer
       if (ag_scb.conn_handle > 0) {
-        bluetooth::metrics::LogBluetoothEvent(
-                ag_scb.peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION,
-                bluetooth::metrics::State::COLLISION_DETECTED_ACCEPT_INCOMING, 0);
-        status = RFCOMM_RemoveConnection(ag_scb.conn_handle);
-        if (status != PORT_SUCCESS) {
-          log::warn("RFCOMM_RemoveConnection failed for {}, handle {}, error {}", dev_addr,
-                    ag_scb.conn_handle, status);
+        if (com_android_bluetooth_flags_hfp_ag_rfc_race_condition_random_timer()) {
+          uint64_t delay_ms = rand() % BTA_AG_COLLISION_JITTER_MS + BTA_AG_COLLISION_MIN_DELAY_MS;
+          log::info("Starting random collision resolution timer: {}ms", delay_ms);
+
+          p_scb->peer_addr = dev_addr;
+
+          // PACK DATA: [Index of Incoming SCB | Incoming Handle]
+          // We use p_scb (Incoming) for the timer so it survives if ag_scb (Outgoing) dies.
+          uintptr_t cookie = ((uintptr_t)bta_ag_scb_to_idx(p_scb) << 16) | data.rfc.port_handle;
+
+          alarm_set_on_mloop(p_scb->collision_timer, delay_ms,
+                               bta_ag_rfc_collision_timer_cback, (void*)cookie);
+
+          // Return immediately. We ignore the incoming connection for now.
+          // ag_scb continues to manage the Outgoing connection.
+          return;
+        } else {
+          bluetooth::metrics::LogBluetoothEvent(
+                  ag_scb.peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION,
+                  bluetooth::metrics::State::COLLISION_DETECTED_ACCEPT_INCOMING, 0);
+          status = RFCOMM_RemoveConnection(ag_scb.conn_handle);
+          if (status != PORT_SUCCESS) {
+            log::warn("RFCOMM_RemoveConnection failed for {}, handle {}, error {}", dev_addr,
+                      ag_scb.conn_handle, status);
+          }
         }
       } else {
-        // As no existing outgoing rfcomm connection, then manual reset current
-        // state, and use the incoming one
         bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);
       }
     }
@@ -634,42 +786,47 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
               ag_scb.in_use, bta_ag_scb_to_idx(p_scb));
   }
 
-  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
-          p_scb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION, false, 0);
+  if (com_android_bluetooth_flags_hfp_ag_rfc_race_condition_random_timer()) {
+    p_scb->peer_addr = dev_addr;
+    bta_ag_setup_and_open(p_scb, data);
+  } else {
+    bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+            p_scb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION, false, 0);
 
-  p_scb->peer_addr = dev_addr;
+    p_scb->peer_addr = dev_addr;
 
-  /* determine connected service from port handle */
-  for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
-    log::verbose("bta_ag_rfc_acp_open: i = {} serv_handle = {} port_handle = {}", i,
-                 p_scb->serv_handle[i], data.rfc.port_handle);
+    /* determine connected service from port handle */
+    for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
+      log::verbose("i = {} serv_handle = {} port_handle = {}", i, p_scb->serv_handle[i],
+                   data.rfc.port_handle);
 
-    if (p_scb->serv_handle[i] == data.rfc.port_handle) {
-      p_scb->conn_service = i;
-      p_scb->conn_handle = data.rfc.port_handle;
-      break;
+      if (p_scb->serv_handle[i] == data.rfc.port_handle) {
+        p_scb->conn_service = i;
+        p_scb->conn_handle = data.rfc.port_handle;
+        break;
+      }
     }
+
+    log::verbose("conn_service = {} conn_handle = {}", p_scb->conn_service, p_scb->conn_handle);
+
+    /* close any unopened server */
+    bta_ag_close_servers(p_scb, (p_scb->reg_services & ~bta_ag_svc_mask[p_scb->conn_service]));
+
+    size_t version_value_size = sizeof(hfp_version);
+    bool get_version =
+        btif_config_get_bin(p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
+                            (uint8_t*)&hfp_version, &version_value_size);
+
+    if (p_scb->conn_service == BTA_AG_HFP && get_version) {
+      DEVICE_IOT_CONFIG_ADDR_SET_HEX_IF_GREATER(p_scb->peer_addr, IOT_CONF_KEY_HFP_VERSION,
+                                                hfp_version, IOT_CONF_BYTE_NUM_2);
+    }
+    /* do service discovery to get features */
+    bta_ag_do_disc(p_scb, bta_ag_svc_mask[p_scb->conn_service]);
+
+    /* continue with common open processing */
+    bta_ag_rfc_open(p_scb, data);
   }
-
-  log::verbose("bta_ag_rfc_acp_open: conn_service = {} conn_handle = {}", p_scb->conn_service,
-               p_scb->conn_handle);
-
-  /* close any unopened server */
-  bta_ag_close_servers(p_scb, (p_scb->reg_services & ~bta_ag_svc_mask[p_scb->conn_service]));
-
-  size_t version_value_size = sizeof(hfp_version);
-  bool get_version = btif_config_get_bin(p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
-                                         (uint8_t*)&hfp_version, &version_value_size);
-
-  if (p_scb->conn_service == BTA_AG_HFP && get_version) {
-    DEVICE_IOT_CONFIG_ADDR_SET_HEX_IF_GREATER(p_scb->peer_addr, IOT_CONF_KEY_HFP_VERSION,
-                                              hfp_version, IOT_CONF_BYTE_NUM_2);
-  }
-  /* do service discovery to get features */
-  bta_ag_do_disc(p_scb, bta_ag_svc_mask[p_scb->conn_service]);
-
-  /* continue with common open processing */
-  bta_ag_rfc_open(p_scb, data);
 }
 
 /*******************************************************************************
@@ -899,7 +1056,7 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       (codec_type != BTM_SCO_CODEC_MSBC) && (codec_type != BTM_SCO_CODEC_LC3) && !aptx_voice) {
     val.num = codec_type;
     val.hdr.status = BTA_AG_FAIL_RESOURCES;
-    log::error("bta_ag_setcodec error: unsupported codec type {}", codec_type);
+    log::error("error: unsupported codec type {}", codec_type);
     (*bta_ag_cb.p_cback)(BTA_AG_CODEC_EVT, (tBTA_AG*)&val);
     return;
   }
@@ -910,11 +1067,11 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     p_scb->codec_updated = true;
     val.num = codec_type;
     val.hdr.status = BTA_AG_SUCCESS;
-    log::verbose("bta_ag_setcodec: Updated codec type {}", codec_type);
+    log::verbose("Updated codec type {}", codec_type);
   } else {
     val.num = codec_type;
     val.hdr.status = BTA_AG_FAIL_RESOURCES;
-    log::error("bta_ag_setcodec error: unsupported codec type {}", codec_type);
+    log::error("error: unsupported codec type {}", codec_type);
   }
 
   (*bta_ag_cb.p_cback)(BTA_AG_CODEC_EVT, (tBTA_AG*)&val);
