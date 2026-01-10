@@ -26,6 +26,8 @@ import android.content.pm.ServiceInfo
 import android.content.res.Resources
 import android.os.Process
 import android.platform.test.annotations.EnableFlags
+import android.platform.test.annotations.RequiresFlagsEnabled
+import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
 import com.android.bluetooth.flags.Flags
@@ -47,6 +49,7 @@ private const val PACKAGE_NAME = "com.android.bluetooth"
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(shadows = [ShadowBluetoothResources::class])
 class BluetoothComponentTest(flags: FlagsWrapper) {
+    @get:Rule val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -66,18 +69,27 @@ class BluetoothComponentTest(flags: FlagsWrapper) {
     }
 
     @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+    @RequiresFlagsEnabled(
+        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER
+    )
     @Test(expected = IllegalStateException::class)
     fun `when system config is invalid - throw exception`() {
         setup("my.pkg.name")
     }
 
     @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+    @RequiresFlagsEnabled(
+        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER
+    )
     @Test
     fun `when system config is missing - can create`() {
         setup("")
     }
 
     @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+    @RequiresFlagsEnabled(
+        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER
+    )
     @Test
     fun `when system config is invalid but safe mode is on - can create`() {
         setup("my.pkg.name", true)

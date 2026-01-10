@@ -21,7 +21,6 @@
 
 #include <memory>
 
-#include "btcore/include/hal_util.h"
 #include "rust/cxx.h"
 
 namespace bluetooth {
@@ -29,7 +28,6 @@ namespace topshim {
 namespace rust {
 
 // BluetoothProperty helper functions
-bt_property_type_t get_property_type(const bt_property_t& property);
 ::rust::Slice<const uint8_t> get_property_bytes(const bt_property_t& property);
 
 // C++ Bluetooth Interface that matches the Rust BTIF FFI defined in /topshim/src/btif.rs
@@ -42,8 +40,8 @@ public:
   void set_adapter_index(int adapter_index) const;
   void bluetooth_init(bool guest_mode, bool is_common_criteria_mode, int config_compare_result,
                       bool is_atv, const ::rust::String hci_instance_name) const;
-  int enable() const;
-  int disable() const;
+  void bluetooth_enable() const;
+  void bluetooth_disable() const;
   void cleanup() const;
   int get_adapter_properties() const;
   int get_adapter_property(bt_property_type_t type) const;
@@ -80,14 +78,14 @@ public:
   bool get_wbs_supported() const;
   bool get_swb_supported() const;
   bool is_coding_format_supported(uint8_t coding_format) const;
+  // TODO(@sarveshkalwit): Remove unsafe access to raw Btif
+  const uint8_t* GetRawBtIntf() const;
 
 private:
   const bt_interface_t* intf_;
 };
 
 std::unique_ptr<BtIntf> GetBtIntf();
-// TODO(@sarveshkalwit): Remove unsafe access to raw Btif
-const uint8_t* GetRawBtIntf();
 
 }  // namespace rust
 }  // namespace topshim

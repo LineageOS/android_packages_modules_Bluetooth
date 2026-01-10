@@ -188,7 +188,7 @@ TEST_F(BluetoothTest, AdapterCancelDiscovery) {
 TEST_F(BluetoothTest, AdapterDisableDuringBonding) {
   EXPECT_EQ(GetState(), BT_STATE_OFF) << "Test should be run with Adapter disabled";
 
-  RawAddress bdaddr = {{0x22, 0x22, 0x22, 0x22, 0x22, 0x22}};
+  RawAddress bdaddr("22:22:22:22:22:22");
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
     bluetooth_enable("test_name");
@@ -211,7 +211,7 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
   bt_callbacks_t* callbacks = bt_callbacks();
   ASSERT_TRUE(callbacks != nullptr);
 
-  bt_interface()->cleanup();  // init is called during SetUp, so we need to cleanup first
+  bluetooth_cleanup();  // init is called during SetUp, so we need to cleanup first
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
     bluetooth_init(callbacks, false, false, 0, false, "default", nullptr);
@@ -225,7 +225,7 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
     bluetooth_disable();
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_OFF) << "Adapter did not turn off.";
-    bt_interface()->cleanup();
+    bluetooth_cleanup();
   }
 
   // re-init to allow proper shutdown to happen

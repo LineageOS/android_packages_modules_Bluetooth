@@ -49,7 +49,10 @@ private fun getCallerIdentity(source: AttributionSource): String =
         // When called from android system, we must set an attribution tag to allow tracking.
         //      Ex: context.createAttributionContext(SERVICE_NAME)
 
-        if ("android" == pkg) {
+        if (
+            "android" == pkg &&
+                android.bluetooth.platform.flags.Flags.strictConfigurationInSystemServer()
+        ) {
             "$pkg/" + requireNotNull(tag) { "System generic caller must set the Attribution tag" }
         } else {
             tag?.let { "$pkg/$it" } ?: pkg

@@ -171,7 +171,10 @@ constexpr uint8_t kAseCtpOpcodeMaxVal = client_parser::ascs::kCtpOpcodeRelease;
 
 }  // namespace ascs
 
-static RawAddress GetTestAddress(uint8_t index) { return {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index}}; }
+static RawAddress GetTestAddress(uint8_t index) {
+  std::array<uint8_t, 6> bytes{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index};
+  return RawAddress(bytes);
+}
 
 class MockLeAudioGroupStateMachineCallbacks : public LeAudioGroupStateMachine::Callbacks {
 public:

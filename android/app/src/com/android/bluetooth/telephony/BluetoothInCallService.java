@@ -1111,9 +1111,7 @@ public class BluetoothInCallService extends InCallService {
                 heldCall.disconnect();
                 return true;
             }
-            if (Flags.sendOkOnNoActionOnChld()) {
-                return true;
-            }
+            return true;
         } else if (chld == CHLD_TYPE_RELEASEACTIVE_ACCEPTHELD) {
             if (Flags.endOutgoingCallOnChld()) {
                 if (activeCall == null) {
@@ -1173,9 +1171,7 @@ public class BluetoothInCallService extends InCallService {
                     return true;
                 }
             }
-            if (Flags.sendOkOnNoActionOnChld()) {
-                return true;
-            }
+            return true;
         } else if (chld == CHLD_TYPE_ADDHELDTOCONF) {
             if (!mCallInfo.isNullCall(activeCall)) {
                 if (activeCall.can(Connection.CAPABILITY_MERGE_CONFERENCE)) {
@@ -1197,9 +1193,7 @@ public class BluetoothInCallService extends InCallService {
                     }
                 }
             }
-            if (Flags.sendOkOnNoActionOnChld()) {
-                return true;
-            }
+            return true;
         }
         return false;
     }

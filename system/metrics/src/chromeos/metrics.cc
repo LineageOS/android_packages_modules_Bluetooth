@@ -231,4 +231,12 @@ void LogMetricBluetoothEnergyMonitorReported(uint16_t /*bqr_version*/,
 void LogMetricBluetoothRFStatsReported(uint16_t /*bqr_version*/,
                                        const bqr::BqrRFStatsEvent& /*event*/) {}
 
+void LogGattOffloadSessionStateChanged(
+        const Address& /* address */, int32_t /* session_id */,
+        android::bluetooth::gatt::GattRoleEnum /* gatt_role */,
+        android::bluetooth::gatt::GattOffloadSessionStateEnum /* state */,
+        int32_t /* gatt_characteristic_properties_bitmask */, int64_t /* session_duration_ms */,
+        android::bluetooth::gatt::GattOffloadErrorEnum /* error_code */, int32_t /* uid */,
+        const std::string& /* attribution_tag */) {}
+
 }  // namespace bluetooth::metrics

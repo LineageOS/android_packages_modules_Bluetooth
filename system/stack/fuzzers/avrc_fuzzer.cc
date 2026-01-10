@@ -58,7 +58,7 @@ namespace {
 
 constexpr uint16_t kDummyCid = 0x1234;
 constexpr uint8_t kDummyId = 0x77;
-constexpr RawAddress kDummyRemoteAddr({0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC});
+constexpr RawAddress kDummyRemoteAddr("77:88:99:AA:BB:CC");
 
 // Set up default callback structure
 static tL2CAP_APPL_INFO avct_appl, avct_br_appl;

@@ -29,8 +29,8 @@ using bluetooth::hci::AddressWithType;
 using connection_manager::tAPP_ID;
 namespace test = bluetooth::hci::testing;
 
-const RawAddress address1{{0x01, 0x01, 0x01, 0x01, 0x01, 0x07}};
-const RawAddress address2{{0x22, 0x22, 0x02, 0x22, 0x33, 0x22}};
+const RawAddress address1("01:01:01:01:01:07");
+const RawAddress address2("22:22:02:22:33:22");
 
 const AddressWithType address1_hci{{0x07, 0x01, 0x01, 0x01, 0x01, 0x01},
                                    bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS};

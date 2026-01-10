@@ -27,7 +27,7 @@
 #include "test/mock/mock_stack_sdp_api.h"
 
 namespace {
-const RawAddress bdaddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress bdaddr("11:22:33:44:55:66");
 }  // namespace
 
 tBTA_SDP_CB bta_sdp_cb;

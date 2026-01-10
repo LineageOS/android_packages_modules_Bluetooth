@@ -24,8 +24,8 @@ namespace bluetooth::le_audio {
 
 static RawAddress GetTestAddress(uint8_t index) {
   EXPECT_LT(index, UINT8_MAX);
-  RawAddress result = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index}};
-  return result;
+  std::array<uint8_t, 6> bytes{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index};
+  return RawAddress(bytes);
 }
 
 class StorageHelperTest : public ::testing::Test {};

@@ -57,8 +57,10 @@ class BluetoothComponent(context: Context) {
         val serviceInfo = result.serviceInfo
         packageName = serviceInfo.packageName
         componentName = ComponentName(serviceInfo.packageName, serviceInfo.name)
-        if (Flags.validateBluetoothNameInPlatformConfig()) {
-            validateDeviceConfiguration(context)
+        if (android.bluetooth.platform.flags.Flags.strictConfigurationInSystemServer()) {
+            if (Flags.validateBluetoothNameInPlatformConfig()) {
+                validateDeviceConfiguration(context)
+            }
         }
         Log.i(TAG, "Successfully found Bluetooth component: $componentName")
     }

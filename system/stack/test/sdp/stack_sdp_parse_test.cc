@@ -50,7 +50,7 @@ using ::testing::SaveArg;
 
 namespace {
 
-const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress kRawAddress = RawAddress("11:22:33:44:55:66");
 constexpr size_t kSdpDbSize = BTA_DM_SDP_DB_SIZE * 16;
 constexpr size_t kSdpPacketStartOffset = 9;
 int L2CA_ConnectReqWithSecurity_cid = 42;

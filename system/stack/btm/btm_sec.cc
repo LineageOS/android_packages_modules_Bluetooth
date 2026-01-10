@@ -4717,8 +4717,7 @@ tBTM_STATUS btm_sec_execute_procedure(BtmDevice* p_device) {
     }
 
     if (start_auth) {
-      if (com_android_bluetooth_flags_ignore_auth_req_when_collision_timer_active() &&
-          alarm_is_scheduled(BtmSecurity::Get().sec_collision_timer_) &&
+      if (alarm_is_scheduled(BtmSecurity::Get().sec_collision_timer_) &&
           (BtmSecurity::Get().p_collided_dev_->bd_addr == p_device->bd_addr)) {
         log::debug(
                 "Security Manager: Authentication will be executed after collision "

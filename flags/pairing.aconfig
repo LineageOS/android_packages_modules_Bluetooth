@@ -2,30 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "clear_pairing_state_when_no_devrec"
-    namespace: "bluetooth"
-    description: "Clear pairing state on early bond failure due to connection timeout and devrec is not created"
-    bug: "364321751"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "trigger_sec_proc_on_inc_access_req"
     namespace: "bluetooth"
     description: "Trigger security procedure as acceptor as needed"
     bug: "376278485"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "ignore_auth_req_when_collision_timer_active"
-    namespace: "bluetooth"
-    description: "Ignore authentication request when collision timer is still active"
-    bug: "380328715"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

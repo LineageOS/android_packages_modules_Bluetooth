@@ -48,11 +48,11 @@ using testing::WithArg;
 namespace bluetooth::le_audio {
 
 const int32_t group_id1 = 1;
-const RawAddress device1 = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress device1 = RawAddress("11:22:33:44:55:66");
 
 const int32_t group_id2 = 2;
-const RawAddress device2 = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x67});
-const RawAddress device3 = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x68});
+const RawAddress device2 = RawAddress("11:22:33:44:55:67");
+const RawAddress device3 = RawAddress("11:22:33:44:55:68");
 
 class MockMetricsCollector : public MetricsCollector {
 public:

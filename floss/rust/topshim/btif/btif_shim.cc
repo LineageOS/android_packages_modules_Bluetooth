@@ -15,6 +15,8 @@
  */
 #include "topshim/btif/btif_shim.h"
 
+#include <btcore/include/hal_util.h>
+
 #include "src/btif.rs.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
@@ -157,8 +159,6 @@ bt_os_callouts_t bt_os_callouts = {
 
 }  // namespace internal
 
-bt_property_type_t get_property_type(const bt_property_t& property) { return property.type; }
-
 ::rust::Slice<const uint8_t> get_property_bytes(const bt_property_t& property) {
   if (property.val == nullptr || property.len <= 0) {
     return ::rust::Slice<const uint8_t>();  // Return an empty slice
@@ -177,12 +177,12 @@ void BtIntf::bluetooth_init(bool guest_mode, bool is_common_criteria_mode,
                    &internal::bt_os_callouts);
 }
 
-int BtIntf::enable() const {
+void BtIntf::bluetooth_enable() const {
   // TODO(b/470303514): Pass the local name string
-  return intf_->enable("");
+  return ::bluetooth_enable("");
 }
 
-int BtIntf::disable() const { return intf_->disable(); }
+void BtIntf::bluetooth_disable() const { return ::bluetooth_disable(); }
 
 void BtIntf::cleanup() const { return intf_->cleanup(); }
 
@@ -294,6 +294,8 @@ bool BtIntf::is_coding_format_supported(uint8_t coding_format) const {
   return intf_->is_coding_format_supported(coding_format);
 }
 
+const uint8_t* BtIntf::GetRawBtIntf() const { return reinterpret_cast<const uint8_t*>(intf_); }
+
 std::unique_ptr<BtIntf> GetBtIntf() {
   if (internal::g_bt_if) {
     std::abort();
@@ -309,8 +311,6 @@ std::unique_ptr<BtIntf> GetBtIntf() {
   internal::g_bt_if = bt_if.get();
   return bt_if;
 }
-
-const uint8_t* GetRawBtIntf() { return reinterpret_cast<const uint8_t*>(internal::g_bt_if); }
 
 }  // namespace rust
 }  // namespace topshim

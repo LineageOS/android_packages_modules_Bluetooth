@@ -47,7 +47,7 @@ using bluetooth::core::testing::MockCoreInterface;
 using ::testing::ElementsAre;
 
 namespace {
-const RawAddress kRawAddress = {{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
+const RawAddress kRawAddress("11:22:33:44:55:66");
 constexpr char kBdName[] = {'k', 'B', 'd', 'N', 'a', 'm', 'e', '\0'};
 }  // namespace
 

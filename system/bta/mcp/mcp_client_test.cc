@@ -137,7 +137,7 @@ public:
   }
 
 protected:
-  const RawAddress kTestAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress kTestAddress = RawAddress("11:22:33:44:55:66");
   const tGATT_IF kTestAppId = 6;
   const uint16_t kTestConnId = 11;
   const uint16_t kMediaStateHandle = 0x0012;

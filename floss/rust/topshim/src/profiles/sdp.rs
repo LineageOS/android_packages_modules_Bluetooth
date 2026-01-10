@@ -328,14 +328,8 @@ impl From<CxxBtSdpRecord> for BtSdpRecord {
     }
 }
 
-impl From<BtSdpRecord> for CxxBtSdpRecord {
-    fn from(item: BtSdpRecord) -> Self {
-        let i = item.clone().get_unsafe_record();
-        CxxBtSdpRecord(i)
-    }
-}
-
 impl BtSdpRecord {
+    // TODO(b/446827362): Do not directly returns structures containing pointers, which is unsafe.
     fn convert_header<'a>(hdr: &'a mut BtSdpHeaderOverlay) -> bindings::bluetooth_sdp_hdr_overlay {
         let srv_name_ptr = LTCheckedPtrMut::from(&mut hdr.service_name);
         let user1_ptr = LTCheckedPtr::from(&hdr.user1_data);
@@ -356,6 +350,7 @@ impl BtSdpRecord {
     }
 
     // Get sdp record with lifetime tied to self
+    // TODO(b/446827362): Do not directly returns structures containing pointers, which is unsafe.
     fn get_unsafe_record<'a>(&'a mut self) -> bindings::bluetooth_sdp_record {
         match self {
             BtSdpRecord::HeaderOverlay(ref mut hdr) => {
@@ -528,8 +523,8 @@ impl Sdp {
     }
 
     #[log_args]
-    pub fn create_sdp_record(&self, record: BtSdpRecord, handle: &mut i32) -> BtStatus {
-        self.internal.create_sdp_record(record.into(), handle).into()
+    pub fn create_sdp_record(&self, mut record: BtSdpRecord, handle: &mut i32) -> BtStatus {
+        self.internal.create_sdp_record(CxxBtSdpRecord(record.get_unsafe_record()), handle).into()
     }
 
     #[log_args]

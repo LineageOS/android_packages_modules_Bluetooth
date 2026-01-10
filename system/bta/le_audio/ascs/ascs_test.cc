@@ -39,8 +39,8 @@ namespace bluetooth::le_audio::test {
 
 static RawAddress GetTestAddress(int index) {
   EXPECT_LT(index, UINT8_MAX);
-  RawAddress result = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, static_cast<uint8_t>(index)}};
-  return result;
+  std::array<uint8_t, 6> bytes{0xC0, 0xDE, 0xC0, 0xDE, 0x00, static_cast<uint8_t>(index)};
+  return RawAddress(bytes);
 }
 
 class MockAscsCallbacks : public Ascs::Callbacks {

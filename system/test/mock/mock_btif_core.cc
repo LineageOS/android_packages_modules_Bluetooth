@@ -46,10 +46,6 @@ bt_status_t btif_set_dynamic_audio_buffer_size(int /* codec */, int /* size */) 
   inc_func_call_count(__func__);
   return BT_STATUS_SUCCESS;
 }
-int btif_is_enabled(void) {
-  inc_func_call_count(__func__);
-  return 0;
-}
 tBTA_SERVICE_MASK btif_get_enabled_services_mask(void) {
   inc_func_call_count(__func__);
   return 0;

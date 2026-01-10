@@ -29,7 +29,7 @@ impl From<CxxSocketType> for SocketType {
             bindings::btsock_type_t_BTSOCK_SCO => SocketType::Sco,
             bindings::btsock_type_t_BTSOCK_L2CAP => SocketType::L2cap,
             bindings::btsock_type_t_BTSOCK_L2CAP_LE => SocketType::L2capLe,
-            _ => unreachable!(),
+            _ => panic!("Unsupported btsock_type_t {}", item.0),
         }
     }
 }
@@ -63,7 +63,7 @@ impl From<CxxSocketDataPath> for SocketDataPath {
             bindings::btsock_data_path_t_BTSOCK_DATA_PATH_HARDWARE_OFFLOAD => {
                 SocketDataPath::HardwareOffload
             }
-            _ => unreachable!(),
+            _ => panic!("Unsupported btsock_data_path_t {}", item.0),
         }
     }
 }

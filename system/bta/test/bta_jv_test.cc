@@ -29,8 +29,8 @@
 #include "test/mock/mock_stack_sdp_legacy_api.h"
 
 namespace {
-const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress kRawAddress2 = RawAddress({0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc});
+const RawAddress kRawAddress = RawAddress("11:22:33:44:55:66");
+const RawAddress kRawAddress2 = RawAddress("77:88:99:aa:bb:cc");
 const bluetooth::Uuid kUuid = bluetooth::Uuid::From16Bit(0x1234);
 const bluetooth::Uuid kUuid2 = bluetooth::Uuid::From16Bit(0x789a);
 

@@ -44,7 +44,7 @@ using ::testing::SaveArg;
 namespace {
 constexpr uint8_t kSDP_MAX_CONNECTIONS = static_cast<uint8_t>(SDP_MAX_CONNECTIONS);
 
-const RawAddress kRawAddress = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+const RawAddress kRawAddress = RawAddress("A1:A2:A3:A4:A5:A6");
 int L2CA_ConnectReqWithSecurity_cid = 0x42;
 
 class StackSdpWithMocksTest : public ::testing::Test {
@@ -92,7 +92,7 @@ TEST_F(StackSdpApiTest, SDP_ServiceSearchRequest) {
             return L2CA_ConnectReqWithSecurity_cid;
           }));
   for (uint8_t i = 0; i < kSDP_MAX_CONNECTIONS; i++) {
-    RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, i});
+    RawAddress bd_addr = RawAddress(std::array<uint8_t, 6>({0x11, 0x22, 0x33, 0x44, 0x55, i}));
     ASSERT_NE(nullptr, sdp_conn_originate(bd_addr));
   }
   tSDP_DISCOVERY_DB db;
@@ -109,7 +109,7 @@ TEST_F(StackSdpApiTest, SDP_ServiceSearchAttributeRequest) {
             return L2CA_ConnectReqWithSecurity_cid;
           }));
   for (uint8_t i = 0; i < kSDP_MAX_CONNECTIONS; i++) {
-    RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, i});
+    RawAddress bd_addr = RawAddress(std::array<uint8_t, 6>({0x11, 0x22, 0x33, 0x44, 0x55, i}));
     ASSERT_NE(nullptr, sdp_conn_originate(bd_addr));
   }
   tSDP_DISCOVERY_DB db;
@@ -126,7 +126,7 @@ TEST_F(StackSdpApiTest, SDP_ServiceSearchAttributeRequest2) {
             return L2CA_ConnectReqWithSecurity_cid;
           }));
   for (uint8_t i = 0; i < kSDP_MAX_CONNECTIONS; i++) {
-    RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, i});
+    RawAddress bd_addr = RawAddress(std::array<uint8_t, 6>({0x11, 0x22, 0x33, 0x44, 0x55, i}));
     ASSERT_NE(nullptr, sdp_conn_originate(bd_addr));
   }
   tSDP_DISCOVERY_DB db;

@@ -945,11 +945,7 @@ static bool cleanupNative(JNIEnv* env, jobject /* obj */) {
 
   log::verbose("");
 
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-
-  sBluetoothInterface->cleanup();
+  bluetooth_cleanup();
   log::info("return from cleanup");
 
   if (sJniCallbacksObj) {
@@ -2152,6 +2148,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
   status = android::register_com_android_bluetooth_le_audio(e);
   if (status < 0) {
     log::error("jni le_audio registration failure: {}", status);
+    return JNI_ERR;
+  }
+
+  status = android::register_com_android_bluetooth_le_audio_broadcaster(e);
+  if (status < 0) {
+    log::error("jni le_audio broadcaster registration failure: {}", status);
     return JNI_ERR;
   }
 

@@ -436,7 +436,7 @@ void bluetooth_init(bt_callbacks_t* callbacks, bool start_restricted, bool is_co
 
   is_local_device_atv = is_atv;
 
-  stack_manager_get_interface()->init_stack(CreateInterfaceToProfiles());
+  stack_init(CreateInterfaceToProfiles());
 
   wakelock_os_callouts_saved = callouts;
   wakelock_set_os_callouts(&wakelock_os_callouts_jni);
@@ -474,7 +474,7 @@ void bluetooth_disable(void) {
   stack_disable(&stop_profiles);
 }
 
-static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(); }
+void bluetooth_cleanup(void) { stack_cleanup(); }
 
 bool is_restricted_mode() { return restricted_mode; }
 
@@ -497,7 +497,7 @@ int get_common_criteria_config_compare_result() {
 bool is_atv_device() { return is_local_device_atv; }
 
 static int get_adapter_properties(void) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -507,7 +507,7 @@ static int get_adapter_properties(void) {
 
 static int get_adapter_property(bt_property_type_t type) {
   /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
-  if (!btif_is_enabled() && (type != BT_PROPERTY_BDADDR) && (type != BT_PROPERTY_BDNAME)) {
+  if (!stack_is_running() && (type != BT_PROPERTY_BDADDR) && (type != BT_PROPERTY_BDNAME)) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -520,7 +520,7 @@ static void set_scan_mode(bt_scan_mode_t mode) {
 }
 
 static int set_adapter_property(const bt_property_t* property) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -543,7 +543,7 @@ static int set_adapter_property(const bt_property_t* property) {
 }
 
 static int get_remote_device_properties(RawAddress remote_addr) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -552,7 +552,7 @@ static int get_remote_device_properties(RawAddress remote_addr) {
 }
 
 static int get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -561,7 +561,7 @@ static int get_remote_device_property(RawAddress remote_addr, bt_property_type_t
 }
 
 static int set_remote_device_property(RawAddress remote_addr, const bt_property_t* property) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -842,7 +842,7 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** /*arguments*/) {
-  if (!stack_manager_get_interface()->get_stack_is_running()) {
+  if (!stack_is_running()) {
     log::error("Stack is not running, skipping dumpsys!!");
     return;
   }
@@ -1143,7 +1143,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
 #ifdef TARGET_FLOSS
         .set_adapter_index = set_adapter_index,
 #endif
-        .cleanup = cleanup,
         .get_adapter_properties = get_adapter_properties,
         .get_adapter_property = get_adapter_property,
         .set_scan_mode = set_scan_mode,
@@ -1151,7 +1150,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .get_remote_device_properties = get_remote_device_properties,
         .get_remote_device_property = get_remote_device_property,
         .set_remote_device_property = set_remote_device_property,
-        .get_remote_service_record = nullptr,
         .get_remote_services = get_remote_services,
         .start_discovery = start_discovery,
         .cancel_discovery = cancel_discovery,

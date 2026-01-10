@@ -33,9 +33,7 @@ typedef void(tBTIF_COPY_CBACK)(uint16_t event, char* p_dest, const char* p_src);
 
 // NOTE: Local re-implementation of functions to avoid thread context switching
 static bool sStackRunning;
-static bool get_stack_is_running(void) { return sStackRunning; }
-static stack_manager_t sStackManager = {nullptr, nullptr, get_stack_is_running};
-const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }
+bool stack_is_running(void) { return sStackRunning; }
 BtStatus do_in_jni_thread(base::OnceClosure task) {
   std::move(task).Run();
   return BtifStatus();
@@ -61,8 +59,8 @@ protected:
   void TearDown() override { btif_queue_release(); }
 };
 
-const RawAddress BtifProfileQueueTest::kTestAddr1{{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
-const RawAddress BtifProfileQueueTest::kTestAddr2{{0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56}};
+const RawAddress BtifProfileQueueTest::kTestAddr1("11:22:33:44:55:66");
+const RawAddress BtifProfileQueueTest::kTestAddr2("AB:CD:EF:12:34:56");
 
 static BtStatus test_connect_cb(RawAddress bda, uint16_t uuid) {
   sResult = UNKNOWN;

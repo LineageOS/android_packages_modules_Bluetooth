@@ -17,7 +17,7 @@
 #include <bluetooth/types/acl_link_spec.h>
 #include <gtest/gtest.h>
 
-static constexpr RawAddress RAW_ADDRESS_TEST1({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+static constinit RawAddress RAW_ADDRESS_TEST1("01:02:03:04:05:06");
 
 TEST(BleAddressWithTypeTest, TYPED_ADDRESS_TRANSPORT) {
   AclLinkSpec linkSpecA = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_AUTO};

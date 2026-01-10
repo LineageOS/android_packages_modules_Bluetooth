@@ -63,7 +63,7 @@ tGATT_TCB* gatt_find_tcb_by_addr(const RawAddress& /*bda*/, tBT_TRANSPORT /*tran
 }
 
 namespace {
-const RawAddress test_address({0x11, 0x11, 0x11, 0x11, 0x11, 0x11});
+const RawAddress test_address("11:11:11:11:11:11");
 std::vector<uint16_t> test_local_cids{61, 62, 63, 64, 65};
 
 class EattTest : public ::testing::Test {

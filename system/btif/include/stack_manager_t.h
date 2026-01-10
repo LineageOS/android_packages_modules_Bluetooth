@@ -28,17 +28,11 @@
 using ProfileStartCallback = void();
 using ProfileStopCallback = void();
 
-typedef struct {
-  void (*init_stack)(bluetooth::core::CoreInterface*);
-  void (*clean_up_stack)();
-
-  bool (*get_stack_is_running)(void);
-} stack_manager_t;
-
+bool stack_is_running();
+void stack_init(bluetooth::core::CoreInterface*);
 void stack_enable(ProfileStartCallback startProfiles, const std::string local_name);
 void stack_disable(ProfileStopCallback stopProfiles);
-
-const stack_manager_t* stack_manager_get_interface();
+void stack_cleanup();
 
 // TODO(zachoverflow): remove this terrible hack once the startup sequence is
 // more sane

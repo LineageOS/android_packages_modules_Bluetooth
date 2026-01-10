@@ -68,9 +68,8 @@ protected:
   }
 };
 
-static const RawAddress SAMPLE_PUBLIC_BDA = {{0x00, 0x00, 0x11, 0x22, 0x33, 0x44}};
-
-static const RawAddress SAMPLE_RRA_BDA = {{0xAA, 0xAA, 0x11, 0x22, 0x33, 0x44}};
+static const RawAddress SAMPLE_PUBLIC_BDA("00:00:11:22:33:44");
+static const RawAddress SAMPLE_RRA_BDA("AA:AA:11:22:33:44");
 
 TEST_F(GattApiTest, test_gatt_load_bonded_ble_only) {
   OVERRIDE_GATT_LOAD_BONDED = std::optional{true};
