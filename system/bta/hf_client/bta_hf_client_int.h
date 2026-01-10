@@ -184,7 +184,7 @@ typedef struct {
   RawAddress peer_addr;                       /* peer bd address */
   tSDP_DISCOVERY_DB* p_disc_db;               /* pointer to discovery database */
   tBTA_HF_CLIENT_SDP_METRICS_CB sdp_metrics;  /* Service discovery information for metrics */
-  uint16_t conn_handle;                       /* RFCOMM handle of connected service */
+  uint8_t conn_handle;                        /* RFCOMM handle of connected service */
   tBTA_HF_CLIENT_PEER_FEAT peer_features;     /* peer device features */
   tBTA_HF_CLIENT_CHLD_FEAT chld_features;     /* call handling features */
   uint16_t peer_version;                      /* profile version of peer device */
@@ -210,7 +210,7 @@ typedef struct {
   uint8_t scn;
   tBTA_HF_CLIENT_CBACK* p_cback; /* application callback */
   tBTA_HF_CLIENT_FEAT features;  /* features registered by application */
-  uint16_t serv_handle;          /* RFCOMM server handle */
+  uint8_t serv_handle;           /* RFCOMM server handle */
   bool deregister;               /* true if service shutting down */
   bool is_support_lc3;           /* true if enable lc3 codec support (HFP1.9) */
 

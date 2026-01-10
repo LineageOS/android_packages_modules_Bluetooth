@@ -1,9 +1,6 @@
 use crate::bindings::root as bindings;
-use crate::btif::{ptr_to_vec, BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, Uuid};
+use crate::btif::{ptr_to_vec, BluetoothInterface, BtStatus, RawAddress, Uuid};
 use crate::mutcxxcall;
-use crate::profiles::gatt::bindings::{
-    btgatt_interface_t, BleAdvertiserInterface, BleScannerInterface,
-};
 use crate::topstack::get_dispatchers;
 
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -42,9 +39,7 @@ pub mod ffi {
         #[namespace = "bluetooth"]
         type Uuid = crate::btif::Uuid;
 
-        #[namespace = ""]
-        #[cxx_name = "bt_interface_t"]
-        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
+        type BtIntf = crate::btif::ffi::BtIntf;
     }
 
     #[derive(Debug, Clone)]
@@ -138,7 +133,7 @@ pub mod ffi {
 
         type GattClientIntf;
 
-        fn GetGattClientProfile(btif: &BluetoothInterface) -> UniquePtr<GattClientIntf>;
+        fn GetGattClientProfile(btif: &BtIntf) -> UniquePtr<GattClientIntf>;
 
         fn register_client(
             self: &GattClientIntf,
@@ -261,7 +256,7 @@ pub mod ffi {
 
         type GattServerIntf;
 
-        fn GetGattServerProfile(btif: &BluetoothInterface) -> UniquePtr<GattServerIntf>;
+        fn GetGattServerProfile(btif: &BtIntf) -> UniquePtr<GattServerIntf>;
 
         fn register_server(self: &GattServerIntf, uuid: Uuid, eatt_support: bool) -> u32;
         fn unregister_server(self: &GattServerIntf, server_if: i32) -> u32;
@@ -324,9 +319,13 @@ pub mod ffi {
 
         type GattIntf;
 
-        fn GetGattProfile(btif: &BluetoothInterface) -> UniquePtr<GattIntf>;
+        fn GetGattProfile(btif: &BtIntf) -> UniquePtr<GattIntf>;
 
         fn init(self: &GattIntf) -> u32;
+        fn cleanup(self: &GattIntf);
+
+        fn GetBleAdvertiserIntf(self: &GattIntf) -> UniquePtr<BleAdvertiserIntf>;
+        fn GetBleScannerIntf(self: &GattIntf) -> UniquePtr<BleScannerIntf>;
     }
 
     extern "Rust" {
@@ -432,8 +431,6 @@ pub mod ffi {
         #[namespace = ""]
         #[cxx_name = "btgatt_filt_param_setup_t"]
         type GattFilterParam = super::GattFilterParam;
-
-        unsafe fn GetBleScannerIntf(gatt: *const u8) -> UniquePtr<BleScannerIntf>;
 
         fn RegisterScanner(self: Pin<&mut BleScannerIntf>, uuid: Uuid);
         fn Unregister(self: Pin<&mut BleScannerIntf>, scanner_id: u8);
@@ -601,10 +598,6 @@ pub mod ffi {
         type AdvertiseParameters = super::AdvertiseParameters;
         #[namespace = ""]
         type PeriodicAdvertisingParameters = super::PeriodicAdvertisingParameters;
-
-        /// Given the gatt profile interface, creates a shim interface for
-        /// |BleAdvertiserInterface|.
-        unsafe fn GetBleAdvertiserIntf(gatt: *const u8) -> UniquePtr<BleAdvertiserIntf>;
 
         fn RegisterAdvertiser(self: Pin<&mut BleAdvertiserIntf>);
         fn Unregister(self: Pin<&mut BleAdvertiserIntf>, adv_id: u8);
@@ -1414,17 +1407,7 @@ u8, u8, *const RawAddress, {
     let _2 = unsafe { *_2 };
 });
 
-struct RawBleScannerWrapper {
-    _raw: *const BleScannerInterface,
-}
-
-struct RawBleAdvertiserWrapper {
-    _raw: *const BleAdvertiserInterface,
-}
-
 // Pointers unsafe due to ownership but this is a static pointer so Send is ok
-unsafe impl Send for RawBleScannerWrapper {}
-unsafe impl Send for RawBleAdvertiserWrapper {}
 unsafe impl Send for Gatt {}
 unsafe impl Send for GattClient {}
 unsafe impl Send for GattClientCallbacks {}
@@ -1758,22 +1741,13 @@ impl GattServer {
 }
 
 pub struct BleScanner {
-    _internal: RawBleScannerWrapper,
     internal_cxx: cxx::UniquePtr<ffi::BleScannerIntf>,
 }
 
 impl BleScanner {
     // TODO(b/383549885) Devise a method to print bound type BleScannerIntf
-    pub(crate) fn new(
-        raw_gatt: *const btgatt_interface_t,
-        internal_cxx: cxx::UniquePtr<ffi::BleScannerIntf>,
-    ) -> Self {
-        BleScanner {
-            _internal: RawBleScannerWrapper {
-                _raw: unsafe { (*raw_gatt).scanner as *const BleScannerInterface },
-            },
-            internal_cxx,
-        }
+    pub(crate) fn new(internal_cxx: cxx::UniquePtr<ffi::BleScannerIntf>) -> Self {
+        BleScanner { internal_cxx }
     }
 
     #[log_args]
@@ -1961,22 +1935,13 @@ impl BleScanner {
 }
 
 pub struct BleAdvertiser {
-    _internal: RawBleAdvertiserWrapper,
     internal_cxx: cxx::UniquePtr<ffi::BleAdvertiserIntf>,
 }
 
 impl BleAdvertiser {
     // TODO(b/383549885) Devise a method to print bound type BleAdvertiserIntf
-    pub(crate) fn new(
-        raw_gatt: *const btgatt_interface_t,
-        internal_cxx: cxx::UniquePtr<ffi::BleAdvertiserIntf>,
-    ) -> Self {
-        BleAdvertiser {
-            _internal: RawBleAdvertiserWrapper {
-                _raw: unsafe { (*raw_gatt).advertiser as *const BleAdvertiserInterface },
-            },
-            internal_cxx,
-        }
+    pub(crate) fn new(internal_cxx: cxx::UniquePtr<ffi::BleAdvertiserIntf>) -> Self {
+        BleAdvertiser { internal_cxx }
     }
 
     #[log_args]
@@ -2081,26 +2046,19 @@ pub struct Gatt {
 impl Gatt {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Gatt {
-        let r = intf.get_profile_interface(SupportedProfiles::Gatt);
-
-        if r.is_null() {
-            panic!("Failed to get GATT interface");
-        }
-
-        let gatt_intf = ffi::GetGattProfile(intf.as_raw_btif());
-        let gatt_client_intf = ffi::GetGattClientProfile(intf.as_raw_btif());
-        let gatt_server_intf = ffi::GetGattServerProfile(intf.as_raw_btif());
-
-        let gatt_scanner_intf = unsafe { ffi::GetBleScannerIntf(r as *const u8) };
-        let gatt_advertiser_intf = unsafe { ffi::GetBleAdvertiserIntf(r as *const u8) };
+        let gatt_intf = ffi::GetGattProfile(intf.as_btif());
+        let gatt_client_intf = ffi::GetGattClientProfile(intf.as_btif());
+        let gatt_server_intf = ffi::GetGattServerProfile(intf.as_btif());
+        let gatt_scanner_intf = gatt_intf.GetBleScannerIntf();
+        let gatt_advertiser_intf = gatt_intf.GetBleAdvertiserIntf();
 
         Gatt {
             internal: gatt_intf,
             is_init: false,
             client: GattClient { internal: gatt_client_intf },
             server: GattServer { internal: gatt_server_intf },
-            scanner: BleScanner::new(r as *const btgatt_interface_t, gatt_scanner_intf),
-            advertiser: BleAdvertiser::new(r as *const btgatt_interface_t, gatt_advertiser_intf),
+            scanner: BleScanner::new(gatt_scanner_intf),
+            advertiser: BleAdvertiser::new(gatt_advertiser_intf),
         }
     }
 

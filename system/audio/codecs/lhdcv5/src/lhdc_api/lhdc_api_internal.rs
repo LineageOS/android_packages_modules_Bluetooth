@@ -110,7 +110,7 @@ pub struct Parameters {
     pub enc_in_buf: Box<[i32]>,
     pub enc_out_buf: Box<[i32]>,
     // TODO(b/454096420) privatize through API
-    pub bitrate_table: &'static [i32],
+    pub bitrate_table: &'static [u32],
 }
 
 impl Parameters {
@@ -474,27 +474,27 @@ impl Parameters {
 pub fn lhdcv5_encoder_get_bitrate(
     bitrate_inx: u32,
     bitrate: &mut u32,
-    bitrate_table: &[i32],
+    bitrate_table: &[u32],
 ) -> i32 {
     if bitrate_inx >= bitrate_table.len() as _ {
         error!("Input bit rate (index) is out of range ({})!", bitrate_inx);
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
     }
-    *bitrate = bitrate_table[bitrate_inx as usize] as u32;
+    *bitrate = bitrate_table[bitrate_inx as usize];
     LHDC_ENC_IN_FRET_SUCCESS
 }
 
 pub fn lhdcv5_encoder_get_bitrate_inx(
     bitrate: u32,
     bitrate_inx: &mut u32,
-    bitrate_table: &[i32],
+    bitrate_table: &[u32],
 ) -> i32 {
     let mut index: u32 = 0;
-    if bitrate > bitrate_table[bitrate_table.len() - 1] as u32 {
+    if bitrate > bitrate_table[bitrate_table.len() - 1] {
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
     }
     while index < bitrate_table.len() as _ {
-        if bitrate_table[index as usize] as u32 >= bitrate {
+        if bitrate_table[index as usize] >= bitrate {
             break;
         }
         index = index.wrapping_add(1);

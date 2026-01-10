@@ -16,6 +16,8 @@
 #ifndef GD_RUST_TOPSHIM_GATT_GATT_BLE_ADVERTISER_SHIM_H
 #define GD_RUST_TOPSHIM_GATT_GATT_BLE_ADVERTISER_SHIM_H
 
+#include <hardware/bt_gatt.h>
+
 #include <memory>
 
 #include "include/hardware/ble_advertiser.h"
@@ -81,8 +83,6 @@ private:
 
   ::BleAdvertiserInterface* adv_intf_;
 };
-
-std::unique_ptr<BleAdvertiserIntf> GetBleAdvertiserIntf(const unsigned char* gatt_intf);
 
 }  // namespace rust
 }  // namespace topshim

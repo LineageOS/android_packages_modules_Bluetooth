@@ -17,13 +17,3 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
-
-flag {
-    name: "gatt_discovery_is_non_opportunistic_client"
-    namespace: "bluetooth"
-    description: "Make GATT Discovery client Non oportunistic client"
-    bug: "436539073"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}

@@ -103,9 +103,7 @@ void InitializeCoreInterface() {
   stack_manager_get_interface()->init_stack(&mockCoreInterface);
 }
 
-void CleanCoreInterface() {
-  stack_manager_get_interface()->clean_up_stack([] {});
-}
+void CleanCoreInterface() { stack_manager_get_interface()->clean_up_stack(); }
 
 MockCoreInterface::MockCoreInterface()
     : bluetooth::core::CoreInterface{&eventCallbacks, &mockConfigInterface, &mockMsbcCodecInterface,

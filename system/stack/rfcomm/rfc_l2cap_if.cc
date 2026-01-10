@@ -281,7 +281,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     return;
   }
 
-  tRFC_EVENT event = rfc_parse_data(p_mcb, &rfc_cb.rfc.rx_frame, p_buf);
+  RfcommEvent event = rfc_parse_data(p_mcb, &rfc_cb.rfc.rx_frame, p_buf);
 
   /* If the frame did not pass validation just ignore it */
   if (event == RFC_EVENT_BAD_FRAME) {
@@ -292,7 +292,8 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
   }
 
   if (rfc_cb.rfc.rx_frame.dlci == RFCOMM_MX_DLCI) {
-    log::verbose("handle multiplexer event {}, p_mcb={}", event, std::format_ptr(p_mcb));
+    log::verbose("handle multiplexer event {}, p_mcb={}", rfcomm_event_text(event),
+                 std::format_ptr(p_mcb));
     /* Take special care of the Multiplexer Control Messages */
     if (event == RFC_EVENT_UIH) {
       rfc_process_mx_message(p_mcb, p_buf);
@@ -300,14 +301,14 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     }
 
     /* Other multiplexer events go to state machine */
-    rfc_mx_sm_execute(p_mcb, static_cast<tRFC_MX_EVENT>(event), nullptr);
+    rfc_mx_sm_execute(p_mcb, static_cast<RfcommMuxEvent>(event), nullptr);
     osi_free(p_buf);
     return;
   }
 
   /* The frame was received on the data channel DLCI, verify that DLC exists */
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, rfc_cb.rfc.rx_frame.dlci);
-  if (p_port == nullptr || !p_port->rfc.p_mcb) {
+  if (p_port == nullptr || !p_port->p_mcb) {
     /* If this is a SABME on new port, check if any app is waiting for it */
     if (event != RFC_EVENT_SABME) {
       log::warn("no for none-SABME event, lcid=0x{:x}, bd_addr={}, p_mcb={}", lcid, p_mcb->bd_addr,
@@ -336,7 +337,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
                  p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci], p_port->handle,
                  std::format_ptr(p_mcb));
     p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci] = p_port->handle;
-    p_port->rfc.p_mcb = p_mcb;
+    p_port->p_mcb = p_mcb;
     if (com_android_bluetooth_flags_hfp_collision_fix_rfcomm_port_rx_buf_critical_error()) {
       port_select_mtu(p_port);
     }
@@ -346,7 +347,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     log::verbose("Handling UIH event, buf_len={}, credit={}", p_buf->len,
                  rfc_cb.rfc.rx_frame.credit);
     if (p_buf->len > 0) {
-      rfc_port_sm_execute(p_port, static_cast<tRFC_PORT_EVENT>(event), p_buf);
+      rfc_port_sm_execute(p_port, static_cast<RfcommPortEvent>(event), p_buf);
     } else {
       osi_free(p_buf);
     }
@@ -357,7 +358,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
 
     return;
   }
-  rfc_port_sm_execute(p_port, static_cast<tRFC_PORT_EVENT>(event), nullptr);
+  rfc_port_sm_execute(p_port, static_cast<RfcommPortEvent>(event), nullptr);
   osi_free(p_buf);
 }
 
@@ -391,13 +392,13 @@ void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested) {
 tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
   auto it = rfc_lcid_mcb.find(lcid);
   if (it == rfc_lcid_mcb.end()) {
-    log::warn("no mcb saved for lcid:{}", lcid);
+    log::warn("no mcb saved for lcid:0x{:x}", lcid);
     return nullptr;
   }
 
   tRFC_MCB* p_mcb = it->second;
   if (p_mcb->lcid != lcid) {
-    log::warn("LCID reused lcid=:0x{:x}, current_lcid=0x{:x}", lcid, p_mcb->lcid);
+    log::warn("LCID reused lcid=0x{:x}, current_lcid=0x{:x}", lcid, p_mcb->lcid);
     return nullptr;
   }
   return p_mcb;

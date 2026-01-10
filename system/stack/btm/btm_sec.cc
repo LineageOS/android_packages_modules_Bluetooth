@@ -1825,8 +1825,6 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool outgo
  *
  ******************************************************************************/
 void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
-  BtmDevice* p_device = nullptr;
-
   if (!com_android_bluetooth_flags_concurrent_incoming_outgoing_pairing()) {
     if ((BtmSecurity::Get().pairing_state_ != BTM_PAIR_STATE_IDLE) &&
         (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
@@ -1841,24 +1839,33 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
     }
   }
 
-  /* Host is not interested or approved connection.  Save BDA and DC and */
-  /* pass request to L2CAP */
+  // Host is not interested or approved connection. Save BDA and DC and pass request to L2CAP
   BtmSecurity::Get().connecting_bda_ = bda;
   BtmSecurity::Get().connecting_dc_ = dc;
 
-  p_device = btm_find_or_alloc_dev(bda);
-
+  BtmDevice* p_device = btm_find_or_alloc_dev(bda);
   if (p_device == nullptr) {
     log::error("No memory to allocate new p_device");
     return;
   }
   p_device->sm4 |= BTM_SM4_CONN_PEND;
 
-  // CoD may be missing for devices bonded without BR/EDR device discovery
-  if (p_device->sec_rec.is_bonded() &&
-      (p_device->dev_class == kDevClassEmpty || p_device->dev_class == kDevClassUnclassified)) {
-    log::debug("Updating CoD for bonded device {} to [0x{:x}, 0x{:x}, 0x{:x}]", bda, dc[0], dc[1],
-               dc[2]);
+  if (!com_android_bluetooth_flags_update_cod_on_incoming_connection()) {
+    if (p_device->sec_rec.is_bonded() &&
+        (p_device->dev_class == kDevClassEmpty || p_device->dev_class == kDevClassUnclassified)) {
+      log::debug("Updating CoD for bonded device {} to [0x{:x}, 0x{:x}, 0x{:x}]", bda, dc[0], dc[1],
+                 dc[2]);
+      p_device->dev_class = dc;
+      btif_update_remote_properties(bda, p_device->sec_bd_name, p_device->dev_class,
+                                    p_device->device_type);
+    }
+    return;
+  }
+
+  // Update CoD if cached value does not match
+  if (dc != kDevClassEmpty && p_device->dev_class != kDevClassUnclassified &&
+      p_device->dev_class != dc) {
+    log::debug("Updating CoD for {} to [0x{:x}, 0x{:x}, 0x{:x}]", bda, dc[0], dc[1], dc[2]);
     p_device->dev_class = dc;
     btif_update_remote_properties(bda, p_device->sec_bd_name, p_device->dev_class,
                                   p_device->device_type);

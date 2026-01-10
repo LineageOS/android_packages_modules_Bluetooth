@@ -53,19 +53,19 @@ const RawAddress kRawAddress2 = RawAddress({0x01, 0x02, 0x03, 0x04, 0x05, 0x06})
 
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
 
-void port_mgmt_cback_0(const tPORT_RESULT code, uint16_t port_handle) {
+void port_mgmt_cback_0(const tPORT_RESULT code, uint8_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 0);
 }
 
-void port_mgmt_cback_1(const tPORT_RESULT code, uint16_t port_handle) {
+void port_mgmt_cback_1(const tPORT_RESULT code, uint8_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 1);
 }
 
-void port_event_cback_0(uint32_t code, uint16_t port_handle) {
+void port_event_cback_0(uint32_t code, uint8_t port_handle) {
   rfcomm_callback->PortEventCallback(code, port_handle, 0);
 }
 
-void port_event_cback_1(uint32_t code, uint16_t port_handle) {
+void port_event_cback_1(uint32_t code, uint8_t port_handle) {
   rfcomm_callback->PortEventCallback(code, port_handle, 1);
 }
 }  // namespace
@@ -108,7 +108,7 @@ public:
    * 3. Process peer ConnectInd
    */
   void StartCollision(uint8_t scn, uint16_t mtu, uint16_t out_lcid, uint16_t in_lcid,
-                      RawAddress peer_addr, uint16_t& server_handle, uint16_t& client_handle) {
+                      RawAddress peer_addr, uint8_t& server_handle, uint8_t& client_handle) {
     log::verbose("Step 1");
     int status = RFCOMM_CreateConnectionWithSecurity(UUID_SERIAL_PORT, scn, true, mtu,
                                                      RawAddress::kAny, &server_handle,
@@ -135,7 +135,7 @@ public:
     log::verbose("Step 3");
     // Mux collision is when we receive a ConnectInd after sending our own ConnectReq
     l2cap_appl_info_.pL2CA_ConnectInd_Cb(peer_addr, in_lcid, BT_PSM_RFCOMM, L2CAP_CMD_CONFIG_RSP);
-    ASSERT_EQ(rfc_cb.port.port[client_handle - 1].rfc.p_mcb->state, RFC_MX_STATE_CONFIGURE);
+    ASSERT_EQ(rfc_cb.port.port[client_handle - 1].p_mcb->state, RFC_MX_STATE_CONFIGURE);
   }
 
 protected:
@@ -167,14 +167,14 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
   rfc_cb.port.rfc_mcb[0].bd_addr = test_bd_addr;
   // no collisions will happen if the bd_addr don't match, regardless of state
   for (int state_int = RFC_MX_STATE_IDLE; state_int <= RFC_MX_STATE_DISC_WAIT_UA; state_int++) {
-    rfc_cb.port.rfc_mcb[0].state = tRFC_MX_STATE(state_int);
+    rfc_cb.port.rfc_mcb[0].state = RfcommMuxState(state_int);
     ASSERT_FALSE(PORT_IsCollisionDetected(different_bd_addr));
   }
 
   rfc_cb.port.rfc_mcb[0].is_initiator = false;
   // no collisions will happen if not initiator, regardless of state
   for (int state_int = RFC_MX_STATE_IDLE; state_int <= RFC_MX_STATE_DISC_WAIT_UA; state_int++) {
-    rfc_cb.port.rfc_mcb[0].state = tRFC_MX_STATE(state_int);
+    rfc_cb.port.rfc_mcb[0].state = RfcommMuxState(state_int);
     ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
   }
 
@@ -196,15 +196,15 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
   rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONNECTED;
   // Null port shouldn't trigger collision
   ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.port[0].rfc.p_mcb = &rfc_cb.port.rfc_mcb[0];
+  rfc_cb.port.port[0].p_mcb = &rfc_cb.port.rfc_mcb[0];
 
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_CLOSED;
+  rfc_cb.port.port[0].sm_cb.state = RFC_STATE_CLOSED;
   ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_SABME_WAIT_UA;
+  rfc_cb.port.port[0].sm_cb.state = RFC_STATE_SABME_WAIT_UA;
   ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_TERM_WAIT_SEC_CHECK;
+  rfc_cb.port.port[0].sm_cb.state = RFC_STATE_TERM_WAIT_SEC_CHECK;
   ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_OPENED;
+  rfc_cb.port.port[0].sm_cb.state = RFC_STATE_OPENED;
   ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
   rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_DISC_WAIT_UA;
   ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
@@ -219,13 +219,13 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
  * 5. Verify mux connected
  */
 TEST_F(StackRfcommTest, collide_then_establish_incoming_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
                                          test_peer_addr, server_handle, client_handle));
-  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
 
   log::verbose("Step 2");
   tL2CAP_CFG_INFO peer_cfg_req = {.mtu_present = true, .mtu = test_mtu};
@@ -265,13 +265,13 @@ TEST_F(StackRfcommTest, collide_then_establish_incoming_conn) {
  * 8. Verify mux connected
  */
 TEST_F(StackRfcommTest, collide_then_establish_outgoing_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
                                          test_peer_addr, server_handle, client_handle));
-  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
 
   log::verbose("Step 2");
   tL2CAP_CFG_INFO peer_cfg_req = {.mtu_present = true, .mtu = test_mtu};
@@ -323,13 +323,13 @@ TEST_F(StackRfcommTest, collide_then_establish_outgoing_conn) {
  * 4. Verify nothing cached anymore
  */
 TEST_F(StackRfcommTest, collide_then_err_outgoing_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
                                          test_peer_addr, server_handle, client_handle));
-  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
 
   log::verbose("Step 2");
   tL2CAP_CFG_INFO peer_cfg_req = {.mtu_present = true, .mtu = test_mtu};
@@ -351,13 +351,13 @@ TEST_F(StackRfcommTest, collide_then_err_outgoing_conn) {
  * 4. Verify nothing cached anymore
  */
 TEST_F(StackRfcommTest, collide_then_close_outgoing_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
                                          test_peer_addr, server_handle, client_handle));
-  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
 
   log::verbose("Step 2");
   tL2CAP_CFG_INFO peer_cfg_req = {.mtu_present = true, .mtu = test_mtu};
@@ -380,13 +380,13 @@ TEST_F(StackRfcommTest, collide_then_close_outgoing_conn) {
  * 6. Verify PORT_START_FAILED and mux now IDLE
  */
 TEST_F(StackRfcommTest, collide_then_err_outgoing_after_timeout) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
                                          test_peer_addr, server_handle, client_handle));
-  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
 
   log::verbose("Step 2");
   tL2CAP_CFG_INFO peer_cfg_req = {.mtu_present = true, .mtu = test_mtu};
@@ -424,13 +424,13 @@ TEST_F(StackRfcommTest, collide_then_err_outgoing_after_timeout) {
  * 8. Verify PORT_PEER_CONNECTION_FAILED and mux now IDLE
  */
 TEST_F(StackRfcommTest, collide_then_close_outgoing_after_timeout) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
                                          test_peer_addr, server_handle, client_handle));
-  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
 
   log::verbose("Step 2");
   tL2CAP_CFG_INFO peer_cfg_req = {.mtu_present = true, .mtu = test_mtu};

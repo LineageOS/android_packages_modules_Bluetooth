@@ -106,7 +106,7 @@ struct BtaJvPcb {
 /* JV RFCOMM control block */
 struct BtaJvRfcommCb {
   tBTA_JV_RFCOMM_CBACK* p_cback;                  // the callback function
-  uint16_t port_hdls[BTA_JV_MAX_RFC_SR_SESSION];  // array of port handles based on session index
+  uint8_t port_hdls[BTA_JV_MAX_RFC_SR_SESSION];   // array of port handles based on session index
   tBTA_SERVICE_ID sec_id;                         // service id
   uint8_t handle;                                 // index: the handle reported to java app
   uint8_t scn;                                    // the scn of the server

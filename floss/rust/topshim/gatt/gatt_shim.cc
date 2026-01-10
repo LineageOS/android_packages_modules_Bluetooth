@@ -33,6 +33,8 @@ namespace internal {
 static GattClientIntf* g_client_if;
 static GattServerIntf* g_server_if;
 static GattIntf* g_gatt_if;
+static BleAdvertiserIntf* g_ble_advertiser_if;
+static BleScannerIntf* g_ble_scanner_if;
 
 // Gatt Client callbacks
 static void register_client_callback(int status, int client_if, const bluetooth::Uuid& app_uuid) {
@@ -368,7 +370,7 @@ tBT_STATUS_LEGACY GattClientIntf::unoffload_characteristics(int conn_id, int ses
   return toLegacyStatus(client_intf_->unoffload_characteristics(conn_id, session_id));
 }
 
-std::unique_ptr<GattClientIntf> GetGattClientProfile(const bt_interface_t& intf) {
+std::unique_ptr<GattClientIntf> GetGattClientProfile(const BtIntf& intf) {
   if (internal::g_client_if) {
     std::abort();
   }
@@ -445,7 +447,7 @@ tBT_STATUS_LEGACY GattServerIntf::unoffload_characteristics(int conn_id, int ses
   return toLegacyStatus(server_intf_->unoffload_characteristics(conn_id, session_id));
 }
 
-std::unique_ptr<GattServerIntf> GetGattServerProfile(const bt_interface_t& intf) {
+std::unique_ptr<GattServerIntf> GetGattServerProfile(const BtIntf& intf) {
   if (internal::g_server_if) {
     std::abort();
   }
@@ -463,7 +465,27 @@ tBT_STATUS_LEGACY GattIntf::init() const {
 
 void GattIntf::cleanup() const { gatt_intf_->cleanup(); }
 
-std::unique_ptr<GattIntf> GetGattProfile(const bt_interface_t& intf) {
+std::unique_ptr<BleAdvertiserIntf> GattIntf::GetBleAdvertiserIntf() const {
+  if (internal::g_ble_advertiser_if) {
+    std::abort();
+  }
+
+  auto g_ble_advertiser_if = std::make_unique<BleAdvertiserIntf>(gatt_intf_->advertiser);
+  internal::g_ble_advertiser_if = g_ble_advertiser_if.get();
+  return g_ble_advertiser_if;
+}
+
+std::unique_ptr<BleScannerIntf> GattIntf::GetBleScannerIntf() const {
+  if (internal::g_ble_scanner_if) {
+    std::abort();
+  }
+
+  auto g_ble_scanner_if = std::make_unique<BleScannerIntf>(gatt_intf_->scanner);
+  internal::g_ble_scanner_if = g_ble_scanner_if.get();
+  return g_ble_scanner_if;
+}
+
+std::unique_ptr<GattIntf> GetGattProfile(const BtIntf& intf) {
   if (internal::g_gatt_if) {
     std::abort();
   }

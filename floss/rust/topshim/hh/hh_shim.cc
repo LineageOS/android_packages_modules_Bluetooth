@@ -147,7 +147,7 @@ void HhIntf::configure_enabled_profiles(bool enable_hidp, bool enable_hogp) cons
   hh_intf_->configure_enabled_profiles(enable_hidp, enable_hogp);
 }
 
-std::unique_ptr<HhIntf> GetHhProfile(const bt_interface_t& intf) {
+std::unique_ptr<HhIntf> GetHhProfile(const BtIntf& intf) {
   if (internal::g_hh_if) {
     std::abort();
   }

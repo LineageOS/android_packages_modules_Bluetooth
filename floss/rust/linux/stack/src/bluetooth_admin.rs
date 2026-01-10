@@ -12,7 +12,7 @@ use crate::socket_manager::BluetoothSocketManager;
 use crate::uuid::{Profile, UuidHelper};
 use crate::{APIMessage, BluetoothAPI, Message, RPCProxy};
 
-use bt_topshim::btif::{BtPropertyType, BtSspVariant, RawAddress, Uuid};
+use bt_topshim::btif::{BtPropertyType, PairingVariant, RawAddress, Uuid};
 use bt_topshim::profiles::sdp::BtSdpRecord;
 use log::{info, warn};
 use serde_json::{json, Value};
@@ -436,7 +436,7 @@ impl IBluetoothCallback for BluetoothDeviceCallbacks {
         &mut self,
         _remote_device: BluetoothDevice,
         _cod: u32,
-        _variant: BtSspVariant,
+        _variant: PairingVariant,
         _passkey: u32,
     ) {
     }

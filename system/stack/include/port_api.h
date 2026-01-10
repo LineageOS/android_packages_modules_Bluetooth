@@ -78,14 +78,14 @@ struct PortSettings {
  * Define the callback function prototypes.  Parameters are specific
  * to each event and are described bellow
  */
-typedef int(tPORT_DATA_CALLBACK)(uint16_t port_handle, void* p_data, uint16_t len);
+typedef int(tPORT_DATA_CALLBACK)(uint8_t port_handle, void* p_data, uint16_t len);
 
 #define DATA_CO_CALLBACK_TYPE_INCOMING 1
 #define DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE 2
 #define DATA_CO_CALLBACK_TYPE_OUTGOING 3
-typedef int(tPORT_DATA_CO_CALLBACK)(uint16_t port_handle, uint8_t* p_buf, uint16_t len, int type);
+typedef int(tPORT_DATA_CO_CALLBACK)(uint8_t port_handle, uint8_t* p_buf, uint16_t len, int type);
 
-typedef void(tPORT_CALLBACK)(uint32_t code, uint16_t port_handle);
+typedef void(tPORT_CALLBACK)(uint32_t code, uint8_t port_handle);
 
 /*
  * Define events that registered application can receive in the callback
@@ -198,7 +198,7 @@ template <>
 struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
 }  // namespace std
 
-typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle);
+typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint8_t port_handle);
 
 /*****************************************************************************
  *  External Function Declarations
@@ -240,7 +240,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  ******************************************************************************/
 [[nodiscard]] int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_server,
                                                       uint16_t mtu, const RawAddress& bd_addr,
-                                                      uint16_t* p_handle,
+                                                      uint8_t* p_handle,
                                                       tPORT_MGMT_CALLBACK* p_mgmt_callback,
                                                       uint16_t sec_mask, RfcommCfgInfo cfg);
 
@@ -278,7 +278,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  * Parameters:      handle     - Handle of the port returned in the Open
  *
  ******************************************************************************/
-[[nodiscard]] int RFCOMM_RemoveConnection(uint16_t handle);
+[[nodiscard]] int RFCOMM_RemoveConnection(uint8_t handle);
 
 /*******************************************************************************
  *
@@ -289,7 +289,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *
  ******************************************************************************/
-[[nodiscard]] int RFCOMM_RemoveServer(uint16_t handle);
+[[nodiscard]] int RFCOMM_RemoveServer(uint8_t handle);
 
 /*******************************************************************************
  *
@@ -305,7 +305,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                                 specified in the mask occurs.
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_SetEventMaskAndCallback(uint16_t port_handle, uint32_t mask,
+[[nodiscard]] int PORT_SetEventMaskAndCallback(uint8_t port_handle, uint32_t mask,
                                                tPORT_CALLBACK* p_port_cb);
 
 /*******************************************************************************
@@ -318,9 +318,9 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_ClearKeepHandleFlag(uint16_t port_handle);
+[[nodiscard]] int PORT_ClearKeepHandleFlag(uint8_t handle);
 
-[[nodiscard]] int PORT_SetDataCOCallback(uint16_t port_handle, tPORT_DATA_CO_CALLBACK* p_port_cb);
+[[nodiscard]] int PORT_SetDataCOCallback(uint8_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb);
 /*******************************************************************************
  *
  * Function         PORT_CheckConnection
@@ -333,7 +333,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                  p_lcid     - OUT L2CAP's LCID
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid);
+[[nodiscard]] int PORT_CheckConnection(uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid);
 
 /*******************************************************************************
  *
@@ -358,7 +358,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                  app_uid    - Uid of app that requested the socket
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_SetAppUid(uint16_t handle, uint32_t app_uid);
+[[nodiscard]] int PORT_SetAppUid(uint8_t handle, uint32_t app_uid);
 
 /*******************************************************************************
  *
@@ -371,7 +371,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                  sdp_duration_ms - Time spent doing sdp
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_SetSdpDuration(uint16_t handle, uint64_t sdp_duration_ms);
+[[nodiscard]] int PORT_SetSdpDuration(uint8_t handle, uint64_t sdp_duration_ms);
 
 /*******************************************************************************
  *
@@ -385,7 +385,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                               configuration information for the connection.
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_SetSettings(uint16_t handle, PortSettings* p_settings);
+[[nodiscard]] int PORT_SetSettings(uint8_t handle, PortSettings* p_settings);
 
 /*******************************************************************************
  *
@@ -399,7 +399,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                               configuration information is returned.
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_GetSettings(uint16_t handle, PortSettings* p_settings);
+[[nodiscard]] int PORT_GetSettings(uint8_t handle, PortSettings* p_settings);
 
 /*******************************************************************************
  *
@@ -414,7 +414,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                  enable     - enables data flow
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable);
+[[nodiscard]] int PORT_FlowControl_MaxCredit(uint8_t handle, bool enable);
 
 #define PORT_DTRDSR_ON 0x01
 #define PORT_CTSRTS_ON 0x02
@@ -449,7 +449,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *                  p_len       - Byte count received
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len, uint16_t* p_len);
+[[nodiscard]] int PORT_ReadData(uint8_t handle, char* p_data, uint16_t max_len, uint16_t* p_len);
 
 /*******************************************************************************
  *
@@ -458,13 +458,13 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  * Description      This function is called from the legacy application to
  *                  send data.
  *
- * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
+ * Parameters:      handle      - Handle returned in the RFCOMM_CreateConnection
  *                  p_data      - Data area
  *                  max_len     - Byte count to write
  *                  p_len       - Bytes written
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len,
+[[nodiscard]] int PORT_WriteData(uint8_t handle, const char* p_data, uint16_t max_len,
                                  uint16_t* p_len);
 
 /*******************************************************************************
@@ -477,7 +477,7 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_WriteDataCO(uint16_t handle, int* p_len);
+[[nodiscard]] int PORT_WriteDataCO(uint8_t handle, int* p_len);
 
 /*******************************************************************************
  *
@@ -497,7 +497,7 @@ void RFCOMM_Init(void);
  * Returns          the security bitmask.
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_GetSecurityMask(uint16_t handle, uint16_t* sec_mask);
+[[nodiscard]] int PORT_GetSecurityMask(uint8_t handle, uint16_t* sec_mask);
 
 /*******************************************************************************
  *
@@ -519,7 +519,7 @@ void RFCOMM_Init(void);
  *                  mux_initiator - OUT is initiator of the RFCOMM multiplexer control channel
  *
  ******************************************************************************/
-[[nodiscard]] int PORT_GetChannelInfo(uint16_t handle, uint16_t* local_mtu, uint16_t* remote_mtu,
+[[nodiscard]] int PORT_GetChannelInfo(uint8_t handle, uint16_t* local_mtu, uint16_t* remote_mtu,
                                       uint16_t* local_credit, uint16_t* remote_credit,
                                       uint16_t* local_cid, uint16_t* remote_cid, uint16_t* dlci,
                                       uint16_t* max_frame_size, uint16_t* acl_handle,

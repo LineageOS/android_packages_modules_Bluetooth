@@ -21,7 +21,7 @@
 #include "macros.h"
 
 // Multiplexer states
-typedef enum : uint16_t {
+enum RfcommMuxState : uint16_t {
   RFC_MX_STATE_IDLE = 0,
   RFC_MX_STATE_WAIT_CONN_CNF = 1,
   RFC_MX_STATE_CONFIGURE = 2,
@@ -29,19 +29,19 @@ typedef enum : uint16_t {
   RFC_MX_STATE_WAIT_SABME = 4,
   RFC_MX_STATE_CONNECTED = 5,
   RFC_MX_STATE_DISC_WAIT_UA = 6,
-} tRFC_MX_STATE;
+};
 
 // Port states
-typedef enum : uint8_t {
+enum RfcommPortState : uint8_t {
   RFC_STATE_CLOSED = 0,
   RFC_STATE_SABME_WAIT_UA = 1,
   RFC_STATE_ORIG_WAIT_SEC_CHECK = 2,
   RFC_STATE_TERM_WAIT_SEC_CHECK = 3,
   RFC_STATE_OPENED = 4,
   RFC_STATE_DISC_WAIT_UA = 5,
-} tRFC_PORT_STATE;
+};
 
-inline std::string rfcomm_mx_state_text(const tRFC_MX_STATE& state) {
+inline std::string rfcomm_mx_state_text(const RfcommMuxState& state) {
   switch (state) {
     CASE_RETURN_TEXT(RFC_MX_STATE_IDLE);
     CASE_RETURN_TEXT(RFC_MX_STATE_WAIT_CONN_CNF);
@@ -55,7 +55,7 @@ inline std::string rfcomm_mx_state_text(const tRFC_MX_STATE& state) {
   }
 }
 
-inline std::string rfcomm_port_state_text(const tRFC_PORT_STATE& state) {
+inline std::string rfcomm_port_state_text(const RfcommPortState& state) {
   switch (state) {
     CASE_RETURN_TEXT(RFC_STATE_CLOSED);
     CASE_RETURN_TEXT(RFC_STATE_SABME_WAIT_UA);
@@ -70,8 +70,8 @@ inline std::string rfcomm_port_state_text(const tRFC_PORT_STATE& state) {
 
 namespace std {
 template <>
-struct formatter<tRFC_MX_STATE> : enum_formatter<tRFC_MX_STATE> {};
+struct formatter<RfcommMuxState> : enum_formatter<RfcommMuxState> {};
 template <>
-struct formatter<tRFC_PORT_STATE> : enum_formatter<tRFC_PORT_STATE> {};
+struct formatter<RfcommPortState> : enum_formatter<RfcommPortState> {};
 
 }  // namespace std

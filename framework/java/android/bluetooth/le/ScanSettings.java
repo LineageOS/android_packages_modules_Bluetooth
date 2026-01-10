@@ -271,7 +271,6 @@ public final class ScanSettings implements Parcelable {
         return mPhy;
     }
 
-    @FlaggedApi(Flags.FLAG_RSSI_SCAN_FILTER)
     @RequiresNoPermission
     public int getRssiThreshold() {
         return mRssiThreshold;
@@ -533,7 +532,6 @@ public final class ScanSettings implements Parcelable {
          * @param rssiThreshold the high threshold of RSSI value. The valid range is [-127, 126].
          * @return this builder
          */
-        @FlaggedApi(Flags.FLAG_RSSI_SCAN_FILTER)
         @RequiresNoPermission
         public @NonNull Builder setRssiThreshold(int rssiThreshold) {
             mRssiThreshold = rssiThreshold;

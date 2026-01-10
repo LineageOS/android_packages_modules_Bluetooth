@@ -164,8 +164,7 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle, const RawAddres
     } else /* there are any CCBs remaining */
     {
       if ((ci.hci_status == HCI_ERR_CONNECTION_EXISTS) ||
-          (com_android_bluetooth_flags_flag_handle_hci_error_controller_busy() &&
-           ci.hci_status == HCI_ERR_CONTROLLER_BUSY)) {
+           ci.hci_status == HCI_ERR_CONTROLLER_BUSY) {
         /* we are in collision situation, wait for connecttion request from
          * controller */
         p_lcb->link_state = LST_CONNECTING;

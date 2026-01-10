@@ -23,7 +23,10 @@
 #include <memory>
 
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 #include "topshim/common/bt_status_helper.h"
+#include "topshim/gatt/gatt_ble_advertiser_shim.h"
+#include "topshim/gatt/gatt_ble_scanner_shim.h"
 
 namespace bluetooth {
 namespace topshim {
@@ -78,7 +81,7 @@ private:
   const btgatt_client_interface_t* client_intf_;
 };
 
-std::unique_ptr<GattClientIntf> GetGattClientProfile(const bt_interface_t& intf);
+std::unique_ptr<GattClientIntf> GetGattClientProfile(const BtIntf& intf);
 
 class GattServerIntf {
 public:
@@ -110,7 +113,7 @@ private:
   const btgatt_server_interface_t* server_intf_;
 };
 
-std::unique_ptr<GattServerIntf> GetGattServerProfile(const bt_interface_t& intf);
+std::unique_ptr<GattServerIntf> GetGattServerProfile(const BtIntf& intf);
 
 class GattIntf {
 public:
@@ -120,11 +123,14 @@ public:
   tBT_STATUS_LEGACY init() const;
   void cleanup() const;
 
+  std::unique_ptr<BleAdvertiserIntf> GetBleAdvertiserIntf() const;
+  std::unique_ptr<BleScannerIntf> GetBleScannerIntf() const;
+
 private:
   const btgatt_interface_t* gatt_intf_;
 };
 
-std::unique_ptr<GattIntf> GetGattProfile(const bt_interface_t& intf);
+std::unique_ptr<GattIntf> GetGattProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim

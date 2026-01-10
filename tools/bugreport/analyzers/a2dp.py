@@ -821,6 +821,21 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
         print(f"Overriding the session with stream CID 0x{stream_cid:04x}")
         session = AvdtpSession(signal_lcid or 0x00, signal_rcid or 0x00)
         session.stream_cid = stream_cid
+        session.configuration = AvdtpSignalingPacket(
+            packet=None,
+            channel_id=0,
+            direction=btsnoop.Direction.SENT,
+            payload=bytes(),
+            signal=avdtp.SetConfigurationCommand(
+                acp_seid=0,
+                int_seid=0,
+                service_capabilities=[
+                    generate_media_codec_capability(
+                        codec_type or 'ldac',
+                        sampling_frequency or 96000,
+                    )
+                ],
+            ))
         active_stream = AvdtpStream(
             generate_media_codec_capability(
                 codec_type or 'ldac',
@@ -831,10 +846,6 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
 
     started_ts = acl_connection.connected.timestamp if acl_connection.connected else acl_packets[0].packet.timestamp
     print(f"---- {started_ts} | 0x{acl_connection.connection_handle:04x} ----")
-
-    # List transmission times of AVDTP Start and Suspend commands.
-    start_responses = []
-    suspend_responses = []
 
     for packet in acl_packets:
         if isinstance(packet, L2capSignalingPacket):
@@ -926,7 +937,6 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                 session.configuration = packet
 
             elif isinstance(packet.signal, avdtp.StartResponse):
-                start_responses.append(packet.packet.timestamp_us)
                 media_codec_capability = None
                 for (
                     service_capability
@@ -941,7 +951,6 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                 all_streams.append(active_stream)
 
             elif isinstance(packet.signal, avdtp.SuspendResponse):
-                suspend_responses.append(packet.packet.timestamp_us)
                 active_stream.suspended = packet
                 active_stream = None
 
@@ -985,22 +994,22 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
     print(f"Extracted {len(all_streams)} audio streams")
 
     fig, axs = plt.subplots(2, sharex=True)
+
     axs[0].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S.%f"))
     axs[0].xaxis.set_tick_params(rotation=45)
+    axs[1].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S.%f"))
+    axs[1].xaxis.set_tick_params(rotation=45)
+
+    for stream in all_streams:
+        if stream.suspended and stream.started:
+            start_ts = stream.started.packet.timestamp_us
+            suspend_ts = stream.suspended.packet.timestamp_us
+            axs[0].axvspan(np.datetime64(start_ts, 'us'), np.datetime64(suspend_ts, 'us'), color='lightblue')
+            axs[1].axvspan(np.datetime64(start_ts, 'us'), np.datetime64(suspend_ts, 'us'), color='lightblue')
 
     for stream in all_streams:
         plot_avdtp_stream(axs[0], stream)
 
-    axs[1].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S.%f"))
-    axs[1].xaxis.set_tick_params(rotation=45)
-
     plot_tx_queue(axs[1], acl_connection)
-
-    for ts in start_responses:
-        axs[0].axvline(np.datetime64(ts, 'us'), color='green')
-        axs[1].axvline(np.datetime64(ts, 'us'), color='green')
-    for ts in suspend_responses:
-        axs[0].axvline(np.datetime64(ts, 'us'), color='red')
-        axs[1].axvline(np.datetime64(ts, 'us'), color='red')
 
     plt.show()

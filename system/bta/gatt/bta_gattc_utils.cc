@@ -28,6 +28,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -45,6 +46,46 @@ static uint8_t ble_acceptlist_size() {
     return 0;
   }
   return bluetooth::shim::GetController()->GetLeFilterAcceptListSize();
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_gattc_cl_get_reported_mtu
+ *
+ * Description      get reported mtu for given client interface.
+ *
+ * Returns          reported mtu value
+ *
+ ******************************************************************************/
+int bta_gattc_cl_get_reported_mtu(uint8_t client_if) {
+  for (auto& p_clcb : bta_gattc_cb.clcb_set) {
+    if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if) {
+      log::verbose("reurning client_if = {}, reported_mtu = {}", client_if,
+                   p_clcb.get()->reported_mtu);
+      return p_clcb.get()->reported_mtu;
+    }
+  }
+  log::warn("No clcb entry for this client_if = {}", client_if);
+  return 0;
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_gattc_cl_set_reported_mtu
+ *
+ * Description      set reported mtu for given client interface.
+ *
+ ******************************************************************************/
+void bta_gattc_cl_set_reported_mtu(uint8_t client_if, int mtu) {
+  for (auto& p_clcb : bta_gattc_cb.clcb_set) {
+    if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if) {
+      log::verbose("setting client_if = {}, reported_mtu = {}", client_if, mtu);
+      p_clcb.get()->reported_mtu = mtu;
+      return;
+    }
+  }
+  log::warn("error setting the reported mtu for client_if = {}", client_if);
+  return;
 }
 
 /*******************************************************************************
@@ -249,6 +290,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
   p_clcb->in_use = 0;
   p_clcb->state = BTA_GATTC_IDLE_ST;
   p_clcb->status = GATT_SUCCESS;
+  p_clcb->reported_mtu = 0;
   // in bta_gattc_sm_execute(), p_clcb is accessed again so we dealloc clcb later.
   // it will be claned up when the client is deregistered or a new clcb is allocated.
   bta_gattc_cb.clcb_pending_dealloc.insert(p_clcb);
@@ -646,6 +688,18 @@ void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
     cb_data.open.remote_bda = remote_bda;
 
     (*p_clreg->p_cback)(BTA_GATTC_OPEN_EVT, &cb_data);
+
+    if (com::android::bluetooth::flags::gatt_conn_settings()) {
+      if (GATT_DEF_BLE_MTU_SIZE != cb_data.open.mtu && cb_data.open.mtu) {
+        tBTA_GATTC mtu_cb_data;
+        mtu_cb_data.cfg_mtu.conn_id = conn_id;
+        mtu_cb_data.cfg_mtu.status = status;
+        mtu_cb_data.cfg_mtu.mtu = mtu;
+
+        (*p_clreg->p_cback)(BTA_GATTC_CFG_MTU_EVT, &mtu_cb_data);
+        bta_gattc_cl_set_reported_mtu(p_clreg->client_if, mtu);
+      }
+    }
   }
 }
 /*******************************************************************************

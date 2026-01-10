@@ -169,10 +169,6 @@ mod ffi {
         include!("topshim/hf_client/hf_client_shim.h");
 
         #[namespace = ""]
-        #[cxx_name = "bt_interface_t"]
-        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
-
-        #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
 
         #[namespace = ""]
@@ -183,9 +179,11 @@ mod ffi {
         #[cxx_name = "bthf_client_audio_state_t"]
         type BthfClientAudioState = super::CxxBthfClientAudioState;
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type HfClientIntf;
 
-        fn GetHfClientProfile(btif: &BluetoothInterface) -> UniquePtr<HfClientIntf>;
+        fn GetHfClientProfile(btif: &BtIntf) -> UniquePtr<HfClientIntf>;
 
         fn init(self: &HfClientIntf) -> u32;
         fn connect(self: &HfClientIntf, addr: RawAddress) -> u32;
@@ -241,7 +239,7 @@ impl HfClient {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> HfClient {
         let hf_client_intf: cxx::UniquePtr<ffi::HfClientIntf> =
-            ffi::GetHfClientProfile(intf.as_raw_btif());
+            ffi::GetHfClientProfile(intf.as_btif());
         HfClient { internal: hf_client_intf, is_init: false, is_enabled: false }
     }
 

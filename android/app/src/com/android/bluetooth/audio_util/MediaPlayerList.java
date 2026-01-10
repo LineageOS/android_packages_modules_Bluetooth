@@ -670,6 +670,10 @@ public class MediaPlayerList {
 
             // If the media controller we updated was the active player check if the media updated
             if (playerId == mActivePlayerId) {
+                // Also update the PlayerSettings with the new controller if it is instantiated.
+                if (mPlayerSettingsListener != null) {
+                    mPlayerSettingsListener.onActivePlayerChanged(player);
+                }
                 sendMediaUpdate(getActivePlayer().getCurrentMediaData());
             }
 

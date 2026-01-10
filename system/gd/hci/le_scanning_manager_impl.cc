@@ -450,7 +450,9 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     }
   }
 
-  void configure_scan() {
+  void configure_scan(uint16_t scan_win_1m, uint32_t scan_int_1m, LeScanType scan_type,
+                      uint16_t scan_win_coded, uint32_t scan_int_coded,
+                      LeScanningFilterPolicy scan_filter_policy, uint8_t scan_phy) {
     std::vector<PhyScanParameters> parameter_vector;
 
     // The Host shall not issue set scan parameter command when scanning is enabled
@@ -469,23 +471,23 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
     switch (api_type_) {
       case ScanApiType::EXTENDED:
-        if ((phy_ & k1mPhyMask) != 0) {
+        if ((scan_phy & k1mPhyMask) != 0) {
           PhyScanParameters phy_scan_parameters;
-          phy_scan_parameters.le_scan_window_ = window_ms_1m_;
-          phy_scan_parameters.le_scan_interval_ = interval_ms_1m_;
-          phy_scan_parameters.le_scan_type_ = le_scan_type_;
+          phy_scan_parameters.le_scan_window_ = scan_win_1m;
+          phy_scan_parameters.le_scan_interval_ = scan_int_1m;
+          phy_scan_parameters.le_scan_type_ = scan_type;
           parameter_vector.push_back(phy_scan_parameters);
         }
-        if ((phy_ & kCodedPhyMask) != 0) {
+        if ((scan_phy & kCodedPhyMask) != 0) {
           PhyScanParameters phy_scan_parameters;
-          phy_scan_parameters.le_scan_window_ = window_ms_coded_;
-          phy_scan_parameters.le_scan_interval_ = interval_ms_coded_;
-          phy_scan_parameters.le_scan_type_ = le_scan_type_;
+          phy_scan_parameters.le_scan_window_ = scan_win_coded;
+          phy_scan_parameters.le_scan_interval_ = scan_int_coded;
+          phy_scan_parameters.le_scan_type_ = scan_type;
           parameter_vector.push_back(phy_scan_parameters);
         }
         le_scanning_interface_->EnqueueCommand(
-                LeSetExtendedScanParametersBuilder::Create(own_address_type_, filter_policy_, phy_,
-                                                           parameter_vector),
+                LeSetExtendedScanParametersBuilder::Create(own_address_type_, scan_filter_policy,
+                                                           scan_phy, parameter_vector),
                 handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
         break;
       case ScanApiType::ANDROID_HCI:
@@ -494,8 +496,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
           return;
         }
         le_scanning_interface_->EnqueueCommand(
-                LeExtendedScanParamsBuilder::Create(le_scan_type_, interval_ms_1m_, window_ms_1m_,
-                                                    own_address_type_, filter_policy_),
+                LeExtendedScanParamsBuilder::Create(scan_type, scan_int_1m, scan_win_1m,
+                                                    own_address_type_, scan_filter_policy),
                 handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
 
         break;
@@ -506,8 +508,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         }
         le_scanning_interface_->EnqueueCommand(
 
-                LeSetScanParametersBuilder::Create(le_scan_type_, interval_ms_1m_, window_ms_1m_,
-                                                   own_address_type_, filter_policy_),
+                LeSetScanParametersBuilder::Create(scan_type, scan_int_1m, scan_win_1m,
+                                                   own_address_type_, scan_filter_policy),
                 handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
         break;
     }
@@ -558,7 +560,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     // On-resume flag should always be reset if there is an explicit start/stop call.
     scan_on_resume_ = false;
     if (start) {
-      configure_scan();
+      configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
+                     interval_ms_coded_, filter_policy_, phy_);
       start_scan();
     } else {
       if (address_manager_registered_) {
@@ -1633,7 +1636,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       // This is a workaround for b/381010390.
       // We'll eventually recover scan parameters which could be overridden by
       // btm_send_hci_set_scan_params.
-      configure_scan();
+      configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
+                     interval_ms_coded_, filter_policy_, phy_);
       start_scan();
     }
     le_address_manager_->AckResume(this);

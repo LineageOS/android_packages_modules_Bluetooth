@@ -2384,7 +2384,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast.
      */
-    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -2417,7 +2416,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast with the specific transport.
      */
-    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
     @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission

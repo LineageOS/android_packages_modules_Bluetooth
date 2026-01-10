@@ -200,7 +200,7 @@ void rfc_send_buf_uih(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
     uint16_t len = p_buf->len;
     if (stack::l2cap::get_interface().L2CA_DataWrite(p_mcb->lcid, p_buf) !=
         tL2CAP_DW_RESULT::SUCCESS) {
-      log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}", p_mcb->bd_addr, p_mcb->lcid,
+      log::warn("Unable to write L2CAP data peer:{} cid:0x{:x} len:{}", p_mcb->bd_addr, p_mcb->lcid,
                 len);
     }
   }
@@ -511,7 +511,7 @@ void rfc_send_credit(tRFC_MCB* p_mcb, uint8_t dlci, uint8_t credit) {
  * Description      This function processes data packet received from L2CAP
  *
  ******************************************************************************/
-tRFC_EVENT rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
+RfcommEvent rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
   uint8_t ead, eal, fcs;
   uint8_t* p_data = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t* p_start = p_data;

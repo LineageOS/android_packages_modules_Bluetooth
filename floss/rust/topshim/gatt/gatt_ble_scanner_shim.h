@@ -16,6 +16,8 @@
 #ifndef SYSTEM_GD_RUST_TOPSHIM_GATT_GATT_BLE_SCANNER_SHIM_H_
 #define SYSTEM_GD_RUST_TOPSHIM_GATT_GATT_BLE_SCANNER_SHIM_H_
 
+#include <hardware/bt_gatt.h>
+
 #include <memory>
 #include <vector>
 
@@ -168,8 +170,6 @@ private:
 
   BleScannerInterface* scanner_intf_;
 };
-
-std::unique_ptr<BleScannerIntf> GetBleScannerIntf(const unsigned char* gatt_intf);
 
 }  // namespace rust
 }  // namespace topshim

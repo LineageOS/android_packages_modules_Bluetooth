@@ -163,7 +163,11 @@ static const module_t* get_local_module(const char* name) {
   return nullptr;
 }
 
-static void init_stack_internal(bluetooth::core::CoreInterface* interface) {
+// Synchronous function to initialize the stack
+static void init_stack(bluetooth::core::CoreInterface* interface) {
+  info("Initializing the stack");
+  assert_that(!stack_is_initialized, "assert failed: !stack_is_initialized");
+
   // all callbacks out of libbluetooth-core happen via this interface
   interfaceToProfiles = interface;
 
@@ -182,30 +186,15 @@ static void init_stack_internal(bluetooth::core::CoreInterface* interface) {
 
   // stack init is synchronous, so no waiting necessary here
   stack_is_initialized = true;
-}
-
-// Synchronous function to initialize the stack
-static void init_stack(bluetooth::core::CoreInterface* interface) {
-  info("is initializing the stack");
-
-  if (stack_is_initialized) {
-    info("found the stack already in initialized state");
-  } else {
-    init_stack_internal(interface);
-  }
-
   info("finished");
 }
 
 // Synchronous function to start up the stack
 void stack_enable(ProfileStartCallback startProfiles, const std::string local_name) {
-  if (stack_is_running) {
-    info("stack already brought up");
-    return;
-  }
-
-  assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
   info("Bringing up the stack");
+  assert_that(!stack_is_running, "assert failed: !stack_is_running");
+  assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
+
   get_btm_client_interface().lifecycle.btm_init();
   module_start_up(get_local_module(BTIF_CONFIG_MODULE));
 
@@ -241,12 +230,9 @@ void stack_enable(ProfileStartCallback startProfiles, const std::string local_na
 }
 
 void stack_disable(ProfileStopCallback stopProfiles) {
-  if (!stack_is_running) {
-    info("stack is already brought down");
-    return;
-  }
+  info("Bringing down the stack");
+  assert_that(stack_is_running, "assert failed: stack_is_running");
 
-  info("is bringing down the stack");
   future_t* local_hack_future = future_new();
   hack_future = local_hack_future;
   stack_is_running = false;
@@ -285,19 +271,11 @@ void stack_disable(ProfileStopCallback stopProfiles) {
 }
 
 // Synchronous function to clean up the stack
-static void clean_up_stack(ProfileStopCallback stopProfiles) {
-  if (!stack_is_initialized) {
-    info("found the stack already in a clean state");
-    return;
-  }
-
-  if (stack_is_running) {
-    warn("found the stack was still running. Bringing it down now.");
-    stack_disable(stopProfiles);
-  }
-
-  info("is cleaning up the stack");
+static void clean_up_stack() {
+  info("Cleaning up the stack");
+  assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
   stack_is_initialized = false;
+  assert_that(!stack_is_running, "assert failed: !stack_is_running");
 
   btif_cleanup_bluetooth();
 

@@ -1,8 +1,8 @@
 //! D-Bus proxy implementations of the APIs.
 
 use bt_topshim::btif::{
-    BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
-    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, RawAddress, Uuid,
+    BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType, BtStatus,
+    BtTransport, BtVendorProductInfo, DisplayAddress, PairingVariant, RawAddress, Uuid,
 };
 use bt_topshim::profiles::a2dp::{
     A2dpCodecBitsPerSample, A2dpCodecChannelMode, A2dpCodecConfig, A2dpCodecIndex,
@@ -91,7 +91,7 @@ impl_dbus_arg_enum!(BtConnectionState);
 impl_dbus_arg_enum!(BtDeviceType);
 impl_dbus_arg_enum!(BtAddrType);
 impl_dbus_arg_enum!(BtPropertyType);
-impl_dbus_arg_enum!(BtSspVariant);
+impl_dbus_arg_enum!(PairingVariant);
 impl_dbus_arg_enum!(BtStatus);
 impl_dbus_arg_enum!(BtTransport);
 impl_dbus_arg_from_into!(BtLeAudioUsage, i32);
@@ -639,7 +639,7 @@ impl IBluetoothCallback for IBluetoothCallbackDBus {
         &mut self,
         remote_device: BluetoothDevice,
         cod: u32,
-        variant: BtSspVariant,
+        variant: PairingVariant,
         passkey: u32,
     ) {
     }
@@ -779,9 +779,8 @@ impl IBluetooth for BluetoothDBus {
         dbus_generated!()
     }
 
-    fn init(&mut self, _hci_index: i32) -> bool {
+    fn init(&mut self, _hci_index: i32) {
         // Not implemented by server
-        true
     }
 
     fn enable(&mut self) -> bool {
