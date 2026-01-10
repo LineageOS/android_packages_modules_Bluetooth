@@ -121,7 +121,7 @@ PacketView<kLittleEndian> BuilderToView(std::unique_ptr<BasePacketBuilder> build
   return PacketView<kLittleEndian>(packet_bytes);
 }
 
-const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress kRawAddress("11:22:33:44:55:66");
 const uint16_t kHciHandle = 123;
 
 auto timeout_time = std::chrono::seconds(3);

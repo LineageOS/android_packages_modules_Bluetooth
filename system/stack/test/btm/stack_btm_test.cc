@@ -151,7 +151,7 @@ TEST_F(StackBtmWithQueuesTest, InformClientOnConnectionSuccess) {
           .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
-  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bda("11:22:33:44:55:66");
 
   on_acl_br_edr_connected(bda, 2, 0, false, HCI_ROLE_CENTRAL);
   ASSERT_EQ(1, get_func_call_count("BTA_dm_acl_up"));
@@ -164,7 +164,7 @@ TEST_F(StackBtmWithQueuesTest, RoleIsSetOnSuccessfulConnection) {
           .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
-  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bda("11:22:33:44:55:66");
 
   on_acl_br_edr_connected(bda, 2, 0, false, HCI_ROLE_CENTRAL);
 
@@ -181,7 +181,7 @@ TEST_F(StackBtmWithQueuesTest, NoInformClientOnConnectionFail) {
           .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
-  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bda("11:22:33:44:55:66");
 
   on_acl_br_edr_failed(bda, HCI_ERR_NO_CONNECTION, false);
   ASSERT_EQ(0, get_func_call_count("BTA_dm_acl_up"));
@@ -211,7 +211,7 @@ TEST_F(StackBtmWithQueuesTest, change_packet_type) {
   ASSERT_EQ(0xffff, btm_cb.acl_cb_.DefaultPacketTypes());
 
   // Create connection
-  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bda("11:22:33:44:55:66");
   AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
                            .transport = BT_TRANSPORT_BR_EDR};
   btm_acl_created(link_spec, handle, HCI_ROLE_CENTRAL);
@@ -256,7 +256,7 @@ void BTM_RMT_NAME_CALLBACK(const RawAddress& bd_addr, DEV_CLASS dc, BD_NAME bd_n
 TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
   btm_cb.rnr.p_rmt_name_callback[0] = BTM_RMT_NAME_CALLBACK;
 
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint8_t* p_bd_name = (const uint8_t*)"MyTestName";
 
   btm_test = {};
@@ -276,7 +276,7 @@ TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
 }
 
 TEST_F(StackBtmWithInitFreeTest, btm_acl_role_changed_with_unknown_address) {
-  const RawAddress bd_addr = RawAddress({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+  const RawAddress bd_addr = RawAddress("01:02:03:04:05:06");
   const tHCI_ROLE new_role = HCI_ROLE_CENTRAL;
 
   // This should not crash and just log an error because there is no active ACL

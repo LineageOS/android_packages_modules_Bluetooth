@@ -31,7 +31,7 @@ protected:
 };
 
 TEST_F(StackBtmDevTest, btm_sec_allocate_dev_rec__no_list) {
-  const RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  const RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   ASSERT_EQ(nullptr, btm_sec_allocate_dev_rec(bd_addr));
   ::BtmSecurity::Get().Init(BTM_SEC_MODE_SC);
   ::BtmSecurity::Get().Free();
@@ -39,7 +39,7 @@ TEST_F(StackBtmDevTest, btm_sec_allocate_dev_rec__no_list) {
 }
 
 TEST_F(StackBtmDevTest, btm_sec_allocate_dev_rec__with_list) {
-  const RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  const RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   ::BtmSecurity::Get().Init(BTM_SEC_MODE_SC);
   ASSERT_NE(nullptr, btm_sec_allocate_dev_rec(bd_addr));
   ::BtmSecurity::Get().Free();

@@ -42,7 +42,7 @@ namespace {
 constexpr uint16_t kDummyCID = 0x1234;
 constexpr uint16_t kDummyPSM = 0x7788;
 constexpr uint8_t kDummyID = 0x99;
-constexpr RawAddress kDummyAddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+constexpr RawAddress kDummyAddr("11:22:33:44:55:66");
 
 // Set up default callback structure
 tL2CAP_APPL_INFO cb_info = {

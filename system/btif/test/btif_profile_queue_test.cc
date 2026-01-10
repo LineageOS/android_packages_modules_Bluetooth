@@ -59,8 +59,8 @@ protected:
   void TearDown() override { btif_queue_release(); }
 };
 
-const RawAddress BtifProfileQueueTest::kTestAddr1{{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
-const RawAddress BtifProfileQueueTest::kTestAddr2{{0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56}};
+const RawAddress BtifProfileQueueTest::kTestAddr1("11:22:33:44:55:66");
+const RawAddress BtifProfileQueueTest::kTestAddr2("AB:CD:EF:12:34:56");
 
 static BtStatus test_connect_cb(RawAddress bda, uint16_t uuid) {
   sResult = UNKNOWN;

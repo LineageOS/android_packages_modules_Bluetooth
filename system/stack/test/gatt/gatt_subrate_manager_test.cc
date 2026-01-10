@@ -44,6 +44,8 @@ using ::testing::SaveArg;
 using ::testing::NiceMock;
 using ::testing::Eq;
 
+RawAddress test_addr_("C0:DE:C0:DE:00:00");
+
 class GattSubrateManagerTest : public ::testing::Test {
 protected:
 void SetUp() override {
@@ -77,7 +79,6 @@ void SetUp() override {
     gatt_free();
   }
 
-  RawAddress test_addr_ = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, static_cast<uint8_t>(0)}};
   tGATT_IF test_client_if_ = 10;
   testing::NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_stack_l2cap_interface_;
 };

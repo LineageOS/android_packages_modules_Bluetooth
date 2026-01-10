@@ -193,7 +193,7 @@ TEST_F(StackBnepTest, BNEP_Deregister) {
 // Test: BNEP_Connect_NotRegistered
 // Verify that BNEP_Connect fails if the profile is not registered.
 TEST_F(StackBnepTest, BNEP_Connect_NotRegistered) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   bluetooth::Uuid src_uuid = bluetooth::Uuid::From16Bit(0x110F);  // PANU
   bluetooth::Uuid dst_uuid = bluetooth::Uuid::From16Bit(0x1116);  // NAP
   uint16_t handle;
@@ -208,7 +208,7 @@ TEST_F(StackBnepTest, DISABLED_BNEP_Connect_L2capFail) {
   reg_info.p_conn_state_cb = conn_state_cb;
   ASSERT_EQ(BNEP_Register(&reg_info), BNEP_SUCCESS);
 
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   bluetooth::Uuid src_uuid = bluetooth::Uuid::From16Bit(0x110F);  // PANU
   bluetooth::Uuid dst_uuid = bluetooth::Uuid::From16Bit(0x1116);  // NAP
   uint16_t handle;
@@ -235,7 +235,7 @@ TEST_F(StackBnepTest, BNEP_ConnectResp_WrongState) {
 // Verify handling of different response codes in BNEP_ConnectResp.
 TEST_F(StackBnepTest, BNEP_ConnectResp_Responses) {
   // Setup a BCB to be in the correct state
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
   ASSERT_NE(p_bcb, nullptr);
 
@@ -277,7 +277,7 @@ TEST_F(StackBnepTest, BNEP_Disconnect_WrongState) {
 // Test: BNEP_WriteBuf_InvalidHandle
 // Verify that BNEP_WriteBuf fails with an invalid handle.
 TEST_F(StackBnepTest, BNEP_WriteBuf_InvalidHandle) {
-  RawAddress dest_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress dest_addr = RawAddress("11:22:33:44:55:66");
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(100);
   p_buf->len = 10;
   p_buf->offset = 0;
@@ -293,7 +293,7 @@ TEST_F(StackBnepTest, BNEP_WriteBuf_InvalidHandle) {
 // Test: BNEP_WriteBuf_MtuExceeded
 // Verify that BNEP_WriteBuf fails if the buffer size exceeds MTU.
 TEST_F(StackBnepTest, BNEP_WriteBuf_MtuExceeded) {
-  RawAddress dest_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress dest_addr = RawAddress("11:22:33:44:55:66");
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + BNEP_MTU_SIZE + 1);
   p_buf->len = BNEP_MTU_SIZE + 1;
   p_buf->offset = 0;
@@ -305,7 +305,7 @@ TEST_F(StackBnepTest, BNEP_WriteBuf_MtuExceeded) {
 // Test: BNEP_Write_InvalidHandle
 // Verify that BNEP_Write fails with an invalid handle.
 TEST_F(StackBnepTest, BNEP_Write_InvalidHandle) {
-  RawAddress dest_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress dest_addr = RawAddress("11:22:33:44:55:66");
   uint8_t data[10];
   ASSERT_EQ(BNEP_Write(0, dest_addr, data, sizeof(data), 0, RawAddress::kEmpty, false),
             BNEP_WRONG_HANDLE);
@@ -317,7 +317,7 @@ TEST_F(StackBnepTest, BNEP_Write_InvalidHandle) {
 // Test: BNEP_Write_MtuExceeded
 // Verify that BNEP_Write fails if the data size exceeds MTU.
 TEST_F(StackBnepTest, BNEP_Write_MtuExceeded) {
-  RawAddress dest_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress dest_addr = RawAddress("11:22:33:44:55:66");
   uint8_t data[BNEP_MTU_SIZE + 1];
   ASSERT_EQ(BNEP_Write(1, dest_addr, data, sizeof(data), 0, RawAddress::kEmpty, false),
             BNEP_MTU_EXCEEDED);
@@ -327,7 +327,7 @@ TEST_F(StackBnepTest, BNEP_Write_MtuExceeded) {
 // Verify the packet filtering logic for protocol and multicast filters.
 TEST_F(StackBnepTest, bnep_is_packet_allowed) {
   tBNEP_CONN* p_bcb = &bnep_cb.bcb[0];
-  RawAddress dest_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress dest_addr = RawAddress("11:22:33:44:55:66");
   uint16_t protocol = 0x0800;  // IP
   uint8_t data[10];
 
@@ -350,15 +350,15 @@ TEST_F(StackBnepTest, bnep_is_packet_allowed) {
   p_bcb->rcvd_num_filters = 0;  // reset
 
   // Multicast filter allows
-  RawAddress multicast_addr = RawAddress({0x01, 0x00, 0x5e, 0x00, 0x00, 0x01});
+  RawAddress multicast_addr = RawAddress("01:00:5e:00:00:01");
   p_bcb->rcvd_mcast_filters = 1;
-  p_bcb->rcvd_mcast_filter_start[0] = RawAddress({0x01, 0x00, 0x5e, 0x00, 0x00, 0x00});
-  p_bcb->rcvd_mcast_filter_end[0] = RawAddress({0x01, 0x00, 0x5e, 0x7f, 0xff, 0xff});
+  p_bcb->rcvd_mcast_filter_start[0] = RawAddress("01:00:5e:00:00:00");
+  p_bcb->rcvd_mcast_filter_end[0] = RawAddress("01:00:5e:7f:ff:ff");
   ASSERT_EQ(bnep_is_packet_allowed(p_bcb, multicast_addr, protocol, false, data, sizeof(data)),
             BNEP_SUCCESS);
 
   // Multicast filter blocks
-  RawAddress blocked_multicast_addr = RawAddress({0x01, 0x00, 0x5f, 0x00, 0x00, 0x01});
+  RawAddress blocked_multicast_addr = RawAddress("01:00:5f:00:00:01");
   ASSERT_EQ(bnep_is_packet_allowed(p_bcb, blocked_multicast_addr, protocol, false, data,
                                    sizeof(data)),
             BNEP_IGNORE_CMD);
@@ -392,8 +392,8 @@ TEST_F(StackBnepTest, bnep_process_control_packet) {
 // Test: bnepu_find_bcb
 // Verify finding a BNEP connection control block by CID or BD_ADDR.
 TEST_F(StackBnepTest, bnepu_find_bcb) {
-  RawAddress bd_addr1 = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-  RawAddress bd_addr2 = RawAddress({0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF});
+  RawAddress bd_addr1 = RawAddress("11:22:33:44:55:66");
+  RawAddress bd_addr2 = RawAddress("AA:BB:CC:DD:EE:FF");
   tBNEP_CONN* p_bcb1 = bnepu_allocate_bcb(bd_addr1);
   p_bcb1->l2cap_cid = 1;
   p_bcb1->con_state = BNEP_STATE_CONNECTED;
@@ -419,7 +419,7 @@ TEST_F(StackBnepTest, bnepu_find_bcb) {
 // Test: bnepu_allocate_and_release_bcb
 // Verify allocation and release of BNEP connection control blocks.
 TEST_F(StackBnepTest, bnepu_allocate_and_release_bcb) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
 
   ASSERT_NE(p_bcb, nullptr);
@@ -479,7 +479,7 @@ protected:
 // Test: bnep_process_setup_conn_req
 // Verify handling of an incoming connection setup request.
 TEST_F(StackBnepWithCallbacksTest, bnep_process_setup_conn_req) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
   p_bcb->con_state = BNEP_STATE_CONN_SETUP;
 
@@ -512,7 +512,7 @@ TEST_F(StackBnepWithCallbacksTest, bnep_process_setup_conn_req) {
 // Test: bnep_process_setup_conn_response
 // Verify processing of a connection setup response.
 TEST_F(StackBnepWithCallbacksTest, bnep_process_setup_conn_response) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
   p_bcb->con_state = BNEP_STATE_CONN_SETUP;
   p_bcb->con_flags = BNEP_FLAGS_IS_ORIG;
@@ -551,7 +551,7 @@ TEST_F(StackBnepWithCallbacksTest, bnep_process_setup_conn_response) {
 // Test: bnep_connected
 // Verify the bnep_connected function updates state and calls callbacks.
 TEST_F(StackBnepWithCallbacksTest, bnep_connected) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
   p_bcb->con_state = BNEP_STATE_CONN_SETUP;
 
@@ -568,7 +568,7 @@ TEST_F(StackBnepWithCallbacksTest, bnep_connected) {
 // Test: bnep_sec_check_complete
 // Verify the security check completion handler.
 TEST_F(StackBnepWithCallbacksTest, bnep_sec_check_complete) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
   p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
 
@@ -590,7 +590,7 @@ TEST_F(StackBnepWithCallbacksTest, bnep_sec_check_complete) {
 // Test: bnep_process_control_packet_more_cases
 // Verify processing of more control packet types.
 TEST_F(StackBnepTest, bnep_process_control_packet_more_cases) {
-  RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   tBNEP_CONN* p_bcb = bnepu_allocate_bcb(bd_addr);
   uint8_t packet[50];
   uint16_t rem_len;

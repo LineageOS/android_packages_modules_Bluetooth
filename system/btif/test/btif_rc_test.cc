@@ -74,7 +74,7 @@ void AvrcpService::RegisterVolChanged(const RawAddress& /*bdaddr*/) { VolChanged
 }  // namespace bluetooth
 
 namespace {
-const RawAddress kDeviceAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress kDeviceAddress("11:22:33:44:55:66");
 const uint8_t kRcHandle = 123;
 }  // namespace
 
@@ -148,7 +148,7 @@ TEST_F(BtifRcTest, btif_rc_is_connected_peer_false) {
   btif_rc_cb.rc_multi_cb[0].rc_addr = kDeviceAddress;
   btif_rc_cb.rc_multi_cb[0].rc_state = BTRC_CONNECTION_STATE_CONNECTED;
   btif_rc_cb.rc_multi_cb[0].rc_handle = 0;
-  ASSERT_FALSE(btif_rc_is_connected_peer(RawAddress({0x00, 0x00, 0x00, 0x00, 0x00, 0x00})));
+  ASSERT_FALSE(btif_rc_is_connected_peer(RawAddress("00:00:00:00:00:00")));
 }
 
 static btrc_ctrl_callbacks_t default_btrc_ctrl_callbacks = {
@@ -417,9 +417,7 @@ TEST_F(BtifRcTest, handle_app_attr_response) {
 
 TEST_F(BtifRcWithCallbacksTest, handle_notifications_rsp_play_status_changed) {
   btrc_ctrl_callbacks.play_status_changed_cb = [](const RawAddress& /* bd_addr */,
-                                                  btrc_play_status_t /* play_status */) {
-
-  };
+                                                  btrc_play_status_t /* play_status */) {};
   btif_rc_cb.rc_multi_cb[0].rc_handle = kRcHandle;
   tAVRC_NOTIF_RSP_PARAM param = {
           .track = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
@@ -2211,7 +2209,7 @@ TEST_F(BtifRcTest, btif_rc_get_connected_peer_handle_success) {
 
 TEST_F(BtifRcTest, btif_rc_get_connected_peer_handle_not_found) {
   btif_rc_cb.rc_multi_cb[0].rc_connected = false;
-  RawAddress unknown_address = RawAddress({0xde, 0xad, 0xbe, 0xef, 0x12, 0x34});
+  RawAddress unknown_address = RawAddress("de:ad:be:ef:12:34");
   ASSERT_EQ(btif_rc_get_connected_peer_handle(unknown_address), 0xFF);
 }
 
@@ -2396,7 +2394,7 @@ TEST_F(BtifRcWithCallbacksTest, get_current_metadata_cmd_test_error) {
     p_dev->transaction_set.transaction[i].label = i;
   }
 
-  const RawAddress unknown_address = RawAddress({0xde, 0xad, 0xbe, 0xef, 0x12, 0x34});
+  const RawAddress unknown_address = RawAddress("de:ad:be:ef:12:34");
   BtStatus status = get_current_metadata_cmd(unknown_address);
   ASSERT_EQ(status, BtifStatus(DEVICE_NOT_FOUND));
 }

@@ -58,11 +58,9 @@ using ::testing::_;
 
 namespace {
 constexpr uint8_t kUnusedTimer = BTA_ID_MAX;
-const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress kRawAddress2({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
-
+const RawAddress kRawAddress("11:22:33:44:55:66");
+const RawAddress kRawAddress2("12:34:56:78:9a:bc");
 constexpr char kRemoteName[] = "TheRemoteName";
-
 }  // namespace
 
 class BtaDmTest : public BtaWithContextTest {

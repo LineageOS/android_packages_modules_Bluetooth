@@ -188,7 +188,7 @@ TEST_F(BluetoothTest, AdapterCancelDiscovery) {
 TEST_F(BluetoothTest, AdapterDisableDuringBonding) {
   EXPECT_EQ(GetState(), BT_STATE_OFF) << "Test should be run with Adapter disabled";
 
-  RawAddress bdaddr = {{0x22, 0x22, 0x22, 0x22, 0x22, 0x22}};
+  RawAddress bdaddr("22:22:22:22:22:22");
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
     bluetooth_enable("test_name");

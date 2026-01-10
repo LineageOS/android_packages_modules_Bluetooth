@@ -47,8 +47,8 @@ namespace {
 
 #define SDP_DB_SIZE 0x10000
 
-constexpr RawAddress kDummyAddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-constexpr RawAddress kDummyRemoteAddr({0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC});
+constexpr RawAddress kDummyAddr("11:22:33:44:55:66");
+constexpr RawAddress kDummyRemoteAddr("77:88:99:AA:BB:CC");
 
 // Set up default callback structure
 tL2CAP_FIXED_CHNL_REG fixed_chnl_reg = {

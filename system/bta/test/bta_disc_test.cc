@@ -41,7 +41,7 @@ using ::testing::_;
 using ::testing::Return;
 
 namespace {
-const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress kRawAddress("11:22:33:44:55:66");
 }
 
 class BtaInitializedTest : public BtaWithContextTest {

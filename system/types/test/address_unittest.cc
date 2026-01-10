@@ -17,24 +17,26 @@
  ******************************************************************************/
 
 #include <bluetooth/types/address.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+using testing::ElementsAre;
 
 static const char* test_addr = "12:34:56:78:9a:bc";
 static const char* test_addr2 = "cb:a9:87:65:43:21";
 
-TEST(RawAddressUnittest, test_constructor_array) {
-  RawAddress bdaddr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
+// Validate the consteval constructor.
+// Note: negative test cases cannot be implemented as they would generate compilation errors.
+TEST(RawAddressUnittest, ConstructorString) {
+  EXPECT_THAT(RawAddress("01:23:45:67:89:ab").address,
+              ElementsAre(0x01, 0x23, 0x45, 0x67, 0x89, 0xab));
+  EXPECT_THAT(RawAddress("cd:ef:AB:CD:EF:00").address,
+              ElementsAre(0xcd, 0xef, 0xab, 0xcd, 0xef, 0x00));
+}
 
-  ASSERT_EQ(0x12, bdaddr.address[0]);
-  ASSERT_EQ(0x34, bdaddr.address[1]);
-  ASSERT_EQ(0x56, bdaddr.address[2]);
-  ASSERT_EQ(0x78, bdaddr.address[3]);
-  ASSERT_EQ(0x9A, bdaddr.address[4]);
-  ASSERT_EQ(0xBC, bdaddr.address[5]);
-
-  std::string ret = bdaddr.ToString();
-
-  ASSERT_STREQ(test_addr, ret.c_str());
+TEST(RawAddressUnittest, ConstructorArray) {
+  EXPECT_THAT(RawAddress(std::array<uint8_t, 6>{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}).address,
+              ElementsAre(0x01, 0x23, 0x45, 0x67, 0x89, 0xab));
 }
 
 TEST(RawAddressUnittest, test_is_empty) {
@@ -154,24 +156,14 @@ TEST(RawAddressTest, IsValidAddress) {
 
 TEST(RawAddressTest, BdAddrFromString) {
   EXPECT_EQ(RawAddress::FromString("00:00:00:00:00:00"), RawAddress::kEmpty);
-  EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21:9f"),
-            RawAddress({0xab, 0x01, 0x4c, 0xd5, 0x21, 0x9f}));
+  EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21:9f"), RawAddress("ab:01:4C:d5:21:9f"));
   EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21"), std::nullopt);
   EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21aaa"), std::nullopt);
   EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21:xx"), std::nullopt);
 }
 
-TEST(RawAddressTest, BdAddrFromArray) {
-  std::array<uint8_t, 6> mac = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
-  RawAddress bdaddr(mac);
-
-  std::string ret = bdaddr.ToString();
-  ASSERT_STREQ("11:22:33:44:55:66", ret.c_str());
-}
-
 TEST(RawAddress, ToStringTest) {
-  std::array<uint8_t, 6> addr_bytes = {0x11, 0x22, 0x33, 0x44, 0x55, 0xab};
-  RawAddress addr(addr_bytes);
+  RawAddress addr("11:22:33:44:55:ab");
   const std::string redacted_loggable_str = "xx:xx:xx:xx:55:ab";
   const std::string loggbable_str = "11:22:33:44:55:ab";
   std::string ret1 = addr.ToString();
