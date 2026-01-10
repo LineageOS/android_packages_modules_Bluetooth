@@ -30,3 +30,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "release_port_instead_mux_when_timeout_after_closed"
+    namespace: "bluetooth"
+    description: "Release port instead of release mux when timeout after port closed"
+    bug: "474236480"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
