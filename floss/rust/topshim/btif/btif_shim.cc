@@ -184,7 +184,7 @@ void BtIntf::bluetooth_enable() const {
 
 void BtIntf::bluetooth_disable() const { return ::bluetooth_disable(); }
 
-void BtIntf::cleanup() const { return intf_->cleanup(); }
+void BtIntf::bluetooth_cleanup() const { return ::bluetooth_cleanup(); }
 
 int BtIntf::get_adapter_properties() const { return intf_->get_adapter_properties(); }
 

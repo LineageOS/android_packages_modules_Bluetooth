@@ -1207,7 +1207,7 @@ pub(crate) mod ffi {
         );
         fn bluetooth_enable(self: &BtIntf);
         fn bluetooth_disable(self: &BtIntf);
-        fn cleanup(self: &BtIntf);
+        fn bluetooth_cleanup(self: &BtIntf);
         fn get_adapter_properties(self: &BtIntf) -> i32;
         fn get_adapter_property(self: &BtIntf, prop_type: BtPropertyType) -> i32;
         fn set_scan_mode(self: &BtIntf, mode: BtScanMode);
@@ -1424,7 +1424,7 @@ impl BluetoothInterface {
     }
 
     pub fn cleanup(&self) {
-        self.internal.cleanup()
+        self.internal.bluetooth_cleanup()
     }
 
     pub fn enable(&self) {
