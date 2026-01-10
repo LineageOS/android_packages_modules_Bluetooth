@@ -329,7 +329,7 @@ public class RemoteDevices {
                 if (!Flags.retainAddressType()) {
                     addressType = BluetoothDevice.ADDRESS_TYPE_PUBLIC;
                 }
-                prop.setDevice(new BluetoothDevice(key, addressType));
+                prop.setDevice(new BluetoothDevice(null, key, addressType));
             } else {
                 BluetoothDevice device =
                         Flags.retainAddressType()
