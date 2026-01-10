@@ -76,6 +76,7 @@ java_library {
 
     static_libs: [
         "PlatformProperties",
+        "android.bluetooth.platform.flags-aconfig-java-export",
         "androidx.annotation_annotation",
         "androidx.appcompat_appcompat",
         "bluetooth-common-java",
@@ -176,6 +177,7 @@ android_robolectric_test {
     ],
 
     static_libs: [
+        "android.bluetooth.platform.flags-aconfig-java-export",
         "androidx.test.core",
         "androidx.test.ext.truth",
         "bluetooth-common-flagwrapper-tests",
