@@ -131,6 +131,10 @@
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
 
+#ifdef TARGET_FLOSS
+#include "sysprops/sysprops_module.h"
+#endif
+
 using namespace bluetooth;
 
 namespace {
@@ -419,6 +423,11 @@ void bluetooth_init(bt_callbacks_t* callbacks, bool start_restricted, bool is_co
   log::info(
           "start_restricted={} common_criteria_mode={}, config_compare_result={} instance_name={}",
           start_restricted, is_common_criteria_mode, config_compare_result, hci_instance_name);
+
+#ifdef TARGET_FLOSS
+  // Floss queries Aflags from this module, thus this needs to be called before anything.
+  sysprops::InitSyspropsModule();
+#endif
 
   set_hal_cbacks(callbacks);
 

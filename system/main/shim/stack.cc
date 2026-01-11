@@ -56,9 +56,7 @@
 #include "os/wakelock_manager.h"
 #include "storage/storage_module.h"
 
-#if TARGET_FLOSS
-#include "sysprops/sysprops_module.h"
-#else
+#ifndef TARGET_FLOSS
 #include "hci/distance_measurement_manager_impl.h"
 #endif
 
@@ -95,9 +93,7 @@ struct Stack::impl {
                              round_robin_scheduler_),
         acl_manager_(handler, hci_layer_, controller_, storage_, round_robin_scheduler_,
                      acl_manager_classic_),
-#ifdef TARGET_FLOSS
-        sysprops_module_(),
-#else
+#ifndef TARGET_FLOSS
         distance_measurement_manager_(handler, &hci_layer_, &controller_, &acl_manager_,
                                       &ranging_hal_),
 #endif
@@ -124,9 +120,7 @@ struct Stack::impl {
   hci::acl_manager::RoundRobinScheduler round_robin_scheduler_;
   hci::acl_manager::AclManagerClassicImpl acl_manager_classic_;
   hci::acl_manager::AclManagerLeImpl acl_manager_;
-#if TARGET_FLOSS
-  sysprops::SyspropsModule sysprops_module_;
-#else
+#ifndef TARGET_FLOSS
   hci::DistanceMeasurementManagerImpl distance_measurement_manager_;
 #endif
   hci::LeScanningManagerImpl le_scanning_manager_;

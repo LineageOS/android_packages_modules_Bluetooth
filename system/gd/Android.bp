@@ -51,7 +51,6 @@ cc_defaults {
                 "os/host/parameter_provider.cc",
                 "os/host/system_properties.cc",
                 "os/host/wakelock_native.cc",
-                "sysprops/sysprops_module.cc",
             ],
         },
         android: {
@@ -425,7 +424,6 @@ cc_test {
         host: {
             srcs: [
                 "hal/hci_hal_impl_host_rootcanal_test.cc",
-                "sysprops/sysprops_module_test.cc",
             ],
         },
         android: {

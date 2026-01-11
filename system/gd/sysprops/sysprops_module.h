@@ -36,5 +36,7 @@ private:
   void parse_config(std::string file_path);
 };
 
+void InitSyspropsModule();
+
 }  // namespace sysprops
 }  // namespace bluetooth
