@@ -548,23 +548,23 @@ pub fn lhdc_freq_shift_apply_encode(
     size: i32,
 ) {
     let mut s: usize = 0;
-    let mut power2: libc::c_float;
+    let mut power2: f32;
     let mut fixed_power2;
     let mut index_top;
     let mut index_bottom;
     let mut swath = 0;
     while s < segment.segment_num && swath < size {
         power2 = if data_sft[s] >= 0_i32 {
-            power_of_2_tbl[(data_sft[s] >> (8_i32 - 4 as libc::c_int)) as usize] as libc::c_float
+            power_of_2_tbl[(data_sft[s] >> (8_i32 - 4 as libc::c_int)) as usize] as f32
                 * 0.000_000_953_674_3_f32
         } else {
             power_of_2_tbl[(((1_i32 << 8 as libc::c_int) * 10 as libc::c_int
                 + 15_i32
                 + data_sft[s])
-                >> (8_i32 - 4 as libc::c_int)) as usize] as libc::c_float
+                >> (8_i32 - 4 as libc::c_int)) as usize] as f32
                 * 0.000_000_000_931_322_6_f32
         };
-        fixed_power2 = (power2 * ((1 as libc::c_longlong) << 26_i32) as libc::c_float) as i32;
+        fixed_power2 = (power2 * ((1 as libc::c_longlong) << 26_i32) as f32) as i32;
         index_top = if segment.segment_offset[s + 1] as i32 >= size {
             size
         } else {
@@ -860,9 +860,7 @@ fn lhdc_enc_lossy_freq_process(fdata_all_buffer: &mut fdata_all_buffer_struct, c
             index = 0_i32;
             loop {
                 let level = fdata_all_buffer.level_table.level(index);
-                if pixel_num_top as libc::c_float * level
-                    <= (1_i32 << 30 as libc::c_int) as libc::c_float
-                {
+                if pixel_num_top as f32 * level <= (1_i32 << 30 as libc::c_int) as f32 {
                     break;
                 }
                 index += 1;
@@ -871,17 +869,14 @@ fn lhdc_enc_lossy_freq_process(fdata_all_buffer: &mut fdata_all_buffer_struct, c
         }
     }
 }
-fn lhdc_enc_lossy_freq_level(
-    fdata_all_buffer: &mut fdata_all_buffer_struct,
-    level: libc::c_float,
-) -> i32 {
+fn lhdc_enc_lossy_freq_level(fdata_all_buffer: &mut fdata_all_buffer_struct, level: f32) -> i32 {
     let in_0 = &mut fdata_all_buffer.fdata_enc_buffer.lossy_fdata_buf;
     let cutoff = fdata_all_buffer.segment_cutoff;
     let out = &mut fdata_all_buffer.fdata_enc_buffer.level.fdata_q_quant;
     let fdata_q_len = &mut fdata_all_buffer.fdata_enc_buffer.level.fdata_q_len;
 
     let mut index: i32;
-    let level_ = (level * (1_i32 << 30 as libc::c_int) as libc::c_float) as libc::c_int;
+    let level_ = (level * (1_i32 << 30 as libc::c_int) as f32) as libc::c_int;
     let n_level_ = -level_;
     let out05_multiply_2 = (2.0f32 * 0.5f32 / level) as libc::c_longlong;
     let n_out05_multiply_2 = -out05_multiply_2;
@@ -912,19 +907,19 @@ fn lhdc_enc_lossy_freq_level(
     fdata_all_buffer.pixel_num - index + (index & 1_i32)
 }
 fn fast_calc_step(
-    jump: libc::c_float,
+    jump: f32,
     per_pixel_number: i32,
     pixel_number: i32,
     offset_size: i32,
     per_offset_size: i32,
-) -> libc::c_float {
-    let tmp: libc::c_float = jump * 0.8f32;
+) -> f32 {
+    let tmp: f32 = jump * 0.8f32;
     let sign_tmp1: i32 = per_pixel_number - pixel_number;
     let sign_tmp2: i32 = offset_size - per_offset_size;
     (if sign_tmp2 > 0_i32 {
-        (sign_tmp1 / sign_tmp2) as libc::c_float * 0.2f32
+        (sign_tmp1 / sign_tmp2) as f32 * 0.2f32
     } else {
-        (-sign_tmp1 / -sign_tmp2) as libc::c_float * 0.2f32
+        (-sign_tmp1 / -sign_tmp2) as f32 * 0.2f32
     }) + tmp
 }
 fn lhdc_enc_lossy_nbyte_estimation(
@@ -996,7 +991,7 @@ fn lhdc_enc_lossy_nbyte_estimation(
             );
         }
         per_offset_size = offset_size;
-        offset_size += ((pixel_number - target_range) as libc::c_float / offset) as i32;
+        offset_size += ((pixel_number - target_range) as f32 / offset) as i32;
         if offset_size == per_offset_size {
             offset_size = if pixel_number < target_range {
                 offset_size -= 1;
@@ -1118,7 +1113,7 @@ fn lhdc_enc_lossy_nbyte_out(
         return Err(Error::TargetRange);
     }
     let level = (fdata_all_buffer.level_table.level(fdata_ch_buffer.offset_size)
-        * (1_i32 << 30) as libc::c_float) as libc::c_int;
+        * (1_i32 << 30) as f32) as libc::c_int;
     let n_level = -level;
     index = fdata_all_buffer.pixel_num - 1;
     while nbyte < fdata_all_buffer.target_range
