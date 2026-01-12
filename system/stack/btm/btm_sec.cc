@@ -3317,6 +3317,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     btm_sec_auth_collision(handle);
     return;
   }
+
   BtmSecurity::Get().collision_start_time_ = 0;
 
   BtmDevice* p_device = btm_get_dev_by_handle(handle);
@@ -3609,11 +3610,13 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
   }
 
   if (status != HCI_SUCCESS && encr_enable == 0) {
-    // Skip the disconnection in case of bond-loss, instead proceed with re-pairing.
-    if (!(is_autonomous_repairing_supported() && status == HCI_ERR_KEY_MISSING)) {
+    if (status == HCI_ERR_LMP_ERR_TRANS_COLLISION || status == HCI_ERR_DIFF_TRANSACTION_COLLISION) {
+      // Do nothing as collision is handled in btm_sec_encrypt_change()
+    } else if (is_autonomous_repairing_supported() && status == HCI_ERR_KEY_MISSING) {
+      // Skip the disconnection in case of bond-loss, instead proceed with re-pairing
+    } else {
       log::error("Encryption failure {}, disconnecting {}", status, handle);
-      btm_sec_disconnect(handle, status,
-                         "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");
+      btm_sec_disconnect(handle, status, "btm_sec_encryption_change_evt: Encryption Failure");
     }
   }
 
