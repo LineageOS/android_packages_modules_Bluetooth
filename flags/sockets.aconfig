@@ -77,3 +77,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "donot_reuse_lecoc_ccbs"
+    namespace: "bluetooth"
+    description: "Release LECOC ccbs on link disconnection"
+    bug: "475235720"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
