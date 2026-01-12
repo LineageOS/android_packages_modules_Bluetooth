@@ -25,6 +25,15 @@
 namespace bluetooth {
 namespace sysprops {
 
+static SyspropsModule* g_sysprops_module;
+
+void InitSyspropsModule() {
+  if (g_sysprops_module) {
+    std::abort();
+  }
+  g_sysprops_module = new SyspropsModule();
+}
+
 static const size_t kDefaultCapacity = 10000;
 static const char* kAflagSection = "Aflags";
 static const char* kAflagPrefix = "persist.device_config.aconfig_flags.bluetooth.";
