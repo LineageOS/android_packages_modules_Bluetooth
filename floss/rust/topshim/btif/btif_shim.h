@@ -42,7 +42,7 @@ public:
                       bool is_atv, const ::rust::String hci_instance_name) const;
   void bluetooth_enable() const;
   void bluetooth_disable() const;
-  void cleanup() const;
+  void bluetooth_cleanup() const;
   int get_adapter_properties() const;
   int get_adapter_property(bt_property_type_t type) const;
   void set_scan_mode(bt_scan_mode_t mode) const;
