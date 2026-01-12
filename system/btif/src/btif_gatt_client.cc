@@ -61,7 +61,6 @@ using base::BindOnce;
 using bluetooth::Uuid;
 
 using namespace bluetooth;
-using std::vector;
 
 extern const btgatt_callbacks_t* bt_gatt_callbacks;
 

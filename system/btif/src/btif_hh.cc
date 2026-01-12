@@ -43,7 +43,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <future>
 
 #include "bt_device_type.h"
 #include "bta_api.h"

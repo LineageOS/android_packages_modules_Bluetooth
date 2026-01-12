@@ -38,7 +38,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/main_thread.h"
 
-// Temp includes
 #include "bta/sys/bta_sys.h"
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_profile_queue.h"
@@ -48,21 +47,10 @@
 #include "stack/include/l2cap_module.h"
 #include "stack/include/port_api.h"
 #include "stack/sdp/sdpint.h"
-#if (BNEP_INCLUDED == TRUE)
-#include "stack/include/bnep_api.h"
-#endif
 #include "stack/include/gap_api.h"
-#if (PAN_INCLUDED == TRUE)
-#include "stack/include/pan_api.h"
-#endif
-#if (HID_HOST_INCLUDED == TRUE)
-#include "stack/include/hidh_api.h"
-#endif
 #include "bta/dm/bta_dm_int.h"
 #include "device/include/interop.h"
 #include "internal_include/stack_config.h"
-#include "os/system_properties.h"
-#include "stack/btm/btm_ble_int.h"
 #include "stack/include/ais_api.h"
 #include "stack/include/smp_api.h"
 

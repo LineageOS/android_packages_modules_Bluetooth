@@ -28,7 +28,6 @@
 #include "common/message_loop_thread.h"
 #include "common/postable_context.h"
 #include "include/btif_status.h"
-#include "include/hardware/bluetooth.h"
 #include "osi/include/allocator.h"
 
 /* BTIF Events */

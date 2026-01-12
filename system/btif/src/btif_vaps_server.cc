@@ -18,18 +18,12 @@
  #include <base/location.h>
  #include <hardware/bt_vaps_server.h>
 
- #include <cstdint>
  #include <memory>
  #include <string>
- #include <utility>
- #include <variant>
- #include <vector>
 
  #include "bta_vaps_server_api.h"
  #include "btif_common.h"
  #include "btif_le_audio.h"
- #include "btif_profile_storage.h"
- #include "stack/include/main_thread.h"
  #include "bluetooth/types/address.h"
 
 using base::BindOnce;
