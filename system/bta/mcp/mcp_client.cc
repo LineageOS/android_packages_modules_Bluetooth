@@ -25,18 +25,15 @@
 #include <mutex>
 #include <sstream>
 
-#include "bta/include/bta_api.h"
 #include "bta/include/bta_gatt_api.h"
+#include "bta/include/bta_mcp_client_api.h"
 #include "bta_gatt_queue.h"
-#include "common/strings.h"
-#include "hardware/bt_le_audio.h"
 #include "mcp/mcp_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/gatt_api.h"
 
-using bluetooth::le_audio::ConnectionState;
 using namespace bluetooth;
 using namespace bluetooth::mcp;
 
@@ -58,7 +55,7 @@ std::mutex instance_mutex;
 
 class McpClientImpl : public McpClient {
 public:
-  McpClientImpl(McpClientCallbacks* callbacks, base::Closure initCb) : callbacks_(callbacks) {
+  McpClientImpl(McpClientCallbacks* callbacks, base::OnceClosure initCb) : callbacks_(callbacks) {
     BTA_GATTC_AppRegister(
             "mcp_client",
             [](tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
@@ -66,8 +63,8 @@ public:
                 instance->GattcCallback(event, p_data);
               }
             },
-            base::Bind(
-                    [](base::Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error("Failed to register MCP client app");
                         return;
@@ -75,9 +72,9 @@ public:
                       if (instance) {
                         instance->gatt_if_ = client_id;
                       }
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
   }
 
@@ -697,13 +694,13 @@ private:
 }  // namespace
 
 // --- McpClient static methods ---
-void McpClient::Initialize(McpClientCallbacks* callbacks, base::Closure initCb) {
+void McpClient::Initialize(McpClientCallbacks* callbacks, base::OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     log::error("Already initialized");
     return;
   }
-  instance = std::make_unique<McpClientImpl>(callbacks, initCb);
+  instance = std::make_unique<McpClientImpl>(callbacks, std::move(initCb));
 }
 
 void McpClient::Cleanup() {
@@ -717,22 +714,9 @@ void McpClient::Cleanup() {
 
 McpClient* McpClient::Get() { return instance.get(); }
 
-void McpDevice::DebugDump(std::stringstream& stream) const {
-  GattServiceDevice::DebugDump(stream);
-
-  stream << "\n    Media Player Name Handle: "
-         << bluetooth::common::ToHexString(media_player_name_handle)
-         << "\n    Track Changed Handle: " << bluetooth::common::ToHexString(track_changed_handle)
-         << "\n    Track Title Handle: " << bluetooth::common::ToHexString(track_title_handle)
-         << "\n    Track Duration Handle: " << bluetooth::common::ToHexString(track_duration_handle)
-         << "\n    Track Position Handle: " << bluetooth::common::ToHexString(track_position_handle)
-         << "\n    Playback Speed Handle: " << bluetooth::common::ToHexString(playback_speed_handle)
-         << "\n    Seeking Speed Handle: " << bluetooth::common::ToHexString(seeking_speed_handle)
-         << "\n    Media State Handle: " << bluetooth::common::ToHexString(media_state_handle)
-         << "\n    Media Control Point Handle: "
-         << bluetooth::common::ToHexString(media_control_point_handle)
-         << "\n    Opcodes Supported Handle: "
-         << bluetooth::common::ToHexString(opcodes_supported_handle)
-         << "\n    Content Control ID Handle: "
-         << bluetooth::common::ToHexString(content_control_id_handle) << "\n";
+void McpClient::DebugDump(int fd) {
+  std::scoped_lock<std::mutex> lock(instance_mutex);
+  if (instance) {
+    instance->DebugDump(fd);
+  }
 }

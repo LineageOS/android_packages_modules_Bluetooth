@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-#include "mcp/mcp_client.h"
-
 #include <base/functional/bind.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "bta/include/bta_api.h"
 #include "bta/include/bta_gatt_api.h"
+#include "bta/include/bta_mcp_client_api.h"
 #include "gatt/database_builder.h"
-#include "hardware/bt_le_audio.h"
 #include "mcp/mcp_types.h"
 #include "test/common/bta_gatt_api_mock.h"
 #include "test/common/bta_gatt_queue_mock.h"
@@ -45,7 +42,8 @@ using ::testing::WithArg;
 
 class MockMcpClientCallbacks : public McpClientCallbacks {
 public:
-  MOCK_METHOD(void, OnConnectionState, (const RawAddress&, le_audio::ConnectionState), (override));
+  // clang-format off
+  MOCK_METHOD(void, OnConnectionState, (const RawAddress&, ConnectionState), (override));
   MOCK_METHOD(void, OnDiscovered, (const RawAddress&), (override));
   MOCK_METHOD(void, OnMediaPlayerNameChanged, (const RawAddress&, const std::string&), (override));
   MOCK_METHOD(void, OnMediaStateChanged, (const RawAddress&, uint8_t), (override));
@@ -59,6 +57,7 @@ public:
               (override));
   MOCK_METHOD(void, OnOpcodesSupportedChanged, (const RawAddress&, uint32_t), (override));
   MOCK_METHOD(void, OnPlayingOrdersSupportedChanged, (const RawAddress&, uint16_t), (override));
+  // clang-format on
 };
 
 class McpClientTest : public ::testing::Test {
@@ -163,8 +162,7 @@ TEST_F(McpClientTest, connect_and_discover_flow) {
   EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
 
-  EXPECT_CALL(*mock_callbacks_,
-              OnConnectionState(kTestAddress, le_audio::ConnectionState::CONNECTED));
+  EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
   EXPECT_CALL(btm_interface, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
   EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
   SimulateGattConnect(kTestAddress, kTestConnId);
