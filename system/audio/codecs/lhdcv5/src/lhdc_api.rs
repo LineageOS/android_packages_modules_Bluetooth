@@ -126,16 +126,18 @@ pub static g_bitrate_table_96k: [u32; 15] =
 pub static g_bitrate_table_192k: [u32; 15] =
     [64, 160, 192, 256, 320, 400, 500, 900, 1000, 1100, 1200, 1300, 1400, 99999, 1536000];
 
-//jimmy
 pub fn lhdcv5_enc_util_get_target_bitrate_inx(
     lhdcBT: &mut lhdc_cb_t,
     bitrate_kbps: u32,
     bitrate_inx: &mut u32,
 ) -> i32 {
-    let func_ret =
-        lhdcv5_enc_util_get_bitrate_inx(bitrate_kbps, bitrate_inx, lhdcBT.enc.bitrate_table);
+    let bitrate_table = &lhdcBT.enc.bitrate_table;
+    if bitrate_kbps > bitrate_table[bitrate_table.len() - 1] {
+        return LHDC_FRET_INVALID_INPUT_PARAM;
+    }
+    let func_ret = lhdcv5_encoder_get_bitrate_inx(bitrate_kbps, bitrate_inx, bitrate_table);
     if func_ret != LHDC_FRET_SUCCESS {
-        error!("Fail to get index by bitrate ({}) ret({func_ret})", *bitrate_inx);
+        error!("Fail to get index by bitrate ({bitrate_kbps}) ret({func_ret})");
         return func_ret;
     }
     LHDC_FRET_SUCCESS
@@ -356,39 +358,6 @@ pub fn lhdcv5_enc_util_enc_process(
             error!("Invalid encode type ({})!", lhdcBT.enc_type);
             return LHDC_FRET_INVALID_CODEC;
         }
-    }
-    LHDC_FRET_SUCCESS
-}
-
-pub fn lhdcv5_enc_util_get_bitrate(
-    bitrate_inx: u32,
-    bitrate: &mut u32,
-    bitrate_table: &[u32],
-) -> i32 {
-    if bitrate_inx as usize >= bitrate_table.len() {
-        error!("Input bit rate (index) is out of range ({bitrate_inx})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    let func_ret = lhdcv5_encoder_get_bitrate(bitrate_inx, bitrate, bitrate_table);
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("Fail to get bitrate ({bitrate_inx}) ret({func_ret})");
-        return func_ret;
-    }
-    func_ret
-}
-
-pub fn lhdcv5_enc_util_get_bitrate_inx(
-    bitrate: u32,
-    bitrate_inx: &mut u32,
-    bitrate_table: &[u32],
-) -> i32 {
-    if bitrate > bitrate_table[bitrate_table.len() - 1] {
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    let func_ret = lhdcv5_encoder_get_bitrate_inx(bitrate, bitrate_inx, bitrate_table);
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("Fail to get index by bitrate ({}) ret({func_ret})", *bitrate_inx);
-        return func_ret;
     }
     LHDC_FRET_SUCCESS
 }
