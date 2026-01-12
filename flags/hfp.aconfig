@@ -180,3 +180,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "disconnect_sco_if_not_allowed"
+    namespace: "bluetooth"
+    description: "Disconnect SCO if not allowed during connection"
+    bug: "475315385"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
