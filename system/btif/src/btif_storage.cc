@@ -506,29 +506,28 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_
   return BT_STATUS_SUCCESS;
 }
 
-static void btif_read_le_key(const uint8_t key_type, const size_t key_len, const RawAddress& addr,
-                             const tBLE_ADDR_TYPE addr_type, const bool add_key, bool* device_added,
-                             bool* key_found) {
+static bool btif_read_le_key(const RawAddress& addr, const tBLE_ADDR_TYPE addr_type,
+                             const PairingType& pairing_type, const uint8_t key_type,
+                             const size_t key_len, const bool add_key, bool* device_added) {
   log::assert_that(device_added != nullptr, "assert failed: device_added != nullptr");
-  log::assert_that(key_found != nullptr, "assert failed: key_found != nullptr");
 
-  tBTA_LE_KEY_VALUE key;
-  memset(&key, 0, sizeof(key));
-
-  if (btif_storage_get_ble_bonding_key(addr, key_type, reinterpret_cast<uint8_t*>(&key), key_len) ==
+  tBTA_LE_KEY_VALUE key = {};
+  if (btif_storage_get_ble_bonding_key(addr, key_type, reinterpret_cast<uint8_t*>(&key), key_len) !=
       BT_STATUS_SUCCESS) {
-    if (add_key) {
-      if (!*device_added) {
-        BTA_DmAddBleDevice(addr, addr_type, BT_DEVICE_TYPE_BLE);
-        *device_added = true;
-      }
+    return false;
+  }
 
-      log::verbose("Adding key type {} for {}", key_type, addr);
-      BTA_DmAddBleKey(addr, &key, key_type);
+  if (add_key) {
+    if (!*device_added) {
+      BTA_DmAddBleDevice(addr, addr_type, BT_DEVICE_TYPE_BLE);
+      *device_added = true;
     }
 
-    *key_found = true;
+    log::verbose("Adding key type {} for {}", key_type, addr);
+    BTA_DmAddBleKey(addr, pairing_type, key_type, key);
   }
+
+  return true;
 }
 
 /*******************************************************************************
@@ -1386,9 +1385,6 @@ bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value)
 bt_status_t btif_in_fetch_bonded_ble_device(const std::string& bdstr, int add,
                                             btif_bonded_devices_t* p_bonded_devices) {
   int device_type = BT_DEVICE_TYPE_UNKNOWN;
-  tBLE_ADDR_TYPE addr_type;
-  bool device_added = false;
-  bool key_found = false;
 
   const RawAddress addr = RawAddress::FromString(bdstr).value_or(RawAddress::kEmpty);
 
@@ -1397,6 +1393,10 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& bdstr, int add,
   }
 
   if ((device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE || btif_has_ble_keys(bdstr)) {
+    tBLE_ADDR_TYPE addr_type;
+    bool device_added = false;
+    bool key_found = false;
+
     log::verbose("Found a LE device: {}", addr);
 
     if (btif_storage_get_remote_addr_type(addr, &addr_type) != BT_STATUS_SUCCESS) {
@@ -1404,9 +1404,13 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& bdstr, int add,
       btif_storage_set_remote_addr_type(addr, BLE_ADDR_PUBLIC);
     }
 
+    PairingType pairing_type = btif_storage_get_ble_pairing_type(addr).value_or(kPairingTypeNone);
+
     for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
-      auto key = BTIF_STORAGE_LE_KEYS[i];
-      btif_read_le_key(key.type, key.size, addr, addr_type, add, &device_added, &key_found);
+      const auto& key = BTIF_STORAGE_LE_KEYS[i];
+      if (btif_read_le_key(addr, addr_type, pairing_type, key.type, key.size, add, &device_added)) {
+        key_found = true;
+      }
     }
 
     // Fill in the bonded devices

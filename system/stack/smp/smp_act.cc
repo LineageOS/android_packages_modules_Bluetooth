@@ -401,7 +401,7 @@ void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   };
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, &le_key, true);
+    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, le_key, true);
   }
   smp_key_distribution(p_cb, NULL);
 }
@@ -418,7 +418,7 @@ void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   smp_send_cmd(SMP_OPCODE_ID_ADDR, p_cb);
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LID, nullptr, true);
+    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LID, tBTM_LE_KEY_VALUE{}, true);
   }
 
   smp_key_distribution_by_transport(p_cb, NULL);
@@ -439,7 +439,7 @@ void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
                             .csrk = p_cb->csrk,
                     },
     };
-    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LCSRK, &key, true);
+    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LCSRK, key, true);
   }
 
   smp_key_distribution_by_transport(p_cb, NULL);
@@ -1041,7 +1041,7 @@ void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   le_key.pairing_algorithm = smp_get_pairing_algorithm(p_cb);
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &le_key, true);
+    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, le_key, true);
   }
 
   smp_key_distribution(p_cb, NULL);
@@ -1094,7 +1094,7 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   /* store the ID key from peer device */
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PID, &pid_key, true);
+    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PID, pid_key, true);
     p_cb->cb_evt = SMP_LE_ADDR_ASSOC_EVT;
     smp_send_app_cback(p_cb, NULL);
   }
@@ -1132,7 +1132,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   le_key.pcsrk_key.counter = 0;
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, &le_key, true);
+    btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, le_key, true);
   }
 }
 

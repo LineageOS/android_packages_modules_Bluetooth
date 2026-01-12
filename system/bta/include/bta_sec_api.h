@@ -100,7 +100,7 @@ typedef uint8_t tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
 
 typedef union {
   tBTM_LE_PENC_KEYS penc_key;   /* received peer encryption key */
-  tBTM_LE_PCSRK_KEYS psrk_key;  /* received peer device SRK */
+  tBTM_LE_PCSRK_KEYS pcsrk_key;  /* received peer device SRK */
   tBTM_LE_PID_KEYS pid_key;     /* peer device ID key */
   tBTM_LE_LENC_KEYS lenc_key;   /* local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
   tBTM_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
@@ -136,7 +136,7 @@ typedef struct {
 typedef struct {
   RawAddress bd_addr; /* peer address */
   tBTM_LE_KEY_TYPE key_type;
-  tBTM_LE_KEY_VALUE* p_key_value;
+  const tBTM_LE_KEY_VALUE* p_key_value;
 } tBTA_DM_BLE_KEY;
 
 /* Structure associated with BTA_DM_AUTH_CMPL_EVT */
@@ -427,14 +427,15 @@ void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
  *                  information stored in the NVRAM.
  *
  * Parameters:      bd_addr          - BD address of the peer
- *                  p_le_key         - LE key values.
- *                  key_type         - LE SMP key type.
+ *                  pairing_type     - Pairing type
+ *                  key_type         - Key type
+ *                  le_key           - Key value
  *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
-                     tBTM_LE_KEY_TYPE key_type);
+void BTA_DmAddBleKey(const RawAddress& bd_addr, const PairingType& pairing_type,
+                     tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key);
 
 /*******************************************************************************
  *

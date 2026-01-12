@@ -1017,10 +1017,30 @@ static tBTM_STATUS bta_dm_sirk_verification_cback(const RawAddress& bd_addr) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
-                       tBTM_LE_KEY_TYPE key_type) {
-  get_btm_client_interface().security.BTM_SecAddBleKey(bd_addr, (tBTM_LE_KEY_VALUE*)&blekey,
-                                                       key_type);
+void bta_dm_add_blekey(const RawAddress& bd_addr, const PairingType& pairing_type,
+                       tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& key) {
+  tBTM_LE_KEY_VALUE btm_key = {.pairing_algorithm = pairing_type.algorithm};
+  switch (key_type) {
+    case BTM_LE_KEY_PENC:
+      btm_key.penc_key = key.penc_key;
+      break;
+    case BTM_LE_KEY_PCSRK:
+      btm_key.pcsrk_key = key.pcsrk_key;
+      break;
+    case BTM_LE_KEY_PID:
+      btm_key.pid_key = key.pid_key;
+      break;
+    case BTM_LE_KEY_LENC:
+      btm_key.lenc_key = key.lenc_key;
+      break;
+    case BTM_LE_KEY_LCSRK:
+      btm_key.lcsrk_key = key.lcsrk_key;
+      break;
+    default:
+      log::error("{} Unknown key type {}", bd_addr, key_type);
+      return;
+  }
+  get_btm_client_interface().security.BTM_SecAddBleKey(bd_addr, key_type, btm_key);
 }
 
 /*******************************************************************************

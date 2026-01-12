@@ -60,7 +60,7 @@ bool btm_get_local_div(const RawAddress& bd_addr, uint16_t* p_div);
 bool btm_ble_get_enc_key_type(const RawAddress& bd_addr, uint8_t* p_key_types);
 
 void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-                         tBTM_LE_KEY_VALUE* p_keys, bool pass_to_application);
+                         const tBTM_LE_KEY_VALUE& key, bool pass_to_application);
 void btm_ble_update_sec_key_size(const RawAddress& bd_addr, uint8_t enc_key_size);
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 

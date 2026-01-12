@@ -54,12 +54,12 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
  *                  information stored in the NVRAM.
  *
  * Parameters:      bd_addr          - BD address of the peer
- *                  p_le_key         - LE key values.
- *                  key_type         - LE SMP key type.
+ *                  key_type         - LE SMP key type
+ *                  key         - LE key value
  *
  ******************************************************************************/
-void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
-                      tBTM_LE_KEY_TYPE key_type);
+void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                      const tBTM_LE_KEY_VALUE& key);
 
 /** Returns local device encryption root (ER) */
 const Octet16& BTM_GetDeviceEncRoot();
