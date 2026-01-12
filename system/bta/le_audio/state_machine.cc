@@ -3010,7 +3010,7 @@ private:
         log::error("inconsistent presentation delay for group");
         group->PrintDebugState();
         state_machine_callbacks_->OnStateMachineInvalidStatusCb(
-                group->group_id_, StateMachineInvalidStatus::INVALID_ASE_STATE_PARAMETERS);
+                group->group_id_, StateMachineInvalidStatus::INVALID_DEVICE_CONFIGURATION);
         return;
       }
       ase->qos_config.framing = group->GetFraming();
