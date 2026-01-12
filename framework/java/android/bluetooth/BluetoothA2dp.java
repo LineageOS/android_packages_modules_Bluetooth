@@ -751,7 +751,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * Enables the optional codecs for the given device for this connection.
      *
      * <p>If the given device supports another codec type than {@link
-     * BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC}, this will switch to it. Switching from one codec
+     * BluetoothCodecConfig#SOURCE_CODEC_TYPE_SBC}, this will switch to it. Switching from one codec
      * to another will create a short audio drop. In case of multiple applications calling the
      * method, the last call will be taken into account, overriding any previous call
      *
@@ -783,7 +783,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * applications calling the method, the last call will be taken into account, overriding any
      * previous call
      *
-     * <p>See {@link BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC}. See {@link
+     * <p>See {@link BluetoothCodecConfig#SOURCE_CODEC_TYPE_SBC}. See {@link
      * #setOptionalCodecsEnabled} to disable optional codecs by default when the given device is
      * connected.
      *
