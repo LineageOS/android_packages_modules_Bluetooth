@@ -420,17 +420,6 @@ struct acl_set_disconnect_reason {
   void operator()(tHCI_STATUS acl_disc_reason) { body(acl_disc_reason); }
 };
 extern struct acl_set_disconnect_reason acl_set_disconnect_reason;
-// Name: acl_write_automatic_flush_timeout
-// Params: const RawAddress& bd_addr, uint16_t flush_timeout_in_ticks
-// Returns: void
-struct acl_write_automatic_flush_timeout {
-  std::function<void(const RawAddress& bd_addr, uint16_t flush_timeout_in_ticks)> body{
-          [](const RawAddress& /* bd_addr */, uint16_t /* flush_timeout_in_ticks */) { ; }};
-  void operator()(const RawAddress& bd_addr, uint16_t flush_timeout_in_ticks) {
-    body(bd_addr, flush_timeout_in_ticks);
-  }
-};
-extern struct acl_write_automatic_flush_timeout acl_write_automatic_flush_timeout;
 // Name: btm_connection_request
 // Params: const RawAddress& bda, const bluetooth::hci::ClassOfDevice& cod
 // Returns: void
