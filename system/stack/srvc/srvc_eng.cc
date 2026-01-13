@@ -64,7 +64,7 @@ tSRVC_ENG_CB srvc_eng_cb;
  *
  * Description      The function searches all LCBs with macthing bd address.
  *
- * Returns          Pointer to the found link conenction control block.
+ * Returns          Pointer to the found link connection control block.
  *
  ******************************************************************************/
 static tSRVC_CLCB* srvc_eng_find_clcb_by_bd_addr(const RawAddress& bda) {
@@ -85,7 +85,7 @@ static tSRVC_CLCB* srvc_eng_find_clcb_by_bd_addr(const RawAddress& bda) {
  *
  * Description      The function searches all LCBs with macthing connection ID.
  *
- * Returns          Pointer to the found link conenction control block.
+ * Returns          Pointer to the found link connection control block.
  *
  ******************************************************************************/
 tSRVC_CLCB* srvc_eng_find_clcb_by_conn_id(tCONN_ID conn_id) {
