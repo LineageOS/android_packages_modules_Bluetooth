@@ -42,6 +42,10 @@
 
 using namespace bluetooth;
 
+static bool sdp_delete_attribute_from_record(tSDP_RECORD* p_rec, uint16_t attr_id);
+static bool sdp_add_attribute_to_record(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr_type,
+                                        uint32_t attr_len, uint8_t* p_val);
+
 /*******************************************************************************
  *
  * Function         find_uuid_in_seq
@@ -349,7 +353,7 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type, uint
         return false;
       }
 
-      return SDP_AddAttributeToRecord(p_rec, attr_id, attr_type, attr_len, p_val);
+      return sdp_add_attribute_to_record(p_rec, attr_id, attr_type, attr_len, p_val);
     }
   }
   return false;
@@ -483,7 +487,7 @@ bool SDP_DeleteRecord(uint32_t handle) {
 
 /*******************************************************************************
  *
- * Function         SDP_AddAttributeToRecord
+ * Function         sdp_add_attribute_to_record
  *
  * Description      This function is called to add an attribute to a record.
  *                  This would be through the SDP database maintenance API.
@@ -495,8 +499,8 @@ bool SDP_DeleteRecord(uint32_t handle) {
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
-bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr_type,
-                              uint32_t attr_len, uint8_t* p_val) {
+static bool sdp_add_attribute_to_record(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr_type,
+                                        uint32_t attr_len, uint8_t* p_val) {
   uint16_t xx, yy;
   tSDP_ATTRIBUTE* p_attr = &p_rec->attribute[0];
 
@@ -504,7 +508,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr
   for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++) {
     /* The attribute exists. replace it */
     if (p_attr->id == attr_id) {
-      SDP_DeleteAttributeFromRecord(p_rec, attr_id);
+      sdp_delete_attribute_from_record(p_rec, attr_id);
       break;
     }
     if (p_attr->id > attr_id) {
@@ -533,7 +537,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr
   if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN) {
     if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
       log::error(
-              "SDP_AddAttributeToRecord failed: free pad {} equals or exceeds max "
+              "sdp_add_attribute_to_record failed: free pad {} equals or exceeds max "
               "padding length {}",
               p_rec->free_pad_ptr, SDP_MAX_PAD_LEN);
       return false;
@@ -541,7 +545,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr
 
     /* do truncate only for text string type descriptor */
     if (attr_type == TEXT_STR_DESC_TYPE) {
-      log::warn("SDP_AddAttributeToRecord: attr_len:{} too long. truncate to ({})", attr_len,
+      log::warn("sdp_add_attribute_to_record: attr_len:{} too long. truncate to ({})", attr_len,
                 SDP_MAX_PAD_LEN - p_rec->free_pad_ptr);
 
       attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
@@ -558,8 +562,8 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr
     p_rec->free_pad_ptr += attr_len;
   } else if (attr_len == 0 && p_attr->len != 0) {
     /* if truncate to 0 length, simply don't add */
-    log::error("SDP_AddAttributeToRecord fail, length exceed maximum: ID {}: attr_len:{}", attr_id,
-               attr_len);
+    log::error("sdp_add_attribute_to_record fail, length exceed maximum: ID {}: attr_len:{}",
+               attr_id, attr_len);
     p_attr->id = p_attr->type = p_attr->len = 0;
     return false;
   }
@@ -779,45 +783,6 @@ bool SDP_AddProfileDescriptorList(uint32_t handle, uint16_t profile_uuid, uint16
 
 /*******************************************************************************
  *
- * Function         SDP_AddProfileDescriptorListToRecord
- *
- * Description      This function is called to add a profile descriptor list to
- *                  a record. This would be through the SDP database maintenance
- *                  API. If the version already exists in the record, it is
- *                  replaced with the new one.
- *
- * Returns          true if added OK, else false
- *
- ******************************************************************************/
-bool SDP_AddProfileDescriptorListToRecord(tSDP_RECORD* prec, uint16_t profile_uuid,
-                                          uint16_t version) {
-  uint8_t* p;
-  bool result;
-  uint8_t* p_buff = (uint8_t*)osi_malloc(sizeof(uint8_t) * SDP_MAX_ATTR_LEN);
-
-  p = p_buff + 2;
-
-  /* First, build the profile descriptor list. This consists of a data element
-   * sequence. */
-  /* The sequence consists of profile's UUID and version number  */
-  UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
-  UINT16_TO_BE_STREAM(p, profile_uuid);
-
-  UINT8_TO_BE_STREAM(p, (UINT_DESC_TYPE << 3) | SIZE_TWO_BYTES);
-  UINT16_TO_BE_STREAM(p, version);
-
-  /* Add in type and length fields */
-  *p_buff = (uint8_t)((DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
-  *(p_buff + 1) = (uint8_t)(p - (p_buff + 2));
-
-  result = SDP_AddAttributeToRecord(prec, ATTR_ID_BT_PROFILE_DESC_LIST, DATA_ELE_SEQ_DESC_TYPE,
-                                    (uint32_t)(p - p_buff), p_buff);
-  osi_free(p_buff);
-  return result;
-}
-
-/*******************************************************************************
- *
  * Function         SDP_AddLanguageBaseAttrIDList
  *
  * Description      This function is called to add a language base attr list to
@@ -886,7 +851,7 @@ bool SDP_AddServiceClassIdList(uint32_t handle, uint16_t num_services, uint16_t*
 
 /*******************************************************************************
  *
- * Function         SDP_DeleteAttributeFromRecord
+ * Function         sdp_delete_attribute_from_record
  *
  * Description      This function is called to delete an attribute from a
  *                  record. This would be through the SDP database maintenance
@@ -895,8 +860,7 @@ bool SDP_AddServiceClassIdList(uint32_t handle, uint16_t num_services, uint16_t*
  * Returns          true if deleted OK, else false if not found
  *
  ******************************************************************************/
-
-bool SDP_DeleteAttributeFromRecord(tSDP_RECORD* p_rec, uint16_t attr_id) {
+static bool sdp_delete_attribute_from_record(tSDP_RECORD* p_rec, uint16_t attr_id) {
   tSDP_ATTRIBUTE* p_attr = &p_rec->attribute[0];
   uint8_t* pad_ptr;
   uint32_t len; /* Number of bytes in the entry */
