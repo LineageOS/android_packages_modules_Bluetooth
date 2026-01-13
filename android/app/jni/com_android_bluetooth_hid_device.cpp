@@ -61,11 +61,10 @@ static void application_state_callback(RawAddress* bd_addr, bthd_application_sta
                                registered);
 }
 
-static void connection_state_callback(RawAddress* bd_addr, bthd_connection_state_t state) {
+static void connection_state_callback(RawAddress bd_addr, bthd_connection_state_t state) {
   CallbackEnv sCallbackEnv(__func__);
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, jaddr.get(),
                                (jint)state);
 }

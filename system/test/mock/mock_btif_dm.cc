@@ -39,7 +39,7 @@ bool btif_dm_pairing_is_busy() {
   inc_func_call_count(__func__);
   return false;
 }
-bool btif_check_cod_hid(const RawAddress& /* remote_bdaddr */) {
+bool btif_check_cod_hid(RawAddress /* remote_bdaddr */) {
   inc_func_call_count(__func__);
   return false;
 }

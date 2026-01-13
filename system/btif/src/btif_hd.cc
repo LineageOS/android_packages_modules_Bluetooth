@@ -235,7 +235,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       }
       btif_storage_set_hidd(p_data->conn.bda);
 
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda, BTHD_CONN_STATE_CONNECTED);
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, p_data->conn.bda, BTHD_CONN_STATE_CONNECTED);
     } break;
 
     case BTA_HD_CLOSE_EVT:
@@ -245,7 +245,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
         btif_hd_cb.forced_disc = FALSE;
         break;
       }
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda,
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, p_data->conn.bda,
                 BTHD_CONN_STATE_DISCONNECTED);
       break;
 
@@ -269,7 +269,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_VC_UNPLUG_EVT:
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda,
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, p_data->conn.bda,
                 BTHD_CONN_STATE_DISCONNECTED);
       if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
         log::verbose("Removing bonding as only HID profile connected");
@@ -282,7 +282,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_CONN_STATE_EVT:
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda,
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, p_data->conn.bda,
                 (bthd_connection_state_t)p_data->conn.status);
       break;
 
