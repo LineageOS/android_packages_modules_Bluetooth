@@ -83,9 +83,8 @@ impl UHid {
     /// Destroy open UHID devices and clear the storage.
     pub fn clear(&mut self) {
         for device in self.devices.iter_mut() {
-            match device.destroy() {
-                Err(e) => error!("Fail to destroy uhid {}", e),
-                Ok(_) => (),
+            if let Err(e) = device.destroy() {
+                error!("Fail to destroy uhid {}", e);
             }
         }
         self.devices.clear();

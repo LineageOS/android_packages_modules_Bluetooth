@@ -145,7 +145,7 @@ impl Drop for UInputDev {
 }
 
 impl UInputDev {
-    fn floor_char_boundary(str: &String, upper_bound: usize) -> usize {
+    fn floor_char_boundary(str: &str, upper_bound: usize) -> usize {
         // Some string operation can only be done at UTF8 boundary, e.g. truncate.
         // It is guaranteed that there would be at least one such boundary in every 4 bytes,
         // therefore we can just brute force it.
@@ -159,7 +159,7 @@ impl UInputDev {
                 return i;
             }
         }
-        return 0;
+        0
     }
 
     #[allow(dangling_pointers_from_temporaries)]
@@ -306,12 +306,7 @@ impl Default for UInput {
 
 impl UInput {
     fn get_device(&mut self, addr: String) -> Option<&mut UInputDev> {
-        for device in self.devices.iter_mut() {
-            if device.addr == addr {
-                return Some(device);
-            }
-        }
-        None
+        self.devices.iter_mut().find(|device| device.addr == addr)
     }
 
     /// Create a new UInput struct that holds a vector of uinput objects.
