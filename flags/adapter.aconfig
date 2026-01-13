@@ -114,3 +114,12 @@ flag {
     }
 }
 
+flag {
+  name: "check_set_event_mask_p2_support_before_writing"
+  namespace: "bluetooth"
+  description: "Some controllers might not support the command Set event mask page 2. Check the local capabilities before sending."
+  bug: "475438075"
+  metadata {
+        purpose: PURPOSE_BUGFIX
+  }
+}
