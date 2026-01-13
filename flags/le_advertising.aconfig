@@ -12,13 +12,6 @@ flag {
 }
 
 flag {
-    name: "le_adv_own_address_api"
-    namespace: "bluetooth"
-    description: "APIs for getting own address of advertising sets"
-    bug: "457538952"
-}
-
-flag {
     name: "max_advertising_power"
     namespace: "bluetooth"
     is_exported: true
