@@ -245,16 +245,11 @@ struct tSDP_CB {
 extern tSDP_CB sdp_cb;
 
 /* Functions provided by sdp_main.cc */
-void sdp_init(void);
-void sdp_free(void);
 void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason);
-
 void sdp_conn_timer_timeout(void* data);
-
 [[nodiscard]] tCONN_CB* sdp_conn_originate(const RawAddress& bd_addr);
 
-/* Functions provided by sdp_utils.cc
- */
+/* Functions provided by sdp_utils.cc */
 void sdpu_log_attribute_metrics(const RawAddress& bda, tSDP_DISCOVERY_DB* p_db);
 tCONN_CB* sdpu_find_ccb_by_cid(uint16_t cid);
 tCONN_CB* sdpu_find_ccb_by_db(const tSDP_DISCOVERY_DB* p_db);
@@ -310,12 +305,6 @@ void sdp_register_sdp_discovery_server_records();
 /* Functions provided by sdp_discovery.cc */
 void sdp_disc_connected(tCONN_CB* p_ccb);
 void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg);
-
-void update_pce_entry_to_interop_database(RawAddress remote_addr);
-bool is_sdp_pbap_pce_disabled(RawAddress remote_addr);
-void sdp_save_local_pse_record_attributes(int32_t rfcomm_channel_number, int32_t l2cap_psm,
-                                          int32_t profile_version, uint32_t supported_features,
-                                          uint32_t supported_repositories);
 
 size_t sdp_get_num_records(const tSDP_DISCOVERY_DB& db);
 size_t sdp_get_num_attributes(const tSDP_DISC_REC& sdp_disc_rec);

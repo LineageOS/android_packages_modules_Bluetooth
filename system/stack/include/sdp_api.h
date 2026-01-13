@@ -31,6 +31,9 @@
 #include "stack/sdp/internal/sdp_api.h"
 #include "stack/sdp/sdp_discovery_db.h"
 
+void sdp_init(void);
+void sdp_free(void);
+
 namespace bluetooth {
 namespace legacy {
 namespace stack {

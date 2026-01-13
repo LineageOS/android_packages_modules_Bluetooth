@@ -30,6 +30,7 @@
 #include "stack/include/avrc_defs.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/sdp_api.h"
 #include "stack/sdp/sdpint.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"

@@ -52,28 +52,8 @@
 #define HFP_PROFILE_MINOR_VERSION_6 0x06
 #define HFP_PROFILE_MINOR_VERSION_7 0x07
 #define HFP_PROFILE_MINOR_VERSION_9 0x09
-#define PBAP_GOEP_L2CAP_PSM_LEN 0x06
-#define PBAP_SUPP_FEA_LEN 0x08
-
-#ifndef SDP_ENABLE_PTS_PBAP
-#define SDP_ENABLE_PTS_PBAP "bluetooth.pts.pbap"
-#endif
-
-#define PBAP_1_2 0x0102
-#define PBAP_1_2_BL_LEN 14
 
 using namespace bluetooth;
-
-/* Used to set PBAP local SDP device record for PBAP 1.2 upgrade */
-struct tSDP_PSE_LOCAL_RECORD {
-  int32_t rfcomm_channel_number;
-  int32_t l2cap_psm;
-  int32_t profile_version;
-  uint32_t supported_features;
-  uint32_t supported_repositories;
-};
-
-static tSDP_PSE_LOCAL_RECORD sdpPseLocalRecord;
 
 /******************************************************************************/
 /*                E R R O R   T E X T   S T R I N G S                         */
@@ -992,68 +972,6 @@ void sdp_server_handle_client_req(tCONN_CB* p_ccb, BT_HDR* p_msg) {
       log::warn("SDP - server got unknown PDU: 0x{:x}", pdu_id);
       break;
   }
-}
-
-/*************************************************************************************
-**
-** Function        update_pce_entry_to_interop_database
-**
-** Description     Update PCE 1.2 entry to dynamic interop database
-**
-***************************************************************************************/
-void update_pce_entry_to_interop_database(RawAddress remote_addr) {
-  if (!interop_match_addr_or_name(INTEROP_ADV_PBAP_VER_1_2, remote_addr,
-                                  &btif_storage_get_remote_device_property)) {
-    interop_database_add_addr(INTEROP_ADV_PBAP_VER_1_2, remote_addr, 3);
-    log::verbose("device: {} is added into interop list", remote_addr);
-  } else {
-    log::warn("device: {} is already found on interop list", remote_addr);
-  }
-}
-
-/*************************************************************************************
-**
-** Function        is_sdp_pbap_pce_disabled
-**
-** Description     Checks if given PBAP record is for PBAP PSE and SDP
-*denylisted
-**
-** Returns         BOOLEAN
-**
-***************************************************************************************/
-bool is_sdp_pbap_pce_disabled(RawAddress remote_address) {
-  if (interop_match_addr_or_name(INTEROP_DISABLE_PCE_SDP_AFTER_PAIRING, remote_address,
-                                 &btif_storage_get_remote_device_property)) {
-    log::verbose("device is denylisted for PCE SDP");
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/*************************************************************************************
-**
-** Function        sdp_save_local_pse_record_attributes_val
-**
-** Description     Save pbap 1.2 sdp record attributes values, which would be
-*used for dynamic version upgrade.
-**
-** Returns         BOOLEAN
-**
-***************************************************************************************/
-void sdp_save_local_pse_record_attributes(int32_t rfcomm_channel_number, int32_t l2cap_psm,
-                                          int32_t profile_version, uint32_t supported_features,
-                                          uint32_t supported_repositories) {
-  log::warn(
-          "rfcomm_channel_number: 0x{:x}, l2cap_psm: 0x{:x} profile_version: "
-          "0x{:x}supported_features: 0x{:x} supported_repositories:  0x{:x}",
-          rfcomm_channel_number, l2cap_psm, profile_version, supported_features,
-          supported_repositories);
-  sdpPseLocalRecord.rfcomm_channel_number = rfcomm_channel_number;
-  sdpPseLocalRecord.l2cap_psm = l2cap_psm;
-  sdpPseLocalRecord.profile_version = profile_version;
-  sdpPseLocalRecord.supported_features = supported_features;
-  sdpPseLocalRecord.supported_repositories = supported_repositories;
 }
 
 void sdp_register_sdp_discovery_server_records() {
