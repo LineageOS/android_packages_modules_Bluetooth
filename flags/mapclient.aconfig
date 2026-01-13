@@ -23,16 +23,6 @@ flag {
 }
 
 flag {
-    name: "map_client_check_access_permission"
-    namespace: "bluetooth"
-    description: "Check if message access permission is allowed before connecting"
-    bug: "428760494"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ignore_message_sms_disallowed"
     namespace: "bluetooth"
     description: "Don't store message if SMS is disallowed for the current user"
