@@ -396,7 +396,10 @@
     {
       "system_properties": {
         "bluetooth.profile.a2dp.sink.enabled": "false",
-        "bluetooth.profile.a2dp.source.enabled": "true"
+        "bluetooth.profile.a2dp.source.enabled": "true",
+        // Disable blur effects to prevent interference with UI automation during tests.
+        // See b/265349220.
+        "persist.sysui.disableBlur": "true"
       },
       "tests": [
         "A2DP/SRC",
