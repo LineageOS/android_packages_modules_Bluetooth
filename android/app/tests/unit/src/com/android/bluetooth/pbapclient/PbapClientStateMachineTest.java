@@ -228,6 +228,27 @@ public class PbapClientStateMachineTest {
     }
 
     @Test
+    public void testConnecting_receivedSdpResultSuccessWithNullRecord_nothingHappens() {
+        // Start in the connecting state.
+        testDisconnected_receivedConnect_connectionStateChangesToConnecting();
+        clearInvocations(mMockCallback);
+
+        // Send an SDP success result but with a null record.
+        mPbapClientStateMachine.onSdpResultReceived(SDP_SUCCESS, null);
+        mTestLooper.dispatchAll();
+
+        // Verify that the state machine remains in the Connecting state.
+        assertThat(mPbapClientStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTING);
+
+        // Verify that no attempt was made to connect the OBEX client.
+        verify(mMockObexClient, never()).connectL2cap(anyInt());
+        verify(mMockObexClient, never()).connectRfcomm(anyInt());
+
+        // Verify that no state changes occurred.
+        verifyNoMoreInteractions(mMockCallback);
+    }
+
+    @Test
     public void testConnecting_receivedSdpResultWithFailedStatus_transitionToDisconnecting() {
         testDisconnected_receivedConnect_connectionStateChangesToConnecting();
         mPbapClientStateMachine.onSdpResultReceived(
