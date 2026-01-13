@@ -43,6 +43,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/l2cap/l2c_int.h"
 
 using namespace bluetooth;
 
@@ -241,6 +242,7 @@ uint16_t AVCT_CreateBrowse(uint8_t handle, tAVCT_ROLE role) {
   uint16_t result = AVCT_SUCCESS;
   tAVCT_CCB* p_ccb;
   tAVCT_BCB* p_bcb;
+  tL2C_LCB* p_l2c_lcb;
   int index;
 
   log::verbose("AVCT_CreateBrowse: role:{}", avct_role_text(role));
@@ -260,7 +262,19 @@ uint16_t AVCT_CreateBrowse(uint8_t handle, tAVCT_ROLE role) {
   if (role == AVCT_ROLE_INITIATOR) {
     /* the link control block must exist before this function is called as INT.
      */
-    if ((p_ccb->p_lcb == NULL) || (p_ccb->p_lcb->allocated == 0)) {
+
+    if (p_ccb->p_lcb == NULL) {
+      return AVCT_NOT_OPEN;
+    }
+    p_l2c_lcb = l2cu_find_lcb_by_bd_addr(p_ccb->p_lcb->peer_addr, BT_TRANSPORT_BR_EDR);
+    if (p_l2c_lcb == NULL) {
+      log::warn("AVCT_CreateBrowse: l2cap lcb for peer does not exist");
+      return AVCT_BAD_HANDLE;
+    } else if (!(p_l2c_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS)) {
+      log::warn("AVCT_CreateBrowse: peer did not support ENH_RETRANS");
+      return AVCT_BAD_HANDLE;
+    }
+    if (p_ccb->p_lcb->allocated == 0) {
       result = AVCT_NOT_OPEN;
     } else {
       /* find link; if none allocate a new one */

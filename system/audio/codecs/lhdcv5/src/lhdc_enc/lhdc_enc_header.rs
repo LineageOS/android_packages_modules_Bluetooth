@@ -18,7 +18,7 @@ use zerocopy::IntoBytes;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SegmentSettings {
-    pub drity_bit_adding: libc::c_float,
+    pub drity_bit_adding: f32,
     pub segment_num_inv: libc::c_int,
     pub segment_scale_jump: libc::c_int,
     pub segment_scale_level: libc::c_int,
@@ -192,6 +192,7 @@ pub const AR_INDEX: HeaderInfoIndex = 3;
 pub const JAS_INDEX: HeaderInfoIndex = 2;
 pub const VERSION_INDEX: HeaderInfoIndex = 1;
 pub const ENC_SIZE_INDEX: HeaderInfoIndex = 0;
+
 #[derive(Copy, Clone, Default)]
 pub struct Header {
     pub info: libc::c_ushort,
@@ -210,23 +211,8 @@ impl Header {
     }
 }
 
-static HEADER_INFO_MAX: [libc::c_ushort; 6] = [
-    0x3ff as libc::c_int as libc::c_ushort,
-    0xc00 as libc::c_int as libc::c_ushort,
-    0x1000 as libc::c_int as libc::c_ushort,
-    0x2000 as libc::c_int as libc::c_ushort,
-    0x4000 as libc::c_int as libc::c_ushort,
-    0x8000 as libc::c_int as libc::c_ushort,
-];
-
-static HEADER_INFO_OFFSETS: [libc::c_int; 6] = [
-    0 as libc::c_int,
-    10 as libc::c_int,
-    12 as libc::c_int,
-    13 as libc::c_int,
-    14 as libc::c_int,
-    15 as libc::c_int,
-];
+static HEADER_INFO_MAX: [libc::c_ushort; 6] = [0x3ff, 0xc00, 0x1000, 0x2000, 0x4000, 0x8000];
+static HEADER_INFO_OFFSETS: [libc::c_int; 6] = [0, 10, 12, 13, 14, 15];
 
 #[inline]
 fn set_hdr_info(hdr_info: &mut libc::c_ushort, index: HeaderInfoIndex, value: libc::c_int) {
@@ -246,7 +232,7 @@ pub fn enc_process_header(
     enc_frm_len_usable: &mut i32,
     encoded_frame: &mut [u8],
 ) -> libc::c_int {
-    let mut hdr_size: libc::c_int = 0 as libc::c_int;
+    let mut hdr_size: libc::c_int = 0;
     *enc_frm_len_usable = hdr.enc_frm_len_provided;
     set_hdr_info(&mut hdr.info, ENC_SIZE_INDEX, *enc_frm_len_usable);
     encoded_frame[0] = hdr.info.as_bytes()[0];
@@ -256,7 +242,7 @@ pub fn enc_process_header(
 }
 
 pub fn lhdc_enc_get_encoded_frame_size(encoded_frame_size: &mut libc::c_int, ctx: &mut Context) {
-    let mut extra_bytes: libc::c_int = 0 as libc::c_int;
+    let mut extra_bytes: libc::c_int = 0;
     let enc_frm_len_provided = ctx.hdr_s().enc_frm_len_provided;
     let ecb: &mut fdata_all_buffer_struct = ctx.ebuffer();
     extra_bytes += 2 as libc::c_int;

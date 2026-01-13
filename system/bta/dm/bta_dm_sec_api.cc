@@ -135,16 +135,14 @@ tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr) {
  *                  information stored in the NVRAM.
  *
  * Parameters:      bd_addr          - BD address of the peer
- *                  p_le_key         - LE key values.
- *                  key_type         - LE SMP key type.
- *
- * Returns          BTA_SUCCESS if successful
- *                  BTA_FAIL if operation failed.
+ *                  pairing_type     - Pairing type
+ *                  key_type         - Key type
+ *                  le_key           - Key value
  *
  ******************************************************************************/
-void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
-                     tBTM_LE_KEY_TYPE key_type) {
-  bta_dm_add_blekey(bd_addr, *p_le_key, key_type);
+void BTA_DmAddBleKey(const RawAddress& bd_addr, const PairingType& pairing_type,
+                     tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key) {
+  bta_dm_add_blekey(bd_addr, pairing_type, key_type, le_key);
 }
 
 /*******************************************************************************

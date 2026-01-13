@@ -93,16 +93,15 @@ impl Top {
         let num2 = self.num2;
         let sft_num = self.offset_num;
         self.pos_twid_scalar_shift = calc_pos_twid_scale_int_bits(num2);
-        let scale = ((1 as libc::c_int) << sft_num) as libc::c_float / num2 as libc::c_float;
+        let scale = ((1 as libc::c_int) << sft_num) as f32 / num2 as f32;
         let pos_twid_scalar_shift_val = (1 as libc::c_longlong) << self.pos_twid_scalar_shift;
         for i in 0..num2 as usize {
-            let mut x =
-                (-PI * (i as libc::c_double + 0.25f64) / num1 as libc::c_double) as libc::c_float;
-            let mut r_tmp = ((x as libc::c_double).cos() as libc::c_float
-                * ((1 as libc::c_longlong) << 31 as libc::c_int) as libc::c_float)
+            let mut x = (-PI * (i as libc::c_double + 0.25f64) / num1 as libc::c_double) as f32;
+            let mut r_tmp = ((x as libc::c_double).cos() as f32
+                * ((1 as libc::c_longlong) << 31 as libc::c_int) as f32)
                 as libc::c_longlong;
-            let mut i_tmp = ((x as libc::c_double).sin() as libc::c_float
-                * ((1 as libc::c_longlong) << 31 as libc::c_int) as libc::c_float)
+            let mut i_tmp = ((x as libc::c_double).sin() as f32
+                * ((1 as libc::c_longlong) << 31 as libc::c_int) as f32)
                 as libc::c_longlong;
             if r_tmp > 2147483647 as libc::c_int as libc::c_longlong {
                 self.pre_twid[i].r = 2147483647 as libc::c_int;
@@ -120,13 +119,11 @@ impl Top {
             } else {
                 self.pre_twid[i].i = i_tmp as libc::c_int;
             }
-            x = (-PI * i as libc::c_double / num1 as libc::c_double) as libc::c_float;
-            r_tmp = (((x as libc::c_double).cos() * scale as libc::c_double) as libc::c_float
-                * pos_twid_scalar_shift_val as libc::c_float)
-                as libc::c_longlong;
-            i_tmp = (((x as libc::c_double).sin() * scale as libc::c_double) as libc::c_float
-                * pos_twid_scalar_shift_val as libc::c_float)
-                as libc::c_longlong;
+            x = (-PI * i as libc::c_double / num1 as libc::c_double) as f32;
+            r_tmp = (((x as libc::c_double).cos() * scale as libc::c_double) as f32
+                * pos_twid_scalar_shift_val as f32) as libc::c_longlong;
+            i_tmp = (((x as libc::c_double).sin() * scale as libc::c_double) as f32
+                * pos_twid_scalar_shift_val as f32) as libc::c_longlong;
             if r_tmp > 2147483647 as libc::c_int as libc::c_longlong {
                 self.pos_twid[i].r = 2147483647 as libc::c_int;
             } else if r_tmp < (-(2147483647 as libc::c_int) - 1 as libc::c_int) as libc::c_longlong
@@ -255,9 +252,9 @@ pub fn lhdc_enc_lossy_frequency_overlap(repeating: libc::c_int, win_hann: &mut [
     for (i, hann) in win_hann.iter_mut().take(repeating as usize).enumerate() {
         let sin_tmp =
             (0.5f64 * PI * (i as libc::c_double + 0.5f64) / repeating as libc::c_double).sin();
-        let win_data = (0.5f64 * PI * sin_tmp * sin_tmp).sin() as libc::c_float;
-        let win_tmp = (win_data * ((1 as libc::c_longlong) << 31 as libc::c_int) as libc::c_float)
-            as libc::c_longlong;
+        let win_data = (0.5f64 * PI * sin_tmp * sin_tmp).sin() as f32;
+        let win_tmp =
+            (win_data * ((1 as libc::c_longlong) << 31 as libc::c_int) as f32) as libc::c_longlong;
         if win_tmp > 2147483647 as libc::c_int as libc::c_longlong {
             *hann = 2147483647 as libc::c_int;
         } else if win_tmp < (-(2147483647 as libc::c_int) - 1 as libc::c_int) as libc::c_longlong {

@@ -182,10 +182,10 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble::BTM_SecAddBleDevice(bd_addr, dev_type, addr_type);
 }
-void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
-                      tBTM_LE_KEY_TYPE key_type) {
+void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                      const tBTM_LE_KEY_VALUE& key) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::BTM_SecAddBleKey(bd_addr, p_le_key, key_type);
+  test::mock::stack_btm_ble::BTM_SecAddBleKey(bd_addr, key_type, key);
 }
 void BTM_SecurityGrant(const RawAddress& bd_addr, tBTM_STATUS res) {
   inc_func_call_count(__func__);
@@ -266,9 +266,9 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
   return test::mock::stack_btm_ble::btm_proc_smp_cback(event, bd_addr, p_data);
 }
 void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-                         tBTM_LE_KEY_VALUE* p_keys, bool pass_to_application) {
+                         const tBTM_LE_KEY_VALUE& key, bool pass_to_application) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::btm_sec_save_le_key(bd_addr, key_type, p_keys, pass_to_application);
+  test::mock::stack_btm_ble::btm_sec_save_le_key(bd_addr, key_type, key, pass_to_application);
 }
 // Mocked functions complete
 // END mockcify generation

@@ -33,9 +33,9 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
               (const RawAddress& /* bd_addr */, tBT_DEVICE_TYPE /* dev_type */,
                tBLE_ADDR_TYPE /* addr_type */));
   MOCK_METHOD((bool), BTM_SecDeleteDevice, (const RawAddress& /* bd_addr */));
-  MOCK_METHOD((void), BTM_SecAddBleKey,
-              (const RawAddress& /* bd_addr */, tBTM_LE_KEY_VALUE* /* p_le_key */,
-               tBTM_LE_KEY_TYPE /* key_type */));
+  MOCK_METHOD(void, BTM_SecAddBleKey,
+              (const RawAddress& /* bd_addr */, tBTM_LE_KEY_TYPE /* key_type */,
+               const tBTM_LE_KEY_VALUE& /* key */));
   MOCK_METHOD((void), BTM_SecClearSecurityFlags, (const RawAddress& /* bd_addr */));
   MOCK_METHOD((tBTM_STATUS), BTM_SetEncryption,
               (const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */,

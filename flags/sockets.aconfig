@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "invalidate_hci_handle_on_acl_removal"
-    namespace: "bluetooth"
-    description: "invalidate hci handle associated with lcb on acl removal"
-    bug: "394329150"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "make_socket_read_behavior_consistent"
     namespace: "bluetooth"
     description: "Ensure both RFCOMM & LECOC sockets return value is consistent on EOF"
@@ -30,17 +20,6 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
-
-flag {
-    name: "donot_pm_classic_on_le_traffic"
-    namespace: "bluetooth"
-    description: "Donot exit the sniff on classic link if on LE only traffic"
-    bug: "416266693"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
 
 flag {
     name: "consider_l2c_header_bytes_for_mps_selection"

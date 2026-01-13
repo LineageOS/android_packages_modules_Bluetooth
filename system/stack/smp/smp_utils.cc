@@ -1491,7 +1491,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
                   },
           .pairing_algorithm = PairingAlgorithm::SC,
   };
-  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, &lle_key, true);
+  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, lle_key, true);
 
   tBTM_LE_KEY_VALUE ple_key = {
           .penc_key =
@@ -1504,7 +1504,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
           .pairing_algorithm = PairingAlgorithm::SC,
   };
   ple_key.penc_key.rand = ZERO_OCTET8;
-  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &ple_key, true);
+  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, ple_key, true);
 }
 
 /** The function calculates MacKey and LTK and saves them in CB. To calculate

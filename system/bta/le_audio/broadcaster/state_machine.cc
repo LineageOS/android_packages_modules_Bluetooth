@@ -110,15 +110,15 @@ public:
   BroadcastStateMachineConfig const& GetStateMachineConfig() const override { return sm_config_; }
 
   void RequestOwnAddress(
-          base::Callback<void(uint8_t /* address_type*/, RawAddress /*address*/)> cb) override {
+          base::OnceCallback<void(uint8_t /* address_type*/, RawAddress /*address*/)> cb) override {
     uint8_t advertising_sid = GetAdvertisingSid();
-    advertiser_if_->GetOwnAddress(advertising_sid, cb);
+    advertiser_if_->GetOwnAddress(advertising_sid, std::move(cb));
   }
 
   void RequestOwnAddress(void) override {
     auto broadcast_id = GetBroadcastId();
-    RequestOwnAddress(base::Bind(&IBroadcastStateMachineCallbacks::OnOwnAddressResponse,
-                                 base::Unretained(this->callbacks_), broadcast_id));
+    RequestOwnAddress(base::BindOnce(&IBroadcastStateMachineCallbacks::OnOwnAddressResponse,
+                                     base::Unretained(this->callbacks_), broadcast_id));
   }
 
   RawAddress GetOwnAddress() override { return addr_; }

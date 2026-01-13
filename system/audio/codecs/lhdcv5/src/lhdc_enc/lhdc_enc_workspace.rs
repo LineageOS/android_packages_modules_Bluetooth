@@ -96,8 +96,9 @@ impl fdata_enc_buffer_struct {
 #[derive(Copy, Clone, Default)]
 pub struct fdata_ch_buffer_struct {
     pub offset_size: libc::c_int,
-    pub offset_step: libc::c_float,
+    pub offset_step: f32,
 }
+
 pub struct fdata_all_buffer_struct {
     pub khz_top: libc::c_int,
     pub ms_top: libc::c_int,
@@ -208,7 +209,7 @@ impl fdata_all_buffer_struct {
         self.khz = khz;
         self.resolution = resolution;
         self.ch_num = ch_num;
-        let khz_calc = if khz == 44100 as libc::c_int { 48000 as libc::c_int } else { khz };
+        let khz_calc = if khz == 44100 { 48000 } else { khz };
         let fdata_for_ov = match ms {
             25 => 10,
             50 => 20,
@@ -223,17 +224,15 @@ impl fdata_all_buffer_struct {
         if result != 0 {
             return result;
         }
-        self.fdata_ch_buffer[0 as libc::c_int as usize].offset_step =
-            8704.0f32 / ((1 as libc::c_int) << 9 as libc::c_int) as libc::c_float;
-        self.fdata_ch_buffer[1 as libc::c_int as usize].offset_step =
-            self.fdata_ch_buffer[0 as libc::c_int as usize].offset_step;
+        self.fdata_ch_buffer[0].offset_step = 8704.0f32 / ((1 as libc::c_int) << 9) as f32;
+        self.fdata_ch_buffer[1].offset_step = self.fdata_ch_buffer[0].offset_step;
         self.frequency_mem.reset(
-            self.pixel_num * 2 as libc::c_int,
+            self.pixel_num * 2,
             self.pixel_ov_num,
             31 as libc::c_int - self.resolution,
         );
 
-        if result != 0 as libc::c_int {
+        if result != 0 {
             return result;
         }
         self.frame_cnt = 0;

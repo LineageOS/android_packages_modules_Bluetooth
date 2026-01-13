@@ -106,10 +106,10 @@ void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmAddBleDevice(bd_addr, addr_type, dev_type);
 }
-void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
-                     tBTM_LE_KEY_TYPE key_type) {
+void BTA_DmAddBleKey(const RawAddress& bd_addr, const PairingType& pairing_type,
+                     tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmAddBleKey(bd_addr, p_le_key, key_type);
+  test::mock::bta_dm_api::BTA_DmAddBleKey(bd_addr, pairing_type, key_type, le_key);
 }
 void BTA_DmAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
                      const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,

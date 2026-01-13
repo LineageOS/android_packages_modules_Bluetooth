@@ -137,15 +137,17 @@ struct bta_dm_add_ble_device {
 extern struct bta_dm_add_ble_device bta_dm_add_ble_device;
 
 // Name: bta_dm_add_blekey
-// Params: const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey, tBTM_LE_KEY_TYPE
-// key_type Return: void
+// Params: const RawAddress& bd_addr, const PairingType& pairing_type, tBTM_LE_KEY_TYPE key_type,
+// const tBTA_LE_KEY_VALUE& key
+// Return: void
 struct bta_dm_add_blekey {
-  std::function<void(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
-                     tBTM_LE_KEY_TYPE key_type)>
-          body{[](const RawAddress& /* bd_addr */, tBTA_LE_KEY_VALUE /* blekey */,
-                  tBTM_LE_KEY_TYPE /* key_type */) {}};
-  void operator()(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey, tBTM_LE_KEY_TYPE key_type) {
-    body(bd_addr, blekey, key_type);
+  std::function<void(const RawAddress& bd_addr, const PairingType& pairing_type,
+                     tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& key)>
+          body{[](const RawAddress& /* bd_addr */, const PairingType& /* pairing_type */,
+                  tBTM_LE_KEY_TYPE /* key_type */, const tBTA_LE_KEY_VALUE& /* key */) {}};
+  void operator()(const RawAddress& bd_addr, const PairingType& pairing_type,
+                  tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& key) {
+    body(bd_addr, pairing_type, key_type, key);
   }
 };
 extern struct bta_dm_add_blekey bta_dm_add_blekey;

@@ -79,7 +79,7 @@ typedef struct {
 
 typedef struct {
   tBTM_LE_KEY_TYPE key_type;
-  tBTM_LE_KEY_VALUE* p_key_value;
+  const tBTM_LE_KEY_VALUE* p_key_value;
 } tBTM_LE_KEY;
 
 // This should be the same as tSMP_EVT_DATA.
