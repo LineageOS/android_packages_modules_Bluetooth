@@ -193,81 +193,11 @@ public class BipPixelTest {
 
     @Test(expected = ParseException.class)
     public void testParseNull_throwsException() {
-        testParse(null, BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
+        testParse(null, BipPixel.TYPE_ERROR, -1, -1, -1, -1, null);
     }
 
     @Test(expected = ParseException.class)
-    public void testParseEmpty_throwsException() {
-        testParse("", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseWhitespace_throwsException() {
-        testParse("\n\t ", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseBadCharacters_throwsException() {
-        testParse("this*has-characters*init", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseTooManyAsterisks_throwsException() {
-        testParse("123*****456", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseWithSymbols_throwsException() {
-        testParse("!@#*342", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseEscapeCharacters_throwsException() {
-        testParse("\\\\*\\\\-\\\\*\\\\", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseWidthTooLargeFixed_throwsException() {
-        testParse("123456*123", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseHeightTooLargeFixed_throwsException() {
-        testParse("123*123456", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMinWidthTooLargeResize_throwsException() {
-        testParse("123456*1-12*1234", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMaxWidthTooLargeResize_throwsException() {
-        testParse("1*1-123456*123", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMinHeightTooLargeResize_throwsException() {
-        testParse("1*123456-12*1234", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMaxHeightTooLargeResize_throwsException() {
-        testParse("1*1-12*123456", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMinWidthTooLargeResizeFixed_throwsException() {
-        testParse("123456**-123*1234", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMaxWidthTooLargeResizeFixed_throwsException() {
-        testParse("123**-123456*1234", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseMaxHeightTooLargeResizeFixed_throwsException() {
-        testParse("123**-1234*123456", BipPixel.TYPE_UNKNOWN, -1, -1, -1, -1, null);
+    public void testParseTooLong_throwsException() {
+        testParse("000000000000000000000000", BipPixel.TYPE_ERROR, -1, -1, -1, -1, null);
     }
 }

@@ -121,15 +121,16 @@ public class CoverArt {
         debug("GetImage(descriptor=" + descriptor);
         if (mImage == null) return null;
         if (descriptor == null) return getImage();
-        if (!isDescriptorValid(descriptor)) {
+
+        if (!isDescriptorEncodingValid(descriptor)) {
             error("Given format isn't available for this image");
             return null;
         }
 
-        if (!Flags.implementGetImageFromDescriptorForCoverArt()) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            mImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-            return outputStream.toByteArray();
+        if (!isDescriptorPixelValid(descriptor)
+                || !Flags.implementGetImageFromDescriptorForCoverArt()) {
+            debug("getImage - descriptor pixels is not valid, returning default image.");
+            return getImage();
         }
 
         BipPixel pixel = descriptor.getPixel();
@@ -217,19 +218,32 @@ public class CoverArt {
         return imageBytes;
     }
 
-    /** Determine if a given image descriptor is valid */
-    private static boolean isDescriptorValid(BipImageDescriptor descriptor) {
-        debug("isDescriptorValid(descriptor=" + descriptor + ")");
+    /** Determine if a given image descriptor pixels is valid */
+    private static boolean isDescriptorPixelValid(BipImageDescriptor descriptor) {
+        debug("isDescriptorPixelValid(descriptor=" + descriptor + ")");
         if (descriptor == null) return false;
 
-        BipEncoding encoding = descriptor.getEncoding();
         BipPixel pixel = descriptor.getPixel();
 
-        int encodingType = encoding.getType();
-        if ((encodingType == BipEncoding.JPEG || encodingType == BipEncoding.PNG)
+        if (pixel != null
                 && ((Flags.implementGetImageFromDescriptorForCoverArt()
                                 && PIXEL_THUMBNAIL.isBiggerOrEquals(pixel))
                         || PIXEL_THUMBNAIL.equals(pixel))) {
+            return true;
+        }
+        return false;
+    }
+
+    /** Determine if a given image descriptor encoding is valid */
+    private static boolean isDescriptorEncodingValid(BipImageDescriptor descriptor) {
+        debug("isDescriptorEncodingValid(descriptor=" + descriptor + ")");
+        if (descriptor == null) return false;
+
+        BipEncoding encoding = descriptor.getEncoding();
+
+        int encodingType = encoding.getType();
+        if (encoding != null
+                && (encodingType == BipEncoding.JPEG || encodingType == BipEncoding.PNG)) {
             return true;
         }
         return false;

@@ -55,7 +55,8 @@ public class BipPixel {
 
     // Note that the integer values also map to the number of '*' delimiters that exist in each
     // formatted string
-    public static final int TYPE_UNKNOWN = 0;
+    public static final int TYPE_ERROR = -1;
+    public static final int TYPE_NO_SET = 0;
     public static final int TYPE_FIXED = 1;
     public static final int TYPE_RESIZE_MODIFIED_ASPECT_RATIO = 2;
     public static final int TYPE_RESIZE_FIXED_ASPECT_RATIO = 3;
@@ -65,6 +66,10 @@ public class BipPixel {
     private final int mMinHeight;
     private final int mMaxWidth;
     private final int mMaxHeight;
+
+    public static final int MAX_PIXEL = 200;
+    public static final int THUMBNAIL_PIXEL = 200;
+    public static final int MAX_PIXEL_STRING = 23;
 
     /** Create a fixed size BipPixel object */
     public static BipPixel createFixed(int width, int height) {
@@ -105,7 +110,7 @@ public class BipPixel {
 
     /** Create a BipPixel object from an Image Format pixel attribute string */
     public BipPixel(String pixel) {
-        int type = TYPE_UNKNOWN;
+        int type = TYPE_ERROR;
         int minWidth = -1;
         int minHeight = -1;
         int maxWidth = -1;
@@ -113,6 +118,13 @@ public class BipPixel {
 
         int typeHint = determinePixelType(pixel);
         switch (typeHint) {
+            case TYPE_NO_SET -> {
+                type = TYPE_FIXED;
+                minWidth = MAX_PIXEL;
+                maxWidth = MAX_PIXEL;
+                minHeight = MAX_PIXEL;
+                maxHeight = MAX_PIXEL;
+            }
             case TYPE_FIXED -> {
                 Pattern fixed = Pattern.compile("^(\\d{1,5})\\*(\\d{1,5})$");
                 Matcher m1 = fixed.matcher(pixel);
@@ -149,7 +161,7 @@ public class BipPixel {
             }
             default -> {}
         }
-        if (type == TYPE_UNKNOWN) {
+        if (type == TYPE_ERROR) {
             throw new ParseException("Failed to determine type of '" + pixel + "'");
         }
         if (isDimensionInvalid(minWidth)
@@ -196,14 +208,14 @@ public class BipPixel {
      * @return The corresponding type we should assume the given pixel string is
      */
     private static int determinePixelType(String pixel) {
-        if (pixel == null || pixel.length() > 23) return TYPE_UNKNOWN;
+        if (pixel == null || pixel.length() > MAX_PIXEL_STRING) return TYPE_ERROR;
         int delimCount = 0;
         for (int i = 0; i < pixel.length(); i++) {
             char c = pixel.charAt(i);
             if (c == '*') delimCount++;
         }
 
-        return delimCount > 0 && delimCount <= 3 ? delimCount : TYPE_UNKNOWN;
+        return delimCount > 0 && delimCount <= 3 ? delimCount : TYPE_NO_SET;
     }
 
     protected static boolean isDimensionInvalid(int dimension) {
@@ -250,6 +262,7 @@ public class BipPixel {
     @Override
     public String toString() {
         return switch (mType) {
+            case TYPE_NO_SET -> MAX_PIXEL + "*" + MAX_PIXEL;
             case TYPE_FIXED -> mMaxWidth + "*" + mMaxHeight;
             case TYPE_RESIZE_MODIFIED_ASPECT_RATIO ->
                     mMinWidth + "*" + mMinHeight + "-" + mMaxWidth + "*" + mMaxHeight;

@@ -194,23 +194,16 @@ public class BipImageFormat {
     @Override
     @SuppressLint("ToStringReturnsNull") // Since this is used for encoding to xml
     public String toString() {
-        if (mEncoding == null
-                || mEncoding.getType() == BipEncoding.UNKNOWN
-                || mPixel == null
-                || mPixel.getType() == BipPixel.TYPE_UNKNOWN) {
-            error(
-                    "Missing required fields [ "
-                            + (mEncoding == null ? "encoding " : "")
-                            + (mPixel == null ? "pixel " : ""));
-            return null;
-        }
-
         StringBuilder sb = new StringBuilder();
         return switch (mFormatType) {
             case FORMAT_NATIVE -> {
                 sb.append("<native");
-                sb.append(" encoding=\"").append(mEncoding.toString()).append("\"");
-                sb.append(" pixel=\"").append(mPixel.toString()).append("\"");
+                sb.append(" encoding=\"")
+                        .append((mEncoding == null ? "" : mEncoding.toString()))
+                        .append("\"");
+                sb.append(" pixel=\"")
+                        .append((mPixel == null ? "" : mPixel.toString()))
+                        .append("\"");
                 if (mSize > -1) {
                     sb.append(" size=\"").append(mSize).append("\"");
                 }
@@ -219,8 +212,12 @@ public class BipImageFormat {
             }
             case FORMAT_VARIANT -> {
                 sb.append("<variant");
-                sb.append(" encoding=\"").append(mEncoding.toString()).append("\"");
-                sb.append(" pixel=\"").append(mPixel.toString()).append("\"");
+                sb.append(" encoding=\"")
+                        .append((mEncoding == null ? "" : mEncoding.toString()))
+                        .append("\"");
+                sb.append(" pixel=\"")
+                        .append((mPixel == null ? "" : mPixel.toString()))
+                        .append("\"");
                 if (mTransformation != null && mTransformation.supportsAny()) {
                     sb.append(" transformation=\"").append(mTransformation.toString()).append("\"");
                 }
@@ -235,7 +232,7 @@ public class BipImageFormat {
             }
             default -> {
                 error("Unsupported format type '" + mFormatType + "'");
-                yield null;
+                yield "";
             }
         };
     }
