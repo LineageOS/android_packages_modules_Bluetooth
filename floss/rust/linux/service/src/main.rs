@@ -340,7 +340,7 @@ extern "C" fn try_cleanup_stack(abort: bool) -> bool {
         // finishing btif cleanup.
         std::thread::sleep(EXTRA_WAIT_BEFORE_KILL_MS);
     }
-    return true;
+    true
 }
 
 extern "C" fn handle_sigterm(_signum: i32) {

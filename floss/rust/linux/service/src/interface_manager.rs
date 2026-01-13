@@ -48,7 +48,7 @@ impl InterfaceManager {
     /// * `conn_join_handle` - The thread handle that's maintaining the DBus resource
     /// * `disconnect_watcher` - DisconnectWatcher to monitor client disconnects
     /// * `bluetooth` - Implementation of the Bluetooth API
-    /// other implementations follow.
+    ///   other implementations follow.
     #[allow(clippy::too_many_arguments)]
     pub async fn dispatch(
         mut rx: Receiver<APIMessage>,
