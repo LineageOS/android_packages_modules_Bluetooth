@@ -102,14 +102,13 @@ pub fn btif_callbacks_dispatcher(attr: TokenStream, item: TokenStream) -> TokenS
     let mut fn_names = quote! {};
     for attr in ast.items {
         if let TraitItem::Method(m) = attr {
-            if m.attrs.len() != 1 {
+            let Some(attr) = m
+                .attrs
+                .iter()
+                .find(|attr| attr.path.get_ident().unwrap().to_string().eq("btif_callback"))
+            else {
                 continue;
-            }
-
-            let attr = &m.attrs[0];
-            if !attr.path.get_ident().unwrap().to_string().eq("btif_callback") {
-                continue;
-            }
+            };
 
             let attr_args = attr.parse_meta().unwrap();
             let btif_callback = if let Meta::List(meta_list) = attr_args {

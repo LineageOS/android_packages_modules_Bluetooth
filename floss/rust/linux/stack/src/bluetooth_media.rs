@@ -259,6 +259,7 @@ pub trait IBluetoothMediaCallback: RPCProxy {
 
     /// Triggered when there is a HFP dump is received. This should only be used
     /// for debugging and testing purpose.
+    #[allow(clippy::too_many_arguments)]
     fn on_hfp_debug_dump(
         &mut self,
         active: bool,

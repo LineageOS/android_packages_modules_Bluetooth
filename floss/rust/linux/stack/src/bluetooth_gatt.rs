@@ -426,6 +426,7 @@ pub trait IBluetoothGatt {
     ///     shall attempt to send before terminating the extended advertising, even if the
     ///     duration has not expired. Valid range is from 1 to 255. 0 means event count limitation.
     /// * `callback_id` - Identifies callback registered in register_advertiser_callback.
+    #[allow(clippy::too_many_arguments)]
     fn start_advertising_set(
         &mut self,
         parameters: AdvertisingSetParameters,
@@ -594,6 +595,7 @@ pub trait IBluetoothGatt {
     /// Requests a connection parameter update.
     /// This causes |on_connection_updated| to be called if there is already an existing
     /// connection to |addr|; Otherwise the method won't generate any callbacks.
+    #[allow(clippy::too_many_arguments)]
     fn connection_parameter_update(
         &self,
         client_id: i32,
@@ -1056,6 +1058,7 @@ pub trait IBluetoothGattServerCallback: RPCProxy {
     );
 
     /// When a remote device has requested to write to a characteristic.
+    #[allow(clippy::too_many_arguments)]
     fn on_characteristic_write_request(
         &mut self,
         _addr: RawAddress,
@@ -1069,6 +1072,7 @@ pub trait IBluetoothGattServerCallback: RPCProxy {
     );
 
     /// When a remote device has requested to write to a descriptor.
+    #[allow(clippy::too_many_arguments)]
     fn on_descriptor_write_request(
         &mut self,
         _addr: RawAddress,
@@ -3174,6 +3178,7 @@ pub(crate) trait BtifGattServerCallbacks {
     );
 
     #[btif_callback(RequestWriteCharacteristic)]
+    #[allow(clippy::too_many_arguments)]
     fn request_write_characteristic_cb(
         &mut self,
         conn_id: i32,
@@ -3187,6 +3192,7 @@ pub(crate) trait BtifGattServerCallbacks {
     );
 
     #[btif_callback(RequestWriteDescriptor)]
+    #[allow(clippy::too_many_arguments)]
     fn request_write_descriptor_cb(
         &mut self,
         conn_id: i32,
@@ -3241,6 +3247,7 @@ pub(crate) trait BtifGattServerCallbacks {
     );
 
     #[btif_callback(SubrateChanged)]
+    #[allow(clippy::too_many_arguments)]
     fn subrate_chg_cb(
         &mut self,
         conn_id: i32,
@@ -3643,6 +3650,7 @@ pub(crate) trait BtifGattScannerCallbacks {
     fn on_scanner_registered(&mut self, uuid: Uuid, scanner_id: u8, status: GattStatus);
 
     #[btif_callback(OnScanResult)]
+    #[allow(clippy::too_many_arguments)]
     fn on_scan_result(
         &mut self,
         event_type: u16,
@@ -3701,6 +3709,7 @@ pub(crate) trait BtifGattScannerInbandCallbacks {
     fn inband_msft_adv_monitor_enable_callback(&mut self, status: u8);
 
     #[btif_callback(StartSyncCallback)]
+    #[allow(clippy::too_many_arguments)]
     fn inband_start_sync_callback(
         &mut self,
         status: u8,

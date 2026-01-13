@@ -810,6 +810,7 @@ pub trait IBluetoothAdvertiseManager {
     ///     shall attempt to send before terminating the extended advertising, even if the
     ///     duration has not expired. Valid range is from 1 to 255. 0 means event count limitation.
     /// * `callback_id` - Identifies callback registered in register_advertiser_callback.
+    #[allow(clippy::too_many_arguments)]
     fn start_advertising_set(
         &mut self,
         parameters: AdvertisingSetParameters,
