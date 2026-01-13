@@ -56,7 +56,7 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sdp_api.h"
-#include "stack/sdp/sdp_discovery_db.h"
+#include "stack/include/sdp_discovery_db.h"
 #include "storage/config_keys.h"
 
 using namespace bluetooth::legacy::stack::sdp;

@@ -32,7 +32,7 @@
 
 #include "include/hardware/bt_sdp.h"  // bluetooth_sdp_record
 #include "macros.h"
-#include "stack/sdp/sdp_discovery_db.h"
+#include "stack/include/sdp_discovery_db.h"
 
 using bluetooth::Uuid;
 

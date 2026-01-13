@@ -63,8 +63,8 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/sdp_api.h"
+#include "stack/include/sdp_discovery_db.h"
 #include "stack/include/sdp_status.h"
-#include "stack/sdp/sdp_discovery_db.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

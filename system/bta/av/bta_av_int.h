@@ -43,7 +43,7 @@
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/sdp/sdp_discovery_db.h"
+#include "stack/include/sdp_discovery_db.h"
 
 /*****************************************************************************
  *  Constants

@@ -38,7 +38,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/sdp_callback.h"
-#include "stack/sdp/sdp_discovery_db.h"
+#include "stack/include/sdp_discovery_db.h"
 
 /* Continuation length - we use a 2-byte offset */
 #define SDP_CONTINUATION_LEN 2

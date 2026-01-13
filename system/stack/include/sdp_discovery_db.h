@@ -35,29 +35,29 @@
 /* Define a structure to hold the discovered service information. */
 struct tSDP_DISC_ATVAL {
   union {
-    uint8_t u8;                         /* 8-bit integer            */
-    uint16_t u16;                       /* 16-bit integer           */
-    uint32_t u32;                       /* 32-bit integer           */
-    struct tSDP_DISC_ATTR* p_sub_attr;  /* Addr of first sub-attr (list)*/
-    uint8_t array[];                    /* Variable length field    */
-                                        /* flexible array member    */
-                                        /* requiring backing store  */
-                                        /* from SDP DB    */
+    uint8_t u8;                        /* 8-bit integer            */
+    uint16_t u16;                      /* 16-bit integer           */
+    uint32_t u32;                      /* 32-bit integer           */
+    struct tSDP_DISC_ATTR* p_sub_attr; /* Addr of first sub-attr (list)*/
+    uint8_t array[];                   /* Variable length field    */
+                                       /* flexible array member    */
+                                       /* requiring backing store  */
+                                       /* from SDP DB    */
   } v;
 };
 
 struct tSDP_DISC_ATTR {
-  struct tSDP_DISC_ATTR* p_next_attr;  /* Addr of next linked attr     */
-  uint16_t attr_id;                    /* Attribute ID                 */
-  uint16_t attr_len_type;              /* Length and type fields       */
-  tSDP_DISC_ATVAL attr_value;          /* Variable length entry data   */
+  struct tSDP_DISC_ATTR* p_next_attr; /* Addr of next linked attr     */
+  uint16_t attr_id;                   /* Attribute ID                 */
+  uint16_t attr_len_type;             /* Length and type fields       */
+  tSDP_DISC_ATVAL attr_value;         /* Variable length entry data   */
 };
 
 struct tSDP_DISC_REC {
-  tSDP_DISC_ATTR* p_first_attr;      /* First attribute of record    */
-  struct tSDP_DISC_REC* p_next_rec;  /* Addr of next linked record   */
-  uint32_t time_read;                /* The time the record was read */
-  RawAddress remote_bd_addr;         /* Remote BD address            */
+  tSDP_DISC_ATTR* p_first_attr;     /* First attribute of record    */
+  struct tSDP_DISC_REC* p_next_rec; /* Addr of next linked record   */
+  uint32_t time_read;               /* The time the record was read */
+  RawAddress remote_bd_addr;        /* Remote BD address            */
 };
 
 // Typedef alias used by profiles

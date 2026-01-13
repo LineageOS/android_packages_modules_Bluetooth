@@ -50,7 +50,7 @@
 #include "stack/include/hiddefs.h"
 #include "stack/include/hidh_api.h"
 #include "stack/include/sdp_api.h"
-#include "stack/sdp/sdp_discovery_db.h"
+#include "stack/include/sdp_discovery_db.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
