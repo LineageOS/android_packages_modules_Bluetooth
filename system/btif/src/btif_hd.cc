@@ -49,7 +49,6 @@
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_util.h"
 #include "btif_status.h"
-#include "hardware/bluetooth.h"
 #include "include/hardware/bt_hd.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"

@@ -27,7 +27,6 @@
 #include "bt_name.h"
 #include "bta_sec_api.h"
 #include "btif_storage.h"
-#include "device/include/device_iot_conf_defs.h"
 #include "device/include/device_iot_config.h"
 #include "hardware/bluetooth.h"
 #include "stack/include/btm_ble_api.h"

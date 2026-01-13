@@ -34,7 +34,6 @@
 #include <string.h>
 
 #include "bta/include/bta_gatt_api.h"
-#include "btif/include/btif_common.h"
 #include "btif_status.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/le_advertising_manager.h"
