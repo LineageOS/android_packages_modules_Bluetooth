@@ -27,3 +27,13 @@ flag {
     purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bqr_fix_energymonitor_params"
+    namespace: "bluetooth"
+    description: "Fix missing parameters in energymonitor event at BQRv7."
+    bug: "474259293"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
