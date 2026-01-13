@@ -20,7 +20,6 @@ import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BluetoothUtils.TypeValueEntry;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
-import android.bluetooth.le.ScanResult;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -43,45 +42,6 @@ class BassUtils {
             }
         }
         return false;
-    }
-
-    static int parseBroadcastId(byte[] broadcastIdBytes) {
-        int broadcastId;
-        broadcastId = (0x00FF0000 & (broadcastIdBytes[2] << 16));
-        broadcastId |= (0x0000FF00 & (broadcastIdBytes[1] << 8));
-        broadcastId |= (0x000000FF & broadcastIdBytes[0]);
-        return broadcastId;
-    }
-
-    static Integer getBroadcastId(ScanResult scanResult) {
-        if (scanResult == null) {
-            Log.e(TAG, "Null scan result");
-            return BassConstants.INVALID_BROADCAST_ID;
-        }
-
-        return getBroadcastId(scanResult.getScanRecord());
-    }
-
-    static Integer getBroadcastId(ScanRecord scanRecord) {
-        if (scanRecord == null) {
-            Log.e(TAG, "Null scan record");
-            return BassConstants.INVALID_BROADCAST_ID;
-        }
-
-        Map<ParcelUuid, byte[]> listOfUuids = scanRecord.getServiceData();
-        if (listOfUuids == null) {
-            Log.e(TAG, "Null service data");
-            return BassConstants.INVALID_BROADCAST_ID;
-        }
-
-        if (listOfUuids.containsKey(BassConstants.BAAS_UUID)) {
-            byte[] bId = listOfUuids.get(BassConstants.BAAS_UUID);
-            return BassUtils.parseBroadcastId(bId);
-        } else {
-            Log.e(TAG, "No broadcast Id in service data");
-        }
-
-        return BassConstants.INVALID_BROADCAST_ID;
     }
 
     static PublicBroadcastData getPublicBroadcastData(ScanRecord scanRecord) {

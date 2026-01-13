@@ -59,6 +59,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_audio.LeAudioUtils;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -714,7 +715,7 @@ class BassClientStateMachine extends StateMachine {
                     broadcastIdBytes,
                     0,
                     BROADCAST_SOURCE_ID_LENGTH);
-            int broadcastId = BassUtils.parseBroadcastId(broadcastIdBytes);
+            int broadcastId = LeAudioUtils.parseBroadcastId(broadcastIdBytes);
             byte[] sourceAddress = new byte[BassConstants.BCAST_RCVR_STATE_SRC_ADDR_SIZE];
             System.arraycopy(
                     receiverState,
