@@ -203,15 +203,14 @@ fn convert_report(count: i32, raw: *mut u8) -> Vec<u8> {
         let p: *const u8 = unsafe { raw.offset(i) };
         v.push(unsafe { *p });
     }
-
-    return v;
+    v
 }
 
 #[derive(Debug)]
 pub enum HHCallbacks {
     ConnectionState(RawAddress, BtAddrType, BtTransport, BthhConnectionState, BthhStatus),
     VirtualUnplug(RawAddress, BtAddrType, BtTransport, BthhStatus),
-    HidInfo(RawAddress, BtAddrType, BtTransport, BthhHidInfo),
+    HidInfo(RawAddress, BtAddrType, BtTransport, Box<BthhHidInfo>),
     ProtocolMode(RawAddress, BtAddrType, BtTransport, BthhStatus, BthhProtocolMode),
     IdleTime(RawAddress, BtAddrType, BtTransport, BthhStatus, i32),
     GetReport(RawAddress, BtAddrType, BtTransport, BthhStatus, Vec<u8>, i32),
@@ -235,7 +234,7 @@ RawAddress, CxxBtAddrType -> BtAddrType, CxxBtTransport -> BtTransport, bindings
 cb_variant!(HHCb, virtual_unplug_cb -> HHCallbacks::VirtualUnplug,
 RawAddress, CxxBtAddrType -> BtAddrType, CxxBtTransport -> BtTransport, CxxBthhStatus -> BthhStatus);
 cb_variant!(HHCb, hid_info_cb -> HHCallbacks::HidInfo,
-RawAddress, CxxBtAddrType -> BtAddrType, CxxBtTransport -> BtTransport, bindings::bthh_hid_info_t -> BthhHidInfo);
+RawAddress, CxxBtAddrType -> BtAddrType, CxxBtTransport -> BtTransport, bindings::bthh_hid_info_t -> Box::<BthhHidInfo>);
 cb_variant!(HHCb, protocol_mode_cb -> HHCallbacks::ProtocolMode,
 RawAddress, CxxBtAddrType -> BtAddrType, CxxBtTransport -> BtTransport, CxxBthhStatus -> BthhStatus,
 CxxBthhProtocolMode -> BthhProtocolMode);

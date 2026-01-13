@@ -81,7 +81,7 @@ use btstack::bluetooth_qa::IBluetoothQACallback;
 
 use crate::dbus_arg::{DBusArg, DBusArgError, DirectDBus, RefArgToRust};
 
-fn make_object_path(idx: i32, name: &str) -> dbus::Path {
+fn make_object_path(idx: i32, name: &str) -> dbus::Path<'_> {
     dbus::Path::new(format!("/org/chromium/bluetooth/hci{}/{}", idx, name)).unwrap()
 }
 

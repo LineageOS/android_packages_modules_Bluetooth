@@ -17,12 +17,10 @@
 #define GD_RUST_TOPSHIM_BTAV_BTAV_SHIM_H
 
 #include <bluetooth/types/address.h>
+#include <hardware/avrcp/avrcp.h>
 
 #include <memory>
 
-#include "audio_hal_interface/a2dp_encoding_host.h"
-#include "include/hardware/avrcp/avrcp.h"
-#include "include/hardware/bt_av.h"
 #include "rust/cxx.h"
 #include "topshim/btif/btif_shim.h"
 
@@ -56,7 +54,7 @@ public:
   RustPresentationPosition get_presentation_position() const;
 };
 
-std::unique_ptr<A2dpIntf> GetA2dpProfile(const unsigned char* btif);
+std::unique_ptr<A2dpIntf> GetA2dpProfile();
 
 class AvrcpIntf {
 public:

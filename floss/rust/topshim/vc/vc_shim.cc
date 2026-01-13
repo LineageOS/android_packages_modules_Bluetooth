@@ -186,16 +186,14 @@ public:
   }
 };
 
-std::unique_ptr<VolumeControlIntf> GetVolumeControlProfile(const unsigned char* btif) {
+std::unique_ptr<VolumeControlIntf> GetVolumeControlProfile(const BtIntf& intf) {
   if (internal::g_vc_if) {
     std::abort();
   }
 
-  const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
-
   auto vc_if = std::make_unique<VolumeControlIntf>(const_cast<vcp::VolumeControllerInterface*>(
           reinterpret_cast<const vcp::VolumeControllerInterface*>(
-                  btif_->get_profile_interface("volume_control"))));
+                  intf.get_profile_interface(BT_PROFILE_VCP_CONTROLLER_ID))));
 
   internal::g_vc_if = vc_if.get();
 
@@ -245,7 +243,7 @@ void VolumeControlIntf::get_ext_audio_out_description(RawAddress addr, uint8_t e
 }
 
 void VolumeControlIntf::set_ext_audio_out_description(RawAddress addr, uint8_t ext_output_id,
-                                                      const char* descr) {
+                                                      const ::rust::String& descr) {
   return intf_->SetExtAudioOutDescription(addr, ext_output_id, std::string(descr));
 }
 }  // namespace rust

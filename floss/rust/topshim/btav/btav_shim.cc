@@ -16,16 +16,17 @@
 
 #include "topshim/btav/btav_shim.h"
 
+#include <audio_hal_interface/a2dp_encoding_host.h>
+#include <base/functional/callback.h>
 #include <bluetooth/types/address.h>
+#include <btif/include/btif_av.h>
+#include <hardware/avrcp/avrcp.h>
+#include <hardware/bluetooth.h>
 
 #include <cstdio>
 #include <map>
 #include <memory>
 
-#include "base/functional/callback.h"
-#include "btif/include/btif_av.h"
-#include "include/hardware/avrcp/avrcp.h"
-#include "include/hardware/bluetooth.h"
 #include "rust/cxx.h"
 #include "src/profiles/a2dp.rs.h"
 #include "src/profiles/avrcp.rs.h"
@@ -270,10 +271,11 @@ static bool mandatory_codec_preferred_cb(const RawAddress& addr) {
   rusty::mandatory_codec_preferred_callback(addr);
   return false;
 }
+static void audio_delay_reported_cb(const RawAddress& /* bd_addr */, int /* delay */) {}
 
 btav_source_callbacks_t g_callbacks = {
-        sizeof(btav_source_callbacks_t), connection_state_cb, audio_state_cb, audio_config_cb,
-        mandatory_codec_preferred_cb,
+        sizeof(btav_source_callbacks_t), connection_state_cb,     audio_state_cb, audio_config_cb,
+        mandatory_codec_preferred_cb,    audio_delay_reported_cb,
 };
 }  // namespace internal
 
@@ -281,12 +283,10 @@ A2dpIntf::~A2dpIntf() {
   // TODO
 }
 
-std::unique_ptr<A2dpIntf> GetA2dpProfile(const unsigned char* btif) {
+std::unique_ptr<A2dpIntf> GetA2dpProfile() {
   if (internal::g_a2dpif) {
     std::abort();
   }
-
-  const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
 
   auto a2dpif = std::make_unique<A2dpIntf>();
   internal::g_a2dpif = a2dpif.get();

@@ -1,5 +1,6 @@
 use pkg_config::Config;
 use std::env;
+use std::io::Write;
 use std::path::PathBuf;
 
 fn main() {
@@ -74,6 +75,24 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings.write_to_file(out_path.join("bindings.rs")).expect("Couldn't write bindings!");
+    let mut f =
+        std::fs::File::create(PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs"))
+            .expect("Couldn't open bindings file!");
+
+    f.write_all(
+        concat!(
+            // This is needed because there are some empty lines at the beginning of the bindings
+            // contents.
+            "#[allow(clippy::empty_line_after_outer_attr)]\n",
+            // We want bindgen to implement PartialEq and Eq for us, but doing so cause the warnings
+            // "function pointer comparisons do not produce meaningful results since their addresses
+            // are not guaranteed to be unique", thus allow this.
+            "#[allow(unpredictable_function_pointer_comparisons)]\n",
+            // bindgen often generates complex types, thus allow this.
+            "#[allow(clippy::type_complexity)]\n",
+        )
+        .as_bytes(),
+    )
+    .expect("Couldn't prepend clippy settings to bindings!");
+    bindings.write(Box::new(f) as Box<dyn Write>).expect("Couldn't write bindings!");
 }

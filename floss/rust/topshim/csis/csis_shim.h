@@ -17,11 +17,11 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <hardware/bt_csis.h>
 
 #include <memory>
 
-#include "include/hardware/bt_csis.h"
-#include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 
 namespace bluetooth {
 namespace topshim {
@@ -42,7 +42,7 @@ private:
   csis::CsisClientInterface* intf_;
 };
 
-std::unique_ptr<CsisClientIntf> GetCsisClientProfile(const unsigned char* btif);
+std::unique_ptr<CsisClientIntf> GetCsisClientProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim

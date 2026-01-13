@@ -475,7 +475,7 @@ impl CommandHandler {
         }
     }
 
-    fn lock_context(&self) -> std::sync::MutexGuard<ClientContext> {
+    fn lock_context(&self) -> std::sync::MutexGuard<'_, ClientContext> {
         self.context.lock().unwrap()
     }
 

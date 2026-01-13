@@ -25,9 +25,11 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("topshim/vc/vc_shim.h");
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type VolumeControlIntf;
 
-        unsafe fn GetVolumeControlProfile(btif: *const u8) -> UniquePtr<VolumeControlIntf>;
+        fn GetVolumeControlProfile(btif: &BtIntf) -> UniquePtr<VolumeControlIntf>;
 
         fn init(self: Pin<&mut VolumeControlIntf>);
         fn cleanup(self: Pin<&mut VolumeControlIntf>);
@@ -64,11 +66,11 @@ pub mod ffi {
             addr: RawAddress,
             ext_output_id: u8,
         );
-        unsafe fn set_ext_audio_out_description(
+        fn set_ext_audio_out_description(
             self: Pin<&mut VolumeControlIntf>,
             addr: RawAddress,
             ext_output_id: u8,
-            descr: *const c_char,
+            descr: &String,
         );
     }
 
@@ -193,9 +195,8 @@ impl ToggleableProfile for VolumeControl {
 
 impl VolumeControl {
     pub fn new(intf: &BluetoothInterface) -> VolumeControl {
-        // SAFETY: `intf.as_raw_ptr()` is a valid pointer to a `BluetoothInterface`
         let vc_if: cxx::UniquePtr<ffi::VolumeControlIntf> =
-            unsafe { ffi::GetVolumeControlProfile(intf.as_raw_ptr()) };
+            ffi::GetVolumeControlProfile(intf.as_btif());
 
         VolumeControl { internal: vc_if, is_init: false, is_enabled: false }
     }
@@ -298,14 +299,6 @@ impl VolumeControl {
         ext_output_id: u8,
         descr: String,
     ) {
-        let c_descr = std::ffi::CString::new(descr).unwrap();
-        unsafe {
-            // SAFETY: calling an FFI where the pointer is const, no modification.
-            self.internal.pin_mut().set_ext_audio_out_description(
-                addr,
-                ext_output_id,
-                c_descr.as_ptr(),
-            );
-        }
+        self.internal.pin_mut().set_ext_audio_out_description(addr, ext_output_id, &descr);
     }
 }

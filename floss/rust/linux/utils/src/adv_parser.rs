@@ -47,7 +47,7 @@ impl<'a> Iterator for AdvDataIterator<'a> {
     }
 }
 
-fn iterate_adv_data(data: &[u8], data_type: u8) -> AdvDataIterator {
+fn iterate_adv_data(data: &[u8], data_type: u8) -> AdvDataIterator<'_> {
     AdvDataIterator { data, data_type, cur: 0 }
 }
 
