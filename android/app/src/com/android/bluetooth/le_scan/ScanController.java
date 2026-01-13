@@ -511,7 +511,7 @@ public class ScanController {
                             app.getInfo(), results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
                 }
             } catch (RemoteException | PendingIntent.CanceledException e) {
-                Log.e(TAG, "Exception: " + e);
+                Log.e(TAG, "onScanResult(): Exception: " + e);
                 handleDeadScanClient(client);
             }
         }
@@ -780,7 +780,7 @@ public class ScanController {
                         app.getInfo(), results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
             }
         } catch (RemoteException | PendingIntent.CanceledException e) {
-            Log.e(TAG, "Exception: " + e);
+            Log.e(TAG, "sendBatchScanResults(): Exception: " + e);
             handleDeadScanClient(client);
         }
         mScanManager.batchScanResultDelivered();
@@ -954,7 +954,7 @@ public class ScanController {
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
             } catch (RemoteException e) {
-                Log.e(TAG, "Exception: " + e);
+                Log.e(TAG, "registerScanner(): Exception: " + e);
             }
             return;
         }
@@ -978,7 +978,7 @@ public class ScanController {
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
             } catch (RemoteException e) {
-                Log.e(TAG, "Exception: " + e);
+                Log.e(TAG, "registerAndStartScan(): Exception: " + e);
             }
             return;
         }
