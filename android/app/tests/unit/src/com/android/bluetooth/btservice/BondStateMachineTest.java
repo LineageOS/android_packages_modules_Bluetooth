@@ -38,6 +38,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.companion.CompanionDeviceManager;
 import android.content.Intent;
@@ -723,6 +724,10 @@ public class BondStateMachineTest {
             ParcelUuid[] uuids) {
         for (int deviceType : DEVICE_TYPES) {
             resetRemoteDevice(deviceType);
+            if (deviceType == BluetoothDevice.DEVICE_TYPE_LE) {
+                // Add audio support to validate tests.
+                mDeviceProperties.setBluetoothClass(BluetoothClass.Service.LE_AUDIO);
+            }
             if (pendingBondedDevice != null) {
                 mStateMachine.mDevicesWaitingForUuids.add(mDevice);
             }
