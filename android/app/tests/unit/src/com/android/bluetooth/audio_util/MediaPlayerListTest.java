@@ -70,6 +70,7 @@ public class MediaPlayerListTest {
     @Mock private MediaPlayerList.MediaUpdateCallback mMediaUpdateCallback;
     @Mock private MediaController mMockController;
     @Mock private MediaPlayerWrapper mMockPlayerWrapper;
+    @Mock private MediaPlayerList.MediaPlayerSettingsEventListener mMockPlayerSettingsListener;
 
     private @Captor ArgumentCaptor<MediaPlayerWrapper.Callback> mPlayerWrapperCb;
     private @Captor ArgumentCaptor<MediaData> mMediaUpdateData;
@@ -236,5 +237,37 @@ public class MediaPlayerListTest {
         assertThat(activeMediaPlayer).isEqualTo(newActiveMediaPlayer);
 
         session.release();
+    }
+
+    @Test
+    public void addMediaPlayer_whenUpdatingActivePlayer_notifiesPlayerSettingsListener() {
+        // Arrange: An active player is set in setUp. Set a listener to be notified of changes.
+        mMediaPlayerList.setPlayerSettingsCallback(mMockPlayerSettingsListener);
+
+        // Act: Re-adding the same player controller should trigger an update on an existing player.
+        mMediaPlayerList.addMediaPlayer(mMockController);
+
+        // Assert: The listener should be notified because the *active* player's controller was
+        // updated.
+        verify(mMockPlayerSettingsListener).onActivePlayerChanged(mMockPlayerWrapper);
+    }
+
+    @Test
+    public void addMediaPlayer_whenUpdatingInactivePlayer_doesNotNotifyListener() {
+        // Arrange: An active player ("testPlayer") is set in setUp.
+        mMediaPlayerList.setPlayerSettingsCallback(mMockPlayerSettingsListener);
+
+        // Create and add a second, inactive player.
+        MediaController mockInactiveController = mock(MediaController.class);
+        doReturn("inactivePlayer").when(mockInactiveController).getPackageName();
+        // Note: The factory will return the same mMockPlayerWrapper instance due to injection.
+        // This is okay for this test, as MediaPlayerList tracks players by ID.
+        mMediaPlayerList.addMediaPlayer(mockInactiveController);
+
+        // Act: Re-adding the inactive player's controller to trigger an update.
+        mMediaPlayerList.addMediaPlayer(mockInactiveController);
+
+        // Assert: The listener should NOT be notified, as the updated player is not the active one.
+        verify(mMockPlayerSettingsListener, never()).onActivePlayerChanged(any());
     }
 }
