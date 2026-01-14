@@ -117,8 +117,11 @@ public:
   /**
    * Suspend the current thread blocking the execution of new tasks on the thread.
    * ShutDown must be called after this to clean up the resources.
+   *
+   * @param caller_handler the handler on which Suspend is called. If nullptr, the instance's
+   * handler_ will be suspended.
    */
-  void Suspend();
+  void Suspend(os::Handler* caller_handler = nullptr);
 
   /**
    * Shutdown the current thread as if it is never started. IsRunning() and
