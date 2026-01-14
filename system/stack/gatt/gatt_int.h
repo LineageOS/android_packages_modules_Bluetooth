@@ -822,6 +822,10 @@ void gattc_offload_handle_service_changed_indication(tGATT_TCB* p_tcb);
 namespace bluetooth {
 namespace legacy {
 namespace testing {
+// Override value for the system property bluetooth.gatt.load_bonded.value
+// TODO(b/414824853) Replace by mocking of system properties.
+extern std::optional<bool> OVERRIDE_GATT_LOAD_BONDED;
+
 BT_HDR* attp_build_value_cmd(uint16_t payload_size, uint8_t op_code, uint16_t handle,
                              uint16_t offset, uint16_t len, uint8_t* p_data);
 }  // namespace testing

@@ -21,8 +21,6 @@
 #include "include/btm_iso_api.h"
 #include "stack/include/bt_hdr.h"
 
-using bluetooth::hci::iso_manager::BigCallbacks;
-using bluetooth::hci::iso_manager::CigCallbacks;
 using bluetooth::hci::iso_manager::iso_impl;
 
 namespace bluetooth {
