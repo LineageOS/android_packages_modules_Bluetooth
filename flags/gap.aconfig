@@ -299,3 +299,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "track_ad_type_flag_change"
+    namespace: "bluetooth"
+    description: "Track ad type flag value change in advertising reports during discovery"
+    bug: "475648435"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
