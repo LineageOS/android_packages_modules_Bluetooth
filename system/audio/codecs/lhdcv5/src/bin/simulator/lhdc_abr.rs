@@ -68,7 +68,6 @@ impl LHDC_ABR {
     }
 
     fn lhdc_enc_abr_adjust_bitrate(&mut self, abr: &mut AutoBitRate, queueLen: u32) -> i32 {
-        let mut func_ret: i32 = LHDC_FRET_SUCCESS;
         let mut last_bitrate: u32 = 0;
         let mut last_bitrate_inx: u32 = 0;
         let mut new_abr_bitrate_inx: u32 = 0;
@@ -84,12 +83,17 @@ impl LHDC_ABR {
             // clean ABR down statistics parameters
             self.handle_abr.down_bitrate_count = 0;
             self.handle_abr.down_bitrate_sum = 0;
+
             if queueLength > ABR_DOWN_QUEUE_LENGTH_THRESHOLD {
                 last_bitrate = abr.handle.last_bitrate();
-                func_ret = abr.handle.get_target_bitrate_inx(last_bitrate, &mut last_bitrate_inx);
-                if func_ret != LHDC_FRET_SUCCESS {
-                    error!("[AUTO_BITRATE][ABR_ADJ](DN) lhdc_get_bitrate_index error {func_ret}");
-                    return func_ret;
+                let func_ret =
+                    abr.handle.get_target_bitrate_inx(last_bitrate, &mut last_bitrate_inx);
+                if func_ret.is_err() {
+                    error!(
+                        "[AUTO_BITRATE][ABR_ADJ](DN) lhdc_get_bitrate_index error {:?}",
+                        func_ret
+                    );
+                    return LHDC_FRET_ERROR;
                 }
 
                 // configure new target bitrate
@@ -99,10 +103,13 @@ impl LHDC_ABR {
                 }
                 new_bitrate = self.handle_abr.abr_table[new_abr_bitrate_inx as usize];
 
-                func_ret = abr.handle.get_target_bitrate_inx(new_bitrate, &mut new_bitrate_inx);
-                if func_ret != LHDC_FRET_SUCCESS {
-                    error!("[AUTO_BITRATE][ABR_ADJ](DN) lhdc_get_bitrate_index error {func_ret}");
-                    return func_ret;
+                let func_ret = abr.handle.get_target_bitrate_inx(new_bitrate, &mut new_bitrate_inx);
+                if func_ret.is_err() {
+                    error!(
+                        "[AUTO_BITRATE][ABR_ADJ](DN) lhdc_get_bitrate_index error {:?}",
+                        func_ret
+                    );
+                    return LHDC_FRET_ERROR;
                 }
 
                 info!(
@@ -123,16 +130,17 @@ impl LHDC_ABR {
                     && (new_abr_bitrate_inx < self.handle_abr.gABR_table_index)
                 {
                     let mut actual_inx = new_bitrate_inx;
-                    func_ret = abr.handle.set_target_bitrate_inx(
+                    let func_ret = abr.handle.set_target_bitrate_inx(
                         new_bitrate_inx,
                         &mut actual_inx,
                         upd_qual_status,
                     );
-                    if func_ret != LHDC_FRET_SUCCESS {
+                    if func_ret.is_err() {
                         error!(
-                            "[AUTO_BITRATE][ABR_ADJ](DN) lhdc_set_bitrate_index error {func_ret}"
+                            "[AUTO_BITRATE][ABR_ADJ](DN) lhdc_set_bitrate_index error {:?}",
+                            func_ret
                         );
-                        return func_ret;
+                        return LHDC_FRET_ERROR;
                     }
 
                     info!(
@@ -168,10 +176,14 @@ impl LHDC_ABR {
             if queueSumTmp < ABR_UP_QUEUE_LENGTH_THRESHOLD {
                 // get last bitrate and index
                 last_bitrate = abr.handle.last_bitrate();
-                func_ret = abr.handle.get_target_bitrate_inx(last_bitrate, &mut last_bitrate_inx);
-                if func_ret != LHDC_FRET_SUCCESS {
-                    error!("[AUTO_BITRATE][ABR_ADJ](UP) lhdc_get_bitrate_index error {func_ret}");
-                    return func_ret;
+                let func_ret =
+                    abr.handle.get_target_bitrate_inx(last_bitrate, &mut last_bitrate_inx);
+                if func_ret.is_err() {
+                    error!(
+                        "[AUTO_BITRATE][ABR_ADJ](UP) lhdc_get_bitrate_index error {:?}",
+                        func_ret
+                    );
+                    return LHDC_FRET_ERROR;
                 }
 
                 // configure new target bitrate and index
@@ -183,10 +195,13 @@ impl LHDC_ABR {
 
                 new_bitrate = self.handle_abr.abr_table[new_abr_bitrate_inx as usize];
 
-                func_ret = abr.handle.get_target_bitrate_inx(new_bitrate, &mut new_bitrate_inx);
-                if func_ret != LHDC_FRET_SUCCESS {
-                    error!("[AUTO_BITRATE][ABR_ADJ](UP) lhdc_get_bitrate_index error {func_ret}");
-                    return func_ret;
+                let func_ret = abr.handle.get_target_bitrate_inx(new_bitrate, &mut new_bitrate_inx);
+                if func_ret.is_err() {
+                    error!(
+                        "[AUTO_BITRATE][ABR_ADJ](UP) lhdc_get_bitrate_index error {:?}",
+                        func_ret
+                    );
+                    return LHDC_FRET_ERROR;
                 }
 
                 info!(
@@ -207,16 +222,17 @@ impl LHDC_ABR {
                     && (new_abr_bitrate_inx > self.handle_abr.gABR_table_index)
                 {
                     let mut actual_inx = new_bitrate_inx;
-                    func_ret = abr.handle.set_target_bitrate_inx(
+                    let func_ret = abr.handle.set_target_bitrate_inx(
                         new_bitrate_inx,
                         &mut actual_inx,
                         upd_qual_status,
                     );
-                    if func_ret != LHDC_FRET_SUCCESS {
+                    if func_ret.is_err() {
                         error!(
-                            "[AUTO_BITRATE][ABR_ADJ](UP) lhdc_set_bitrate_index error {func_ret}"
+                            "[AUTO_BITRATE][ABR_ADJ](UP) lhdc_set_bitrate_index error {:?}",
+                            func_ret
                         );
-                        return func_ret;
+                        return LHDC_FRET_ERROR;
                     }
                     info!(
                         "[AUTO_BITRATE][ABR_ADJ](UP) br_table[{}]({}) to br_table[{}][{}]",
@@ -249,7 +265,7 @@ impl LHDC_ABR {
         self.handle_abr.up_bitrate_count += 1;
         self.handle_abr.down_bitrate_count += 1;
 
-        func_ret
+        LHDC_FRET_SUCCESS
     }
 
     pub fn lhdcBT_autoBR_reset_abr_index(&mut self) -> i32 {

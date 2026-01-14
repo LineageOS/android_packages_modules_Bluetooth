@@ -119,8 +119,8 @@ fn init_encoder(
         mtu,
         interval,
     );
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("Failed to init LHDC encoder ({func_ret})!");
+    if func_ret.is_err() {
+        error!("Failed to init LHDC encoder ({:?})!", func_ret);
         return LHDC_FRET_ERROR;
     }
     lhdc_abr.lhdcBT_autoBR_adjust_bitrate_init(sampling_freq);
@@ -135,8 +135,8 @@ fn encode(
     p_out_frames: &mut u32,
 ) -> i32 {
     let func_ret = handle.enc_process(in_pcm, out, p_out_bytes, p_out_frames);
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("Failed to encode pcm samples ({func_ret})!");
+    if func_ret.is_err() {
+        error!("Failed to encode pcm samples ({:?})!", func_ret);
         return LHDC_FRET_ERROR;
     }
     LHDC_FRET_SUCCESS
@@ -144,8 +144,8 @@ fn encode(
 
 fn get_block_size(handle: &Context, samples_per_frame: &mut u32) -> i32 {
     let func_ret = handle.get_block_size(samples_per_frame);
-    if func_ret != LHDC_FRET_SUCCESS || *samples_per_frame <= 0 {
-        error!("Failed to get block size ({func_ret}) ({})!", *samples_per_frame);
+    if func_ret.is_err() || *samples_per_frame <= 0 {
+        error!("Failed to get block size ({:?}) ({})!", func_ret, *samples_per_frame);
         return LHDC_FRET_ERROR;
     }
     LHDC_FRET_SUCCESS
@@ -158,8 +158,8 @@ fn set_max_bitrate(handle: &mut Context, max_bitrate_inx: u32) -> i32 {
         return LHDC_FRET_INVALID_INPUT_PARAM;
     }
     let func_ret = handle.set_max_bitrate_inx(max_bitrate_inx, &mut max_bitrate_inx_set);
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("failed to set max. bit rate index({func_ret}), ({max_bitrate_inx})!");
+    if func_ret.is_err() {
+        error!("failed to set max. bit rate index({:?}), ({max_bitrate_inx})!", func_ret);
         return LHDC_FRET_ERROR;
     }
 
@@ -173,13 +173,14 @@ fn set_min_bitrate(handle: &mut Context, min_bitrate_inx: u32) -> i32 {
         return LHDC_FRET_INVALID_INPUT_PARAM;
     }
     let func_ret = handle.set_min_bitrate_inx(min_bitrate_inx, &mut min_bitrate_inx_set);
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("failed to set min. bit rate ({func_ret})");
+    if func_ret.is_err() {
+        error!("failed to set min. bit rate ({:?})", func_ret);
         return LHDC_FRET_ERROR;
     }
 
     LHDC_FRET_SUCCESS
 }
+
 fn set_bitrate(abr_handle: &mut LHDC_ABR, abr: &mut AutoBitRate, bitrate_inx: u32) -> i32 {
     let upd_qual_status: bool;
     let mut func_ret = LHDC_FRET_SUCCESS;
@@ -188,9 +189,10 @@ fn set_bitrate(abr_handle: &mut LHDC_ABR, abr: &mut AutoBitRate, bitrate_inx: u3
         LHDC_QUALITY_CTRL_RESET_ABR => {
             abr_handle.lhdcBT_autoBR_reset_abr_index();
             let mut actual_inx = bitrate_inx;
-            func_ret = abr.handle.set_target_bitrate_inx(LHDC_QUALITY_LOW, &mut actual_inx, false);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("lhdcv5_enc_util_set_target_bitrate_inx error ({func_ret})!");
+            let func_ret =
+                abr.handle.set_target_bitrate_inx(LHDC_QUALITY_LOW, &mut actual_inx, false);
+            if func_ret.is_err() {
+                error!("lhdcv5_enc_util_set_target_bitrate_inx error ({:?})!", func_ret);
                 return LHDC_FRET_ERROR;
             }
         }
@@ -200,13 +202,13 @@ fn set_bitrate(abr_handle: &mut LHDC_ABR, abr: &mut AutoBitRate, bitrate_inx: u3
             } else {
                 upd_qual_status = true;
                 let mut actual_inx = bitrate_inx;
-                func_ret = abr.handle.set_target_bitrate_inx(
+                let func_ret = abr.handle.set_target_bitrate_inx(
                     bitrate_inx,
                     &mut actual_inx,
                     upd_qual_status,
                 );
-                if func_ret != LHDC_FRET_SUCCESS {
-                    error!("lhdcv5_enc_util_set_target_bitrate_inx error ({})!", func_ret);
+                if func_ret.is_err() {
+                    error!("lhdcv5_enc_util_set_target_bitrate_inx error ({:?})!", func_ret);
                     return LHDC_FRET_ERROR;
                 }
             }
