@@ -17,10 +17,10 @@
 
 #include <gmock/gmock.h>
 
-#include "stack/include/security_client_callbacks.h"
+#include "stack/include/btm_sec_api.h"
 
 struct MockSecurityClientInterface : public SecurityClientInterface {
-  MockSecurityClientInterface() = default;
+  MockSecurityClientInterface();
   MOCK_METHOD((void), BTM_Sec_Init, ());
   MOCK_METHOD((void), BTM_Sec_Free, ());
   MOCK_METHOD((bool), BTM_SecRegister, (const tBTM_APPL_INFO*));
@@ -44,9 +44,8 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
   MOCK_METHOD((bool), BTM_IsEncrypted,
               (const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */));
   MOCK_METHOD((bool), BTM_SecIsLeSecurityPending, (const RawAddress& /* bd_addr */));
-  MOCK_METHOD((bool), BTM_IsDeviceBonded,
-              (const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */));
-  MOCK_METHOD(bool, BTM_SetSecurityLevel,
+  MOCK_METHOD((bool), BTM_IsBonded, (const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */));
+  MOCK_METHOD((bool), BTM_SetSecurityLevel,
               (bool /* outgoing */, const char* /* p_name */, uint8_t /* service_id */,
                uint16_t /* sec_level */, uint16_t /* psm */, uint32_t /* mx_proto_id */,
                uint32_t /* mx_chan_id */));
@@ -66,9 +65,10 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
               (tBTM_STATUS /* res */, tBT_TRANSPORT /* transport */,
                const RawAddress /* bd_addr */));
   MOCK_METHOD((void), BTM_BleSirkConfirmDeviceReply,
-              (const RawAddress& /* bd_addr */, uint8_t /* res */));
+              (const RawAddress& /* bd_addr */, tBTM_STATUS /* res */));
   MOCK_METHOD((void), BTM_BlePasskeyReply,
-              (const RawAddress& /* bd_addr */, uint8_t /* res */, uint32_t /* passkey */));
+              (const RawAddress& /* bd_addr */, tBTM_STATUS /* res */, uint32_t /* passkey */));
+  MOCK_METHOD((uint8_t), BTM_BleReadSecKeySize, (const RawAddress& /* bd_addr */));
   MOCK_METHOD((uint8_t), BTM_GetSecurityMode, ());
   MOCK_METHOD((const char*), BTM_SecReadDevName, (const RawAddress& /* bd_addr */));
   MOCK_METHOD((DEV_CLASS), BTM_SecReadDevClass, (const RawAddress& /* bd_addr */));

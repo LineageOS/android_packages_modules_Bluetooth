@@ -40,6 +40,6 @@ bool BTM_IsBonded(const RawAddress& remote_bd_addr, tBT_TRANSPORT transport) {
   return btm_api_interface->IsDeviceBonded(remote_bd_addr, transport);
 }
 
-uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr) {
+uint8_t BTM_BleReadSecKeySize(const RawAddress& bd_addr) {
   return btm_api_interface->ReadSecKeySize(bd_addr);
 }

@@ -45,8 +45,10 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_bta_hearing_aid_audio_source.h"
 #include "test/mock/mock_main_shim_entry.h"
+#include "test/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_stack_gap_conn_interface.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 static std::map<const char*, bool> fake_osi_bool_props;
 
@@ -298,6 +300,10 @@ protected:
             &hearing_aid_audio_source_interface_);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
+
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
+
     callbacks.reset(new MockHearingAidCallbacks());
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
@@ -355,6 +361,7 @@ protected:
 
   void TearDown(void) override {
     services_map.clear();
+    reset_mock_btm_client_interface();
     gatt::SetMockBtaGattQueue(nullptr);
     gatt::SetMockBtaGattInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
@@ -469,9 +476,10 @@ protected:
   void SetEncryptionResult(const RawAddress& address, bool success) {
     encryption_result = success;
 
-    ON_CALL(btm_interface, BTM_IsEncrypted(address, _)).WillByDefault(Return(encryption_result));
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _))
+            .WillByDefault(Return(encryption_result));
 
-    ON_CALL(btm_interface, IsDeviceBonded(address, _)).WillByDefault(Return(true));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(address, _)).WillByDefault(Return(true));
   }
 
   std::unique_ptr<MockHearingAidCallbacks> callbacks;
@@ -487,6 +495,7 @@ protected:
   std::map<uint16_t, uint8_t> device_capabilities_;
   bluetooth::testing::stack::l2cap::Mock mock_stack_l2cap_interface_;
   bluetooth::testing::stack::gap_conn::Mock mock_stack_gap_conn_interface_;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
   tGAP_CONN_CALLBACK* gap_conn_cb;
   uint16_t req_int;
   uint16_t req_latency;
@@ -551,7 +560,7 @@ TEST_F(HearingAidTest, connect) {
   EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address));
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(Return(true));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(Return(true));
 
   HearingAid::Connect(test_address);
   InjectGapOpen(1);
@@ -562,7 +571,7 @@ TEST_F(HearingAidTest, connect) {
 TEST_F(HearingAidTest, disconnect_when_connected) {
   set_sample_database(1);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(Return(true));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(Return(true));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address));
   HearingAid::Connect(test_address);
