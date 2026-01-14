@@ -182,6 +182,16 @@ flag {
 }
 
 flag {
+    name: "release_pending_sco_after_role_switch"
+    namespace: "bluetooth"
+    description: "Trigger a check for pending SCO connections once link re-encryption follows a role switch to avoid missing simultaneous SCO requests"
+    bug: "475076252"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "disconnect_sco_if_not_allowed"
     namespace: "bluetooth"
     description: "Disconnect SCO if not allowed during connection"
