@@ -32,11 +32,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 
 import android.bluetooth.BluetoothDevice;
-import android.os.Looper;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -62,14 +62,12 @@ public class HidHostServiceTest {
     private final BluetoothDevice mDevice = getTestDevice(0);
 
     private HidHostService mService;
+    private TestLooper mLooper;
 
     @Before
     public void setUp() throws Exception {
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
-
-        mService = new HidHostService(mAdapterService, mNativeInterface);
+        mLooper = new TestLooper();
+        mService = new HidHostService(mAdapterService, mNativeInterface, mLooper.getLooper());
         mService.setAvailable(true);
     }
 

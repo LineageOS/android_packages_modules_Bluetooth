@@ -27,6 +27,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
@@ -37,6 +38,7 @@ import android.bluetooth.BluetoothUuid;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
@@ -99,6 +101,8 @@ public class HidHostService extends ConnectableProfile {
         }
     }
 
+    private final Looper mLooper;
+    private final HidHostServiceHandler mHandler;
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
@@ -128,12 +132,15 @@ public class HidHostService extends ConnectableProfile {
     private static final int BTHH_ERR_TOD_UNSPT = 10; // Remote device not supported
 
     public HidHostService(AdapterService adapterService) {
-        this(adapterService, null);
+        this(adapterService, null, Looper.getMainLooper());
     }
 
     @VisibleForTesting
-    HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
+    HidHostService(
+            AdapterService adapterService, HidHostNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.HID_HOST, adapterService);
+        mLooper = requireNonNull(looper);
+        mHandler = new HidHostServiceHandler(mLooper);
         var nativeCallback = new HidHostNativeCallback(getAdapterService(), this);
         mNativeInterface =
                 requireNonNullElseGet(
@@ -324,37 +331,40 @@ public class HidHostService extends ConnectableProfile {
         return true;
     }
 
-    private final Handler mHandler =
-            new Handler() {
-                @Override
-                public void handleMessage(Message msg) {
-                    Log.v(TAG, "handleMessage(): msg.what=" + msg.what);
+    @VisibleForTesting
+    class HidHostServiceHandler extends Handler {
+        HidHostServiceHandler(Looper looper) {
+            super(looper);
+        }
 
-                    switch (msg.what) {
-                        case MESSAGE_CONNECT -> handleMessageConnect(msg);
-                        case MESSAGE_DISCONNECT -> handleMessageDisconnect(msg);
-                        case MESSAGE_CONNECT_STATE_CHANGED -> handleMessageConnectStateChanged(msg);
-                        case MESSAGE_GET_PROTOCOL_MODE -> handleMessageGetProtocolMode(msg);
-                        case MESSAGE_ON_GET_PROTOCOL_MODE -> handleMessageOnGetProtocolMode(msg);
-                        case MESSAGE_VIRTUAL_UNPLUG -> handleMessageVirtualUnplug(msg);
-                        case MESSAGE_SET_PROTOCOL_MODE -> handleMessageSetProtocolMode(msg);
-                        case MESSAGE_GET_REPORT -> handleMessageGetReport(msg);
-                        case MESSAGE_ON_GET_REPORT -> handleMessageOnGetReport(msg);
-                        case MESSAGE_ON_HANDSHAKE -> handleMessageOnHandshake(msg);
-                        case MESSAGE_SET_REPORT -> handleMessageSetReport(msg);
-                        case MESSAGE_ON_VIRTUAL_UNPLUG -> handleMessageOnVirtualUnplug(msg);
-                        case MESSAGE_GET_IDLE_TIME -> handleMessageGetIdleTime(msg);
-                        case MESSAGE_ON_GET_IDLE_TIME -> handleMessageOnGetIdleTime(msg);
-                        case MESSAGE_SET_IDLE_TIME -> handleMessageSetIdleTime(msg);
-                        case MESSAGE_SET_PREFERRED_TRANSPORT ->
-                                handleMessageSetPreferredTransport(msg);
-                        case MESSAGE_SEND_DATA -> handleMessageSendData(msg);
-                        case MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED ->
-                                handleMessageSetAndroidHeadTrackerEnabled(msg);
-                        default -> {} // Nothing to do
-                    }
-                }
-            };
+        @Override
+        public void handleMessage(Message msg) {
+            Log.v(TAG, "handleMessage(): msg.what=" + msg.what);
+
+            switch (msg.what) {
+                case MESSAGE_CONNECT -> handleMessageConnect(msg);
+                case MESSAGE_DISCONNECT -> handleMessageDisconnect(msg);
+                case MESSAGE_CONNECT_STATE_CHANGED -> handleMessageConnectStateChanged(msg);
+                case MESSAGE_GET_PROTOCOL_MODE -> handleMessageGetProtocolMode(msg);
+                case MESSAGE_ON_GET_PROTOCOL_MODE -> handleMessageOnGetProtocolMode(msg);
+                case MESSAGE_VIRTUAL_UNPLUG -> handleMessageVirtualUnplug(msg);
+                case MESSAGE_SET_PROTOCOL_MODE -> handleMessageSetProtocolMode(msg);
+                case MESSAGE_GET_REPORT -> handleMessageGetReport(msg);
+                case MESSAGE_ON_GET_REPORT -> handleMessageOnGetReport(msg);
+                case MESSAGE_ON_HANDSHAKE -> handleMessageOnHandshake(msg);
+                case MESSAGE_SET_REPORT -> handleMessageSetReport(msg);
+                case MESSAGE_ON_VIRTUAL_UNPLUG -> handleMessageOnVirtualUnplug(msg);
+                case MESSAGE_GET_IDLE_TIME -> handleMessageGetIdleTime(msg);
+                case MESSAGE_ON_GET_IDLE_TIME -> handleMessageOnGetIdleTime(msg);
+                case MESSAGE_SET_IDLE_TIME -> handleMessageSetIdleTime(msg);
+                case MESSAGE_SET_PREFERRED_TRANSPORT -> handleMessageSetPreferredTransport(msg);
+                case MESSAGE_SEND_DATA -> handleMessageSendData(msg);
+                case MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED ->
+                        handleMessageSetAndroidHeadTrackerEnabled(msg);
+                default -> {} // Nothing to do
+            }
+        }
+    }
 
     private void handleMessageSetAndroidHeadTrackerEnabled(Message msg) {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
