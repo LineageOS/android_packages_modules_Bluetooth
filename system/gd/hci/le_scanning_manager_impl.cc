@@ -76,6 +76,12 @@ enum class ScanApiType {
   EXTENDED = 3,
 };
 
+enum class ScanCallerType {
+  JAVA = 1,
+  DISCOVERY = 2,
+  CSIS = 3,
+};
+
 struct Scanner {
   Uuid app_uuid;
   bool in_use;
@@ -556,13 +562,39 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     }
   }
 
-  void scan(bool start) {
+  bool update_start_scan(ScanCallerType callerType) {
+    bool should_start_scan = true;
+    switch (callerType) {
+      case ScanCallerType::DISCOVERY:
+      case ScanCallerType::CSIS:
+        if (callerType == ScanCallerType::DISCOVERY) {
+          set_le_discovery_active();
+        } else {
+          set_le_csis_scan_active();
+        }
+        break;
+      case ScanCallerType::JAVA:
+        // Mark Java scan as active
+        set_le_java_scan_active();
+        break;
+    }
+    return should_start_scan;
+  }
+
+  void scan(bool start, ScanCallerType callerType) {
     // On-resume flag should always be reset if there is an explicit start/stop call.
     scan_on_resume_ = false;
     if (start) {
-      configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
-                     interval_ms_coded_, filter_policy_, phy_);
-      start_scan();
+      if (com::android::bluetooth::flags::migrate_btm_scan_to_gd()) {
+        // Only start scan if we need to
+        if (update_start_scan(callerType)) {
+          start_scan();
+        }
+      } else {
+        configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
+                       interval_ms_coded_, filter_policy_, phy_);
+        start_scan();
+      }
     } else {
       if (address_manager_registered_) {
         le_address_manager_->Unregister(this);
@@ -1718,7 +1750,7 @@ void LeScanningManagerImpl::Unregister(ScannerId scanner_id) {
 }
 
 void LeScanningManagerImpl::Scan(bool start) {
-  pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan, start);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan, start, ScanCallerType::JAVA);
 }
 
 void LeScanningManagerImpl::SetScanParameters(LeScanType scan_type, ScannerId scanner_id_1m,
