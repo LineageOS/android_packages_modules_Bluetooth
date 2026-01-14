@@ -230,11 +230,11 @@ impl ServerContextMap {
     }
 
     fn get_by_server_id(&self, server_id: i32) -> Option<&Server> {
-        self.servers.iter().find(|server| server.id.map_or(false, |id| id == server_id))
+        self.servers.iter().find(|server| server.id == Some(server_id))
     }
 
     fn get_mut_by_server_id(&mut self, server_id: i32) -> Option<&mut Server> {
-        self.servers.iter_mut().find(|server| server.id.map_or(false, |id| id == server_id))
+        self.servers.iter_mut().find(|server| server.id == Some(server_id))
     }
 
     fn get_by_callback_id(&self, callback_id: u32) -> Option<&Server> {

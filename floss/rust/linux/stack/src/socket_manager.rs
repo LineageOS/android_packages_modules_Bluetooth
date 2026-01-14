@@ -151,11 +151,7 @@ impl BluetoothServerSocket {
         sock.port = conn.channel;
         sock.max_rx_size = conn.max_rx_packet_size.into();
         sock.max_tx_size = conn.max_tx_packet_size.into();
-        sock.fd = match socket::try_from_fd(sockfd.unwrap_or(-1)) {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        };
-
+        sock.fd = socket::try_from_fd(sockfd.unwrap_or(-1)).ok();
         sock
     }
 }
@@ -579,11 +575,7 @@ impl BluetoothSocketManager {
                 log::debug!("service {} is blocked by admin policy", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
-            if self
-                .listening
-                .iter()
-                .any(|(_, v)| v.iter().any(|s| s.uuid.map_or(false, |u| u == uuid)))
-            {
+            if self.listening.iter().any(|(_, v)| v.iter().any(|s| s.uuid == Some(uuid))) {
                 log::warn!("Service {} already exists", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::SocketError, INVALID_SOCKET_ID);
             }
@@ -1190,7 +1182,7 @@ impl BluetoothSocketManager {
             .filter(|sock| {
                 sock.uuid
                     // Don't need to close L2cap socket (indicated by no uuid).
-                    .map_or(false, |uuid| !self.admin_helper.is_service_allowed(&uuid))
+                    .is_some_and(|uuid| !self.admin_helper.is_service_allowed(&uuid))
             })
             .map(|sock| (sock.socket_id, sock.tx.clone(), sock.uuid.unwrap()))
             .collect::<Vec<(u64, Sender<SocketRunnerActions>, Uuid)>>();

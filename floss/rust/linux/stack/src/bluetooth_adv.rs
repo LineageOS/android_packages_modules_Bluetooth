@@ -1485,7 +1485,7 @@ impl SoftwareRotationAdvertiseManagerImpl {
                 // This advertiser has been removed.
                 return false;
             };
-            if info.expire_time.map_or(false, |t| t < now) {
+            if info.expire_time.is_some_and(|t| t < now) {
                 // This advertiser has expired.
                 info.enabled = false;
                 if let Some(cb) = callbacks.get_by_id_mut(info.callback_id) {
@@ -1560,7 +1560,7 @@ impl SoftwareRotationAdvertiseManagerImpl {
             let now = Instant::now();
             if let Some(info) = self.adv_info.get(&current_id) {
                 if info.enabled {
-                    info.expire_time.map_or(true, |t| t >= now)
+                    info.expire_time.is_none_or(|t| t >= now)
                 } else {
                     false
                 }

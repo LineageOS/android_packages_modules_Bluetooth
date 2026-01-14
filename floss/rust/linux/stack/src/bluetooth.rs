@@ -1047,7 +1047,7 @@ impl Bluetooth {
 
     /// Gets whether a single device is connected with its address.
     fn get_acl_state_by_addr(&self, addr: &RawAddress) -> bool {
-        self.remote_devices.get(addr).map_or(false, |d| d.is_connected())
+        self.remote_devices.get(addr).is_some_and(|d| d.is_connected())
     }
 
     /// Check whether remote devices are still fresh. If they're outside the
@@ -1316,8 +1316,8 @@ impl Bluetooth {
     /// Checks whether a Hid/Hog connection is being established or active.
     pub fn is_initiated_hh_connection(&self, device_address: &RawAddress) -> bool {
         self.remote_devices
-            .get(&device_address)
-            .map_or(false, |context| context.is_initiated_hh_connection)
+            .get(device_address)
+            .is_some_and(|context| context.is_initiated_hh_connection)
     }
 
     /// Checks whether the list of device properties contains some UUID we should connect now
@@ -1328,7 +1328,7 @@ impl Bluetooth {
         properties: &Vec<BluetoothProperty>,
     ) {
         // Return early if no need to connect new profiles
-        if !self.remote_devices.get(&addr).map_or(false, |d| d.connect_to_new_profiles) {
+        if !self.remote_devices.get(&addr).is_some_and(|d| d.connect_to_new_profiles) {
             return;
         }
 
@@ -2031,10 +2031,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
         // Only care about device type property changed on bonded device.
         // If the property change happens during bonding, it will be updated after bonding complete anyway.
         if self.get_bond_state_by_addr(&addr) == BtBondState::Bonded
-            && properties.iter().any(|prop| match prop {
-                BluetoothProperty::TypeOfDevice(_) => true,
-                _ => false,
-            })
+            && properties.iter().any(|prop| matches!(prop, BluetoothProperty::TypeOfDevice(_)))
         {
             // Update the connectable mode since the device type is changed.
             self.update_connectable_mode();
@@ -2628,13 +2625,10 @@ impl IBluetooth for Bluetooth {
     fn get_remote_wake_allowed(&self, device: BluetoothDevice) -> bool {
         // Wake is allowed if the device supports HIDP or HOGP only.
         match self.get_remote_device_property(&device, &BtPropertyType::Uuids) {
-            Some(BluetoothProperty::Uuids(uuids)) => {
-                return uuids.iter().any(|&uuid| {
-                    UuidHelper::is_known_profile(&uuid).map_or(false, |profile| {
-                        profile == Profile::Hid || profile == Profile::Hogp
-                    })
-                });
-            }
+            Some(BluetoothProperty::Uuids(uuids)) => uuids.iter().any(|&uuid| {
+                UuidHelper::is_known_profile(&uuid)
+                    .is_some_and(|profile| profile == Profile::Hid || profile == Profile::Hogp)
+            }),
             _ => false,
         }
     }

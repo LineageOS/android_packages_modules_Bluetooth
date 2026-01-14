@@ -236,7 +236,7 @@ impl BatteryService {
 
                 self.gatt.lock().unwrap().register_for_notification(client_id, addr, handle, true);
 
-                if self.battery_sets.get(&addr).is_none() {
+                if !self.battery_sets.contains_key(&addr) {
                     self.gatt.lock().unwrap().read_characteristic(client_id, addr, handle, 0);
                 }
             }

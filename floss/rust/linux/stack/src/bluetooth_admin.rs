@@ -185,13 +185,9 @@ impl BluetoothAdmin {
 
     fn get_affected_status(&self, blocked_services: &Vec<Uuid>) -> bool {
         // return true if a supported profile is in blocked services.
-        blocked_services
-            .iter()
-            .find(|&uuid| {
-                UuidHelper::is_known_profile(uuid)
-                    .map_or(false, |p| UuidHelper::is_profile_supported(&p))
-            })
-            .is_some()
+        blocked_services.iter().any(|uuid| {
+            UuidHelper::is_known_profile(uuid).is_some_and(|p| UuidHelper::is_profile_supported(&p))
+        })
     }
 
     fn load_config(&mut self) -> Result<()> {
