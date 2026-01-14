@@ -18,33 +18,18 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
+#include <optional>
 #include <string>
 
 #include "macros.h"
+#include "stack/include/bt_device_type.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 
-typedef enum : uint8_t {
-  BTM_BLE_SEC_REQ_ACT_NONE = 0,
-  /* encrypt the link using current key or key refresh */
-  BTM_BLE_SEC_REQ_ACT_ENCRYPT = 1,
-  BTM_BLE_SEC_REQ_ACT_PAIR = 2,
-  /* discard the sec request while encryption is started but not completed */
-  BTM_BLE_SEC_REQ_ACT_DISCARD = 3,
-} tBTM_BLE_SEC_REQ_ACT;
-
-inline std::string btm_ble_sec_req_act_text(const tBTM_BLE_SEC_REQ_ACT& action) {
-  switch (action) {
-    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_NONE);
-    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_ENCRYPT);
-    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_PAIR);
-    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_DISCARD);
-    default:
-      return "UNKNOWN ACTION";
-  }
-}
 /* LE security function from btm_sec.cc */
 tBTM_BLE_SEC_REQ_ACT btm_ble_link_sec_check(const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req);
 void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk, const Octet16& stk);
@@ -67,8 +52,27 @@ uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                                     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
 
-namespace std {
-template <>
-struct formatter<tBTM_BLE_SEC_REQ_ACT>
-    : string_formatter<tBTM_BLE_SEC_REQ_ACT, &btm_ble_sec_req_act_text> {};
-}  // namespace std
+// Added for API consistency
+void btm_ble_load_local_keys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
+void btm_sec_add_ble_device(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
+                            tBLE_ADDR_TYPE addr_type);
+void btm_sec_add_ble_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                         const tBTM_LE_KEY_VALUE& key);
+void btm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, tBTM_STATUS res);
+void btm_ble_passkey_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t passkey);
+const Octet16& btm_get_device_enc_root();
+const Octet16& btm_get_device_id_root();
+const Octet16& btm_get_device_dhk();
+void btm_security_grant(const RawAddress& bd_addr, tBTM_STATUS res);
+void btm_ble_confirm_reply(const RawAddress& bd_addr, tBTM_STATUS res);
+void btm_ble_oob_data_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t len,
+                            uint8_t* p_data);
+void btm_ble_secure_connection_oob_data_reply(const RawAddress& bd_addr, uint8_t* p_c,
+                                              uint8_t* p_r);
+bool btm_ble_data_signature(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
+                            BLE_SIGNATURE signature);
+bool btm_ble_verify_signature(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
+                              uint32_t counter, uint8_t* p_comp);
+std::optional<Octet16> btm_ble_get_peer_ltk(const RawAddress address);
+std::optional<Octet16> btm_ble_get_peer_irk(const RawAddress address);
+std::optional<tBLE_BD_ADDR> btm_ble_get_identity_address(const RawAddress address);

@@ -109,7 +109,7 @@ static inline void validate_bredr_pairing_type(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_SecAddDevice
+ * Function         btm_sec_add_device
  *
  * Description      Add/modify device.  This function will be normally called
  *                  during host startup to restore all required information
@@ -122,9 +122,9 @@ static inline void validate_bredr_pairing_type(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
-                      const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
-                      uint8_t pin_length) {
+void btm_sec_add_device(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                        const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
+                        uint8_t pin_length) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
 
   if (p_device == nullptr) {
@@ -213,19 +213,19 @@ uint16_t BTM_GetCachedClockOffset(const RawAddress& bd_addr) {
  *
  * Returns true if removed successfully, false if not found.
  */
-bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
+bool btm_sec_delete_device(const RawAddress& bd_addr) {
   if (com_android_bluetooth_flags_btm_disconnect_on_remove()) {
     // BTA may not know about the connection if BTM is still reading remote features and version.
     // If so, just disconnect the link here.
     uint16_t handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
     if (handle != HCI_INVALID_HANDLE) {
       log::warn("Disconnecting unreported LE connection {}", bd_addr);
-      acl_disconnect_after_role_switch(handle, HCI_SUCCESS, "BTM_SecDeleteDevice");
+      acl_disconnect_after_role_switch(handle, HCI_SUCCESS, "btm_sec_delete_device");
     }
     handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
     if (handle != HCI_INVALID_HANDLE) {
       log::warn("Disconnecting unreported BR/EDR connection {}", bd_addr);
-      acl_disconnect_after_role_switch(handle, HCI_SUCCESS, "BTM_SecDeleteDevice");
+      acl_disconnect_after_role_switch(handle, HCI_SUCCESS, "btm_sec_delete_device");
     }
   }
 
@@ -251,7 +251,7 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   connection_manager::remove_unconditional(bd_addr);
 
   /* Tell controller to get rid of the link key, if it has one stored */
-  btm_sec_hci_delete_stored_link_key(p_device->bd_addr);
+  get_security_client_interface().BTM_SecHciDeleteStoredLinkKey(p_device->bd_addr);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Device removed",
                  std::format("device_type:{} bond_type:{}", DeviceTypeText(p_device->device_type),
                              bond_type_text(p_device->sec_rec.bond_type)));
@@ -265,13 +265,13 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_SecClearSecurityFlags
+ * Function         btm_sec_clear_security_flags
  *
  * Description      Reset the security flags (mark as not-paired) for a given
  *                  remove device.
  *
  ******************************************************************************/
-void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
+void btm_sec_clear_security_flags(const RawAddress& bd_addr) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     log::warn("Unable to clear security flags for unknown device {}", bd_addr);
@@ -286,7 +286,7 @@ void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_SecReadDevName
+ * Function         btm_sec_read_dev_name
  *
  * Description      Looks for the device name in the security database for the
  *                  specified BD address.
@@ -294,7 +294,7 @@ void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
  * Returns          Pointer to the name or NULL
  *
  ******************************************************************************/
-const char* BTM_SecReadDevName(const RawAddress& bd_addr) {
+const char* btm_sec_read_dev_name(const RawAddress& bd_addr) {
   const char* p_name = NULL;
   const BtmDevice* p_srec;
 
@@ -308,7 +308,7 @@ const char* BTM_SecReadDevName(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_SecReadDevClass
+ * Function         btm_sec_read_dev_class
  *
  * Description      Looks for the class of device in the security database for
  *                  the specified BD address.
@@ -316,7 +316,7 @@ const char* BTM_SecReadDevName(const RawAddress& bd_addr) {
  * Returns          Class of device or kDevClassEmpty
  *
  ******************************************************************************/
-DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr) {
+DEV_CLASS btm_sec_read_dev_class(const RawAddress& bd_addr) {
   const BtmDevice* p_srec = btm_find_dev(bd_addr);
   if (p_srec != nullptr) {
     return p_srec->dev_class;
@@ -693,7 +693,7 @@ static void consolidate_existing_dev(BtmDevice* p_target, BtmDevice* p_device,
      * at same time, initiate it just from central. */
     if (stack::l2cap::get_interface().L2CA_GetBleConnRole(ble_conn_addr) == HCI_ROLE_CENTRAL) {
       log::info("Will encrypt existing connection");
-      BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
+      btm_set_encryption(bd_addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
     }
   }
 }

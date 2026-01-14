@@ -234,7 +234,7 @@ static tBTM_STATUS btm_sec_report_bond_loss(BtmDevice* p_device, tBT_TRANSPORT t
 
 /*******************************************************************************
  *
- * Function         BTM_SecRegister
+ * Function         btm_sec_register
  *
  * Description      Application manager calls this function to register for
  *                  security services.  There can be one and only one
@@ -244,7 +244,7 @@ static tBTM_STATUS btm_sec_report_bond_loss(BtmDevice* p_device, tBT_TRANSPORT t
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
+bool btm_sec_register(const tBTM_APPL_INFO* p_cb_info) {
   log::info("p_cb_info->p_le_callback == 0x{}", std::format_ptr(p_cb_info->p_le_callback));
   if (p_cb_info->p_le_callback) {
     log::verbose("SMP_Register( btm_proc_smp_cback )");
@@ -265,25 +265,25 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
   return true;
 }
 
-bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+bool btm_is_encrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return BtmSecurity::Get().IsDeviceEncrypted(bd_addr, transport);
 }
 
-bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+bool btm_is_link_key_authed(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return BtmSecurity::Get().IsLinkKeyAuthenticated(bd_addr, transport);
 }
 
-bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+bool btm_is_bonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return BtmSecurity::Get().IsDeviceBonded(bd_addr, transport);
 }
 
-bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+bool btm_is_authenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return BtmSecurity::Get().IsDeviceAuthenticated(bd_addr, transport);
 }
 
 /*******************************************************************************
  *
- * Function         BTM_SetPinType
+ * Function         btm_set_pin_type
  *
  * Description      Set PIN type for the device.
  *
@@ -291,8 +291,8 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
  *
  ******************************************************************************/
 // TODO : Remove when the flag local_pin_key_type is shipped
-void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
-  log::verbose("BTM_SetPinType: pin type {} [variable-0, fixed-1], code {}, length {}", pin_type,
+void btm_set_pin_type(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
+  log::verbose("btm_set_pin_type: pin type {} [variable-0, fixed-1], code {}, length {}", pin_type,
                (char*)pin_code.data(), pin_code_len);
 
   /* If device is not up security mode will be set as a part of startup */
@@ -308,7 +308,7 @@ void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
 
 /*******************************************************************************
  *
- * Function         BTM_SetSecurityLevel
+ * Function         btm_set_security_level
  *
  * Description      Register service security level with Security Manager
  *
@@ -326,15 +326,16 @@ void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
-                          uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id) {
+bool btm_set_security_level(bool outgoing, const char* p_name, uint8_t service_id,
+                            uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
+                            uint32_t mx_chan_id) {
   return BtmSecurity::Get().AddService(outgoing, p_name, service_id, sec_level, psm, mx_proto_id,
                                        mx_chan_id);
 }
 
 /*******************************************************************************
  *
- * Function         BTM_SecClrService
+ * Function         btm_sec_clr_service
  *
  * Description      Removes specified service record(s) from the security
  *                  database. All service records with the specified name are
@@ -350,13 +351,13 @@ bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id,
  * Returns          Number of records that were freed.
  *
  ******************************************************************************/
-uint8_t BTM_SecClrService(uint8_t service_id) {
+uint8_t btm_sec_clr_service(uint8_t service_id) {
   return BtmSecurity::Get().RemoveServiceById(service_id);
 }
 
 /*******************************************************************************
  *
- * Function         BTM_SecClrServiceByPsm
+ * Function         btm_sec_clr_service_by_psm
  *
  * Description      Removes specified service record from the security database.
  *                  All service records with the specified psm are removed.
@@ -370,7 +371,9 @@ uint8_t BTM_SecClrService(uint8_t service_id) {
  * Returns          Number of records that were freed.
  *
  ******************************************************************************/
-uint8_t BTM_SecClrServiceByPsm(uint16_t psm) { return BtmSecurity::Get().RemoveServiceByPsm(psm); }
+uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
+  return BtmSecurity::Get().RemoveServiceByPsm(psm);
+}
 
 // TODO (b/460502961): Remove once the flag security_mode_3_pairing is shipped.
 static void PinCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
@@ -471,7 +474,7 @@ static void PinCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin
 
 /*******************************************************************************
  *
- * Function         BTM_PINCodeReply
+ * Function         btm_pin_code_reply
  *
  * Description      This function is called after Security Manager submitted
  *                  PIN code request to the UI.
@@ -484,8 +487,8 @@ static void PinCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin
  *                  pin_code     - Array with the PIN Code
  *
  ******************************************************************************/
-void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
-                      PinCode pin_code) {
+void btm_pin_code_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                        PinCode pin_code) {
   if (!com_android_bluetooth_flags_security_mode_3_pairing()) {
     PinCodeReply(bd_addr, res, pin_len, pin_code);
     return;
@@ -731,7 +734,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
 /*******************************************************************************
  *
- * Function         BTM_SecBond
+ * Function         btm_sec_bond
  *
  * Description      This function is called to perform bonding with peer device.
  *                  If the connection is already up, but not secure, pairing
@@ -742,8 +745,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
-tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_TRANSPORT transport, tBT_DEVICE_TYPE /* device_type */) {
+tBTM_STATUS btm_sec_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE /* device_type */) {
   if (transport == BT_TRANSPORT_AUTO) {
     if (addr_type == BLE_ADDR_PUBLIC) {
       transport = get_btm_client_interface().ble.BTM_UseLeLink(bd_addr) ? BT_TRANSPORT_LE
@@ -774,7 +777,7 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
 
 /*******************************************************************************
  *
- * Function         BTM_SecBondCancel
+ * Function         btm_sec_bond_cancel
  *
  * Description      This function is called to cancel ongoing bonding process
  *                  with peer device.
@@ -783,10 +786,10 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
  *                  transport    - false for BR/EDR link; true for LE link
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
+tBTM_STATUS btm_sec_bond_cancel(const RawAddress& bd_addr) {
   BtmDevice* p_device;
 
-  log::verbose("BTM_SecBondCancel()  State: {} flags:0x{:x}",
+  log::verbose("btm_sec_bond_cancel()  State: {} flags:0x{:x}",
                btm_pair_state_descr(BtmSecurity::Get().pairing_state_),
                BtmSecurity::Get().pairing_flags_);
   p_device = btm_get_dev(bd_addr);
@@ -828,7 +831,7 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
       /* If the HCI link was set up by Bonding process */
       if (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_DISC_WHEN_DONE) {
         return btm_sec_send_hci_disconnect(p_device, HCI_ERR_PEER_USER, p_device->hci_handle,
-                                           "stack::btm::btm_sec::BTM_SecBondCancel");
+                                           "stack::btm::btm_sec::btm_sec_bond_cancel");
       } else {
         l2cu_update_lcb_4_bonding(bd_addr, false);
       }
@@ -857,7 +860,7 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_SecGetDeviceLinkKeyType
+ * Function         btm_sec_get_device_link_key_type
  *
  * Description      This function is called to obtain link key type for the
  *                  device.
@@ -869,7 +872,7 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
  *                  otherwise.
  *
  ******************************************************************************/
-tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr) {
+tBTM_LINK_KEY_TYPE btm_sec_get_device_link_key_type(const RawAddress& bd_addr) {
   const BtmDevice* p_device = btm_find_dev(bd_addr);
 
   if ((p_device != NULL) && (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN)) {
@@ -880,7 +883,7 @@ tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_SetEncryption
+ * Function         btm_set_encryption
  *
  * Description      This function is called to ensure that connection is
  *                  encrypted.  Should be called only on an open connection.
@@ -904,9 +907,9 @@ tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr) {
  *                  tBTM_STATUS::BTM_MODE_UNSUPPORTED - if security manager not linked in.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                              tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
-                              tBTM_BLE_SEC_ACT sec_act) {
+tBTM_STATUS btm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                               tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
+                               tBTM_BLE_SEC_ACT sec_act) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     log::error("Unknown device {}", bd_addr);
@@ -1036,13 +1039,13 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
   return rc;
 }
 
-bool BTM_SecIsLeSecurityPending(const RawAddress& bd_addr) {
+bool btm_sec_is_le_security_pending(const RawAddress& bd_addr) {
   const BtmDevice* p_device = btm_find_dev(bd_addr);
   return p_device && (p_device->sec_rec.is_security_state_le_encrypting() ||
                       p_device->sec_rec.le_link == tSECURITY_STATE::AUTHENTICATING);
 }
 
-tBTM_STATUS BTM_SecReportBondLoss(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+tBTM_STATUS btm_sec_report_bond_loss(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     log::error("No record found for {}", bd_addr);
@@ -1085,7 +1088,7 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(BtmDevice* p_device, tHCI_STATUS 
 
 /*******************************************************************************
  *
- * Function         BTM_ConfirmReqReply
+ * Function         btm_confirm_req_reply
  *
  * Description      This function is called to confirm the numeric value for
  *                  Simple Pairing in response to BTM_SP_CFM_REQ_EVT
@@ -1095,8 +1098,8 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(BtmDevice* p_device, tHCI_STATUS 
  *                  bd_addr       - Address of the peer device
  *
  ******************************************************************************/
-void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
-  log::verbose("BTM_ConfirmReqReply() State: {}  Res: {}",
+void btm_confirm_req_reply(tBTM_STATUS res, const RawAddress& bd_addr) {
+  log::verbose("btm_confirm_req_reply() State: {}  Res: {}",
                btm_pair_state_descr(BtmSecurity::Get().pairing_state_), res);
 
   /* If timeout already expired or has been canceled, ignore the reply */
@@ -1127,7 +1130,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_PasskeyReqReply
+ * Function         btm_passkey_req_reply
  *
  * Description      This function is called to provide the passkey for
  *                  Simple Pairing in response to BTM_SP_KEY_REQ_EVT
@@ -1139,8 +1142,8 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
  *                  BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
  *
  ******************************************************************************/
-void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey) {
-  log::verbose("BTM_PasskeyReqReply: State: {}  res:{}",
+void btm_passkey_req_reply(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey) {
+  log::verbose("btm_passkey_req_reply: State: {}  res:{}",
                btm_pair_state_descr(BtmSecurity::Get().pairing_state_), res);
 
   if (BtmSecurity::Get().pairing_state_ == BTM_PAIR_STATE_IDLE ||
@@ -1157,9 +1160,9 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t pa
 
       if (p_device->hci_handle != HCI_INVALID_HANDLE) {
         btm_sec_send_hci_disconnect(p_device, HCI_ERR_AUTH_FAILURE, p_device->hci_handle,
-                                    "stack::btm::btm_sec::BTM_PasskeyReqReply Invalid handle");
+                                    "stack::btm::btm_sec::btm_passkey_req_reply Invalid handle");
       } else {
-        BTM_SecBondCancel(bd_addr);
+        btm_sec_bond_cancel(bd_addr);
       }
 
       p_device->sec_rec.sec_flags &= ~(BTM_SEC_LINK_KEY_AUTHED | BTM_SEC_LINK_KEY_KNOWN);
@@ -1190,13 +1193,13 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t pa
 
 /*******************************************************************************
  *
- * Function         BTM_ReadLocalOobData
+ * Function         btm_read_local_oob_data
  *
  * Description      This function is called to read the local OOB data from
  *                  LM
  *
  ******************************************************************************/
-void BTM_ReadLocalOobData(void) {
+void btm_read_local_oob_data(void) {
   if (bluetooth::shim::GetController()->SupportsSecureConnections()) {
     btsnd_hcic_read_local_oob_extended_data();
   } else {
@@ -1206,7 +1209,7 @@ void BTM_ReadLocalOobData(void) {
 
 /*******************************************************************************
  *
- * Function         BTM_RemoteOobDataReply
+ * Function         btm_remote_oob_data_reply
  *
  * Description      This function is called to provide the remote OOB data for
  *                  Simple Pairing in response to BTM_SP_RMT_OOB_EVT
@@ -1216,8 +1219,8 @@ void BTM_ReadLocalOobData(void) {
  *                  r           - simple pairing Randomizer  C.
  *
  ******************************************************************************/
-void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c,
-                            const Octet16& r) {
+void btm_remote_oob_data_reply(tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c,
+                               const Octet16& r) {
   log::verbose("State: {} res: {}", btm_pair_state_descr(BtmSecurity::Get().pairing_state_), res);
 
   /* If timeout already expired or has been canceled, ignore the reply */
@@ -1240,7 +1243,7 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr, const Oc
 
 /*******************************************************************************
  *
- * Function         BTM_PeerSupportsSecureConnections
+ * Function         btm_peer_supports_secure_connections
  *
  * Description      This function is called to check if the peer supports
  *                  BR/EDR Secure Connections.
@@ -1251,7 +1254,7 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr, const Oc
  *                  else false.
  *
  ******************************************************************************/
-bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr) {
+bool btm_peer_supports_secure_connections(const RawAddress& bd_addr) {
   const BtmDevice* p_device = btm_find_dev(bd_addr);
   if (p_device == nullptr) {
     log::warn("unknown BDA: {}", bd_addr);
@@ -1302,7 +1305,7 @@ tBT_DEVICE_TYPE BTM_GetPeerDeviceTypeFromFeatures(const RawAddress& bd_addr) {
  *                  security mode.
  *
  ******************************************************************************/
-uint8_t BTM_GetSecurityMode() { return BtmSecurity::Get().security_mode_; }
+uint8_t btm_get_security_mode() { return BtmSecurity::Get().security_mode_; }
 
 /************************************************************************
  *              I N T E R N A L     F U N C T I O N S
@@ -1328,8 +1331,7 @@ static bool security_upgrade_possible(const BtmDevice* p_device, bool outgoing) 
   uint16_t bond_check = outgoing ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE;
   bool bonding_required = sec_rec.security_required & bond_check;
 
-  if (bonding_required &&
-      !sec_rec.is_bond_type_persistent()) {
+  if (bonding_required && !sec_rec.is_bond_type_persistent()) {
     log::debug("Not bonded, upgrade is possible sec_flags: 0x{:x}", sec_rec.sec_flags);
     return true;
   }
@@ -2017,10 +2019,10 @@ void btm_sec_dev_reset(void) {
   }
 
   /* add mx service to use no security */
-  BTM_SetSecurityLevel(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
-                       BTM_SEC_PROTO_RFCOMM, 0);
-  BTM_SetSecurityLevel(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
-                       BTM_SEC_PROTO_RFCOMM, 0);
+  btm_set_security_level(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
+                         BTM_SEC_PROTO_RFCOMM, 0);
+  btm_set_security_level(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
+                         BTM_SEC_PROTO_RFCOMM, 0);
   log::verbose("btm_sec_dev_reset sec mode: {}", BtmSecurity::Get().security_mode_);
 }
 
@@ -2764,7 +2766,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
                     "did not receive IO cap response prior to BTM_SP_CFM_REQ_EVT, "
                     "failing pairing request");
             status = tBTM_STATUS::BTM_WRONG_MODE;
-            BTM_ConfirmReqReply(status, p_bda);
+            btm_confirm_req_reply(status, p_bda);
             return;
           }
 
@@ -2826,11 +2828,11 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
     }
 
     if (event == BTM_SP_CFM_REQ_EVT) {
-      log::verbose("calling BTM_ConfirmReqReply with status: {}", status);
-      BTM_ConfirmReqReply(status, p_bda);
+      log::verbose("calling btm_confirm_req_reply with status: {}", status);
+      btm_confirm_req_reply(status, p_bda);
     } else if (BtmSecurity::Get().devcb_.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT &&
                event == BTM_SP_KEY_REQ_EVT) {
-      BTM_PasskeyReqReply(status, p_bda, 0);
+      btm_passkey_req_reply(status, p_bda, 0);
     }
     return;
   }
@@ -2944,7 +2946,7 @@ void btm_rem_oob_req(const RawAddress bd_addr) {
     if ((*BtmSecurity::Get().api_.p_sp_callback)(BTM_SP_RMT_OOB_EVT,
                                                  (tBTM_SP_EVT_DATA*)&evt_data) ==
         tBTM_STATUS::BTM_NOT_AUTHORIZED) {
-      BTM_RemoteOobDataReply(static_cast<tBTM_STATUS>(true), p_bda, c, r);
+      btm_remote_oob_data_reply(static_cast<tBTM_STATUS>(true), p_bda, c, r);
     }
     return;
   }
@@ -3197,7 +3199,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
               (p_device->IsLocallyInitiated() && role == HCI_ROLE_PERIPHERAL)
                       ? BtmDevice::RoleSwitchPending::kAfterEnc
                       : BtmDevice::RoleSwitchPending::kNone;
-      BTM_SetEncryption(p_device->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
+      btm_set_encryption(p_device->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
       l2cu_start_post_bond_timer(p_device->hci_handle);
     }
 
@@ -4122,7 +4124,7 @@ void btm_sec_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr, tHC
   }
   if (new_role == HCI_ROLE_CENTRAL && btm_dev_authenticated(p_device) &&
       !btm_dev_encrypted(p_device)) {
-    BTM_SetEncryption(p_device->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
+    btm_set_encryption(p_device->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
   }
 }
 
@@ -5083,8 +5085,8 @@ static bool btm_sec_check_prefetch_pin(BtmDevice* p_device) {
 
   /* If we got a PIN, use that, else try to get one */
   if (BtmSecurity::Get().pin_code_len_) {
-    BTM_PINCodeReply(p_device->bd_addr, tBTM_STATUS::BTM_SUCCESS, BtmSecurity::Get().pin_code_len_,
-                     BtmSecurity::Get().pin_code_);
+    btm_pin_code_reply(p_device->bd_addr, tBTM_STATUS::BTM_SUCCESS,
+                       BtmSecurity::Get().pin_code_len_, BtmSecurity::Get().pin_code_);
     return true;
   }
 
@@ -5166,7 +5168,7 @@ static void btm_sec_check_pending_enc_req(BtmDevice* p_device, tBT_TRANSPORT tra
       log::info("Retrying encryption request: addr={}, transport={}, sec_act=0x{:x}",
                 p_device->bd_addr, transport, req.sec_act);
       tBTM_STATUS res =
-              BTM_SetEncryption(p_device->bd_addr, transport, req.callback, req.ref, req.sec_act);
+              btm_set_encryption(p_device->bd_addr, transport, req.callback, req.ref, req.sec_act);
       if (res != tBTM_STATUS::BTM_SUCCESS && res != tBTM_STATUS::BTM_CMD_STARTED) {
         log::warn(
                 "Failed to retry encryption request: addr={}, transport={}, sec_act=0x{:x}, res={}",
@@ -5205,7 +5207,7 @@ static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security, bool outgoi
  * Function         btm_sec_clear_ble_keys
  *
  * Description      This function is called to clear out the BLE keys.
- *                  Typically when devices are removed in BTM_SecDeleteDevice,
+ *                  Typically when devices are removed in btm_sec_delete_device,
  *                  or when a new BT Link key is generated.
  *
  * Returns          void
