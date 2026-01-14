@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.swoffload"
+container: "vendor"
+
+flag {
+  name: "swoffload_peripheral_decoding_feature"
+  namespace: "bluetooth"
+  description: "Flag for enabling peripheral decoding feature in Software Offload Library"
+  bug: "475344085"
+}
