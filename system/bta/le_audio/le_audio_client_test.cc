@@ -3253,6 +3253,8 @@ protected:
     LeAudioClient::Get()->SetCcidInformation(gtbs_ccid,
                                              static_cast<int>(LeAudioContextType::CONVERSATIONAL));
     LeAudioClient::Get()->GroupSetActive(group_id);
+    SyncOnMainLoop();
+    Mock::VerifyAndClearExpectations(&mock_btif_storage_);
   }
 
   void TestSetCodecPreference(
@@ -18367,6 +18369,62 @@ TEST_F(UnicastTest, testGameSonificationHandling) {
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
+TEST_F(UnicastTest, testSetEnableStateFalseDuringStreaming) {
+  /* Scenario
+   * 1. Enter streaming
+   * 2. Disable LeAudio
+   * 3. Make sure GATT Client is not called
+   */
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+
+  auto scenario = types::LeAudioContextType::MEDIA;
+  types::BidirectionalPair<types::AudioContexts> metadata_contexts = {
+          .sink = AudioContexts(types::LeAudioContextType::MEDIA), .source = AudioContexts()};
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  const RawAddress test_address0 = GetTestAddress(0);
+
+  EXPECT_CALL(mock_gatt_interface_, CancelOpen(_, _, _)).Times(0);
+  LeAudioClient::Get()->SetEnableState(test_address0, false);
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
+}
+
+TEST_F(UnicastTest, testSetEnableStateFalseDuringAutoConnect) {
+  /* Scenario
+   * 1. Enter streaming
+   * 2. Disable LeAudio
+   * 3. Make sure GATT Client is not called
+   */
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+
+  /* Remove default action on the direct connect */
+  ON_CALL(mock_gatt_interface_, Open(_, _, _, _)).WillByDefault(Return());
+
+  /* Initiate disconnection with timeout reason, the possible reason why GATT
+   * read attribute operation may be not handled
+   */
+  InjectDisconnectedEvent(1, GATT_CONN_TIMEOUT);
+  InjectDisconnectedEvent(2, GATT_CONN_TIMEOUT);
+  SyncOnMainLoop();
+
+  const RawAddress test_address0 = GetTestAddress(0);
+  const RawAddress test_address1 = GetTestAddress(1);
+
+  EXPECT_CALL(mock_gatt_interface_, CancelOpen(_, test_address0, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, CancelOpen(_, test_address1, _)).Times(1);
+  LeAudioClient::Get()->SetEnableState(test_address0, false);
+  LeAudioClient::Get()->SetEnableState(test_address1, false);
+
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
 }
 
 class UnicastDsaTest : public UnicastTest,
