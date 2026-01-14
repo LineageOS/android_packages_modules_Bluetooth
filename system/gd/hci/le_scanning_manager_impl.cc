@@ -34,7 +34,7 @@
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/ble_hci_link_interface.h"
-#include "stack/include/btm_sec_api.h"
+#include "stack/include/btm_client_interface.h"
 
 namespace bluetooth {
 namespace hci {
@@ -718,7 +718,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
   bool is_bonded(Address target_address) {
     if (com::android::bluetooth::flags::irk_scanning_bond_check_update()) {
-      return BTM_IsBonded(RawAddress(target_address.address), BT_TRANSPORT_LE);
+      return get_btm_client_interface().security.BTM_IsBonded(RawAddress(target_address.address),
+                                                              BT_TRANSPORT_LE);
     } else {
       for (auto device : storage_module_->GetBondedDevices()) {
         if (device.GetAddress() == target_address) {

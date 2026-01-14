@@ -44,7 +44,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "stack/include/btm_sec_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
 
@@ -546,9 +546,10 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
       // Only load the database if we are bonded, since the device cache is
       // meaningless otherwise (as we need to do rediscovery regardless)
-      gatt::Database db = BTM_IsBonded(p_clcb->bda)
-                                  ? bta_gattc_cache_load(p_clcb->p_srcb->server_bda)
-                                  : gatt::Database();
+      gatt::Database db =
+              get_btm_client_interface().security.BTM_IsBonded(p_clcb->bda, BT_TRANSPORT_AUTO)
+                      ? bta_gattc_cache_load(p_clcb->p_srcb->server_bda)
+                      : gatt::Database();
       auto robust_caching_support = GetRobustCachingSupport(p_clcb, db);
       log::info("Connected to {}, robust caching support is {}", p_clcb->bda,
                 robust_caching_support);

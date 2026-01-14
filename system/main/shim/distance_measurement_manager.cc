@@ -23,6 +23,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/main_thread.h"
 
 using bluetooth::hci::DistanceMeasurementDetectedAttackLevel;
@@ -87,7 +88,7 @@ public:
     auto distance_measurement_location_type =
             static_cast<DistanceMeasurementLocationType>(location_type);
     hci::Role local_hci_role;
-    if (!BTM_IsEncrypted(identity_addr, BT_TRANSPORT_LE) &&
+    if (!get_btm_client_interface().security.BTM_IsEncrypted(identity_addr, BT_TRANSPORT_LE) &&
         distance_measurement_method == DistanceMeasurementMethod::METHOD_CS) {
       if (retries < kMaxRetryCount) {
         log::info("Connection is not encrypted, retrying in {} ms", kRetryIntervalMs);

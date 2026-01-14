@@ -589,7 +589,8 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle, enh_esco_params
       ** If so, we cannot use SCO-only packet types (HFP 1.7)
       */
       const bool local_supports_sc = bluetooth::shim::GetController()->SupportsSecureConnections();
-      const bool remote_supports_sc = BTM_PeerSupportsSecureConnections(bd_addr);
+      const bool remote_supports_sc =
+              get_security_client_interface().BTM_PeerSupportsSecureConnections(bd_addr);
 
       if (local_supports_sc && remote_supports_sc) {
         if (com_android_bluetooth_flags_fix_sco_type_mask_check()) {

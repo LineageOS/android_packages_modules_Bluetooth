@@ -541,7 +541,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
   p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
   if (p_srv_chg_clt != NULL) {
     check_srv_chg = true;
-  } else if (BTM_IsBonded(bd_addr)) {
+  } else if (get_btm_client_interface().security.BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
     gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
     if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection()) {
       p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
@@ -941,7 +941,7 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t /* initiator */, tL2CAP
   tGATTS_SRV_CHG* p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
   if (p_srv_chg_clt != NULL) {
     gatt_chk_srv_chg(p_srv_chg_clt);
-  } else if (BTM_IsBonded(p_tcb->peer_bda)) {
+  } else if (get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda, BT_TRANSPORT_AUTO)) {
     gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
 
@@ -974,7 +974,7 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool /* ack_needed */) {
   }
 
   if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == nullptr &&
-      BTM_IsBonded(p_tcb->peer_bda)) {
+      get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda, BT_TRANSPORT_AUTO)) {
     gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
   /* send disconnect callback */
@@ -994,7 +994,7 @@ static void gatt_l2cif_disconnect(uint16_t lcid) {
 
   /* If the device is not in the service changed client list, add it... */
   if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == nullptr &&
-      BTM_IsBonded(p_tcb->peer_bda)) {
+      get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda, BT_TRANSPORT_AUTO)) {
     gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
 
