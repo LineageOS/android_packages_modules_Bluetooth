@@ -175,6 +175,8 @@ static constexpr uint8_t kLogDumpParamTotalLen = 3;
 static constexpr uint8_t kVersion5_0ParamsTotalLen = 7;
 // Added in BQR V6.0
 static constexpr uint8_t kVersion6_0ParamsTotalLen = 6;
+// Added in BQR V7.0 for Energy Monitor Event
+static constexpr uint8_t kEnergyMonitorVersion7_0ParamsTotalLen = 8;
 
 // Warning criteria of the RSSI value.
 static constexpr int8_t kCriWarnRssi = -80;
@@ -430,6 +432,15 @@ typedef struct {
   uint32_t tx_epa_active_two_chain_time;
 } __attribute__((__packed__)) BqrEnergyMonitorEvent;
 
+// BQR Energy Monitoring Event Packet for BQRv7
+typedef struct __attribute__((__packed__)) {
+  BqrEnergyMonitorEvent base;
+  // The time duration of the total RX active time on BR/EDR scan
+  uint32_t bredr_rx_active_scan_total_time;
+  // The time duration of the total RX active time on BLE scan
+  uint32_t le_rx_active_scan_total_time;
+} BqrEnergyMonitoringEventV7;
+
 static constexpr uint8_t kEnergyMonitorParamTotalLen = sizeof(BqrEnergyMonitorEvent);
 
 // RF Stats BQR event
@@ -658,7 +669,7 @@ public:
   // Link Quality related BQR event
   BqrLinkQualityEvent bqr_link_quality_event_ = {};
   // Energy Monitor BQR event
-  BqrEnergyMonitorEvent bqr_energy_monitor_event_ = {};
+  BqrEnergyMonitoringEventV7 bqr_energy_monitor_event_ = {};
   // RF Stats BQR event
   BqrRFStatsEvent bqr_rf_stats_event_ = {};
   // Log Dump related BQR event

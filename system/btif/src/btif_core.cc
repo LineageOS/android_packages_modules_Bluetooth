@@ -36,7 +36,6 @@
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
-#include <signal.h>
 #include <sys/types.h>
 
 #include <cstdint>
@@ -59,11 +58,9 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
-#include "osi/include/future.h"
 #include "osi/include/properties.h"
 #include "stack/include/a2dp_api.h"
 #include "stack/include/btm_ble_api.h"
-#include "stack/include/btm_client_interface.h"
 #include "storage/config_keys.h"
 
 using bluetooth::Uuid;

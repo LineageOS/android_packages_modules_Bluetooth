@@ -879,6 +879,42 @@ public class TbsGattTest {
     }
 
     @Test
+    public void testSetInbandRingtoneFlag() {
+        prepareDefaultService();
+        BluetoothGattCharacteristic characteristic = getCharacteristic(TbsGatt.UUID_STATUS_FLAGS);
+        configureNotifications(mFirstDevice, characteristic, true);
+
+        byte[] valueBytes = new byte[2];
+
+        int statusFlagValue = TbsGatt.STATUS_FLAG_INBAND_RINGTONE_ENABLED;
+        valueBytes[0] = (byte) (statusFlagValue & 0xFF);
+        valueBytes[1] = (byte) ((statusFlagValue >> 8) & 0xFF);
+
+        mTbsGatt.setInbandRingtoneFlag(mFirstDevice);
+        verify(mGattServer)
+                .notifyCharacteristicChanged(
+                        eq(mFirstDevice), eq(characteristic), eq(false), eq(valueBytes));
+    }
+
+    @Test
+    public void testClearInbandRingtoneFlag() {
+        prepareDefaultService();
+        BluetoothGattCharacteristic characteristic = getCharacteristic(TbsGatt.UUID_STATUS_FLAGS);
+        configureNotifications(mFirstDevice, characteristic, true);
+
+        byte[] valueBytes = new byte[2];
+
+        int statusFlagValue = 0;
+        valueBytes[0] = (byte) (statusFlagValue & 0xFF);
+        valueBytes[1] = (byte) ((statusFlagValue >> 8) & 0xFF);
+
+        mTbsGatt.clearInbandRingtoneFlag(mFirstDevice);
+        verify(mGattServer)
+                .notifyCharacteristicChanged(
+                        eq(mFirstDevice), eq(characteristic), eq(false), eq(valueBytes));
+    }
+
+    @Test
     public void testHandleIsInbandRingtoneEnabled() {
         prepareDefaultService();
         BluetoothGattCharacteristic characteristic = getCharacteristic(TbsGatt.UUID_STATUS_FLAGS);

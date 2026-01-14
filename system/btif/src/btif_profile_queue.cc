@@ -41,7 +41,6 @@
 #include "btif/include/stack_manager_t.h"
 #include "btif_common.h"
 #include "btif_status.h"
-#include "hardware/bluetooth.h"
 
 using namespace bluetooth;
 

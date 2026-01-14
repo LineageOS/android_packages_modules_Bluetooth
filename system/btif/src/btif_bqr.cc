@@ -159,38 +159,58 @@ void BqrVseSubEvt::ParseBqrLinkQualityEvt(uint8_t length, const uint8_t* p_param
 }
 
 bool BqrVseSubEvt::ParseBqrEnergyMonitorEvt(uint8_t length, const uint8_t* p_param_buf) {
-  if (length < kEnergyMonitorParamTotalLen) {
+  int min_expected_length = kEnergyMonitorParamTotalLen;
+
+  if (length < min_expected_length) {
     log::fatal(
             "Parameter total length: {} is abnormal. It shall be not shorter than: "
             "{}",
-            length, kEnergyMonitorParamTotalLen);
+            length, min_expected_length);
     return false;
   }
 
-  STREAM_TO_UINT8(bqr_energy_monitor_event_.quality_report_id, p_param_buf);
-  bqr_link_quality_event_.quality_report_id = bqr_energy_monitor_event_.quality_report_id;
-  STREAM_TO_UINT16(bqr_energy_monitor_event_.avg_current_consume, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.idle_total_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.idle_state_enter_count, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.active_total_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.active_state_enter_count, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.bredr_tx_total_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.bredr_tx_state_enter_count, p_param_buf);
-  STREAM_TO_UINT8(bqr_energy_monitor_event_.bredr_tx_avg_power_lv, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.bredr_rx_total_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.bredr_rx_state_enter_count, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.le_tx_total_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.le_tx_state_enter_count, p_param_buf);
-  STREAM_TO_UINT8(bqr_energy_monitor_event_.le_tx_avg_power_lv, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.le_rx_total_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.le_rx_state_enter_count, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.tm_period, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.rx_active_one_chain_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.rx_active_two_chain_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.tx_ipa_active_one_chain_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.tx_ipa_active_two_chain_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.tx_epa_active_one_chain_time, p_param_buf);
-  STREAM_TO_UINT32(bqr_energy_monitor_event_.tx_epa_active_two_chain_time, p_param_buf);
+  STREAM_TO_UINT8(bqr_energy_monitor_event_.base.quality_report_id, p_param_buf);
+  bqr_link_quality_event_.quality_report_id = bqr_energy_monitor_event_.base.quality_report_id;
+  STREAM_TO_UINT16(bqr_energy_monitor_event_.base.avg_current_consume, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.idle_total_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.idle_state_enter_count, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.active_total_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.active_state_enter_count, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.bredr_tx_total_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.bredr_tx_state_enter_count, p_param_buf);
+  STREAM_TO_UINT8(bqr_energy_monitor_event_.base.bredr_tx_avg_power_lv, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.bredr_rx_total_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.bredr_rx_state_enter_count, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.le_tx_total_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.le_tx_state_enter_count, p_param_buf);
+  STREAM_TO_UINT8(bqr_energy_monitor_event_.base.le_tx_avg_power_lv, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.le_rx_total_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.le_rx_state_enter_count, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.tm_period, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.rx_active_one_chain_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.rx_active_two_chain_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.tx_ipa_active_one_chain_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.tx_ipa_active_two_chain_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.tx_epa_active_one_chain_time, p_param_buf);
+  STREAM_TO_UINT32(bqr_energy_monitor_event_.base.tx_epa_active_two_chain_time, p_param_buf);
+
+  bqr_energy_monitor_event_.bredr_rx_active_scan_total_time = 0;
+  bqr_energy_monitor_event_.le_rx_active_scan_total_time = 0;
+
+  if (vendor_cap_supported_version >= kBqrVersion7_0 &&
+      com_android_bluetooth_flags_bqr_fix_energymonitor_params()) {
+    if (length < kEnergyMonitorParamTotalLen + kEnergyMonitorVersion7_0ParamsTotalLen) {
+      log::warn(
+              "Parameter total length: {} is abnormal. "
+              "vendor_cap_supported_version: {} (>= BqrV7={}), It should "
+              "not be shorter than: {}",
+              length, vendor_cap_supported_version, kBqrVersion7_0,
+              kEnergyMonitorParamTotalLen + kEnergyMonitorVersion7_0ParamsTotalLen);
+    } else {
+      STREAM_TO_UINT32(bqr_energy_monitor_event_.bredr_rx_active_scan_total_time, p_param_buf);
+      STREAM_TO_UINT32(bqr_energy_monitor_event_.le_rx_active_scan_total_time, p_param_buf);
+    }
+  }
   return true;
 }
 
@@ -303,10 +323,10 @@ std::string BqrVseSubEvt::ToString() const {
        << ", RxDuplicate: " << std::to_string(bqr_link_quality_event_.rx_duplicate_packets);
   }
   if (QUALITY_REPORT_ID_ENERGY_MONITOR == bqr_link_quality_event_.quality_report_id) {
-    ss << ", TotalTime: " << std::to_string(bqr_energy_monitor_event_.tm_period)
-       << ", ActiveTime: " << std::to_string(bqr_energy_monitor_event_.active_total_time)
-       << ", IdleTime: " << std::to_string(bqr_energy_monitor_event_.idle_total_time)
-       << ", AvgCurrent: " << std::to_string(bqr_energy_monitor_event_.avg_current_consume);
+    ss << ", TotalTime: " << std::to_string(bqr_energy_monitor_event_.base.tm_period)
+       << ", ActiveTime: " << std::to_string(bqr_energy_monitor_event_.base.active_total_time)
+       << ", IdleTime: " << std::to_string(bqr_energy_monitor_event_.base.idle_total_time)
+       << ", AvgCurrent: " << std::to_string(bqr_energy_monitor_event_.base.avg_current_consume);
   }
   if (QUALITY_REPORT_ID_RF_STATS == bqr_link_quality_event_.quality_report_id) {
     ss << ", TotalTime: " << std::to_string(bqr_rf_stats_event_.tm_period)
@@ -735,7 +755,6 @@ static void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event) {
                   quality_report_id, length, kEnergyMonitorParamTotalLen);
           return;
         }
-
         AddEnergyMonitorEventToQueue(length, p_bqr_event);
       }
       break;
@@ -839,7 +858,7 @@ static void AddEnergyMonitorEventToQueue(uint8_t length, const uint8_t* p_energy
   }
 
   metrics::LogMetricBluetoothEnergyMonitorReported(vendor_cap_supported_version,
-                                                   p_bqr_event->bqr_energy_monitor_event_);
+                                                   p_bqr_event->bqr_energy_monitor_event_.base);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 

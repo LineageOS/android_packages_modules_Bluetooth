@@ -1247,6 +1247,15 @@ public class BluetoothInCallServiceTest {
     }
 
     @Test
+    public void processChldTypeReleaseHeld_noRingingOrHeldCall_returnsTrue() {
+        boolean didProcess =
+                mBluetoothInCallService.processChld(mHeadsetService, CHLD_TYPE_RELEASEHELD);
+
+        // The method should return true even if no action was taken.
+        assertThat(didProcess).isTrue();
+    }
+
+    @Test
     public void processChldReleaseActiveRinging() {
         BluetoothCall activeCall = createActiveCall(UUID.randomUUID());
         BluetoothCall ringingCall = createRingingCall(UUID.randomUUID());
@@ -1308,6 +1317,16 @@ public class BluetoothInCallServiceTest {
                         mHeadsetService, CHLD_TYPE_HOLDACTIVE_ACCEPTHELD);
 
         verify(activeCall).hold();
+        assertThat(didProcess).isTrue();
+    }
+
+    @Test
+    public void processChldHoldActiveAcceptHeld_noActionableCall_returnsTrue() {
+        boolean didProcess =
+                mBluetoothInCallService.processChld(
+                        mHeadsetService, CHLD_TYPE_HOLDACTIVE_ACCEPTHELD);
+
+        // The method should return true even if no action was taken.
         assertThat(didProcess).isTrue();
     }
 
@@ -1374,6 +1393,15 @@ public class BluetoothInCallServiceTest {
                 mBluetoothInCallService.processChld(mHeadsetService, CHLD_TYPE_ADDHELDTOCONF);
 
         verify(activeCall).conference(conferenceableCall);
+        assertThat(didProcess).isTrue();
+    }
+
+    @Test
+    public void processChldAddHeldToConf_noActiveCall_returnsTrue() {
+        boolean didProcess =
+                mBluetoothInCallService.processChld(mHeadsetService, CHLD_TYPE_ADDHELDTOCONF);
+
+        // The method should return true even if no action was taken.
         assertThat(didProcess).isTrue();
     }
 

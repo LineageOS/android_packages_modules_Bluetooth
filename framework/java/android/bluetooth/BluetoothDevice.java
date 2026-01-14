@@ -133,7 +133,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * contain the extra fields {@link #EXTRA_NAME} and/or {@link #EXTRA_RSSI} and/or {@link
      * #EXTRA_IS_COORDINATED_SET_MEMBER} if they are available.
      *
-     * <p>From {@link Build.VERSION_CODES_FULL.BAKLAVA_1}, it contains the extra field {@link
+     * <p>From {@link Build.VERSION_CODES_FULL#BAKLAVA_1}, it contains the extra field {@link
      * #EXTRA_DISCOVERY_RESULT_TYPE}. Based on the discovery result type, it can contain extra
      * fields for UUIDs:
      *

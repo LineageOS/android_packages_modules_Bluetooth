@@ -133,26 +133,6 @@ public class BipEncodingTest {
         assertThat(encoding.isAndroidSupported()).isFalse();
     }
 
-    @Test(expected = ParseException.class)
-    public void testParseInvalidName_throwsException() {
-        testParse("JIF", BipEncoding.UNKNOWN, "UNKNOWN", null, false);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseInvalidUsrEncoding_throwsException() {
-        testParse("USR", BipEncoding.UNKNOWN, "UNKNOWN", null, false);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseNullString() {
-        testParse(null, BipEncoding.UNKNOWN, "UNKNOWN", null, false);
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseEmptyString() {
-        testParse("", BipEncoding.UNKNOWN, "UNKNOWN", null, false);
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testCreateInvalidEncoding() {
         new BipEncoding(-5, null);

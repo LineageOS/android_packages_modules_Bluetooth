@@ -41,7 +41,6 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -109,10 +108,7 @@ public class MapClientService extends ConnectableProfile {
             throw new IllegalArgumentException("Null device");
         }
         Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
-        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN
-                || (Flags.mapClientCheckAccessPermission()
-                        && getAdapterService().getMessageAccessPermission(device)
-                                != BluetoothDevice.ACCESS_ALLOWED)) {
+        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
             Log.w(
                     TAG,
                     "Connection not allowed: <"
