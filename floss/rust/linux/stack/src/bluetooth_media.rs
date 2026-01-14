@@ -1009,19 +1009,18 @@ impl BluetoothMedia {
                                 );
                             });
 
-                            match self.le_audio_delayed_audio_conf_updates.remove(&group_id) {
-                                Some(conf) => {
-                                    self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
-                                        callback.on_lea_audio_conf(
-                                            conf.direction,
-                                            conf.group_id,
-                                            conf.snk_audio_location,
-                                            conf.src_audio_location,
-                                            conf.avail_cont,
-                                        );
-                                    });
-                                }
-                                _ => {}
+                            if let Some(conf) =
+                                self.le_audio_delayed_audio_conf_updates.remove(&group_id)
+                            {
+                                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                                    callback.on_lea_audio_conf(
+                                        conf.direction,
+                                        conf.group_id,
+                                        conf.snk_audio_location,
+                                        conf.src_audio_location,
+                                        conf.avail_cont,
+                                    );
+                                });
                             }
                         }
 
@@ -1997,14 +1996,9 @@ impl BluetoothMedia {
     fn uhid_destroy(&mut self, addr: &RawAddress) {
         if let Some(uhid) = self.uhid.get_mut(addr) {
             debug!("[{}]: UHID destroy", DisplayAddress(addr));
-            match uhid.handle.destroy() {
-                Err(e) => log::error!(
-                    "[{}]: UHID destroy: Fail to destroy uhid {}",
-                    DisplayAddress(addr),
-                    e
-                ),
-                Ok(_) => (),
-            };
+            if let Err(e) = uhid.handle.destroy() {
+                log::error!("[{}]: UHID destroy: Fail to destroy uhid {}", DisplayAddress(addr), e);
+            }
             self.uhid.remove(addr);
             self.notify_telephony_event(addr, TelephonyEvent::UHidDestroy);
         } else {
@@ -2024,14 +2018,13 @@ impl BluetoothMedia {
                 (data & UHID_INPUT_PHONE_MUTE) != 0,
                 (data & UHID_INPUT_DROP) != 0,
             );
-            match uhid.handle.send_input(data) {
-                Err(e) => log::error!(
+            if let Err(e) = uhid.handle.send_input(data) {
+                log::error!(
                     "[{}]: UHID: Fail to send hid input report. err:{}",
                     DisplayAddress(addr),
                     e
-                ),
-                Ok(_) => (),
-            };
+                );
+            }
         }
     }
 
@@ -2176,7 +2169,9 @@ impl BluetoothMedia {
         // Defaults to Idle if no calls are present.
         // Revisit this logic if the system supports multiple concurrent calls in the future (e.g., three-way-call).
         let mut call_state = CallState::Idle;
-        self.call_list.first().map(|c| call_state = c.state);
+        if let Some(c) = self.call_list.first() {
+            call_state = c.state;
+        }
         self.telephony_callbacks.lock().unwrap().for_all_callbacks(|callback| {
             callback.on_telephony_event(*addr, u8::from(event), u8::from(call_state));
         });

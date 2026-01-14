@@ -1209,12 +1209,12 @@ impl BluetoothSocketManager {
 
     pub fn remove_callback(&mut self, callback: CallbackId) {
         // Remove any associated futures and sockets waiting to accept.
-        self.connecting.remove(&callback).map(|sockets| {
+        if let Some(sockets) = self.connecting.remove(&callback) {
             for s in sockets {
                 s.joinhandle.abort();
             }
-        });
-        self.listening.remove(&callback).map(|sockets| {
+        }
+        if let Some(sockets) = self.listening.remove(&callback) {
             for s in sockets {
                 if s.joinhandle.is_finished() {
                     continue;
@@ -1225,7 +1225,7 @@ impl BluetoothSocketManager {
                     let _ = tx.send(SocketRunnerActions::Close(id)).await;
                 });
             }
-        });
+        }
 
         if !self.is_listening() {
             // Update the connectable mode since the list of listening socket has changed.
@@ -1443,38 +1443,31 @@ impl IBluetoothSocketManager for BluetoothSocketManager {
     }
 
     fn accept(&mut self, callback: CallbackId, id: SocketId, timeout_ms: Option<u32>) -> BtStatus {
-        match self.listening.get(&callback) {
-            Some(v) => {
-                if let Some(found) = v.iter().find(|item| item.socket_id == id) {
-                    let tx = found.tx.clone();
-                    let timeout_duration = timeout_ms.map(|t| Duration::from_millis(t.into()));
-                    self.runtime.spawn(async move {
-                        let _ =
-                            tx.send(SocketRunnerActions::AcceptTimeout(id, timeout_duration)).await;
-                    });
+        if let Some(v) = self.listening.get(&callback) {
+            if let Some(found) = v.iter().find(|item| item.socket_id == id) {
+                let tx = found.tx.clone();
+                let timeout_duration = timeout_ms.map(|t| Duration::from_millis(t.into()));
+                self.runtime.spawn(async move {
+                    let _ = tx.send(SocketRunnerActions::AcceptTimeout(id, timeout_duration)).await;
+                });
 
-                    return BtStatus::Success;
-                }
+                return BtStatus::Success;
             }
-            None => (),
         }
 
         BtStatus::InvalidParam
     }
 
     fn close(&mut self, callback: CallbackId, id: SocketId) -> BtStatus {
-        match self.listening.get(&callback) {
-            Some(v) => {
-                if let Some(found) = v.iter().find(|item| item.socket_id == id) {
-                    let tx = found.tx.clone();
-                    self.runtime.spawn(async move {
-                        let _ = tx.send(SocketRunnerActions::Close(id)).await;
-                    });
+        if let Some(v) = self.listening.get(&callback) {
+            if let Some(found) = v.iter().find(|item| item.socket_id == id) {
+                let tx = found.tx.clone();
+                self.runtime.spawn(async move {
+                    let _ = tx.send(SocketRunnerActions::Close(id)).await;
+                });
 
-                    return BtStatus::Success;
-                }
+                return BtStatus::Success;
             }
-            None => (),
         }
 
         BtStatus::InvalidParam

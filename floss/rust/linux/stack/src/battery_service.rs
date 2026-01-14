@@ -322,11 +322,8 @@ impl BatteryService {
         }
         self.battery_sets.remove(&remote_address);
         self.handles.remove(&remote_address);
-        match self.client_id {
-            Some(client_id) => {
-                self.gatt.lock().unwrap().client_disconnect(client_id, remote_address);
-            }
-            None => (),
+        if let Some(client_id) = self.client_id {
+            self.gatt.lock().unwrap().client_disconnect(client_id, remote_address);
         }
     }
 

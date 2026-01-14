@@ -100,8 +100,10 @@ impl DeviceInformation {
                 offset,
                 _is_long,
                 handle,
-            ) => match (self.gatt_server_id, self.pnp_id_handle) {
-                (Some(server_id), Some(pnp_handle)) => {
+            ) => {
+                if let (Some(server_id), Some(pnp_handle)) =
+                    (self.gatt_server_id, self.pnp_id_handle)
+                {
                     if &pnp_handle == handle {
                         let vendor_id = sysprop::get_i32(sysprop::PropertyI32::VendorId);
                         let vendor_id_source =
@@ -131,9 +133,7 @@ impl DeviceInformation {
                         );
                     }
                 }
-
-                (_, _) => (),
-            },
+            }
         }
     }
 }

@@ -231,9 +231,8 @@ impl From<AdvertisingSetParameters> for bt_topshim::profiles::gatt::AdvertisePar
             props |= 0x40;
         }
 
-        match val.discoverable {
-            LeDiscMode::GeneralDiscoverable => is_discoverable = true,
-            _ => {}
+        if val.discoverable == LeDiscMode::GeneralDiscoverable {
+            is_discoverable = true;
         }
 
         let interval = clamp(val.interval, INTERVAL_MIN, INTERVAL_MAX - INTERVAL_DELTA);

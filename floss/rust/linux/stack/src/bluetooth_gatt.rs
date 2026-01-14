@@ -2770,10 +2770,15 @@ pub(crate) trait BtifGattClientCallbacks {
     );
 
     #[btif_callback(Notify)]
-    fn notify_cb(&mut self, conn_id: i32, data: BtGattNotifyParams);
+    fn notify_cb(&mut self, conn_id: i32, data: Box<BtGattNotifyParams>);
 
     #[btif_callback(ReadCharacteristic)]
-    fn read_characteristic_cb(&mut self, conn_id: i32, status: GattStatus, data: BtGattReadParams);
+    fn read_characteristic_cb(
+        &mut self,
+        conn_id: i32,
+        status: GattStatus,
+        data: Box<BtGattReadParams>,
+    );
 
     #[btif_callback(WriteCharacteristic)]
     fn write_characteristic_cb(
@@ -2785,7 +2790,7 @@ pub(crate) trait BtifGattClientCallbacks {
     );
 
     #[btif_callback(ReadDescriptor)]
-    fn read_descriptor_cb(&mut self, conn_id: i32, status: GattStatus, data: BtGattReadParams);
+    fn read_descriptor_cb(&mut self, conn_id: i32, status: GattStatus, data: Box<BtGattReadParams>);
 
     #[btif_callback(WriteDescriptor)]
     fn write_descriptor_cb(
@@ -2926,14 +2931,19 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         // No-op.
     }
 
-    fn notify_cb(&mut self, conn_id: i32, data: BtGattNotifyParams) {
+    fn notify_cb(&mut self, conn_id: i32, data: Box<BtGattNotifyParams>) {
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
         if let Some(cb) = self.context_map.get_callback_from_callback_id(client.cbid) {
             cb.on_notify(data.bda, data.handle as i32, data.value[0..data.len as usize].to_vec());
         }
     }
 
-    fn read_characteristic_cb(&mut self, conn_id: i32, status: GattStatus, data: BtGattReadParams) {
+    fn read_characteristic_cb(
+        &mut self,
+        conn_id: i32,
+        status: GattStatus,
+        data: Box<BtGattReadParams>,
+    ) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
         if let Some(cb) = self.context_map.get_callback_from_callback_id(client.cbid) {
@@ -2974,7 +2984,12 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         }
     }
 
-    fn read_descriptor_cb(&mut self, conn_id: i32, status: GattStatus, data: BtGattReadParams) {
+    fn read_descriptor_cb(
+        &mut self,
+        conn_id: i32,
+        status: GattStatus,
+        data: Box<BtGattReadParams>,
+    ) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
         if let Some(cb) = self.context_map.get_callback_from_callback_id(client.cbid) {
@@ -3046,13 +3061,11 @@ impl BtifGattClientCallbacks for BluetoothGatt {
                     false
                 });
 
-                self.context_map.get_callback_from_callback_id(cbid).map(
-                    |cb: &mut GattClientCallback| {
-                        for callback in congestion_queue.iter() {
-                            cb.on_characteristic_write(callback.0, callback.1, callback.2);
-                        }
-                    },
-                );
+                if let Some(cb) = self.context_map.get_callback_from_callback_id(cbid) {
+                    for callback in congestion_queue.iter() {
+                        cb.on_characteristic_write(callback.0, callback.1, callback.2);
+                    }
+                }
             }
         }
     }
