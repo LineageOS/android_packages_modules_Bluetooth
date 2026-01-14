@@ -2438,7 +2438,6 @@ void BTIF_dm_disable() {
   }
   bluetooth::bqr::DisableBtQualityReport();
   log::info("Stack device manager shutdown finished");
-  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
 /*******************************************************************************
