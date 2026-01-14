@@ -30,6 +30,7 @@
 #include "hal/link_clocker.h"
 #include "hal/snoop_logger.h"
 #include "os/parameter_provider.h"
+#include "os/system_properties.h"
 
 namespace bluetooth::hal {
 
@@ -58,8 +59,6 @@ class HciCallbacksImpl : public HciBackendCallbacks {
   } kNullCallbacks;
 
 public:
-  std::promise<void>* const init_promise = &init_promise_;
-
   HciCallbacksImpl(SnoopLogger* btsnoop_logger, LinkClocker& link_clocker)
       : link_clocker_(link_clocker), btsnoop_logger_(btsnoop_logger) {}
 
@@ -80,6 +79,27 @@ public:
   void initializationComplete() override {
     common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_, __func__);
     init_promise_.set_value();
+  }
+
+  void waitForInitialization() {
+    if (!com::android::bluetooth::flags::threading_remove_management_thread()) {
+      init_promise_.get_future().wait();
+      return;
+    }
+    std::chrono::milliseconds start_timeout;
+    if (android::sysprop::bluetooth::Hardware::degraded_performance_mode().value_or(false) ||
+        os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
+      log::warn("Running in degraded performance mode due to slow hardware");
+      start_timeout = std::chrono::milliseconds(8000);
+    } else if (bluetooth::os::GetSystemPropertyUint32("ro.build.version.sdk", 99) < 37) {
+      start_timeout = std::chrono::milliseconds(
+              os::GetSystemPropertyUint32("bluetooth.gd.start_timeout", 3000));
+    } else {
+      start_timeout = std::chrono::milliseconds(3000);
+    }
+
+    auto init_status = init_promise_.get_future().wait_for(start_timeout);
+    log::assert_that(init_status == std::future_status::ready, "Can't start HAL");
   }
 
   void hciEventReceived(const std::vector<uint8_t>& packet) override {
@@ -192,7 +212,7 @@ HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLog
   callbacks_ = std::make_shared<HciCallbacksImpl>(btsnoop_logger_, link_clocker_);
 
   backend_->initialize(callbacks_);
-  callbacks_->init_promise->get_future().wait();
+  callbacks_->waitForInitialization();
   log::info("HCI HAL initialization completed !!");
 }
 

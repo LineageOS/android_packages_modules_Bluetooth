@@ -11,3 +11,13 @@ flag {
     }
 }
 
+flag {
+    name: "threading_remove_management_thread"
+    namespace: "bluetooth"
+    description: "Remove management_thread"
+    bug: "475658554"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
