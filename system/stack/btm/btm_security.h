@@ -100,6 +100,7 @@ public:
 
   DEV_CLASS connecting_dc_;
 
+  void Init();
   void Init(uint8_t initial_security_mode);
   void Free();
 
@@ -133,6 +134,3 @@ public:
       }                                                                                          \
     }                                                                                            \
   } while (0)
-
-void BTM_Sec_Init();
-void BTM_Sec_Free();

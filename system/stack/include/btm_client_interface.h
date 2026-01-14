@@ -29,6 +29,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/security_client_callbacks.h"
 

@@ -40,6 +40,11 @@ BtmSecurity& BtmSecurity::Get() {
   return control_block;
 }
 
+void BtmSecurity::Init() {
+  Init(stack_config_get_interface()->get_pts_secure_only_mode() ? BTM_SEC_MODE_SC
+                                                                : BTM_SEC_MODE_SP);
+}
+
 void BtmSecurity::Init(uint8_t initial_security_mode) {
   pin_code_ = {};
   memset(&cfg_, 0, sizeof(cfg_));
@@ -90,14 +95,6 @@ void BtmSecurity::Free() {
   alarm_free(execution_wait_timer_);
   execution_wait_timer_ = nullptr;
 }
-
-void BTM_Sec_Init() {
-  BtmSecurity::Get().Init(stack_config_get_interface()->get_pts_secure_only_mode()
-                                  ? BTM_SEC_MODE_SC
-                                  : BTM_SEC_MODE_SP);
-}
-
-void BTM_Sec_Free() { BtmSecurity::Get().Free(); }
 
 /*******************************************************************************
  *
