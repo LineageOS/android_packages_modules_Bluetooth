@@ -67,9 +67,9 @@ impl BatteryProviderManager {
         match self.battery_info.get(&remote_address) {
             None => {
                 debug!("No battery info found for [{}]", DisplayAddress(&remote_address));
-                return None;
+                None
             }
-            Some(info) => return info.pick_best(),
+            Some(info) => info.pick_best(),
         }
     }
 

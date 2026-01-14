@@ -29,7 +29,7 @@ use num_traits::cast::{FromPrimitive, ToPrimitive};
 use rand::rngs::SmallRng;
 use rand::{RngCore, SeedableRng};
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::Sender;
 
@@ -312,11 +312,10 @@ impl ServerContextMap {
     }
 
     fn get_conn_id_from_address(&self, server_id: i32, address: &RawAddress) -> Option<i32> {
-        return self
-            .connections
+        self.connections
             .iter()
             .find(|conn| conn.server_id == server_id && conn.address == *address)
-            .map(|conn| conn.conn_id);
+            .map(|conn| conn.conn_id)
     }
 
     fn get_server_ids_from_address(&self, address: &RawAddress) -> Vec<i32> {
@@ -418,13 +417,13 @@ pub trait IBluetoothGatt {
     /// * `advertise_data` - Advertisement data to be broadcasted.
     /// * `scan_response` - Scan response.
     /// * `periodic_parameters` - Periodic advertising parameters. If None, periodic advertising
-    ///     will not be started.
+    ///   will not be started.
     /// * `periodic_data` - Periodic advertising data.
     /// * `duration` - Advertising duration, in 10 ms unit. Valid range is from 1 (10 ms) to
-    ///     65535 (655.35 sec). 0 means no advertising timeout.
+    ///   65535 (655.35 sec). 0 means no advertising timeout.
     /// * `max_ext_adv_events` - Maximum number of extended advertising events the controller
-    ///     shall attempt to send before terminating the extended advertising, even if the
-    ///     duration has not expired. Valid range is from 1 to 255. 0 means event count limitation.
+    ///   shall attempt to send before terminating the extended advertising, even if the
+    ///   duration has not expired. Valid range is from 1 to 255. 0 means event count limitation.
     /// * `callback_id` - Identifies callback registered in register_advertiser_callback.
     #[allow(clippy::too_many_arguments)]
     fn start_advertising_set(
@@ -857,7 +856,7 @@ impl BluetoothGattService {
 
     fn into_db(
         service: BluetoothGattService,
-        services: &Vec<BluetoothGattService>,
+        services: &[BluetoothGattService],
     ) -> Vec<BtGattDbElement> {
         let mut db_out: Vec<BtGattDbElement> = vec![];
         db_out.push(BtGattDbElement {
@@ -1999,10 +1998,10 @@ impl From<&ScanFilter> for MsftAdvMonitor {
             _ => ScanFilterConditionType::MsftConditionTypeAll as u8,
         };
         MsftAdvMonitor {
-            rssi_high_threshold: val.rssi_high_threshold.try_into().unwrap(),
-            rssi_low_threshold: val.rssi_low_threshold.try_into().unwrap(),
-            rssi_low_timeout: val.rssi_low_timeout.try_into().unwrap(),
-            rssi_sampling_period: val.rssi_sampling_period.try_into().unwrap(),
+            rssi_high_threshold: val.rssi_high_threshold,
+            rssi_low_threshold: val.rssi_low_threshold,
+            rssi_low_timeout: val.rssi_low_timeout,
+            rssi_sampling_period: val.rssi_sampling_period,
             condition_type: scan_filter_condition_type,
             patterns: (&val.condition).into(),
             addr_info: (&val.condition).into(),

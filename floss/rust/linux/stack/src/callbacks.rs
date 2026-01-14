@@ -75,6 +75,7 @@ impl<T: RPCProxy + Send + ?Sized> Callbacks<T> {
     }
 
     /// Returns the callback object based on the given id.
+    #[allow(clippy::borrowed_box)]
     pub fn get_by_id(&self, id: u32) -> Option<&Box<T>> {
         self.callbacks.get(&id)
     }

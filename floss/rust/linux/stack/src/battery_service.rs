@@ -271,7 +271,7 @@ impl BatteryService {
         }
     }
 
-    fn set_battery_info(&mut self, remote_address: &RawAddress, value: &Vec<u8>) -> BatterySet {
+    fn set_battery_info(&mut self, remote_address: &RawAddress, value: &[u8]) -> BatterySet {
         let level: Vec<_> = value.iter().cloned().chain(iter::repeat(0_u8)).take(4).collect();
         let level = u32::from_le_bytes(level.try_into().unwrap());
         debug!("BAS received battery level for {}: {}", DisplayAddress(remote_address), level);

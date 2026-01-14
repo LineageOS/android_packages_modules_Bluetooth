@@ -110,7 +110,6 @@ const CSIS_BONDING_NUM_ATTEMPTS: u32 = 30;
 const CSIS_BONDING_RETRY_DELAY_MS: u64 = 500;
 
 pub trait IBluetoothMedia {
-    ///
     fn register_callback(&mut self, callback: Box<dyn IBluetoothMediaCallback + Send>) -> bool;
 
     /// initializes media (both A2dp and AVRCP) stack
@@ -235,10 +234,8 @@ pub trait IBluetoothMediaCallback: RPCProxy {
     /// triggered.
     fn on_bluetooth_audio_device_added(&mut self, device: BluetoothAudioDevice);
 
-    ///
     fn on_bluetooth_audio_device_removed(&mut self, addr: RawAddress);
 
-    ///
     fn on_absolute_volume_supported_changed(&mut self, supported: bool);
 
     /// Triggered when a Bluetooth device triggers an AVRCP/A2DP volume change
@@ -314,7 +311,6 @@ pub trait IBluetoothMediaCallback: RPCProxy {
 }
 
 pub trait IBluetoothTelephony {
-    ///
     fn register_telephony_callback(
         &mut self,
         callback: Box<dyn IBluetoothTelephonyCallback + Send>,
@@ -460,6 +456,8 @@ impl From<TelephonyEvent> for u8 {
     }
 }
 
+type FallbackTasksType = Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>;
+
 pub struct BluetoothMedia {
     battery_provider_manager: Arc<Mutex<Box<BatteryProviderManager>>>,
     battery_provider_id: u32,
@@ -480,7 +478,7 @@ pub struct BluetoothMedia {
     hfp_audio_state: HashMap<RawAddress, BthfAudioState>,
     a2dp_caps: HashMap<RawAddress, Vec<A2dpCodecConfig>>,
     hfp_cap: HashMap<RawAddress, HfpCodecFormat>,
-    fallback_tasks: Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
+    fallback_tasks: FallbackTasksType,
     absolute_volume: bool,
     uinput: UInput,
     delay_enable_profiles: HashSet<Profile>,
@@ -590,7 +588,7 @@ impl BluetoothMedia {
 
     pub fn cleanup(&mut self) -> bool {
         for profile in MEDIA_PROFILE_ENABLE_ORDER.iter().rev() {
-            self.disable_profile(&profile);
+            self.disable_profile(profile);
         }
         self.initialized = false;
         true
@@ -714,13 +712,13 @@ impl BluetoothMedia {
             _ => {}
         }
 
-        match profile {
-            &Profile::A2dpSource => self.a2dp.enable(),
-            &Profile::AvrcpTarget => self.avrcp.enable(),
-            &Profile::Hfp => self.hfp.enable(),
-            &Profile::LeAudio => self.le_audio.enable(),
-            &Profile::VolumeControl => self.vc.enable(),
-            &Profile::CoordinatedSet => self.csis.enable(),
+        match *profile {
+            Profile::A2dpSource => self.a2dp.enable(),
+            Profile::AvrcpTarget => self.avrcp.enable(),
+            Profile::Hfp => self.hfp.enable(),
+            Profile::LeAudio => self.le_audio.enable(),
+            Profile::VolumeControl => self.vc.enable(),
+            Profile::CoordinatedSet => self.csis.enable(),
             _ => {
                 warn!("Tried to enable {} in bluetooth_media", profile);
                 return;
@@ -735,13 +733,13 @@ impl BluetoothMedia {
     }
 
     pub fn disable_profile(&mut self, profile: &Profile) {
-        match profile {
-            &Profile::A2dpSource => self.a2dp.disable(),
-            &Profile::AvrcpTarget => self.avrcp.disable(),
-            &Profile::Hfp => self.hfp.disable(),
-            &Profile::LeAudio => self.le_audio.disable(),
-            &Profile::VolumeControl => self.vc.disable(),
-            &Profile::CoordinatedSet => self.csis.disable(),
+        match *profile {
+            Profile::A2dpSource => self.a2dp.disable(),
+            Profile::AvrcpTarget => self.avrcp.disable(),
+            Profile::Hfp => self.hfp.disable(),
+            Profile::LeAudio => self.le_audio.disable(),
+            Profile::VolumeControl => self.vc.disable(),
+            Profile::CoordinatedSet => self.csis.disable(),
             _ => {
                 warn!("Tried to disable {} in bluetooth_media", profile);
                 return;
@@ -752,13 +750,13 @@ impl BluetoothMedia {
     }
 
     pub fn is_profile_enabled(&self, profile: &Profile) -> Option<bool> {
-        match profile {
-            &Profile::A2dpSource => Some(self.a2dp.is_enabled()),
-            &Profile::AvrcpTarget => Some(self.avrcp.is_enabled()),
-            &Profile::Hfp => Some(self.hfp.is_enabled()),
-            &Profile::LeAudio => Some(self.le_audio.is_enabled()),
-            &Profile::VolumeControl => Some(self.vc.is_enabled()),
-            &Profile::CoordinatedSet => Some(self.csis.is_enabled()),
+        match *profile {
+            Profile::A2dpSource => Some(self.a2dp.is_enabled()),
+            Profile::AvrcpTarget => Some(self.avrcp.is_enabled()),
+            Profile::Hfp => Some(self.hfp.is_enabled()),
+            Profile::LeAudio => Some(self.le_audio.is_enabled()),
+            Profile::VolumeControl => Some(self.vc.is_enabled()),
+            Profile::CoordinatedSet => Some(self.csis.is_enabled()),
             _ => {
                 warn!("Tried to query enablement status of {} in bluetooth_media", profile);
                 None
@@ -2239,7 +2237,7 @@ impl BluetoothMedia {
     }
 
     async fn wait_retry(
-        _fallback_tasks: &Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
+        _fallback_tasks: &FallbackTasksType,
         device_states: &Arc<Mutex<HashMap<RawAddress, DeviceConnectionStates>>>,
         txl: &Sender<Message>,
         addr: &RawAddress,
@@ -2262,7 +2260,7 @@ impl BluetoothMedia {
     }
 
     async fn wait_disconnect(
-        fallback_tasks: &Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
+        fallback_tasks: &FallbackTasksType,
         device_states: &Arc<Mutex<HashMap<RawAddress, DeviceConnectionStates>>>,
         txl: &Sender<Message>,
         addr: &RawAddress,
@@ -2277,7 +2275,7 @@ impl BluetoothMedia {
     }
 
     async fn async_disconnect(
-        fallback_tasks: &Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
+        fallback_tasks: &FallbackTasksType,
         device_states: &Arc<Mutex<HashMap<RawAddress, DeviceConnectionStates>>>,
         txl: &Sender<Message>,
         addr: &RawAddress,
@@ -2633,7 +2631,7 @@ impl BluetoothMedia {
 
     pub fn filter_to_connected_audio_devices_from(
         &self,
-        devices: &Vec<BluetoothDevice>,
+        devices: &[BluetoothDevice],
     ) -> Vec<BluetoothDevice> {
         devices
             .iter()
@@ -3133,8 +3131,8 @@ impl IBluetoothMedia for BluetoothMedia {
         // TODO(b/284811956) A2DP needs to be enabled before AVRCP otherwise AVRCP gets memset'd.
         // Iterate the delay_enable_profiles hashmap directly when this is fixed.
         for profile in MEDIA_PROFILE_ENABLE_ORDER {
-            if self.delay_enable_profiles.contains(&profile) {
-                self.enable_profile(&profile);
+            if self.delay_enable_profiles.contains(profile) {
+                self.enable_profile(profile);
             }
         }
         let api_tx = self.api_tx.clone();

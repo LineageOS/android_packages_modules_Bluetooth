@@ -1325,7 +1325,7 @@ impl Bluetooth {
     fn check_new_property_and_potentially_connect_profiles(
         &self,
         addr: RawAddress,
-        properties: &Vec<BluetoothProperty>,
+        properties: &[BluetoothProperty],
     ) {
         // Return early if no need to connect new profiles
         if !self.remote_devices.get(&addr).is_some_and(|d| d.connect_to_new_profiles) {
@@ -1352,7 +1352,7 @@ impl Bluetooth {
             if let Some(profile) = UuidHelper::is_known_profile(uuid) {
                 return UuidHelper::is_profile_supported(&profile);
             }
-            return false;
+            false
         });
         if !profile_known_and_supported {
             return;
@@ -1368,7 +1368,7 @@ impl Bluetooth {
     }
 
     /// Connect these profiles of a peripheral device
-    fn connect_profiles_internal(&mut self, uuids: &Vec<Uuid>, device: BluetoothDevice) {
+    fn connect_profiles_internal(&mut self, uuids: &[Uuid], device: BluetoothDevice) {
         let addr = device.address;
         if !self.get_acl_state_by_addr(&addr) {
             // log ACL connection attempt if it's not already connected.
@@ -1463,7 +1463,7 @@ impl Bluetooth {
             let transport = match self.get_remote_type(device.info.clone()) {
                 BtDeviceType::Bredr => BtTransport::Bredr,
                 BtDeviceType::Ble => BtTransport::Le,
-                _ => device.acl_reported_transport.clone(),
+                _ => device.acl_reported_transport,
             };
             tokio::spawn(async move {
                 let _ = tx
@@ -1798,15 +1798,15 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
     #[log_cb_args]
     fn discovery_state(&mut self, state: BtDiscoveryState) {
-        let is_discovering = &state == &BtDiscoveryState::Started;
+        let is_discovering = state == BtDiscoveryState::Started;
 
         // No-op if we're updating the state to the same value again.
-        if &is_discovering == &self.is_discovering {
+        if is_discovering == self.is_discovering {
             return;
         }
 
         // Cache discovering state
-        self.is_discovering = &state == &BtDiscoveryState::Started;
+        self.is_discovering = state == BtDiscoveryState::Started;
         if self.is_discovering {
             self.discovering_started = Instant::now();
         }
@@ -2409,11 +2409,7 @@ impl IBluetooth for Bluetooth {
         }
 
         let elapsed_ms = self.discovering_started.elapsed().as_millis() as u64;
-        if elapsed_ms >= DEFAULT_DISCOVERY_TIMEOUT_MS {
-            0
-        } else {
-            DEFAULT_DISCOVERY_TIMEOUT_MS - elapsed_ms
-        }
+        DEFAULT_DISCOVERY_TIMEOUT_MS.saturating_sub(elapsed_ms)
     }
 
     fn create_bond(&mut self, device: BluetoothDevice, transport: BtTransport) -> BtStatus {
@@ -2909,10 +2905,10 @@ impl IBluetooth for Bluetooth {
             .create(true)
             .truncate(true)
             .open(DUMPSYS_LOG)
-            .and_then(|file| {
+            .map(|file| {
                 let fd = file.as_raw_fd();
                 self.intf.lock().unwrap().dump(fd);
-                Ok(format!("dump to {}", DUMPSYS_LOG))
+                format!("dump to {}", DUMPSYS_LOG)
             })
             .unwrap_or_default()
     }
@@ -3021,7 +3017,7 @@ impl BtifHHCallbacks for Bluetooth {
             // TODO(b/329837967): Determine correct reconnection
             // behavior based on device instead of the default
             self.hh.as_ref().unwrap().disconnect(
-                address.clone(),
+                address,
                 address_type,
                 transport,
                 /*reconnect_allowed=*/ true,

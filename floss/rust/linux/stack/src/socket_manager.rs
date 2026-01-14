@@ -803,7 +803,7 @@ impl BluetoothSocketManager {
             match m {
                 SocketRunnerActions::AcceptTimeout(socket_id, may_timeout) => {
                     // If the given socket id doesn't match, ignore the call.
-                    if &socket_id != &socket_info.id {
+                    if socket_id != socket_info.id {
                         continue;
                     }
 
@@ -959,7 +959,7 @@ impl BluetoothSocketManager {
                 }
                 SocketRunnerActions::Close(socket_id) => {
                     // Ignore requests where socket id doesn't match.
-                    if &socket_id != &socket_info.id {
+                    if socket_id != socket_info.id {
                         continue;
                     }
 
