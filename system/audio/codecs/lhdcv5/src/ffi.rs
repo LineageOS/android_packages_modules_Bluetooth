@@ -165,11 +165,14 @@ pub unsafe extern "C" fn lhdcv5_enc_ffi_get_bitrate_index(
         // invoking the method with a valid handle.
         unsafe { Box::from_raw(handle.cast_mut()) },
     );
-    to_lhdc_fret(cb.get_target_bitrate_inx(
-        bitrate,
+    let ret = cb.get_target_bitrate_inx(bitrate);
+    if let Ok(inx) = ret {
         // SAFETY: `bitrate_inx` has been checked non-null.
-        unsafe { bitrate_inx.as_mut().unwrap() },
-    ))
+        unsafe {
+            *bitrate_inx = inx;
+        }
+    }
+    to_lhdc_fret(ret)
 }
 
 /// # Safety
@@ -188,8 +191,7 @@ pub unsafe extern "C" fn lhdcv5_enc_ffi_set_bitrate_index(
         // invoking the method with a valid handle.
         unsafe { Box::from_raw(handle.cast_mut()) },
     );
-    let mut actual_inx = bitrate_inx;
-    to_lhdc_fret(cb.set_target_bitrate_inx(bitrate_inx, &mut actual_inx, upd_qual_status))
+    to_lhdc_fret(cb.set_target_bitrate_inx(bitrate_inx, upd_qual_status))
 }
 
 /// # Safety
@@ -207,8 +209,7 @@ pub unsafe extern "C" fn lhdcv5_enc_ffi_set_max_bitrate(
         // invoking the method with a valid handle.
         unsafe { Box::from_raw(handle.cast_mut()) },
     );
-    let mut actual_inx = max_bitrate_inx;
-    to_lhdc_fret(cb.set_max_bitrate_inx(max_bitrate_inx, &mut actual_inx))
+    to_lhdc_fret(cb.set_max_bitrate_inx(max_bitrate_inx))
 }
 
 /// # Safety
@@ -226,8 +227,7 @@ pub unsafe extern "C" fn lhdcv5_enc_ffi_set_min_bitrate(
         // invoking the method with a valid handle.
         unsafe { Box::from_raw(handle.cast_mut()) },
     );
-    let mut actual_inx = min_bitrate_inx;
-    to_lhdc_fret(cb.set_min_bitrate_inx(min_bitrate_inx, &mut actual_inx))
+    to_lhdc_fret(cb.set_min_bitrate_inx(min_bitrate_inx))
 }
 
 /// # Safety
@@ -247,10 +247,14 @@ pub unsafe extern "C" fn lhdcv5_enc_ffi_get_block_size(
         // invoking the method with a valid handle.
         unsafe { Box::from_raw(handle.cast_mut()) },
     );
-    to_lhdc_fret(cb.get_block_size(
+    let ret = cb.get_block_size();
+    if let Ok(block_size) = ret {
         // SAFETY: `samples_per_frame` has been checked non-null.
-        unsafe { samples_per_frame.as_mut().unwrap() },
-    ))
+        unsafe {
+            *samples_per_frame = block_size;
+        }
+    }
+    to_lhdc_fret(ret)
 }
 
 /// # Safety

@@ -136,13 +136,12 @@ impl Context {
         Ok(Self { enc_type: LHDC_ENC_TYPE_LHDC, err: 0, enc: Parameters::new(version)? })
     }
 
-    pub fn get_target_bitrate_inx(&self, bitrate_kbps: u32, bitrate_inx: &mut u32) -> Result<()> {
+    pub fn get_target_bitrate_inx(&self, bitrate_kbps: u32) -> Result<u32> {
         let bitrate_table = &self.enc.bitrate_table;
         if bitrate_kbps > bitrate_table[bitrate_table.len() - 1] {
             return Err(Error::InvalidInputParam);
         }
-        lhdcv5_encoder_get_bitrate_inx(bitrate_kbps, bitrate_inx, bitrate_table)?;
-        Ok(())
+        Ok(lhdcv5_encoder_get_bitrate_inx(bitrate_kbps, bitrate_table)?)
     }
 
     pub fn last_bitrate(&self) -> u32 {
@@ -156,9 +155,8 @@ impl Context {
     pub fn set_target_bitrate_inx(
         &mut self,
         bitrate_inx: u32,
-        bitrate_inx_set: &mut u32,
         upd_qual_status: bool,
-    ) -> Result<()> {
+    ) -> Result<u32> {
         if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
             error!("Input bit rate (index) is invalid ({})!!!", bitrate_inx);
             return Err(Error::InvalidInputParam);
@@ -192,15 +190,10 @@ impl Context {
             self.enc.quality_status, upd_bitrate_inx,
         );
 
-        *bitrate_inx_set = upd_bitrate_inx;
-        Ok(())
+        Ok(upd_bitrate_inx)
     }
 
-    pub fn set_max_bitrate_inx(
-        &mut self,
-        max_bitrate_inx: u32,
-        max_bitrate_inx_set: &mut u32,
-    ) -> Result<()> {
+    pub fn set_max_bitrate_inx(&mut self, max_bitrate_inx: u32) -> Result<u32> {
         if max_bitrate_inx < LHDC_QUALITY_LOW || max_bitrate_inx > LHDC_QUALITY_MAX_BITRATE {
             error!("Input MAX. bit rate (index) is invalid ({})!", max_bitrate_inx);
             return Err(Error::InvalidInputParam);
@@ -208,21 +201,16 @@ impl Context {
         match self.enc_type {
             1 => {
                 lhdcv5_encoder_set_max_bitrate_inx(&mut self.enc, max_bitrate_inx)?;
-                *max_bitrate_inx_set = self.enc.max_bitrate_inx;
+                Ok(self.enc.max_bitrate_inx)
             }
             _ => {
                 error!("Invalid encode type ({})!", self.enc_type);
-                return Err(Error::InvalidCodec);
+                Err(Error::InvalidCodec)
             }
         }
-        Ok(())
     }
 
-    pub fn set_min_bitrate_inx(
-        &mut self,
-        min_bitrate_inx: u32,
-        min_bitrate_inx_set: &mut u32,
-    ) -> Result<()> {
+    pub fn set_min_bitrate_inx(&mut self, min_bitrate_inx: u32) -> Result<u32> {
         if min_bitrate_inx < LHDC_QUALITY_LOW0 || min_bitrate_inx > LHDC_QUALITY_LOW {
             error!("Input MIN. bit rate (index) is invalid ({})!", min_bitrate_inx);
             return Err(Error::InvalidInputParam);
@@ -230,14 +218,13 @@ impl Context {
         match self.enc_type {
             1 => {
                 lhdcv5_encoder_set_min_bitrate_inx(&mut self.enc, min_bitrate_inx)?;
-                *min_bitrate_inx_set = self.enc.min_bitrate_inx;
+                Ok(self.enc.min_bitrate_inx)
             }
             _ => {
                 error!("Invalid encode type ({})!", self.enc_type);
-                return Err(Error::InvalidCodec);
+                Err(Error::InvalidCodec)
             }
         }
-        Ok(())
     }
 
     pub fn init_encoder(
@@ -249,7 +236,6 @@ impl Context {
         mtu: u32,
         interval: u32,
     ) -> Result<()> {
-        let mut samples_per_frame: u32 = 0;
         if sampling_freq != LHDC_SR_44100HZ
             && sampling_freq != LHDC_SR_48000HZ
             && sampling_freq != LHDC_SR_96000HZ
@@ -289,7 +275,7 @@ impl Context {
                     interval,
                 )?;
                 self.enc.frame_duration = frame_duration;
-                lhdcv5_encoder_get_frame_len(&self.enc, &mut samples_per_frame)?;
+                let _ = lhdcv5_encoder_get_frame_len(&self.enc)?;
             }
             _ => {
                 error!("Invalid encode type ({})!", self.enc_type);
@@ -309,17 +295,17 @@ impl Context {
         Ok(())
     }
 
-    pub fn get_block_size(&self, block_size: &mut u32) -> Result<()> {
+    pub fn get_block_size(&self) -> Result<u32> {
         match self.enc_type {
             1 => {
-                lhdcv5_encoder_get_frame_len(&self.enc, block_size)?;
+                let block_size = lhdcv5_encoder_get_frame_len(&self.enc)?;
+                Ok(block_size)
             }
             _ => {
                 error!("Invalid encode type ({})!", self.enc_type);
-                return Err(Error::InvalidCodec);
+                Err(Error::InvalidCodec)
             }
         }
-        Ok(())
     }
 
     pub fn enc_process(
