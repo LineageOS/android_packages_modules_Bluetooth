@@ -43,6 +43,7 @@ enum class StateMachineInvalidStatus {
   INVALID_ASE_STATE_TRANSITION,
   INVALID_CIS_ESTABLISHED_EVENT,
   UNABLE_TO_ASSIGN_CISES,
+  INVALID_DEVICE_CONFIGURATION,
 };
 
 inline std::ostream& operator<<(std::ostream& out, const StateMachineInvalidStatus value) {
@@ -58,6 +59,7 @@ inline std::ostream& operator<<(std::ostream& out, const StateMachineInvalidStat
     CASE_SET_PTR_TO_TOKEN_STR(StateMachineInvalidStatus, INVALID_ASE_STATE_TRANSITION);
     CASE_SET_PTR_TO_TOKEN_STR(StateMachineInvalidStatus, INVALID_CIS_ESTABLISHED_EVENT);
     CASE_SET_PTR_TO_TOKEN_STR(StateMachineInvalidStatus, UNABLE_TO_ASSIGN_CISES);
+    CASE_SET_PTR_TO_TOKEN_STR(StateMachineInvalidStatus, INVALID_DEVICE_CONFIGURATION);
     default:
       ch = "Invalid status code";
       break;

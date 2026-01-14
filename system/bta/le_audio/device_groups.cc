@@ -829,48 +829,50 @@ uint8_t LeAudioDeviceGroup::GetTargetPhy(uint8_t direction) const {
 }
 
 bool LeAudioDeviceGroup::GetPresentationDelay(uint32_t* delay, uint8_t direction) const {
-  uint32_t delay_min = 0;
-  uint32_t delay_max = UINT32_MAX;
-  uint32_t preferred_delay_min = delay_min;
-  uint32_t preferred_delay_max = delay_max;
+  uint32_t common_delay_min = 0;
+  uint32_t common_delay_max = 0xFFFFFF; /* 3 Octects  */
+  uint32_t common_preferred_delay_min = common_delay_min;
+  uint32_t common_preferred_delay_max = common_delay_max;
 
   LeAudioDevice* leAudioDevice = GetFirstActiveDevice();
   log::assert_that(leAudioDevice, "Shouldn't be called without an active device.");
 
-  do {
-    struct ase* ase = leAudioDevice->GetFirstActiveAseByDirection(direction);
-    if (!ase) {
-      continue;  // device has no active ASEs in this direction
-    }
-
-    do {
-      /* No common range check */
-      if (ase->qos_preferences.pres_delay_min > delay_max ||
-          ase->qos_preferences.pres_delay_max < delay_min) {
+  /* Here we are trying to find a common supported presentation delay range for all active ASEs
+   * We are looking in both ranges, the regular one and preferred. This is expected that coordinated
+   * set will provide presentation delays ranges which have a common part. */
+  for (; leAudioDevice; leAudioDevice = GetNextActiveDevice(leAudioDevice)) {
+    for (struct ase* ase = leAudioDevice->GetFirstActiveAseByDirection(direction); ase;
+         ase = leAudioDevice->GetNextActiveAseWithSameDirection(ase)) {
+      /* Make sure provided presentation delay has a common range. */
+      if (ase->qos_preferences.pres_delay_min > common_delay_max ||
+          ase->qos_preferences.pres_delay_max < common_delay_min) {
         return false;
       }
 
-      if (ase->qos_preferences.pres_delay_min > delay_min) {
-        delay_min = ase->qos_preferences.pres_delay_min;
+      if (ase->qos_preferences.pres_delay_min > common_delay_min) {
+        common_delay_min = ase->qos_preferences.pres_delay_min;
       }
-      if (ase->qos_preferences.pres_delay_max < delay_max) {
-        delay_max = ase->qos_preferences.pres_delay_max;
+      if (ase->qos_preferences.pres_delay_max < common_delay_max) {
+        common_delay_max = ase->qos_preferences.pres_delay_max;
       }
-      if (ase->qos_preferences.preferred_pres_delay_min > preferred_delay_min) {
-        preferred_delay_min = ase->qos_preferences.preferred_pres_delay_min;
+      if (ase->qos_preferences.preferred_pres_delay_min > common_preferred_delay_min) {
+        common_preferred_delay_min = ase->qos_preferences.preferred_pres_delay_min;
       }
-      if (ase->qos_preferences.preferred_pres_delay_max < preferred_delay_max &&
+      if (ase->qos_preferences.preferred_pres_delay_max < common_preferred_delay_max &&
           ase->qos_preferences.preferred_pres_delay_max != types::kPresDelayNoPreference) {
-        preferred_delay_max = ase->qos_preferences.preferred_pres_delay_max;
+        common_preferred_delay_max = ase->qos_preferences.preferred_pres_delay_max;
       }
-    } while ((ase = leAudioDevice->GetNextActiveAseWithSameDirection(ase)));
-  } while ((leAudioDevice = GetNextActiveDevice(leAudioDevice)));
+    }
+  }
 
-  if (preferred_delay_min <= preferred_delay_max && preferred_delay_min >= delay_min &&
-      preferred_delay_min <= delay_max) {
-    *delay = preferred_delay_min;
+  if (common_preferred_delay_min <= common_preferred_delay_max &&
+      common_preferred_delay_min >= common_delay_min &&
+      common_preferred_delay_min <= common_delay_max) {
+    log::debug("direction {}, preferred delay: {:#x}  ", direction, common_preferred_delay_min);
+    *delay = common_preferred_delay_min;
   } else {
-    *delay = delay_min;
+    log::debug("direction {}, delay_min: {:#x}  ", direction, common_delay_min);
+    *delay = common_delay_min;
   }
 
   return true;
