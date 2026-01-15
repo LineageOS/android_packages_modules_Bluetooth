@@ -227,7 +227,16 @@ public:
         if (group->IsConfiguredForContext(context_type)) {
           if (group->Activate(context_type, metadata_context_types, ccid_lists)) {
             SetTargetState(group, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
-
+            if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+              if (group->cig.GetState() == CigState::CREATED) {
+                if (PrepareAndSendQoSToTheGroup(group)) {
+                  return true;
+                }
+                ClearGroup(group, true);
+                return false;
+              }
+              group->cig.GenerateCisIds(context_type);
+            }
             if (CigCreate(group)) {
               return true;
             }
@@ -245,7 +254,7 @@ public:
         /* We are going to reconfigure whole group. Clear Cises.*/
         ReleaseCisIds(group);
 
-        /* If configuration is needed */
+        /* If configuration is needed but for sure CIG does not exist at this moment */
         [[fallthrough]];
 
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE:
@@ -254,7 +263,16 @@ public:
           return false;
         }
 
-        group->cig.GenerateCisIds(context_type);
+        /* We are here only when CIG exists in idle state which might be due to controller
+         * misbehavior */
+        if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig() &&
+            group->cig.GetState() == CigState::CREATED) {
+          log::warn("Cig is created for group_id: {}", group->group_id_);
+          group->cig.PrintCigState();
+        } else {
+          group->cig.GenerateCisIds(context_type);
+        }
+
         /* All ASEs should aim to achieve target state */
         SetTargetState(group, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
         if (!PrepareAndSendCodecConfigToTheGroup(group)) {
@@ -297,7 +315,9 @@ public:
             log::info("Need to reconfigure CIG as something has changed.");
 
             ReleaseCisIds(group);
-            group->cig.GenerateCisIds(context_type);
+            if (!com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+              group->cig.GenerateCisIds(context_type);
+            }
 
             wait_for_cig_removal = true;
 
@@ -732,8 +752,14 @@ public:
               group->group_id_, StateMachineInvalidStatus::FAILED_TO_CREATE_CIG);
       return;
     }
+
     log::info("Succeed on CIG Recover - back to creating CIG");
     if (!CigCreate(group)) {
+      if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+        /* If CIG recovery did not succeed let's clear cig.cises. */
+        group->cig.ClearCisIds();
+      }
+
       log::error("Could not create CIG. Stop the stream for group {}", group->group_id_);
       state_machine_callbacks_->OnStateMachineInvalidStatusCb(
               group->group_id_, StateMachineInvalidStatus::FAILED_TO_CREATE_CIG);
@@ -748,6 +774,9 @@ public:
                  group->group_id_, status, ToString(group->cig.GetState()));
       return;
     }
+    if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+      group->cig.ClearCisIds();
+    }
     group->cig.SetState(CigState::NONE);
   }
 
@@ -759,6 +788,11 @@ public:
       state_machine_callbacks_->OnStateMachineInvalidStatusCb(
               group->group_id_, StateMachineInvalidStatus::FAILED_TO_REMOVE_CIG);
       return;
+    }
+
+    if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+      group->cig.ClearCisIds();
+      group->cig.GenerateCisIds(group->GetConfigurationContextType());
     }
 
     group->cig.SetState(CigState::NONE);
@@ -943,6 +977,10 @@ public:
       for (auto& ase : leAudioDevice->ases_) {
         ase.cis_id = bluetooth::le_audio::kInvalidCisId;
         ase.cis_conn_hdl = bluetooth::le_audio::kInvalidCisConnHandle;
+        if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+          ase.cis_state = CisState::IDLE;
+          ase.data_path_state = DataPathState::IDLE;
+        }
       }
       leAudioDevice = group->GetNextDevice(leAudioDevice);
     }
@@ -1450,7 +1488,9 @@ public:
         }
 
         log::info("Lost all members from the group {}", group->group_id_);
-        group->cig.ClearCisIds();
+        if (!com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+          group->cig.ClearCisIds();
+        }
         RemoveCigForGroup(group);
 
         group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
