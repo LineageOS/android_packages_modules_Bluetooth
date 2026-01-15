@@ -38,6 +38,7 @@ java_library {
     installable: false,
     srcs: [
         ":Bluetooth-binder-aidl-for-service",
+        ":bluetooth-system-server-messenger",
         ":statslog-bluetooth-java-gen",
         "src/**/*.java",
         "src/ActiveLogs.kt",
@@ -57,7 +58,7 @@ java_library {
         "src/PermissionChecker.kt",
         "src/RadioModeListener.kt",
         "src/RolePermissionListener.kt",
-        "src/ServerBinder.kt",
+        "src/ServiceMessenger.kt",
         "src/SharingRestriction.kt",
         "src/ShellCommand.kt",
         "src/airplane/AirplaneModeController.kt",
@@ -137,6 +138,7 @@ android_robolectric_test {
 
     srcs: [
         ":Bluetooth-binder-aidl-for-service",
+        ":bluetooth-system-server-messenger",
         ":statslog-bluetooth-java-gen",
         "src/ActiveLogs.kt",
         "src/ActiveLogsTest.kt",
@@ -161,8 +163,7 @@ android_robolectric_test {
         "src/RadioModeListenerTest.kt",
         "src/RolePermissionListener.kt",
         "src/RolePermissionListenerTest.kt",
-        "src/ServerBinder.kt",
-        "src/ServerBinderTest.kt",
+        "src/ServiceMessenger.kt",
         "src/SharingRestriction.kt",
         "src/SharingRestrictionTest.kt",
         "src/ShellCommand.kt",
@@ -187,7 +188,7 @@ android_robolectric_test {
         "flag-junit",
         "inline-mockito-robolectric-prebuilt",
         "kotlin-test",
-        "kotlinx_coroutines_android",
+        "kotlinx_coroutines",
         "kotlinx_coroutines_test",
         "mockito-kotlin-nodeps",
         "modules-utils-preconditions",

@@ -40,7 +40,7 @@ interface BluetoothManagerServiceApi {
 
     fun getAddress(): String?
 
-    fun setName(name: String?)
+    fun setName(name: String)
 
     fun getName(): String?
 
@@ -60,7 +60,7 @@ interface BluetoothManagerServiceApi {
 
     fun factoryReset(): Boolean
 
-    fun setBtHciSnoopLogMode(mode: Int)
+    fun setBtHciSnoopLogMode(mode: Int): Int
 
     fun getBtHciSnoopLogMode(): Int
 
