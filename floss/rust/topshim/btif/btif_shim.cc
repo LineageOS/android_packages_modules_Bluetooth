@@ -35,7 +35,7 @@ namespace internal {
 // Singleton instance of BtIntf
 static BtIntf* g_bt_if;
 
-// Callbacks for bt_callbacks_t. Some are unimplemented.
+// Callbacks for bt_callbacks_t
 static void adapter_state_cb(bt_state_t state) { rusty::adapter_state_cb(state); }
 
 static void adapter_properties_cb(bt_status_t status, int num_properties,
@@ -79,47 +79,32 @@ static void bond_state_cb(bt_status_t status, RawAddress remote_bd_addr, tBT_TRA
   rusty::bond_state_cb(status, remote_bd_addr, transport, state, pairing_type, fail_reason);
 }
 
-static void address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
-  rusty::address_consolidate_cb(main_bd_addr, secondary_bd_addr);
-}
-
-static void le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
-                                    uint8_t identity_address_type) {
-  rusty::le_address_associate_cb(main_bd_addr, secondary_bd_addr, identity_address_type);
-}
-
 static void acl_state_cb(bt_status_t status, AclLinkSpec& link_spec, bt_acl_state_t state,
                          bt_hci_error_code_t hci_reason, bt_conn_direction_t direction,
                          uint16_t acl_handle) {
   rusty::acl_state_cb(status, link_spec, state, hci_reason, direction, acl_handle);
 }
 
-static void link_quality_report_cb(uint64_t timestamp, int report_id, int rssi, int snr,
-                                   int retransmission_count, int packets_not_receive_count,
-                                   int negative_acknowledgement_count) {}
-
-static void switch_buffer_size_cb(bool is_low_latency_buffer_size) {}
-
-static void switch_codec_cb(bool is_low_latency_buffer_size) {}
-
-static void le_rand_cb(uint64_t random) {}
-
 static void thread_evt_cb(bt_cb_thread_evt evt) { rusty::thread_evt_cb(evt); }
-
-static void dut_mode_recv_cb(uint16_t opcode, uint8_t* buf, uint8_t len) {}
-
-static void le_test_mode_cb(bt_status_t status, uint16_t num_packets) {}
-
-static void energy_info_cb(bt_activity_energy_info* energy_info, bt_uid_traffic_t* uid_data) {}
-
-static void generate_local_oob_data_cb(tBT_TRANSPORT transport, bt_oob_data_t oob_data) {
-  rusty::generate_local_oob_data_cb(transport, oob_data);
-}
 
 static void key_missing_cb(const RawAddress bd_addr, uint8_t reason) {
   rusty::key_missing_cb(bd_addr, reason);
 }
 
+// Null implementation of unused callbacks
+static void address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {}
+static void le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
+                                    uint8_t identity_address_type) {}
+static void dut_mode_recv_cb(uint16_t opcode, uint8_t* buf, uint8_t len) {}
+static void le_test_mode_cb(bt_status_t status, uint16_t num_packets) {}
+static void energy_info_cb(bt_activity_energy_info* energy_info, bt_uid_traffic_t* uid_data) {}
+static void link_quality_report_cb(uint64_t timestamp, int report_id, int rssi, int snr,
+                                   int retransmission_count, int packets_not_receive_count,
+                                   int negative_acknowledgement_count) {}
+static void generate_local_oob_data_cb(tBT_TRANSPORT transport, bt_oob_data_t oob_data) {}
+static void switch_buffer_size_cb(bool is_low_latency_buffer_size) {}
+static void switch_codec_cb(bool is_low_latency_buffer_size) {}
+static void le_rand_cb(uint64_t random) {}
 static void encryption_change_cb(const bt_encryption_change_evt encryption_change) {}
 
 bt_callbacks_t bt_callbacks = {

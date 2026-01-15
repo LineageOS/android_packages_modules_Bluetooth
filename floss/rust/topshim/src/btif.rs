@@ -1029,9 +1029,6 @@ impl Display for DisplayAddress<'_> {
 pub type AclLinkSpec = bindings::AclLinkSpec;
 
 #[gen_cxx_extern_trivial]
-pub type OobData = bindings::bt_oob_data_s;
-
-#[gen_cxx_extern_trivial]
 type CxxPairingType = bindings::PairingType;
 
 /// An enum representing `bt_callbacks_t` from btif.
@@ -1045,22 +1042,9 @@ pub enum BaseCallbacks {
     PinRequest(RawAddress, String, u32, bool),
     SspRequest(RawAddress, PairingVariant, u32),
     BondState(BtStatus, RawAddress, BtBondState, i32),
-    AddressConsolidate(RawAddress, RawAddress),
-    LeAddressAssociate(RawAddress, RawAddress, u8),
     AclState(BtStatus, AclLinkSpec, BtAclState, BtHciErrorCode, BtConnectionDirection, u16),
     ThreadEvent(BtThreadEvent),
-    // Unimplemented so far:
-    // dut_mode_recv_cb
-    // le_test_mode_cb
-    // energy_info_cb
-    // link_quality_report_cb
-    // switch_buffer_size_cb
-    // switch_codec_cb
-    // Box OobData as its size is much bigger than others
-    GenerateLocalOobData(BtTransport, Box<OobData>),
-    LeRandCallback(u64),
     KeyMissing(RawAddress, u8),
-    // encryption_change_cb
 }
 
 pub struct BaseCallbacksDispatcher {
@@ -1102,12 +1086,6 @@ cb_variant!(BaseCb, bond_state_cb -> BaseCallbacks::BondState,
     CxxPairingType -> _,
     i32
 );
-cb_variant!(BaseCb, address_consolidate_cb -> BaseCallbacks::AddressConsolidate,
-    RawAddress, RawAddress
-);
-cb_variant!(BaseCb, le_address_associate_cb -> BaseCallbacks::LeAddressAssociate,
-    RawAddress, RawAddress, u8
-);
 cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, CxxBtThreadEvent -> BtThreadEvent);
 cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
     u32 -> BtStatus,
@@ -1117,10 +1095,6 @@ cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
     CxxBtConnectionDirection -> BtConnectionDirection,
     u16 -> u16
 );
-cb_variant!(BaseCb, generate_local_oob_data_cb -> BaseCallbacks::GenerateLocalOobData,
-    CxxBtTransport -> BtTransport, OobData -> Box::<OobData>
-);
-cb_variant!(BaseCb, le_rand_cb -> BaseCallbacks::LeRandCallback, u64);
 cb_variant!(BaseCb, key_missing_cb -> BaseCallbacks::KeyMissing, RawAddress, u8);
 
 // Rust Btif FFI that matches the C++ Btif Interface defined in /topshim/btif/btif_shim.h
@@ -1191,10 +1165,6 @@ pub(crate) mod ffi {
         #[namespace = ""]
         #[cxx_name = "PairingType"]
         type PairingType = super::CxxPairingType;
-
-        #[namespace = ""]
-        #[cxx_name = "bt_oob_data_s"]
-        type OobData = super::OobData;
 
         #[namespace = ""]
         #[cxx_name = "bt_cb_thread_evt"]
@@ -1306,8 +1276,6 @@ pub(crate) mod ffi {
             pairing_type: PairingType,
             bond_result: i32,
         );
-        fn address_consolidate_cb(remote_addr: RawAddress, bd_addr: RawAddress);
-        fn le_address_associate_cb(remote_addr: RawAddress, bd_addr: RawAddress, irk: u8);
         fn thread_evt_cb(evt: BtThreadEvent);
         fn acl_state_cb(
             status: u32,
@@ -1317,8 +1285,6 @@ pub(crate) mod ffi {
             direction: BtConnectionDirection,
             handle: u16,
         );
-        fn generate_local_oob_data_cb(transport: BtTransport, oob_data: OobData);
-        fn le_rand_cb(rand: u64);
         fn key_missing_cb(remote_addr: RawAddress, cod: u8);
     }
 }
