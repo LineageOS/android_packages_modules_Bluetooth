@@ -81,7 +81,7 @@ public class RemoteDevices {
     private static final String TAG = Util.BT_PREFIX + RemoteDevices.class.getSimpleName();
 
     // Maximum number of device properties to remember
-    private static final int MAX_DEVICE_QUEUE_SIZE = 200;
+    @VisibleForTesting static final int MAX_DEVICE_QUEUE_SIZE = 200;
 
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
