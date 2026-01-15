@@ -1944,7 +1944,7 @@ public class BluetoothManagerService {
         return bOptions.toBundle();
     }
 
-    int setBtHciSnoopLogMode(int mode) {
+    void setBtHciSnoopLogMode(int mode) {
         final BluetoothProperties.snoop_log_mode_values snoopMode =
                 switch (mode) {
                     case BT_SNOOP_LOG_MODE_DISABLED ->
@@ -1958,9 +1958,7 @@ public class BluetoothManagerService {
             BluetoothProperties.snoop_log_mode(snoopMode);
         } catch (RuntimeException e) {
             Log.e(TAG, "setBtHciSnoopLogMode: Failed to set mode to " + mode + ": " + e);
-            return Integer.MAX_VALUE;
         }
-        return 0;
     }
 
     int getBtHciSnoopLogMode() {
