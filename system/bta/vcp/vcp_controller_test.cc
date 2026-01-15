@@ -140,7 +140,7 @@ private:
     /* 0x0004-0x000f RFU */
     if (vcs) {
       /* VCS */
-      builder.AddService(0x0010, 0x0026, kVolumeControlUuid, true);
+      builder.AddService(0x0010, 0x0026, kVolumeControlServiceUuid, true);
       if (aics) {
         builder.AddIncludedService(0x0011, kVolumeAudioInputUuid, 0x0030, 0x003e);
         builder.AddIncludedService(0x0012, kVolumeAudioInputUuid, 0x0050, 0x005f);
@@ -150,7 +150,7 @@ private:
         builder.AddIncludedService(0x0014, kVolumeOffsetUuid, 0x0080, 0x008b);
       }
       /* 0x0015-0x001f RFU */
-      builder.AddCharacteristic(0x0020, 0x0021, kVolumeControlStateUuid,
+      builder.AddCharacteristic(0x0020, 0x0021, kVolumeStateUuid,
                                 GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
       builder.AddDescriptor(0x0022, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
       if (!vcs_broken) {
@@ -859,7 +859,7 @@ TEST_F(VolumeControlTest, test_reconnect_after_interrupted_discovery) {
   // This time let the service discovery pass
   ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
           .WillByDefault(Invoke([&](uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) -> void {
-            if (*p_srvc_uuid == kVolumeControlUuid) {
+            if (*p_srvc_uuid == kVolumeControlServiceUuid) {
               GetSearchCompleteEvent(conn_id);
             }
           }));
@@ -923,7 +923,7 @@ TEST_F(VolumeControlTest, test_reconnect_after_timeout) {
   // device reconnect now.
   ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
           .WillByDefault(Invoke([&](uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) -> void {
-            if (*p_srvc_uuid == kVolumeControlUuid) {
+            if (*p_srvc_uuid == kVolumeControlServiceUuid) {
               GetSearchCompleteEvent(conn_id);
             }
           }));
