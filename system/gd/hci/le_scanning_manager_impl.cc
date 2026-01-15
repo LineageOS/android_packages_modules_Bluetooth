@@ -581,6 +581,25 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     return should_start_scan;
   }
 
+  bool update_stop_scan(ScanCallerType callerType) {
+    bool should_stop_scan = false;
+    switch (callerType) {
+      case ScanCallerType::DISCOVERY:
+      case ScanCallerType::CSIS:
+        if (callerType == ScanCallerType::DISCOVERY) {
+          reset_le_discovery();
+        } else {
+          reset_le_csis_scan();
+        }
+        break;
+      case ScanCallerType::JAVA:
+        // Mark Java scan as inactive
+        reset_le_java_scan();
+        break;
+    }
+    return should_stop_scan;
+  }
+
   void scan(bool start, ScanCallerType callerType) {
     // On-resume flag should always be reset if there is an explicit start/stop call.
     scan_on_resume_ = false;
@@ -596,12 +615,15 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         start_scan();
       }
     } else {
-      if (address_manager_registered_) {
-        le_address_manager_->Unregister(this);
-        address_manager_registered_ = false;
-        paused_ = false;
+      if (!com::android::bluetooth::flags::migrate_btm_scan_to_gd() ||
+          update_stop_scan(callerType)) {
+        if (address_manager_registered_) {
+          le_address_manager_->Unregister(this);
+          address_manager_registered_ = false;
+          paused_ = false;
+        }
+        stop_scan();
       }
-      stop_scan();
     }
   }
 
