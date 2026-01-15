@@ -209,7 +209,7 @@ typedef struct {
 
   /** dis-connect from hid device */
   BtStatus (*disconnect)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                         bool reconnect_allowed);
+                         int reconnect_policy);
 
   /** Virtual UnPlug (VUP) the specified HID device */
   BtStatus (*virtual_unplug)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);

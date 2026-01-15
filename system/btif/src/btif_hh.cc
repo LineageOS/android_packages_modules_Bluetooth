@@ -96,6 +96,14 @@ typedef enum {
   BTIF_HH_VUP_REQ_EVT
 } btif_hh_req_evt_t;
 
+// LINT.IfChange
+typedef enum {
+  RECONNECT_ALLOWED = 0,            // Reconnection allowed
+  RECONNECT_NOT_ALLOWED_TEMPORARY,  // Reconnection is not allowed till next BT restart
+  RECONNECT_NOT_ALLOWED,            // Reconnection is not allowed
+} reconnect_policy_t;
+// LINT.ThenChange(/android/app/src/com/android/bluetooth/hid/HidHostService.java)
+
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -1719,7 +1727,7 @@ static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSP
  *
  ******************************************************************************/
 static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                           bool reconnect_allowed) {
+                           int reconnect_policy) {
   CHECK_BTHH_INIT();
   AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
@@ -1734,12 +1742,16 @@ static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
   }
 
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
-  if (!reconnect_allowed) {
+  if (reconnect_policy != RECONNECT_ALLOWED) {
     log::info("Incoming reconnections disabled for device {}", link_spec);
     btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(link_spec);
     if (added_dev != nullptr) {
-      added_dev->reconnect_allowed = reconnect_allowed;
-      btif_storage_set_hid_connection_policy(added_dev->link_spec, reconnect_allowed);
+      added_dev->reconnect_allowed = false;
+      if (reconnect_policy == RECONNECT_NOT_ALLOWED) {
+        btif_storage_set_hid_connection_policy(added_dev->link_spec, false);
+      } else {
+        log::debug("Temporarily disable HoGP reconnection.");
+      }
       // If a bonded LE device is not currently connected, cancel the background connection.
       if (p_dev == nullptr && transport == BT_TRANSPORT_LE) {
         BTA_HhCancelOpen(link_spec);

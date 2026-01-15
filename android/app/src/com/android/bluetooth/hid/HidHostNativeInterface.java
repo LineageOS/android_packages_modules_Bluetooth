@@ -40,9 +40,8 @@ public class HidHostNativeInterface extends NativeInterface<HidHostNativeCallbac
         return connectHidNative(address, addressType, transport);
     }
 
-    boolean disconnectHid(
-            byte[] address, int addressType, int transport, boolean reconnectAllowed) {
-        return disconnectHidNative(address, addressType, transport, reconnectAllowed);
+    boolean disconnectHid(byte[] address, int addressType, int transport, int reconnectPolicy) {
+        return disconnectHidNative(address, addressType, transport, reconnectPolicy);
     }
 
     boolean getProtocolMode(byte[] address, int addressType, int transport) {
@@ -91,7 +90,7 @@ public class HidHostNativeInterface extends NativeInterface<HidHostNativeCallbac
     private native boolean connectHidNative(byte[] btAddress, int addressType, int transport);
 
     private native boolean disconnectHidNative(
-            byte[] btAddress, int addressType, int transport, boolean reconnectAllowed);
+            byte[] btAddress, int addressType, int transport, int reconnectPolicy);
 
     private native boolean getProtocolModeNative(byte[] btAddress, int addressType, int transport);
 

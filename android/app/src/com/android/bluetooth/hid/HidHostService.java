@@ -131,6 +131,12 @@ public class HidHostService extends ConnectableProfile {
 
     private static final int BTHH_ERR_TOD_UNSPT = 10; // Remote device not supported
 
+    // LINT.IfChange
+    static final int RECONNECT_ALLOWED = 0;
+    static final int RECONNECT_NOT_ALLOWED_TEMPORARY = 1;
+    static final int RECONNECT_NOT_ALLOWED = 2;
+    // LINT.ThenChange(/system/btif/src/btif_hh.cc)
+
     public HidHostService(AdapterService adapterService) {
         this(adapterService, null, Looper.getMainLooper());
     }
@@ -310,17 +316,15 @@ public class HidHostService extends ConnectableProfile {
      *
      * @param device remote device
      * @param transport transport
-     * @param reconnectAllowed true if remote device is allowed to initiate reconnections, else
-     *     false
+     * @param reconnectPolicy policy to allow reconnect
      * @return true if successfully requested, else false
      */
-    private boolean nativeDisconnect(
-            BluetoothDevice device, int transport, boolean reconnectAllowed) {
+    private boolean nativeDisconnect(BluetoothDevice device, int transport, int reconnectPolicy) {
         if (!mNativeInterface.disconnectHid(
                 getByteAddress(device, transport),
                 getAddressType(device),
                 transport,
-                reconnectAllowed)) {
+                reconnectPolicy)) {
             Log.w(
                     TAG,
                     "nativeDisconnect: Disconnection attempt failed."
@@ -402,7 +406,7 @@ public class HidHostService extends ConnectableProfile {
 
             // Disable connection if headtracker is disabled
             if (!enabled) {
-                nativeDisconnect(device, TRANSPORT_LE, false);
+                nativeDisconnect(device, TRANSPORT_LE, RECONNECT_NOT_ALLOWED);
             }
         }
     }
@@ -441,7 +445,7 @@ public class HidHostService extends ConnectableProfile {
                                 + (" device=" + device)
                                 + (" transport: prev=" + prevTransport + " -> new=" + transport));
                 // Disconnect the other transport and disallow reconnections
-                nativeDisconnect(device, prevTransport, false);
+                nativeDisconnect(device, prevTransport, RECONNECT_NOT_ALLOWED);
 
                 // Immediately update the connection state to disconnected. From now on,
                 // the connection state will be updated only for the selected transport.
@@ -619,7 +623,7 @@ public class HidHostService extends ConnectableProfile {
                         "handleMessageConnectStateChanged: Disconnect and unknown inputDevice"
                                 + (" device=" + device)
                                 + (" state=" + state));
-                nativeDisconnect(device, transport, false);
+                nativeDisconnect(device, transport, RECONNECT_NOT_ALLOWED);
                 return;
             }
         }
@@ -672,11 +676,11 @@ public class HidHostService extends ConnectableProfile {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
         int connectionPolicy = msg.arg1;
 
-        boolean reconnectAllowed = true;
+        int reconnectPolicy = RECONNECT_ALLOWED;
         if (connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            reconnectAllowed = false;
+            reconnectPolicy = RECONNECT_NOT_ALLOWED;
         }
-        nativeDisconnect(device, getTransport(device), reconnectAllowed);
+        nativeDisconnect(device, getTransport(device), reconnectPolicy);
     }
 
     private void handleMessageConnect(Message msg) {
@@ -760,7 +764,7 @@ public class HidHostService extends ConnectableProfile {
                             + (" device=" + device)
                             + (" connectionPolicy=" + getConnectionPolicy(device)));
 
-            nativeDisconnect(device, transport, false);
+            nativeDisconnect(device, transport, RECONNECT_NOT_ALLOWED);
             return false;
         }
         return true;
