@@ -21,6 +21,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static com.android.bluetooth.ChangeIds.DONOT_STEAL_AUDIO_ON_GATT_CONN;
 import static com.android.bluetooth.Util.transportToString;
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.gatt.ContextMap.RemoveReason.REASON_BINDER_DIED;
@@ -39,6 +40,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.Nullable;
+import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -1098,17 +1100,44 @@ public class GattService extends ProfileService {
         }
 
         if (transport != TRANSPORT_BREDR && isDirect && !opportunistic) {
-            String attributionTag = getLastAttributionTag(source);
-            if (packageName != null) {
-                for (Map.Entry<String, String> entry :
-                        GATT_CLIENTS_NOTIFY_TO_ADAPTER_PACKAGES.entrySet()) {
-                    if (packageName.contains(entry.getKey())
-                            && ((attributionTag != null
-                                            && attributionTag.contains(entry.getValue()))
-                                    || entry.getValue().isEmpty())) {
-                        getAdapterService().notifyDirectLeGattClientConnect(clientIf, device);
-                        break;
+            if (!Flags.gattConnSettings()) {
+                String attributionTag = getLastAttributionTag(source);
+                if (packageName != null) {
+                    for (Map.Entry<String, String> entry :
+                            GATT_CLIENTS_NOTIFY_TO_ADAPTER_PACKAGES.entrySet()) {
+                        if (packageName.contains(entry.getKey())
+                                && ((attributionTag != null
+                                                && attributionTag.contains(entry.getValue()))
+                                        || entry.getValue().isEmpty())) {
+                            getAdapterService().notifyDirectLeGattClientConnect(clientIf, device);
+                            break;
+                        }
                     }
+                }
+            } else {
+                // This logic prevents app-initiated GATT connections from hijacking an active LE
+                // Audio stream, controlled by the DONOT_STEAL_AUDIO_ON_GATT_CONN compatibility
+                // flag.
+                boolean disableLeAudio = false;
+                if (Flags.gattThread()) {
+                    disableLeAudio =
+                            CompatChanges.isChangeEnabled(
+                                    DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid());
+                } else {
+                    final long token = Binder.clearCallingIdentity();
+                    try {
+                        disableLeAudio =
+                                CompatChanges.isChangeEnabled(
+                                        DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid());
+                    } finally {
+                        Binder.restoreCallingIdentity(token);
+                    }
+                }
+                if (disableLeAudio) {
+                    // Notify gatt connection trigger from connectGatt to LeAudio so that It will
+                    // mark the device as not available for LeAudio
+                    Log.i(TAG, "clientConnect(): notifyDirectLeGattClientConnect");
+                    getAdapterService().notifyDirectLeGattClientConnect(clientIf, device);
                 }
             }
         }

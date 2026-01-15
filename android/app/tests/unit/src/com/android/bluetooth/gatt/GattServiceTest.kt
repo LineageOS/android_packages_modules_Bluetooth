@@ -499,13 +499,9 @@ class GattServiceTest(flags: FlagsWrapper) {
         val opportunistic = false
         val isAutomaticMtuEnabled = false
 
-        val testAttributeSource =
-            AttributionSource.Builder(Process.SYSTEM_UID)
-                .setPid(Process.myPid())
-                .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                .setPackageName("com.google.android.gms")
-                .setAttributionTag("com.google.android.gms.findmydevice")
-                .build()
+        InstrumentationRegistry.getInstrumentation()
+            .getUiAutomation()
+            .adoptShellPermissionIdentity()
 
         service.clientConnect(
             gattCallback,
@@ -515,7 +511,7 @@ class GattServiceTest(flags: FlagsWrapper) {
             transport,
             opportunistic,
             isAutomaticMtuEnabled,
-            testAttributeSource,
+            source,
         )
 
         verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
@@ -550,13 +546,9 @@ class GattServiceTest(flags: FlagsWrapper) {
         val opportunistic = false
         val isAutomaticMtuEnabled = false
 
-        val testAttributeSource =
-            AttributionSource.Builder(Process.SYSTEM_UID)
-                .setPid(Process.myPid())
-                .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                .setPackageName("com.google.android.gms")
-                .setAttributionTag("com.google.android.gms.findmydevice")
-                .build()
+        InstrumentationRegistry.getInstrumentation()
+            .getUiAutomation()
+            .adoptShellPermissionIdentity()
 
         service.clientConnect(
             gattCallback,
@@ -566,7 +558,7 @@ class GattServiceTest(flags: FlagsWrapper) {
             transport,
             opportunistic,
             isAutomaticMtuEnabled,
-            testAttributeSource,
+            source,
         )
 
         verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
@@ -597,13 +589,9 @@ class GattServiceTest(flags: FlagsWrapper) {
         val opportunistic = false
         val isAutomaticMtuEnabled = false
 
-        val testAttributeSource =
-            AttributionSource.Builder(Process.SYSTEM_UID)
-                .setPid(Process.myPid())
-                .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                .setPackageName("com.google.android.gms")
-                .setAttributionTag("com.google.android.gms.findmydevice")
-                .build()
+        InstrumentationRegistry.getInstrumentation()
+            .getUiAutomation()
+            .adoptShellPermissionIdentity()
 
         service.clientConnect(
             gattCallback,
@@ -613,7 +601,7 @@ class GattServiceTest(flags: FlagsWrapper) {
             transport,
             opportunistic,
             isAutomaticMtuEnabled,
-            testAttributeSource,
+            source,
         )
 
         verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())

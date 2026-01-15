@@ -37,4 +37,15 @@ public class ChangeIds {
     @ChangeId
     @EnabledSince(targetSdkVersion = android.os.Build.VERSION_CODES.CINNAMON_BUN)
     public static final long BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION = 401333807L;
+
+    /**
+     * Starting with Android C (CINNAMON_BUN), {@link BluetoothDevice#connectGatt()} would ensure LE
+     * Audio is not transferred to the new device when application trigger GATT connection. If the
+     * device is LE Audio capable, LE Audio profiles will get connected and marked as device
+     * available for LE Audio. Applications can trigger LE Audio connection and enable audio
+     * streaming over LE Audio by invoking {@link BluetoothLeAudio#setActiveDevice()}
+     */
+    @ChangeId
+    @EnabledSince(targetSdkVersion = android.os.Build.VERSION_CODES.CINNAMON_BUN)
+    public static final long DONOT_STEAL_AUDIO_ON_GATT_CONN = 455594702L;
 }
