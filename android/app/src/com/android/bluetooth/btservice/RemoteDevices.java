@@ -338,31 +338,53 @@ public class RemoteDevices {
                 prop.setDevice(device);
             }
 
-            DeviceProperties pv = mDevices.put(key, prop);
-
-            // If new device causes overflow, remove the oldest non-bonded device
-            if (pv == null && mDevices.size() >= MAX_DEVICE_QUEUE_SIZE) {
-                String eldestAddress = null;
-                for (Map.Entry<String, DeviceProperties> entry : mDevices.entrySet()) {
-                    // Device to remove should not be bonded or same as the new device
-                    if (entry.getValue().getBondState() == BluetoothDevice.BOND_NONE
-                            && !entry.getKey().equals(key)) {
-                        eldestAddress = entry.getKey();
-                        break;
-                    }
-                }
-
-                if (eldestAddress != null) {
-                    mDevices.remove(eldestAddress);
-                    debugLog(
-                            "Ejected "
-                                    + (toAnonymizedAddress(eldestAddress) + " from property map"));
+            // Make space for the new device if the cache is full
+            if (mDevices.size() >= MAX_DEVICE_QUEUE_SIZE) {
+                String lruAddress = findLruAddress();
+                if (lruAddress != null) {
+                    mDevices.remove(lruAddress);
+                    debugLog("Ejected " + (toAnonymizedAddress(lruAddress) + " from property map"));
                 } else {
-                    warnLog("No non-bonded device to eject");
+                    errorLog("No non-bonded device to eject");
                 }
             }
+
+            mDevices.put(key, prop);
             return prop;
         }
+    }
+
+    private String findLruAddress() {
+        String evictionCandidate = null;
+
+        for (Map.Entry<String, DeviceProperties> entry : mDevices.entrySet()) {
+            String address = entry.getKey();
+            DeviceProperties prop = entry.getValue();
+
+            // Ignore the bonded or bonding devices
+            if (prop.getBondState() != BluetoothDevice.BOND_NONE) {
+                continue;
+            }
+
+            // Ignore the connected devices
+            if (prop.getConnectionHandle(TRANSPORT_BREDR) != BluetoothDevice.ERROR
+                    || prop.getConnectionHandle(TRANSPORT_LE) != BluetoothDevice.ERROR) {
+                continue;
+            }
+
+            if (prop.getPackages().length != 0) {
+                // Some apps are interested, use it as the eviction candidate of last resort
+                if (evictionCandidate == null) {
+                    evictionCandidate = address;
+                }
+                continue;
+            }
+
+            // Not bonded, not connected, and not in use by any apps, so it's eligible for eviction
+            return address;
+        }
+
+        return evictionCandidate;
     }
 
     DeviceProperties addDeviceProperties(byte[] address) {
