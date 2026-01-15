@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.audio_util;
 
+import static android.os.Process.INVALID_UID;
+
+import android.app.ActivityManager;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -33,8 +36,12 @@ public class PlayerSettingsManager {
     private final MediaPlayerList mMediaPlayerList;
     private final AvrcpTargetService mService;
 
-    private MediaControllerCompat mActivePlayerController;
+    private MediaControllerCompat mActivePlayerController = null;
     private final MediaControllerCallback mControllerCallback;
+
+    private final ActivityManager mActivityManager;
+
+    private int mActiveSessionUid = INVALID_UID;
 
     /**
      * Map containing the current values of the player settings. Used to prevent sending a state
@@ -52,27 +59,14 @@ public class PlayerSettingsManager {
         mMediaPlayerList = mediaPlayerList;
         mMediaPlayerList.setPlayerSettingsCallback(this::activePlayerChanged);
         mControllerCallback = new MediaControllerCallback();
+        mActivityManager = mService.getSystemService(ActivityManager.class);
 
-        MediaPlayerWrapper wrapper = mMediaPlayerList.getActivePlayer();
-        if (wrapper != null && wrapper.getSessionToken() != null) {
-            MediaSessionCompat.Token sessionToken =
-                    MediaSessionCompat.Token.fromToken(wrapper.getSessionToken());
-            if (sessionToken == null) {
-                Log.w(TAG, "PlayerSettingsManager sessionToken is null");
-                return;
-            }
-            mActivePlayerController = new MediaControllerCompat(mService, sessionToken);
-            if (!registerMediaControllerCallback(mActivePlayerController, mControllerCallback)) {
-                mActivePlayerController = null;
-            }
-        } else {
-            Log.i(TAG, "PlayerSettingsManager : no registered callback");
-            mActivePlayerController = null;
-        }
         mCurrentAppSettingValue.put(
                 PlayerSettingsValues.SETTING_REPEAT, PlayerSettingsValues.STATE_REPEAT_OFF);
         mCurrentAppSettingValue.put(
                 PlayerSettingsValues.SETTING_SHUFFLE, PlayerSettingsValues.STATE_SHUFFLE_OFF);
+
+        activePlayerChanged(mMediaPlayerList.getActivePlayer());
     }
 
     /** Unregister callbacks */
@@ -81,29 +75,48 @@ public class PlayerSettingsManager {
             unregisterMediaControllerCallback(mActivePlayerController, mControllerCallback);
         }
         mActivePlayerController = null;
+        mActiveSessionUid = INVALID_UID;
         mCurrentAppSettingValue.clear();
     }
 
     /** Updates the active player controller. */
     private void activePlayerChanged(MediaPlayerWrapper mediaPlayerWrapper) {
         if (mActivePlayerController != null) {
-            unregisterMediaControllerCallback(mActivePlayerController, mControllerCallback);
+            boolean packageIsNotFrozen = appIsNotFrozen();
+            Log.i(
+                    TAG,
+                    "activePlayerChanged - current active app uid="
+                            + mActiveSessionUid
+                            + " isNotFrozen="
+                            + packageIsNotFrozen);
+            // If the package is frozen, the binder call to unregister the callback will crash, and
+            // ActivityManager will kill the Media Player app.
+            // If mediaPlayerWrapper is null, this means no more controller is available, so we
+            // can't unregister the callback.
+            if (packageIsNotFrozen && mediaPlayerWrapper != null) {
+                Log.i(TAG, "activePlayerChanged - unregistering the MediaControllerCallback");
+                unregisterMediaControllerCallback(mActivePlayerController, mControllerCallback);
+            }
         }
         if (mediaPlayerWrapper != null && mediaPlayerWrapper.getSessionToken() != null) {
+            mActiveSessionUid = mediaPlayerWrapper.getSessionToken().getUid();
             MediaSessionCompat.Token sessionToken =
                     MediaSessionCompat.Token.fromToken(mediaPlayerWrapper.getSessionToken());
             if (sessionToken == null) {
-                Log.w(TAG, "activePlayerChanged sessionToken is null");
+                Log.w(TAG, "activePlayerChanged - sessionToken is null");
                 return;
             }
-            Log.i(TAG, "activePlayerChanged : " + mediaPlayerWrapper.getPackageName());
+            Log.i(TAG, "activePlayerChanged to " + mediaPlayerWrapper.getPackageName());
             mActivePlayerController = new MediaControllerCompat(mService, sessionToken);
             if (!registerMediaControllerCallback(mActivePlayerController, mControllerCallback)) {
+                Log.e(TAG, "activePlayerChanged - Couldn't register callback");
                 mActivePlayerController = null;
+                mActiveSessionUid = INVALID_UID;
             }
         } else {
-            Log.i(TAG, "activePlayerChanged : no registered callback");
+            Log.i(TAG, "activePlayerChanged - New player is null, removed active player");
             mActivePlayerController = null;
+            mActiveSessionUid = INVALID_UID;
         }
         updateRemoteDevice();
     }
@@ -149,10 +162,10 @@ public class PlayerSettingsManager {
     /** Called from remote device to set the active player repeat mode. */
     public boolean setPlayerRepeatMode(int repeatMode) {
         if (mActivePlayerController == null) {
-            Log.i(TAG, "setPlayerRepeatMode: no active player");
+            Log.i(TAG, "setPlayerRepeatMode - no active player");
             return false;
         }
-        Log.d(TAG, "setPlayerRepeatMode repeat : " + repeatMode);
+        Log.d(TAG, "setPlayerRepeatMode repeat=" + repeatMode);
 
         MediaControllerCompat.TransportControls controls;
         try {
@@ -181,10 +194,10 @@ public class PlayerSettingsManager {
     /** Called from remote device to set the active player shuffle mode. */
     public boolean setPlayerShuffleMode(int shuffleMode) {
         if (mActivePlayerController == null) {
-            Log.i(TAG, "setPlayerShuffleMode: no active player");
+            Log.i(TAG, "setPlayerShuffleMode - no active player");
             return false;
         }
-        Log.d(TAG, "setPlayerShuffleMode shuffle : " + shuffleMode);
+        Log.d(TAG, "setPlayerShuffleMode shuffle=" + shuffleMode);
 
         MediaControllerCompat.TransportControls controls;
         try {
@@ -213,15 +226,17 @@ public class PlayerSettingsManager {
      */
     public int getPlayerRepeatMode() {
         if (mActivePlayerController == null) {
-            Log.i(TAG, "getPlayerRepeatMode: no active player");
+            Log.i(TAG, "getPlayerRepeatMode - no active player");
             return PlayerSettingsValues.STATE_REPEAT_OFF;
         }
-        int mediaFwkMode;
-        try {
-            mediaFwkMode = mActivePlayerController.getRepeatMode();
-        } catch (Exception e) {
-            Log.e(TAG, e.toString());
-            return PlayerSettingsValues.STATE_REPEAT_OFF;
+        int mediaFwkMode = PlaybackStateCompat.REPEAT_MODE_NONE;
+        // If the app is frozen, the binder call will fail and the app will be killed.
+        if (appIsNotFrozen()) {
+            try {
+                mediaFwkMode = mActivePlayerController.getRepeatMode();
+            } catch (Exception e) {
+                Log.e(TAG, e.toString());
+            }
         }
         return switch (mediaFwkMode) {
             case PlaybackStateCompat.REPEAT_MODE_NONE -> PlayerSettingsValues.STATE_REPEAT_OFF;
@@ -239,15 +254,17 @@ public class PlayerSettingsManager {
      */
     public int getPlayerShuffleMode() {
         if (mActivePlayerController == null) {
-            Log.i(TAG, "getPlayerShuffleMode: no active player");
+            Log.i(TAG, "getPlayerShuffleMode - no active player");
             return PlayerSettingsValues.STATE_SHUFFLE_OFF;
         }
-        int mediaFwkMode;
-        try {
-            mediaFwkMode = mActivePlayerController.getShuffleMode();
-        } catch (Exception e) {
-            Log.e(TAG, e.toString());
-            return PlayerSettingsValues.STATE_SHUFFLE_OFF;
+        int mediaFwkMode = PlaybackStateCompat.SHUFFLE_MODE_NONE;
+        // If the app is frozen, the binder call will fail and the app will be killed.
+        if (appIsNotFrozen()) {
+            try {
+                mediaFwkMode = mActivePlayerController.getShuffleMode();
+            } catch (Exception e) {
+                Log.e(TAG, e.toString());
+            }
         }
         return switch (mediaFwkMode) {
             case PlaybackStateCompat.SHUFFLE_MODE_NONE -> PlayerSettingsValues.STATE_SHUFFLE_OFF;
@@ -293,7 +310,7 @@ public class PlayerSettingsManager {
     private class MediaControllerCallback extends MediaControllerCompat.Callback {
         @Override
         public void onRepeatModeChanged(final int repeatMode) {
-            Log.d(TAG, "onRepeatModeChanged : " + repeatMode);
+            Log.d(TAG, "onRepeatModeChanged repeatMode=" + repeatMode);
             updateRemoteDevice();
         }
 
@@ -305,7 +322,7 @@ public class PlayerSettingsManager {
 
         @Override
         public void onShuffleModeChanged(final int shuffleMode) {
-            Log.d(TAG, "onShuffleModeChanged : " + shuffleMode);
+            Log.d(TAG, "onShuffleModeChanged shuffleMode=" + shuffleMode);
             updateRemoteDevice();
         }
     }
@@ -360,5 +377,16 @@ public class PlayerSettingsManager {
             case PlayerSettingsValues.STATE_SHUFFLE_GROUP -> "STATE_SHUFFLE_GROUP";
             default -> "STATE_DEFAULT_OFF";
         };
+    }
+
+    private boolean appIsNotFrozen() {
+        if (mActiveSessionUid == INVALID_UID) {
+            // This should never happen as this function is called only when there is an active
+            // controller, which would have also set the session UID.
+            Log.e(TAG, "appIsNotFrozen - mActiveSessionUid is not set, defaulting to true.");
+            return true;
+        }
+        return mActivityManager.getUidFrozenState(new int[] {mActiveSessionUid})[0]
+                == ActivityManager.UidFrozenStateChangedCallback.UID_FROZEN_STATE_UNFROZEN;
     }
 }
