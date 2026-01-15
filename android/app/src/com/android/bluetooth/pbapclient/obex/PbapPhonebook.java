@@ -208,6 +208,6 @@ public class PbapPhonebook {
 
     @Override
     public String toString() {
-        return "<" + TAG + "phonebook=" + mPhonebook + " entries=" + getCount() + ">";
+        return "<" + TAG + " phonebook=" + mPhonebook + " entries=" + getCount() + ">";
     }
 }
