@@ -270,15 +270,7 @@ final class LeAudioStateMachine extends StateMachine {
 
             switch (message.what) {
                 case CONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
-                    } else {
-                        if (!hasDeferredMessages(DISCONNECT)) {
-                            Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
-                        } else {
-                            deferMessage(message);
-                        }
-                    }
+                    Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
                 }
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
@@ -368,14 +360,10 @@ final class LeAudioStateMachine extends StateMachine {
 
             switch (message.what) {
                 case CONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        if (!hasDeferredMessages(CONNECT)) {
-                            deferMessage(message);
-                        } else {
-                            log("Connect already scheduled for " + mDevice);
-                        }
-                    } else {
+                    if (!hasDeferredMessages(CONNECT)) {
                         deferMessage(message);
+                    } else {
+                        log("Connect already scheduled for " + mDevice);
                     }
                 }
                 case MESSAGE_CONNECT_TIMEOUT -> {
@@ -389,14 +377,10 @@ final class LeAudioStateMachine extends StateMachine {
                     sendMessage(STACK_EVENT, disconnectEvent);
                 }
                 case DISCONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        log("Disconnect is ongoing for " + mDevice);
-                        if (hasDeferredMessages(CONNECT)) {
-                            log("Removing scheduled connect for " + mDevice);
-                            removeDeferredMessages(CONNECT);
-                        }
-                    } else {
-                        deferMessage(message);
+                    log("Disconnect is ongoing for " + mDevice);
+                    if (hasDeferredMessages(CONNECT)) {
+                        log("Removing scheduled connect for " + mDevice);
+                        removeDeferredMessages(CONNECT);
                     }
                 }
                 case STACK_EVENT -> {

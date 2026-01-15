@@ -160,7 +160,6 @@ public class LeAudioStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void handleMultipleConnectDisconnect_onDisconnectingState() {
         generateConnectionMessageFromNative(STATE_CONNECTED, STATE_DISCONNECTED);
 

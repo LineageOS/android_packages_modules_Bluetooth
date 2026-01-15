@@ -37,15 +37,11 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
-import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.*;
@@ -60,7 +56,6 @@ import org.mockito.Mockito;
 @RunWith(AndroidJUnit4.class)
 public class CsipSetCoordinatorStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private CsipSetCoordinatorService mService;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
@@ -343,18 +338,6 @@ public class CsipSetCoordinatorStateMachineTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
-    public void testProcessConnectMessage_onConnectingState() {
-        /* Connect is not deferred anymore in Connecting state. This is going to be removed */
-        initToConnectingState();
-        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
-        assertThat(
-                        mStateMachine.doesSuperHaveDeferredMessages(
-                                CsipSetCoordinatorStateMachine.CONNECT))
-                .isTrue();
-    }
-
-    @Test
     public void testProcessConnectTimeoutMessage_onConnectingState() {
         initToConnectingState();
         sendMessageAndVerifyTransition(
@@ -432,7 +415,6 @@ public class CsipSetCoordinatorStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void ignoreConnectState_onConnectingState() {
         initToConnectingState();
         allowConnection(true);
@@ -449,7 +431,6 @@ public class CsipSetCoordinatorStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void handleMultipleConnectDisconnect_onDisconnectingState() {
         initToConnectedState();
 
@@ -559,18 +540,6 @@ public class CsipSetCoordinatorStateMachineTest {
         sendMessageAndVerifyTransition(
                 CsipSetCoordinatorStateMachine.CONNECT_TIMEOUT,
                 CsipSetCoordinatorStateMachine.Disconnected.class);
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
-    public void testProcessDisconnectMessage_onDisconnectingState() {
-        /* Disconnect will not be deferred anymore when flag is enabled. This test will be removed */
-        initToDisconnectingState();
-        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
-        assertThat(
-                        mStateMachine.doesSuperHaveDeferredMessages(
-                                CsipSetCoordinatorStateMachine.DISCONNECT))
-                .isTrue();
     }
 
     @Test

@@ -77,16 +77,6 @@ flag {
 }
 
 flag {
-    name: "ignore_multiple_connect_request_in_bt_services"
-    namespace: "bluetooth"
-    description: "Ignore multiple connect request in BT Services"
-    bug: "429143534"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "consistent_battery_level"
     namespace: "bluetooth"
     description: "Do not reset battey level from BAS to prevent battey level fluctuation"
