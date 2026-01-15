@@ -250,10 +250,11 @@ public class PbapClientServiceTest {
     }
 
     @Test
-    public void testOnSdpResultReceived_nullRecord_eventDropped() {
+    public void testOnSdpResultReceived_nullRecord_eventForwardedWithNullPbapRecord() {
+        // Verify that a null SdpPseRecord is forwarded to the state machine as a null
+        // PbapSdpRecord, rather than being dropped.
         mService.receiveSdpSearchRecord(mDevice, SDP_SUCCESS, null, BluetoothUuid.PBAP_PSE);
-        verify(mDeviceStateMachine, never())
-                .onSdpResultReceived(anyInt(), any(PbapSdpRecord.class));
+        verify(mDeviceStateMachine, times(1)).onSdpResultReceived(eq(SDP_SUCCESS), eq(null));
     }
 
     @Test
@@ -278,6 +279,14 @@ public class PbapClientServiceTest {
                 mDevice, SDP_BUSY, mMockSdpRecord, /* wrong */ BluetoothUuid.PBAP_PSE);
         verify(mDeviceStateMachine, times(1))
                 .onSdpResultReceived(eq(SDP_BUSY), any(PbapSdpRecord.class));
+    }
+
+    @Test
+    public void testOnSdpResultReceived_statusBusyAndNullRecord_eventForwarded() {
+        // Verify that a BUSY status with a null record is forwarded to the state machine. This is
+        // critical for the state machine to be able to retry the SDP search.
+        mService.receiveSdpSearchRecord(mDevice, SDP_BUSY, null, BluetoothUuid.PBAP_PSE);
+        verify(mDeviceStateMachine, times(1)).onSdpResultReceived(eq(SDP_BUSY), eq(null));
     }
 
     // *********************************************************************************************
