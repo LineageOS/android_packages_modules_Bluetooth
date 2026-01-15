@@ -490,3 +490,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_hdt_control_path_improvements"
+    namespace: "bluetooth"
+    description: "Improve HDT control path for LE audio"
+    bug: "475014941"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
