@@ -24,6 +24,7 @@
 #include <log/log.h>
 
 #include <functional>
+#include <utility>
 
 #include "bta/le_audio/content_control_id_keeper.h"
 #include "bta_gatt_api_mock.h"
@@ -254,6 +255,30 @@ protected:
   bool group_is_suspending_;
   uint8_t iso_client_handle_ = 1;
 
+  /* Control test specific sdu configuration */
+  typedef struct {
+    bool inject_sdu_interval;
+    uint32_t sdu_interval;
+    bool inject_max_sdu;
+    uint16_t max_sdu;
+  } test_sdu_config_t;
+
+  test_sdu_config_t test_remote_sink_sdu_config_;
+  test_sdu_config_t test_remote_source_sdu_config_;
+
+  /* Control test specific presentation delays */
+  typedef struct {
+    uint32_t min;
+    uint32_t max;
+    uint32_t pref_min;
+    uint32_t pref_max;
+  } test_presentation_delay_t;
+
+  std::vector<std::pair<RawAddress, test_presentation_delay_t>>
+          test_remote_sink_presentation_delay_vec_;
+  std::vector<std::pair<RawAddress, test_presentation_delay_t>>
+          test_remote_source_presentation_delay_vec_;
+
   /* Needed for tests when one set member is bonded */
   int overrided_group_size_;
 
@@ -276,6 +301,7 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
             true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
+    com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();
@@ -301,6 +327,11 @@ protected:
     enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
     group_is_suspending_ = false;
     overrided_group_size_ = -1;
+    test_remote_sink_sdu_config_ = {};
+    test_remote_source_sdu_config_ = {};
+
+    test_remote_sink_presentation_delay_vec_.clear();
+    test_remote_source_presentation_delay_vec_.clear();
 
     LeAudioGroupStateMachine::Initialize(&mock_callbacks_, iso_client_handle_);
 
@@ -379,6 +410,48 @@ protected:
                     }));
 
     ConfigureIsoManagerMock();
+  }
+
+  void setTestSduInterval(uint32_t sdu_interval, uint8_t direction = types::kLeAudioDirectionBoth) {
+    if (direction & types::kLeAudioDirectionSink) {
+      test_remote_sink_sdu_config_.inject_sdu_interval = true;
+      test_remote_sink_sdu_config_.sdu_interval = sdu_interval;
+    }
+
+    if (direction & types::kLeAudioDirectionSource) {
+      test_remote_source_sdu_config_.inject_sdu_interval = true;
+      test_remote_source_sdu_config_.sdu_interval = sdu_interval;
+    }
+  }
+
+  void setTestMaxSdu(uint16_t max_sdu, uint8_t direction = types::kLeAudioDirectionBoth) {
+    if (direction & types::kLeAudioDirectionSink) {
+      test_remote_sink_sdu_config_.inject_max_sdu = true;
+      test_remote_sink_sdu_config_.max_sdu = max_sdu;
+    }
+
+    if (direction & types::kLeAudioDirectionSource) {
+      test_remote_source_sdu_config_.inject_max_sdu = true;
+      test_remote_source_sdu_config_.max_sdu = max_sdu;
+    }
+  }
+
+  void setTestPrefPresentationDelay(uint32_t min, uint32_t max, uint32_t pref_min,
+                                    uint32_t pref_max, RawAddress addr = RawAddress::kEmpty,
+                                    uint8_t direction = types::kLeAudioDirectionBoth) {
+    log::debug(
+            "setTestPrefPresentationDelay: min {:#x}, max {:#x}, pref_min {:#x}, "
+            "pref_max {:#x}",
+            min, max, pref_min, pref_max);
+    if (direction & types::kLeAudioDirectionSink) {
+      test_remote_sink_presentation_delay_vec_.push_back(
+              std::make_pair(addr, test_presentation_delay_t{min, max, pref_min, pref_max}));
+    }
+
+    if (direction & types::kLeAudioDirectionSource) {
+      test_remote_source_presentation_delay_vec_.push_back(
+              std::make_pair(addr, test_presentation_delay_t{min, max, pref_min, pref_max}));
+    }
   }
 
   void HandleCtpOperation(LeAudioDevice* device, std::vector<uint8_t> value, GATT_WRITE_OP_CB cb,
@@ -670,10 +743,11 @@ protected:
               return AudioSetConfigurationProvider::Get()->CheckConfigurationIsBiDirSwb(config);
             }));
     ON_CALL(*mock_codec_manager_, GetCodecConfig)
-            .WillByDefault(Invoke(
-                    [](const bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements&
-                               requirements,
-                       bluetooth::le_audio::CodecManager::UnicastConfigurationProvider provider) {
+            .WillByDefault(
+                    Invoke([this](const bluetooth::le_audio::CodecManager::
+                                          UnicastConfigurationRequirements& requirements,
+                                  bluetooth::le_audio::CodecManager::UnicastConfigurationProvider
+                                          provider) {
                       auto configs = *bluetooth::le_audio::AudioSetConfigurationProvider::Get()
                                               ->GetConfigurations(requirements.audio_context_type);
                       // Note: This dual bidir SWB exclusion logic has to match the
@@ -691,6 +765,30 @@ protected:
                                 configs.end());
                       }
                       auto config = provider(requirements, &configs);
+
+                      /* Inject SDU Interval if needed */
+                      if (test_remote_sink_sdu_config_.inject_sdu_interval) {
+                        for (auto& el : config->confs.sink) {
+                          el.qos.sduIntervalUs = test_remote_sink_sdu_config_.sdu_interval;
+                        }
+                      }
+                      if (test_remote_source_sdu_config_.inject_sdu_interval) {
+                        for (auto& el : config->confs.source) {
+                          el.qos.sduIntervalUs = test_remote_source_sdu_config_.sdu_interval;
+                        }
+                      }
+
+                      /* Inject MAX SDU if needed */
+                      if (test_remote_sink_sdu_config_.inject_max_sdu) {
+                        for (auto& el : config->confs.sink) {
+                          el.qos.maxSdu = test_remote_sink_sdu_config_.sdu_interval;
+                        }
+                      }
+                      if (test_remote_source_sdu_config_.inject_max_sdu) {
+                        for (auto& el : config->confs.source) {
+                          el.qos.maxSdu = test_remote_source_sdu_config_.max_sdu;
+                        }
+                      }
 
                       // Inject the DSA channel configuration for the remote source direction
                       if (requirements.flags & CodecManager::Flags::SPATIAL_AUDIO) {
@@ -1461,12 +1559,47 @@ protected:
                 codec_configured_state_params.framing = ascs::kAseParamFramingUnframedSupported;
                 codec_configured_state_params.preferred_retrans_nb = 0x04;
                 codec_configured_state_params.max_transport_latency = 0x0020;
-                codec_configured_state_params.pres_delay_min = 0xABABAB;
-                codec_configured_state_params.pres_delay_max = 0xCDCDCD;
+
+                test_presentation_delay_t default_delays = {0xABABAB, 0xCDCDCD,
+                                                            types::kPresDelayNoPreference,
+                                                            types::kPresDelayNoPreference};
+                test_presentation_delay_t* test_common_presentation_delays = nullptr;
+                test_presentation_delay_t* used_presentation_delays = nullptr;
+
+                std::vector<std::pair<RawAddress, test_presentation_delay_t>>
+                        directional_test_delays_vec;
+                if (ase->direction == types::kLeAudioDirectionSink) {
+                  directional_test_delays_vec = test_remote_sink_presentation_delay_vec_;
+                } else {
+                  directional_test_delays_vec = test_remote_source_presentation_delay_vec_;
+                }
+
+                if (directional_test_delays_vec.empty()) {
+                  used_presentation_delays = &default_delays;
+                } else {
+                  for (auto [addr, delays] : directional_test_delays_vec) {
+                    if (addr == device->address_) {
+                      used_presentation_delays = &delays;
+                      break;
+                    }
+                    if (addr == RawAddress::kEmpty) {
+                      test_common_presentation_delays = &delays;
+                    }
+                  }
+                  if (!used_presentation_delays) {
+                    /* Use either common test data of the default one. */
+                    used_presentation_delays = test_common_presentation_delays
+                                                       ? test_common_presentation_delays
+                                                       : &default_delays;
+                  }
+                }
+
+                codec_configured_state_params.pres_delay_min = used_presentation_delays->min;
+                codec_configured_state_params.pres_delay_max = used_presentation_delays->max;
                 codec_configured_state_params.preferred_pres_delay_min =
-                        types::kPresDelayNoPreference;
+                        used_presentation_delays->pref_min;
                 codec_configured_state_params.preferred_pres_delay_max =
-                        types::kPresDelayNoPreference;
+                        used_presentation_delays->pref_max;
 
                 if (caching) {
                   cached_codec_configuration_map_[ase_id] = codec_configured_state_params;
@@ -11848,6 +11981,328 @@ TEST_F(StateMachineTest, testStreamMultipleDsa) {
   ASSERT_EQ(last_datapath_params_.codec_id_format, types::kLeAudioCodingFormatVendorSpecific);
   ASSERT_EQ(last_datapath_params_.codec_id_company, types::kLeAudioVendorCompanyIdGoogle);
   ASSERT_EQ(last_datapath_params_.codec_id_vendor, types::kLeAudioVendorCodecIdHeadtracking);
+}
+
+TEST_F(StateMachineTest, testStreamFailureOnCigCreateDueToSduInterval) {
+  const auto context_type = kContextTypeMedia;
+  const int leaudio_group_id = 4;
+
+  // Just for testing to trigger CIG Create failure.
+  setTestSduInterval(0);
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+  auto* leAudioDevice = group->GetFirstDevice();
+
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AnyNumber());
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              OnStateMachineInvalidStatusCb(leaudio_group_id,
+                                            StateMachineInvalidStatus::FAILED_TO_CREATE_CIG));
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, testStreamFailureOnCigCreateWhenSduIntevalIsInvalidForOneDirection) {
+  const auto context_type = kContextTypeConversational;
+  const int leaudio_group_id = 4;
+
+  // Just for testing to trigger CIG Create failure.
+  setTestSduInterval(0, types::kLeAudioDirectionSink);
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+  auto* leAudioDevice = group->GetFirstDevice();
+
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AnyNumber());
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              OnStateMachineInvalidStatusCb(leaudio_group_id,
+                                            StateMachineInvalidStatus::FAILED_TO_CREATE_CIG));
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, testStreamFailureOnCigCreateDueToMaxSdu) {
+  const auto context_type = kContextTypeMedia;
+  const int leaudio_group_id = 4;
+
+  // Just for testing to trigger CIG Create failure.
+  setTestMaxSdu(0);
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+  auto* leAudioDevice = group->GetFirstDevice();
+
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AnyNumber());
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              OnStateMachineInvalidStatusCb(leaudio_group_id,
+                                            StateMachineInvalidStatus::FAILED_TO_CREATE_CIG));
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, testStreamFailureOnCigCreateWhenMaxSduIsInvalidForOneDirection) {
+  const auto context_type = kContextTypeConversational;
+  const int leaudio_group_id = 4;
+
+  // Just for testing to trigger CIG Create failure.
+  setTestMaxSdu(0, types::kLeAudioDirectionSink);
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+  auto* leAudioDevice = group->GetFirstDevice();
+
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AnyNumber());
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              OnStateMachineInvalidStatusCb(leaudio_group_id,
+                                            StateMachineInvalidStatus::FAILED_TO_CREATE_CIG));
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, testStreamPreferredPresentationDelay) {
+  auto context_type = kContextTypeConversational;
+  int leaudio_group_id = 4;
+  uint32_t preferred_remote_sink_delay = 0xAAAAAA;
+  uint32_t preferred_remote_source_delay = 0xBBBBBB;
+
+  setTestPrefPresentationDelay(1, 0xFFFFFF, preferred_remote_sink_delay,
+                               preferred_remote_sink_delay, RawAddress::kEmpty,
+                               types::kLeAudioDirectionSink);
+  setTestPrefPresentationDelay(1, 0xFFFFFF, preferred_remote_source_delay,
+                               preferred_remote_source_delay, RawAddress::kEmpty,
+                               types::kLeAudioDirectionSource);
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+  auto* leAudioDevice = group->GetFirstDevice();
+
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AnyNumber());
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  uint32_t pd = 0;
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSink));
+  ASSERT_EQ(pd, preferred_remote_sink_delay);
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSource));
+  ASSERT_EQ(pd, preferred_remote_source_delay);
+}
+
+TEST_F(StateMachineTest, testStreamPreferredPresentationDelayOutsidePresentationDelay) {
+  auto context_type = kContextTypeConversational;
+  int leaudio_group_id = 4;
+  uint32_t delay = 0x00AAAA;
+  uint32_t preferred_delay = 0xBBBBBB;
+
+  setTestPrefPresentationDelay(delay, delay, preferred_delay, preferred_delay);
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+  auto* leAudioDevice = group->GetFirstDevice();
+
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AnyNumber());
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  uint32_t pd = 0;
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSink));
+  ASSERT_EQ(pd, delay);
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSource));
+  ASSERT_EQ(pd, delay);
+}
+
+TEST_F(StateMachineTest, testStreamDifferentPresentationDelayMinOfMultipleDevices) {
+  auto context_type = kContextTypeMedia;
+  auto leaudio_group_id = 2;
+  auto num_devices = 2;
+
+  uint32_t first_device_delay_min = 0xAAAAAA;
+  uint32_t second_device_delay_min = 0xAAAABB;
+  uint32_t no_delay_set = 0;
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+
+  auto* firstDevice = group->GetFirstDevice();
+  setTestPrefPresentationDelay(first_device_delay_min, 0xFFFFFF, 0, 0, firstDevice->address_);
+
+  auto* secondDevice = group->GetNextDevice(firstDevice);
+  setTestPrefPresentationDelay(second_device_delay_min, 0xFFFFFF, 0, 0, secondDevice->address_);
+
+  InjectInitialIdleNotification(group);
+
+  // Start the configuration and stream the content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  uint32_t pd = 0;
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSink));
+  ASSERT_EQ(pd, second_device_delay_min);
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSource));
+  ASSERT_EQ(pd, no_delay_set);
+}
+
+TEST_F(StateMachineTest, testStreamPreferredPresentationDelayMultipleDevices) {
+  auto context_type = kContextTypeMedia;
+  auto leaudio_group_id = 2;
+  auto num_devices = 2;
+
+  uint32_t first_device_delay_min = 0xAAAAAA;
+  uint32_t second_device_delay_min = 0xAAAABB;
+  uint32_t preferred_delay_min = 0xBBBBBB;
+  uint32_t no_delay_set = 0;
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+
+  auto* firstDevice = group->GetFirstDevice();
+  setTestPrefPresentationDelay(first_device_delay_min, 0xFFFFFF, preferred_delay_min,
+                               preferred_delay_min, firstDevice->address_);
+
+  auto* secondDevice = group->GetNextDevice(firstDevice);
+  setTestPrefPresentationDelay(second_device_delay_min, 0xFFFFFF, preferred_delay_min,
+                               preferred_delay_min, secondDevice->address_);
+
+  InjectInitialIdleNotification(group);
+
+  // Start the configuration and stream the content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  uint32_t pd = 0;
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSink));
+  ASSERT_EQ(pd, preferred_delay_min);
+  ASSERT_TRUE(group->GetPresentationDelay(&pd, types::kLeAudioDirectionSource));
+  ASSERT_EQ(pd, no_delay_set);
+}
+
+TEST_F(StateMachineTest, testStreamDifferentRangeOfPresentationDelayMultipleDevices) {
+  auto context_type = kContextTypeMedia;
+  auto leaudio_group_id = 2;
+  auto num_devices = 2;
+
+  uint32_t first_device_delay = 0xAAAAAA;
+  uint32_t second_device_delay = 0xAAAABB;
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+
+  auto* firstDevice = group->GetFirstDevice();
+  setTestPrefPresentationDelay(first_device_delay, first_device_delay, 0, 0, firstDevice->address_);
+
+  auto* secondDevice = group->GetNextDevice(firstDevice);
+  setTestPrefPresentationDelay(second_device_delay, second_device_delay, 0, 0,
+                               secondDevice->address_);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              OnStateMachineInvalidStatusCb(
+                      leaudio_group_id, StateMachineInvalidStatus::INVALID_DEVICE_CONFIGURATION))
+          .Times(1);
+  // Start the configuration and stream the content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
 }
 
 }  // namespace internal

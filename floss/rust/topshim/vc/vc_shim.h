@@ -17,11 +17,12 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <hardware/bt_vcp_controller.h>
 
 #include <memory>
 
-#include "include/hardware/bt_vcp_controller.h"
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 
 namespace bluetooth {
 namespace topshim {
@@ -44,13 +45,14 @@ public:
   void get_ext_audio_out_location(RawAddress addr, uint8_t ext_output_id);
   void set_ext_audio_out_location(RawAddress addr, uint8_t ext_output_id, uint32_t location);
   void get_ext_audio_out_description(RawAddress addr, uint8_t ext_output_id);
-  void set_ext_audio_out_description(RawAddress addr, uint8_t ext_output_id, const char* descr);
+  void set_ext_audio_out_description(RawAddress addr, uint8_t ext_output_id,
+                                     const ::rust::String& descr);
 
 private:
   vcp::VolumeControllerInterface* intf_;
 };
 
-std::unique_ptr<VolumeControlIntf> GetVolumeControlProfile(const unsigned char* btif);
+std::unique_ptr<VolumeControlIntf> GetVolumeControlProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim

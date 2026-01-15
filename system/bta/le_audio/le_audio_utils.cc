@@ -29,7 +29,6 @@
 #include "le_audio/codec_manager.h"
 #include "le_audio_types.h"
 
-using bluetooth::common::ToString;
 using bluetooth::le_audio::types::AudioContexts;
 using bluetooth::le_audio::types::LeAudioContextType;
 

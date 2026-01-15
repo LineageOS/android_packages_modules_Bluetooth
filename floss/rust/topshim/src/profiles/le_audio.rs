@@ -137,9 +137,11 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("topshim/le_audio/le_audio_shim.h");
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type LeAudioClientIntf;
 
-        unsafe fn GetLeAudioClientProfile(btif: *const u8) -> UniquePtr<LeAudioClientIntf>;
+        fn GetLeAudioClientProfile(btif: &BtIntf) -> UniquePtr<LeAudioClientIntf>;
 
         fn init(self: Pin<&mut LeAudioClientIntf>);
         fn connect(self: Pin<&mut LeAudioClientIntf>, addr: RawAddress);
@@ -598,9 +600,8 @@ impl ToggleableProfile for LeAudioClient {
 impl LeAudioClient {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> LeAudioClient {
-        // SAFETY: `intf.as_raw_ptr()` is a valid pointer to a `BluetoothInterface`
         let lea_client_if: cxx::UniquePtr<ffi::LeAudioClientIntf> =
-            unsafe { ffi::GetLeAudioClientProfile(intf.as_raw_ptr()) };
+            ffi::GetLeAudioClientProfile(intf.as_btif());
 
         LeAudioClient { internal: lea_client_if, is_init: false, is_enabled: false }
     }

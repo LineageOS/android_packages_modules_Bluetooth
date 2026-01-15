@@ -183,6 +183,7 @@ mod ffi {
 
         fn GetSocketProfile(btif: &BtIntf) -> UniquePtr<SocketIntf>;
 
+        #[allow(clippy::too_many_arguments)]
         fn listen(
             self: &SocketIntf,
             socket_type: SocketType,
@@ -198,6 +199,7 @@ mod ffi {
             endpoint_id: u64,
             max_rx_packet_size: i32,
         ) -> u32;
+        #[allow(clippy::too_many_arguments)]
         fn connect(
             self: &SocketIntf,
             bd_addr: RawAddress,
@@ -214,6 +216,7 @@ mod ffi {
             max_rx_packet_size: i32,
         ) -> u32;
         fn request_max_tx_data_length(self: &SocketIntf, bd_addr: RawAddress);
+        #[allow(clippy::too_many_arguments)]
         fn control_req(
             self: &SocketIntf,
             dlci: u8,
@@ -271,7 +274,7 @@ impl BtSocket {
     ) -> (BtStatus, Result<File, FdError>) {
         let mut sockfd: i32 = -1;
 
-        let uuid = service_uuid.or(Some(Uuid::from([0; 16]))).unwrap();
+        let uuid = service_uuid.unwrap_or(Uuid::from([0; 16]));
 
         let name = CString::new(service_name).expect("Service name has null in it.");
 
@@ -313,7 +316,7 @@ impl BtSocket {
         calling_uid: i32,
     ) -> (BtStatus, Result<File, FdError>) {
         let mut sockfd: i32 = -1;
-        let uuid = service_uuid.or(Some(Uuid::from([0; 16]))).unwrap();
+        let uuid = service_uuid.unwrap_or(Uuid::from([0; 16]));
 
         let data_path = SocketDataPath::NoOffload;
         let sock_name = CString::new("test").expect("Socket name has null in it");

@@ -869,7 +869,7 @@ static void gatts_process_find_info(tGATT_TCB& tcb, uint16_t cid, uint8_t op_cod
  *
  ******************************************************************************/
 static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len, uint8_t* p_data) {
-  /* BR/EDR conenction, send error response */
+  /* BR/EDR connection, send error response */
   if (cid != L2CAP_ATT_CID) {
     gatt_send_error_rsp(tcb, cid, GATT_REQ_NOT_SUPPORTED, GATT_REQ_MTU, 0, false);
     return;

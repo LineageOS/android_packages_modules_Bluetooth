@@ -140,7 +140,7 @@ tCONN_ID gatt_profile_find_conn_id_by_bd_addr(const RawAddress& remote_bda) {
  *
  * Description      find clcb by Connection ID
  *
- * Returns          Pointer to the found link conenction control block.
+ * Returns          Pointer to the found link connection control block.
  *
  ******************************************************************************/
 static tGATT_PROFILE_CLCB* gatt_profile_find_clcb_by_conn_id(tCONN_ID conn_id) {
@@ -162,7 +162,7 @@ static tGATT_PROFILE_CLCB* gatt_profile_find_clcb_by_conn_id(tCONN_ID conn_id) {
  *
  * Description      The function searches all LCBs with macthing bd address.
  *
- * Returns          Pointer to the found link conenction control block.
+ * Returns          Pointer to the found link connection control block.
  *
  ******************************************************************************/
 static tGATT_PROFILE_CLCB* gatt_profile_find_clcb_by_bd_addr(const RawAddress& bda,

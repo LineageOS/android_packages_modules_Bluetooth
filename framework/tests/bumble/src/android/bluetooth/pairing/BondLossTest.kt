@@ -32,6 +32,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.platform.test.annotations.RequiresFlagsDisabled
+import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -77,6 +78,7 @@ import pandora.SecurityProto.SecurityLevel
 @RunWith(AndroidJUnit4::class)
 class BondLossTest {
     @get:Rule val mockitoRule = MockitoJUnit.rule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
     @get:Rule(order = 2) val bumble = PandoraDevice()
     @get:Rule(order = 3)

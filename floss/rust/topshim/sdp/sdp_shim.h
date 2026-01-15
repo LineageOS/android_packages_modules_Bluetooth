@@ -22,7 +22,6 @@
 
 #include <memory>
 
-#include "rust/cxx.h"
 #include "topshim/btif/btif_shim.h"
 #include "topshim/common/bt_status_helper.h"
 

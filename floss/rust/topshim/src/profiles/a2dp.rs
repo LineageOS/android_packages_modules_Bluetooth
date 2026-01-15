@@ -1,4 +1,4 @@
-use crate::btif::{BluetoothInterface, BtStatus, RawAddress, ToggleableProfile};
+use crate::btif::{BtStatus, RawAddress, ToggleableProfile};
 use crate::topstack::get_dispatchers;
 
 use bitflags::bitflags;
@@ -232,7 +232,7 @@ pub mod ffi {
         type A2dpIntf;
         type A2dpSinkIntf;
 
-        unsafe fn GetA2dpProfile(btif: *const u8) -> UniquePtr<A2dpIntf>;
+        fn GetA2dpProfile() -> UniquePtr<A2dpIntf>;
 
         fn init(self: &A2dpIntf) -> i32;
         fn connect(self: &A2dpIntf, bt_addr: RawAddress) -> u32;
@@ -252,7 +252,7 @@ pub mod ffi {
         fn get_presentation_position(self: &A2dpIntf) -> RustPresentationPosition;
         // A2dp sink functions
 
-        unsafe fn GetA2dpSinkProfile(btif: *const u8) -> UniquePtr<A2dpSinkIntf>;
+        fn GetA2dpSinkProfile() -> UniquePtr<A2dpSinkIntf>;
 
         fn init(self: &A2dpSinkIntf) -> i32;
         fn connect(self: &A2dpSinkIntf, bt_addr: RawAddress) -> i32;
@@ -357,13 +357,16 @@ impl ToggleableProfile for A2dp {
     }
 }
 
+impl Default for A2dp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl A2dp {
     #[log_args]
-    pub fn new(intf: &BluetoothInterface) -> A2dp {
-        let a2dpif: cxx::UniquePtr<ffi::A2dpIntf>;
-        unsafe {
-            a2dpif = ffi::GetA2dpProfile(intf.as_raw_ptr());
-        }
+    pub fn new() -> A2dp {
+        let a2dpif: cxx::UniquePtr<ffi::A2dpIntf> = ffi::GetA2dpProfile();
 
         A2dp { internal: a2dpif, _is_init: false, _is_enabled: false }
     }
@@ -490,13 +493,16 @@ impl ToggleableProfile for A2dpSink {
     }
 }
 
+impl Default for A2dpSink {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl A2dpSink {
     #[log_args]
-    pub fn new(intf: &BluetoothInterface) -> A2dpSink {
-        let a2dp_sink: cxx::UniquePtr<ffi::A2dpSinkIntf>;
-        unsafe {
-            a2dp_sink = ffi::GetA2dpSinkProfile(intf.as_raw_ptr());
-        }
+    pub fn new() -> A2dpSink {
+        let a2dp_sink: cxx::UniquePtr<ffi::A2dpSinkIntf> = ffi::GetA2dpSinkProfile();
 
         A2dpSink { internal: a2dp_sink, _is_init: false, _is_enabled: false }
     }

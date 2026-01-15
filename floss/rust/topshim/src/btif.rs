@@ -431,7 +431,7 @@ pub fn ascii_to_string(data: &[u8], length: usize) -> String {
 fn u32_from_bytes(item: &[u8]) -> u32 {
     let mut u: [u8; 4] = [0; 4];
     let len = std::cmp::min(item.len(), 4);
-    u[0..len].copy_from_slice(&item);
+    u[0..len].copy_from_slice(item);
     u32::from_ne_bytes(u)
 }
 
@@ -774,7 +774,7 @@ const TYPED_ADDR_LENGTH: usize = bindings::RawAddress_kLength as usize + 1;
 
 impl BluetoothProperty {
     pub fn get_type(&self) -> BtPropertyType {
-        match &*self {
+        match self {
             BluetoothProperty::BdName(_) => BtPropertyType::BdName,
             BluetoothProperty::BdAddr(_) => BtPropertyType::BdAddr,
             BluetoothProperty::Uuids(_) => BtPropertyType::Uuids,
@@ -804,7 +804,7 @@ impl BluetoothProperty {
     /// LTCheckedPtrMut to it.
     ///
     /// The lifetime of the returned pointer is tied to that of the slice given.
-    fn get_data_ptr<'a>(&'a self, data: &'a mut [u8]) -> LTCheckedPtrMut<'a, u8> {
+    fn get_data_ptr<'a>(&self, data: &'a mut [u8]) -> LTCheckedPtrMut<'a, u8> {
         let len = self.get_len();
         match self {
             BluetoothProperty::BdName(name) => {
@@ -858,7 +858,7 @@ impl From<CxxBluetoothProperty> for BluetoothProperty {
             }
             bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_BONDED_DEVICES => {
                 assert!(
-                    len % TYPED_ADDR_LENGTH == 0,
+                    len.is_multiple_of(TYPED_ADDR_LENGTH),
                     "Invalid AdapterBondedDevices prop len: {}",
                     len
                 );
@@ -1194,7 +1194,6 @@ pub(crate) mod ffi {
         type BtIntf;
 
         fn GetBtIntf() -> UniquePtr<BtIntf>;
-        fn GetRawBtIntf(self: &BtIntf) -> *const u8;
 
         fn set_adapter_index(self: &BtIntf, adapter_index: i32);
         fn bluetooth_init(
@@ -1313,63 +1312,8 @@ pub(crate) mod ffi {
     }
 }
 
-/// Macro to call functions via function pointers. Expects the self object to
-/// have a raw interface wrapper at `self.internal`. The actual function call is
-/// marked unsafe since it will need to dereference a C object. This can cause
-/// segfaults if not validated beforehand.
-///
-/// Example:
-///     ccall!(self, foobar, arg1, arg2)
-///     Expands to: unsafe {((*self.internal.raw).foobar.unwrap())(arg1, arg2)}
-#[macro_export]
-macro_rules! ccall {
-    ($self:ident,$fn_name:ident) => {
-        unsafe {
-            ((*$self.internal.raw).$fn_name.unwrap())()
-        }
-    };
-    ($self:ident,$fn_name:ident, $($args:expr),*) => {
-        unsafe {
-            ((*$self.internal.raw).$fn_name.unwrap())($($args),*)
-        }
-    };
-}
-
-/// Macro to call const functions via cxx. Expects the self object to have the
-/// cxx object to be called at `self.internal_cxx`.
-///
-/// Example:
-///     cxxcall!(self, foobar, arg1, arg2)
-///     Expands to: self.internal_cxx.foobar(arg1, arg2)
-#[macro_export]
-macro_rules! cxxcall {
-    ($self:expr,$fn_name:ident) => {
-        $self.internal_cxx.$fn_name()
-    };
-    ($self:expr,$fn_name:ident, $($args:expr),*) => {
-        $self.internal_cxx.$fn_name($($args),*)
-    };
-}
-
-/// Macro to call mutable functions via cxx. Mutable functions are always
-/// required to be defined with `self: Pin<&mut Self>`. The self object must
-/// have the cxx object at `self.internal_cxx`.
-///
-/// Example:
-///     mutcxxcall!(self, foobar, arg1, arg2)
-///     Expands to: self.internal_cxx.pin_mut().foobar(arg1, arg2)
-#[macro_export]
-macro_rules! mutcxxcall {
-    ($self:expr,$fn_name:ident) => {
-        $self.internal_cxx.pin_mut().$fn_name()
-    };
-    ($self:expr,$fn_name:ident, $($args:expr),*) => {
-        $self.internal_cxx.pin_mut().$fn_name($($args),*)
-    };
-}
-
 #[no_mangle]
-extern "C" fn wake_lock_noop(_0: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int {
+extern "C" fn wake_lock_noop(_: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int {
     // The wakelock mechanism is not available on this platform,
     // so just returning success to avoid error log.
     0
@@ -1573,11 +1517,6 @@ impl BluetoothInterface {
         self.internal.set_event_filter_connection_setup_all_devices()
     }
 
-    // TODO(@sarveshkalwit): Remove once all modules have been updated with FFI
-    pub(crate) fn as_raw_ptr(&self) -> *const u8 {
-        self.internal.GetRawBtIntf()
-    }
-
     pub(crate) fn as_btif(&self) -> &ffi::BtIntf {
         self.internal.as_ref().unwrap()
     }
@@ -1606,9 +1545,7 @@ pub fn get_btinterface() -> BluetoothInterface {
 
 // Turns C-array T[] to Vec<U>.
 pub(crate) fn ptr_to_vec<T: Copy, U: From<T>>(start: *const T, length: usize) -> Vec<U> {
-    unsafe {
-        (0..length).map(|i| U::from(start.offset(i as isize).read_unaligned())).collect::<Vec<U>>()
-    }
+    unsafe { (0..length).map(|i| U::from(start.add(i).read_unaligned())).collect::<Vec<U>>() }
 }
 
 #[cfg(test)]

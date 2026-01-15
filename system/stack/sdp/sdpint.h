@@ -190,10 +190,10 @@ struct tCONN_CB {
   alarm_t* sdp_conn_timer;
   uint16_t rem_mtu_size;
   uint16_t connection_id;
-  uint16_t list_len;                   /* length of the response in the GKI buffer */
+  uint16_t list_len;                    /* length of the response in the GKI buffer */
   uint16_t pse_dynamic_attributes_len;  // length of the attributes need to be
                                         // added in final sdp response len
-  uint8_t* rsp_list;                   /* pointer to GKI buffer holding response */
+  uint8_t* rsp_list;                    /* pointer to GKI buffer holding response */
 
   tSDP_DISCOVERY_DB* p_db; /* Database to save info into   */
   tSDP_DISC_CMPL_CB* p_cb; /* Callback for discovery done  */
@@ -210,7 +210,7 @@ struct tCONN_CB {
   tSDP_DISC_WAIT disc_state{SDP_DISC_WAIT_CONN};
   bool is_attr_search{false};
 
-  uint16_t cont_offset;     /* Continuation state data in the server response */
+  uint16_t cont_offset;      /* Continuation state data in the server response */
   tSDP_CONT_INFO cont_info;  // structure to hold continuation information for
                              //   the server response
   tCONN_CB() = default;
@@ -283,11 +283,6 @@ uint16_t sdpu_get_attrib_seq_len(const tSDP_RECORD* p_rec, const tSDP_ATTR_SEQ* 
 uint16_t sdpu_get_attrib_entry_len(const tSDP_ATTRIBUTE* p_attr);
 uint8_t* sdpu_build_partial_attrib_entry(uint8_t* p_out, const tSDP_ATTRIBUTE* p_attr, uint16_t len,
                                          uint16_t* offset);
-bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id, uint8_t attr_type,
-                              uint32_t attr_len, uint8_t* p_val);
-bool SDP_AddProfileDescriptorListToRecord(tSDP_RECORD* p_rec, uint16_t profile_uuid,
-                                          uint16_t version);
-bool SDP_DeleteAttributeFromRecord(tSDP_RECORD* p_rec, uint16_t attr_id);
 uint16_t sdpu_is_avrcp_profile_description_list(const tSDP_ATTRIBUTE* p_attr);
 bool sdpu_is_service_id_avrc_target(const tSDP_ATTRIBUTE* p_attr);
 bool spdu_is_avrcp_version_valid(const uint16_t version);

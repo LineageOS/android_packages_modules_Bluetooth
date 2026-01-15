@@ -138,15 +138,27 @@ bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::m
   return true;
 }
 
-void MessageLoopThread::Suspend() {
+void MessageLoopThread::Suspend(os::Handler* caller_handler) {
   if (!com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     return;
   }
 
+  os::Handler* temp_handler;
   std::future<void> future;
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-    if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
+    /**
+     * Temporarily set the handler to nullptr to prevent any further tasks from being posted, and
+     * also avoiding dup Suspend and ShutDown calls.
+     */
+    temp_handler = caller_handler;
+    if (temp_handler == nullptr) {
+      temp_handler =
+              handler_;  // If caller_handler is not provided, suspend the instance's handler_.
+      handler_ = nullptr;
+    }
+
+    if (temp_handler == nullptr) {  // or (handler_thread_ == nullptr)
       log::error("handler is already stopped for thread {}", *this);
       return;
     }
@@ -155,7 +167,7 @@ void MessageLoopThread::Suspend() {
      * Waiting for the handler to be idle.
      * This replicates RunLoop::QuitWhenIdle() functionality.
      */
-    future = handler_->NotifyWhenIdle();
+    future = temp_handler->NotifyWhenIdle();
   }
 
   // Let this thread finish with `api_mutex_` released.
@@ -164,36 +176,51 @@ void MessageLoopThread::Suspend() {
                    handler_thread_->GetThreadName(), kHandlerStopTimeout.count());
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-    handler_->Clear();
+    temp_handler->Clear();
   }
 
   // To prevent deadlock, release the lock before waiting for the reactable to be unregistered.
   // This is safe because the handler is already cleared and will no longer accept tasks.
-  handler_->WaitUntilStopped(kHandlerStopTimeout);
+  temp_handler->WaitUntilStopped(kHandlerStopTimeout);
+
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    if (caller_handler == nullptr) {
+      // Restore only if caller_handler is not provided, otherwise caller (ShutDown()) will manage.
+      handler_ = temp_handler;
+    }
+  }
 }
 
 void MessageLoopThread::ShutDown() {
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
+    os::Handler* temp_handler;
     {
       std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-      if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
+      /**
+       * Temporarily set the handler to nullptr to prevent any further tasks from being posted, and
+       * also avoiding dup Suspend and ShutDown calls.
+       */
+      temp_handler = handler_;
+      handler_ = nullptr;
+
+      if (temp_handler == nullptr) {  // or (handler_thread_ == nullptr)
         log::error("handler is already stopped for thread {}", *this);
         return;
       }
     }
 
-    if (!handler_->IsCleared()) {
+    if (!temp_handler->IsCleared()) {
       log::info("MessageLoopThread was not previously suspended");
-      Suspend();
+      Suspend(temp_handler);
     }
 
     {
       std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-      delete handler_;
+      delete temp_handler;
       delete handler_thread_;
       // The destructor of os::Thread will stop and join the thread.
 
-      handler_ = nullptr;
       handler_thread_ = nullptr;
       return;
     }

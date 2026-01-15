@@ -189,24 +189,26 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("topshim/hfp/hfp_shim.h");
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type HfpIntf;
 
-        unsafe fn GetHfpProfile(btif: *const u8) -> UniquePtr<HfpIntf>;
-        unsafe fn interop_insert_call_when_sco_start(bt_addr: RawAddress) -> bool;
-        unsafe fn interop_disable_hf_profile(name: *const c_char) -> bool;
-        fn init(self: Pin<&mut HfpIntf>) -> i32;
+        fn GetHfpProfile(btif: &BtIntf) -> UniquePtr<HfpIntf>;
+        fn interop_insert_call_when_sco_start(bt_addr: RawAddress) -> bool;
+        fn interop_disable_hf_profile(name: &String) -> bool;
+        fn init(self: Pin<&mut HfpIntf>) -> u32;
         fn connect(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> u32;
         fn connect_audio(
             self: Pin<&mut HfpIntf>,
             bt_addr: RawAddress,
             sco_offload: bool,
             disabled_codecs: i32,
-        ) -> i32;
-        fn set_active_device(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> i32;
-        fn set_volume(self: Pin<&mut HfpIntf>, volume: i8, bt_addr: RawAddress) -> i32;
+        ) -> u32;
+        fn set_active_device(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> u32;
+        fn set_volume(self: Pin<&mut HfpIntf>, volume: i8, bt_addr: RawAddress) -> u32;
         fn set_mic_volume(self: Pin<&mut HfpIntf>, volume: i8, bt_addr: RawAddress) -> u32;
         fn disconnect(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> u32;
-        fn disconnect_audio(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> i32;
+        fn disconnect_audio(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> u32;
         fn device_status_notification(
             self: Pin<&mut HfpIntf>,
             status: TelephonyDeviceStatus,
@@ -249,6 +251,7 @@ pub mod ffi {
         fn hfp_hangup_call_callback(addr: RawAddress);
         fn hfp_dial_call_callback(number: String, addr: RawAddress);
         fn hfp_call_hold_callback(chld: CallHoldCommand, addr: RawAddress);
+        #[allow(clippy::too_many_arguments)]
         fn hfp_debug_dump_callback(
             active: bool,
             codec_id: u16,
@@ -263,14 +266,11 @@ pub mod ffi {
 }
 
 pub fn interop_insert_call_when_sco_start(bt_addr: RawAddress) -> bool {
-    //Call an unsafe function in c++. This is necessary for bridge C++ interop API with floss(rust).
-    unsafe { return ffi::interop_insert_call_when_sco_start(bt_addr) }
+    ffi::interop_insert_call_when_sco_start(bt_addr)
 }
 
 pub fn interop_disable_hf_profile(name: String) -> bool {
-    let c_name = std::ffi::CString::new(name).unwrap();
-    // Call an unsafe function in c++. This is necessary for bridge C++ interop API with floss(rust).
-    unsafe { return ffi::interop_disable_hf_profile(c_name.as_ptr()) }
+    ffi::interop_disable_hf_profile(&name)
 }
 
 pub type TelephonyDeviceStatus = ffi::TelephonyDeviceStatus;
@@ -283,6 +283,12 @@ impl TelephonyDeviceStatus {
             signal_strength: 5,
             battery_level: 5,
         }
+    }
+}
+
+impl Default for TelephonyDeviceStatus {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -443,10 +449,7 @@ impl ToggleableProfile for Hfp {
 impl Hfp {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Hfp {
-        let hfpif: cxx::UniquePtr<ffi::HfpIntf>;
-        unsafe {
-            hfpif = ffi::GetHfpProfile(intf.as_raw_ptr());
-        }
+        let hfpif: cxx::UniquePtr<ffi::HfpIntf> = ffi::GetHfpProfile(intf.as_btif());
 
         Hfp { internal: hfpif, _is_init: false, _is_enabled: false }
     }
@@ -468,48 +471,48 @@ impl Hfp {
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&mut self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().connect(addr))
+        self.internal.pin_mut().connect(addr).into()
     }
 
     #[log_args]
-    #[profile_enabled_or(BtStatus::NotReady.into())]
+    #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect_audio(
         &mut self,
         addr: RawAddress,
         sco_offload: bool,
         disabled_codecs: i32,
-    ) -> i32 {
-        self.internal.pin_mut().connect_audio(addr, sco_offload, disabled_codecs)
+    ) -> BtStatus {
+        self.internal.pin_mut().connect_audio(addr, sco_offload, disabled_codecs).into()
     }
 
     #[log_args]
-    #[profile_enabled_or(BtStatus::NotReady.into())]
-    pub fn set_active_device(&mut self, addr: RawAddress) -> i32 {
-        self.internal.pin_mut().set_active_device(addr)
+    #[profile_enabled_or(BtStatus::NotReady)]
+    pub fn set_active_device(&mut self, addr: RawAddress) -> BtStatus {
+        self.internal.pin_mut().set_active_device(addr).into()
     }
 
     #[log_args]
-    #[profile_enabled_or(BtStatus::NotReady.into())]
-    pub fn set_volume(&mut self, volume: i8, addr: RawAddress) -> i32 {
-        self.internal.pin_mut().set_volume(volume, addr)
+    #[profile_enabled_or(BtStatus::NotReady)]
+    pub fn set_volume(&mut self, volume: i8, addr: RawAddress) -> BtStatus {
+        self.internal.pin_mut().set_volume(volume, addr).into()
     }
 
     #[log_args]
-    #[profile_enabled_or(BtStatus::NotReady.into())]
+    #[profile_enabled_or(BtStatus::NotReady)]
     pub fn set_mic_volume(&mut self, volume: i8, addr: RawAddress) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().set_mic_volume(volume, addr))
+        self.internal.pin_mut().set_mic_volume(volume, addr).into()
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&mut self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().disconnect(addr))
+        self.internal.pin_mut().disconnect(addr).into()
     }
 
     #[log_args]
-    #[profile_enabled_or(BtStatus::NotReady.into())]
-    pub fn disconnect_audio(&mut self, addr: RawAddress) -> i32 {
-        self.internal.pin_mut().disconnect_audio(addr)
+    #[profile_enabled_or(BtStatus::NotReady)]
+    pub fn disconnect_audio(&mut self, addr: RawAddress) -> BtStatus {
+        self.internal.pin_mut().disconnect_audio(addr).into()
     }
 
     #[log_args]
@@ -519,7 +522,7 @@ impl Hfp {
         status: TelephonyDeviceStatus,
         addr: RawAddress,
     ) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().device_status_notification(status, addr))
+        self.internal.pin_mut().device_status_notification(status, addr).into()
     }
 
     #[log_args]
@@ -530,11 +533,7 @@ impl Hfp {
         phone_state: PhoneState,
         addr: RawAddress,
     ) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().indicator_query_response(
-            device_status,
-            phone_state,
-            addr,
-        ))
+        self.internal.pin_mut().indicator_query_response(device_status, phone_state, addr).into()
     }
 
     #[log_args]
@@ -544,7 +543,7 @@ impl Hfp {
         call_list: &Vec<CallInfo>,
         addr: RawAddress,
     ) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().current_calls_query_response(call_list, addr))
+        self.internal.pin_mut().current_calls_query_response(call_list, addr).into()
     }
 
     #[log_args]
@@ -555,13 +554,13 @@ impl Hfp {
         number: &String,
         addr: RawAddress,
     ) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().phone_state_change(phone_state, number, addr))
+        self.internal.pin_mut().phone_state_change(phone_state, number, addr).into()
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn simple_at_response(&mut self, ok: bool, addr: RawAddress) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().simple_at_response(ok, addr))
+        self.internal.pin_mut().simple_at_response(ok, addr).into()
     }
 
     #[log_args]

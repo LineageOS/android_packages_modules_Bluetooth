@@ -658,7 +658,7 @@ void bta_hh_open_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   if (p_cb->app_id != 0) {
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, p_data);
   } else
-  /*  app_id == 0 indicates an incoming conenction request arrives without SDP
+  /*  app_id == 0 indicates an incoming connection request arrives without SDP
    *  performed, do it first
    */
   {

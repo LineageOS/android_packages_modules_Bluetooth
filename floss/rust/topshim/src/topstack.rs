@@ -88,8 +88,8 @@ impl DispatchContainer {
     ///
     /// # Arguments
     ///
-    /// * `obj` - The contents of [`InstanceBox`], usually `Arc<Mutex<U>>`. See
-    ///           the [`InstanceBox`] documentation for examples.
+    /// * `obj` - The contents of [`InstanceBox`], usually `Arc<Mutex<U>>`. See the [`InstanceBox`]
+    ///   documentation for examples.
     ///
     /// # Returns
     ///

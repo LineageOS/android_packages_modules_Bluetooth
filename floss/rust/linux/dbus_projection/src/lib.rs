@@ -181,7 +181,7 @@ impl ClientDBusProxy {
         Self { conn, bus_name, objpath, interface }
     }
 
-    fn create_proxy(&self) -> dbus::nonblock::Proxy<Arc<SyncConnection>> {
+    fn create_proxy(&self) -> dbus::nonblock::Proxy<'_, Arc<SyncConnection>> {
         let conn = self.conn.clone();
         dbus::nonblock::Proxy::new(
             self.bus_name.clone(),

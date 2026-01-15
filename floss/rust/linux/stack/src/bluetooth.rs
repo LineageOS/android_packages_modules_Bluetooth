@@ -1574,7 +1574,7 @@ pub(crate) trait BtifHHCallbacks {
         address: RawAddress,
         address_type: BtAddrType,
         transport: BtTransport,
-        info: BthhHidInfo,
+        info: Box<BthhHidInfo>,
     );
 
     #[btif_callback(ProtocolMode)]
@@ -3067,7 +3067,7 @@ impl BtifHHCallbacks for Bluetooth {
         address: RawAddress,
         address_type: BtAddrType,
         transport: BtTransport,
-        info: BthhHidInfo,
+        info: Box<BthhHidInfo>,
     ) {
     }
 

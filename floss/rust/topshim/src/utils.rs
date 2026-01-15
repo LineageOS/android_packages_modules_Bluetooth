@@ -29,9 +29,9 @@ impl<T> LTCheckedPtr<'static, T> {
     }
 }
 
-impl<'a, T> Into<*const T> for LTCheckedPtr<'a, T> {
-    fn into(self) -> *const T {
-        self.ptr
+impl<T> From<LTCheckedPtr<'_, T>> for *const T {
+    fn from(val: LTCheckedPtr<'_, T>) -> Self {
+        val.ptr
     }
 }
 
@@ -116,9 +116,9 @@ impl<'a, T> LTCheckedPtrMut<'a, T> {
     }
 }
 
-impl<'a, T> Into<*mut T> for LTCheckedPtrMut<'a, T> {
-    fn into(self) -> *mut T {
-        self.ptr
+impl<T> From<LTCheckedPtrMut<'_, T>> for *mut T {
+    fn from(val: LTCheckedPtrMut<'_, T>) -> Self {
+        val.ptr
     }
 }
 

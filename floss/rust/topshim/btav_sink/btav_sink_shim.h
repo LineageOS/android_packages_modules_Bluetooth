@@ -20,10 +20,6 @@
 
 #include <memory>
 
-#include "include/hardware/bt_av.h"
-#include "rust/cxx.h"
-#include "topshim/btav_sink/btav_sink_shim.h"
-
 namespace bluetooth {
 namespace topshim {
 namespace rust {
@@ -41,7 +37,7 @@ public:
   void cleanup() const;
 };
 
-std::unique_ptr<A2dpSinkIntf> GetA2dpSinkProfile(const unsigned char* btif);
+std::unique_ptr<A2dpSinkIntf> GetA2dpSinkProfile();
 
 }  // namespace rust
 }  // namespace topshim
