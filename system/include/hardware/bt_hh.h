@@ -205,7 +205,8 @@ typedef struct {
   BtStatus (*init)(bthh_callbacks_t* callbacks);
 
   /** connect to hid device */
-  BtStatus (*connect)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);
+  BtStatus (*connect)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                      bool direct);
 
   /** dis-connect from hid device */
   BtStatus (*disconnect)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,

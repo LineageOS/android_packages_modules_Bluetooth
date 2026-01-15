@@ -36,8 +36,8 @@ public class HidHostNativeInterface extends NativeInterface<HidHostNativeCallbac
         cleanupNative();
     }
 
-    boolean connectHid(byte[] address, int addressType, int transport) {
-        return connectHidNative(address, addressType, transport);
+    boolean connectHid(byte[] address, int addressType, int transport, boolean direct) {
+        return connectHidNative(address, addressType, transport, direct);
     }
 
     boolean disconnectHid(byte[] address, int addressType, int transport, int reconnectPolicy) {
@@ -87,7 +87,8 @@ public class HidHostNativeInterface extends NativeInterface<HidHostNativeCallbac
 
     private native void cleanupNative();
 
-    private native boolean connectHidNative(byte[] btAddress, int addressType, int transport);
+    private native boolean connectHidNative(
+            byte[] btAddress, int addressType, int transport, boolean direct);
 
     private native boolean disconnectHidNative(
             byte[] btAddress, int addressType, int transport, int reconnectPolicy);

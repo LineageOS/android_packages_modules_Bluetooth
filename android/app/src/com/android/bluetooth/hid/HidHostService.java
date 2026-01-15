@@ -296,16 +296,18 @@ public class HidHostService extends ConnectableProfile {
      *
      * @param device remote device
      * @param transport transport to be used
+     * @param direct true if use direct connect, else do background connect
      * @return true if successfully requested, else false
      */
-    private boolean nativeConnect(BluetoothDevice device, int transport) {
+    private boolean nativeConnect(BluetoothDevice device, int transport, boolean direct) {
         if (!mNativeInterface.connectHid(
-                getByteAddress(device, transport), getAddressType(device), transport)) {
+                getByteAddress(device, transport), getAddressType(device), transport, direct)) {
             Log.w(
                     TAG,
                     "nativeConnect: Connection attempt failed."
                             + (" device=" + device)
-                            + (" transport=" + transport));
+                            + (" transport=" + transport)
+                            + (" direct=" + direct));
             return false;
         }
         return true;
@@ -400,7 +402,7 @@ public class HidHostService extends ConnectableProfile {
 
             // Request connection if headtracker is enabled but is disconnected
             if (enabled && getState(device, TRANSPORT_LE) == STATE_DISCONNECTED) {
-                nativeConnect(device, TRANSPORT_LE);
+                nativeConnect(device, TRANSPORT_LE, true);
                 return;
             }
 
@@ -452,7 +454,7 @@ public class HidHostService extends ConnectableProfile {
                 updateConnectionState(device, prevTransport, STATE_DISCONNECTED);
 
                 // Request to connect the preferred transport
-                nativeConnect(device, transport);
+                nativeConnect(device, transport, true);
             }
         }
 
@@ -726,7 +728,7 @@ public class HidHostService extends ConnectableProfile {
             return;
         }
 
-        nativeConnect(device, inputDevice.mSelectedTransport);
+        nativeConnect(device, inputDevice.mSelectedTransport, true);
     }
 
     /**
