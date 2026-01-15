@@ -45,7 +45,7 @@ using namespace bluetooth::ccp;
 
 namespace {
 class CcpClientImpl;
-std::unique_ptr<CcpClientImpl> instance = nullptr;
+extern std::unique_ptr<CcpClientImpl> instance;
 std::mutex instance_mutex;
 
 static constexpr std::size_t kCallEntrySize = 3;
@@ -829,6 +829,8 @@ private:
   tGATT_IF gatt_if_ = 0;
   std::list<std::shared_ptr<CcpDevice>> devices_;
 };
+
+std::unique_ptr<CcpClientImpl> instance = nullptr;
 
 }  // namespace
 
