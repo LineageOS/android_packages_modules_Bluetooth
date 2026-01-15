@@ -66,7 +66,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.BtRestrictedStatsLog;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.bass_client.BassConstants;
+import com.android.bluetooth.le_audio.LeAudioConstants;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.common.hash.BloomFilter;
@@ -842,7 +842,7 @@ public class MetricsLogger {
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BROADCAST_AUDIO_SYNC_REPORTED,
-                isLocalBroadcast ? broadcastId : BassConstants.INVALID_BROADCAST_ID,
+                isLocalBroadcast ? broadcastId : LeAudioConstants.INVALID_BROADCAST_ID,
                 isLocalBroadcast,
                 syncDurationMs,
                 latencyPaSyncMs,

@@ -22,8 +22,6 @@ import java.util.UUID;
 
 /** Broadcast Audio Scan Service constants class */
 public class BassConstants {
-    public static final ParcelUuid BAAS_UUID =
-            ParcelUuid.fromString("00001852-0000-1000-8000-00805F9B34FB");
     public static final UUID BASS_UUID = UUID.fromString("0000184F-0000-1000-8000-00805F9B34FB");
     public static final UUID BASS_BCAST_AUDIO_SCAN_CTRL_POINT =
             UUID.fromString("00002BC7-0000-1000-8000-00805F9B34FB");
@@ -41,7 +39,6 @@ public class BassConstants {
     public static final int INVALID_ADV_SID = -1;
     public static final int INVALID_ADV_ADDRESS_TYPE = -1;
     public static final int INVALID_ADV_INTERVAL = -1;
-    public static final int INVALID_BROADCAST_ID = -1;
     public static final int BROADCAST_ASSIST_ADDRESS_TYPE_PUBLIC = 0;
     public static final int INVALID_SOURCE_ID = -1;
     public static final int INVALID_PA_SYNC_VALUE = -1;
