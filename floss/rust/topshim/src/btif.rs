@@ -554,9 +554,16 @@ pub enum BtThreadEvent {
     Disassociate,
 }
 
-impl From<bindings::bt_cb_thread_evt> for BtThreadEvent {
-    fn from(item: bindings::bt_cb_thread_evt) -> Self {
-        BtThreadEvent::from_u32(item).unwrap_or(BtThreadEvent::Associate)
+#[gen_cxx_extern_trivial_tuple]
+struct CxxBtThreadEvent(bindings::bt_cb_thread_evt);
+
+impl From<CxxBtThreadEvent> for BtThreadEvent {
+    fn from(item: CxxBtThreadEvent) -> Self {
+        match item.0 {
+            bindings::bt_cb_thread_evt_ASSOCIATE_JVM => BtThreadEvent::Associate,
+            bindings::bt_cb_thread_evt_DISASSOCIATE_JVM => BtThreadEvent::Disassociate,
+            _ => panic!("Unsupported bt_cb_thread_evt {}", item.0),
+        }
     }
 }
 
@@ -1101,7 +1108,7 @@ cb_variant!(BaseCb, address_consolidate_cb -> BaseCallbacks::AddressConsolidate,
 cb_variant!(BaseCb, le_address_associate_cb -> BaseCallbacks::LeAddressAssociate,
     RawAddress, RawAddress, u8
 );
-cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, u32 -> BtThreadEvent);
+cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, CxxBtThreadEvent -> BtThreadEvent);
 cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
     u32 -> BtStatus,
     AclLinkSpec,
@@ -1188,6 +1195,10 @@ pub(crate) mod ffi {
         #[namespace = ""]
         #[cxx_name = "bt_oob_data_s"]
         type OobData = super::OobData;
+
+        #[namespace = ""]
+        #[cxx_name = "bt_cb_thread_evt"]
+        type BtThreadEvent = super::CxxBtThreadEvent;
 
         fn get_property_bytes(prop: &BluetoothProperty) -> &[u8];
 
@@ -1297,7 +1308,7 @@ pub(crate) mod ffi {
         );
         fn address_consolidate_cb(remote_addr: RawAddress, bd_addr: RawAddress);
         fn le_address_associate_cb(remote_addr: RawAddress, bd_addr: RawAddress, irk: u8);
-        fn thread_evt_cb(evt: u32);
+        fn thread_evt_cb(evt: BtThreadEvent);
         fn acl_state_cb(
             status: u32,
             link_spec: AclLinkSpec,

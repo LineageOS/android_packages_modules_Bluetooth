@@ -104,7 +104,7 @@ static void switch_codec_cb(bool is_low_latency_buffer_size) {}
 
 static void le_rand_cb(uint64_t random) {}
 
-static void callback_thread_event(bt_cb_thread_evt evt) {}
+static void thread_evt_cb(bt_cb_thread_evt evt) { rusty::thread_evt_cb(evt); }
 
 static void dut_mode_recv_cb(uint16_t opcode, uint8_t* buf, uint8_t len) {}
 
@@ -135,7 +135,7 @@ bt_callbacks_t bt_callbacks = {
         address_consolidate_cb,
         le_address_associate_cb,
         acl_state_cb,
-        callback_thread_event,
+        thread_evt_cb,
         dut_mode_recv_cb,
         le_test_mode_cb,
         energy_info_cb,
