@@ -27,7 +27,7 @@ import androidx.test.filters.SmallTest
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getRealDevice
-import com.android.bluetooth.mockBluetoothManager
+import com.android.bluetooth.mockGetRemoteDevice
 import com.android.tests.bluetooth.MockitoRule
 import org.junit.After
 import org.junit.Before
@@ -71,7 +71,7 @@ class PeriodicScanManagerTest {
 
     @Before
     fun setUp() {
-        adapterService.mockBluetoothManager()
+        adapterService.mockGetRemoteDevice(device)
 
         periodicScanManager = PeriodicScanManager(adapterService, scanController, nativeInterface)
         scanResult = ScanResult(device, 0, 0, 0, sid, 0, 0, 0, null, 0)
