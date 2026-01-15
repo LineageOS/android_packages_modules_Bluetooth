@@ -126,20 +126,15 @@ impl UHidHfp {
             let mut event = [0u8; UHID_EVENT_SIZE];
             debug!("UHID: reading loop start");
             loop {
-                match uhid_reader.read_exact(&mut event) {
-                    Err(e) => {
-                        log::error!("UHID: Read error: {:?}", e);
-                        break;
-                    }
-                    Ok(_) => (),
+                if let Err(e) = uhid_reader.read_exact(&mut event) {
+                    log::error!("UHID: Read error: {:?}", e);
+                    break;
                 }
                 match OutputEvent::try_from(event) {
                     Ok(m) => {
-                        match m {
-                            OutputEvent::Stop => break,
-                            _ => (),
-                        };
-
+                        if matches!(m, OutputEvent::Stop) {
+                            break;
+                        }
                         output_callback(m);
                     }
                     Err(e) => {

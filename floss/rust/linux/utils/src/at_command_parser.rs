@@ -126,8 +126,8 @@ pub fn parse_at_command_data(at_string: String) -> Result<AtCommand, String> {
 pub fn calculate_battery_percent(at_command: AtCommand) -> Result<u32, String> {
     match at_command.data {
         Some(data) => {
-            match data.get(&AtCommandDataType::IPhoneAccevBatteryLevel) {
-                Some(battery_level) => match battery_level.parse::<u32>() {
+            if let Some(battery_level) = data.get(&AtCommandDataType::IPhoneAccevBatteryLevel) {
+                match battery_level.parse::<u32>() {
                     // The Apple Accessory Design Guidelines indicate
                     // this will be a value in the range [0, 9]. The
                     // guidelines do not specify that this maps to
@@ -137,42 +137,36 @@ pub fn calculate_battery_percent(at_command: AtCommand) -> Result<u32, String> {
                     // Section 27.1 HFP Command AT+IPHONEACCEV
                     Ok(level) => return Ok((level + 1) * 10),
                     Err(e) => return Err(e.to_string()),
-                },
-                None => (),
-            }
-            match data.get(&AtCommandDataType::XeventBatteryLevel) {
-                Some(battery_level) => {
-                    match data.get(&AtCommandDataType::XeventBatteryLevelRange) {
-                        Some(battery_level_range) => {
-                            match (battery_level.parse::<u32>(), battery_level_range.parse::<u32>())
-                            {
-                                (Ok(level), Ok(range)) => {
-                                    if level > range {
-                                        return Err(format!(
-                                            "Invalid battery level {}/{}",
-                                            level, range
-                                        ));
-                                    }
-                                    // Mathematically it is not possible to represent anything
-                                    // meaningful if there are not at least two options for
-                                    // BatteryLevel.
-                                    if range < 2 {
-                                        return Err(
-                                            "BatteryLevelRange must be at least 2".to_string()
-                                        );
-                                    }
-                                    return Ok((f64::from(level) / f64::from(range - 1) * 100.0)
-                                        .floor()
-                                        as u32);
-                                }
-                                (Err(e), _) => return Err(e.to_string()),
-                                (Ok(_), Err(e)) => return Err(e.to_string()),
-                            }
-                        }
-                        None => return Err("BatteryLevelRange missing".to_string()),
-                    }
                 }
-                None => (),
+            }
+            if let Some(battery_level) = data.get(&AtCommandDataType::XeventBatteryLevel) {
+                match data.get(&AtCommandDataType::XeventBatteryLevelRange) {
+                    Some(battery_level_range) => {
+                        match (battery_level.parse::<u32>(), battery_level_range.parse::<u32>()) {
+                            (Ok(level), Ok(range)) => {
+                                if level > range {
+                                    return Err(format!(
+                                        "Invalid battery level {}/{}",
+                                        level, range
+                                    ));
+                                }
+                                // Mathematically it is not possible to represent anything
+                                // meaningful if there are not at least two options for
+                                // BatteryLevel.
+                                if range < 2 {
+                                    return Err("BatteryLevelRange must be at least 2".to_string());
+                                }
+                                return Ok(
+                                    (f64::from(level) / f64::from(range - 1) * 100.0).floor()
+                                        as u32,
+                                );
+                            }
+                            (Err(e), _) => return Err(e.to_string()),
+                            (Ok(_), Err(e)) => return Err(e.to_string()),
+                        }
+                    }
+                    None => return Err("BatteryLevelRange missing".to_string()),
+                }
             }
         }
         None => return Err("No battery data found".to_string()),

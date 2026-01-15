@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{Error, ErrorKind, Read, Result, Write};
+use std::io::{Error, Read, Result, Write};
 use std::sync::{Arc, Mutex};
 
 use crate::bluetooth::{Bluetooth, BluetoothDevice, IBluetooth, IBluetoothCallback};
@@ -49,16 +49,10 @@ pub struct PolicyEffect {
 }
 
 /// A helper struct that tells whether a service or a profile is allowed.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct BluetoothAdminPolicyHelper {
     allowed_services: HashSet<Uuid>,
     accept_ssp_request: bool,
-}
-
-impl Default for BluetoothAdminPolicyHelper {
-    fn default() -> Self {
-        Self { allowed_services: HashSet::default(), accept_ssp_request: false }
-    }
 }
 
 impl BluetoothAdminPolicyHelper {
@@ -67,7 +61,7 @@ impl BluetoothAdminPolicyHelper {
     }
 
     pub(crate) fn is_profile_allowed(&self, profile: &Profile) -> bool {
-        self.is_service_allowed(UuidHelper::get_profile_uuid(&profile).unwrap())
+        self.is_service_allowed(UuidHelper::get_profile_uuid(profile).unwrap())
     }
 
     pub(crate) fn is_accept_ssp_request(&self) -> bool {
@@ -88,7 +82,7 @@ impl BluetoothAdminPolicyHelper {
         self.allowed_services.iter().cloned().collect()
     }
 
-    fn get_blocked_services(&self, remote_uuids: &Vec<Uuid>) -> Vec<Uuid> {
+    fn get_blocked_services(&self, remote_uuids: &[Uuid]) -> Vec<Uuid> {
         remote_uuids.iter().filter(|&uu| !self.is_service_allowed(uu)).cloned().collect()
     }
 
@@ -179,19 +173,15 @@ impl BluetoothAdmin {
         });
     }
 
-    fn get_blocked_services(&self, remote_uuids: &Vec<Uuid>) -> Vec<Uuid> {
+    fn get_blocked_services(&self, remote_uuids: &[Uuid]) -> Vec<Uuid> {
         self.admin_helper.get_blocked_services(remote_uuids)
     }
 
-    fn get_affected_status(&self, blocked_services: &Vec<Uuid>) -> bool {
+    fn get_affected_status(&self, blocked_services: &[Uuid]) -> bool {
         // return true if a supported profile is in blocked services.
-        blocked_services
-            .iter()
-            .find(|&uuid| {
-                UuidHelper::is_known_profile(uuid)
-                    .map_or(false, |p| UuidHelper::is_profile_supported(&p))
-            })
-            .is_some()
+        blocked_services.iter().any(|uuid| {
+            UuidHelper::is_known_profile(uuid).is_some_and(|p| UuidHelper::is_profile_supported(&p))
+        })
     }
 
     fn load_config(&mut self) -> Result<()> {
@@ -200,7 +190,7 @@ impl BluetoothAdmin {
         file.read_to_string(&mut contents)?;
         let json = serde_json::from_str::<Value>(contents.as_str())?;
         let (allowed_services, accept_ssp) = Self::get_config_from_json(&json)
-            .ok_or(Error::new(ErrorKind::Other, "Failed converting json to config"))?;
+            .ok_or(Error::other("Failed converting json to config"))?;
         if !self.admin_helper.set_allowed_services(allowed_services) {
             info!("Admin: load_config: allowed service unchanged");
         }

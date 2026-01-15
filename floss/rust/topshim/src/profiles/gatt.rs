@@ -788,7 +788,7 @@ impl Display for GattStatus {
     }
 }
 
-#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy, Default)]
+#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy, Default, PartialEq)]
 #[repr(u32)]
 /// LE Discoverable modes.
 pub enum LeDiscMode {
@@ -860,10 +860,10 @@ pub enum GattClientCallbacks {
     Connect(i32, GattStatus, i32, i32, RawAddress),
     Disconnect(i32, GattStatus, i32, i32, RawAddress),
     RegisterForNotification(i32, i32, GattStatus, u16),
-    Notify(i32, BtGattNotifyParams),
-    ReadCharacteristic(i32, GattStatus, BtGattReadParams),
+    Notify(i32, Box<BtGattNotifyParams>),
+    ReadCharacteristic(i32, GattStatus, Box<BtGattReadParams>),
     WriteCharacteristic(i32, GattStatus, u16, Vec<u8>),
-    ReadDescriptor(i32, GattStatus, BtGattReadParams),
+    ReadDescriptor(i32, GattStatus, Box<BtGattReadParams>),
     WriteDescriptor(i32, GattStatus, u16, Vec<u8>),
     ExecuteWrite(i32, GattStatus),
     ReadRemoteRssi(i32, RawAddress, i32, GattStatus),
@@ -948,13 +948,13 @@ cb_variant!(
 cb_variant!(
     GattClientCb,
     gc_notify_cb -> GattClientCallbacks::Notify,
-    i32, BtGattNotifyParams
+    i32, BtGattNotifyParams -> Box::<BtGattNotifyParams>
 );
 
 cb_variant!(
     GattClientCb,
     gc_read_characteristic_cb -> GattClientCallbacks::ReadCharacteristic,
-    i32, i32 -> GattStatus, BtGattReadParams
+    i32, i32 -> GattStatus, BtGattReadParams -> Box::<BtGattReadParams>
 );
 
 cb_variant!(
@@ -965,7 +965,7 @@ cb_variant!(
 cb_variant!(
     GattClientCb,
     gc_read_descriptor_cb -> GattClientCallbacks::ReadDescriptor,
-    i32, i32 -> GattStatus, BtGattReadParams
+    i32, i32 -> GattStatus, BtGattReadParams -> Box::<BtGattReadParams>
 );
 
 cb_variant!(

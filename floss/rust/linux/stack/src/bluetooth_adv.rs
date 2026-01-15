@@ -94,7 +94,7 @@ pub trait IAdvertisingSetCallback: RPCProxy {
     ///
     /// * `reg_id` - Identifies the advertising set registered by `start_advertising_set`.
     /// * `advertiser_id` - ID for the advertising set. It will be used in other advertising methods
-    ///     and callbacks.
+    ///   and callbacks.
     /// * `tx_power` - Transmit power that will be used for this advertising set.
     /// * `status` - Status of this operation.
     fn on_advertising_set_started(
@@ -231,9 +231,8 @@ impl From<AdvertisingSetParameters> for bt_topshim::profiles::gatt::AdvertisePar
             props |= 0x40;
         }
 
-        match val.discoverable {
-            LeDiscMode::GeneralDiscoverable => is_discoverable = true,
-            _ => {}
+        if val.discoverable == LeDiscMode::GeneralDiscoverable {
+            is_discoverable = true;
         }
 
         let interval = clamp(val.interval, INTERVAL_MIN, INTERVAL_MAX - INTERVAL_DELTA);
@@ -249,7 +248,7 @@ impl From<AdvertisingSetParameters> for bt_topshim::profiles::gatt::AdvertisePar
             scan_request_notification_enable: 0_u8, // false
             own_address_type: val.own_address_type as i8,
             peer_address: address,
-            peer_address_type: 0x00 as i8,
+            peer_address_type: 0x00i8,
             discoverable: is_discoverable,
         }
     }
@@ -335,10 +334,7 @@ impl AdvertiseData {
         }
     }
 
-    fn append_transport_discovery_data(
-        dest: &mut Vec<u8>,
-        transport_discovery_data: &Vec<Vec<u8>>,
-    ) {
+    fn append_transport_discovery_data(dest: &mut Vec<u8>, transport_discovery_data: &[Vec<u8>]) {
         for tdd in transport_discovery_data.iter().filter(|tdd| !tdd.is_empty()) {
             AdvertiseData::append_adv_data(dest, TRANSPORT_DISCOVERY_DATA, tdd);
         }
@@ -363,12 +359,12 @@ impl AdvertiseData {
     }
 
     /// Validates the raw data as advertisement data.
-    pub fn validate_raw_data(is_legacy: bool, bytes: &Vec<u8>) -> bool {
+    pub fn validate_raw_data(is_legacy: bool, bytes: &[u8]) -> bool {
         bytes.len() <= if is_legacy { LEGACY_ADV_DATA_LEN_MAX } else { EXT_ADV_DATA_LEN_MAX }
     }
 
     /// Checks if the advertisement can be upgraded to extended.
-    pub fn can_upgrade(parameters: &mut AdvertisingSetParameters, adv_bytes: &Vec<u8>) -> bool {
+    pub fn can_upgrade(parameters: &mut AdvertisingSetParameters, adv_bytes: &[u8]) -> bool {
         if parameters.is_legacy && !AdvertiseData::validate_raw_data(true, adv_bytes) {
             info!("Auto upgrading advertisement to extended");
             parameters.is_legacy = false;
@@ -624,7 +620,7 @@ impl AdvertiseManagerImpl {
     }
 
     fn find_reg_id(&self, adv_id: AdvertiserId) -> Option<RegId> {
-        for (_, s) in &self.sets {
+        for s in self.sets.values() {
             if s.adv_id == Some(adv_id) {
                 return Some(s.reg_id());
             }
@@ -802,14 +798,15 @@ pub trait IBluetoothAdvertiseManager {
     /// * `advertise_data` - Advertisement data to be broadcasted.
     /// * `scan_response` - Scan response.
     /// * `periodic_parameters` - Periodic advertising parameters. If None, periodic advertising
-    ///     will not be started.
+    ///   will not be started.
     /// * `periodic_data` - Periodic advertising data.
     /// * `duration` - Advertising duration, in 10 ms unit. Valid range is from 1 (10 ms) to
-    ///     65535 (655.35 sec). 0 means no advertising timeout.
+    ///   65535 (655.35 sec). 0 means no advertising timeout.
     /// * `max_ext_adv_events` - Maximum number of extended advertising events the controller
-    ///     shall attempt to send before terminating the extended advertising, even if the
-    ///     duration has not expired. Valid range is from 1 to 255. 0 means event count limitation.
+    ///   shall attempt to send before terminating the extended advertising, even if the
+    ///   duration has not expired. Valid range is from 1 to 255. 0 means event count limitation.
     /// * `callback_id` - Identifies callback registered in register_advertiser_callback.
+    #[allow(clippy::too_many_arguments)]
     fn start_advertising_set(
         &mut self,
         parameters: AdvertisingSetParameters,
@@ -1485,7 +1482,7 @@ impl SoftwareRotationAdvertiseManagerImpl {
                 // This advertiser has been removed.
                 return false;
             };
-            if info.expire_time.map_or(false, |t| t < now) {
+            if info.expire_time.is_some_and(|t| t < now) {
                 // This advertiser has expired.
                 info.enabled = false;
                 if let Some(cb) = callbacks.get_by_id_mut(info.callback_id) {
@@ -1560,7 +1557,7 @@ impl SoftwareRotationAdvertiseManagerImpl {
             let now = Instant::now();
             if let Some(info) = self.adv_info.get(&current_id) {
                 if info.enabled {
-                    info.expire_time.map_or(true, |t| t >= now)
+                    info.expire_time.is_none_or(|t| t >= now)
                 } else {
                     false
                 }

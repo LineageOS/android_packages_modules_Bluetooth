@@ -151,11 +151,7 @@ impl BluetoothServerSocket {
         sock.port = conn.channel;
         sock.max_rx_size = conn.max_rx_packet_size.into();
         sock.max_tx_size = conn.max_tx_packet_size.into();
-        sock.fd = match socket::try_from_fd(sockfd.unwrap_or(-1)) {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        };
-
+        sock.fd = socket::try_from_fd(sockfd.unwrap_or(-1)).ok();
         sock
     }
 }
@@ -579,11 +575,7 @@ impl BluetoothSocketManager {
                 log::debug!("service {} is blocked by admin policy", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
-            if self
-                .listening
-                .iter()
-                .any(|(_, v)| v.iter().any(|s| s.uuid.map_or(false, |u| u == uuid)))
-            {
+            if self.listening.iter().any(|(_, v)| v.iter().any(|s| s.uuid == Some(uuid))) {
                 log::warn!("Service {} already exists", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::SocketError, INVALID_SOCKET_ID);
             }
@@ -811,7 +803,7 @@ impl BluetoothSocketManager {
             match m {
                 SocketRunnerActions::AcceptTimeout(socket_id, may_timeout) => {
                     // If the given socket id doesn't match, ignore the call.
-                    if &socket_id != &socket_info.id {
+                    if socket_id != socket_info.id {
                         continue;
                     }
 
@@ -967,7 +959,7 @@ impl BluetoothSocketManager {
                 }
                 SocketRunnerActions::Close(socket_id) => {
                     // Ignore requests where socket id doesn't match.
-                    if &socket_id != &socket_info.id {
+                    if socket_id != socket_info.id {
                         continue;
                     }
 
@@ -1190,7 +1182,7 @@ impl BluetoothSocketManager {
             .filter(|sock| {
                 sock.uuid
                     // Don't need to close L2cap socket (indicated by no uuid).
-                    .map_or(false, |uuid| !self.admin_helper.is_service_allowed(&uuid))
+                    .is_some_and(|uuid| !self.admin_helper.is_service_allowed(&uuid))
             })
             .map(|sock| (sock.socket_id, sock.tx.clone(), sock.uuid.unwrap()))
             .collect::<Vec<(u64, Sender<SocketRunnerActions>, Uuid)>>();
@@ -1209,12 +1201,12 @@ impl BluetoothSocketManager {
 
     pub fn remove_callback(&mut self, callback: CallbackId) {
         // Remove any associated futures and sockets waiting to accept.
-        self.connecting.remove(&callback).map(|sockets| {
+        if let Some(sockets) = self.connecting.remove(&callback) {
             for s in sockets {
                 s.joinhandle.abort();
             }
-        });
-        self.listening.remove(&callback).map(|sockets| {
+        }
+        if let Some(sockets) = self.listening.remove(&callback) {
             for s in sockets {
                 if s.joinhandle.is_finished() {
                     continue;
@@ -1225,7 +1217,7 @@ impl BluetoothSocketManager {
                     let _ = tx.send(SocketRunnerActions::Close(id)).await;
                 });
             }
-        });
+        }
 
         if !self.is_listening() {
             // Update the connectable mode since the list of listening socket has changed.
@@ -1443,38 +1435,31 @@ impl IBluetoothSocketManager for BluetoothSocketManager {
     }
 
     fn accept(&mut self, callback: CallbackId, id: SocketId, timeout_ms: Option<u32>) -> BtStatus {
-        match self.listening.get(&callback) {
-            Some(v) => {
-                if let Some(found) = v.iter().find(|item| item.socket_id == id) {
-                    let tx = found.tx.clone();
-                    let timeout_duration = timeout_ms.map(|t| Duration::from_millis(t.into()));
-                    self.runtime.spawn(async move {
-                        let _ =
-                            tx.send(SocketRunnerActions::AcceptTimeout(id, timeout_duration)).await;
-                    });
+        if let Some(v) = self.listening.get(&callback) {
+            if let Some(found) = v.iter().find(|item| item.socket_id == id) {
+                let tx = found.tx.clone();
+                let timeout_duration = timeout_ms.map(|t| Duration::from_millis(t.into()));
+                self.runtime.spawn(async move {
+                    let _ = tx.send(SocketRunnerActions::AcceptTimeout(id, timeout_duration)).await;
+                });
 
-                    return BtStatus::Success;
-                }
+                return BtStatus::Success;
             }
-            None => (),
         }
 
         BtStatus::InvalidParam
     }
 
     fn close(&mut self, callback: CallbackId, id: SocketId) -> BtStatus {
-        match self.listening.get(&callback) {
-            Some(v) => {
-                if let Some(found) = v.iter().find(|item| item.socket_id == id) {
-                    let tx = found.tx.clone();
-                    self.runtime.spawn(async move {
-                        let _ = tx.send(SocketRunnerActions::Close(id)).await;
-                    });
+        if let Some(v) = self.listening.get(&callback) {
+            if let Some(found) = v.iter().find(|item| item.socket_id == id) {
+                let tx = found.tx.clone();
+                self.runtime.spawn(async move {
+                    let _ = tx.send(SocketRunnerActions::Close(id)).await;
+                });
 
-                    return BtStatus::Success;
-                }
+                return BtStatus::Success;
             }
-            None => (),
         }
 
         BtStatus::InvalidParam

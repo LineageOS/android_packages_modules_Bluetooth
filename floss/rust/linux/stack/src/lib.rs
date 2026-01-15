@@ -257,6 +257,7 @@ impl Stack {
     }
 
     /// Runs the main dispatch loop.
+    #[allow(clippy::too_many_arguments)]
     pub async fn dispatch(
         mut rx: Receiver<Message>,
         tx: Sender<Message>,

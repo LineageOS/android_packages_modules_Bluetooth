@@ -83,15 +83,12 @@ fn notify_suspend_state(hci_index: u16, suspended: bool) {
     }
     // Bind to control channel (which is used for mgmt commands). We provide
     // HCI_DEV_NONE because we don't actually need a valid HCI dev for some MGMT commands.
-    match btsock.bind_channel(HciChannels::Control, HCI_DEV_NONE) {
-        -1 => {
-            panic!(
-                "Failed to bind control channel with errno={}",
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
-            );
-        }
-        _ => (),
-    };
+    if btsock.bind_channel(HciChannels::Control, HCI_DEV_NONE) == -1 {
+        panic!(
+            "Failed to bind control channel with errno={}",
+            std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
+        );
+    }
 
     let command = MgmtCommand::FlossNotifySuspendState(hci_index, suspended);
     let bytes_written = btsock.write_mgmt_packet(command.into());
