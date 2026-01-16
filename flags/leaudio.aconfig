@@ -127,16 +127,6 @@ flag {
 }
 
 flag {
-    name: "dsa_use_codec_extensibility"
-    namespace: "bluetooth"
-    description: "Use the codec extensibility API for passing DSA parameters"
-    bug: "406747076"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_audio_update_config_preference_to_hal"
     namespace: "bluetooth"
     description: "Send user set config preference to BT Audio HAL"

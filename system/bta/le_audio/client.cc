@@ -4806,7 +4806,7 @@ public:
 
     log::info("Session reconfiguration needed group: {} for context type: {}", group->group_id_,
               ToString(context_type));
-    if (com_android_bluetooth_flags_dsa_use_codec_extensibility() && dsa_reconfigure_needed) {
+    if (dsa_reconfigure_needed) {
       log::debug("Invalidate current {} configuration for DSA mode change",
                  common::ToString(context_type));
       group->InvalidateCachedConfigurations(context_type);
@@ -6048,9 +6048,7 @@ public:
                                is_missing_source_ase_context;
 
     // Clear DSA configuration cache when DSA mode has changed
-    auto clear_dsa_config_cache =
-            com_android_bluetooth_flags_dsa_use_codec_extensibility() && is_dsa_reconfig_needed;
-    if (is_configuration_changed || clear_dsa_config_cache) {
+    if (is_configuration_changed || is_dsa_reconfig_needed) {
       group->InvalidateCachedConfigurations(new_configuration_context);
     }
 

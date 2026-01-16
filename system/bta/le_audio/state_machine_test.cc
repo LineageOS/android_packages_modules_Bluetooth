@@ -12020,9 +12020,6 @@ TEST_F(StateMachineTest, testStreamMultipleDsa) {
   const auto leaudio_group_id = 4;
   const auto num_devices = 2;
 
-  // Enable flags
-  com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
-
   // Prepare multiple connected devices in a group
   auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
   ASSERT_EQ(group->Size(), num_devices);

@@ -1155,9 +1155,7 @@ public:
                  common::ToString(codec));
 
     } else {
-      if (com_android_bluetooth_flags_dsa_use_codec_extensibility()) {
-        log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
-      }
+      log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
       switch (group->dsa_.mode) {
         case DsaMode::ISO_HW:
           data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
@@ -1774,9 +1772,7 @@ private:
                     param.sdu_itv_stom, param.max_trans_lat_stom, it->max_sdu_size_stom,
                     it->rtn_stom);
           } else {
-            if (com_android_bluetooth_flags_dsa_use_codec_extensibility()) {
-              log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
-            }
+            log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
             param.sdu_itv_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
             param.max_trans_lat_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
             it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
