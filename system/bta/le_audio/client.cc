@@ -2858,9 +2858,7 @@ public:
       leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTED_BY_USER_GETTING_READY);
     }
 
-    if (com_android_bluetooth_flags_leaudio_use_aggressive_params()) {
-      lockConnParamsForStreaming(leAudioDevice);
-    }
+    lockConnParamsForStreaming(leAudioDevice);
 
     /* Check if the device is in allow list and update the flag */
     leAudioDevice->UpdateDeviceAllowlistFlag();
@@ -4061,11 +4059,6 @@ public:
   void connectionReady(LeAudioDevice* leAudioDevice) {
     log::debug("{},  {}", leAudioDevice->address_,
                bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
-
-    if (!com_android_bluetooth_flags_leaudio_use_aggressive_params()) {
-      stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
-              leAudioDevice->address_, false);
-    }
 
     if (leAudioDevice->GetConnectionState() ==
                 DeviceConnectState::CONNECTED_BY_USER_GETTING_READY &&
@@ -6603,9 +6596,7 @@ public:
 
     switch (status) {
       case GroupStreamStatus::STREAMING: {
-        if (com_android_bluetooth_flags_leaudio_use_aggressive_params()) {
-          unlockConnParamsForStreaming(group);
-        }
+        unlockConnParamsForStreaming(group);
         if (!is_active_group_operation) {
           log::error("Streaming group {} is no longer active. Stop the group.", group_id);
           GroupStop(group_id);

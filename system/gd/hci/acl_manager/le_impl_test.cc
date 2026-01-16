@@ -798,8 +798,6 @@ TEST_F(LeImplTest,
     GTEST_SKIP() << "Skipping test because the threshold is zero";
   }
 
-  com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
-
   std::vector<AddressWithType> accept_list;
   Address test_non_le_audio_device_address = Address::FromString("00:11:22:33:44:55").value();
   accept_list.push_back(
