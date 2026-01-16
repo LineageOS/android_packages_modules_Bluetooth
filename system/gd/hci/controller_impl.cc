@@ -61,7 +61,10 @@ struct ControllerImpl::impl {
             handler_->BindOn(this, &ControllerImpl::impl::NumberOfCompletedPackets));
 
     set_event_mask(kDefaultEventMask);
-    set_event_mask_page_2(kDefaultEventMaskPage2);
+
+    if (!com::android::bluetooth::flags::check_set_event_mask_p2_support_before_writing()) {
+      set_event_mask_page_2(kDefaultEventMaskPage2);
+    }
 
     write_le_host_support(Enable::ENABLED, Enable::DISABLED);
     hci_->EnqueueCommand(
@@ -345,6 +348,12 @@ struct ControllerImpl::impl {
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     local_supported_commands_ = complete_view.GetSupportedCommands();
+
+    if (com::android::bluetooth::flags::check_set_event_mask_p2_support_before_writing()) {
+      if (is_supported(OpCode::SET_EVENT_MASK_PAGE_2)) {
+        set_event_mask_page_2(kDefaultEventMaskPage2);
+      }
+    }
   }
 
   void read_local_extended_features_complete_handler(std::promise<void> promise,
