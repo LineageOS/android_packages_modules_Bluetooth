@@ -996,45 +996,33 @@ bool LeAudioDevice::IsReadyToCreateStream(void) {
             if (ase.direction == types::kLeAudioDirectionSink &&
                 (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
                  ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
-              if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-                if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
-                    ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
-                  return false;
-                } else {
-                  return true;
-                }
-              } else {
-                return true;
+              if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
+                  ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+                return false;
               }
+              return true;
             }
 
             if (ase.direction == types::kLeAudioDirectionSource &&
                 ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-              if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-                if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
-                    ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
-                  return false;
-                } else {
-                  return true;
-                }
-              } else {
-                return true;
+              if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
+                  ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+                return false;
               }
+              return true;
             }
 
             is_any_direction_started = true;
             return false;
           });
 
-  if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-    /* This is actually just for testing code, but still valid check. If it turns out that
-     * device has all directions in QoS state, it could be reported as Ready To Stream which is not
-     * true. At least one direction need to be enabled per device.
-     */
-    if (is_any_active && !is_any_direction_started) {
-      log::debug("{}, has active ASEs but has no enabled direction yet.", address_);
-      return false;
-    }
+  /* This is actually just for testing code, but still valid check. If it turns out that
+   * device has all directions in QoS state, it could be reported as Ready To Stream which is not
+   * true. At least one direction need to be enabled per device.
+   */
+  if (is_any_active && !is_any_direction_started) {
+    log::debug("{}, has active ASEs but has no enabled direction yet.", address_);
+    return false;
   }
 
   return iter == ases_.end();

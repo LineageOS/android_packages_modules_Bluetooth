@@ -1660,7 +1660,6 @@ protected:
     com::android::bluetooth::flags::provider_->le_audio_update_config_preference_to_hal(true);
     com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_
             ->leaudio_use_game_sonification_as_regular_sonification(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_switching_le_audio_devices(true);
@@ -15615,7 +15614,6 @@ protected:
   void SetUp() override {
     UnicastTest::SetUp();
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
     GmapClient::UpdateGmapOffloaderSupport(true);
     GmapServer::UpdateGmapOffloaderSupport(true);
@@ -15633,7 +15631,6 @@ protected:
   void SetUp() override {
     UnicastTestCsis::SetUp();
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
     GmapClient::UpdateGmapOffloaderSupport(true);
     GmapServer::UpdateGmapOffloaderSupport(true);

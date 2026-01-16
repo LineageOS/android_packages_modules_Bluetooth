@@ -3222,8 +3222,7 @@ private:
         continue;
       }
 
-      if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening() &&
-          ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      if (ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
         log::info(
                 "Metadata for ase_id {} cannot be updated due to invalid ase state - see log above",
                 ase->id);
@@ -3291,10 +3290,8 @@ private:
 
     do {
       if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
-        if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-          if (ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-            continue;
-          }
+        if (ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+          continue;
         }
         stream << "ASE_ID " << +ase->id << ",";
         ids.push_back(ase->id);
@@ -3431,16 +3428,8 @@ private:
           group->SetStreamingMetadataContexts(streaming_audio_context.value(), ase->direction);
         }
 
-        if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-          if (!group->HasAllRequiredStreamingAses()) {
-            log::info("More Ases to get in streaming state for group_id: {}", group->group_id_);
-            return;
-          }
-
-        } else if (!group->HaveAllActiveDevicesAsesTheSameState(
-                           AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING)) {
-          /* More ASEs notification form this device has to come for this group
-           */
+        if (!group->HasAllRequiredStreamingAses()) {
+          log::info("More Ases to get in streaming state for group_id: {}", group->group_id_);
           return;
         }
 

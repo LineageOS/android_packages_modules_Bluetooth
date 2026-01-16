@@ -302,7 +302,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
             true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
@@ -8775,7 +8774,6 @@ TEST_F(StateMachineTest, StopStreamAfterConfigureToQoS) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSinkFirst) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -8852,7 +8850,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSinkFirst) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSourceFirst) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -8929,7 +8926,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSourceFirst) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSink) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -9021,7 +9017,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSink) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -9115,7 +9110,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndReleaseSource) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -9223,7 +9217,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndReleaseSource) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSink) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -9299,7 +9292,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSink) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSource) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
