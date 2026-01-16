@@ -19,18 +19,8 @@
  *   Functions generated:5
  */
 
-#include <bluetooth/types/address.h>
-
-#include "stack/sdp/sdpint.h"
+#include "stack/include/sdp_api.h"
 #include "test/common/mock_functions.h"
 
-tCONN_CB* sdp_conn_originate(const RawAddress& /* p_bd_addr */) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-void sdp_conn_timer_timeout(void* /* data */) { inc_func_call_count(__func__); }
-void sdp_disconnect(tCONN_CB* /* p_ccb */, tSDP_REASON /* reason */) {
-  inc_func_call_count(__func__);
-}
 void sdp_free(void) { inc_func_call_count(__func__); }
 void sdp_init(void) { inc_func_call_count(__func__); }

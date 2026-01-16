@@ -28,12 +28,14 @@
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/include/bta_sdp_api.h"
 #include "btif/include/btif_config.h"
+#include "btif/include/btif_storage.h"
+#include "device/include/interop.h"
+#include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdp_status.h"
-#include "stack/sdp/sdpint.h"  // is_sdp_pbap_pce_disabled
 #include "storage/config_keys.h"
 
 #ifdef TARGET_FLOSS
@@ -79,6 +81,20 @@ static const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
 
 namespace {
 constexpr char kBtmLogTag[] = "SDP";
+}
+
+/*************************************************************************************
+**
+** Function        is_sdp_pbap_pce_disabled
+**
+** Description     Checks if given PBAP record is for PBAP PSE and SDP denylisted
+**
+** Returns         BOOLEAN
+**
+***************************************************************************************/
+static bool is_sdp_pbap_pce_disabled(RawAddress remote_address) {
+  return interop_match_addr_or_name(INTEROP_DISABLE_PCE_SDP_AFTER_PAIRING, remote_address,
+                                    &btif_storage_get_remote_device_property);
 }
 
 static void store_avrcp_profile_feature(tSDP_DISC_REC* sdp_rec) {

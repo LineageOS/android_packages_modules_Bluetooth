@@ -34,6 +34,7 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cdefs.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"
 
