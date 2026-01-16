@@ -33,16 +33,6 @@ flag {
 }
 
 flag {
-    name: "initial_conn_params_p1"
-    namespace: "bluetooth"
-    description: "Use aggressive connection parameters when <2 connections exist. go/initial-connection-parameter-optimization"
-    bug: "378595485"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "scan_controller_thread"
     namespace: "bluetooth"
     description: "Makes scan controller operations run on one thread."
