@@ -397,7 +397,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         // device supports absolute volume. Defer switching the device until AVRCP returns the
         // info.
         if (!mDeviceMap.containsKey(mCurrentDevice)) {
-            Log.w(TAG, "volumeDeviceSwitched: Device isn't connected: " + mCurrentDevice);
+            Log.w(TAG, "onAudioDevicesAdded: Device isn't connected: " + mCurrentDevice);
             return;
         }
 
