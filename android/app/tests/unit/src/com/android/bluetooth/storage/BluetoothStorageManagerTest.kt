@@ -23,11 +23,14 @@ import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
 import android.bluetooth.BluetoothSinkAudioPolicy
 import android.content.Context
 import android.content.pm.PackageManager
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.TestUtils.mockGetRemoteDevice
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
+import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -45,13 +48,14 @@ import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.anyString
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.whenever
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4
+import platform.test.runner.parameterized.Parameters
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(ParameterizedAndroidJunit4::class)
 @ExperimentalCoroutinesApi
-class BluetoothStorageManagerTest {
-
+class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @get:Rule val mockitoRule = MockitoRule()
-
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val tempFolder = TemporaryFolder()
 
     @Mock private lateinit var adapterService: AdapterService
@@ -102,25 +106,51 @@ class BluetoothStorageManagerTest {
     @Test
     fun testSetAndGetCustomMetadata() =
         runTest(testDispatcher) {
+            doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
             val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
             val value = "Test Manufacturer".toByteArray()
 
             assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
 
-            storageManager.setCustomMetadata(device1, key, value)
+            assertThat(storageManager.setCustomMetadata(device1, key, value)).isTrue()
 
             assertThat(storageManager.getCustomMetadata(device1, key)).isEqualTo(value)
+        }
+
+    @Test
+    @EnableFlags(Flags.FLAG_STORAGE_PREVENT_CUSTOM_METADATA_ON_UNBONDED_DEVICE)
+    fun setCustomMetadata_twice_refustToChangeDatabase() =
+        runTest(testDispatcher) {
+            doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
+            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+            val value = "Test Manufacturer".toByteArray()
+
+            assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
+            assertThat(storageManager.setCustomMetadata(device1, key, value)).isTrue()
+
+            assertThat(storageManager.setCustomMetadata(device1, key, value)).isFalse()
+        }
+
+    @Test
+    @EnableFlags(Flags.FLAG_STORAGE_PREVENT_CUSTOM_METADATA_ON_UNBONDED_DEVICE)
+    fun setCustomMetadata_onUnknownDevice_refuseToChangeDatabase() =
+        runTest(testDispatcher) {
+            doReturn(arrayOf<BluetoothDevice>()).whenever(adapterService).bondedDevices
+            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+            val value = "Test Manufacturer".toByteArray()
+
+            assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
+
+            assertThat(storageManager.setCustomMetadata(device1, key, value)).isFalse()
+
+            assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
         }
 
     @Test
     fun setCustomMetadata_withEmptyValue_removesMetadata() =
         runTest(testDispatcher) {
             val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
-            val value = "Test Manufacturer".toByteArray()
-
-            // Set an initial value for the metadata
-            storageManager.setCustomMetadata(device1, key, value)
-            assertThat(storageManager.getCustomMetadata(device1, key)).isEqualTo(value)
+            testSetAndGetCustomMetadata()
 
             // Set an empty byte array, which should remove the metadata
             storageManager.setCustomMetadata(device1, key, byteArrayOf())
@@ -226,6 +256,7 @@ class BluetoothStorageManagerTest {
     @Test
     fun getAudioPolicyMetadata_deviceInStorageWithoutHfpSettings_returnsDefault() =
         runTest(testDispatcher) {
+            doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
             // Scenario: The device is present in storage, but has no HFP settings.
             // We add it to storage by setting some other metadata.
             storageManager.setCustomMetadata(
@@ -253,4 +284,13 @@ class BluetoothStorageManagerTest {
 
             assertThat(retrievedPolicy).isEqualTo(testPolicy)
         }
+
+    companion object {
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams() =
+            FlagsWrapper.progressionOf(
+                Flags.FLAG_STORAGE_PREVENT_CUSTOM_METADATA_ON_UNBONDED_DEVICE
+            )
+    }
 }

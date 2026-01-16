@@ -12,6 +12,16 @@ flag {
 }
 
 flag {
+    name: "storage_prevent_custom_metadata_on_unbonded_device"
+    namespace: "bluetooth"
+    description: "If the device is unbonded and unknown, do not write custom metadata in the database"
+    bug: "476474347"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "unify_timeout_property"
     namespace: "bluetooth"
     description: "Unify the various timeout in the stack to allow slower hardware to still boot"
