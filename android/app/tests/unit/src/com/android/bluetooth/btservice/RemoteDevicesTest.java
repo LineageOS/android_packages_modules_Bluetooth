@@ -1278,4 +1278,108 @@ public class RemoteDevicesTest {
 
         return AllOf.allOf(matchers.toArray(new Matcher[0]));
     }
+
+    @Test
+    public void testAddDeviceProperties_addNewDevice() {
+        // GIVEN a new device address
+        String addressString = "00:11:22:33:44:55";
+        byte[] address = Utils.getBytesFromAddress(addressString);
+        int addressType = BluetoothDevice.ADDRESS_TYPE_PUBLIC;
+
+        // WHEN adding device properties
+        DeviceProperties prop = mRemoteDevices.addDeviceProperties(address, addressType);
+
+        // THEN properties are created and stored
+        assertThat(prop).isNotNull();
+        assertThat(prop.getDevice().getAddress()).isEqualTo(addressString);
+        assertThat(mRemoteDevices.getDeviceProperties(prop.getDevice())).isEqualTo(prop);
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // Add maxDevices devices
+        List<BluetoothDevice> devices = new ArrayList<>();
+        for (int i = 0; i < maxDevices; i++) {
+            String address = String.format("%02X:00:00:00:00:00", i);
+            DeviceProperties prop =
+                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+            devices.add(prop.getDevice());
+        }
+
+        // Verify all are present
+        for (BluetoothDevice device : devices) {
+            assertThat(mRemoteDevices.getDeviceProperties(device)).isNotNull();
+        }
+
+        // WHEN adding another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN the first device (LRU) should be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNull();
+        // And the new one should be present
+        assertThat(mRemoteDevices.getDevice(newAddress)).isNotNull();
+        // And the second device should still be present
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNotNull();
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction_bondedAndConnectedAreSkipped() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // Add maxDevices devices
+        List<BluetoothDevice> devices = new ArrayList<>();
+        for (int i = 0; i < maxDevices; i++) {
+            String address = String.format("%02X:00:00:00:00:00", i);
+            DeviceProperties prop =
+                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+            devices.add(prop.getDevice());
+            if (i == 0) {
+                prop.setBondState(BluetoothDevice.BOND_BONDED);
+            } else if (i == 1) {
+                prop.setConnected(TRANSPORT_BREDR, 123);
+            }
+        }
+
+        // WHEN adding another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN the first (bonded) and second (connected) devices should NOT be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNotNull();
+
+        // The third device should be evicted instead
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(2))).isNull();
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction_preferDevicesWithoutPackages() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // Add maxDevices devices
+        List<BluetoothDevice> devices = new ArrayList<>();
+        for (int i = 0; i < maxDevices; i++) {
+            String address = String.format("%02X:00:00:00:00:00", i);
+            DeviceProperties prop =
+                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+            devices.add(prop.getDevice());
+            if (i == 0) {
+                // First device has a package associated
+                prop.addPackage("com.test.package");
+            }
+        }
+
+        // WHEN adding the another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN the first device (with package) should NOT be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
+
+        // The second device (without package) should be evicted instead
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNull();
+    }
 }
