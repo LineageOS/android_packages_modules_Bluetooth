@@ -84,3 +84,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "impl_avrcp_bip_obex_abort"
+    namespace: "bluetooth"
+    description: "Implemented mandatory abort command for AvrcpBipObexServer"
+    bug: "475741322"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

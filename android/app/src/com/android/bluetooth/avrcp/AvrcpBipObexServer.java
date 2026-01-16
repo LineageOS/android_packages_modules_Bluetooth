@@ -21,6 +21,7 @@ import android.util.Log;
 import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
 import com.android.bluetooth.avrcpcontroller.BipImageProperties;
 import com.android.bluetooth.avrcpcontroller.ParseException;
+import com.android.bluetooth.flags.Flags;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
@@ -36,6 +37,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     private static final String TAG = AvrcpBipObexServer.class.getSimpleName();
 
     private final AvrcpCoverArtService mAvrcpCoverArtService;
+    private boolean mIsAborted = false;
 
     // AVRCP Controller BIP Image Initiator/Cover Art UUID - AVRCP 1.6 Section 5.14.2.1
     private static final byte[] BLUETOOTH_UUID_AVRCP_COVER_ART =
@@ -114,6 +116,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     @Override
     public int onGet(final Operation op) {
         debug("onGet");
+        mIsAborted = false;
         try {
             HeaderSet request = op.getReceivedHeader();
             if (request == null) return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
@@ -135,7 +138,13 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
         } catch (ParseException e) {
             return ResponseCodes.OBEX_HTTP_PRECON_FAILED;
         } catch (Exception e) {
-            return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
+            Log.e(TAG, "Exception occurred while handling request", e);
+            if (Flags.implAvrcpBipObexAbort() && mIsAborted) {
+                Log.d(TAG, "onGet Operation Aborted");
+                return ResponseCodes.OBEX_HTTP_OK;
+            } else {
+                return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
+            }
         }
     }
 
@@ -146,6 +155,11 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
 
     @Override
     public int onAbort(final HeaderSet request, HeaderSet reply) {
+        debug("onAbort");
+        if (Flags.implAvrcpBipObexAbort()) {
+            mIsAborted = true;
+            return ResponseCodes.OBEX_HTTP_OK;
+        }
         return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
     }
 
@@ -299,7 +313,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     }
 
     /** Send a response to the given operation using the given headers and bytes. */
-    private static int sendResponse(Operation op, HeaderSet replyHeaders, byte[] bytes) {
+    private int sendResponse(Operation op, HeaderSet replyHeaders, byte[] bytes) {
         if (op != null && bytes != null && replyHeaders != null) {
             OutputStream outStream = null;
             int maxChunkSize = 0;
@@ -309,7 +323,8 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
                 op.sendHeaders(replyHeaders); // Do this before getting chunk size
                 maxChunkSize = op.getMaxPacketSize();
                 outStream = op.openOutputStream();
-                while (bytesWritten < bytes.length) {
+                while (!(Flags.implAvrcpBipObexAbort() && mIsAborted)
+                        && bytesWritten < bytes.length) {
                     bytesToWrite = Math.min(maxChunkSize, bytes.length - bytesWritten);
                     outStream.write(bytes, bytesWritten, bytesToWrite);
                     bytesWritten += bytesToWrite;
@@ -327,7 +342,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
                 }
             }
             // If we didn't write everything then send the error code
-            if (bytesWritten != bytes.length) {
+            if (bytesWritten != bytes.length && !(Flags.implAvrcpBipObexAbort() && mIsAborted)) {
                 warn("Failed to write entire response");
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
             }

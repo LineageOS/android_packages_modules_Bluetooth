@@ -93,8 +93,6 @@ using bluetooth::log::fatal;
 using bluetooth::log::info;
 using bluetooth::log::warn;
 
-static MessageLoopThread management_thread("bt_stack_manager_thread");
-
 // If initialized, any of the bluetooth API functions can be called.
 // (e.g. turning logging on and off, enabling/disabling the stack, etc)
 static bool stack_is_initialized;
@@ -232,16 +230,12 @@ void stack_disable(ProfileStopCallback stopProfiles) {
   btif_dm_cleanup();
 
   future_await(local_hack_future);
-  local_hack_future = future_new();
-  hack_future = local_hack_future;
 
   bta_sys_disable();
   BTA_dm_on_hw_off();
 
   module_shut_down(get_local_module(BTIF_CONFIG_MODULE));
   module_shut_down(get_local_module(DEVICE_IOT_CONFIG_MODULE));
-
-  future_await(local_hack_future);
 
   gatt_free();
   do_in_main_thread(base::BindOnce(sdp_free));

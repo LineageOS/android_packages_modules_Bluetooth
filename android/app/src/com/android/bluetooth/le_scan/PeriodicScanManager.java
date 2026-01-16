@@ -21,9 +21,7 @@ import static com.android.bluetooth.Utils.callbackToApp;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.PeriodicAdvertisingReport;
 import android.bluetooth.le.ScanRecord;
@@ -57,7 +55,6 @@ public class PeriodicScanManager {
             Collections.synchronizedMap(new HashMap<>());
 
     private final AdapterService mAdapterService;
-    private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
     private final PeriodicScanNativeInterface mNativeInterface;
 
@@ -66,7 +63,6 @@ public class PeriodicScanManager {
             ScanController scanController,
             PeriodicScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
         var nativeCallback = new PeriodicScanNativeCallback(mAdapterService, this);
         mNativeInterface =
@@ -163,7 +159,7 @@ public class PeriodicScanManager {
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
-                                            mAdapter.getRemoteLeDevice(address, addressType),
+                                            mAdapterService.getRemoteDevice(address, addressType),
                                             sid,
                                             e.getValue().skip,
                                             e.getValue().timeout,
@@ -177,7 +173,7 @@ public class PeriodicScanManager {
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
-                                            mAdapter.getRemoteLeDevice(address, addressType),
+                                            mAdapterService.getRemoteDevice(address, addressType),
                                             sid,
                                             e.getValue().skip,
                                             e.getValue().timeout,
@@ -285,7 +281,7 @@ public class PeriodicScanManager {
                     try {
                         callback.onSyncEstablished(
                                 entry.getValue().id,
-                                mAdapter.getRemoteLeDevice(address, addressType),
+                                mAdapterService.getRemoteDevice(address, addressType),
                                 sid,
                                 entry.getValue().skip,
                                 entry.getValue().timeout,

@@ -48,21 +48,22 @@ class BluetoothService(context: Context) : SystemService(context) {
                 BluetoothSupervisor(context, looper, bluetoothComponent)
             }
 
-        runOnBmsThread {
+        launchOnServerThread {
             BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
         }
     }
 
-    // Run any lambda on the BluetoothSystemServer thread without waiting for its completion
-    private fun runOnBmsThread(block: suspend CoroutineScope.() -> Unit) = scope.launch { block() }
+    // Run lambda on the BluetoothSystemServer thread without waiting for completion
+    private fun launchOnServerThread(block: suspend CoroutineScope.() -> Unit) =
+        scope.launch { block() }
 
     override fun onStart() {
-        publishBinderService(SERVICE_NAME, BluetoothServiceBinder(looper, supervisor.api, context))
+        publishBinderService(SERVICE_NAME, ServerBinder(looper, supervisor.api, context))
     }
 
     override fun onBootPhase(phase: Int) {
         if (phase != SystemService.PHASE_BOOT_COMPLETED) return
-        runOnBmsThread { supervisor.onBootCompleted() }
+        launchOnServerThread { supervisor.onBootCompleted() }
     }
 
     override fun onUserStarting(user: TargetUser) {
@@ -89,7 +90,7 @@ class BluetoothService(context: Context) : SystemService(context) {
             }
             Log.i(TAG, "onUserStarting($user): Initializing for foreground user")
         }
-        runOnBmsThread { supervisor.onUserStarting(user.userHandle) }
+        launchOnServerThread { supervisor.onUserStarting(user.userHandle) }
     }
 
     override fun onUserStopping(user: TargetUser) {
@@ -98,7 +99,7 @@ class BluetoothService(context: Context) : SystemService(context) {
             return
         }
         Log.i(TAG, "onUserStopping($user)")
-        runOnBmsThread { supervisor.onUserStopping(user.userHandle) }
+        launchOnServerThread { supervisor.onUserStopping(user.userHandle) }
     }
 
     override fun onUserStopped(user: TargetUser) {
@@ -107,6 +108,6 @@ class BluetoothService(context: Context) : SystemService(context) {
 
     override fun onUserSwitching(from: TargetUser?, to: TargetUser) {
         Log.i(TAG, "onUserSwitching($from => $to)")
-        runOnBmsThread { supervisor.onUserSwitching(to.userHandle) }
+        launchOnServerThread { supervisor.onUserSwitching(to.userHandle) }
     }
 }

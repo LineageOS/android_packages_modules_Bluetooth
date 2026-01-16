@@ -236,7 +236,7 @@ impl BatteryService {
 
                 self.gatt.lock().unwrap().register_for_notification(client_id, addr, handle, true);
 
-                if self.battery_sets.get(&addr).is_none() {
+                if !self.battery_sets.contains_key(&addr) {
                     self.gatt.lock().unwrap().read_characteristic(client_id, addr, handle, 0);
                 }
             }
@@ -271,7 +271,7 @@ impl BatteryService {
         }
     }
 
-    fn set_battery_info(&mut self, remote_address: &RawAddress, value: &Vec<u8>) -> BatterySet {
+    fn set_battery_info(&mut self, remote_address: &RawAddress, value: &[u8]) -> BatterySet {
         let level: Vec<_> = value.iter().cloned().chain(iter::repeat(0_u8)).take(4).collect();
         let level = u32::from_le_bytes(level.try_into().unwrap());
         debug!("BAS received battery level for {}: {}", DisplayAddress(remote_address), level);
@@ -322,11 +322,8 @@ impl BatteryService {
         }
         self.battery_sets.remove(&remote_address);
         self.handles.remove(&remote_address);
-        match self.client_id {
-            Some(client_id) => {
-                self.gatt.lock().unwrap().client_disconnect(client_id, remote_address);
-            }
-            None => (),
+        if let Some(client_id) = self.client_id {
+            self.gatt.lock().unwrap().client_disconnect(client_id, remote_address);
         }
     }
 

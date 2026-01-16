@@ -27,7 +27,7 @@ fn debug_output_to_file(gen: &proc_macro2::TokenStream, filename: String) {
         .to_string();
 
     let path = Path::new(&filepath);
-    let mut file = File::create(&path).unwrap();
+    let mut file = File::create(path).unwrap();
     file.write_all(gen.to_string().as_bytes()).unwrap();
 }
 
@@ -102,14 +102,13 @@ pub fn btif_callbacks_dispatcher(attr: TokenStream, item: TokenStream) -> TokenS
     let mut fn_names = quote! {};
     for attr in ast.items {
         if let TraitItem::Method(m) = attr {
-            if m.attrs.len() != 1 {
+            let Some(attr) = m
+                .attrs
+                .iter()
+                .find(|attr| attr.path.get_ident().unwrap().to_string().eq("btif_callback"))
+            else {
                 continue;
-            }
-
-            let attr = &m.attrs[0];
-            if !attr.path.get_ident().unwrap().to_string().eq("btif_callback") {
-                continue;
-            }
+            };
 
             let attr_args = attr.parse_meta().unwrap();
             let btif_callback = if let Meta::List(meta_list) = attr_args {
@@ -161,7 +160,7 @@ pub fn btif_callbacks_dispatcher(attr: TokenStream, item: TokenStream) -> TokenS
     };
 
     // TODO: Have a simple framework to turn on/off macro-generated code debug.
-    debug_output_to_file(&gen, format!("out-{}.rs", fn_ident.to_string()));
+    debug_output_to_file(&gen, format!("out-{}.rs", fn_ident));
 
     gen.into()
 }
