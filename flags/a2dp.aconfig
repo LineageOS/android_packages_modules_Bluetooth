@@ -146,3 +146,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_handle_sa_reconfig_in_native"
+    namespace: "bluetooth"
+    description: "Handle Spatial Audio codec reconfiguration in Native instead of Java"
+    bug: "476380771"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
