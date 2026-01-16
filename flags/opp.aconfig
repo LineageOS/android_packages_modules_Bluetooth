@@ -8,13 +8,3 @@ flag {
     description: "New API to get the original intent in Bluetooth Device Picker"
     bug: "395796600"
 }
-
-flag {
-    name: "send_opp_device_picker_extra_intent"
-    namespace: "bluetooth"
-    description: "Send the original intent when opening Bluetooth device picker"
-    bug: "397852103"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
