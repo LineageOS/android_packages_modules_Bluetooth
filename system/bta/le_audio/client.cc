@@ -1299,13 +1299,6 @@ public:
   void UpdateCodecConfigPreferenceToHal(
           const bluetooth::le_audio::btle_audio_codec_config_t* input_codec_config,
           const bluetooth::le_audio::btle_audio_codec_config_t* output_codec_config) {
-    if (!com_android_bluetooth_flags_le_audio_update_config_preference_to_hal()) {
-      log::warn(
-              "SetCodecPriority skipped due to flag not set: "
-              "le_audio_update_config_preference_to_hal");
-      return;
-    }
-
     if (le_audio_sink_hal_client_ && input_codec_config) {
       le_audio_sink_hal_client_->SetCodecPriority(
               bluetooth::le_audio::utils::translateCodecTypeToLeAudioCodecId(
