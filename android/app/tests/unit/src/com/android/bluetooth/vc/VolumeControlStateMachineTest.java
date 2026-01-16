@@ -46,14 +46,11 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
@@ -71,7 +68,6 @@ import org.mockito.hamcrest.MockitoHamcrest;
 @RunWith(AndroidJUnit4.class)
 public class VolumeControlStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private VolumeControlService mService;
     @Mock private VolumeControlNativeInterface mNativeInterface;
@@ -220,7 +216,6 @@ public class VolumeControlStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void ignoreConnectState_onConnectingState() {
         generateConnectionMessageFromNative(STATE_CONNECTING, STATE_DISCONNECTED);
 
@@ -233,7 +228,6 @@ public class VolumeControlStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void handleMultipleConnectDisconnect_onDisconnectingState() {
         generateConnectionMessageFromNative(STATE_CONNECTED, STATE_DISCONNECTED);
 

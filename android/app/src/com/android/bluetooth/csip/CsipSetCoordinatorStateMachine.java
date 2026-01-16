@@ -32,7 +32,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -255,11 +254,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
             switch (message.what) {
                 case CONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
-                    } else {
-                        deferMessage(message);
-                    }
+                    Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
                 }
                 case CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
@@ -352,14 +347,10 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
             switch (message.what) {
                 case CONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        if (!hasDeferredMessages(CONNECT)) {
-                            deferMessage(message);
-                        } else {
-                            log("Connect already scheduled for " + mDevice);
-                        }
-                    } else {
+                    if (!hasDeferredMessages(CONNECT)) {
                         deferMessage(message);
+                    } else {
+                        log("Connect already scheduled for " + mDevice);
                     }
                 }
                 case CONNECT_TIMEOUT -> {
@@ -375,14 +366,10 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                     sendMessage(STACK_EVENT, disconnectEvent);
                 }
                 case DISCONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        log("Disconnect is ongoing for " + mDevice);
-                        if (hasDeferredMessages(CONNECT)) {
-                            log("Removing scheduled connect for " + mDevice);
-                            removeDeferredMessages(CONNECT);
-                        }
-                    } else {
-                        deferMessage(message);
+                    log("Disconnect is ongoing for " + mDevice);
+                    if (hasDeferredMessages(CONNECT)) {
+                        log("Removing scheduled connect for " + mDevice);
+                        removeDeferredMessages(CONNECT);
                     }
                 }
                 case STACK_EVENT -> {
