@@ -881,8 +881,6 @@ TEST(CodecConfigTest, test_tmap_and_gmap_target_latency) {
 }
 
 TEST(UtilsTest, test_type_mapping) {
-  com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);
-
   ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
                     LeAudioCodecConfiguration::kSampleRate384000),
             LE_AUDIO_SAMPLE_RATE_INDEX_384000HZ);

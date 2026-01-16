@@ -1550,11 +1550,8 @@ void LeAudioDeviceGroup::CigConfiguration::GetCisCount(LeAudioContextType contex
   }
 
   // For non-LC3 codecs like Opus, we should base the strategy calcualation based on the config
-  const bool derive_strategy_from_config =
-          current_config && com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type();
-  auto strategy = derive_strategy_from_config
-                          ? group_->FindGroupStrategyForConfig(current_config.get())
-                          : group_->GetGroupSinkStrategy();
+  auto strategy = current_config ? group_->FindGroupStrategyForConfig(current_config.get())
+                                 : group_->GetGroupSinkStrategy();
   log::debug(
           "{} {}, strategy {}, group avail sink ases: {}, "
           "group avail source ases {} "
