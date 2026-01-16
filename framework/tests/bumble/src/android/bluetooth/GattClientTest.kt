@@ -289,6 +289,12 @@ class GattClientTest {
         verify(gattCallback_2, timeout(5000).atLeast(1))
             .onMtuChanged(eq(gatt_2), eq(ANDROID_MTU), eq(GATT_SUCCESS))
 
+        // clear all invocations so that disconnect util expect
+        // right number callbacks on disconnects
+        clearInvocations(gattCallback_1)
+        clearInvocations(gattCallback_2)
+        clearInvocations(gattCallback_3)
+
         // disconnect both GATT clients
         disconnectAndWaitDisconnection(gatt_1, gattCallback_1)
         disconnectAndWaitDisconnection(gatt_2, gattCallback_2)
