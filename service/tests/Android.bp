@@ -41,7 +41,6 @@ android_test {
         "platform-test-annotations",
         "service-bluetooth-binder-aidl",
         "service-bluetooth-pre-jarjar",
-        "service-bluetooth.change-ids",
         "truth",
     ],
 
