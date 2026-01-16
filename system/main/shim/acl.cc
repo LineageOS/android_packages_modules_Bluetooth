@@ -960,8 +960,7 @@ struct shim::Acl::impl {
     }
 
     auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
-    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout() ||
-        !com_android_bluetooth_flags_remove_device_with_connection_manager()) {
+    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
       GetAclManagerLe()->RemoveFromBackgroundList(remote_address_with_type);
       connection_manager::on_removed_from_accept_list(
               ToRawAddress(remote_address_with_type.GetAddress()));
