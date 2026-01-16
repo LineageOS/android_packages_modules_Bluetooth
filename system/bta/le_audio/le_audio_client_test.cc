@@ -1656,7 +1656,6 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
     com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
     com::android::bluetooth::flags::provider_->le_audio_update_config_preference_to_hal(true);
     com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);

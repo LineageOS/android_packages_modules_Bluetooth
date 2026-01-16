@@ -147,16 +147,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_fix_stop_reconfiguration_timeout"
-    namespace: "bluetooth"
-    description: "Fix for stop the reconfiguration timeout"
-    bug: "406570963"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "dsa_use_codec_extensibility"
     namespace: "bluetooth"
     description: "Use the codec extensibility API for passing DSA parameters"

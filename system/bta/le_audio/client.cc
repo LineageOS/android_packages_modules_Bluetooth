@@ -5143,11 +5143,6 @@ public:
               if (!com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
                 audio_sender_state_ = AudioState::READY_TO_START;
               }
-              if (!com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-                  IsReconfigurationTimeoutRunning(active_group_id_)) {
-                StopReconfigurationTimeout(active_group_id_,
-                                           bluetooth::le_audio::types::kLeAudioDirectionSource);
-              }
             } else {
               CancelLocalAudioSourceStreamingRequest();
             }
@@ -5241,8 +5236,7 @@ public:
             }
             break;
         }
-        if (com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-            IsReconfigurationTimeoutRunning(active_group_id_)) {
+        if (IsReconfigurationTimeoutRunning(active_group_id_)) {
           StopReconfigurationTimeout(active_group_id_,
                                      bluetooth::le_audio::types::kLeAudioDirectionSource);
         }
@@ -5504,11 +5498,6 @@ public:
               if (!com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
                 audio_receiver_state_ = AudioState::READY_TO_START;
               }
-              if (!com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-                  IsReconfigurationTimeoutRunning(active_group_id_)) {
-                StopReconfigurationTimeout(active_group_id_,
-                                           bluetooth::le_audio::types::kLeAudioDirectionSink);
-              }
             } else {
               CancelLocalAudioSinkStreamingRequest();
             }
@@ -5598,8 +5587,7 @@ public:
             }
             break;
         }
-        if (com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-            IsReconfigurationTimeoutRunning(active_group_id_)) {
+        if (IsReconfigurationTimeoutRunning(active_group_id_)) {
           StopReconfigurationTimeout(active_group_id_,
                                      bluetooth::le_audio::types::kLeAudioDirectionSink);
         }
