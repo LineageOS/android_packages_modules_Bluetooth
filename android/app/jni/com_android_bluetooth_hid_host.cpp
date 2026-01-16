@@ -20,7 +20,6 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_transport.h>
-#include <com_android_bluetooth_flags.h>
 #include <jni.h>
 #include <nativehelper/scoped_local_ref.h>
 
@@ -183,19 +182,9 @@ static void initializeNative(JNIEnv* env, jobject object) {
   }
 
   if (sBluetoothHidInterface != NULL) {
-    if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
-      // `unlock`, as the cleanup() is a synchronous call internally, and may cause deadlock.
-      lock.unlock();
-    }
-
     log::warn("Cleaning up Bluetooth HID Interface before initializing...");
     sBluetoothHidInterface->cleanup();
     sBluetoothHidInterface = NULL;
-
-    if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
-      // `lock` again to keep the behavior intact.
-      lock.lock();
-    }
   }
 
   if (mCallbacksObj != NULL) {
@@ -233,19 +222,9 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
   }
 
   if (sBluetoothHidInterface != NULL) {
-    if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
-      // `unlock`, as the cleanup() is a synchronous call internally, and may cause deadlock.
-      lock.unlock();
-    }
-
     log::warn("Cleaning up Bluetooth HID Interface...");
     sBluetoothHidInterface->cleanup();
     sBluetoothHidInterface = NULL;
-
-    if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
-      // `lock` again to keep the behavior intact.
-      lock.lock();
-    }
   }
 
   if (mCallbacksObj != NULL) {

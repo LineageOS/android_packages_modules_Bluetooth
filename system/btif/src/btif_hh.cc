@@ -2215,7 +2215,7 @@ static void cleanup(void) {
     return;
   }
 
-  get_jni_thread()->DoInThreadSynchronously(&cleanup_in_jni_thread);
+  do_in_jni_thread(base::BindOnce(cleanup_in_jni_thread));
 }
 
 /*******************************************************************************
