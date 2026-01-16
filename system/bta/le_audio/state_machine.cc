@@ -2073,11 +2073,6 @@ private:
       return;
     }
 
-    if (!com_android_bluetooth_flags_leaudio_dynamic_data_path_change()) {
-      log::debug("Skipped due to leaudio_dynamic_data_path_change flag not being set.");
-      return;
-    }
-
     hci_data_direction_t direction =
             ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
                     ? hci_data_direction_t::HOST_TO_CONTROLLER
