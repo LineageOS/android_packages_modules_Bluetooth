@@ -232,9 +232,9 @@ uint8_t avrc_opcode_from_pdu(uint8_t pdu) {
  *
  * Function         avrc_is_valid_opcode
  *
- * Description      This function returns the opcode of the given pdu
+ * Description      Check if the given opcode is valid
  *
- * Returns          AVRC_OP_VENDOR, AVRC_OP_PASS_THRU or AVRC_OP_BROWSE
+ * Returns          returns true if it is valid
  *
  ******************************************************************************/
 bool avrc_is_valid_opcode(uint8_t opcode) {
