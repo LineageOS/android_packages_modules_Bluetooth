@@ -3052,7 +3052,8 @@ private:
       }
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
 
-    if (ids.empty()) {
+    std::vector<uint8_t> value;
+    if (!bluetooth::le_audio::client_parser::ascs::PrepareAseCtpRelease(ids, value)) {
       log::info("Nothing to send to {}", leAudioDevice->address_);
       return false;
     }
@@ -3060,8 +3061,6 @@ private:
     leAudioDevice->last_ase_ctp_command_sent =
             bluetooth::le_audio::client_parser::ascs::kCtpOpcodeRelease;
 
-    std::vector<uint8_t> value;
-    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpRelease(ids, value);
     WriteToControlPoint(leAudioDevice, value);
 
     log::info("group_id: {}, {}", leAudioDevice->group_id_, leAudioDevice->address_);

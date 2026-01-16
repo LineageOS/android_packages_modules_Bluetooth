@@ -1796,7 +1796,7 @@ TEST(LeAudioClientParserTest, testPrepareAseCtpReleaseEmpty) {
   std::vector<uint8_t> ase_ids;
   std::vector<uint8_t> value;
 
-  PrepareAseCtpRelease(ase_ids, value);
+  ASSERT_FALSE(PrepareAseCtpRelease(ase_ids, value));
   ASSERT_EQ(value.size(), 0u);
 }
 
@@ -1806,7 +1806,7 @@ TEST(LeAudioClientParserTest, testPrepareAseCtpReleaseSingle) {
 
   ase_ids.push_back(0x11);
 
-  PrepareAseCtpRelease(ase_ids, value);
+  ASSERT_TRUE(PrepareAseCtpRelease(ase_ids, value));
 
   uint8_t i = 0;
   ASSERT_NE(value.size(), 0u);
@@ -1823,7 +1823,7 @@ TEST(LeAudioClientParserTest, testPrepareAseCtpReleaseMultiple) {
   ase_ids.push_back(0x11);
   ase_ids.push_back(0x36);
 
-  PrepareAseCtpRelease(ase_ids, value);
+  ASSERT_TRUE(PrepareAseCtpRelease(ase_ids, value));
 
   uint8_t i = 0;
   ASSERT_NE(value.size(), 0u);
