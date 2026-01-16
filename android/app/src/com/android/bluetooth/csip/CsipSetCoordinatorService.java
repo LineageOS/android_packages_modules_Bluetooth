@@ -768,6 +768,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             return;
         }
 
+        Map<Integer, Integer> groupsRelatedToDevice = mDeviceGroupIdRankMap.get(device);
         mDeviceGroupIdRankMap.remove(device);
         for (Map.Entry<Integer, Set<BluetoothDevice>> entry :
                 mGroupIdToConnectedDevices.entrySet()) {
@@ -785,6 +786,16 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
                 return;
             }
             removeStateMachine(device);
+        }
+
+        if (Flags.leaudioFixReportingCsisMembers()) {
+            /* Make sure when removing bonding, there is no outstanding device in the mFoundSetMemberToGroupId map */
+            groupsRelatedToDevice.forEach(
+                    (groupId, rank) -> {
+                        if (getGroupDevicesOrdered(groupId).size() == 0) {
+                            mFoundSetMemberToGroupId.values().remove(groupId);
+                        }
+                    });
         }
     }
 
