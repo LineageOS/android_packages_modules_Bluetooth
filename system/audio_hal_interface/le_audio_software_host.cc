@@ -475,6 +475,9 @@ void LeAudioClientInterface::Source::SetCodecPriority(
   log::info("");
 }
 
+void LeAudioClientInterface::Source::UpdateBroadcastAudioConfigToHal(
+        ::le_audio::broadcast_offload_config const& /*config*/) {}
+
 void LeAudioClientInterface::Source::SuspendedForReconfiguration() {
   log::info("");
   // TODO
@@ -482,6 +485,15 @@ void LeAudioClientInterface::Source::SuspendedForReconfiguration() {
 
 void LeAudioClientInterface::Source::ReconfigurationComplete() { log::info(""); }
 void LeAudioClientInterface::Source::StreamSuspended() { log::info(""); }
+
+std::optional<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
+LeAudioClientInterface::Source::GetBroadcastConfig(
+        const std::vector<std::pair<::bluetooth::le_audio::types::LeAudioContextType,
+                                    uint8_t>>& /*subgroup_quality*/,
+        const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>& /*pacs*/)
+        const {
+  return std::nullopt;
+}
 
 size_t LeAudioClientInterface::Source::Write(const uint8_t* p_buf, uint32_t len) {
   bool ok = UIPC_Send(*lea_uipc, UIPC_CH_ID_AV_AUDIO, 0, p_buf, len);
@@ -535,38 +547,47 @@ bool LeAudioClientInterface::ReleaseSink(LeAudioClientInterface::Sink* sink) {
 }
 
 LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
-        StreamCallbacks stream_cb, bluetooth::common::MessageLoopThread* /*message_loop*/) {
-  if (unicast_source_ == nullptr) {
-    unicast_source_ = new Source();
+        StreamCallbacks stream_cb, bluetooth::common::MessageLoopThread* /*message_loop*/,
+        bool is_broadcasting_session_type) {
+  if (is_broadcasting_session_type && !LeAudioHalVerifier::SupportsLeAudioBroadcast()) {
+    log::warn("No support for broadcasting Le Audio");
+    return nullptr;
+  }
+
+  Source* source = is_broadcasting_session_type ? broadcast_source_ : unicast_source_;
+  if (source == nullptr) {
+    source = new Source(is_broadcasting_session_type);
+    (is_broadcasting_session_type ? broadcast_source_ : unicast_source_) = source;
   } else {
     log::warn("Source is already acquired");
     return nullptr;
   }
 
-  log::info("");
-
   host::le_audio::LeAudioSourceTransport::instance =
           new host::le_audio::LeAudioSourceTransport(std::move(stream_cb));
 
-  return unicast_source_;
+  return source;
 }
 
 bool LeAudioClientInterface::IsUnicastSourceAcquired() { return unicast_source_ != nullptr; }
 
+bool LeAudioClientInterface::IsBroadcastSourceAcquired() { return broadcast_source_ != nullptr; }
+
 bool LeAudioClientInterface::ReleaseSource(LeAudioClientInterface::Source* source) {
-  if (source != unicast_source_) {
+  if (source != unicast_source_ && source != broadcast_source_) {
     log::warn("Can't release not acquired source");
     return false;
   }
 
-  log::info("");
+  source->Cleanup();
 
-  if (host::le_audio::LeAudioSourceTransport::instance) {
-    source->Cleanup();
+  if (source == unicast_source_) {
+    delete (unicast_source_);
+    unicast_source_ = nullptr;
+  } else if (source == broadcast_source_) {
+    delete (broadcast_source_);
+    broadcast_source_ = nullptr;
   }
-
-  delete (unicast_source_);
-  unicast_source_ = nullptr;
 
   return true;
 }
