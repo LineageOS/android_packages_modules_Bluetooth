@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "idempotent_direct_connect_add"
-    namespace: "bluetooth"
-    description: "Make direct_connect_add idempotent"
-    bug: "409239278"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "allow_rearm_if_suspend_scan_params_used"
     namespace: "bluetooth"
     description: "When suspend scan params are used, allow re-arm connection even if device is in accept list"
