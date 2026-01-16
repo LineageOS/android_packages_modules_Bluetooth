@@ -637,17 +637,10 @@ public class ScanController {
             if (filter.matches(scanResult)) {
                 return true;
             }
-            if (Flags.originalAddressFilterMatch()) {
-                if (originalAddress != null
-                        && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())
-                        && filter.matchesWithoutAddress(scanResult)) {
-                    return true;
-                }
-            } else {
-                if (originalAddress != null
-                        && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())) {
-                    return true;
-                }
+            if (originalAddress != null
+                    && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())
+                    && filter.matchesWithoutAddress(scanResult)) {
+                return true;
             }
         }
         return false;
