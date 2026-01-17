@@ -60,10 +60,6 @@ interface BluetoothManagerServiceApi {
 
     fun factoryReset(): Boolean
 
-    fun setBtHciSnoopLogMode(mode: Int)
-
-    fun getBtHciSnoopLogMode(): Int
-
     fun isAutoOnSupported(): Boolean
 
     fun isAutoOnEnabled(): Boolean
