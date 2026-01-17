@@ -512,16 +512,18 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   }
 
   p_clcb->p_srcb->connected = true;
+
+  if (p_clcb->p_srcb->mtu == 0) {
+    log::verbose("MTU value being set to default MTU size");
+    p_clcb->p_srcb->mtu = GATT_DEF_BLE_MTU_SIZE;
+  }
+
   if (com::android::bluetooth::flags::gatt_conn_settings()) {
     if (p_clcb->p_srcb->mtu == GATT_DEF_BLE_MTU_SIZE) {
       // Set the default based on the APP's preference
       log::verbose("bd_addr: {}", p_clcb->bda);
       GATTC_SetDefaultMtu(p_clcb->bda);
     }
-  }
-
-  if (p_clcb->p_srcb->mtu == 0) {
-    p_clcb->p_srcb->mtu = GATT_DEF_BLE_MTU_SIZE;
   }
 
   tBTA_GATTC_RCB* p_clreg = p_clcb->p_rcb;
@@ -1264,10 +1266,14 @@ void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
         } else {
           log::info("Push callbacks to clients which are not notified before");
           for (auto& clcb : bta_gattc_cb.clcb_set) {
+            if (clcb.get()->in_use == false) {
+              continue;
+            }
             int reported_mtu = bta_gattc_cl_get_reported_mtu(clcb.get()->p_rcb->client_if);
             if (p_data->op_cmpl.p_cmpl && p_data->op_cmpl.p_cmpl->mtu != reported_mtu) {
               bta_gattc_cfg_mtu_cmpl(clcb.get(), &p_data->op_cmpl);
-              bta_gattc_cl_set_reported_mtu(p_clcb->p_rcb->client_if, p_data->op_cmpl.p_cmpl->mtu);
+              bta_gattc_cl_set_reported_mtu(clcb.get()->p_rcb->client_if,
+                                            p_data->op_cmpl.p_cmpl->mtu);
             } else {
               log::debug("skip reporting mtu, as it is same as before");
             }

@@ -2161,6 +2161,15 @@ public class AdapterService extends Service {
                 return;
             }
 
+            MetricsLogger.getInstance()
+                    .logBluetoothEvent(
+                            socket.getRemoteDevice(),
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__RFCOMM_SOCKET_JAVA_CONNECTION,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SUCCESS_ACCEPT,
+                            Binder.getCallingUid());
+
             listenerData.pendingSockets.add(socket);
             try {
                 listenerData.pendingIntent.send();

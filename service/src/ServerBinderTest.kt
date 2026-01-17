@@ -25,6 +25,7 @@ import android.content.Context
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.UserManager
+import android.permission.PermissionManager
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
@@ -38,9 +39,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.Shadows.shadowOf
@@ -54,6 +57,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     private val callback: IBluetoothManagerCallback.Stub = mock()
     private val tokenBinder: IBinder = mock()
     private val api: BluetoothManagerServiceApi = mock()
+    private val permissionManager: PermissionManager = mock()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val application = ApplicationProvider.getApplicationContext<Application>()
@@ -68,7 +72,11 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
         BluetoothComponentTest.setup()
         BluetoothRestrictionTest.setup()
 
-        binder = ServerBinder(looper, api, context)
+        doReturn(PermissionManager.PERMISSION_HARD_DENIED)
+            .whenever(permissionManager)
+            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
+
+        binder = ServerBinder(looper, api, context, permissionManager)
     }
 
     @Test
@@ -154,7 +162,12 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
         BluetoothRestrictionTest.allowBluetooth()
     }
 
-    private fun grantConnect() = shadowOf(application).grantPermissions(BLUETOOTH_CONNECT)
+    private fun grantConnect() {
+        shadowOf(application).grantPermissions(BLUETOOTH_CONNECT)
+        doReturn(PermissionManager.PERMISSION_GRANTED)
+            .whenever(permissionManager)
+            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
+    }
 
     private fun grantPrivileged() = shadowOf(application).grantPermissions(BLUETOOTH_PRIVILEGED)
 

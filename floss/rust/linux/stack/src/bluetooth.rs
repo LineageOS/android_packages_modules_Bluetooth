@@ -1531,9 +1531,6 @@ pub(crate) trait BtifBluetoothCallbacks {
     ) {
     }
 
-    #[btif_callback(LeRandCallback)]
-    fn le_rand_cb(&mut self, random: u64) {}
-
     #[btif_callback(PinRequest)]
     fn pin_request(
         &mut self,

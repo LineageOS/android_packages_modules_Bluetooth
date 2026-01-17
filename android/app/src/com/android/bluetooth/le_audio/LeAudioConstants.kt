@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-/*
- * Generated mock file from original source file
- *   Functions generated:5
- */
+package com.android.bluetooth.le_audio
 
-#include "stack/include/sdp_api.h"
-#include "test/common/mock_functions.h"
+import android.os.ParcelUuid
 
-void sdp_free(void) { inc_func_call_count(__func__); }
-void sdp_init(void) { inc_func_call_count(__func__); }
+/** Constants for LE Audio Service. */
+object LeAudioConstants {
+    @JvmField
+    val BAAS_UUID: ParcelUuid = ParcelUuid.fromString("00001852-0000-1000-8000-00805F9B34FB")
+
+    const val INVALID_BROADCAST_ID: Int = -1
+}

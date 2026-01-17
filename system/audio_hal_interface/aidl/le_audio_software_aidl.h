@@ -225,6 +225,11 @@ public:
   void LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, uint8_t bit_rate,
                                       uint8_t channels_count, uint32_t data_interval);
 
+  void LeAudioSetBroadcastConfig(
+          const ::bluetooth::le_audio::broadcast_offload_config& offload_config);
+
+  const LeAudioBroadcastConfiguration& LeAudioGetBroadcastConfig();
+
   bool IsRequestCompletedAfterUpdate(
           const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>&
                   lambda,
@@ -236,8 +241,10 @@ public:
   void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSourceTransport* instance_unicast_ = nullptr;
+  static inline LeAudioSourceTransport* instance_broadcast_ = nullptr;
 
   static inline BluetoothAudioSourceClientInterface* interface_unicast_ = nullptr;
+  static inline BluetoothAudioSourceClientInterface* interface_broadcast_ = nullptr;
 
 private:
   LeAudioTransport* transport_;

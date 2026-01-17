@@ -242,6 +242,8 @@ protected:
           ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
 
   /* Use to simulated error status on Cis creation */
+  int num_of_simulated_cis_events_;
+  uint8_t remove_cig_simulated_status_;
   bool overwrite_cis_status_;
   bool use_cis_retry_cnt_;
   int retry_cis_established_cnt_;
@@ -279,6 +281,9 @@ protected:
   std::vector<std::pair<RawAddress, test_presentation_delay_t>>
           test_remote_source_presentation_delay_vec_;
 
+  std::vector<std::pair<RawAddress, uint16_t>> test_remote_sink_max_transport_latency_vec_;
+  std::vector<std::pair<RawAddress, uint16_t>> test_remote_source_max_transport_latency_vec_;
+
   /* Needed for tests when one set member is bonded */
   int overrided_group_size_;
 
@@ -297,7 +302,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
             true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
@@ -312,6 +316,7 @@ protected:
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<bluetooth::hci::testing::MockController>();
 
+    remove_cig_simulated_status_ = 0;
     overwrite_cis_status_idx_ = 0;
     use_cis_retry_cnt_ = false;
     retry_cis_established_cnt_ = 0;
@@ -332,6 +337,9 @@ protected:
 
     test_remote_sink_presentation_delay_vec_.clear();
     test_remote_source_presentation_delay_vec_.clear();
+
+    test_remote_sink_max_transport_latency_vec_.clear();
+    test_remote_source_max_transport_latency_vec_.clear();
 
     LeAudioGroupStateMachine::Initialize(&mock_callbacks_, iso_client_handle_);
 
@@ -454,6 +462,19 @@ protected:
     }
   }
 
+  void setTestMaxTransportLatency(uint16_t max_transport_latency,
+                                  RawAddress addr = RawAddress::kEmpty,
+                                  uint8_t direction = types::kLeAudioDirectionBoth) {
+    if (direction & types::kLeAudioDirectionSink) {
+      test_remote_sink_max_transport_latency_vec_.push_back(
+              std::make_pair(addr, max_transport_latency));
+    }
+    if (direction & types::kLeAudioDirectionSource) {
+      test_remote_source_max_transport_latency_vec_.push_back(
+              std::make_pair(addr, max_transport_latency));
+    }
+  }
+
   void HandleCtpOperation(LeAudioDevice* device, std::vector<uint8_t> value, GATT_WRITE_OP_CB cb,
                           void* cb_data) {
     auto opcode = value[0];
@@ -546,7 +567,7 @@ protected:
                 [](LeAudioDeviceGroup* group, LeAudioGroupStateMachine* state_machine, int status) {
                   state_machine->ProcessHciNotifOnCigRemove(status, group);
                 },
-                group.get(), LeAudioGroupStateMachine::Get(), 0));
+                group.get(), LeAudioGroupStateMachine::Get(), remove_cig_simulated_status_));
       }
     });
 
@@ -1537,6 +1558,18 @@ protected:
                 ASSERT_EQ(ase->expected_state,
                           types::AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
 
+                std::vector<std::pair<RawAddress, test_presentation_delay_t>>
+                        directional_test_delays_vec;
+                std::vector<std::pair<RawAddress, uint16_t>> directional_test_max_tl_vec;
+
+                if (ase->direction == types::kLeAudioDirectionSink) {
+                  directional_test_delays_vec = test_remote_sink_presentation_delay_vec_;
+                  directional_test_max_tl_vec = test_remote_sink_max_transport_latency_vec_;
+                } else {
+                  directional_test_delays_vec = test_remote_source_presentation_delay_vec_;
+                  directional_test_max_tl_vec = test_remote_source_max_transport_latency_vec_;
+                }
+
                 // Skip target latency param
                 ase_p++;
 
@@ -1558,40 +1591,47 @@ protected:
                 // Some initial QoS settings
                 codec_configured_state_params.framing = ascs::kAseParamFramingUnframedSupported;
                 codec_configured_state_params.preferred_retrans_nb = 0x04;
-                codec_configured_state_params.max_transport_latency = 0x0020;
 
+                // Set test max tl
+                codec_configured_state_params.max_transport_latency = 0;
+                uint16_t default_max_tl = 0x0020;
+                int test_common_max_tl = -1;
+                for (auto [addr, max_tl] : directional_test_max_tl_vec) {
+                  if (addr == device->address_) {
+                    codec_configured_state_params.max_transport_latency = max_tl;
+                    break;
+                  }
+                  if (addr == RawAddress::kEmpty) {
+                    test_common_max_tl = max_tl;
+                  }
+                }
+                if (codec_configured_state_params.max_transport_latency == 0) {
+                  codec_configured_state_params.max_transport_latency =
+                          test_common_max_tl < 0 ? default_max_tl : test_common_max_tl;
+                }
+
+                // Set test presentation delays
                 test_presentation_delay_t default_delays = {0xABABAB, 0xCDCDCD,
                                                             types::kPresDelayNoPreference,
                                                             types::kPresDelayNoPreference};
                 test_presentation_delay_t* test_common_presentation_delays = nullptr;
                 test_presentation_delay_t* used_presentation_delays = nullptr;
 
-                std::vector<std::pair<RawAddress, test_presentation_delay_t>>
-                        directional_test_delays_vec;
-                if (ase->direction == types::kLeAudioDirectionSink) {
-                  directional_test_delays_vec = test_remote_sink_presentation_delay_vec_;
-                } else {
-                  directional_test_delays_vec = test_remote_source_presentation_delay_vec_;
+                for (auto [addr, delays] : directional_test_delays_vec) {
+                  if (addr == device->address_) {
+                    used_presentation_delays = &delays;
+                    break;
+                  }
+                  if (addr == RawAddress::kEmpty) {
+                    test_common_presentation_delays = &delays;
+                  }
                 }
 
-                if (directional_test_delays_vec.empty()) {
-                  used_presentation_delays = &default_delays;
-                } else {
-                  for (auto [addr, delays] : directional_test_delays_vec) {
-                    if (addr == device->address_) {
-                      used_presentation_delays = &delays;
-                      break;
-                    }
-                    if (addr == RawAddress::kEmpty) {
-                      test_common_presentation_delays = &delays;
-                    }
-                  }
-                  if (!used_presentation_delays) {
-                    /* Use either common test data of the default one. */
-                    used_presentation_delays = test_common_presentation_delays
-                                                       ? test_common_presentation_delays
-                                                       : &default_delays;
-                  }
+                if (!used_presentation_delays) {
+                  /* Use either common test data of the default one. */
+                  used_presentation_delays = test_common_presentation_delays
+                                                     ? test_common_presentation_delays
+                                                     : &default_delays;
                 }
 
                 codec_configured_state_params.pres_delay_min = used_presentation_delays->min;
@@ -3453,6 +3493,111 @@ TEST_F(StateMachineTest, testFailedStreamMultipleConversational) {
   ASSERT_EQ(2, get_func_call_count("alarm_cancel"));
   Mock::VerifyAndClearExpectations(&gatt_queue);
   Mock::VerifyAndClearExpectations(mock_iso_manager_);
+}
+
+TEST_F(StateMachineTest, testFailedStreamCreationAndCigRemovalDisallowed) {
+  /* Testing here CIS Failed to be established */
+  const auto context_type = kContextTypeMedia;
+  const auto leaudio_group_id = 4;
+  const auto num_devices = 2;
+
+  do_not_send_cis_establish_event_ = true;
+  remove_cig_simulated_status_ = HCI_ERR_COMMAND_DISALLOWED;
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group, 0, true, false);  // Make sure we stay in Enabling state
+  PrepareReceiverStartReadyHandler(group);
+  PrepareReleaseHandler(group);
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_iso_manager_, EstablishCis(_)).Times(AtLeast(1));
+
+  EXPECT_CALL(*mock_iso_manager_, DisconnectCis(_, _)).Times(1);
+  EXPECT_CALL(*mock_iso_manager_, RemoveCig(_, _)).Times(AtLeast(1));
+
+  InjectInitialIdleNotification(group);
+
+  auto* firstDevice = group->GetFirstDevice();
+
+  /* First device Control Point actions
+   * Codec Config
+   * QoS Config
+   * Enable
+   * Release
+   */
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(firstDevice->conn_id_, firstDevice->ctp_hdls_.val_hdl,
+                                              _, GATT_WRITE_NO_RSP, _, _))
+          .Times(4);
+  auto* secondDevice = group->GetNextDevice(firstDevice);
+
+  /* Second device Control Point actions
+   * Codec Config
+   * QoS Config
+   * Enable
+   * Release
+   */
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(secondDevice->conn_id_, secondDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(4);
+
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+
+  auto* firstDeviceAse = firstDevice->GetFirstActiveAseByDirection(types::kLeAudioDirectionSink);
+  ASSERT_FALSE(firstDeviceAse == nullptr);
+
+  log::debug("ASE STATE {}", common::ToString(firstDeviceAse->state));
+
+  // make sure the ASE is in correct state, required in this scenario
+  ASSERT_TRUE(firstDeviceAse->state == types::AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING);
+
+  log::debug("Inject CIS Established Event failed");
+  bluetooth::hci::iso_manager::cis_establish_cmpl_evt cis_establish_evt = {
+          .status = 0x1e,  // Invalid LMP Parameters / Invalid LL Parameters (0x1e),
+          .cig_id = leaudio_group_id,
+          .cis_conn_hdl = firstDeviceAse->cis_conn_hdl,
+  };
+
+  InjectHciNotifyCisEstablished(group, firstDevice, cis_establish_evt);
+  SyncOnMainLoop();
+
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
+
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
+  testing::Mock::VerifyAndClearExpectations(mock_iso_manager_);
+
+  log::debug("Start stream again - CIG was not removed and we should reuse it");
+
+  do_not_send_cis_establish_event_ = false;
+  PrepareEnableHandler(group);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(firstDevice->conn_id_, firstDevice->ctp_hdls_.val_hdl,
+                                              _, GATT_WRITE_NO_RSP, _, _))
+          .Times(3);
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(secondDevice->conn_id_, secondDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(3);
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _, _)).Times(0);
+
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
+  testing::Mock::VerifyAndClearExpectations(mock_iso_manager_);
 }
 
 TEST_F(StateMachineTest, testAttachToStreamWhileFirstDeviceIsStartingStream) {
@@ -8629,7 +8774,6 @@ TEST_F(StateMachineTest, StopStreamAfterConfigureToQoS) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSinkFirst) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -8706,7 +8850,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSinkFirst) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSourceFirst) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -8783,7 +8926,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSourceFirst) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSink) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -8875,7 +9017,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSink) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -8969,7 +9110,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndReleaseSource) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -9077,7 +9217,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndReleaseSource) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSink) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -9153,7 +9292,6 @@ TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSink) {
 }
 
 TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSource) {
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
   const auto context_type = kContextTypeLive;
   const auto leaudio_group_id = 6;
   const auto num_devices = 2;
@@ -12303,6 +12441,86 @@ TEST_F(StateMachineTest, testStreamDifferentRangeOfPresentationDelayMultipleDevi
                          {.sink = types::AudioContexts(context_type),
                           .source = types::AudioContexts(context_type)});
   Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, testCigCreateFailedDueToInvalidMaxTL) {
+  const auto context_type = kContextTypeMedia;
+  const auto leaudio_group_id = 3;
+  const auto num_devices = 1;
+
+  setTestMaxTransportLatency(0x0005);
+
+  // Prepare fake connected device in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+
+  ON_CALL(*mock_iso_manager_, CreateCig).WillByDefault(Return());
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  /*  1. Codec Config
+   *  2. Release
+   */
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(2);
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, EstablishCis(_)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath(_, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, RemoveIsoDataPath(_, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, DisconnectCis(_, _)).Times(0);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              OnStateMachineInvalidStatusCb(leaudio_group_id,
+                                            StateMachineInvalidStatus::FAILED_TO_CREATE_CIG));
+
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+
+  Mock::VerifyAndClearExpectations(mock_iso_manager_);
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, testSuccessfulCigCreateForMultipleDevicesWhenOneDeviceProvidedBadTL) {
+  auto context_type = kContextTypeMedia;
+  auto leaudio_group_id = 2;
+  auto num_devices = 2;
+
+  uint16_t invalid_tl = 0x01;
+  uint16_t test_tl = 0x00AA;
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+
+  /* One device provides invalid Max TL, but Android tries to create stream based on the TL provided
+   * by the other device from the CSIS group. */
+  auto* firstDevice = group->GetFirstDevice();
+  setTestMaxTransportLatency(invalid_tl, firstDevice->address_);
+
+  auto* secondDevice = group->GetNextDevice(firstDevice);
+  setTestMaxTransportLatency(test_tl, secondDevice->address_);
+
+  InjectInitialIdleNotification(group);
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _, _)).Times(1);
+
+  // Start the configuration and stream the content
+  StartStream_onMainloop(group, context_type,
+                         {.sink = types::AudioContexts(context_type),
+                          .source = types::AudioContexts(context_type)});
+  Mock::VerifyAndClearExpectations(mock_iso_manager_);
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  ASSERT_EQ(group->GetMaxTransportLatencyMtos(), test_tl);
 }
 
 }  // namespace internal

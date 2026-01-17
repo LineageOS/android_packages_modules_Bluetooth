@@ -479,6 +479,29 @@ public class BluetoothMapContentObserverTest {
     }
 
     @Test
+    public void testDeleteMessageMms_whenMessageIsUnlocked_returnsTrue() {
+        Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
+        BluetoothMapContentObserver.Msg msg =
+                createMsgWithTypeAndThreadId(Mms.MESSAGE_BOX_ALL, TEST_THREAD_ID);
+        map.put(TEST_HANDLE_ONE, msg);
+        mObserver.setMsgListMms(map, true);
+
+        MatrixCursor cursor = new MatrixCursor(new String[] {Mms.LOCKED, Mms.THREAD_ID});
+        cursor.addRow(new Object[] {0, TEST_THREAD_ID}); // 0 means unlocked
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
+        doReturn(TEST_PLACEHOLDER_INT)
+                .when(mMapMethodProxy)
+                .contentResolverUpdate(any(), any(), any(), any(), any());
+
+        assertThat(mObserver.deleteMessageMms(TEST_HANDLE_ONE)).isTrue();
+
+        verify(mMapMethodProxy).contentResolverUpdate(any(), any(), any(), any(), any());
+        assertThat(msg.threadId).isEqualTo(BluetoothMapContentObserver.DELETED_THREAD_ID);
+    }
+
+    @Test
     public void testDeleteMessageMms_whenMessageIsLocked_returnsFalse() {
         // Setup a message in the observer's internal list
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
@@ -554,6 +577,43 @@ public class BluetoothMapContentObserverTest {
         assertThat(mObserver.deleteMessageSms(TEST_HANDLE_ONE)).isTrue();
 
         assertThat(mObserver.getMsgListSms().get(TEST_HANDLE_ONE)).isNull();
+    }
+
+    @Test
+    public void testDeleteMessageSms_whenMessageIsLocked_returnsFalse() {
+        MatrixCursor cursor = new MatrixCursor(new String[] {Sms.LOCKED, Sms.THREAD_ID});
+        cursor.addRow(new Object[] {1, TEST_THREAD_ID}); // 1 means locked
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
+
+        assertThat(mObserver.deleteMessageSms(TEST_HANDLE_ONE)).isFalse();
+
+        verify(mMapMethodProxy, never()).contentResolverUpdate(any(), any(), any(), any(), any());
+        verify(mMapMethodProxy, never()).contentResolverDelete(any(), any(), any(), any());
+    }
+
+    @Test
+    public void testDeleteMessageSms_whenMessageIsUnlocked_returnsTrue() {
+        Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
+        BluetoothMapContentObserver.Msg msg =
+                createMsgWithTypeAndThreadId(Sms.MESSAGE_TYPE_ALL, TEST_THREAD_ID);
+        map.put(TEST_HANDLE_ONE, msg);
+        mObserver.setMsgListSms(map, true);
+
+        MatrixCursor cursor = new MatrixCursor(new String[] {Sms.LOCKED, Sms.THREAD_ID});
+        cursor.addRow(new Object[] {0, TEST_THREAD_ID}); // 0 means unlocked
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
+        doReturn(TEST_PLACEHOLDER_INT)
+                .when(mMapMethodProxy)
+                .contentResolverUpdate(any(), any(), any(), any(), any());
+
+        assertThat(mObserver.deleteMessageSms(TEST_HANDLE_ONE)).isTrue();
+
+        verify(mMapMethodProxy).contentResolverUpdate(any(), any(), any(), any(), any());
+        assertThat(msg.threadId).isEqualTo(BluetoothMapContentObserver.DELETED_THREAD_ID);
     }
 
     @Test

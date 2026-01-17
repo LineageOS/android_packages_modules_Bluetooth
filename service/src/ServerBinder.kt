@@ -29,6 +29,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.permission.PermissionManager
 import android.sysprop.BluetoothProperties
 import com.android.bluetooth.flags.Flags
 import java.io.FileDescriptor
@@ -61,11 +62,15 @@ private fun getCallerIdentity(source: AttributionSource): String =
         }
     }
 
-class ServerBinder(looper: Looper, private val api: BluetoothManagerServiceApi, context: Context) :
-    IBluetoothManager.Stub() {
+class ServerBinder(
+    looper: Looper,
+    private val api: BluetoothManagerServiceApi,
+    context: Context,
+    permissionManager: PermissionManager = context.getSystemService(PermissionManager::class.java)!!,
+) : IBluetoothManager.Stub() {
 
     private val serviceDispatcher = Handler(looper).asCoroutineDispatcher()
-    private val checker = PermissionChecker(context)
+    private val checker = PermissionChecker(context, permissionManager)
 
     private fun <T> runOnServerThread(block: suspend () -> T): T {
         // Blocks the current Binder thread  until the coroutine completes

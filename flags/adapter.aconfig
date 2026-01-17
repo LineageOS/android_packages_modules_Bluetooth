@@ -77,16 +77,6 @@ flag {
 }
 
 flag {
-    name: "ignore_multiple_connect_request_in_bt_services"
-    namespace: "bluetooth"
-    description: "Ignore multiple connect request in BT Services"
-    bug: "429143534"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "consistent_battery_level"
     namespace: "bluetooth"
     description: "Do not reset battey level from BAS to prevent battey level fluctuation"
@@ -114,3 +104,12 @@ flag {
     }
 }
 
+flag {
+  name: "check_set_event_mask_p2_support_before_writing"
+  namespace: "bluetooth"
+  description: "Some controllers might not support the command Set event mask page 2. Check the local capabilities before sending."
+  bug: "475438075"
+  metadata {
+        purpose: PURPOSE_BUGFIX
+  }
+}

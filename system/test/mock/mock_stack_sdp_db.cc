@@ -20,7 +20,6 @@
  */
 
 #include "stack/sdp/internal/sdp_api.h"
-#include "stack/sdp/sdpint.h"
 #include "test/common/mock_functions.h"
 
 bool SDP_AddAdditionProtoLists(uint32_t /* handle */, uint16_t /* num_elem */,
@@ -66,20 +65,6 @@ bool SDP_AddUuidSequence(uint32_t /* handle */, uint16_t /* attr_id */, uint16_t
 bool SDP_DeleteRecord(uint32_t /* handle */) {
   inc_func_call_count(__func__);
   return false;
-}
-const tSDP_ATTRIBUTE* sdp_db_find_attr_in_rec(const tSDP_RECORD* /* p_rec */,
-                                              uint16_t /* start_attr */, uint16_t /* end_attr */) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-tSDP_RECORD* sdp_db_find_record(uint32_t /* handle */) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-const tSDP_RECORD* sdp_db_service_search(const tSDP_RECORD* /* p_rec */,
-                                         const tSDP_UUID_SEQ* /* p_seq */) {
-  inc_func_call_count(__func__);
-  return nullptr;
 }
 uint32_t SDP_CreateRecord(void) {
   inc_func_call_count(__func__);

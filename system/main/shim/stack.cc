@@ -147,50 +147,56 @@ void Stack::StartEverything() {
     stack_thread_ = new os::Thread("gd_stack_thread", os::Thread::Priority::REAL_TIME);
     stack_handler_ = new os::Handler(stack_thread_);
 
-    management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
-    management_handler_ = new Handler(management_thread_);
+    if (!com::android::bluetooth::flags::threading_remove_management_thread()) {
+      management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
+      management_handler_ = new Handler(management_thread_);
+    }
 
     WakelockManager::Get().Acquire();
   }
 
-  std::promise<void> promise;
-  auto future = promise.get_future();
-  management_handler_->Post(
-          common::BindOnce(&Stack::handle_start_up, common::Unretained(this), std::move(promise)));
-
-  std::chrono::milliseconds start_timeout;
-  if (!com::android::bluetooth::flags::unify_timeout_property()) {
-    start_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
+  if (com::android::bluetooth::flags::threading_remove_management_thread()) {
+    this->handle_start_up();
   } else {
-    if (android::sysprop::bluetooth::Hardware::degraded_performance_mode().value_or(false) ||
-        os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
-      log::warn("Running in degraded performance mode due to slow hardware");
-      start_timeout = std::chrono::milliseconds(8000);
-    } else if (bluetooth::os::GetSystemPropertyUint32("ro.build.version.sdk", 99) < 37) {
-      start_timeout = std::chrono::milliseconds(
-              os::GetSystemPropertyUint32("bluetooth.gd.start_timeout", 3000));
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    management_handler_->Post(common::BindOnce(&Stack::handle_start_up_old,
+                                               common::Unretained(this), std::move(promise)));
+
+    std::chrono::milliseconds start_timeout;
+    if (!com::android::bluetooth::flags::unify_timeout_property()) {
+      start_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
     } else {
-      start_timeout = std::chrono::milliseconds(3000);
+      if (android::sysprop::bluetooth::Hardware::degraded_performance_mode().value_or(false) ||
+          os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
+        log::warn("Running in degraded performance mode due to slow hardware");
+        start_timeout = std::chrono::milliseconds(8000);
+      } else if (bluetooth::os::GetSystemPropertyUint32("ro.build.version.sdk", 99) < 37) {
+        start_timeout = std::chrono::milliseconds(
+                os::GetSystemPropertyUint32("bluetooth.gd.start_timeout", 3000));
+      } else {
+        start_timeout = std::chrono::milliseconds(3000);
+      }
     }
-  }
 
-  auto init_status = future.wait_for(start_timeout);
+    auto init_status = future.wait_for(start_timeout);
 
-  log::info("init_status == {}", int(init_status));
+    log::info("init_status == {}", int(init_status));
 
-  if (init_status != std::future_status::ready) {
-    /* Crash stuck thread and print it's stack trace, so that we know why startup is taking too
-     * long */
-    management_thread_->Abort();
+    if (init_status != std::future_status::ready) {
+      /* Crash stuck thread and print it's stack trace, so that we know why startup is taking too
+       * long */
+      management_thread_->Abort();
 
-    /* Crashed thread should take whole stack with it, but main thread is being executed
-     * simultaneously. This sleep ensures that main thread doesn't execute any logic below, and
-     * nicely dies with rest of stack.  */
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+      /* Crashed thread should take whole stack with it, but main thread is being executed
+       * simultaneously. This sleep ensures that main thread doesn't execute any logic below, and
+       * nicely dies with rest of stack.  */
+      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-    /* We should already be dead because of the Abort above, this is just in case the sleep above
-     * was somehow too short */
-    log::assert_that(init_status == std::future_status::ready, "Can't start stack");
+      /* We should already be dead because of the Abort above, this is just in case the sleep above
+       * was somehow too short */
+      log::assert_that(init_status == std::future_status::ready, "Can't start stack");
+    }
   }
 
   {
@@ -229,31 +235,37 @@ void Stack::Stop() {
 
   WakelockManager::Get().Acquire();
 
-  std::promise<void> promise;
-  auto future = promise.get_future();
-  management_handler_->Post(
-          common::BindOnce(&Stack::handle_shut_down, common::Unretained(this), std::move(promise)));
-
-  std::chrono::milliseconds stop_timeout;
-  if (com::android::bluetooth::flags::unify_timeout_property()) {
-    stop_timeout = std::chrono::milliseconds(12000);
+  if (com::android::bluetooth::flags::threading_remove_management_thread()) {
+    this->handle_shut_down();
+    WakelockManager::Get().Release();
+    WakelockManager::Get().CleanUp();
   } else {
-    stop_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    management_handler_->Post(common::BindOnce(&Stack::handle_shut_down_old,
+                                               common::Unretained(this), std::move(promise)));
+
+    std::chrono::milliseconds stop_timeout;
+    if (com::android::bluetooth::flags::unify_timeout_property()) {
+      stop_timeout = std::chrono::milliseconds(12000);
+    } else {
+      stop_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
+    }
+
+    // This timeout is racing with the Kill from SystemServer, it should never fire here.
+    // The management_handler_ thread should be removed and this run synchronously instead
+    auto stop_status = future.wait_for(stop_timeout);
+
+    WakelockManager::Get().Release();
+    WakelockManager::Get().CleanUp();
+
+    log::assert_that(stop_status == std::future_status::ready, "Can't stop stack");
+
+    management_handler_->Clear();
+    management_handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+    delete management_handler_;
+    delete management_thread_;
   }
-
-  // This timeout is racing with the Kill from SystemServer, it should never fire here.
-  // The management_handler_ thread should be removed and this run synchronously instead
-  auto stop_status = future.wait_for(stop_timeout);
-
-  WakelockManager::Get().Release();
-  WakelockManager::Get().CleanUp();
-
-  log::assert_that(stop_status == std::future_status::ready, "Can't stop stack");
-
-  management_handler_->Clear();
-  management_handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
-  delete management_handler_;
-  delete management_thread_;
 
   delete stack_handler_;
   stack_handler_ = nullptr;
@@ -377,12 +389,16 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
   }
 }
 
-void Stack::handle_start_up(std::promise<void> promise) {
+void Stack::handle_start_up() { pimpl_ = std::make_unique<Stack::impl>(stack_handler_); }
+
+void Stack::handle_start_up_old(std::promise<void> promise) {
   pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
   promise.set_value();
 }
 
-void Stack::handle_shut_down(std::promise<void> promise) {
+void Stack::handle_shut_down() { pimpl_.reset(); }
+
+void Stack::handle_shut_down_old(std::promise<void> promise) {
   pimpl_.reset();
   promise.set_value();
 }

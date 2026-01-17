@@ -70,16 +70,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_dynamic_direction_opening"
-    namespace: "bluetooth"
-    description: "Enable direction only when needed"
-    bug: "412540131"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_config_profile_enabling"
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"
@@ -141,16 +131,6 @@ flag {
     namespace: "bluetooth"
     description: "use aggressive parameters for LE Audio device"
     bug: "400607635"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_fix_stop_reconfiguration_timeout"
-    namespace: "bluetooth"
-    description: "Fix for stop the reconfiguration timeout"
-    bug: "406570963"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

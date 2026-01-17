@@ -2436,15 +2436,16 @@ TEST_P(LeAudioAseConfigurationTest, test_reactivation_conversational) {
   group_->Activate(LeAudioContextType::CONVERSATIONAL, audio_contexts, ccid_lists);
 
   TestActiveAses();
-  ASSERT_NE(this->group_->cig.cises.size(), 0lu);
+  auto& cises = this->group_->cig.GetCises();
+  ASSERT_NE(cises.size(), 0lu);
 
   /* Verify ASEs assigned CISes by counting assigned to bi-directional CISes */
   int bi_dir_ases_count =
-          std::count_if(tws_headset->ases_.begin(), tws_headset->ases_.end(), [this](auto& ase) {
+          std::count_if(tws_headset->ases_.begin(), tws_headset->ases_.end(), [cises](auto& ase) {
             if (ase.cis_id == kInvalidCisId) {
               return false;
             }
-            return this->group_->cig.cises[ase.cis_id].type == CisType::CIS_TYPE_BIDIRECTIONAL;
+            return cises[ase.cis_id].type == CisType::CIS_TYPE_BIDIRECTIONAL;
           });
 
   /* Only two ASEs can be bonded to one bi-directional CIS */
@@ -2526,9 +2527,10 @@ TEST_P(LeAudioAseConfigurationTest, test_getting_cis_count) {
   group_->cig.GenerateCisIds(LeAudioContextType::MEDIA);
 
   /* Verify prepared CISes by counting generated entries */
-  int snk_cis_count = std::count_if(
-          this->group_->cig.cises.begin(), this->group_->cig.cises.end(),
-          [](auto& cis) { return cis.type == CisType::CIS_TYPE_UNIDIRECTIONAL_SINK; });
+  auto& cises = group_->cig.GetCises();
+  int snk_cis_count = std::count_if(cises.begin(), cises.end(), [](auto& cis) {
+    return cis.type == CisType::CIS_TYPE_UNIDIRECTIONAL_SINK;
+  });
 
   /* Two CIS should be prepared for dual dev expected set */
   ASSERT_EQ(snk_cis_count, 2);

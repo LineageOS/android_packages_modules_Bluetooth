@@ -343,26 +343,18 @@ final class HapClientStateMachine extends StateMachine {
 
             switch (message.what) {
                 case MESSAGE_CONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        if (!hasDeferredMessages(MESSAGE_CONNECT)) {
-                            deferMessage(message);
-                        } else {
-                            Log.w(TAG, mStateLog + "CONNECT already scheduled");
-                        }
-                    } else {
+                    if (!hasDeferredMessages(MESSAGE_CONNECT)) {
                         deferMessage(message);
+                    } else {
+                        Log.w(TAG, mStateLog + "CONNECT already scheduled");
                     }
                 }
                 case MESSAGE_DISCONNECT -> {
-                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
-                        if (hasDeferredMessages(MESSAGE_CONNECT)) {
-                            Log.w(TAG, mStateLog + "removing scheduled CONNECT");
-                            removeDeferredMessages(MESSAGE_CONNECT);
-                        } else {
-                            Log.w(TAG, mStateLog + "ignore DISCONNECT");
-                        }
+                    if (hasDeferredMessages(MESSAGE_CONNECT)) {
+                        Log.w(TAG, mStateLog + "removing scheduled CONNECT");
+                        removeDeferredMessages(MESSAGE_CONNECT);
                     } else {
-                        deferMessage(message);
+                        Log.w(TAG, mStateLog + "ignore DISCONNECT");
                     }
                 }
                 case MESSAGE_CONNECT_TIMEOUT -> {

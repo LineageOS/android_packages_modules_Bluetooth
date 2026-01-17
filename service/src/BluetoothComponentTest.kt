@@ -26,7 +26,6 @@ import android.content.pm.ServiceInfo
 import android.content.res.Resources
 import android.os.Process
 import android.platform.test.annotations.EnableFlags
-import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
@@ -68,27 +67,27 @@ class BluetoothComponentTest(flags: FlagsWrapper) {
         BluetoothComponent(context)
     }
 
-    @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
-    @RequiresFlagsEnabled(
-        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER
+    @EnableFlags(
+        Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG,
+        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER,
     )
     @Test(expected = IllegalStateException::class)
     fun `when system config is invalid - throw exception`() {
         setup("my.pkg.name")
     }
 
-    @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
-    @RequiresFlagsEnabled(
-        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER
+    @EnableFlags(
+        Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG,
+        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER,
     )
     @Test
     fun `when system config is missing - can create`() {
         setup("")
     }
 
-    @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
-    @RequiresFlagsEnabled(
-        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER
+    @EnableFlags(
+        Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG,
+        android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER,
     )
     @Test
     fun `when system config is invalid but safe mode is on - can create`() {
@@ -151,7 +150,10 @@ class BluetoothComponentTest(flags: FlagsWrapper) {
         @JvmStatic
         @Parameters(name = "{0}")
         fun getParams() =
-            FlagsWrapper.progressionOf(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+            FlagsWrapper.progressionOf(
+                android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER,
+                Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG,
+            )
     }
 }
 

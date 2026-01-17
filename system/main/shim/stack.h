@@ -95,8 +95,10 @@ private:
   os::Thread* management_thread_ = nullptr;
   os::Handler* management_handler_ = nullptr;
 
-  void handle_start_up(std::promise<void> promise);
-  void handle_shut_down(std::promise<void> promise);
+  void handle_start_up();
+  void handle_start_up_old(std::promise<void> promise);
+  void handle_shut_down();
+  void handle_shut_down_old(std::promise<void> promise);
 };
 
 }  // namespace shim

@@ -58,21 +58,28 @@ public:
 
     types::CigState GetState(void) const { return state_; }
     void SetState(bluetooth::le_audio::types::CigState state);
-    void GetCisCount(types::LeAudioContextType context_type, uint8_t& out_cis_count_bidir,
-                     uint8_t& out_cis_count_unidir_sink,
-                     uint8_t& out_cis_count_unidir_source) const;
     void GenerateCisIds(types::LeAudioContextType context_type);
+    void ClearCisIds(void) { cises.clear(); }
     bool AssignCisIds(LeAudioDevice* leAudioDevice);
     void AssignCisConnHandles(const std::vector<uint16_t>& conn_handles);
     void UnassignCis(LeAudioDevice* leAudioDevice, uint16_t conn_handle);
+    void UnassignAllCises(void);
+    void PrintCigState(void);
+    const std::vector<struct types::cis>& GetCises(void) const { return cises; }
+
     types::BidirectionalPair<bool> GetConnectedCisDirections(void);
-    std::vector<struct types::cis> cises;
 
   private:
+    void GetCisCount(types::LeAudioContextType context_type, uint8_t& out_cis_count_bidir,
+                     uint8_t& out_cis_count_unidir_sink,
+                     uint8_t& out_cis_count_unidir_source) const;
     uint8_t GetFirstFreeCisId(types::CisType cis_type) const;
 
     LeAudioDeviceGroup* group_;
     types::CigState state_;
+
+    /* Life time of cises is from GenerateCisIds() up to when CIG is removed.*/
+    std::vector<struct types::cis> cises;
   } cig;
 
   bool IsGroupConfiguredTo(const types::AudioSetConfiguration& cfg) {

@@ -363,11 +363,6 @@ public:
   }
 
   bool isDynamicDirectionsEnabled(LeAudioDeviceGroup* group) {
-    if (!com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-      log::debug("leaudio_dynamic_direction_opening is not enabled");
-      return false;
-    }
-
     if (group == nullptr) {
       log::debug("Not valid group");
       return false;
@@ -4846,11 +4841,7 @@ public:
       return;
     }
 
-    /* Without the flag, this shall be called when group is not streaming */
-    bool group_is_streaming = com_android_bluetooth_flags_leaudio_dynamic_direction_opening()
-                                      ? group->IsStreaming()
-                                      : false;
-    if (leAudioHealthStatus_ && !group_is_streaming) {
+    if (leAudioHealthStatus_ && !group->IsStreaming()) {
       leAudioHealthStatus_->AddStatisticForGroup(
               group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
     }
@@ -5132,23 +5123,13 @@ public:
       case AudioState::IDLE: {
         switch (audio_receiver_state_) {
           case AudioState::IDLE:
-            if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-              /* Let's set it before the OnAudioResume() as it is important in case group is already
-               * in QoS Configured state so the state machine can get enabled directions correctly.
-               */
-              audio_sender_state_ = AudioState::READY_TO_START;
-            }
+            /* Let's set it before the OnAudioResume() as it is important in case group is already
+             * in QoS Configured state so the state machine can get enabled directions correctly.
+             */
+            audio_sender_state_ = AudioState::READY_TO_START;
+
             /* Stream is not started. Try to do it.*/
-            if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-              if (!com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-                audio_sender_state_ = AudioState::READY_TO_START;
-              }
-              if (!com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-                  IsReconfigurationTimeoutRunning(active_group_id_)) {
-                StopReconfigurationTimeout(active_group_id_,
-                                           bluetooth::le_audio::types::kLeAudioDirectionSource);
-              }
-            } else {
+            if (!OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
               CancelLocalAudioSourceStreamingRequest();
             }
             break;
@@ -5241,8 +5222,7 @@ public:
             }
             break;
         }
-        if (com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-            IsReconfigurationTimeoutRunning(active_group_id_)) {
+        if (IsReconfigurationTimeoutRunning(active_group_id_)) {
           StopReconfigurationTimeout(active_group_id_,
                                      bluetooth::le_audio::types::kLeAudioDirectionSource);
         }
@@ -5494,22 +5474,11 @@ public:
       case AudioState::IDLE: {
         switch (audio_sender_state_) {
           case AudioState::IDLE:
-            if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-              /* Let's set it before the OnAudioResume() as it is important in case group is already
-               * in QoS Configured state so the state machine can get enabled directions correctly.
-               */
-              audio_receiver_state_ = AudioState::READY_TO_START;
-            }
-            if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
-              if (!com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
-                audio_receiver_state_ = AudioState::READY_TO_START;
-              }
-              if (!com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-                  IsReconfigurationTimeoutRunning(active_group_id_)) {
-                StopReconfigurationTimeout(active_group_id_,
-                                           bluetooth::le_audio::types::kLeAudioDirectionSink);
-              }
-            } else {
+            /* Let's set it before the OnAudioResume() as it is important in case group is already
+             * in QoS Configured state so the state machine can get enabled directions correctly.
+             */
+            audio_receiver_state_ = AudioState::READY_TO_START;
+            if (!OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
               CancelLocalAudioSinkStreamingRequest();
             }
             break;
@@ -5598,8 +5567,7 @@ public:
             }
             break;
         }
-        if (com_android_bluetooth_flags_leaudio_fix_stop_reconfiguration_timeout() &&
-            IsReconfigurationTimeoutRunning(active_group_id_)) {
+        if (IsReconfigurationTimeoutRunning(active_group_id_)) {
           StopReconfigurationTimeout(active_group_id_,
                                      bluetooth::le_audio::types::kLeAudioDirectionSink);
         }
@@ -6532,7 +6500,7 @@ public:
 
     auto group = aseGroups_.FindById(group_id);
     if (!isDynamicDirectionsEnabled(group)) {
-      log::debug("leaudio_dynamic_direction_opening is not enabled.");
+      log::debug("Dynamic Directions mode is not enabled.");
       if (group && group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
         log::info("group_id: {} is suspending.", group_id);
         return 0;

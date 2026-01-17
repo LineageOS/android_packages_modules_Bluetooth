@@ -31,6 +31,7 @@ namespace storage {
 
 LegacyConfigFile::LegacyConfigFile(std::string path) : path_(std::move(path)) {
   log::assert_that(!path_.empty(), "assert failed: !path_.empty()");
+  log::info("Config created with path parameter: {}", path_);
 }
 
 std::optional<ConfigCache> LegacyConfigFile::Read(size_t temp_devices_capacity) {

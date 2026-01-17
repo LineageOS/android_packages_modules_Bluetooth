@@ -26,6 +26,7 @@ import android.bluetooth.IBluetoothSocketManager;
 import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.ParcelFileDescriptor;
+import com.android.bluetooth.BluetoothStatsLog;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -71,6 +72,10 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                     leDeviceAddr = device.getAddress();
                 }
             }
+        }
+
+        if (type == BluetoothSocket.TYPE_RFCOMM) {
+            logRfcommConnectStartEvent(device);
         }
 
         Log.i(
@@ -130,6 +135,10 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
         }
 
         String brEdrAddress = mService.getBrEdrAddress(device);
+
+        if (type == BluetoothSocket.TYPE_RFCOMM) {
+            logRfcommConnectStartEvent(device);
+        }
 
         Log.i(
                 TAG,
@@ -308,5 +317,15 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             return null;
         }
         return ParcelFileDescriptor.adoptFd(fd);
+    }
+
+    private static void logRfcommConnectStartEvent(BluetoothDevice device) {
+        MetricsLogger.getInstance()
+                .logBluetoothEvent(
+                        device,
+                        BluetoothStatsLog
+                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__RFCOMM_SOCKET_JAVA_CONNECTION,
+                        BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__START,
+                        Binder.getCallingUid());
     }
 }

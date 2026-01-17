@@ -486,35 +486,35 @@ static bool get_cached_remote_name(const RawAddress& bd_addr, bt_bdname_t* p_rem
   return false;
 }
 
-static uint32_t btif_get_cod(const RawAddress* remote_bdaddr) {
+static uint32_t btif_get_cod(const RawAddress remote_bdaddr) {
   uint32_t remote_cod = 0;
-  if (!btif_storage_get_cod(*remote_bdaddr, &remote_cod)) {
+  if (!btif_storage_get_cod(remote_bdaddr, &remote_cod)) {
     remote_cod = 0;
   }
 
   return remote_cod;
 }
 
-static bool btif_check_cod(const RawAddress* remote_bdaddr, uint32_t cod) {
+static bool btif_check_cod(const RawAddress remote_bdaddr, uint32_t cod) {
   return (btif_get_cod(remote_bdaddr) & COD_DEVICE_MASK) == cod;
 }
 
-static bool btif_check_cod_phone(const RawAddress& bd_addr) {
-  return (btif_get_cod(&bd_addr) & PHONE_COD_MAJOR_CLASS_MASK) == (BTM_COD_MAJOR_PHONE << 8);
+static bool btif_check_cod_phone(const RawAddress bd_addr) {
+  return (btif_get_cod(bd_addr) & PHONE_COD_MAJOR_CLASS_MASK) == (BTM_COD_MAJOR_PHONE << 8);
 }
 
-bool btif_check_cod_hid(const RawAddress& bd_addr) {
-  return (btif_get_cod(&bd_addr) & COD_HID_MASK) == COD_HID_MAJOR;
+bool btif_check_cod_hid(const RawAddress bd_addr) {
+  return (btif_get_cod(bd_addr) & COD_HID_MASK) == COD_HID_MAJOR;
 }
 
-bool btif_check_cod_hid_major(const RawAddress& bd_addr, uint32_t cod) {
-  uint32_t remote_cod = btif_get_cod(&bd_addr);
+bool btif_check_cod_hid_major(const RawAddress bd_addr, uint32_t cod) {
+  uint32_t remote_cod = btif_get_cod(bd_addr);
   return (remote_cod & COD_HID_MASK) == COD_HID_MAJOR &&
          (remote_cod & COD_HID_SUB_MAJOR) == (cod & COD_HID_SUB_MAJOR);
 }
 
-static bool btif_check_cod_le_audio(const RawAddress& bd_addr) {
-  return (btif_get_cod(&bd_addr) & COD_CLASS_LE_AUDIO) == COD_CLASS_LE_AUDIO;
+static bool btif_check_cod_le_audio(const RawAddress bd_addr) {
+  return (btif_get_cod(bd_addr) & COD_CLASS_LE_AUDIO) == COD_CLASS_LE_AUDIO;
 }
 
 /*****************************************************************************
@@ -685,7 +685,7 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
     ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device name", status);
   }
 
-  uint32_t old_cod = btif_get_cod(&bdaddr);
+  uint32_t old_cod = btif_get_cod(bdaddr);
 
   /* class of device */
   cod = devclass2uint(dev_class);
@@ -990,10 +990,9 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
      */
     if (!(is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) &&
         pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
-      if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) ||
-          btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
-          btif_check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
-          btif_check_cod(&bd_addr, COD_AV_HIFI_AUDIO) ||
+      if (btif_check_cod(bd_addr, COD_AV_HEADSETS) || btif_check_cod(bd_addr, COD_AV_HEADPHONES) ||
+          btif_check_cod(bd_addr, COD_AV_PORTABLE_AUDIO) ||
+          btif_check_cod(bd_addr, COD_AV_HIFI_AUDIO) ||
           btif_check_cod_hid_major(bd_addr, COD_HID_POINTING)) {
         /*  Check if this device can be auto paired  */
         if (!interop_match_addr(INTEROP_DISABLE_AUTO_PAIRING, bd_addr) &&
@@ -1488,7 +1487,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
              inferred device class based on the service uuids or appearance. We
              don't want this to replace the existing value below when we call
              btif_storage_add_remote_device */
-          uint32_t old_cod = btif_get_cod(&bdaddr);
+          uint32_t old_cod = btif_get_cod(bdaddr);
           if (cod == COD_UNCLASSIFIED && old_cod != 0) {
             cod = old_cod;
           }
@@ -2272,7 +2271,7 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, co
     return;
   }
 
-  uint32_t cod = btif_get_cod(&bd_addr);
+  uint32_t cod = btif_get_cod(bd_addr);
   if (cod != 0) {
     properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bd_addr), &bd_addr});
     properties.push_back(bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(uint32_t), &cod});

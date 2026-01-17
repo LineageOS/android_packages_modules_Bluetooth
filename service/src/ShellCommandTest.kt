@@ -25,6 +25,7 @@ import android.os.Binder
 import android.os.HandlerThread
 import android.os.ParcelFileDescriptor
 import android.os.Process
+import android.permission.PermissionManager
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
@@ -58,6 +59,7 @@ class ShellCommandTest(flags: FlagsWrapper, private val returnValue: Boolean) {
     @get:Rule val testName = TestName()
 
     private val api: BluetoothManagerServiceApi = mock()
+    private val permissionManager: PermissionManager = mock()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val application = ApplicationProvider.getApplicationContext<Application>()
@@ -76,7 +78,12 @@ class ShellCommandTest(flags: FlagsWrapper, private val returnValue: Boolean) {
     fun setUp() {
         BluetoothComponentTest.setup()
         BluetoothRestrictionTest.setup()
-        binder = ServerBinder(looper, api, context)
+
+        doReturn(PermissionManager.PERMISSION_HARD_DENIED)
+            .whenever(permissionManager)
+            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
+
+        binder = ServerBinder(looper, api, context, permissionManager)
 
         waitForStateCalledWith = null
         outPipe = ParcelFileDescriptor.createPipe()
@@ -194,7 +201,12 @@ class ShellCommandTest(flags: FlagsWrapper, private val returnValue: Boolean) {
         assertThat(waitForStateCalledWith).isNull()
     }
 
-    private fun grantConnect() = shadowOf(application).grantPermissions(BLUETOOTH_CONNECT)
+    private fun grantConnect() {
+        shadowOf(application).grantPermissions(BLUETOOTH_CONNECT)
+        doReturn(PermissionManager.PERMISSION_GRANTED)
+            .whenever(permissionManager)
+            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
+    }
 
     private fun grantPrivileged() = shadowOf(application).grantPermissions(BLUETOOTH_PRIVILEGED)
 

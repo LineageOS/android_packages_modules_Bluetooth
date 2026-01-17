@@ -45,9 +45,11 @@ import com.android.server.bluetooth.ChangeIds.RESTRICT_ENABLE_DISABLE
 
 private const val TAG = "PermissionChecker"
 
-internal class PermissionChecker(private val context: Context) {
+internal class PermissionChecker(
+    private val context: Context,
+    private val permissionManager: PermissionManager,
+) {
     private val userManager: UserManager = context.getSystemService(UserManager::class.java)!!
-    private val permissionManager = context.getSystemService(PermissionManager::class.java)!!
 
     // We need to allow SystemUi to bypass some 'foreground user check'
     // TODO: remove this hack and validate secondary user can still toggle via quick settings
@@ -84,7 +86,7 @@ internal class PermissionChecker(private val context: Context) {
     fun getAddressAllowed(source: AttributionSource) {
         enforceConnect(source, "getAddress")
         if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)
-        enforceLocalMacAddressPermission("getAddress")
+        enforceLocalMacAddress("getAddress")
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -100,7 +102,7 @@ internal class PermissionChecker(private val context: Context) {
     }
 
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    fun enforcePrivileged() = context.enforceCallingPermission(BLUETOOTH_PRIVILEGED, null)
+    fun enforcePrivileged() = context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
 
     @RequiresPermission(DUMP) fun enforceDump() = context.enforceCallingPermission(DUMP, null)
 
@@ -200,16 +202,23 @@ internal class PermissionChecker(private val context: Context) {
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
-    private fun enforceConnect(source: AttributionSource, apiName: String) {
-        val msg = "$apiName enforce BLUETOOTH_CONNECT. But permission is missing for source=$source"
-        context.enforceCallingPermission(BLUETOOTH_CONNECT, msg)
+    private fun enforceConnect(clientSource: AttributionSource, apiName: String) {
+        val perm = BLUETOOTH_CONNECT
+        val source =
+            AttributionSource.Builder(context.attributionSource).setNext(clientSource).build()
+        val msg = "$apiName enforce $perm. But permission is missing for source=$source"
+        when (permissionManager.checkPermissionForDataDeliveryFromDataSource(perm, source, msg)) {
+            PermissionManager.PERMISSION_GRANTED -> {} /* nothing to do, permission granted */
+            PermissionManager.PERMISSION_HARD_DENIED -> throw SecurityException(msg)
+            PermissionManager.PERMISSION_SOFT_DENIED -> throw BluetoothPermissionException(msg)
+        }
     }
 
     @RequiresPermission(LOCAL_MAC_ADDRESS)
-    private fun enforceLocalMacAddressPermission(apiName: String) {
+    private fun enforceLocalMacAddress(apiName: String) {
         val perm = LOCAL_MAC_ADDRESS
         val msg = "$apiName enforce $perm. But permission is missing"
-        if (context.checkCallingPermission(perm) == PackageManager.PERMISSION_DENIED) {
+        if (context.checkCallingOrSelfPermission(perm) == PackageManager.PERMISSION_DENIED) {
             throw BluetoothPermissionException(msg)
         }
     }
