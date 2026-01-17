@@ -59,6 +59,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.bluetooth.obex.IObexConnectionHandler;
 import com.android.bluetooth.obex.ObexServerSockets;
@@ -77,7 +78,8 @@ import java.util.Locale;
  * Performs the background Bluetooth OPP transfer. It also starts thread to accept incoming OPP
  * connection.
  */
-public class BluetoothOppService extends ProfileService implements IObexConnectionHandler {
+public class BluetoothOppService extends ProfileService
+        implements IObexConnectionHandler, AdapterService.BluetoothStateCallback {
     private static final String TAG = BluetoothOppService.class.getSimpleName();
 
     /** Owned providers and activities */
@@ -210,9 +212,13 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     BluetoothOppService(AdapterService adapterService, BluetoothOppPreference oppPreference) {
         super(BluetoothProfile.OPP, adapterService);
 
-        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        registerReceiver(mBluetoothReceiver, filter);
+        if (Flags.oppRemoveInternalReceiver()) {
+            getAdapterService().registerBluetoothStateCallback(getMainExecutor(), this);
+        } else {
+            IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+            registerReceiver(mBluetoothReceiver, filter);
+        }
 
         oppPreference.dump();
 
@@ -448,7 +454,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 getContentResolver().unregisterContentObserver(mObserver);
                 mObserver = null;
             }
-            unregisterReceiver(mBluetoothReceiver);
+            if (Flags.oppRemoveInternalReceiver()) {
+                getAdapterService().unregisterBluetoothStateCallback(this);
+            } else {
+                unregisterReceiver(mBluetoothReceiver);
+            }
         } catch (IllegalArgumentException e) {
             Log.w(TAG, "unregisterReceivers " + e.toString());
         }
@@ -510,6 +520,9 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
+                    if (Flags.oppRemoveInternalReceiver()) {
+                        throw new IllegalStateException("oppRemoveInternalReceiver is enabled");
+                    }
                     String action = intent.getAction();
 
                     if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
@@ -549,6 +562,40 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     }
                 }
             };
+
+    @Override
+    public void onBluetoothStateChange(int prevState, int newState) {
+        if (!Flags.oppRemoveInternalReceiver()) {
+            throw new IllegalStateException("oppRemoveInternalReceiver is not enabled");
+        }
+        if (newState != State.ON) {
+            return;
+        }
+        Log.v(TAG, "Bluetooth state changed: STATE_ON");
+        startListener();
+        // If this is within a sending process, continue the handle
+        // logic to display device picker dialog.
+        synchronized (this) {
+            if (!BluetoothOppManager.getInstance(getAdapterService()).mSendingFlag) {
+                return;
+            }
+            // reset the flags
+            BluetoothOppManager.getInstance(getAdapterService()).mSendingFlag = false;
+
+            Intent intent =
+                    new Intent(BluetoothDevicePicker.ACTION_LAUNCH)
+                            .putExtra(BluetoothDevicePicker.EXTRA_NEED_AUTH, false)
+                            .putExtra(
+                                    BluetoothDevicePicker.EXTRA_FILTER_TYPE,
+                                    BluetoothDevicePicker.FILTER_TYPE_TRANSFER)
+                            .putExtra(BluetoothDevicePicker.EXTRA_LAUNCH_PACKAGE, getPackageName())
+                            .putExtra(
+                                    BluetoothDevicePicker.EXTRA_LAUNCH_CLASS,
+                                    BluetoothOppReceiver.class.getName())
+                            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getAdapterService().startActivity(intent);
+        }
+    }
 
     private void updateFromProvider() {
         synchronized (BluetoothOppService.this) {

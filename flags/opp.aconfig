@@ -2,6 +2,16 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "opp_remove_internal_receiver"
+    namespace: "bluetooth"
+    description: "OppService is internal and shouldn't need to listen to public broadcast of state change"
+    bug: "476506745"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "opp_device_picker_extra_intent_apis"
     is_exported: true
     namespace: "bluetooth"
