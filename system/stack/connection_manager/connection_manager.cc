@@ -557,12 +557,7 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
     // app already trying to connect to this particular device
     if (info.doing_direct_conn.count(app_id)) {
       log::info("attempt from app_id=0x{:x} to {} already in progress", app_id, address_with_type);
-      if (com_android_bluetooth_flags_idempotent_direct_connect_add()) {
-        return true;
-      } else {
-        bluetooth::metrics::LogMetricLeConnectionRejected(address);
-        return false;
-      }
+      return true;
     }
 
     // This is to match existing GD connection manager behavior - if multiple apps try direct

@@ -315,7 +315,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       peripheral_latency = BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF;
       supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
-      /* if both side 4.1, or we are central device, send HCI command */
+      // If both side 4.1, or we are central device, send HCI command
       if (p_lcb->IsLinkRoleCentral() ||
           (bluetooth::shim::GetController()->SupportsBleConnectionParametersRequest() &&
            acl_peer_supports_ble_connection_parameters_request(p_lcb->remote_bd_addr))) {
@@ -330,11 +330,10 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
     }
   } else {
-    /* application allows to do update, if we were delaying one do it now */
+    // Application allows to do update, if we were delaying one do it now
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
-
-      /* If we find timeout for connection update config smaller than lower bound
-         because of current subrate factor, reset the subrate first */
+      // If we find timeout for connection update config smaller than lower bound because of current
+      // subrate factor, reset the subrate first
       if (com::android::bluetooth::flags::le_subrate_manager()) {
         if (p_lcb->SubrateFactor() > 1) {
           uint16_t timeout_bond =
@@ -351,7 +350,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
         }
       }
 
-      /* if both side 4.1, or we are central device, send HCI command */
+      // If both side 4.1, or we are central device, send HCI command
       if (p_lcb->IsLinkRoleCentral() ||
           (bluetooth::shim::GetController()->SupportsBleConnectionParametersRequest() &&
            acl_peer_supports_ble_connection_parameters_request(p_lcb->remote_bd_addr))) {
