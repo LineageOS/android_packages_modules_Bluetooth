@@ -301,7 +301,6 @@ protected:
   virtual void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
     com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
             true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
@@ -12019,9 +12018,6 @@ TEST_F(StateMachineTest, testStreamMultipleDsa) {
   const auto context_type = kContextTypeMedia;
   const auto leaudio_group_id = 4;
   const auto num_devices = 2;
-
-  // Enable flags
-  com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
 
   // Prepare multiple connected devices in a group
   auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);

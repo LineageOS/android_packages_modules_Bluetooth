@@ -374,11 +374,6 @@ public:
       return;
     }
 
-    if (!com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type()) {
-      log::verbose("Skipped due to disabled `leaudio_add_opus_hi_res_codec_type` flag.");
-      return;
-    }
-
     // Since `offloader_stream_maps` may not be populated yet due to CISes not yet being allocated
     // for the audio channels, we can send only the codec information now and update the stream map
     // later, when the CISes are
