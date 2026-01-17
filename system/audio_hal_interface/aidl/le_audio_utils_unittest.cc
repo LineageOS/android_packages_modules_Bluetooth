@@ -1292,6 +1292,29 @@ TEST(BluetoothAudioClientInterfaceAidlTest, testGetStackBroadcastConfigurationFr
 }
 
 TEST(BluetoothAudioClientInterfaceAidlTest,
+     testGetStackBroadcastConfigurationFromAidlFormatNulloptDataPath) {
+  // Prepare a standard broadcast configuration
+  auto [aidl_config, expected_stack_config] =
+          test_utils::PrepareReferenceBroadcastConfigurationLc3();
+
+  // Unset the optional data path configuration to test the default handling
+  aidl_config.dataPathConfiguration = std::nullopt;
+
+  // The stack configuration should be generated with a default data path
+  ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+          LeAudioDataPathConfiguration default_datapath_config{};
+  expected_stack_config.data_path =
+          bluetooth::audio::aidl::GetStackDataPathFromAidlFormat(default_datapath_config);
+
+  // Call the function under test
+  auto stack_config = GetStackBroadcastConfigurationFromAidlFormat(aidl_config);
+
+  // Verify the result
+  ASSERT_TRUE(stack_config.has_value());
+  ASSERT_EQ(stack_config.value(), expected_stack_config);
+}
+
+TEST(BluetoothAudioClientInterfaceAidlTest,
      testGetAidlLeAudioBroadcastConfigurationRequirementFromStackFormat) {
   auto [reference_aidl_requirements, stack_requirements] =
           test_utils::PrepareReferenceBroadcastRequirements();
