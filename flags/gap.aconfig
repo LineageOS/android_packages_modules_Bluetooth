@@ -33,16 +33,6 @@ flag {
 }
 
 flag {
-    name: "initial_conn_params_p1"
-    namespace: "bluetooth"
-    description: "Use aggressive connection parameters when <2 connections exist. go/initial-connection-parameter-optimization"
-    bug: "378595485"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "scan_controller_thread"
     namespace: "bluetooth"
     description: "Makes scan controller operations run on one thread."
@@ -71,30 +61,10 @@ flag {
 }
 
 flag {
-    name: "remove_device_with_connection_manager"
-    namespace: "bluetooth"
-    description: "Remove device through connection_manager to sync accept list"
-    bug: "405283189"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "preload_gatt_database"
     namespace: "bluetooth"
     description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
     bug: "407051373"
-}
-
-flag {
-    name: "service_rediscovery_fix"
-    namespace: "bluetooth"
-    description: "Fix handling service change with multiple reconnecting clients trying to discover services immediately after connection"
-    bug: "413723825"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {

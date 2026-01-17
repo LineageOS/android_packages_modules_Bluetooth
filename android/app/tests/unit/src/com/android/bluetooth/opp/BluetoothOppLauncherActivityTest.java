@@ -405,7 +405,6 @@ public class BluetoothOppLauncherActivityTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_SEND_OPP_DEVICE_PICKER_EXTRA_INTENT)
     public void onCreate_withActionSend_grantUriPermissionToNearbyComponent() {
         doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
         doReturn(PackageManager.PERMISSION_GRANTED)

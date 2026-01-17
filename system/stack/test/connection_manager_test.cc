@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include "stack/connection_manager/connection_manager.h"
 
 #include <base/bind_helpers.h>
@@ -166,13 +181,8 @@ TEST_F(BleConnectionManager, test_direct_connection_client) {
   EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _)).Times(1);
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
 
-  if (com_android_bluetooth_flags_idempotent_direct_connect_add()) {
-    // App already doing a direct connection, do nothing
-    EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
-  } else {
-    // App already doing a direct connection, attempt to re-add result in failure
-    EXPECT_FALSE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
-  }
+  // App already doing a direct connection, do nothing
+  EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
 
   // Client that don't do direct connection should fail attempt to stop it
   EXPECT_FALSE(direct_connect_remove(CLIENT2, address1));

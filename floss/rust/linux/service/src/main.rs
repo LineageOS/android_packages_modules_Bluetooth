@@ -2,6 +2,7 @@ use clap::{App, AppSettings, Arg};
 use dbus_projection::DisconnectWatcher;
 use dbus_tokio::connection;
 use futures::future;
+use libc;
 use nix::sys::signal;
 use std::error::Error;
 use std::sync::{Arc, Condvar, Mutex};
@@ -356,10 +357,9 @@ extern "C" fn handle_sigterm(_signum: i32) {
 /// Used to indicate controller needs reset
 extern "C" fn handle_sigusr1(_signum: i32) {
     log::info!("SIGUSR1 received");
-    if !try_cleanup_stack(true) {
-        log::info!("Skipped to handle SIGUSR1");
-        return;
+    // use _exit(0) to terminate the process immediately and avoid the unstable cleanup path in
+    // libbluetooth.
+    unsafe {
+        libc::_exit(0);
     }
-    log::info!("SIGUSR1 completed");
-    std::process::exit(0);
 }

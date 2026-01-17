@@ -999,25 +999,20 @@ public:
       }
     }
 
-    if (com::android::bluetooth::flags::initial_conn_params_p1()) {
-      if (prefer_relaxed_connection_interval) {
-        conn_interval_min = LeConnectionParameters::GetMinConnIntervalRelaxed();
-        conn_interval_max = LeConnectionParameters::GetMaxConnIntervalRelaxed();
-        log::debug("conn_interval_min={}, conn_interval_max={}", conn_interval_min,
-                   conn_interval_max);
-      } else {
-        size_t num_classic_acl_connections = classic_acl_count_provider_.GetAclCount();
-        size_t num_acl_connections = connections.size();
-
-        log::debug("ACL connection count: Classic={}, LE={}", num_classic_acl_connections,
-                   num_acl_connections);
-
-        choose_connection_mode(num_classic_acl_connections + num_acl_connections,
-                               &conn_interval_min, &conn_interval_max);
-      }
+    if (prefer_relaxed_connection_interval) {
+      conn_interval_min = LeConnectionParameters::GetMinConnIntervalRelaxed();
+      conn_interval_max = LeConnectionParameters::GetMaxConnIntervalRelaxed();
+      log::debug("conn_interval_min={}, conn_interval_max={}", conn_interval_min,
+                 conn_interval_max);
     } else {
-      conn_interval_min = os::GetSystemPropertyUint32(kPropertyMinConnInterval, kConnIntervalMin);
-      conn_interval_max = os::GetSystemPropertyUint32(kPropertyMaxConnInterval, kConnIntervalMax);
+      size_t num_classic_acl_connections = classic_acl_count_provider_.GetAclCount();
+      size_t num_acl_connections = connections.size();
+
+      log::debug("ACL connection count: Classic={}, LE={}", num_classic_acl_connections,
+                 num_acl_connections);
+
+      choose_connection_mode(num_classic_acl_connections + num_acl_connections, &conn_interval_min,
+                             &conn_interval_max);
     }
 
     uint16_t conn_latency = os::GetSystemPropertyUint32(kPropertyConnLatency, kConnLatency);
