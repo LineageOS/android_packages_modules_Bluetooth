@@ -23,7 +23,6 @@ import android.bluetooth.test_utils.BlockingBluetoothAdapter
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.os.SystemProperties
-import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -84,7 +83,6 @@ class ConnParamTest {
         host.close()
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.initial_conn_params_p1")
     @Test
     fun connParamsAreRelaxedAfterServiceDiscovery() {
         checkAggressiveConnectionWillBeUsed()
@@ -116,7 +114,6 @@ class ConnParamTest {
         disconnectAndWaitDisconnection(gatt, gattCallback)
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.initial_conn_params_p1")
     @Test
     fun connParamsAreRelaxedForBondedDevice_withBluetoothRestart() {
         checkAggressiveConnectionWillBeUsed()

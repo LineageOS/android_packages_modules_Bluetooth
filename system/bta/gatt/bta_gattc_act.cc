@@ -586,8 +586,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
           /* cache load failure, start discovery */
           bta_gattc_start_discover(p_clcb, NULL);
         } else {
-          if (com_android_bluetooth_flags_initial_conn_params_p1() &&
-              p_clcb->transport == BT_TRANSPORT_LE) {
+          if (p_clcb->transport == BT_TRANSPORT_LE) {
             log::info("Using cached database without robust caching.");
             bluetooth::stack::l2cap::get_interface().L2CA_LockBleConnParamsForServiceDiscovery(
                     p_clcb->p_srcb->server_bda, false);
