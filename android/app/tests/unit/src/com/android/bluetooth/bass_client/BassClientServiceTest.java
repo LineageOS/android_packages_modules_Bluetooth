@@ -86,6 +86,7 @@ import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
@@ -492,6 +493,8 @@ public class BassClientServiceTest {
 
         when(mCallback.asBinder()).thenReturn(mBinder);
         mBassClientService.registerCallback(mCallback);
+
+        assertThat(mBassClientService.mEncryptionStateReceiver).isNotNull();
     }
 
     @After
@@ -8741,5 +8744,44 @@ public class BassClientServiceTest {
         expect.that(msg.isPresent()).isTrue();
         expect.that(msg.orElse(null)).isNotNull();
         verify(sm1, never()).sendMessage(any());
+    }
+
+    @Test
+    public void testIsEncrypted() {
+        // Device does not exist/never been connected -> false
+        assertThat(mBassClientService.isEncrypted(getTestDevice(99))).isFalse();
+
+        // Simulate device connection
+        prepareConnectedDeviceGroup();
+
+        // Device connected -> no ACTION_ENCRYPTION_CHANGE broadcast -> isEncrypted() -> false
+        assertThat(mBassClientService.isEncrypted(mCurrentDevice)).isFalse();
+
+        // Simulate ACTION_ENCRYPTION_CHANGE broadcast with encryption disabled
+        Intent encryptionChangeIntentDisabled =
+                new Intent(BluetoothDevice.ACTION_ENCRYPTION_CHANGE);
+        encryptionChangeIntentDisabled.putExtra(BluetoothDevice.EXTRA_DEVICE, mCurrentDevice);
+        encryptionChangeIntentDisabled.putExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, false);
+        encryptionChangeIntentDisabled.putExtra(
+                BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE);
+        mBassClientService.mEncryptionStateReceiver.onReceive(
+                ApplicationProvider.getApplicationContext(), encryptionChangeIntentDisabled);
+        assertThat(mBassClientService.isEncrypted(mCurrentDevice)).isFalse();
+
+        // Simulate ACTION_ENCRYPTION_CHANGE broadcast with encryption enabled
+        Intent encryptionChangeIntentEnabled = new Intent(BluetoothDevice.ACTION_ENCRYPTION_CHANGE);
+        encryptionChangeIntentEnabled.putExtra(BluetoothDevice.EXTRA_DEVICE, mCurrentDevice);
+        encryptionChangeIntentEnabled.putExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true);
+        encryptionChangeIntentEnabled.putExtra(
+                BluetoothDevice.EXTRA_ENCRYPTION_STATUS, BluetoothStatusCodes.SUCCESS);
+        encryptionChangeIntentEnabled.putExtra(
+                BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE);
+        mBassClientService.mEncryptionStateReceiver.onReceive(
+                ApplicationProvider.getApplicationContext(), encryptionChangeIntentEnabled);
+        assertThat(mBassClientService.isEncrypted(mCurrentDevice)).isTrue();
+
+        // Device disconnected -> isEncrypted() -> false
+        injectDeviceDisconnection(mCurrentDevice);
+        assertThat(mBassClientService.isEncrypted(mCurrentDevice)).isFalse();
     }
 }
