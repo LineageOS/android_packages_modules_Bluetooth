@@ -30,6 +30,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
@@ -705,6 +706,7 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   auto p_link = allocate_link_for(bd_addr, transport);
   if (p_link == nullptr) {
     log::error("Unable to allocate device resources for new connection {}", link_spec);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BTA_DM_MAX_LINKS_REACHED);
     return;
   }
   log::info("Acl connected peer:{} transport:{} handle:{}", bd_addr, bt_transport_text(transport),
