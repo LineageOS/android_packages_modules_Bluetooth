@@ -347,7 +347,8 @@ bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
     }
     /* for LE link, always drop and re-open to ensure to get LE remote feature
      */
-    if (p_lcb->transport == BT_TRANSPORT_LE) {
+    if (!com::android::bluetooth::flags::donot_reuse_lecoc_ccbs() &&
+        p_lcb->transport == BT_TRANSPORT_LE) {
       btm_acl_removed(handle);
       p_lcb->InvalidateHandle();
     } else {
