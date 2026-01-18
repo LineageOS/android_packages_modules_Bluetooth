@@ -1656,14 +1656,9 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
-    com::android::bluetooth::flags::provider_->le_audio_update_config_preference_to_hal(true);
-    com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);
-    com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
     com::android::bluetooth::flags::provider_
             ->leaudio_use_game_sonification_as_regular_sonification(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_switching_le_audio_devices(true);
-    com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_unicast_monitor(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_state_machine_invalid_status(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
@@ -3403,12 +3398,10 @@ protected:
   void SetUp() override {
     UnicastTest::SetUp();
     group_ = new LeAudioDeviceGroup(group_id_);
-    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
   }
 
   void TearDown() override {
     delete group_;
-    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(false);
     UnicastTest::TearDown();
   }
 

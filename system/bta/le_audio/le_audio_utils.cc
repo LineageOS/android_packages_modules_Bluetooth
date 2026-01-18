@@ -139,9 +139,6 @@ bluetooth::le_audio::btle_audio_codec_index_t translateLeAudioCodecIdToCodecType
   if (codecId == types::LeAudioCodecIdLc3) {
     return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3;
   } else if (codecId == types::LeAudioCodecIdOpus) {
-    if (!com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type()) {
-      return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS;
-    }
     if (sampling_frequency_hz.has_value() &&
         sampling_frequency_hz.value() > LeAudioCodecConfiguration::kSampleRate48000) {
       return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES;
@@ -160,10 +157,7 @@ types::LeAudioCodecId translateCodecTypeToLeAudioCodecId(btle_audio_codec_index_
     case bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS:
       return types::LeAudioCodecIdOpus;
     case bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES:
-      if (com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type()) {
-        return types::LeAudioCodecIdOpus;
-      }
-      [[fallthrough]];
+      return types::LeAudioCodecIdOpus;
     default:
       break;
   }

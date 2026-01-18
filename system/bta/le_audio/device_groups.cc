@@ -1070,8 +1070,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       }
       break;
     case ::bluetooth::le_audio::types::LeAudioContextType::MEDIA:
-      if (com_android_bluetooth_flags_dsa_use_codec_extensibility() &&
-          (dsa_.mode == DsaMode::ISO_SW || dsa_.mode == DsaMode::ISO_HW)) {
+      if (dsa_.mode == DsaMode::ISO_SW || dsa_.mode == DsaMode::ISO_HW) {
         log::debug("Setting the DSA flag for mode: {}", common::ToString(dsa_.mode));
         // Set the DSA flags
         new_req.flags = CodecManager::Flags(new_req.flags | CodecManager::Flags::SPATIAL_AUDIO);
@@ -1551,11 +1550,8 @@ void LeAudioDeviceGroup::CigConfiguration::GetCisCount(LeAudioContextType contex
   }
 
   // For non-LC3 codecs like Opus, we should base the strategy calcualation based on the config
-  const bool derive_strategy_from_config =
-          current_config && com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type();
-  auto strategy = derive_strategy_from_config
-                          ? group_->FindGroupStrategyForConfig(current_config.get())
-                          : group_->GetGroupSinkStrategy();
+  auto strategy = current_config ? group_->FindGroupStrategyForConfig(current_config.get())
+                                 : group_->GetGroupSinkStrategy();
   log::debug(
           "{} {}, strategy {}, group avail sink ases: {}, "
           "group avail source ases {} "
@@ -2804,10 +2800,7 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
   }
 
   stream << std::format("      DSA mode: {}{}, is_active: {}\n", common::ToString(dsa_.mode),
-                        (dsa_.mode == DsaMode::DISABLED) ? ""
-                        : com_android_bluetooth_flags_dsa_use_codec_extensibility()
-                                ? " (codec extensibility)"
-                                : " (static)",
+                        (dsa_.mode == DsaMode::DISABLED) ? "" : " (codec extensibility)",
                         dsa_.active);
 
   auto& cises = cig.GetCises();

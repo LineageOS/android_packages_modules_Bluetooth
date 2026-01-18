@@ -869,8 +869,7 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda, tBTM_NAME_CMP
 
   tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
   if (p_i && !ble_evt_type_is_connectable(p_i->inq_info.results.ble_evt_type)) {
-    if (com_android_bluetooth_flags_ble_rnr_when_connected() &&
-        BTM_IsAclConnectionUp(remote_bda, BT_TRANSPORT_LE)) {
+    if (BTM_IsAclConnectionUp(remote_bda, BT_TRANSPORT_LE)) {
       log::verbose("name request to non-connectable device, but already connected");
     } else {
       log::verbose("name request to non-connectable device failed.");

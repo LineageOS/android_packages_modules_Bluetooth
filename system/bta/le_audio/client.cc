@@ -1299,13 +1299,6 @@ public:
   void UpdateCodecConfigPreferenceToHal(
           const bluetooth::le_audio::btle_audio_codec_config_t* input_codec_config,
           const bluetooth::le_audio::btle_audio_codec_config_t* output_codec_config) {
-    if (!com_android_bluetooth_flags_le_audio_update_config_preference_to_hal()) {
-      log::warn(
-              "SetCodecPriority skipped due to flag not set: "
-              "le_audio_update_config_preference_to_hal");
-      return;
-    }
-
     if (le_audio_sink_hal_client_ && input_codec_config) {
       le_audio_sink_hal_client_->SetCodecPriority(
               bluetooth::le_audio::utils::translateCodecTypeToLeAudioCodecId(
@@ -2858,9 +2851,7 @@ public:
       leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTED_BY_USER_GETTING_READY);
     }
 
-    if (com_android_bluetooth_flags_leaudio_use_aggressive_params()) {
-      lockConnParamsForStreaming(leAudioDevice);
-    }
+    lockConnParamsForStreaming(leAudioDevice);
 
     /* Check if the device is in allow list and update the flag */
     leAudioDevice->UpdateDeviceAllowlistFlag();
@@ -4062,11 +4053,6 @@ public:
     log::debug("{},  {}", leAudioDevice->address_,
                bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
 
-    if (!com_android_bluetooth_flags_leaudio_use_aggressive_params()) {
-      stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
-              leAudioDevice->address_, false);
-    }
-
     if (leAudioDevice->GetConnectionState() ==
                 DeviceConnectState::CONNECTED_BY_USER_GETTING_READY &&
         (leAudioDevice->autoconnect_flag_ == false)) {
@@ -4813,7 +4799,7 @@ public:
 
     log::info("Session reconfiguration needed group: {} for context type: {}", group->group_id_,
               ToString(context_type));
-    if (com_android_bluetooth_flags_dsa_use_codec_extensibility() && dsa_reconfigure_needed) {
+    if (dsa_reconfigure_needed) {
       log::debug("Invalidate current {} configuration for DSA mode change",
                  common::ToString(context_type));
       group->InvalidateCachedConfigurations(context_type);
@@ -6055,9 +6041,7 @@ public:
                                is_missing_source_ase_context;
 
     // Clear DSA configuration cache when DSA mode has changed
-    auto clear_dsa_config_cache =
-            com_android_bluetooth_flags_dsa_use_codec_extensibility() && is_dsa_reconfig_needed;
-    if (is_configuration_changed || clear_dsa_config_cache) {
+    if (is_configuration_changed || is_dsa_reconfig_needed) {
       group->InvalidateCachedConfigurations(new_configuration_context);
     }
 
@@ -6603,9 +6587,7 @@ public:
 
     switch (status) {
       case GroupStreamStatus::STREAMING: {
-        if (com_android_bluetooth_flags_leaudio_use_aggressive_params()) {
-          unlockConnParamsForStreaming(group);
-        }
+        unlockConnParamsForStreaming(group);
         if (!is_active_group_operation) {
           log::error("Streaming group {} is no longer active. Stop the group.", group_id);
           GroupStop(group_id);

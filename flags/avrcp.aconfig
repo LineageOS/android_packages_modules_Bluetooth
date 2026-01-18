@@ -94,3 +94,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "no_avrcp_connection_delay"
+    namespace: "bluetooth"
+    description: "Remove the fixed delay for AVRCP connection"
+    bug: "475410182"
+}

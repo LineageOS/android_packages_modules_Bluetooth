@@ -127,61 +127,11 @@ flag {
 }
 
 flag {
-    name: "leaudio_use_aggressive_params"
-    namespace: "bluetooth"
-    description: "use aggressive parameters for LE Audio device"
-    bug: "400607635"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "dsa_use_codec_extensibility"
-    namespace: "bluetooth"
-    description: "Use the codec extensibility API for passing DSA parameters"
-    bug: "406747076"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "le_audio_update_config_preference_to_hal"
-    namespace: "bluetooth"
-    description: "Send user set config preference to BT Audio HAL"
-    bug: "413225593"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_add_opus_hi_res_codec_type"
-    namespace: "bluetooth"
-    description: "Add OPUS codec type to LE Audio"
-    bug: "410516242"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_add_opus_hi_res_codec_type_api"
     is_exported: true
     namespace: "bluetooth"
     description: "Add OPUS codec type to LE Audio API"
     bug: "419699224"
-}
-
-flag {
-    name: "leaudio_dynamic_data_path_change"
-    namespace: "bluetooth"
-    description: "Change the data path dynamically"
-    bug: "414773442"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {

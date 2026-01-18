@@ -1138,8 +1138,7 @@ public:
       connection_mode = ConnectionMode::AGGRESSIVE;
     }
 
-    if (com::android::bluetooth::flags::leaudio_use_aggressive_params() &&
-        num_acl_connections < iso_aggressive_connection_threshold &&
+    if (num_acl_connections < iso_aggressive_connection_threshold &&
         accept_list_contains_only_le_audio_devices()) {
       connection_mode = ConnectionMode::AGGRESSIVE_ISO;
     }
