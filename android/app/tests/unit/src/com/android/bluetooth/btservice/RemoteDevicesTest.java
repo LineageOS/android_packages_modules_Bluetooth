@@ -108,6 +108,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /** Test cases for {@link RemoteDevices}. */
 @MediumTest
@@ -1360,17 +1361,15 @@ public class RemoteDevicesTest {
         int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
 
         // Add maxDevices devices
-        List<BluetoothDevice> devices = new ArrayList<>();
-        for (int i = 0; i < maxDevices; i++) {
-            String address = String.format("%02X:00:00:00:00:00", i);
-            DeviceProperties prop =
-                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
-            devices.add(prop.getDevice());
-            if (i == 0) {
-                // First device has a package associated
-                prop.addPackage("com.test.package");
-            }
-        }
+        List<BluetoothDevice> devices =
+                fillLruCacheWithDevices(
+                        maxDevices,
+                        (i, prop) -> {
+                            if (i == 0) {
+                                // First device has a package associated
+                                prop.addPackage("com.test.package");
+                            }
+                        });
 
         // WHEN adding the another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
@@ -1381,5 +1380,78 @@ public class RemoteDevicesTest {
 
         // The second device (without package) should be evicted instead
         assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNull();
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction_noEligibleDeviceToEvict() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // GIVEN a full cache where all devices are ineligible for eviction (bonded or connected)
+        List<BluetoothDevice> devices =
+                fillLruCacheWithDevices(
+                        maxDevices,
+                        (i, prop) -> {
+                            if (i % 2 == 0) {
+                                prop.setBondState(BluetoothDevice.BOND_BONDED);
+                            } else {
+                                prop.setConnected(TRANSPORT_BREDR, 123);
+                            }
+                        });
+
+        // WHEN adding another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN no device should be evicted
+        for (BluetoothDevice device : devices) {
+            assertThat(mRemoteDevices.getDeviceProperties(device)).isNotNull();
+        }
+        // And the new device should be present, exceeding the cache size temporarily
+        assertThat(mRemoteDevices.getDevice(newAddress)).isNotNull();
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction_evictsCandidateWithPackageWhenNoBetterOption() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // GIVEN a full cache where one device is bonded and the rest are "last resort" candidates
+        List<BluetoothDevice> devices =
+                fillLruCacheWithDevices(
+                        maxDevices,
+                        (i, prop) -> {
+                            if (i == 0) {
+                                prop.setBondState(BluetoothDevice.BOND_BONDED);
+                            } else {
+                                prop.addPackage("com.test.package." + i);
+                            }
+                        });
+
+        // WHEN adding another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN the first device (bonded) should NOT be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
+        // The second device (the first "last resort" candidate) should be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNull();
+        // The third device should still be present
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(2))).isNotNull();
+        // And the new device should be present
+        assertThat(mRemoteDevices.getDevice(newAddress)).isNotNull();
+    }
+
+    private List<BluetoothDevice> fillLruCacheWithDevices(
+            int count, BiConsumer<Integer, DeviceProperties> propertySetter) {
+        List<BluetoothDevice> devices = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String address = String.format("%02X:00:00:00:00:00", i);
+            DeviceProperties prop =
+                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+            devices.add(prop.getDevice());
+            if (propertySetter != null) {
+                propertySetter.accept(i, prop);
+            }
+        }
+        return devices;
     }
 }
