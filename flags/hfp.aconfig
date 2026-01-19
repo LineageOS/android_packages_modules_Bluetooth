@@ -29,16 +29,6 @@ flag {
 }
 
 flag {
-    name: "check_peer_hf_indicator"
-    namespace: "bluetooth"
-    description: "Flag to check the peer HF indicator before setting feature mask"
-    bug: "383933502"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "enable_battery_level_update_only_through_hf_indicator"
     namespace: "bluetooth"
     description: "Flag to ignore vendor specific battery level update when HF indicator support is enabled."

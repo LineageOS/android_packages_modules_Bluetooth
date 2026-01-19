@@ -1143,8 +1143,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
       p_scb->peer_features = (uint16_t)int_arg;
 
       if (p_scb->peer_version < HFP_VERSION_1_7) {
-        if (!(com_android_bluetooth_flags_check_peer_hf_indicator() &&
-              p_scb->peer_version == HFP_HSP_VERSION_UNKNOWN &&
+        if (!(p_scb->peer_version == HFP_HSP_VERSION_UNKNOWN &&
               (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
           p_scb->masked_features &= HFP_1_6_FEAT_MASK;
         }
