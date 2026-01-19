@@ -882,16 +882,21 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
     return;
   }
 
-  /* Stop the timer first */
+  if (com_android_bluetooth_flags_flush_a2dp_fmq_on_stop()) {
+    // Flush the audio data left in the FMQ.
+    bluetooth::audio::a2dp::flush_source();
+  }
+
+  // Stop the timer first.
   btif_a2dp_source_cb.media_alarm.CancelAndWait();
   wakelock_release();
 
   bluetooth::audio::a2dp::ack_stream_suspended(Status::SUCCESS);
 
-  /* audio engine stopped, reset tx suspended flag */
+  // audio engine stopped, reset tx suspended flag.
   btif_a2dp_source_cb.tx_flush = false;
 
-  /* Reset the media feeding state */
+  // Reset the media feeding state.
   if (btif_a2dp_source_cb.encoder_interface != nullptr) {
     btif_a2dp_source_cb.encoder_interface->feeding_reset();
   }

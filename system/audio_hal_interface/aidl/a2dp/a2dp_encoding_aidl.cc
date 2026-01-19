@@ -407,6 +407,20 @@ size_t read(uint8_t* p_buf, uint32_t len) {
   return active_hal_interface->ReadAudioData(p_buf, len);
 }
 
+// Clear the FMQ.
+void flush_source() {
+  if (!is_hal_enabled()) {
+    log::error("BluetoothAudio HAL is not enabled");
+    return;
+  }
+  if (is_hal_offloading()) {
+    log::error("session_type={} is not A2DP_SOFTWARE_ENCODING_DATAPATH",
+               toString(active_hal_interface->GetTransportInstance()->GetSessionType()));
+    return;
+  }
+  active_hal_interface->FlushAudioData();
+}
+
 // Update A2DP delay report to BluetoothAudio HAL
 void set_remote_delay(uint16_t delay_report) {
   if (!is_hal_enabled()) {
