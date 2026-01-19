@@ -126,8 +126,43 @@ constants {
 }
 
 constants {
+  name: "FIELD_IDLE_TIME"
+  string_value: "idle_time"
+}
+
+constants {
   name: "FIELD_COMMON"
   string_value: "common"
+}
+
+constants {
+  name: "FIELD_VOLUME_OFFSET"
+  string_value: "volume_offset"
+}
+
+constants {
+  name: "FIELD_INSTANCE_ID"
+  string_value: "instance_id"
+}
+
+constants {
+  name: "FIELD_OFFSET"
+  string_value: "offset"
+}
+
+constants {
+  name: "FIELD_AUDIO_LOCATION"
+  string_value: "audio_location"
+}
+
+constants {
+  name: "FIELD_AUDIO_DESCRIPTION"
+  string_value: "audio_description"
+}
+
+constants {
+  name: "FIELD_VOLUME"
+  string_value: "volume"
 }
 
 # =========================== #
@@ -672,6 +707,16 @@ constants {
 }
 
 constants {
+  name: "BASS_SOURCE_ADDED"
+  string_value: "BASS_SOURCE_ADDED"
+}
+
+constants {
+  name: "BASS_SOURCE_REMOVED"
+  string_value: "BASS_SOURCE_REMOVED"
+}
+
+constants {
   name: "BASS_RECEIVE_STATE_CHANGED"
   string_value: "BASS_RECEIVE_STATE_CHANGED"
 }
@@ -732,6 +777,16 @@ constants {
   string_value: "A2DP_PLAYING_STATE_CHANGED"
 }
 
+constants {
+  name: "A2DP_CODEC_CONFIG_CHANGED"
+  string_value: "A2DP_CODEC_CONFIG_CHANGED"
+}
+
+constants {
+  name: "A2DP_FIELD_CODEC_TYPE"
+  string_value: "A2DP_FIELD_CODEC_TYPE"
+}
+
 # ======================== #
 # BluetoothLeAudioSnippet  #
 # ======================== #
@@ -743,6 +798,11 @@ constants {
 constants {
   name: "VOLUME_CHANGED"
   string_value: "VOLUME_CHANGED"
+}
+
+constants {
+  name: "MUTE_CHANGED"
+  string_value: "MUTE_CHANGED"
 }
 
 constants {
@@ -1061,6 +1121,30 @@ constants: {
 }
 
 # ============================ #
+# BluetoothVolumeControlSnippet    #
+# ============================ #
+
+constants {
+  name: "VOLUME_OFFSET_CHANGED"
+  string_value: "VolumeOffsetChanged"
+}
+
+constants {
+  name: "VOLUME_OFFSET_AUDIO_LOCATION_CHANGED"
+  string_value: "VolumeOffsetAudioLocationChanged"
+}
+
+constants {
+  name: "VOLUME_OFFSET_AUDIO_DESCRIPTION_CHANGED"
+  string_value: "VolumeOffsetAudioDescriptionChanged"
+}
+
+constants {
+  name: "DEVICE_VOLUME_CHANGED"
+  string_value: "DeviceVolumeChanged"
+}
+
+# ============================ #
 # AudioInputControlSnippet     #
 # ============================ #
 
@@ -1122,6 +1206,25 @@ constants {
 constants {
   name: "AICS_SET_GAIN_MODE_FAILED"
   string_value: "AicsSetGainModeFailed"
+}
+
+# ============================ #
+# BluetoothHidHostSnippet      #
+# ============================ #
+
+constants {
+  name: "HID_HOST_HANDSHAKE"
+  string_value: "HID_HOST_HANDSHAKE"
+}
+
+constants {
+  name: "HID_HOST_REPORT"
+  string_value: "HID_HOST_REPORT"
+}
+
+constants {
+  name: "HID_HOST_IDLE_TIME_CHANGED"
+  string_value: "HID_HOST_IDLE_TIME_CHANGED"
 }
 
 # ============================ #

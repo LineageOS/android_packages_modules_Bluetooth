@@ -34,7 +34,7 @@ class BluetoothPanSnippet : Snippet {
     private val context = instrumentation.targetContext
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val broadcastReceivers = mutableMapOf<String, BroadcastReceiver>()
-    private val proxy = Utils.getProfileProxy<BluetoothPan>(context, BluetoothProfile.PAN)
+    private val proxy = Utils.getProfileProxy(context, BluetoothProfile.PAN) as BluetoothPan
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()

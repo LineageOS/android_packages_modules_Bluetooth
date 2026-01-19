@@ -13,18 +13,28 @@
 #  limitations under the License.
 """Simple pacs configuration."""
 
+from collections.abc import Sequence
+
 from bumble import hci
 from bumble.profiles import bap
 from bumble.profiles import pacs
 
 
 def make_pacs(
-    audio_location: bap.AudioLocation | None = None,) -> pacs.PublishedAudioCapabilitiesService:
+    audio_location: bap.AudioLocation | None = None,
+    source_pacs: Sequence[pacs.PacRecord] | None = None,
+    sink_pacs: Sequence[pacs.PacRecord] | None = None,
+) -> pacs.PublishedAudioCapabilitiesService:
     """Creates a PACS service.
 
   Args:
     audio_location: The audio location of the PACS. If None, defaults to
       (FRONT_LEFT | FRONT_RIGHT) for sink and (FRONT_LEFT) for source.
+    source_pacs: The source PACs. If None, defaults to LC3 with sampling
+      frequencies 16000, 32000 Hz and channel count 1.
+    sink_pacs: The sink PACs. If None, defaults to LC3 with sampling frequencies
+      16000, 32000, 48000 Hz and channel count 1, 2.
+
   Returns:
     A PACS service.
   """
@@ -36,7 +46,7 @@ def make_pacs(
         sink_audio_locations=audio_location or
         (bap.AudioLocation.FRONT_LEFT | bap.AudioLocation.FRONT_RIGHT),
         source_audio_locations=audio_location or (bap.AudioLocation.FRONT_LEFT),
-        sink_pac=[
+        sink_pac=sink_pacs or [
             pacs.PacRecord(
                 coding_format=hci.CodingFormat(hci.CodecID.LC3),
                 codec_specific_capabilities=bap.CodecSpecificCapabilities(
@@ -52,7 +62,7 @@ def make_pacs(
                 ),
             )
         ],
-        source_pac=[
+        source_pac=source_pacs or [
             pacs.PacRecord(
                 coding_format=hci.CodingFormat(hci.CodecID.LC3),
                 codec_specific_capabilities=bap.CodecSpecificCapabilities(

@@ -36,7 +36,7 @@ class BluetoothHfpHfSnippet : Snippet {
     private val context = instrumentation.targetContext
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val proxy =
-        Utils.getProfileProxy<BluetoothHeadsetClient>(context, BluetoothProfile.HEADSET_CLIENT)
+        Utils.getProfileProxy(context, BluetoothProfile.HEADSET_CLIENT) as BluetoothHeadsetClient
     private val broadcastReceivers = mutableMapOf<String, BroadcastReceiver>()
 
     init {

@@ -34,7 +34,7 @@ class BluetoothHfpAgSnippet : Snippet {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val proxy = Utils.getProfileProxy<BluetoothHeadset>(context, BluetoothProfile.HEADSET)
+    private val proxy = Utils.getProfileProxy(context, BluetoothProfile.HEADSET) as BluetoothHeadset
     private val broadcastReceivers = mutableMapOf<String, BroadcastReceiver>()
 
     init {
@@ -140,6 +140,18 @@ class BluetoothHfpAgSnippet : Snippet {
     @Rpc(description = "Get SCO connection state")
     fun hfpAgGetAudioState(address: String): Int =
         proxy.getAudioState(bluetoothAdapter.getRemoteDevice(address))
+
+    /**
+     * Sets HFP active device to device in [address]. If [address] is null, clears active device.
+     */
+    @Rpc(description = "Set HFP active device.")
+    fun hfpAgSetActiveDevice(address: String?): Boolean {
+        val device: BluetoothDevice? = address?.let { bluetoothAdapter.getRemoteDevice(it) }
+        return BluetoothHeadset::class
+            .java
+            .getMethod("setActiveDevice", BluetoothDevice::class.java)
+            .invoke(proxy, device) as Boolean
+    }
 
     companion object {
         const val TAG = "BluetoothHfpAgSnippet"

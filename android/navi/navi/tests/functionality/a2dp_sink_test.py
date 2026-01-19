@@ -111,7 +111,7 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
         del ref_avrcp_protocol
 
         self.logger.info("[DUT] Connect and pair REF.")
-        await self.classic_connect_and_pair()
+        await self.classic_connect_and_pair(connect_profiles=True)
 
         dut_a2dp_sink_callback = self.dut.bl4a.register_callback(bl4a_api.Module.A2DP_SINK)
         self.test_case_context.push(dut_a2dp_sink_callback)
@@ -157,7 +157,7 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
         del ref_avrcp_protocol, ref_avrcp_protocol_queue
 
         self.logger.info("[DUT] Connect and pair REF.")
-        await self.classic_connect_and_pair()
+        await self.classic_connect_and_pair(connect_profiles=True)
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             self.logger.info("[REF] Wait for AVDTP connection")

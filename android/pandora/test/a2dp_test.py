@@ -769,7 +769,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             L2CAP_SIGNALING_CID,
             AVDTP_PSM,
             source_cid,
-            spec.mtu,
+            spec,
         )
         connection_channels[source_cid] = channel
 
@@ -865,7 +865,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                         L2CAP_SIGNALING_CID,
                         AVDTP_PSM,
                         source_cid,
-                        spec.mtu,
+                        spec,
                     )
                     connection_channels[source_cid] = channel
 

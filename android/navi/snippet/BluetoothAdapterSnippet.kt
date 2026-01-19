@@ -52,7 +52,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -81,18 +80,28 @@ class BluetoothAdapterSnippet : Snippet {
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
                     when (intent.action) {
-                        BluetoothAdapter.ACTION_BLE_STATE_CHANGED ->
-                            adapterState.tryEmit(
+                        BluetoothAdapter.ACTION_BLE_STATE_CHANGED -> {
+                            val state =
                                 intent.getIntExtra(
                                     BluetoothAdapter.EXTRA_STATE,
                                     BluetoothAdapter.ERROR,
                                 )
+                            Log.d(
+                                TAG,
+                                "BLE state changed to ${BluetoothAdapter.nameForState(state)}",
                             )
+                            adapterState.value = state
+                        }
                     }
                 }
             },
             IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED),
+            Context.RECEIVER_EXPORTED,
         )
+    }
+
+    private fun getDevice(address: String): BluetoothDevice {
+        return bluetoothAdapter.getRemoteDevice(address)
     }
 
     /** Resets Bluetooth, waits for auto-restart, and returns whether everything succeeds. */
@@ -109,7 +118,7 @@ class BluetoothAdapterSnippet : Snippet {
                         )
                     }
                 }
-                .first { it != BluetoothAdapter.STATE_OFF }
+                .first { it != BluetoothAdapter.STATE_ON }
         }
         val result = bluetoothAdapter.clearBluetooth()
         if (result) {
@@ -125,8 +134,6 @@ class BluetoothAdapterSnippet : Snippet {
                     }
                 }
                 .first { it == BluetoothAdapter.STATE_ON }
-            // b/266611263: Delay to initialize the Bluetooth completely and to fix flakiness
-            delay(1.seconds)
         } else {
             turningOff.cancel()
         }
@@ -260,13 +267,23 @@ class BluetoothAdapterSnippet : Snippet {
                     }
                 }
             }
-        context.registerReceiver(broadcastReceivers[callbackId], intentFilter)
+        context.registerReceiver(
+            broadcastReceivers[callbackId],
+            intentFilter,
+            Context.RECEIVER_EXPORTED,
+        )
     }
 
     /** Removes a [BroadcastReceiver] of [callbackId]. */
     @Rpc(description = "Unregister an adapter callback")
     fun unregisterAdapterCallback(callbackId: String) {
-        broadcastReceivers.remove(callbackId)?.let { context.unregisterReceiver(it) }
+        broadcastReceivers.remove(callbackId)?.let {
+            try {
+                context.unregisterReceiver(it)
+            } catch (e: IllegalArgumentException) {
+                Log.w(TAG, "Receiver for $callbackId not registered.")
+            }
+        }
     }
 
     /** Returns addresses of bonded devices. */
@@ -434,6 +451,43 @@ class BluetoothAdapterSnippet : Snippet {
         bluetoothAdapter.getRemoteDevice(address).setPin(pin)
 
     /**
+     * Triggers service discovery on the given device to fetch UUIDs. Listen for the results using
+     * [registerAdapterCallback] and handling the [SnippetConstants.UUID_CHANGED] event.
+     */
+    @Rpc(description = "Triggers service discovery on the given device to fetch UUIDs.")
+    fun fetchUuidsWithSdp(address: String): Boolean {
+        @Suppress("DEPRECATION")
+        return getDevice(address).fetchUuidsWithSdp()
+    }
+
+    /**
+     * Gets the a device's Bluetooth class.
+     *
+     * @throws RuntimeException if the Bluetooth class cannot be retrieved.
+     */
+    @Rpc(description = "Gets the Bluetooth class of the device.")
+    fun getBluetoothClass(address: String): Int {
+        return getDevice(address).bluetoothClass?.deviceClass
+            ?: throw RuntimeException(
+                "Failed to get BluetoothClass for $address, API returned null."
+            )
+    }
+
+    /**
+     * Gets the cached UUIDs from the device.
+     *
+     * @throws RuntimeException if the UUIDs cannot be retrieved.
+     */
+    @Rpc(description = "Gets the device's cached UUIDs.")
+    fun getDeviceUuids(address: String): List<String> {
+        val device = getDevice(address)
+        return device.uuids?.map { it.toString() }
+            ?: throw RuntimeException(
+                "Failed to get UUIDs for $address, API returned null (is SDP done?)."
+            )
+    }
+
+    /**
      * Sets Bluetooth scan mode to [scanMode] and returns the status defined in
      * [android.bluetooth.BluetoothStatusCodes].
      */
@@ -469,7 +523,7 @@ class BluetoothAdapterSnippet : Snippet {
                 }
             }
 
-        advertiser.startAdvertising(
+        advertiser?.startAdvertising(
             advertiseSettings,
             advertiseData,
             scanResponse,
@@ -514,7 +568,7 @@ class BluetoothAdapterSnippet : Snippet {
                 }
             }
 
-        bluetoothAdapter.bluetoothLeAdvertiser.startAdvertisingSet(
+        bluetoothAdapter.bluetoothLeAdvertiser?.startAdvertisingSet(
             advertiseSetParameters,
             advertiseData,
             scanResponse,
@@ -534,14 +588,14 @@ class BluetoothAdapterSnippet : Snippet {
     @Rpc(description = "Stop BLE Advertising")
     fun stopAdvertising(cookie: String) =
         advertisers.remove(cookie)?.let {
-            bluetoothAdapter.bluetoothLeAdvertiser.stopAdvertising(it)
+            bluetoothAdapter.bluetoothLeAdvertiser?.stopAdvertising(it)
         }
 
     /** Stops a BLE advertising set with [cookie]. */
     @Rpc(description = "Stop BLE Advertising Set")
     fun stopAdvertisingSet(cookie: String) =
         advertisingSets.remove(cookie)?.let {
-            bluetoothAdapter.bluetoothLeAdvertiser.stopAdvertisingSet(it)
+            bluetoothAdapter.bluetoothLeAdvertiser?.stopAdvertisingSet(it)
         }
 
     /**
@@ -581,7 +635,7 @@ class BluetoothAdapterSnippet : Snippet {
         // Mobly snippet lib cannot pass non-primitive list properly, so we only take 0 or 1 filter
         // here (and it's the most commonly used case).
         val scanFilters = listOfNotNull(scanFilter)
-        scanner.startScan(
+        scanner?.startScan(
             /* filters = */ scanFilters,
             /* settings = */ scanSettings ?: ScanSettings.Builder().build(),
             /* callback = */ callback,
@@ -593,7 +647,7 @@ class BluetoothAdapterSnippet : Snippet {
     @Rpc(description = "Stop BLE scanning")
     fun stopScanning(callbackId: String) {
         scanners[callbackId]?.let {
-            bluetoothAdapter.bluetoothLeScanner.stopScan(it)
+            bluetoothAdapter.bluetoothLeScanner?.stopScan(it)
             scanners.remove(callbackId)
         } ?: throw IllegalArgumentException("Scanner with cookie $callbackId doesn't exist")
     }

@@ -199,6 +199,19 @@ class A2dpState(enum.IntEnum):
     NOT_PLAYING = 11
 
 
+class A2dpCodecType(enum.IntEnum):
+    """android.bluetooth.BluetoothCodecConfig.SOURCE_CODEC_TYPE_*."""
+
+    SBC = 0
+    AAC = 1
+    APTX = 2
+    APTX_HD = 3
+    LDAC = 4
+    LC3 = 5
+    OPUS = 6
+    INVALID = 1000 * 1000
+
+
 class ScoState(enum.IntEnum):
     """android.bluetooth.BluetoothHeadset.STATE_AUDIO_*."""
 
@@ -920,3 +933,10 @@ class BluetoothStatusCode(enum.IntEnum):
     RFCOMM_LISTENER_NO_SOCKET_AVAILABLE = 2005
     ERROR_NOT_DUAL_MODE_AUDIO_DEVICE = 3000
     ERROR_UNKNOWN = 2147483647
+
+
+class AudioDeviceRole(enum.IntEnum):
+    """android.media.AudioDeviceAttributes.ROLE_*."""
+
+    INPUT = 1
+    OUTPUT = 2

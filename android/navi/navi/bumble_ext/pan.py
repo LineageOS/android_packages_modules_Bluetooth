@@ -20,10 +20,11 @@ https://www.bluetooth.com/specifications/specs/bluetooth-network-encapsulation-p
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 import dataclasses
 import logging
 import struct
-from typing import Callable, Type, cast
+from typing import Self, cast
 
 from bumble import core
 from bumble import hci
@@ -31,7 +32,6 @@ from bumble import l2cap
 from bumble import sdp
 from bumble import utils
 import bumble.device
-from typing_extensions import Self
 
 from navi.bumble_ext import bnep
 
@@ -102,7 +102,7 @@ class EthernetFrame:
         ) + self.payload)
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Self:
+    def from_bytes(cls, pdu: bytes) -> Self:
         """Creates an Ethernet frame from the given bytes.
 
     Args:
@@ -312,7 +312,7 @@ class Connection(utils.CompositeEventEmitter):
 
     @classmethod
     async def connect(
-        cls: Type[Self],
+        cls,
         connection: bumble.device.Connection,
         source_service: core.UUID | None = None,
         destination_service: core.UUID | None = None,
@@ -395,7 +395,7 @@ class Connection(utils.CompositeEventEmitter):
       packet: The packet to send.
     """
         _logger.debug(">> %s", packet)
-        self.l2cap_channel.send_pdu(packet)
+        self.l2cap_channel.write(bytes(packet))
 
     def _on_pdu(self, pdu: bytes) -> None:
         bnep_packet = bnep.Packet.from_bytes(pdu)
@@ -423,12 +423,12 @@ class Connection(utils.CompositeEventEmitter):
             self.destination_service = core.UUID.from_bytes(packet.payload[1:1 + uuid_size][::-1])
             self.source_service = core.UUID.from_bytes(packet.payload[1 + uuid_size:1 +
                                                                       uuid_size * 2][::-1])
-            self.l2cap_channel.send_pdu(
-                bnep.Control(
-                    control_type=bnep.ControlType.SETUP_CONNECTION_RESPONSE_MSG,
-                    payload=bnep.SetupConnectionResponseCode.OPERATION_SUCCESSFUL.to_bytes(
-                        2, "big", signed=False),
-                ))
+            response = bnep.Control(
+                control_type=bnep.ControlType.SETUP_CONNECTION_RESPONSE_MSG,
+                payload=bnep.SetupConnectionResponseCode.OPERATION_SUCCESSFUL.to_bytes(
+                    2, "big", signed=False),
+            )
+            self.l2cap_channel.write(bytes(response))
         elif packet.control_type == bnep.ControlType.SETUP_CONNECTION_RESPONSE_MSG:
             if not self._connection_result or self._connection_result.done():
                 return

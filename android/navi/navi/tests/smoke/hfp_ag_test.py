@@ -155,7 +155,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             )
 
             self.logger.info("[DUT] Connect and pair REF.")
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await dut_cb.wait_for_event(
@@ -323,7 +323,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         self.test_case_context.push(dut_telecom_cb)
 
         self.logger.info("[DUT] Connect and pair REF.")
-        await self.classic_connect_and_pair()
+        await self.classic_connect_and_pair(connect_profiles=True)
 
         self.logger.info("[DUT] Wait for HFP connected.")
         await dut_hfp_cb.wait_for_event(
@@ -481,7 +481,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         self.test_case_context.push(dut_telecom_cb)
 
         self.logger.info("[DUT] Connect and pair REF.")
-        await self.classic_connect_and_pair()
+        await self.classic_connect_and_pair(connect_profiles=True)
 
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -563,7 +563,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Connect and pair REF.")
         with self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_hfp_cb:
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await dut_hfp_cb.wait_for_event(
@@ -656,7 +656,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_hfp_cb,
                 self.dut.bl4a.register_callback(_Module.ADAPTER) as dut_adapter_cb,
         ):
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
             self.logger.info("[DUT] Wait for HFP connected.")
             await dut_hfp_cb.wait_for_event(
                 bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),
@@ -718,7 +718,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[DUT] Connect and pair REF.")
             with self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_hfp_cb:
-                await self.classic_connect_and_pair()
+                await self.classic_connect_and_pair(connect_profiles=True)
 
                 self.logger.info("[DUT] Wait for SCO connected.")
                 await self._wait_for_sco_state(dut_hfp_cb, _ScoState.CONNECTED)
@@ -738,8 +738,8 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
     """
         if self._is_ranchu_emulator(self.dut.device):
             self.skipTest("Volume control is not supported on Ranchu emulator")
-        if self.dut.device.is_emulator and issuer == constants.TestRole.DUT:
-            self.skipTest("b/420835576: Volume control from DUT is broken")
+        if self.dut.device.is_emulator:
+            self.skipTest("b/422822911: SCO is not fully supported on emulator")
 
         # [REF] Setup HFP.
         hfp_configuration = hfp.HfConfiguration(
@@ -763,7 +763,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
                     constants.Direction.OUTGOING,
                 ),
         ):
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
             self.dut.bt.audioPlaySine()
@@ -835,7 +835,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Connect and pair REF.")
         with self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_hfp_cb:
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
             await dut_hfp_cb.wait_for_event(
                 bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -906,7 +906,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Connect and pair REF.")
         with self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_hfp_cb:
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
             await dut_hfp_cb.wait_for_event(
                 bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -1002,7 +1002,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         dut_hfp_cb = self.dut.bl4a.register_callback(_Module.HFP_AG)
         self.test_case_context.push(dut_hfp_cb)
 
-        await self.classic_connect_and_pair()
+        await self.classic_connect_and_pair(connect_profiles=True)
         self.logger.info("[DUT] Wait for HFP connected.")
         await dut_hfp_cb.wait_for_event(
             bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),

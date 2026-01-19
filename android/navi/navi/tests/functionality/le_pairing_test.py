@@ -406,6 +406,12 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
         versa.
       ref_io_capability: IO Capability on the REF device.
     """
+        if (variant == TestVariant.REJECT and connection_direction == _Direction.OUTGOING and
+                pairing_direction == _Direction.INCOMING and ref_io_capability in (
+                    pairing.PairingDelegate.IoCapability.DISPLAY_OUTPUT_AND_YES_NO_INPUT,
+                    pairing.PairingDelegate.IoCapability.DISPLAY_OUTPUT_ONLY,
+                ) and self.dut.bluetooth_mainline_version < 361000000):
+            self.skipTest('This combination is broken before 2025-10 release.')
 
         # ####################### Setup ##########################
         pairing_delegate = pairing_utils.PairingDelegate(
@@ -600,6 +606,8 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
         versa.
       ref_connection_address_type: Address type of the REF device.
     """
+        if not sc and self.dut.bluetooth_mainline_version < 361000000:
+            self.skipTest('Legacy OOB pairing is broken before 2025-10 release.')
 
         pairing_delegate = pairing_utils.PairingDelegate(
             auto_accept=True,

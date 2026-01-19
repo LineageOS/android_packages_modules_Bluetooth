@@ -14,10 +14,21 @@
 """Generic functionality test suite for Bluetooth."""
 
 import sys
+
 from mobly import suite_runner
+from navi.tests.functionality import a2dp_sink_test
+from navi.tests.functionality import a2dp_source_test
+from navi.tests.functionality import aics_test
+from navi.tests.functionality import coex_test
+from navi.tests.functionality import hap_test
+from navi.tests.functionality import hfp_ag_test as hfp_ag_test_venti
+from navi.tests.functionality import le_audio_unicast_client_dual_device_test
+from navi.tests.functionality import le_pairing_test
+from navi.tests.functionality import rfcomm_socket_test
+from navi.tests.functionality import vocs_test
 from navi.tests.smoke import a2dp_test
-from navi.tests.smoke import avrcp_test
 from navi.tests.smoke import asha_test
+from navi.tests.smoke import avrcp_test
 from navi.tests.smoke import bluetooth_service_test
 from navi.tests.smoke import classic_host_test
 from navi.tests.smoke import classic_pairing_test
@@ -36,14 +47,6 @@ from navi.tests.smoke import opp_test
 from navi.tests.smoke import pan_test
 from navi.tests.smoke import pbap_test
 from navi.tests.smoke import rfcomm_test
-from navi.tests.functionality import a2dp_sink_test
-from navi.tests.functionality import a2dp_source_test
-from navi.tests.functionality import aics_test
-from navi.tests.functionality import coex_test
-from navi.tests.functionality import hap_test
-from navi.tests.functionality import hfp_ag_test as hfp_ag_test_venti
-from navi.tests.functionality import le_pairing_test
-from navi.tests.functionality import rfcomm_socket_test
 
 if __name__ == "__main__":
     # Take test args
@@ -80,4 +83,6 @@ if __name__ == "__main__":
         coex_test.CoexTest,
         hfp_ag_test_venti.HfpAgTest,
         rfcomm_socket_test.RfcommSocketTest,
+        le_audio_unicast_client_dual_device_test.LeAudioUnicastClientDualDeviceTest,
+        vocs_test.VocsTest,
     ])

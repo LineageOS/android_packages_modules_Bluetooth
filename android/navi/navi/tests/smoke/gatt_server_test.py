@@ -17,6 +17,7 @@ import secrets
 import uuid
 
 from bumble import gatt
+from bumble import gatt_client
 from bumble import hci
 import bumble.core
 import bumble.device
@@ -28,6 +29,7 @@ from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import bluetooth_constants
+from navi.utils import constants
 from navi.utils import retry
 
 _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
@@ -307,6 +309,25 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Wait for notification.")
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                 self.assertEqual(await notification_queue.get(), expected_data)
+
+    async def test_eatt(self) -> None:
+        # EATT requires authentication and encryption.
+        self.logger.info("[REF] Connect to DUT.")
+        await self.le_connect_and_pair(hci.OwnAddressType.RANDOM,
+                                       direction=constants.Direction.INCOMING)
+        if not (ref_dut_acl := self.ref.device.find_connection_by_bd_addr(
+                hci.Address(self.dut.address),
+                transport=bumble.core.PhysicalTransport.LE,
+        )):
+            self.fail("Failed to find ACL connection between DUT and REF.")
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Connect EATT.")
+            client = await gatt_client.Client.connect_eatt(ref_dut_acl)
+
+            self.logger.info("[DUT] Discover services.")
+            services = await client.discover_services()
+            self.assertNotEmpty(services)
 
 
 if __name__ == "__main__":

@@ -43,15 +43,61 @@ class BluetoothVolumeControlSnippet : Snippet {
     private val bluetoothAdapter = bluetoothManager.adapter
 
     private val vcpProxy =
-        Utils.getProfileProxy<BluetoothVolumeControl>(context, BluetoothProfile.VOLUME_CONTROL)
+        Utils.getProfileProxy(context, BluetoothProfile.VOLUME_CONTROL) as BluetoothVolumeControl
     private val callbackExecutor = context.mainExecutor
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
     }
 
+    private fun getBluetoothDevice(address: String): BluetoothDevice =
+        bluetoothAdapter.getRemoteDevice(address)
+
     private fun getAic(address: String, instanceId: Int): AudioInputControl =
-        vcpProxy.getAudioInputControlServices(bluetoothAdapter.getRemoteDevice(address))[instanceId]
+        vcpProxy.getAudioInputControlServices(getBluetoothDevice(address))[instanceId]
+
+    private inner class VolumeControlCallback(val callbackId: String) :
+        BluetoothVolumeControl.Callback {
+
+        override fun onVolumeOffsetChanged(device: BluetoothDevice, instanceId: Int, offset: Int) {
+            postSnippetEvent(callbackId, SnippetConstants.VOLUME_OFFSET_CHANGED) {
+                putString(SnippetConstants.FIELD_DEVICE, device.address)
+                putInt(SnippetConstants.FIELD_INSTANCE_ID, instanceId)
+                putInt(SnippetConstants.FIELD_OFFSET, offset)
+            }
+        }
+
+        override fun onVolumeOffsetAudioLocationChanged(
+            device: BluetoothDevice,
+            instanceId: Int,
+            audioLocation: Int,
+        ) {
+            postSnippetEvent(callbackId, SnippetConstants.VOLUME_OFFSET_AUDIO_LOCATION_CHANGED) {
+                putString(SnippetConstants.FIELD_DEVICE, device.address)
+                putInt(SnippetConstants.FIELD_INSTANCE_ID, instanceId)
+                putInt(SnippetConstants.FIELD_AUDIO_LOCATION, audioLocation)
+            }
+        }
+
+        override fun onVolumeOffsetAudioDescriptionChanged(
+            device: BluetoothDevice,
+            instanceId: Int,
+            audioDescription: String,
+        ) {
+            postSnippetEvent(callbackId, SnippetConstants.VOLUME_OFFSET_AUDIO_DESCRIPTION_CHANGED) {
+                putString(SnippetConstants.FIELD_DEVICE, device.address)
+                putInt(SnippetConstants.FIELD_INSTANCE_ID, instanceId)
+                putString(SnippetConstants.FIELD_AUDIO_DESCRIPTION, audioDescription)
+            }
+        }
+
+        override fun onDeviceVolumeChanged(device: BluetoothDevice, volume: Int) {
+            postSnippetEvent(callbackId, SnippetConstants.DEVICE_VOLUME_CHANGED) {
+                putString(SnippetConstants.FIELD_DEVICE, device.address)
+                putInt(SnippetConstants.FIELD_VOLUME, volume)
+            }
+        }
+    }
 
     private inner class AicsCallback(val callbackId: String) :
         AudioInputControl.AudioInputCallback {
@@ -100,6 +146,7 @@ class BluetoothVolumeControlSnippet : Snippet {
 
     private val activeCallbacks = mutableMapOf<String, Pair<AudioInputControl, AicsCallback>>()
     private val vcpCallbacks = mutableMapOf<String, BroadcastReceiver>()
+    private val vcpProfileCallbacks = mutableMapOf<String, BluetoothVolumeControl.Callback>()
 
     @AsyncRpc(description = "Sets up a callback for an AICS instance.")
     fun registerAicsCallback(callbackId: String, address: String, instanceId: Int) {
@@ -116,13 +163,21 @@ class BluetoothVolumeControlSnippet : Snippet {
         }
     }
 
-    @Rpc(description = "Unregisters a callback for VCP connection state changes.")
+    @Rpc(description = "Unregisters a callback for Connection state changes and VCP events.")
     fun unregisterVolumeControlCallback(callbackId: String) {
         vcpCallbacks.remove(callbackId)?.let { context.unregisterReceiver(it) }
+        vcpProfileCallbacks.remove(callbackId)?.let { vcpProxy.unregisterCallback(it) }
     }
 
-    @AsyncRpc(description = "Registers a callback for VCP connection state changes.")
+    @AsyncRpc(
+        description = "Registers a callback for VCP events including connection state changes."
+    )
     fun registerVolumeControlCallback(callbackId: String) {
+        val profileCallback = VolumeControlCallback(callbackId)
+        Log.i(TAG, "Registering profile callback for $callbackId")
+        vcpProxy.registerCallback(callbackExecutor, profileCallback)
+        vcpProfileCallbacks[callbackId] = profileCallback
+
         val receiver =
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
@@ -166,6 +221,44 @@ class BluetoothVolumeControlSnippet : Snippet {
         bluetoothAdapter.closeProfileProxy(BluetoothProfile.VOLUME_CONTROL, vcpProxy)
     }
 
+    @Rpc(description = "Get Connected devices")
+    fun vcpGetConnectedDevices(): List<String> {
+        return vcpProxy.connectedDevices.map { it.address }.toList()
+    }
+
+    @Rpc(description = "Get Connection State")
+    fun vcpGetConnectionState(address: String): Int =
+        vcpProxy.getConnectionState(getBluetoothDevice(address))
+
+    // VOCS RPCs
+
+    @Rpc(description = "Set the Volume Offset.")
+    fun setVolumeOffset(address: String, instanceId: Int, offset: Int) {
+        vcpProxy.setVolumeOffset(getBluetoothDevice(address), instanceId, offset)
+    }
+
+    @Rpc(description = "Check if the volume offset is available")
+    fun isVolumeOffsetAvailable(address: String): Boolean =
+        vcpProxy.isVolumeOffsetAvailable(getBluetoothDevice(address))
+
+    @Rpc(description = "Get the number of VOCS instances")
+    fun getNumberofVocsInstances(address: String): Int =
+        vcpProxy.getNumberOfVolumeOffsetInstances(getBluetoothDevice(address))
+
+    @Rpc(description = "Connection Policy")
+    fun vcpSetConnectionPolicy(address: String, policy: Int): Boolean =
+        vcpProxy.setConnectionPolicy(getBluetoothDevice(address), policy)
+
+    @Rpc(description = "Get Connection Policy")
+    fun vcpGetConnectionPolicy(address: String): Int =
+        vcpProxy.getConnectionPolicy(getBluetoothDevice(address))
+
+    @Rpc(description = "Set device volume")
+    fun vcpSetDeviceVolume(address: String, volume: Int, isGroupOperation: Boolean) {
+        vcpProxy.setDeviceVolume(getBluetoothDevice(address), volume, isGroupOperation)
+    }
+
+    // AICS RPCs
     @Rpc(description = "Gets the Audio Input Type.")
     fun aicsGetAudioInputType(address: String, instanceId: Int): Int =
         getAic(address, instanceId).audioInputType
@@ -224,10 +317,6 @@ class BluetoothVolumeControlSnippet : Snippet {
     @Rpc(description = "Sets the mute state.")
     fun aicsSetMute(address: String, instanceId: Int, mute: Int): Boolean =
         getAic(address, instanceId).setMute(mute)
-
-    @Rpc(description = "Connection Policy")
-    fun vcpSetConnectionPolicy(address: String, policy: Int): Boolean =
-        vcpProxy.setConnectionPolicy(bluetoothAdapter.getRemoteDevice(address), policy)
 
     companion object {
         private const val TAG = "AudioInputControlSnippet"

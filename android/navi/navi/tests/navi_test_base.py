@@ -58,7 +58,7 @@ from navi.utils import snippet_stub
 
 _NAVI_PARAMETERIZED = "_NAVI_PARAMETERIZED"
 _NAVI_REQUIRE_FLAG = "_NAVI_REQUIRE_FLAG"
-_SETUP_TIMEOUT_SECONDS = 10.0
+_SETUP_TIMEOUT_SECONDS = 15.0
 # 100 * 0.625ms = 62.5ms
 _DEFAULT_ADVERTISING_INTERVAL = 100
 RECORD_FULL_DATA = "record_full_data"
@@ -740,6 +740,10 @@ class AndroidBumbleTestBase(BaseTestBase):
                 classic_interlaced_scan_enabled=True,
                 # Enable Address resolution fffloading for Bumble devices.
                 address_resolution_offload=True,
+                # Enable LE subrating for Bumble devices.
+                le_subrate_enabled=True,
+                # Enable EATT.
+                eatt_enabled=True,
                 # Set a random IRK.
                 irk=secrets.token_bytes(16),
                 # Set a random static address.
@@ -820,32 +824,40 @@ class AndroidBumbleTestBase(BaseTestBase):
             f.write(data)
 
     def _get_btsnoop_and_dumpsys(self) -> None:
-        adb_snippets.download_btsnoop(
-            device=self.dut.device,
-            destination_base_path=self.current_test_info.output_path,
-        )
-        adb_snippets.cleanup_btsnoop(device=self.dut.device)
-        adb_snippets.download_dumpsys(
-            device=self.dut.device,
-            destination_base_path=self.current_test_info.output_path,
-        )
-        for ref in self._refs:
-            address_str = ref.address.replace(":", "-")
-            with open(
-                    pathlib.Path(
-                        self.current_test_info.output_path,
-                        f"bumble_{address_str}_btsnoop.log",
-                    ),
-                    "wb",
-            ) as f:
-                f.write(ref.snoop_buffer.getbuffer())
-            if isinstance(ref.adapter, crown.AndroidCrownAdapter):
-                adb_snippets.download_btsnoop(
-                    device=ref.adapter.ad,
-                    destination_base_path=self.current_test_info.output_path,
-                    filename_prefix="bumble",
-                )
-                adb_snippets.cleanup_btsnoop(device=ref.adapter.ad)
+        try:
+            adb_snippets.download_btsnoop(
+                device=self.dut.device,
+                destination_base_path=self.current_test_info.output_path,
+            )
+            adb_snippets.cleanup_btsnoop(device=self.dut.device)
+            adb_snippets.download_dumpsys(
+                device=self.dut.device,
+                destination_base_path=self.current_test_info.output_path,
+            )
+            for ref in self._refs:
+                address_str = ref.address.replace(":", "-")
+                with open(
+                        pathlib.Path(
+                            self.current_test_info.output_path,
+                            f"bumble_{address_str}_btsnoop.log",
+                        ),
+                        "wb",
+                ) as f:
+                    f.write(ref.snoop_buffer.getbuffer())
+                if isinstance(ref.adapter, crown.AndroidCrownAdapter):
+                    adb_snippets.download_btsnoop(
+                        device=ref.adapter.ad,
+                        destination_base_path=self.current_test_info.output_path,
+                        filename_prefix="bumble",
+                    )
+                    adb_snippets.cleanup_btsnoop(device=ref.adapter.ad)
+        except (adb.Error, FileNotFoundError):
+            if sys.platform == "win32":
+                self.logger.exception(
+                    "Failed to get btsnoop and dumpsys, probably because the file path"
+                    " is too long (Windows limit is 260 characters)")
+            else:
+                self.logger.exception("Failed to get btsnoop and dumpsys")
 
     @retry_lib.retry_on_exception()
     @override
@@ -945,6 +957,7 @@ class AndroidBumbleTestBase(BaseTestBase):
         self,
         ref: crown.CrownDevice | None = None,
         direction: constants.Direction = constants.Direction.OUTGOING,
+        connect_profiles: bool = False,
     ) -> bumble.device.Connection:
         """Connects and creates bond from DUT over BR/EDR.
 
@@ -958,6 +971,8 @@ class AndroidBumbleTestBase(BaseTestBase):
       ref: The Bumble device to pair with. If None, first Bumble device will be
         used.
       direction: The direction of the pairing.
+      connect_profiles: Whether to connect profiles after pairing. This may
+        fails if REF has no known service UUIDs.
 
     Returns:
       REF->DUT ACL connection instance.
@@ -1032,6 +1047,15 @@ class AndroidBumbleTestBase(BaseTestBase):
                     transport=bumble.core.PhysicalTransport.BR_EDR,
             )):
                 self.fail("Failed to find ACL connection between DUT and REF.")
+
+            if connect_profiles:
+                self.logger.info("[DUT] Wait for UUID changed.")
+                await dut_cb.wait_for_event(
+                    bl4a_api.UuidChanged(address=ref.address, uuids=matcher.ANY),
+                    timeout=_SETUP_TIMEOUT_SECONDS,
+                )
+                # Trigger profile connections.
+                self.dut.bt.connect(ref.address)
             return ref_dut_acl
 
     @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)

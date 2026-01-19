@@ -17,10 +17,12 @@ import asyncio
 import dataclasses
 import datetime
 import enum
+import itertools
 from typing import TypeAlias
 import xml.etree.ElementTree as ET
 
 from bumble import core
+from bumble import l2cap
 from mobly import test_runner
 from mobly import signals
 from typing_extensions import override
@@ -83,6 +85,11 @@ class _DisconnectVariant(enum.IntEnum):
     BEARER = 2
 
 
+class _BearerType(enum.IntEnum):
+    RFCOMM = 1
+    L2CAP = 2
+
+
 class MapTest(navi_test_base.TwoDevicesTestBase):
 
     @override
@@ -113,7 +120,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_test()
         await self._setup_paired_devices()
 
-    async def _make_mas_client_from_ref(self) -> obex.ClientSession:
+    async def _make_mas_client_from_ref(self, bearer_type: _BearerType) -> obex.ClientSession:
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             self.logger.info("[REF] Connect to DUT.")
             ref_dut_acl = await self.ref.device.connect(self.dut.address,
@@ -128,16 +135,29 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
             if not sdp_info:
                 self.fail("Failed to find SDP record for MAP MAS.")
 
-            ref_rfcomm_manager = rfcomm.Manager.find_or_create(self.ref.device)
-            self.logger.info("[REF] Connect RFCOMM.")
-            rfcomm_client = await ref_rfcomm_manager.connect(ref_dut_acl)
-            self.logger.info("[REF] Open DLC to %d.", sdp_info.rfcomm_channel)
-            ref_dlc = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
-            return obex.ClientSession(ref_dlc)
+            bearer: obex.Bearer
+            if bearer_type == _BearerType.L2CAP:
+                if not sdp_info.goep_l2cap_psm:
+                    self.fail("Failed to find GOEP L2CAP PSM in SDP record.")
+                self.logger.info("[REF] Open L2CAP channel to %d.", sdp_info.goep_l2cap_psm)
+                bearer = await ref_dut_acl.create_l2cap_channel(
+                    l2cap.ClassicChannelSpec(
+                        psm=sdp_info.goep_l2cap_psm,
+                        mode=l2cap.TransmissionMode.ENHANCED_RETRANSMISSION,
+                        fcs_enabled=True,
+                    ))
+            else:
+                ref_rfcomm_manager = rfcomm.Manager.find_or_create(self.ref.device)
+                self.logger.info("[REF] Connect RFCOMM.")
+                rfcomm_client = await ref_rfcomm_manager.connect(ref_dut_acl)
+                self.logger.info("[REF] Open DLC to %d.", sdp_info.rfcomm_channel)
+                bearer = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
+            return obex.ClientSession(bearer)
 
-    async def _make_connected_mas_client_from_ref(self,) -> tuple[obex.ClientSession, int]:
+    async def _make_connected_mas_client_from_ref(
+            self, bearer_type: _BearerType) -> tuple[obex.ClientSession, int]:
         with self.dut.bl4a.register_callback(_Module.MAP) as dut_cb:
-            client = await self._make_mas_client_from_ref()
+            client = await self._make_mas_client_from_ref(bearer_type)
             self.logger.info("[REF] Send connect request.")
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
                 response = await client.send_request(_CONNECT_REQUEST)
@@ -169,11 +189,12 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
              )),
         ])
 
-    @navi_test_base.parameterized(
-        _DisconnectVariant.ACL,
-        _DisconnectVariant.BEARER,
-    )
-    async def test_connect_disconnect(self, variant: _DisconnectVariant) -> None:
+    @navi_test_base.parameterized(*itertools.product(
+        (_DisconnectVariant.ACL, _DisconnectVariant.BEARER),
+        (_BearerType.RFCOMM, _BearerType.L2CAP),
+    ))
+    async def test_connect_disconnect(self, variant: _DisconnectVariant,
+                                      bearer_type: _BearerType) -> None:
         """Tests connecting and disconnecting message_access.
 
     Test steps:
@@ -182,14 +203,15 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
 
     Args:
       variant: The disconnect variant.
+      bearer_type: The bearer type.
     """
         with self.dut.bl4a.register_callback(_Module.MAP) as dut_cb:
-            client, _ = await self._make_connected_mas_client_from_ref()
+            client, _ = await self._make_connected_mas_client_from_ref(bearer_type)
 
             match variant:
                 case _DisconnectVariant.ACL:
                     self.logger.info("[REF] Disconnect ACL.")
-                    coroutine = (client.bearer.multiplexer.l2cap_channel.connection.disconnect())
+                    coroutine = list(self.ref.device.connections.values())[0].disconnect()
                 case _DisconnectVariant.BEARER:
                     self.logger.info("[REF] Disconnect bearer.")
                     coroutine = client.bearer.disconnect()
@@ -204,11 +226,18 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
                     state=android_constants.ConnectionState.DISCONNECTED,
                 ),)
 
-    @navi_test_base.parameterized(
-        android_constants.SmsMessageType.INBOX,
-        android_constants.SmsMessageType.SENT,
-    )
-    async def test_get_sms(self, message_type: android_constants.SmsMessageType) -> None:
+    @navi_test_base.parameterized(*itertools.product(
+        (
+            android_constants.SmsMessageType.INBOX,
+            android_constants.SmsMessageType.SENT,
+        ),
+        (_BearerType.RFCOMM, _BearerType.L2CAP),
+    ))
+    async def test_get_sms(
+        self,
+        message_type: android_constants.SmsMessageType,
+        bearer_type: _BearerType,
+    ) -> None:
         """Tests getting SMS message from DUT.
 
     Test steps:
@@ -219,6 +248,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
 
     Args:
       message_type: The SMS message type.
+      bearer_type: The bearer type.
     """
         folder_path = {
             android_constants.SmsMessageType.INBOX: "inbox",
@@ -226,7 +256,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         }[message_type]
         self._add_sms_message(_SAMPLE_MESSAGE, message_type)
 
-        client, connection_id = await self._make_connected_mas_client_from_ref()
+        client, connection_id = await self._make_connected_mas_client_from_ref(bearer_type)
         for folder in ("telecom", "msg"):
             self.logger.info("[REF] Set folder path to %s.", folder)
             setpath_request = obex.SetpathRequest(
@@ -282,7 +312,11 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         self.assertIn(_SAMPLE_MESSAGE.body, lines)
         self.assertIn(f"TEL:{_SAMPLE_MESSAGE.address}", lines)
 
-    async def test_message_notification(self) -> None:
+    @navi_test_base.parameterized(
+        (_BearerType.RFCOMM,),
+        (_BearerType.L2CAP,),
+    )
+    async def test_message_notification(self, bearer_type: _BearerType) -> None:
         """Tests sending message notification from DUT to REF.
 
     Test steps:
@@ -291,19 +325,27 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
       3. Wait for DUT to connect to the MNS server.
       4. Add SMS message to DUT.
       5. Wait for REF to receive the message notification.
+
+    Args:
+      bearer_type: The bearer type.
     """
-        ref_rfcomm_manager = rfcomm.Manager.find_or_create(self.ref.device)
-        mns_server = message_access.MnsServer(ref_rfcomm_manager)
+        mns_server = message_access.MnsServer(self.ref.device)
+        goep_l2cap_psm: int | None
+        if bearer_type == _BearerType.L2CAP:
+            goep_l2cap_psm = mns_server.l2cap_server.psm
+        else:
+            goep_l2cap_psm = None
         self.ref.device.sdp_service_records = {
             1: (message_access.MnsSdpInfo(
                 service_record_handle=1,
                 rfcomm_channel=mns_server.rfcomm_channel,
-                version=message_access.Version.V_1_3,
+                version=message_access.Version.V_1_4,
                 supported_features=(
                     message_access.ApplicationParameterValue.SupportedFeatures(0xFF)),
+                goep_l2cap_psm=goep_l2cap_psm,
             ).to_sdp_records()),
         }
-        client, connection_id = await self._make_connected_mas_client_from_ref()
+        client, connection_id = await self._make_connected_mas_client_from_ref(bearer_type)
 
         request = obex.Request(
             opcode=obex.Opcode.PUT,
