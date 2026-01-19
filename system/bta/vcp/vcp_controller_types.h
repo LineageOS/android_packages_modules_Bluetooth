@@ -28,22 +28,17 @@
 #include <vector>
 
 #include "bta/include/bta_groups.h"
+#include "bta/vcp/vcs_types.h"
 #include "osi/include/alarm.h"
 
 namespace bluetooth {
 namespace vcp {
 namespace internal {
 
-/* clang-format off */
-/* Volume control point opcodes */
-static constexpr uint8_t kControlPointOpcodeVolumeDown         = 0x00;
-static constexpr uint8_t kControlPointOpcodeVolumeUp           = 0x01;
-static constexpr uint8_t kControlPointOpcodeUnmuteVolumeDown   = 0x02;
-static constexpr uint8_t kControlPointOpcodeUnmuteVolumeUp     = 0x03;
-static constexpr uint8_t kControlPointOpcodeSetAbsoluteVolume  = 0x04;
-static constexpr uint8_t kControlPointOpcodeUnmute             = 0x05;
-static constexpr uint8_t kControlPointOpcodeMute               = 0x06;
+using namespace vcs;
+using namespace vcs::uuid;
 
+/* clang-format off */
 /* Volume offset control point opcodes */
 static constexpr uint8_t kVolumeOffsetControlPointOpcodeSet                 = 0x01;
 
@@ -53,11 +48,6 @@ static constexpr uint8_t kVolumeInputControlPointOpcodeUnmute               = 0x
 static constexpr uint8_t kVolumeInputControlPointOpcodeMute                 = 0x03;
 static constexpr uint8_t kVolumeInputControlPointOpcodeSetManualGainMode    = 0x04;
 static constexpr uint8_t kVolumeInputControlPointOpcodeSetAutoGainMode      = 0x05;
-
-static const Uuid kVolumeControlUuid                         = Uuid::From16Bit(0x1844);
-static const Uuid kVolumeControlStateUuid                    = Uuid::From16Bit(0x2B7D);
-static const Uuid kVolumeControlPointUuid                    = Uuid::From16Bit(0x2B7E);
-static const Uuid kVolumeFlagsUuid                           = Uuid::From16Bit(0x2B7F);
 
 static const Uuid kVolumeOffsetUuid                          = Uuid::From16Bit(0x1845);
 static const Uuid kVolumeOffsetStateUuid                     = Uuid::From16Bit(0x2B80);

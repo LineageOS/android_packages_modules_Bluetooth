@@ -268,12 +268,12 @@ protected:
   /* sample database 1xVCS, 2xAICS, 2xVOCS */
   void SetSampleDatabase1(void) {
     gatt::DatabaseBuilder builder;
-    builder.AddService(0x0001, 0x0017, kVolumeControlUuid, true);
+    builder.AddService(0x0001, 0x0017, kVolumeControlServiceUuid, true);
     builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x0020, 0x002e);
     builder.AddIncludedService(0x0003, kVolumeAudioInputUuid, 0x0040, 0x004f);
     builder.AddIncludedService(0x0004, kVolumeOffsetUuid, 0x0060, 0x0069);
     builder.AddIncludedService(0x0005, kVolumeOffsetUuid, 0x0080, 0x008b);
-    builder.AddCharacteristic(0x0010, 0x0011, kVolumeControlStateUuid,
+    builder.AddCharacteristic(0x0010, 0x0011, kVolumeStateUuid,
                               GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
     builder.AddDescriptor(0x0012, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
     builder.AddCharacteristic(0x0013, 0x0014, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
@@ -360,10 +360,10 @@ protected:
   /* sample database 1xAICS, 1xVOCS */
   void SetSampleDatabase3(void) {
     gatt::DatabaseBuilder builder;
-    builder.AddService(0x0001, 0x0017, kVolumeControlUuid, true);
+    builder.AddService(0x0001, 0x0017, kVolumeControlServiceUuid, true);
     builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x0020, 0x002e);
     builder.AddIncludedService(0x0004, kVolumeOffsetUuid, 0x0060, 0x0069);
-    builder.AddCharacteristic(0x0010, 0x0011, kVolumeControlStateUuid,
+    builder.AddCharacteristic(0x0010, 0x0011, kVolumeStateUuid,
                               GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
     builder.AddDescriptor(0x0012, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
     builder.AddCharacteristic(0x0013, 0x0014, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
@@ -414,9 +414,9 @@ TEST_F(VolumeControllerDeviceTest, test_service_volume_control_not_found) {
 
 TEST_F(VolumeControllerDeviceTest, test_service_aics_incomplete) {
   gatt::DatabaseBuilder builder;
-  builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
+  builder.AddService(0x0001, 0x000a, kVolumeControlServiceUuid, true);
   builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x000b, 0x0018);
-  builder.AddCharacteristic(0x0003, 0x0004, kVolumeControlStateUuid,
+  builder.AddCharacteristic(0x0003, 0x0004, kVolumeStateUuid,
                             GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
   builder.AddDescriptor(0x0005, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
   builder.AddCharacteristic(0x0006, 0x0007, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
@@ -450,9 +450,9 @@ TEST_F(VolumeControllerDeviceTest, test_service_aics_incomplete) {
 
 TEST_F(VolumeControllerDeviceTest, test_service_aics_found) {
   gatt::DatabaseBuilder builder;
-  builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
+  builder.AddService(0x0001, 0x000a, kVolumeControlServiceUuid, true);
   builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x000b, 0x001a);
-  builder.AddCharacteristic(0x0003, 0x0004, kVolumeControlStateUuid,
+  builder.AddCharacteristic(0x0003, 0x0004, kVolumeStateUuid,
                             GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
   builder.AddDescriptor(0x0005, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
   builder.AddCharacteristic(0x0006, 0x0007, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
@@ -493,8 +493,8 @@ TEST_F(VolumeControllerDeviceTest, test_service_aics_found) {
 
 TEST_F(VolumeControllerDeviceTest, test_service_volume_control_incomplete) {
   gatt::DatabaseBuilder builder;
-  builder.AddService(0x0001, 0x0006, kVolumeControlUuid, true);
-  builder.AddCharacteristic(0x0002, 0x0003, kVolumeControlStateUuid,
+  builder.AddService(0x0001, 0x0006, kVolumeControlServiceUuid, true);
+  builder.AddCharacteristic(0x0002, 0x0003, kVolumeStateUuid,
                             GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
   builder.AddDescriptor(0x0004, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
   builder.AddCharacteristic(0x0005, 0x0006, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
@@ -511,9 +511,9 @@ TEST_F(VolumeControllerDeviceTest, test_service_volume_control_incomplete) {
 
 TEST_F(VolumeControllerDeviceTest, test_service_vocs_incomplete) {
   gatt::DatabaseBuilder builder;
-  builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
+  builder.AddService(0x0001, 0x000a, kVolumeControlServiceUuid, true);
   builder.AddIncludedService(0x0002, kVolumeOffsetUuid, 0x000b, 0x0013);
-  builder.AddCharacteristic(0x0003, 0x0004, kVolumeControlStateUuid,
+  builder.AddCharacteristic(0x0003, 0x0004, kVolumeStateUuid,
                             GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
   builder.AddDescriptor(0x0005, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
   builder.AddCharacteristic(0x0006, 0x0007, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
@@ -543,9 +543,9 @@ TEST_F(VolumeControllerDeviceTest, test_service_vocs_incomplete) {
 
 TEST_F(VolumeControllerDeviceTest, test_service_vocs_found) {
   gatt::DatabaseBuilder builder;
-  builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
+  builder.AddService(0x0001, 0x000a, kVolumeControlServiceUuid, true);
   builder.AddIncludedService(0x0002, kVolumeOffsetUuid, 0x000b, 0x0015);
-  builder.AddCharacteristic(0x0003, 0x0004, kVolumeControlStateUuid,
+  builder.AddCharacteristic(0x0003, 0x0004, kVolumeStateUuid,
                             GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
   builder.AddDescriptor(0x0005, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
   builder.AddCharacteristic(0x0006, 0x0007, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
