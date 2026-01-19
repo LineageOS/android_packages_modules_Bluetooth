@@ -55,42 +55,50 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
     do_in_main_thread(BindOnce(&McpClient::Disconnect, Unretained(McpClient::Get()), address));
   }
 
-  void Play(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::Play, Unretained(McpClient::Get()), address));
-  }
-
-  void Pause(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::Pause, Unretained(McpClient::Get()), address));
-  }
-
-  void Stop(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::Stop, Unretained(McpClient::Get()), address));
-  }
-
-  void NextTrack(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::NextTrack, Unretained(McpClient::Get()), address));
-  }
-
-  void PreviousTrack(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::PreviousTrack, Unretained(McpClient::Get()), address));
-  }
-
-  void FastRewind(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::FastRewind, Unretained(McpClient::Get()), address));
-  }
-
-  void FastForward(const RawAddress& address) override {
-    do_in_main_thread(BindOnce(&McpClient::FastForward, Unretained(McpClient::Get()), address));
-  }
-
-  void MoveRelative(const RawAddress& address, int32_t offset) override {
+  void Play(const RawAddress& address, int media_controller_id) override {
     do_in_main_thread(
-            BindOnce(&McpClient::MoveRelative, Unretained(McpClient::Get()), address, offset));
+            BindOnce(&McpClient::Play, Unretained(McpClient::Get()), address, media_controller_id));
   }
 
-  void SetTrackPosition(const RawAddress& address, int32_t position) override {
+  void Pause(const RawAddress& address, int media_controller_id) override {
+    do_in_main_thread(BindOnce(&McpClient::Pause, Unretained(McpClient::Get()), address,
+                               media_controller_id));
+  }
+
+  void Stop(const RawAddress& address, int media_controller_id) override {
+    do_in_main_thread(
+            BindOnce(&McpClient::Stop, Unretained(McpClient::Get()), address, media_controller_id));
+  }
+
+  void NextTrack(const RawAddress& address, int media_controller_id) override {
+    do_in_main_thread(BindOnce(&McpClient::NextTrack, Unretained(McpClient::Get()), address,
+                               media_controller_id));
+  }
+
+  void PreviousTrack(const RawAddress& address, int media_controller_id) override {
+    do_in_main_thread(BindOnce(&McpClient::PreviousTrack, Unretained(McpClient::Get()), address,
+                               media_controller_id));
+  }
+
+  void FastRewind(const RawAddress& address, int media_controller_id) override {
+    do_in_main_thread(BindOnce(&McpClient::FastRewind, Unretained(McpClient::Get()), address,
+                               media_controller_id));
+  }
+
+  void FastForward(const RawAddress& address, int media_controller_id) override {
+    do_in_main_thread(BindOnce(&McpClient::FastForward, Unretained(McpClient::Get()), address,
+                               media_controller_id));
+  }
+
+  void MoveRelative(const RawAddress& address, int media_controller_id, int32_t offset) override {
+    do_in_main_thread(BindOnce(&McpClient::MoveRelative, Unretained(McpClient::Get()), address,
+                               media_controller_id, offset));
+  }
+
+  void SetTrackPosition(const RawAddress& address, int media_controller_id,
+                        int32_t position) override {
     do_in_main_thread(BindOnce(&McpClient::SetTrackPosition, Unretained(McpClient::Get()), address,
-                               position));
+                               media_controller_id, position));
   }
 
   // Callbacks
@@ -103,61 +111,70 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnDiscovered, Unretained(callbacks_), address));
   }
 
-  void OnMediaPlayerNameChanged(const RawAddress& address, const std::string& name) override {
+  void OnMediaPlayerNameChanged(const RawAddress& address, int media_controller_id,
+                                const std::string& name) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnMediaPlayerNameChanged, Unretained(callbacks_),
-                              address, name));
+                              address, media_controller_id, name));
   }
 
-  void OnTrackChanged(const RawAddress& address) override {
-    do_in_jni_thread(
-            BindOnce(&McpClientCallbacks::OnTrackChanged, Unretained(callbacks_), address));
+  void OnTrackChanged(const RawAddress& address, int media_controller_id) override {
+    do_in_jni_thread(BindOnce(&McpClientCallbacks::OnTrackChanged, Unretained(callbacks_), address,
+                              media_controller_id));
   }
 
-  void OnTrackTitleChanged(const RawAddress& address, const std::string& title) override {
+  void OnTrackTitleChanged(const RawAddress& address, int media_controller_id,
+                           const std::string& title) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnTrackTitleChanged, Unretained(callbacks_),
-                              address, title));
+                              address, media_controller_id, title));
   }
 
-  void OnTrackDurationChanged(const RawAddress& address, int32_t duration) override {
+  void OnTrackDurationChanged(const RawAddress& address, int media_controller_id,
+                              int32_t duration) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnTrackDurationChanged, Unretained(callbacks_),
-                              address, duration));
+                              address, media_controller_id, duration));
   }
 
-  void OnTrackPositionChanged(const RawAddress& address, int32_t position) override {
+  void OnTrackPositionChanged(const RawAddress& address, int media_controller_id,
+                              int32_t position) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnTrackPositionChanged, Unretained(callbacks_),
-                              address, position));
+                              address, media_controller_id, position));
   }
 
-  void OnPlaybackSpeedChanged(const RawAddress& address, int8_t speed) override {
+  void OnPlaybackSpeedChanged(const RawAddress& address, int media_controller_id,
+                              int8_t speed) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnPlaybackSpeedChanged, Unretained(callbacks_),
-                              address, speed));
+                              address, media_controller_id, speed));
   }
 
-  void OnPlayingOrdersSupportedChanged(const RawAddress& address,
+  void OnPlayingOrdersSupportedChanged(const RawAddress& address, int media_controller_id,
                                        uint16_t playing_orders) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnPlayingOrdersSupportedChanged,
-                              Unretained(callbacks_), address, playing_orders));
+                              Unretained(callbacks_), address, media_controller_id,
+                              playing_orders));
   }
 
-  void OnSeekingSpeedChanged(const RawAddress& address, int8_t speed) override {
+  void OnSeekingSpeedChanged(const RawAddress& address, int media_controller_id,
+                             int8_t speed) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnSeekingSpeedChanged, Unretained(callbacks_),
-                              address, speed));
+                              address, media_controller_id, speed));
   }
 
-  void OnMediaStateChanged(const RawAddress& address, uint8_t state) override {
+  void OnMediaStateChanged(const RawAddress& address, int media_controller_id,
+                           uint8_t state) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnMediaStateChanged, Unretained(callbacks_),
-                              address, state));
+                              address, media_controller_id, state));
   }
 
-  void OnMediaControlResult(const RawAddress& address, uint8_t opcode,
+  void OnMediaControlResult(const RawAddress& address, int media_controller_id, uint8_t opcode,
                             MediaControlResultCode result) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnMediaControlResult, Unretained(callbacks_),
-                              address, opcode, result));
+                              address, media_controller_id, opcode, result));
   }
 
-  void OnOpcodesSupportedChanged(const RawAddress& address, uint32_t opcodes) override {
+  void OnOpcodesSupportedChanged(const RawAddress& address, int media_controller_id,
+                                 uint32_t opcodes) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnOpcodesSupportedChanged,
-                              Unretained(callbacks_), address, opcodes));
+                              Unretained(callbacks_), address, media_controller_id, opcodes));
   }
 
 private:

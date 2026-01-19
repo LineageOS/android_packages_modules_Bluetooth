@@ -90,8 +90,10 @@ public:
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDiscovered, addr.get());
   }
 
-  void OnMediaPlayerNameChanged(const RawAddress& address, const std::string& name) override {
-    log::info("addr: {}, name: {}", address.ToRedactedStringForLogging(), name);
+  void OnMediaPlayerNameChanged(const RawAddress& address, int media_controller_id,
+                                const std::string& name) override {
+    log::info("addr: {}, id: {}, name: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, name);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -102,11 +104,11 @@ public:
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     jstring j_name = sCallbackEnv->NewStringUTF(name.c_str());
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onMediaPlayerNameChanged, addr.get(),
-                                 j_name);
+                                 media_controller_id, j_name);
   }
 
-  void OnTrackChanged(const RawAddress& address) override {
-    log::info("addr: {}", address.ToRedactedStringForLogging());
+  void OnTrackChanged(const RawAddress& address, int media_controller_id) override {
+    log::info("addr: {}, id: {}", address.ToRedactedStringForLogging(), media_controller_id);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -115,11 +117,14 @@ public:
     }
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackChanged, addr.get());
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackChanged, addr.get(),
+                                 media_controller_id);
   }
 
-  void OnTrackTitleChanged(const RawAddress& address, const std::string& title) override {
-    log::info("addr: {}, title: {}", address.ToRedactedStringForLogging(), title);
+  void OnTrackTitleChanged(const RawAddress& address, int media_controller_id,
+                           const std::string& title) override {
+    log::info("addr: {}, id: {}, title: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, title);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -129,11 +134,14 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     jstring j_title = sCallbackEnv->NewStringUTF(title.c_str());
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackTitleChanged, addr.get(), j_title);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackTitleChanged, addr.get(),
+                                 media_controller_id, j_title);
   }
 
-  void OnTrackDurationChanged(const RawAddress& address, int32_t duration) override {
-    log::info("addr: {}, duration: {}", address.ToRedactedStringForLogging(), duration);
+  void OnTrackDurationChanged(const RawAddress& address, int media_controller_id,
+                              int32_t duration) override {
+    log::info("addr: {}, id: {}, duration: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, duration);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -143,11 +151,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackDurationChanged, addr.get(),
-                                 (jint)duration);
+                                 media_controller_id, (jint)duration);
   }
 
-  void OnTrackPositionChanged(const RawAddress& address, int32_t position) override {
-    log::info("addr: {}, position: {}", address.ToRedactedStringForLogging(), position);
+  void OnTrackPositionChanged(const RawAddress& address, int media_controller_id,
+                              int32_t position) override {
+    log::info("addr: {}, id: {}, position: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, position);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -157,11 +167,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackPositionChanged, addr.get(),
-                                 (jint)position);
+                                 media_controller_id, (jint)position);
   }
 
-  void OnPlaybackSpeedChanged(const RawAddress& address, int8_t speed) override {
-    log::info("addr: {}, speed: {}", address.ToRedactedStringForLogging(), speed);
+  void OnPlaybackSpeedChanged(const RawAddress& address, int media_controller_id,
+                              int8_t speed) override {
+    log::info("addr: {}, id: {}, speed: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, speed);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -171,12 +183,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPlaybackSpeedChanged, addr.get(),
-                                 (jbyte)speed);
+                                 media_controller_id, (jbyte)speed);
   }
 
-  void OnPlayingOrdersSupportedChanged(const RawAddress& address,
+  void OnPlayingOrdersSupportedChanged(const RawAddress& address, int media_controller_id,
                                        uint16_t playing_orders) override {
-    log::info("addr: {}, playing_orders: {}", address.ToRedactedStringForLogging(), playing_orders);
+    log::info("addr: {}, id: {}, playing_orders: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, playing_orders);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -186,11 +199,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPlayingOrdersSupportedChanged, addr.get(),
-                                 (jint)playing_orders);
+                                 media_controller_id, (jint)playing_orders);
   }
 
-  void OnSeekingSpeedChanged(const RawAddress& address, int8_t speed) override {
-    log::info("addr: {}, speed: {}", address.ToRedactedStringForLogging(), speed);
+  void OnSeekingSpeedChanged(const RawAddress& address, int media_controller_id,
+                             int8_t speed) override {
+    log::info("addr: {}, id: {}, speed: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, speed);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -200,11 +215,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSeekingSpeedChanged, addr.get(),
-                                 (jbyte)speed);
+                                 media_controller_id, (jbyte)speed);
   }
 
-  void OnMediaStateChanged(const RawAddress& address, uint8_t state) override {
-    log::info("addr: {}, state: {}", address.ToRedactedStringForLogging(), state);
+  void OnMediaStateChanged(const RawAddress& address, int media_controller_id,
+                           uint8_t state) override {
+    log::info("addr: {}, id: {}, state: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, state);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -214,13 +231,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onMediaStateChanged, addr.get(),
-                                 (jint)state);
+                                 media_controller_id, (jint)state);
   }
 
-  void OnMediaControlResult(const RawAddress& address, uint8_t opcode,
+  void OnMediaControlResult(const RawAddress& address, int media_controller_id, uint8_t opcode,
                             MediaControlResultCode result) override {
-    log::info("addr: {}, opcode: {}, result: {}", address.ToRedactedStringForLogging(), opcode,
-              static_cast<int>(result));
+    log::info("addr: {}, id: {}, opcode: {}, result: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, opcode, static_cast<int>(result));
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -230,11 +247,13 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onMediaControlResult, addr.get(),
-                                 (jint)opcode, (jint)result);
+                                 media_controller_id, (jint)opcode, (jint)result);
   }
 
-  void OnOpcodesSupportedChanged(const RawAddress& address, uint32_t opcodes) override {
-    log::info("addr: {}, opcodes: {}", address.ToRedactedStringForLogging(), opcodes);
+  void OnOpcodesSupportedChanged(const RawAddress& address, int media_controller_id,
+                                 uint32_t opcodes) override {
+    log::info("addr: {}, id: {}, opcodes: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, opcodes);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -244,7 +263,7 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onOpcodesSupportedChanged, addr.get(),
-                                 (jint)opcodes);
+                                 media_controller_id, (jint)opcodes);
   }
 };
 
@@ -331,7 +350,8 @@ static void disconnectNative(JNIEnv* env, jobject /* object */, jbyteArray addre
   sMcpClientInterface->Disconnect(bd_addr);
 }
 
-static void playNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void playNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                       jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -339,10 +359,11 @@ static void playNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->Play(bd_addr);
+  sMcpClientInterface->Play(bd_addr, media_controller_id);
 }
 
-static void pauseNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void pauseNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                        jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -350,10 +371,11 @@ static void pauseNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->Pause(bd_addr);
+  sMcpClientInterface->Pause(bd_addr, media_controller_id);
 }
 
-static void stopNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void stopNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                       jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -361,10 +383,11 @@ static void stopNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->Stop(bd_addr);
+  sMcpClientInterface->Stop(bd_addr, media_controller_id);
 }
 
-static void nextTrackNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void nextTrackNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                            jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -372,10 +395,11 @@ static void nextTrackNative(JNIEnv* env, jobject /* object */, jbyteArray addres
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->NextTrack(bd_addr);
+  sMcpClientInterface->NextTrack(bd_addr, media_controller_id);
 }
 
-static void previousTrackNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void previousTrackNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -383,10 +407,11 @@ static void previousTrackNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->PreviousTrack(bd_addr);
+  sMcpClientInterface->PreviousTrack(bd_addr, media_controller_id);
 }
 
-static void fastRewindNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void fastRewindNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                             jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -394,10 +419,11 @@ static void fastRewindNative(JNIEnv* env, jobject /* object */, jbyteArray addre
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->FastRewind(bd_addr);
+  sMcpClientInterface->FastRewind(bd_addr, media_controller_id);
 }
 
-static void fastForwardNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static void fastForwardNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                              jint media_controller_id) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -405,10 +431,11 @@ static void fastForwardNative(JNIEnv* env, jobject /* object */, jbyteArray addr
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->FastForward(bd_addr);
+  sMcpClientInterface->FastForward(bd_addr, media_controller_id);
 }
 
-static void moveRelativeNative(JNIEnv* env, jobject /* object */, jbyteArray address, jint offset) {
+static void moveRelativeNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                               jint media_controller_id, jint offset) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -416,11 +443,11 @@ static void moveRelativeNative(JNIEnv* env, jobject /* object */, jbyteArray add
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->MoveRelative(bd_addr, offset);
+  sMcpClientInterface->MoveRelative(bd_addr, media_controller_id, offset);
 }
 
 static void setTrackPositionNative(JNIEnv* env, jobject /* object */, jbyteArray address,
-                                   jint position) {
+                                   jint media_controller_id, jint position) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sMcpClientInterface) {
@@ -428,7 +455,7 @@ static void setTrackPositionNative(JNIEnv* env, jobject /* object */, jbyteArray
     return;
   }
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  sMcpClientInterface->SetTrackPosition(bd_addr, position);
+  sMcpClientInterface->SetTrackPosition(bd_addr, media_controller_id, position);
 }
 
 int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
@@ -437,15 +464,15 @@ int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
           {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
           {"connectNative", "([B)V", reinterpret_cast<void*>(connectNative)},
           {"disconnectNative", "([B)V", reinterpret_cast<void*>(disconnectNative)},
-          {"playNative", "([B)V", reinterpret_cast<void*>(playNative)},
-          {"pauseNative", "([B)V", reinterpret_cast<void*>(pauseNative)},
-          {"stopNative", "([B)V", reinterpret_cast<void*>(stopNative)},
-          {"nextTrackNative", "([B)V", reinterpret_cast<void*>(nextTrackNative)},
-          {"previousTrackNative", "([B)V", reinterpret_cast<void*>(previousTrackNative)},
-          {"fastRewindNative", "([B)V", reinterpret_cast<void*>(fastRewindNative)},
-          {"fastForwardNative", "([B)V", reinterpret_cast<void*>(fastForwardNative)},
-          {"moveRelativeNative", "([BI)V", reinterpret_cast<void*>(moveRelativeNative)},
-          {"setTrackPositionNative", "([BI)V", reinterpret_cast<void*>(setTrackPositionNative)},
+          {"playNative", "([BI)V", reinterpret_cast<void*>(playNative)},
+          {"pauseNative", "([BI)V", reinterpret_cast<void*>(pauseNative)},
+          {"stopNative", "([BI)V", reinterpret_cast<void*>(stopNative)},
+          {"nextTrackNative", "([BI)V", reinterpret_cast<void*>(nextTrackNative)},
+          {"previousTrackNative", "([BI)V", reinterpret_cast<void*>(previousTrackNative)},
+          {"fastRewindNative", "([BI)V", reinterpret_cast<void*>(fastRewindNative)},
+          {"fastForwardNative", "([BI)V", reinterpret_cast<void*>(fastForwardNative)},
+          {"moveRelativeNative", "([BII)V", reinterpret_cast<void*>(moveRelativeNative)},
+          {"setTrackPositionNative", "([BII)V", reinterpret_cast<void*>(setTrackPositionNative)},
   };
   const char* jniNativeInterfaceClass = "com/android/bluetooth/mcp/McpClientNativeInterface";
   const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
@@ -458,17 +485,18 @@ int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},
           {"onDiscovered", "([B)V", &method_onDiscovered},
-          {"onMediaPlayerNameChanged", "([BLjava/lang/String;)V", &method_onMediaPlayerNameChanged},
-          {"onTrackChanged", "([B)V", &method_onTrackChanged},
-          {"onTrackTitleChanged", "([BLjava/lang/String;)V", &method_onTrackTitleChanged},
-          {"onTrackDurationChanged", "([BI)V", &method_onTrackDurationChanged},
-          {"onTrackPositionChanged", "([BI)V", &method_onTrackPositionChanged},
-          {"onPlaybackSpeedChanged", "([BB)V", &method_onPlaybackSpeedChanged},
-          {"onPlayingOrdersSupportedChanged", "([BI)V", &method_onPlayingOrdersSupportedChanged},
-          {"onSeekingSpeedChanged", "([BB)V", &method_onSeekingSpeedChanged},
-          {"onMediaStateChanged", "([BI)V", &method_onMediaStateChanged},
-          {"onMediaControlResult", "([BII)V", &method_onMediaControlResult},
-          {"onOpcodesSupportedChanged", "([BI)V", &method_onOpcodesSupportedChanged},
+          {"onMediaPlayerNameChanged", "([BILjava/lang/String;)V",
+           &method_onMediaPlayerNameChanged},
+          {"onTrackChanged", "([BI)V", &method_onTrackChanged},
+          {"onTrackTitleChanged", "([BILjava/lang/String;)V", &method_onTrackTitleChanged},
+          {"onTrackDurationChanged", "([BII)V", &method_onTrackDurationChanged},
+          {"onTrackPositionChanged", "([BII)V", &method_onTrackPositionChanged},
+          {"onPlaybackSpeedChanged", "([BIB)V", &method_onPlaybackSpeedChanged},
+          {"onPlayingOrdersSupportedChanged", "([BII)V", &method_onPlayingOrdersSupportedChanged},
+          {"onSeekingSpeedChanged", "([BIB)V", &method_onSeekingSpeedChanged},
+          {"onMediaStateChanged", "([BII)V", &method_onMediaStateChanged},
+          {"onMediaControlResult", "([BIII)V", &method_onMediaControlResult},
+          {"onOpcodesSupportedChanged", "([BII)V", &method_onOpcodesSupportedChanged},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/mcp/McpClientNativeCallback", javaMethods);
 
