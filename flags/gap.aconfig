@@ -116,16 +116,6 @@ flag {
 }
 
 flag {
-    name: "original_address_filter_match"
-    namespace: "bluetooth"
-    description: "Match other filters along with device address when we use original address."
-    bug: "425250980"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "get_svc_uuids_bugfix"
     namespace: "bluetooth"
     description: "Bug fixes for the flag get_svc_uuids_from_ble_adv_data"
