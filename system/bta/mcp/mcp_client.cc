@@ -403,8 +403,11 @@ private:
     }
 
     if (device->service_found) {
-      if (device->media_state_handle == 0 || device->media_control_point_handle == 0 ||
-          device->opcodes_supported_handle == 0) {
+      if (device->media_player_name_handle == 0 || device->track_changed_handle == 0 ||
+          device->track_title_handle == 0 || device->track_duration_handle == 0 ||
+          device->track_position_handle == 0 || device->media_state_handle == 0 ||
+          device->content_control_id_handle == 0 ||
+          (device->media_control_point_handle != 0 && device->opcodes_supported_handle == 0)) {
         log::error("Mandatory MCS characteristics not found on {}", device->addr);
         BTA_GATTC_Close(device->conn_id);
         return;
