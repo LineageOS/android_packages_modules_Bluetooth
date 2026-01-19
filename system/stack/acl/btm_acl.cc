@@ -631,6 +631,10 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t /* status */, uint8_t encr_
     /* Finished enabling Encryption after role switch */
     p->reset_switch_role();
     p->set_encryption_idle();
+    /* Release any SCO requests that arrived during re-encryption */
+    if (com_android_bluetooth_flags_release_pending_sco_after_role_switch()) {
+      btm_sco_chk_pend_rolechange(p->hci_handle);
+    }
     NotifyAclRoleSwitchComplete(btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr,
                                 btm_cb.acl_cb_.switch_role_ref_data.role,
                                 btm_cb.acl_cb_.switch_role_ref_data.hci_status);
@@ -1164,15 +1168,26 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddre
     new_role = p_acl->link_role;
   }
 
-  /* Check if any SCO req is pending for role change */
-  btm_sco_chk_pend_rolechange(p_acl->hci_handle);
-
-  /* if switching state is switching we need to turn encryption on */
-  /* if idle, we did not change encryption */
-  if (p_acl->is_switch_role_switching()) {
-    p_acl->set_encryption_on();
-    p_acl->set_switch_role_encryption_on();
-    return;
+  if (com_android_bluetooth_flags_release_pending_sco_after_role_switch()) {
+    /* if switching state is switching we need to turn encryption on */
+    /* if idle, we did not change encryption */
+    if (p_acl->is_switch_role_switching()) {
+      p_acl->set_encryption_on();
+      p_acl->set_switch_role_encryption_on();
+      return;
+    }
+    /* Check if any SCO req is pending for role change */
+    btm_sco_chk_pend_rolechange(p_acl->hci_handle);
+  } else {
+    /* Check if any SCO req is pending for role change */
+    btm_sco_chk_pend_rolechange(p_acl->hci_handle);
+    /* if switching state is switching we need to turn encryption on */
+    /* if idle, we did not change encryption */
+    if (p_acl->is_switch_role_switching()) {
+      p_acl->set_encryption_on();
+      p_acl->set_switch_role_encryption_on();
+      return;
+    }
   }
 
   /* Set the switch_role_state to IDLE since the reply received from HCI */
@@ -1709,7 +1724,7 @@ bool acl_link_is_disconnecting(const RawAddress& remote_bda, tBT_TRANSPORT trans
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, transport);
   if (p_acl != nullptr && p_acl->InUse() && p_acl->disconnect_reason != 0) {
     log::warn("Link is in disconnecting, disconnect_reason:{}, bd_addr:{}",
-               p_acl->disconnect_reason, remote_bda);
+              p_acl->disconnect_reason, remote_bda);
     return true;
   }
   return false;
