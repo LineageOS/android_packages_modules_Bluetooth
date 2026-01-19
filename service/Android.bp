@@ -53,6 +53,7 @@ java_library {
         "src/BluetoothRestriction.kt",
         "src/BluetoothService.kt",
         "src/BluetoothSupervisor.kt",
+        "src/ChangeIds.kt",
         "src/Log.kt",
         "src/PermissionChecker.kt",
         "src/RadioModeListener.kt",
@@ -66,11 +67,11 @@ java_library {
     ],
 
     libs: [
+        "app-compat-annotations",
         "framework-annotations-lib",
         "framework-configinfrastructure.stubs.module_lib",
         "framework-permission-s.stubs.module_lib",
         "framework-statsd.stubs.module_lib",
-        "service-bluetooth.change-ids",
     ],
 
     static_libs: [
@@ -110,6 +111,11 @@ java_library {
     min_sdk_version: "36",
     apex_available: ["com.android.bt"],
     visibility: ["//packages/modules/Bluetooth/apex"],
+}
+
+platform_compat_config {
+    name: "bluetooth-compat-config",
+    src: ":service-bluetooth",
 }
 
 java_library {
@@ -154,6 +160,7 @@ android_robolectric_test {
         "src/BluetoothManagerServiceApi.kt",
         "src/BluetoothRestriction.kt",
         "src/BluetoothRestrictionTest.kt",
+        "src/ChangeIds.kt",
         "src/Log.kt",
         "src/LogTest.kt",
         "src/PermissionChecker.kt",
@@ -200,9 +207,9 @@ android_robolectric_test {
 
     libs: [
         "PlatformProperties",
+        "app-compat-annotations",
         "framework-annotations-lib",
         "framework-statsd.stubs.module_lib",
-        "service-bluetooth.change-ids",
     ],
 
     jacoco: {

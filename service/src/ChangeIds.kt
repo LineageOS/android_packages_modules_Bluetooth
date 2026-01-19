@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.android.server.bluetooth;
+package com.android.server.bluetooth
 
-import android.compat.annotation.ChangeId;
-import android.compat.annotation.EnabledSince;
+import android.compat.annotation.ChangeId
+import android.compat.annotation.EnabledSince
+import android.os.Build
 
-/** All the {@link ChangeId} used in the Bluetooth service . */
-class ChangeIds {
-    private ChangeIds() {}
-
-    /**
-     * Starting with {@link android.os.Build.VERSION_CODES#TIRAMISU}, applications are not allowed
-     * to enable/disable Bluetooth.
-     */
+/** All the [ChangeId] used in the Bluetooth system server. */
+object ChangeIds {
+    /** After TIRAMISU, applications are not allowed to enable/disable Bluetooth. */
     @ChangeId
-    @EnabledSince(targetSdkVersion = android.os.Build.VERSION_CODES.TIRAMISU)
-    static final long RESTRICT_ENABLE_DISABLE = 218493289L;
+    @EnabledSince(targetSdkVersion = Build.VERSION_CODES.TIRAMISU)
+    const val RESTRICT_ENABLE_DISABLE = 218493289L
 }
