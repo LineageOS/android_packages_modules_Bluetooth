@@ -1386,7 +1386,9 @@ void bta_av_sdp_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   bta_av_free_sdb(p_scb, NULL);
-  bta_av_str_closed(p_scb, p_data);
+  if (!com_android_bluetooth_flags_cleanup_avdt_on_sdp_result_when_closing()) {
+    bta_av_str_closed(p_scb, p_data);
+  }
 }
 
 /*******************************************************************************
