@@ -218,8 +218,9 @@ void port_release_port(tPORT* p_port) {
   alarm_cancel(p_port->port_timer);
 
   p_port->state = PORT_CONNECTION_STATE_CLOSED;
-  if (com_android_bluetooth_flags_mark_port_not_in_use_on_release()) {
-    log::debug("setting p_port->in_use=false");
+  if (com_android_bluetooth_flags_mark_port_not_in_use_on_release()
+      && !p_port->keep_port_handle) {
+    log::debug("setting p_port->in_use=false when not keep port handle");
     p_port->in_use = false;
   }
 
