@@ -19,9 +19,35 @@
 #include <functional>
 #include <mutex>
 
+#include "hal/gatt_hal_impl.h"
+#include "hal/hci_hal_impl.h"
+#include "hal/link_clocker.h"
+#include "hal/ranging_hal_impl.h"
+#include "hal/snoop_logger.h"
+#include "hal/socket_hal_impl.h"
+#include "hci/acl_manager/acl_manager_classic_impl.h"
+#include "hci/acl_manager/acl_manager_le_impl.h"
+#include "hci/acl_manager/acl_scheduler.h"
+#include "hci/controller_impl.h"
+#include "hci/hci_layer.h"
+#include "hci/le_advertising_manager_impl.h"
+#include "hci/le_scanning_manager_impl.h"
+#include "hci/msft.h"
+#include "hci/remote_name_request_impl.h"
+#include "lpp/lpp_offload_manager.h"
+#include "main/shim/acl.h"
+#include "main/shim/acl_interface.h"
+#include "main/shim/distance_measurement_manager.h"
+#include "main/shim/entry.h"
 #include "main/shim/stack.h"
 #include "os/handler.h"
+#include "os/system_properties.h"
 #include "os/thread.h"
+#include "storage/storage_module.h"
+
+#ifndef TARGET_FLOSS
+#include "hci/distance_measurement_manager_impl.h"
+#endif
 
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth::shim {
@@ -59,8 +85,34 @@ public:
   void Dump(int fd, std::promise<void> promise) const override;
 
 private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+  struct Modules {
+    Modules(os::Handler* handler);
+
+    Acl* acl_ = nullptr;
+    storage::StorageModule storage_;
+    hal::SnoopLogger snoop_logger_;
+    hal::LinkClocker link_clocker_;
+    hal::HciHalImpl hci_hal_;
+    hal::RangingHalImpl ranging_hal_;
+    hci::HciLayer hci_layer_;
+    hci::ControllerImpl controller_;
+    hci::acl_manager::AclScheduler acl_scheduler_;
+    hci::RemoteNameRequestModuleImpl remote_name_request_;
+    hci::acl_manager::RoundRobinScheduler round_robin_scheduler_;
+    hci::acl_manager::AclManagerClassicImpl acl_manager_classic_;
+    hci::acl_manager::AclManagerLeImpl acl_manager_;
+#ifndef TARGET_FLOSS
+    hci::DistanceMeasurementManagerImpl distance_measurement_manager_;
+#endif
+    hci::LeScanningManagerImpl le_scanning_manager_;
+    hci::MsftExtensionManager msft_extension_manager_;
+    hci::LeAdvertisingManagerImpl le_advertising_manager_;
+    hal::SocketHalImpl socket_hal_;
+    hal::GattHalImpl gatt_hal_;
+    lpp::LppOffloadManager lpp_offload_manager_;
+  };
+
+  std::unique_ptr<Modules> modules_;
 
   mutable std::recursive_mutex mutex_;
   bool is_running_ = false;
