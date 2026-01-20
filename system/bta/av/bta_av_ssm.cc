@@ -26,6 +26,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -426,12 +427,22 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
           event_handler1 = &bta_av_disconnect_req;
           break;
         case BTA_AV_SDP_DISC_OK_EVT:
-          p_scb->state = BTA_AV_INIT_SST;
-          event_handler1 = &bta_av_sdp_failed;
+          if (com_android_bluetooth_flags_cleanup_avdt_on_sdp_result_when_closing()) {
+            event_handler1 = &bta_av_sdp_failed;
+            event_handler2 = &bta_av_disconnect_req;
+          } else {
+            p_scb->state = BTA_AV_INIT_SST;
+            event_handler1 = &bta_av_sdp_failed;
+          }
           break;
         case BTA_AV_SDP_DISC_FAIL_EVT:
-          p_scb->state = BTA_AV_INIT_SST;
-          event_handler1 = &bta_av_sdp_failed;
+          if (com_android_bluetooth_flags_cleanup_avdt_on_sdp_result_when_closing()) {
+            event_handler1 = &bta_av_sdp_failed;
+            event_handler2 = &bta_av_disconnect_req;
+          } else {
+            p_scb->state = BTA_AV_INIT_SST;
+            event_handler1 = &bta_av_sdp_failed;
+          }
           break;
         case BTA_AV_STR_OPEN_OK_EVT:
           event_handler1 = &bta_av_do_close;
