@@ -29,7 +29,45 @@ class HeadsetAgIndicatorEnableStateTest {
 
     @Test
     fun hashCode_returnsCorrectResult() {
-        val state = HeadsetAgIndicatorEnableState(true, true, true, true)
-        assertThat(state.hashCode()).isEqualTo(15)
+        assertThat(
+                HeadsetAgIndicatorEnableState(
+                        /* newService = */ false,
+                        /* newRoam = */ false,
+                        /* newSignal = */ false,
+                        /* newBattery = */ false,
+                    )
+                    .hashCode()
+            )
+            .isEqualTo(0)
+        assertThat(
+                HeadsetAgIndicatorEnableState(
+                        /* newService = */ true,
+                        /* newRoam = */ false,
+                        /* newSignal = */ false,
+                        /* newBattery = */ false,
+                    )
+                    .hashCode()
+            )
+            .isEqualTo(1)
+        assertThat(
+                HeadsetAgIndicatorEnableState(
+                        /* newService = */ false,
+                        /* newRoam = */ true,
+                        /* newSignal = */ false,
+                        /* newBattery = */ false,
+                    )
+                    .hashCode()
+            )
+            .isEqualTo(2)
+        assertThat(
+                HeadsetAgIndicatorEnableState(
+                        /* newService = */ true,
+                        /* newRoam = */ true,
+                        /* newSignal = */ true,
+                        /* newBattery = */ true,
+                    )
+                    .hashCode()
+            )
+            .isEqualTo(15)
     }
 }
