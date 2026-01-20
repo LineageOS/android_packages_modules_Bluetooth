@@ -15,8 +15,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 
-use crate::console_blue;
-use crate::ClientContext;
+use crate::{console_blue, ClientContext};
 
 #[derive(Helper)]
 struct BtHelper {

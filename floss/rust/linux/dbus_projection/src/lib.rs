@@ -243,7 +243,7 @@ impl ClientDBusProxy {
         member: &str,
         args: A,
     ) -> T {
-        let (ret,): (T,) = self.method_withresult(member, args).unwrap();
+        let (ret,): (T,) = self.method_withresult(member, args).expect("DBus call must succeed");
         ret
     }
 
