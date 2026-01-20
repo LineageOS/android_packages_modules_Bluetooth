@@ -112,7 +112,7 @@ private:
     lpp::LppOffloadManager lpp_offload_manager_;
   };
 
-  std::unique_ptr<Modules> modules_;
+  mutable std::optional<Modules> modules_;
 
   mutable std::recursive_mutex mutex_;
   bool is_running_ = false;
