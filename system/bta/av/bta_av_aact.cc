@@ -298,15 +298,19 @@ static void notify_start_failed(tBTA_AV_SCB* p_scb) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
+void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   log::verbose("rc_handle:{}, use_rc: {}", p_scb->rc_handle, p_scb->use_rc);
   /* for outgoing RC connection as INT/CT */
   if ((p_scb->rc_handle == BTA_AV_RC_HANDLE_NONE) &&
       /* (bta_av_cb.features & BTA_AV_FEAT_RCCT) && */
       (p_scb->use_rc || (p_scb->role & BTA_AV_ROLE_AD_ACP))) {
     if ((p_scb->wait & BTA_AV_WAIT_ROLE_SW_BITS) == 0) {
-      bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL, BTA_AV_AVRC_TIMER_EVT,
-                          p_scb->hndl);
+      if (!com_android_bluetooth_flags_no_avrcp_connection_delay()) {
+        bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL, BTA_AV_AVRC_TIMER_EVT,
+                            p_scb->hndl);
+      } else {
+        bta_av_ssm_execute(p_scb, BTA_AV_AVRC_TIMER_EVT, p_data);
+      }
     } else {
       p_scb->wait |= BTA_AV_WAIT_CHECK_RC;
     }
@@ -795,8 +799,12 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if (p_scb->wait & BTA_AV_WAIT_CHECK_RC) {
     p_scb->wait &= ~BTA_AV_WAIT_CHECK_RC;
-    bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL, BTA_AV_AVRC_TIMER_EVT,
-                        p_scb->hndl);
+    if (!com_android_bluetooth_flags_no_avrcp_connection_delay()) {
+      bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL, BTA_AV_AVRC_TIMER_EVT,
+                          p_scb->hndl);
+    } else {
+      bta_av_ssm_execute(p_scb, BTA_AV_AVRC_TIMER_EVT, p_data);
+    }
   }
 
   /* store peer addr other parameters */
@@ -2939,8 +2947,12 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       if (p_scb->rc_handle == BTA_AV_RC_HANDLE_NONE) {
         /* AVRC channel is not connected. delay a little bit */
         if ((p_scb->wait & BTA_AV_WAIT_ROLE_SW_BITS) == 0) {
-          bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL, BTA_AV_AVRC_TIMER_EVT,
-                              p_scb->hndl);
+          if (!com_android_bluetooth_flags_no_avrcp_connection_delay()) {
+            bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL,
+                                BTA_AV_AVRC_TIMER_EVT, p_scb->hndl);
+          } else {
+            bta_av_ssm_execute(p_scb, BTA_AV_AVRC_TIMER_EVT, p_data);
+          }
         } else {
           p_scb->wait |= BTA_AV_WAIT_CHECK_RC;
         }
