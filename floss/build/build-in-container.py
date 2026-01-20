@@ -34,6 +34,9 @@ class FlossContainerRunner:
 
             # Run tests
             [f'{SRC_MOUNT}/build.py', '--target', 'test'],
+
+            # Run clippy
+            [f'{SRC_MOUNT}/build.py', '--target', 'clippy'],
         ]
 
     def __init__(self, workdir, rootdir, proto_logging_dir, image_tag, volume_name, container_name,

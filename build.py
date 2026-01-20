@@ -516,7 +516,7 @@ class HostBuild():
     def _target_clippy(self):
         """ Runs cargo clippy, a collection of lints to catch common mistakes.
         """
-        cmd = ['cargo', 'clippy']
+        cmd = ['cargo', 'clippy', '--', '-D', 'warnings']
         self.run_command('rust', cmd, cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
 
     def _target_utils(self):
