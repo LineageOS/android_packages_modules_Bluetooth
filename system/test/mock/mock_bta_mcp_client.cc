@@ -14,10 +14,26 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <base/functional/callback.h>
 
-#include "include/hardware/bt_mcp_client.h"
-#include "include/hardware/bt_vcp_renderer.h"
+#include "bta/include/bta_mcp_client_api.h"
+#include "test/common/mock_functions.h"
 
-bluetooth::mcp::McpClientInterface* btif_mcp_client_get_interface();
-bluetooth::vcp::VolumeRendererInterface* btif_vcp_renderer_get_interface();
+namespace bluetooth {
+namespace mcp {
+
+void McpClient::Initialize(McpClientCallbacks* /* callbacks */, base::OnceClosure /* initCb */) {
+  inc_func_call_count(__func__);
+}
+
+void McpClient::Cleanup(void) { inc_func_call_count(__func__); }
+
+McpClient* McpClient::Get(void) {
+  inc_func_call_count(__func__);
+  return nullptr;
+}
+
+void McpClient::DebugDump(int /* fd */) { inc_func_call_count(__func__); }
+
+}  // namespace mcp
+}  // namespace bluetooth

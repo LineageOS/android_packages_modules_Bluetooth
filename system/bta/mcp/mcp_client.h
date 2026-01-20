@@ -22,12 +22,8 @@
 #include <cstdint>
 #include <memory>
 #include <sstream>
-#include <vector>
 
 #include "common/strings.h"
-#include "hardware/bt_le_audio.h"
-#include "mcp_types.h"
-#include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
 
 namespace bluetooth {
@@ -73,7 +69,28 @@ public:
     uint16_t conn_id;
   };
 
-  void DebugDump(std::stringstream& stream) const;
+  void DebugDump(std::stringstream& stream) const {
+    GattServiceDevice::DebugDump(stream);
+
+    stream << "\n    Media Player Name Handle: "
+           << bluetooth::common::ToHexString(media_player_name_handle)
+           << "\n    Track Changed Handle: " << bluetooth::common::ToHexString(track_changed_handle)
+           << "\n    Track Title Handle: " << bluetooth::common::ToHexString(track_title_handle)
+           << "\n    Track Duration Handle: "
+           << bluetooth::common::ToHexString(track_duration_handle)
+           << "\n    Track Position Handle: "
+           << bluetooth::common::ToHexString(track_position_handle)
+           << "\n    Playback Speed Handle: "
+           << bluetooth::common::ToHexString(playback_speed_handle)
+           << "\n    Seeking Speed Handle: " << bluetooth::common::ToHexString(seeking_speed_handle)
+           << "\n    Media State Handle: " << bluetooth::common::ToHexString(media_state_handle)
+           << "\n    Media Control Point Handle: "
+           << bluetooth::common::ToHexString(media_control_point_handle)
+           << "\n    Opcodes Supported Handle: "
+           << bluetooth::common::ToHexString(opcodes_supported_handle)
+           << "\n    Content Control ID Handle: "
+           << bluetooth::common::ToHexString(content_control_id_handle) << "\n";
+  }
 
   void ClearHandles() {
     service_found = false;
@@ -104,54 +121,6 @@ public:
   uint16_t media_control_point_handle = 0;
   uint16_t opcodes_supported_handle = 0;
   uint16_t content_control_id_handle = 0;
-};
-
-// Interface for MCP Client callbacks.
-class McpClientCallbacks {
-public:
-  virtual ~McpClientCallbacks() = default;
-  virtual void OnConnectionState(const RawAddress& address, le_audio::ConnectionState state) = 0;
-  virtual void OnDiscovered(const RawAddress& address) = 0;
-  virtual void OnMediaPlayerNameChanged(const RawAddress& address, const std::string& name) = 0;
-  virtual void OnTrackChanged(const RawAddress& address) = 0;
-  virtual void OnTrackTitleChanged(const RawAddress& address, const std::string& title) = 0;
-  virtual void OnTrackDurationChanged(const RawAddress& address, int32_t duration) = 0;
-  virtual void OnTrackPositionChanged(const RawAddress& address, int32_t position) = 0;
-  virtual void OnPlaybackSpeedChanged(const RawAddress& address, int8_t speed) = 0;
-  virtual void OnPlayingOrdersSupportedChanged(const RawAddress& address,
-                                               uint16_t playing_orders) = 0;
-  virtual void OnSeekingSpeedChanged(const RawAddress& address, int8_t speed) = 0;
-  virtual void OnMediaStateChanged(const RawAddress& address, uint8_t state) = 0;
-  virtual void OnMediaControlResult(const RawAddress& address, uint8_t opcode,
-                                    MediaControlResultCode result) = 0;
-  virtual void OnOpcodesSupportedChanged(const RawAddress& address, uint32_t opcodes) = 0;
-};
-
-// Main interface for the MCP Client module.
-class McpClient {
-public:
-  static void Initialize(McpClientCallbacks* callbacks, base::Closure initCb);
-  static void Cleanup();
-  static McpClient* Get();
-  static void DebugDump(int fd);
-
-  virtual void Connect(const RawAddress& address) = 0;
-  virtual void Disconnect(const RawAddress& address) = 0;
-
-  // Media Control Point commands
-  virtual void Play(const RawAddress& address) = 0;
-  virtual void Pause(const RawAddress& address) = 0;
-  virtual void Stop(const RawAddress& address) = 0;
-  virtual void NextTrack(const RawAddress& address) = 0;
-  virtual void PreviousTrack(const RawAddress& address) = 0;
-  virtual void FastRewind(const RawAddress& address) = 0;
-  virtual void FastForward(const RawAddress& address) = 0;
-  virtual void MoveRelative(const RawAddress& address, int32_t offset) = 0;
-
-  // Track Position Characteristic commands
-  virtual void SetTrackPosition(const RawAddress& address, int32_t position) = 0;
-
-  virtual ~McpClient() = default;
 };
 
 }  // namespace mcp
