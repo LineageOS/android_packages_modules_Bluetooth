@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hfp;
+package com.android.bluetooth.hfp
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link HeadsetAgIndicatorEnableState}. */
+/** Test cases for [HeadsetAgIndicatorEnableState]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HeadsetAgIndicatorEnableStateTest {
+@RunWith(AndroidJUnit4::class)
+class HeadsetAgIndicatorEnableStateTest {
 
     @Test
-    public void hashCode_returnsCorrectResult() {
-        HeadsetAgIndicatorEnableState state =
-                new HeadsetAgIndicatorEnableState(true, true, true, true);
-
-        assertThat(state.hashCode()).isEqualTo(15);
+    fun hashCode_returnsCorrectResult() {
+        val state = HeadsetAgIndicatorEnableState(true, true, true, true)
+        assertThat(state.hashCode()).isEqualTo(15)
     }
 }
