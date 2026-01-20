@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,44 +14,32 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import static com.google.common.truth.Truth.assertThat;
+import android.bluetooth.BluetoothProfile
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.bluetooth.BluetoothProfile;
+/** Test cases for [Config]. */
+@RunWith(AndroidJUnit4::class)
+class ConfigTest {
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.Arrays;
-
-/** Test cases for {@link Config}. */
-@RunWith(AndroidJUnit4.class)
-public final class ConfigTest {
     @Test
-    public void setProfileEnabled() {
-        boolean enabled =
-                Arrays.stream(Config.getSupportedProfiles())
-                        .anyMatch(profileId -> profileId == BluetoothProfile.CSIP_SET_COORDINATOR);
+    fun setProfileEnabled() {
+        val enabled = Config.getSupportedProfiles().contains(BluetoothProfile.CSIP_SET_COORDINATOR)
 
-        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, false);
-        assertThat(
-                        Arrays.stream(Config.getSupportedProfiles())
-                                .anyMatch(
-                                        profileId ->
-                                                profileId == BluetoothProfile.CSIP_SET_COORDINATOR))
-                .isFalse();
+        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, false)
+        assertThat(Config.getSupportedProfiles())
+            .asList()
+            .doesNotContain(BluetoothProfile.CSIP_SET_COORDINATOR)
 
-        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, true);
-        assertThat(
-                        Arrays.stream(Config.getSupportedProfiles())
-                                .anyMatch(
-                                        profileId ->
-                                                profileId == BluetoothProfile.CSIP_SET_COORDINATOR))
-                .isTrue();
+        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, true)
+        assertThat(Config.getSupportedProfiles())
+            .asList()
+            .contains(BluetoothProfile.CSIP_SET_COORDINATOR)
 
-        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, enabled);
+        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, enabled)
     }
 }
