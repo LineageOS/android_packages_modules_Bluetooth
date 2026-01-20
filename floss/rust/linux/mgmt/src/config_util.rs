@@ -244,21 +244,18 @@ pub fn write_floss_address_privacy_enabled(enabled: bool) -> std::io::Result<()>
         data.clone(),
     )?;
 
-    std::fs::write(format!("{}", FLOSS_ADDRESS_PRIVACY_CONFIG_SAVE), data.clone())
+    std::fs::write(FLOSS_ADDRESS_PRIVACY_CONFIG_SAVE, data.clone())
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive, ToPrimitive, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Eq, PartialEq, FromPrimitive, ToPrimitive, Serialize, Deserialize, Default,
+)]
 #[repr(u32)]
 pub enum UnstableAflagsUseMode {
+    #[default]
     Auto = 0,
     ForceUse = 1,
     ForceNoUse = 2,
-}
-
-impl Default for UnstableAflagsUseMode {
-    fn default() -> Self {
-        UnstableAflagsUseMode::Auto
-    }
 }
 
 pub fn get_unstable_aflags_use_mode() -> UnstableAflagsUseMode {

@@ -10,7 +10,6 @@ use dbus_crossroads::Crossroads;
 use dbus_projection::DisconnectWatcher;
 use dbus_tokio::connection;
 use log::LevelFilter;
-use log_panics;
 use manager_service::bluetooth_manager::BluetoothManager;
 use manager_service::powerd_suspend_manager::PowerdSuspendManager;
 use manager_service::{
