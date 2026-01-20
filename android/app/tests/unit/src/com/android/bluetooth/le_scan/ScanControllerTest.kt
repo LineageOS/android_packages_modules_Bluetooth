@@ -35,7 +35,6 @@ import android.os.BatteryStatsManager
 import android.os.Binder
 import android.os.RemoteException
 import android.os.WorkSource
-import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -781,7 +780,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ORIGINAL_ADDRESS_FILTER_MATCH)
     fun matchesFilters_originalAddress() {
         // This address is different from mDevice.getAddress()
         val originalAddress = "00:11:22:33:CC:DD"

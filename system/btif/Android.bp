@@ -104,6 +104,7 @@ cc_library_static {
         "src/btif_util.cc",
         "src/btif_vaps_server.cc",
         "src/btif_vcp_controller.cc",
+        "src/btif_vcp_renderer.cc",
         "src/stack_manager.cc",
     ],
     local_include_dirs: [

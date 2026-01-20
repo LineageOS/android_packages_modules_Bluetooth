@@ -185,10 +185,6 @@ class BluetoothSupervisor(
 
         override fun factoryReset() = bms().factoryReset(0)
 
-        override fun setBtHciSnoopLogMode(mode: Int) = bms().setBtHciSnoopLogMode(mode)
-
-        override fun getBtHciSnoopLogMode() = bms().btHciSnoopLogMode
-
         override fun isAutoOnSupported() = bms().isAutoOnSupported
 
         override fun isAutoOnEnabled() = bms().isAutoOnEnabled

@@ -238,6 +238,7 @@ protected:
     com::android::bluetooth::flags::provider_
             ->leaudio_use_game_sonification_as_regular_sonification(true);
     com::android::bluetooth::flags::provider_->leaudio_broadcast_extend_audio_active_state(true);
+    com::android::bluetooth::flags::provider_->leaudio_fix_stream_confirm_datapath_race(true);
 
     test::mock::osi_alarm::alarm_free.body = [](alarm_t* alarm) {
       if (alarm) {
@@ -1539,6 +1540,53 @@ TEST_F(BroadcasterTest, AudioResumeAfterSuspend) {
   iso_active_callback(false);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_broadcaster_callbacks_);
+}
+
+TEST_F(BroadcasterTest, ConfirmStreamingRequestInStreamingState) {
+  LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
+  EXPECT_CALL(*mock_audio_source_, Start)
+          .WillOnce(DoAll(SaveArg<1>(&audio_receiver), Return(true)));
+  EXPECT_CALL(*mock_codec_manager_, UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+          .Times(1);
+
+  auto broadcast_id = InstantiateBroadcast();
+  ASSERT_NE(audio_receiver, nullptr);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+
+  auto mock_sm = MockBroadcastStateMachine::GetLastInstance();
+
+  BigConfig big_cfg;
+  big_cfg.big_handle = mock_sm->GetAdvertisingSid();
+  big_cfg.connection_handles = {0x10, 0x12};
+  mock_sm->SetExpectedBigConfig(big_cfg);
+
+  /* Override default mock to imitate pause after BIG create */
+  ON_CALL(*mock_sm, ProcessMessage(BroadcastStateMachine::Message::START, testing::_))
+          .WillByDefault(
+                  [&](bluetooth::le_audio::broadcaster::BroadcastStateMachine::Message /*event*/,
+                      const void* /*data*/) {
+                    if (mock_sm->GetState() == BroadcastStateMachine::State::CONFIGURED) {
+                      mock_sm->SetExpectedState(BroadcastStateMachine::State::ENABLING);
+                      mock_sm->cb->OnStateMachineEvent(mock_sm->GetBroadcastId(),
+                                                       mock_sm->GetState(),
+                                                       &mock_sm->cfg.config.subgroups);
+                    }
+                  });
+
+  EXPECT_CALL(mock_broadcaster_callbacks_,
+              OnBroadcastStateChanged(broadcast_id, BroadcastState::ENABLING))
+          .Times(1);
+  audio_receiver->OnAudioResume();
+  Mock::VerifyAndClearExpectations(mock_audio_source_);
+  Mock::VerifyAndClearExpectations(&mock_broadcaster_callbacks_);
+
+  EXPECT_CALL(*mock_audio_source_, ConfirmStreamingRequest()).Times(0);
+  InjectBigCreateComplete(big_cfg.big_handle, 0x00);
+  Mock::VerifyAndClearExpectations(mock_audio_source_);
+
+  /* Force streaming state return from state machine would trigger stream confirmation */
+  EXPECT_CALL(*mock_audio_source_, ConfirmStreamingRequest()).Times(1);
+  mock_sm->ForceStreamingState();
 }
 
 // TODO: Add tests for:

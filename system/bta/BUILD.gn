@@ -141,6 +141,8 @@ static_library("bta") {
     "vaps/vaps_server_utils.cc",
     "vcp/vcp_controller_device.cc",
     "vcp/vcp_controller.cc",
+    "vcp/vcp_renderer.cc",
+    "vcp/vcs_server.cc",
   ]
 
   include_dirs = [

@@ -171,6 +171,10 @@ public:
   void SetExpectedBigConfig(std::optional<bluetooth::le_audio::broadcaster::BigConfig> big_cfg) {
     big_config_ = big_cfg;
   }
+  void ForceStreamingState() {
+    SetState(State::STREAMING);
+    this->cb->OnStateMachineEvent(this->cfg.broadcast_id, GetState(), &this->cfg.config.subgroups);
+  }
 
   static MockBroadcastStateMachine* last_instance_;
   static uint8_t instance_counter_;

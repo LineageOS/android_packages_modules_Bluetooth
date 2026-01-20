@@ -59,6 +59,7 @@
 #define BT_PROFILE_SOCKETS_ID "socket"
 #define BT_PROFILE_VAPS_SERVER_ID "vaps_server"
 #define BT_PROFILE_VCP_CONTROLLER_ID "volume_control"
+#define BT_PROFILE_VCP_RENDERER_ID "vcp_renderer"
 
 /** Bluetooth Device Name */
 typedef struct {

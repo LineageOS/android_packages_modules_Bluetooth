@@ -108,7 +108,7 @@ bool VolumeControllerDevice::set_volume_control_service_handles(const gatt::Serv
            flags_ccc_handle = 0;
 
   for (const gatt::Characteristic& chrc : service.characteristics) {
-    if (chrc.uuid == kVolumeControlStateUuid) {
+    if (chrc.uuid == kVolumeStateUuid) {
       state_handle = chrc.value_handle;
       state_ccc_handle = find_ccc_handle(chrc.value_handle);
     } else if (chrc.uuid == kVolumeControlPointUuid) {
@@ -252,7 +252,7 @@ bool VolumeControllerDevice::UpdateHandles(void) {
   }
 
   for (auto const& service : *services) {
-    if (service.uuid == kVolumeControlUuid) {
+    if (service.uuid == kVolumeControlServiceUuid) {
       log::info("{}, found VCS, handle={:#x}", address, service.handle);
       vcs_found = set_volume_control_service_handles(service);
       if (!vcs_found) {

@@ -60,6 +60,7 @@
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/include/bta_vaps_server_api.h"
 #include "bta/include/bta_vcp_controller_api.h"
+#include "bta/include/bta_vcp_renderer_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/bluetooth.h"
 #include "btif/include/btif_a2dp.h"
@@ -79,6 +80,7 @@
 #include "btif/include/btif_hh.h"
 #include "btif/include/btif_keystore.h"
 #include "btif/include/btif_le_audio.h"
+#include "btif/include/btif_le_audio_peripheral.h"
 #include "btif/include/btif_pan.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_rc.h"
@@ -99,6 +101,7 @@
 #include "hardware/bt_hearing_aid.h"
 #include "hardware/bt_le_audio.h"
 #include "hardware/bt_vcp_controller.h"
+#include "hardware/bt_vcp_renderer.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/parameter_provider.h"
@@ -882,6 +885,7 @@ static void dump(int fd, const char** /*arguments*/) {
   LeAudioClient::DebugDump(fd);
   LeAudioBroadcaster::DebugDump(fd);
   VolumeController::DebugDump(fd);
+  ::bluetooth::vcp::VolumeRenderer::DebugDump(fd);
   bluetooth::vaps::GetVapsServer()->DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
@@ -989,6 +993,10 @@ static const void* get_profile_interface(const char* profile_id) {
 
   if (is_profile(profile_id, BT_PROFILE_VAPS_SERVER_ID)) {
     return btif_vaps_server_get_interface();
+  }
+
+  if (is_profile(profile_id, BT_PROFILE_VCP_RENDERER_ID)) {
+    return btif_vcp_renderer_get_interface();
   }
 
   if (is_profile(profile_id, BT_BQR_ID)) {

@@ -1128,6 +1128,10 @@ private:
               instance->UpdateAudioActiveStateInBroadcastAnnouncements();
             }
           }
+
+          if (com_android_bluetooth_flags_leaudio_fix_stream_confirm_datapath_race()) {
+            instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
+          }
           break;
       };
 
@@ -1146,7 +1150,9 @@ private:
               std::bind(&LeAudioSourceAudioHalClient::UpdateBroadcastAudioConfigToHal,
                         instance->le_audio_source_hal_client_.get(), std::placeholders::_1));
 
-      instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
+      if (!com_android_bluetooth_flags_leaudio_fix_stream_confirm_datapath_race()) {
+        instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
+      }
     }
 
     void OnAnnouncementUpdated(uint32_t broadcast_id) {
