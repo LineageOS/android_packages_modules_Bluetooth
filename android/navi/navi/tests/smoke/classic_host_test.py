@@ -13,18 +13,19 @@
 #  limitations under the License.
 
 import asyncio
-import contextlib
 import datetime
+from unittest import mock
 
 from bumble import core
 from bumble import hci
-from mobly import asserts
 from mobly import test_runner
 
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import pyee_extensions
+
+_DEFAULT_DISCOVER_TIMEOUT = 15
 
 
 class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
@@ -34,24 +35,33 @@ class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
         """Test outgoing Classic ACL connection.
 
     Test steps:
-      1. Create connection from DUT.
-      2. Wait for ACL connected on both devices.
+      1. Create bond from DUT.
+      2. Accept connection from REF.
+      3. Wait for ACL connected on DUT.
+      4. Cancel bond from DUT.
+      5. Wait for ACL disconnected on DUT.
     """
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
+            self.logger.info("[DUT] Create bond.")
             self.dut.bt.createBond(self.ref.address, android_constants.Transport.CLASSIC)
 
+            self.logger.info("[REF] Accept connection.")
             await self.ref.device.accept(
-                f'{self.dut.address}/P',
+                f"{self.dut.address}/P",
                 timeout=datetime.timedelta(seconds=15).total_seconds(),
             )
+
+            self.logger.info("[DUT] Wait for ACL connected.")
             await dut_cb.wait_for_event(
                 bl4a_api.AclConnected(
                     address=self.ref.address,
                     transport=android_constants.Transport.CLASSIC,
                 ),)
-            # disconnect() doesn't work, because it can only remove profile
-            # connections.
+            # disconnect() doesn"t work, because it only remove profile connections.
+            self.logger.info("[DUT] Cancel bond.")
             self.dut.bt.cancelBond(self.ref.address)
+
+            self.logger.info("[DUT] Wait for ACL disconnected.")
             await dut_cb.wait_for_event(
                 bl4a_api.AclDisconnected(
                     address=self.ref.address,
@@ -66,21 +76,26 @@ class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
 
     Test steps:
       1. Create connection from REF.
-      2. Wait for ACL connected on both devices.
+      2. Wait for ACL connected on DUT.
       3. Disconnect from REF.
-      4. Wait for ACL disconnected on both devices.
+      4. Wait for ACL disconnected DUT.
     """
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
-            ref_dut_acl = await self.ref.device.connect(f'{self.dut.address}/P',
+            self.logger.info("[REF] Create connection.")
+            ref_dut_acl = await self.ref.device.connect(f"{self.dut.address}/P",
                                                         transport=core.BT_BR_EDR_TRANSPORT)
 
+            self.logger.info("[DUT] Wait for ACL connected.")
             await dut_cb.wait_for_event(
                 bl4a_api.AclConnected(
                     address=self.ref.address,
                     transport=android_constants.Transport.CLASSIC,
                 ),)
 
+            self.logger.info("[REF] Disconnect.")
             await ref_dut_acl.disconnect()
+
+            self.logger.info("[DUT] Wait for ACL disconnected.")
             await dut_cb.wait_for_event(
                 bl4a_api.AclDisconnected(
                     address=self.ref.address,
@@ -94,66 +109,71 @@ class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
     Test steps:
       1. Set REF in discoverable mode.
       2. Start discovery on DUT.
-      3. Wait for DUT discovered or timeout(15 seconds).
-      4. Check result(should be discovered).
+      3. Wait for DUT discovered.
     """
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
+            self.logger.info("[REF] Set discoverable.")
             await self.ref.device.set_discoverable(True)
+
+            self.logger.info("[DUT] Start inquiry.")
             self.dut.bt.startInquiry()
 
-            await dut_cb.wait_for_event(bl4a_api.DeviceFound, lambda e:
-                                        (e.address == self.ref.address))
+            self.logger.info("[DUT] Wait for DUT discovered.")
+            await dut_cb.wait_for_event(
+                bl4a_api.DeviceFound(address=self.ref.address, name=mock.ANY))
 
     async def test_discoverable(self) -> None:
-        """Test DUT in discoverable mode.
+        """Test ref discover DUT.
 
     Test steps:
       1. Set DUT in discoverable mode.
       2. Start discovery on REF.
-      3. Wait for DUT discovered or timeout(15 seconds).
-      4. Check result(should be discovered).
+      3. Wait for DUT discovered.
     """
+        self.logger.info("[DUT] Set scan mode to CONNECTABLE_DISCOVERABLE.")
         self.dut.bt.setScanMode(android_constants.ScanMode.CONNECTABLE_DISCOVERABLE)
 
         with pyee_extensions.EventWatcher() as watcher:
-            inquiry_future = asyncio.events.get_running_loop().create_future()
+            inquiry = asyncio.Event()
 
-            @watcher.on(self.ref.device, 'inquiry_result')
+            @watcher.on(self.ref.device, "inquiry_result")
             def on_inquiry_result(address: hci.Address, *_) -> None:
-                if address == hci.Address(f'{self.dut.address}/P'):
-                    inquiry_future.set_result(None)
+                if address == hci.Address(f"{self.dut.address}/P"):
+                    inquiry.set()
 
+            self.logger.info("[REF] Start discovery.")
             await self.ref.device.start_discovery()
-            await asyncio.tasks.wait_for(inquiry_future,
-                                         timeout=datetime.timedelta(seconds=15).total_seconds())
+
+            self.logger.info("[REF] Wait for DUT discover timeout.")
+            async with self.assert_not_timeout(_DEFAULT_DISCOVER_TIMEOUT):
+                await inquiry.wait()
 
     async def test_not_discoverable(self) -> None:
-        """Test DUT in not discoverable mode.
+        """Test ref can not discover DUT.
 
     Test steps:
-      1. Set DUT in not discoverable mode.
+      1. Set DUT scan mode to NONE.
       2. Start discovery on REF.
-      3. Wait for DUT discovered or timeout(15 seconds).
-      4. Check result(should not be discovered).
+      3. Wait for DUT discovered timeout.
     """
+        self.logger.info("[DUT] Set scan mode to NONE.")
         self.dut.bt.setScanMode(android_constants.ScanMode.NONE)
 
         with pyee_extensions.EventWatcher() as watcher:
-            inquiry_future = asyncio.events.get_running_loop().create_future()
+            inquiry = asyncio.Event()
 
-            @watcher.on(self.ref.device, 'inquiry_result')
+            @watcher.on(self.ref.device, "inquiry_result")
             def on_inquiry_result(address: hci.Address, *_) -> None:
-                if address == hci.Address(f'{self.dut.address}/P'):
-                    inquiry_future.set_result(None)
+                if address == hci.Address(f"{self.dut.address}/P"):
+                    inquiry.set()
 
+            self.logger.info("[REF] Start discovery.")
             await self.ref.device.start_discovery()
-            with contextlib.suppress(asyncio.exceptions.TimeoutError):
-                await asyncio.tasks.wait_for(
-                    inquiry_future,
-                    timeout=datetime.timedelta(seconds=15).total_seconds(),
-                )
-                asserts.assert_is_none(inquiry_future.result())
+
+            self.logger.info("[REF] Wait for DUT discover timeout.")
+            async with self.assert_timeout(_DEFAULT_DISCOVER_TIMEOUT):
+                await inquiry.wait()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_runner.main()

@@ -28,6 +28,7 @@ from navi.utils import bl4a_api
 _PROPERTY_PAN_NAP_ENABLED = "bluetooth.profile.pan.nap.enabled"
 _PROPERTY_PAN_PANU_ENABLED = "bluetooth.profile.pan.panu.enabled"
 _DEFAULT_FRAME_TIMEOUT_SECONDS = 30.0
+_IDLE_TIME_SECONDS = 3.0
 
 _CallbackHandler: TypeAlias = bl4a_api.CallbackHandler
 _Module: TypeAlias = bl4a_api.Module
@@ -91,6 +92,19 @@ class PanTest(navi_test_base.TwoDevicesTestBase):
             async with self.assert_not_timeout(_DEFAULT_FRAME_TIMEOUT_SECONDS):
                 await ref_frame_queue.get()
 
+            # Let some ethernet frames pass through.
+            await asyncio.sleep(_IDLE_TIME_SECONDS)
+
+            self.logger.info("[DUT] Disconnect PANU.")
+            self.dut.bt.setPanConnectionPolicy(self.ref.address,
+                                               android_constants.ConnectionPolicy.FORBIDDEN)
+            self.logger.info("[DUT] Wait for PANU disconnected.")
+            await dut_cb.wait_for_event(
+                bl4a_api.ProfileConnectionStateChanged(
+                    address=self.ref.address,
+                    state=android_constants.ConnectionState.DISCONNECTED,
+                ),)
+
     async def test_nap_connection(self) -> None:
         """Tests making a PAN connection from DUT(PANU) to REF(NAP).
 
@@ -135,6 +149,20 @@ class PanTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Wait for Ethernet frame from DUT.")
             async with self.assert_not_timeout(_DEFAULT_FRAME_TIMEOUT_SECONDS):
                 await ref_frame_queue.get()
+
+            # Let some ethernet frames pass through.
+            await asyncio.sleep(_IDLE_TIME_SECONDS)
+
+            self.logger.info("[DUT] Disconnect PANU.")
+            async with self.assert_not_timeout(_DEFAULT_FRAME_TIMEOUT_SECONDS):
+                await ref_pan_connection.l2cap_channel.disconnect()
+
+            self.logger.info("[DUT] Wait for PANU disconnected.")
+            await dut_cb.wait_for_event(
+                bl4a_api.ProfileConnectionStateChanged(
+                    address=self.ref.address,
+                    state=android_constants.ConnectionState.DISCONNECTED,
+                ),)
 
 
 if __name__ == "__main__":

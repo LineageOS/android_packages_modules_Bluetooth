@@ -152,7 +152,7 @@ class HfProtocol(hfp.HfProtocol):
 
         def on_dlc(dlc: rfcomm.DLC) -> None:
             _logger.info("[REF] HFP DLC connected %s.", dlc)
-            hfp_protocol = HfProtocol(dlc, configuration, auto_accept_sco_request)
+            hfp_protocol = cls(dlc, configuration, auto_accept_sco_request)
             protocol_queue.put_nowait(hfp_protocol)
             dlc.multiplexer.l2cap_channel.connection.abort_on("disconnection", hfp_protocol.run())
 
@@ -188,6 +188,10 @@ class HfProtocol(hfp.HfProtocol):
         self.speaker_volume = 7
         self.on(self.EVENT_SPEAKER_VOLUME, self._on_speaker_volume)
 
+        self.microphone_volume_condition = asyncio.Condition()
+        self.microphone_volume = 7
+        self.on(self.EVENT_MICROPHONE_VOLUME, self._on_microphone_volume)
+
     @override
     async def initiate_slc(self) -> None:
         await super().initiate_slc()
@@ -207,6 +211,11 @@ class HfProtocol(hfp.HfProtocol):
         async with self.speaker_volume_condition:
             self.speaker_volume = volume_level
             self.speaker_volume_condition.notify_all()
+
+    async def _on_microphone_volume(self, volume_level: int) -> None:
+        async with self.microphone_volume_condition:
+            self.microphone_volume = volume_level
+            self.microphone_volume_condition.notify_all()
 
     def _on_disconnection(self) -> None:
         device = self.dlc.multiplexer.l2cap_channel.connection.device

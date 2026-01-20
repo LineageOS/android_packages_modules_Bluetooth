@@ -15,23 +15,651 @@
 
 from __future__ import annotations
 
+import abc
 import asyncio
 import dataclasses
 import enum
 import logging
-from typing import Any, Generic, Self, TypeAlias, TypeVar
+import struct
+from typing import Any, ClassVar, TypeVar
 
 from bumble import core
-from bumble import device
-from bumble import hid
+from bumble import device as bumble_device
+from bumble import hci
 from bumble import l2cap
 from bumble import sdp
-import pyee
+from bumble import utils
 from typing_extensions import override
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-Message: TypeAlias = hid.Message
+HID_CONTROL_PSM = 0x0011
+HID_INTERRUPT_PSM = 0x0013
+
+
+class HidProtocolError(core.ProtocolError):
+    result_code: HandshakeMessage.ResultCode
+
+    def __init__(self, result_code: HandshakeMessage.ResultCode):
+        self.result_code = result_code
+        super().__init__(result_code.value, error_namespace="HID", error_name=result_code.name)
+
+
+# Report types
+class ReportType(utils.OpenIntEnum):
+    OTHER_REPORT = 0x00
+    INPUT_REPORT = 0x01
+    OUTPUT_REPORT = 0x02
+    FEATURE_REPORT = 0x03
+
+
+# Protocol modes
+class ProtocolMode(utils.OpenIntEnum):
+    BOOT_PROTOCOL = 0x00
+    REPORT_PROTOCOL = 0x01
+
+
+# Messages
+class Message:
+    """Base class for HID messages."""
+
+    class Type(utils.OpenIntEnum):
+        HANDSHAKE = 0x00
+        CONTROL = 0x01
+        GET_REPORT = 0x04
+        SET_REPORT = 0x05
+        GET_PROTOCOL = 0x06
+        SET_PROTOCOL = 0x07
+        GET_IDLE = 0x08
+        SET_IDLE = 0x09
+        DATA = 0x0A
+
+    message_type: ClassVar[Type]
+
+    subclasses: ClassVar[dict[Type, type[Message]]] = {}
+
+    _MESSAGE_TYPE = TypeVar("_MESSAGE_TYPE", bound="Message")
+
+    @classmethod
+    def message(cls, subclass: type[_MESSAGE_TYPE]) -> type[_MESSAGE_TYPE]:
+        cls.subclasses[subclass.message_type] = subclass
+        return subclass
+
+    # Class Method to derive header
+    @classmethod
+    def header(cls, lower_bits: int = 0x00) -> bytes:
+        return bytes([(cls.message_type << 4) | lower_bits])
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> Message:
+        message_type = Message.Type(data[0] >> 4)
+        if subclass := cls.subclasses.get(message_type):
+            return subclass.from_bytes(data)
+        else:
+            raise core.InvalidPacketError(f"Unknown message type {message_type.name}")
+
+    def __bytes__(self) -> bytes:
+        raise NotImplementedError
+
+
+@Message.message
+@dataclasses.dataclass
+class HandshakeMessage(Message):
+    """HID Handshake message.
+
+  This message is used to acknowledge or reject control channel requests.
+  """
+
+    message_type = Message.Type.HANDSHAKE
+
+    class ResultCode(utils.OpenIntEnum):
+        SUCCESSFUL = 0x00
+        NOT_READY = 0x01
+        ERR_INVALID_REPORT_ID = 0x02
+        ERR_UNSUPPORTED_REQUEST = 0x03
+        ERR_INVALID_PARAMETER = 0x04
+        ERR_UNKNOWN = 0x0E
+        ERR_FATAL = 0x0F
+
+    result_code: ResultCode
+
+    def __bytes__(self) -> bytes:
+        return self.header(self.result_code)
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> HandshakeMessage:
+        return cls(result_code=cls.ResultCode(data[0] & 0xFF))
+
+
+@Message.message
+@dataclasses.dataclass
+class ControlMessage(Message):
+    """HID Control message.
+
+  This message is used to send control commands between the host and device.
+  """
+
+    message_type = Message.Type.CONTROL
+
+    class Command(utils.OpenIntEnum):
+        SUSPEND = 0x03
+        EXIT_SUSPEND = 0x04
+        VIRTUAL_CABLE_UNPLUG = 0x05
+
+    command: Command
+
+    def __bytes__(self) -> bytes:
+        return self.header(self.command)
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> ControlMessage:
+        return cls(command=ControlMessage.Command(data[0] & 0x0F))
+
+
+@Message.message
+@dataclasses.dataclass
+class GetReportMessage(Message):
+    """HID Get Report message.
+
+  This message is used by the host to request a report from the device.
+  """
+
+    message_type = Message.Type.GET_REPORT
+    FLAG_HAS_SIZE = 0x08
+
+    report_type: ReportType
+    report_id: int | None = None
+    buffer_size: int | None = None
+
+    def __bytes__(self) -> bytes:
+        data = self.header(self.report_type |
+                           (self.FLAG_HAS_SIZE if self.buffer_size is not None else 0))
+        if self.report_id is not None:
+            data += bytes([self.report_id])
+        if self.buffer_size is not None:
+            data += struct.pack("<H", self.buffer_size)
+        return data
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> GetReportMessage:
+        report_type = ReportType(data[0] & 0x03)
+        if len(data) == 1:
+            return cls(report_type=report_type)
+        report_id = data[1]
+        if data[0] & cls.FLAG_HAS_SIZE:
+            return cls(
+                report_type=report_type,
+                report_id=report_id,
+                buffer_size=struct.unpack("<H", data[2:4])[0],
+            )
+        else:
+            return cls(report_type=report_type, report_id=report_id)
+
+
+@Message.message
+@dataclasses.dataclass
+class SetReportMessage(Message):
+    """HID Set Report message.
+
+  This message is used by the host to set the report for the device.
+  """
+
+    message_type = Message.Type.SET_REPORT
+
+    report_type: ReportType
+    data: bytes
+
+    def __bytes__(self) -> bytes:
+        return self.header(self.report_type) + self.data
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> SetReportMessage:
+        return cls(report_type=ReportType(data[0] & 0x03), data=data[1:])
+
+
+@Message.message
+@dataclasses.dataclass
+class GetProtocolMessage(Message):
+    """HID Get Protocol message.
+
+  This message is used by the host to get the protocol mode for the device.
+  """
+
+    message_type = Message.Type.GET_PROTOCOL
+
+    def __bytes__(self) -> bytes:
+        return self.header()
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> GetProtocolMessage:
+        del data  # unused.
+        return cls()
+
+
+@Message.message
+@dataclasses.dataclass
+class SetProtocolMessage(Message):
+    """HID Set Protocol message.
+
+  This message is used by the host to set the protocol mode for the device.
+  """
+
+    message_type = Message.Type.SET_PROTOCOL
+
+    protocol_mode: ProtocolMode
+
+    def __bytes__(self) -> bytes:
+        return self.header(self.protocol_mode)
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> SetProtocolMessage:
+        return cls(protocol_mode=ProtocolMode(data[0] & 0x01))
+
+
+@Message.message
+@dataclasses.dataclass
+class GetIdleMessage(Message):
+    """HID Get Idle message.
+
+  This message is used by the host to get the idle time for the device.
+  """
+
+    message_type = Message.Type.GET_IDLE
+
+    def __bytes__(self) -> bytes:
+        return self.header()
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> GetIdleMessage:
+        del data  # unused.
+        return cls()
+
+
+@Message.message
+@dataclasses.dataclass
+class SetIdleMessage(Message):
+    """HID Set Idle message.
+
+  This message is used by the host to set the idle time for the device.
+  """
+
+    message_type = Message.Type.SET_IDLE
+
+    idle_time: int
+
+    def __bytes__(self) -> bytes:
+        return self.header(self.idle_time)
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> SetIdleMessage:
+        return cls(idle_time=int.from_bytes(data[1:2], byteorder="little"))
+
+
+# Device sends input report, host sends output report.
+@Message.message
+@dataclasses.dataclass
+class DataMessage(Message):
+    """HID Data message.
+
+  This message is used to send report data. The direction of the report depends
+  on the role:
+  - Device sends input report.
+  - Host sends output report.
+  """
+
+    message_type = Message.Type.DATA
+
+    data: bytes
+    report_type: ReportType
+
+    def __bytes__(self) -> bytes:
+        return self.header(self.report_type) + self.data
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> DataMessage:
+        return cls(data=data[1:], report_type=ReportType(data[0] & 0x03))
+
+
+# -----------------------------------------------------------------------------
+class HID(abc.ABC, utils.EventEmitter):
+    """Base class for Bluetooth Human Interface Device (HID) profiles.
+
+  This class provides the fundamental structure for both HID Host and HID Device
+  roles, handling L2CAP channel management for control and interrupt channels.
+  """
+
+    control_channel: l2cap.ClassicChannel | None = None
+    interrupt_channel: l2cap.ClassicChannel | None = None
+
+    EVENT_INTERRUPT_DATA = "interrupt_data"
+    EVENT_CONTROL_DATA = "control_data"
+    EVENT_SUSPEND = "suspend"
+    EVENT_EXIT_SUSPEND = "exit_suspend"
+    EVENT_VIRTUAL_CABLE_UNPLUG = "virtual_cable_unplug"
+    EVENT_CONNECTION = "connection"
+    EVENT_DISCONNECTION = "disconnection"
+
+    class Role(utils.OpenIntEnum):
+        HOST = 0x00
+        DEVICE = 0x01
+
+    role: ClassVar[Role]
+
+    def __init__(self, device: bumble_device.Device) -> None:
+        super().__init__()
+        self.remote_device_bd_address: hci.Address | None = None
+        self.device = device
+
+        # Register ourselves with the L2CAP channel manager
+        device.create_l2cap_server(l2cap.ClassicChannelSpec(HID_CONTROL_PSM),
+                                   self._on_l2cap_connection)
+        device.create_l2cap_server(l2cap.ClassicChannelSpec(HID_INTERRUPT_PSM),
+                                   self._on_l2cap_connection)
+
+    async def connect(self, connection: bumble_device.Connection) -> None:
+        self.control_channel = await connection.create_l2cap_channel(
+            l2cap.ClassicChannelSpec(HID_CONTROL_PSM))
+        self.control_channel.sink = self._on_control_pdu
+        self.interrupt_channel = await connection.create_l2cap_channel(
+            l2cap.ClassicChannelSpec(HID_INTERRUPT_PSM))
+        self.interrupt_channel.sink = self._on_interrupt_pdu
+
+    async def disconnect(self) -> None:
+        if self.interrupt_channel:
+            await self.interrupt_channel.disconnect()
+            self.interrupt_channel = None
+        if self.control_channel:
+            await self.control_channel.disconnect()
+            self.control_channel = None
+
+    def _on_l2cap_connection(self, l2cap_channel: l2cap.ClassicChannel) -> None:
+        logger.debug("+++ New L2CAP connection: %s", l2cap_channel)
+        l2cap_channel.on(
+            l2cap_channel.EVENT_OPEN,
+            lambda: self._on_l2cap_channel_open(l2cap_channel),
+        )
+        l2cap_channel.on(
+            l2cap_channel.EVENT_CLOSE,
+            lambda: self._on_l2cap_channel_close(l2cap_channel),
+        )
+
+    def _on_l2cap_channel_open(self, l2cap_channel: l2cap.ClassicChannel) -> None:
+        if l2cap_channel.psm == HID_CONTROL_PSM:
+            self.control_channel = l2cap_channel
+            self.control_channel.sink = self._on_control_pdu
+        else:
+            self.interrupt_channel = l2cap_channel
+            self.interrupt_channel.sink = self._on_interrupt_pdu
+            if not self.control_channel:
+                logger.warning("Interrupt channel established before control channel!")
+        logger.debug("$$$ L2CAP channel open: %s", l2cap_channel)
+
+        if self.control_channel and self.interrupt_channel:
+            self.emit(self.EVENT_CONNECTION)
+
+    def _on_l2cap_channel_close(self, l2cap_channel: l2cap.ClassicChannel) -> None:
+        if l2cap_channel.psm == HID_CONTROL_PSM:
+            self.control_channel = None
+        else:
+            self.interrupt_channel = None
+        logger.debug("$$$ L2CAP channel close: %s", l2cap_channel)
+
+        if not self.control_channel and not self.interrupt_channel:
+            self.emit(self.EVENT_DISCONNECTION)
+
+    @abc.abstractmethod
+    def _on_control_pdu(self, pdu: bytes) -> None:
+        pass
+
+    def _on_interrupt_pdu(self, pdu: bytes) -> None:
+        message = DataMessage.from_bytes(pdu)
+        logger.debug("<<< [Interrupt] %s", message)
+        self.emit(
+            self.EVENT_INTERRUPT_DATA,
+            message.report_type,
+            message.data,
+        )
+
+    def _send_control_pdu(self, message: Message) -> None:
+        if not self.control_channel:
+            raise core.InvalidStateError("Control channel is not connected")
+        logger.debug(">>> [Control] %s", message)
+        self.control_channel.write(bytes(message))
+
+    def _send_interrupt_pdu(self, message: Message) -> None:
+        if not self.interrupt_channel:
+            raise core.InvalidStateError("Interrupt channel is not connected")
+        logger.debug(">>> [Interrupt] %s", message)
+        self.interrupt_channel.write(bytes(message))
+
+    def send_interrupt_data(self, data: bytes) -> None:
+        if self.role == HID.Role.HOST:
+            report_type = ReportType.OUTPUT_REPORT
+        else:
+            report_type = ReportType.INPUT_REPORT
+        if self.interrupt_channel is not None:
+            self._send_interrupt_pdu(DataMessage(data, report_type))
+
+    def virtual_cable_unplug(self) -> None:
+        self._send_control_pdu(ControlMessage(ControlMessage.Command.VIRTUAL_CABLE_UNPLUG))
+
+
+# -----------------------------------------------------------------------------
+
+
+class Device(HID):
+    """HID Device role implementation.
+
+  This class represents a Bluetooth HID Device, handling incoming control and
+  interrupt channel PDUs and providing an interface for sending data.
+  """
+
+    EVENT_PROTOCOL_CHANGED = "protocol_changed"
+    EVENT_IDLE_TIME_CHANGED = "idle_time_changed"
+    _idle_time: int = 0
+
+    class Delegate:
+        """Delegate class for handling HID device requests.
+
+    This class defines the interface for handling `set_report` and `get_report`
+    requests from the HID Host.
+    """
+
+        def set_report(self, report_type: ReportType, data: bytes) -> None:
+            del report_type, data  # unused.
+            raise HidProtocolError(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+
+        def get_report(self, report_type: ReportType, report_id: int | None) -> bytes:
+            del report_type, report_id  # unused.
+            raise HidProtocolError(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+
+    role = HID.Role.DEVICE
+
+    def __init__(
+        self,
+        device: bumble_device.Device,
+        delegate: Delegate | None = None,
+        protocol: ProtocolMode = ProtocolMode.REPORT_PROTOCOL,
+    ) -> None:
+        super().__init__(device)
+        self.delegate = delegate
+        self.protocol = protocol
+
+    @override
+    def _on_control_pdu(self, pdu: bytes) -> None:
+        message = Message.from_bytes(pdu)
+        logger.debug("<<< [Control] %s", message)
+
+        try:
+            if isinstance(message, GetReportMessage):
+                self._handle_get_report(message)
+            elif isinstance(message, SetReportMessage):
+                self._handle_set_report(message)
+            elif isinstance(message, GetProtocolMessage):
+                self._handle_get_protocol()
+            elif isinstance(message, SetProtocolMessage):
+                self._handle_set_protocol(message)
+            elif isinstance(message, GetIdleMessage):
+                self._handle_get_idle()
+            elif isinstance(message, SetIdleMessage):
+                self._handle_set_idle(message)
+            elif isinstance(message, DataMessage):
+                self.emit(self.EVENT_CONTROL_DATA, message)
+            elif isinstance(message, ControlMessage):
+                if message.command == ControlMessage.Command.SUSPEND:
+                    self.emit(self.EVENT_SUSPEND)
+                elif message.command == ControlMessage.Command.EXIT_SUSPEND:
+                    self.emit(self.EVENT_EXIT_SUSPEND)
+                elif message.command == ControlMessage.Command.VIRTUAL_CABLE_UNPLUG:
+                    self.emit(self.EVENT_VIRTUAL_CABLE_UNPLUG)
+                else:
+                    logger.error("Unsupported command %s", message.command.name)
+            else:
+                logger.error("Unsupported command type %s", message.message_type.name)
+                self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+        except NotImplementedError:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+        except HidProtocolError as e:
+            self._send_handshake_message(e.result_code)
+
+    def _send_handshake_message(self, result_code: HandshakeMessage.ResultCode) -> None:
+        self._send_control_pdu(HandshakeMessage(result_code))
+
+    def _send_control_data(self, report_type: ReportType, data: bytes):
+        self._send_control_pdu(DataMessage(report_type=report_type, data=data))
+
+    def _handle_get_report(self, message: GetReportMessage) -> None:
+        if not self.delegate:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+            return
+        result = self.delegate.get_report(message.report_type, message.report_id)
+        data = (bytes(([message.report_id] if message.report_id is not None else [])) + result)
+
+        assert self.control_channel
+        if len(data) < self.control_channel.peer_mtu:
+            self._send_control_data(report_type=message.report_type, data=data)
+        else:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_INVALID_PARAMETER)
+
+    def _handle_set_report(self, message: SetReportMessage):
+        if not self.delegate:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+            return
+        self.delegate.set_report(message.report_type, message.data)
+        self._send_handshake_message(HandshakeMessage.ResultCode.SUCCESSFUL)
+
+    def _handle_get_protocol(self):
+        if self.protocol is None:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+        else:
+            self._send_control_data(ReportType.OTHER_REPORT, bytes([self.protocol]))
+
+    def _handle_set_protocol(self, message: SetProtocolMessage):
+        if self.protocol is None:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+        else:
+            self.protocol = message.protocol_mode
+            self._send_handshake_message(HandshakeMessage.ResultCode.SUCCESSFUL)
+            self.emit(self.EVENT_PROTOCOL_CHANGED)
+
+    def _handle_get_idle(self):
+        self._send_control_data(ReportType.OTHER_REPORT, bytes([self._idle_time]))
+
+    def _handle_set_idle(self, message: SetIdleMessage):
+        if self._idle_time is None:
+            self._send_handshake_message(HandshakeMessage.ResultCode.ERR_UNSUPPORTED_REQUEST)
+        else:
+            self._idle_time = message.idle_time
+            self._send_handshake_message(HandshakeMessage.ResultCode.SUCCESSFUL)
+            self.emit(self.EVENT_IDLE_TIME_CHANGED)
+
+
+# -----------------------------------------------------------------------------
+class Host(HID):
+    """HID Host role implementation.
+
+  This class represents a Bluetooth HID Host, handling the connection and
+  communication with a HID Device. It provides methods to send and receive
+  HID reports and control messages.
+  """
+
+    role = HID.Role.HOST
+
+    _pending_command_future: asyncio.Future[DataMessage | None] | None = None
+
+    def __init__(self, device: bumble_device.Device) -> None:
+        super().__init__(device)
+        self._report_queue = asyncio.Queue[bytes]
+
+    async def _send_control_message(self, message: Message) -> DataMessage | None:
+        self._pending_command_future = asyncio.get_running_loop().create_future()
+        self._send_control_pdu(message)
+        return await self._pending_command_future
+
+    async def get_report(
+        self,
+        report_type: ReportType,
+        report_id: int | None = None,
+        buffer_size: int | None = None,
+    ) -> bytes:
+        result = await self._send_control_message(
+            GetReportMessage(
+                report_type=report_type,
+                report_id=report_id,
+                buffer_size=buffer_size,
+            ))
+        if result:
+            return result.data
+        else:
+            raise core.UnreachableError()
+
+    async def set_report(self, report_type: ReportType, data: bytes) -> None:
+        await self._send_control_message(SetReportMessage(report_type=report_type, data=data))
+
+    async def get_protocol(self) -> ProtocolMode:
+        result = await self._send_control_message(GetProtocolMessage())
+        if result:
+            return ProtocolMode(result.data[0])
+        else:
+            raise core.UnreachableError()
+
+    async def set_protocol(self, protocol_mode: ProtocolMode) -> None:
+        await self._send_control_message(SetProtocolMessage(protocol_mode=protocol_mode))
+
+    def suspend(self) -> None:
+        self._send_control_pdu(ControlMessage(ControlMessage.Command.SUSPEND))
+
+    def exit_suspend(self) -> None:
+        self._send_control_pdu(ControlMessage(ControlMessage.Command.EXIT_SUSPEND))
+
+    @override
+    def _on_control_pdu(self, pdu: bytes) -> None:
+        message = Message.from_bytes(pdu)
+        logger.debug("<<< [Control] %s", message)
+        if isinstance(message, DataMessage):
+            if (self._pending_command_future and not self._pending_command_future.done()):
+                self._pending_command_future.set_result(message)
+                self._pending_command_future = None
+            else:
+                logger.error("Unexpected message %s", message)
+        elif isinstance(message, HandshakeMessage):
+            if (self._pending_command_future and not self._pending_command_future.done()):
+                if message.result_code == HandshakeMessage.ResultCode.SUCCESSFUL:
+                    self._pending_command_future.set_result(None)
+                else:
+                    self._pending_command_future.set_exception(HidProtocolError(
+                        message.result_code))
+                self._pending_command_future = None
+            else:
+                logger.error("Unexpected message %s", message)
+        elif isinstance(message, ControlMessage):
+            if message.command == ControlMessage.Command.VIRTUAL_CABLE_UNPLUG:
+                self.emit(self.EVENT_VIRTUAL_CABLE_UNPLUG)
+            else:
+                logger.debug("Unsupported command %s", message.command.name)
+        else:
+            logger.debug("Unsupported message %s", message.message_type.name)
+
 
 DEFAULT_REPORT_MAP = bytes([
     # fmt: off
@@ -168,18 +796,8 @@ DEFAULT_REPORT_MAP = bytes([
     0xC0,  #   End Collection
     0xC0,  # End Collection
 ])
+
 PROPERTY_HID_HOST_SUPPORTED = "bluetooth.profile.hid.host.enabled"
-
-
-class ReportProtocol(enum.IntEnum):
-    BOOT = 0x00
-    REPORT = 0x01
-
-
-class ReportType(enum.IntEnum):
-    INPUT = 0x01
-    OUTPUT = 0x02
-    FEATURE = 0x03
 
 
 class AttributeId(enum.IntEnum):
@@ -278,7 +896,7 @@ def make_device_sdp_record(
             sdp.DataElement.sequence([
                 sdp.DataElement.sequence([
                     sdp.DataElement.uuid(core.BT_L2CAP_PROTOCOL_ID),
-                    sdp.DataElement.unsigned_integer_16(hid.HID_CONTROL_PSM),
+                    sdp.DataElement.unsigned_integer_16(HID_CONTROL_PSM),
                 ]),
                 sdp.DataElement.sequence([sdp.DataElement.uuid(core.BT_HIDP_PROTOCOL_ID)]),
             ]),
@@ -306,7 +924,7 @@ def make_device_sdp_record(
                 sdp.DataElement.sequence([
                     sdp.DataElement.sequence([
                         sdp.DataElement.uuid(core.BT_L2CAP_PROTOCOL_ID),
-                        sdp.DataElement.unsigned_integer_16(hid.HID_INTERRUPT_PSM),
+                        sdp.DataElement.unsigned_integer_16(HID_INTERRUPT_PSM),
                     ]),
                     sdp.DataElement.sequence([
                         sdp.DataElement.uuid(core.BT_HIDP_PROTOCOL_ID),
@@ -408,7 +1026,7 @@ def make_device_sdp_record(
     return attributes
 
 
-async def find_device_sdp_record(connection: device.Connection,) -> SdpInformation | None:
+async def find_device_sdp_record(connection: bumble_device.Connection,) -> SdpInformation | None:
     """Finds the SDP record of the device."""
 
     async with sdp.Client(connection) as sdp_client:
@@ -417,7 +1035,7 @@ async def find_device_sdp_record(connection: device.Connection,) -> SdpInformati
         if not service_record_handles:
             return None
         if len(service_record_handles) > 1:
-            _logger.info("Remote has more than one HID SDP records, only return the first one.")
+            logger.info("Remote has more than one HID SDP records, only return the first one.")
 
         service_record_handle = service_record_handles[0]
         attr: dict[str, Any] = {"service_record_handle": service_record_handle}
@@ -470,195 +1088,5 @@ async def find_device_sdp_record(connection: device.Connection,) -> SdpInformati
         try:
             return SdpInformation(**attr)
         except TypeError:
-            _logger.exception("Cannot build SDP information")
+            logger.exception("Cannot build SDP information")
             return None
-
-
-class BaseProtocol(pyee.EventEmitter):
-    """Base class for HID Protocol. Device and Host should inherit this class."""
-
-    class Role(enum.IntEnum):
-        HOST = 0x00
-        DEVICE = 0x01
-
-    class Event(enum.StrEnum):
-        """HID Device Events."""
-
-        SUSPEND = "suspend"
-        CONTROL_DATA = "control_data"
-        INTERRUPT_DATA = "interrupt_data"
-        EXIT_SUSPEND = "exit_suspend"
-        VIRTUAL_CABLE_UNPLUG = "virtual_cable_unplug"
-        HANDSHAKE = "handshake"
-
-    role: Role
-
-    def __init__(
-        self,
-        control_channel: l2cap.ClassicChannel,
-        interrupt_channel: l2cap.ClassicChannel,
-    ) -> None:
-        super().__init__()
-        self.control_channel = control_channel
-        self.interrupt_channel = interrupt_channel
-        self.control_channel.sink = self._on_control_pdu
-        self.interrupt_channel.sink = self._on_interrupt_pdu
-
-    @classmethod
-    async def connect(cls: type[Self], connection: device.Connection) -> Self:
-        """Connects to the HID peer."""
-
-        control_channel = await connection.create_l2cap_channel(spec=l2cap.ClassicChannelSpec(
-            psm=hid.HID_CONTROL_PSM))
-        interrupt_channel = await connection.create_l2cap_channel(spec=l2cap.ClassicChannelSpec(
-            psm=hid.HID_INTERRUPT_PSM))
-        return cls(control_channel=control_channel, interrupt_channel=interrupt_channel)
-
-    def _on_control_pdu(self, pdu: bytes) -> None:
-        raise NotImplementedError()
-
-    def _on_interrupt_pdu(self, pdu: bytes) -> None:
-        self.emit(self.Event.INTERRUPT_DATA, pdu)
-
-    def send_data(self, data: bytes) -> None:
-        raise NotImplementedError()
-
-    def virtual_cable_unplug(self) -> None:
-        msg = hid.VirtualCableUnplug()
-        self.control_channel.send_pdu(msg)
-
-
-class DeviceProtocol(BaseProtocol):
-    """HID Device."""
-
-    role = BaseProtocol.Role.DEVICE
-
-    @override
-    def _on_control_pdu(self, pdu: bytes) -> None:
-        param = pdu[0] & 0x0F
-        message_type = pdu[0] >> 4
-
-        match message_type, param:
-            case Message.MessageType.GET_REPORT, _:
-                self.send_handshake_message(Message.Handshake.SUCCESSFUL)
-            case Message.MessageType.SET_REPORT, _:
-                self.send_handshake_message(Message.Handshake.SUCCESSFUL)
-            case Message.MessageType.GET_PROTOCOL, _:
-                self.send_handshake_message(Message.Handshake.SUCCESSFUL)
-            case Message.MessageType.SET_PROTOCOL, _:
-                self.send_handshake_message(Message.Handshake.SUCCESSFUL)
-            case Message.MessageType.DATA, _:
-                self.emit(self.Event.CONTROL_DATA, pdu)
-            case Message.MessageType.CONTROL, Message.ControlCommand.SUSPEND:
-                self.emit(self.Event.SUSPEND)
-            case Message.MessageType.CONTROL, Message.ControlCommand.EXIT_SUSPEND:
-                self.emit(self.Event.EXIT_SUSPEND)
-            case (
-                Message.MessageType.CONTROL,
-                Message.ControlCommand.VIRTUAL_CABLE_UNPLUG,
-            ):
-                self.emit(self.Event.VIRTUAL_CABLE_UNPLUG)
-            case _:
-                self.send_handshake_message(Message.Handshake.ERR_UNSUPPORTED_REQUEST)
-
-    def send_handshake_message(self, result_code: int) -> None:
-        msg = hid.SendHandshakeMessage(result_code)
-        self.control_channel.send_pdu(msg)
-
-    def send_control_data(self, report_type: int, data: bytes):
-        msg = hid.SendControlData(report_type=report_type, data=data)
-        self.control_channel.send_pdu(msg)
-
-    @override
-    def send_data(self, data: bytes) -> None:
-        msg = hid.SendData(data, Message.ReportType.INPUT_REPORT)
-        self.interrupt_channel.send_pdu(msg)
-
-
-class HostProtocol(BaseProtocol):
-    """HID Host."""
-
-    def get_report(self, report_type: int, report_id: int, buffer_size: int) -> None:
-        msg = hid.GetReportMessage(report_type=report_type,
-                                   report_id=report_id,
-                                   buffer_size=buffer_size)
-        self.control_channel.send_pdu(bytes(msg))
-
-    def set_report(self, report_type: int, data: bytes) -> None:
-        msg = hid.SetReportMessage(report_type=report_type, data=data)
-        self.control_channel.send_pdu(bytes(msg))
-
-    def get_protocol(self) -> None:
-        msg = hid.GetProtocolMessage()
-        self.control_channel.send_pdu(bytes(msg))
-
-    def set_protocol(self, protocol_mode: int) -> None:
-        msg = hid.SetProtocolMessage(protocol_mode=protocol_mode)
-        self.control_channel.send_pdu(bytes(msg))
-
-    def suspend(self) -> None:
-        msg = hid.Suspend()
-        self.control_channel.send_pdu(bytes(msg))
-
-    def exit_suspend(self) -> None:
-        msg = hid.ExitSuspend()
-        self.control_channel.send_pdu(bytes(msg))
-
-    @override
-    def _on_control_pdu(self, pdu: bytes) -> None:
-        param = pdu[0] & 0x0F
-        message_type = pdu[0] >> 4
-        match message_type, param:
-            case Message.MessageType.HANDSHAKE, _:
-                self.emit(self.Event.HANDSHAKE, Message.Handshake(param))
-            case Message.MessageType.DATA, _:
-                self.emit(self.Event.CONTROL_DATA, pdu)
-            case (
-                Message.MessageType.CONTROL,
-                Message.ControlCommand.VIRTUAL_CABLE_UNPLUG,
-            ):
-                self.emit(self.Event.VIRTUAL_CABLE_UNPLUG)
-
-    @override
-    def send_data(self, data: bytes) -> None:
-        msg = hid.SendData(data, Message.ReportType.OUTPUT_REPORT)
-        self.interrupt_channel.send_pdu(msg)
-
-
-_Protocol = TypeVar("_Protocol", bound=BaseProtocol)
-
-
-class Server(Generic[_Protocol]):
-    """HID Server."""
-
-    _pending_control_channels: dict[device.Connection, l2cap.ClassicChannel] = {}
-
-    def __init__(
-        self,
-        bumble_device: device.Device,
-        protocol_factory: type[_Protocol],
-    ) -> None:
-        self._control_channel_server = bumble_device.create_l2cap_server(
-            spec=l2cap.ClassicChannelSpec(psm=hid.HID_CONTROL_PSM),
-            handler=self._on_control_channel,
-        )
-        self._interrupt_channel_server = bumble_device.create_l2cap_server(
-            spec=l2cap.ClassicChannelSpec(psm=hid.HID_INTERRUPT_PSM),
-            handler=self._on_interrupt_channel,
-        )
-        self.protocol_factory = protocol_factory
-        self._pending_connections = asyncio.Queue[_Protocol]()
-
-    def _on_control_channel(self, channel: l2cap.ClassicChannel) -> None:
-        self._pending_control_channels[channel.connection] = channel
-
-    def _on_interrupt_channel(self, channel: l2cap.ClassicChannel) -> None:
-        if control_channel := self._pending_control_channels.pop(channel.connection, None):
-            protocol = self.protocol_factory(control_channel=control_channel,
-                                             interrupt_channel=channel)
-            self._pending_connections.put_nowait(protocol)
-        else:
-            raise core.InvalidStateError("No pending control channel")
-
-    async def wait_connection(self) -> _Protocol:
-        return await self._pending_connections.get()

@@ -14,24 +14,27 @@
 """Bluetooth Object Push Profile (OPP) implementation."""
 
 import asyncio
+from collections.abc import Iterable
 import dataclasses
 import logging
-from typing import Iterable
 
 from bumble import core
+from bumble import device as device_lib
+from bumble import l2cap
 from bumble import rfcomm
 from bumble import sdp
 from bumble import utils
-import bumble.device
 from typing_extensions import override
 
 from navi.bumble_ext import obex
+from navi.bumble_ext import rfcomm as rfcomm_ext
 
 GOEP_L2CAP_PSM_ATTRIBUTE_ID = 0x0200
 SERVICE_VERSION_ATTRIBUTE_ID = 0x0300
 SUPPORTED_FORMAT_LIST_ATTRIBUTE_ID = 0x0303
 
 # Same as Android.
+DEFAULT_L2CAP_MTU = 8087
 MAX_RFCOMM_OBEX_PACKET_LENGTH = 65530
 MIN_PACKET_LENGTH = 256
 MIN_PUT_HEADER_SIZE = len(
@@ -137,7 +140,7 @@ def make_sdp_records(info: SdpInfo) -> list[sdp.ServiceAttribute]:
     return records
 
 
-async def find_sdp_record(connection: bumble.device.Connection,) -> SdpInfo | None:
+async def find_sdp_record(connection: device_lib.Connection,) -> SdpInfo | None:
     """Finds SDP record for a service."""
     async with sdp.Client(connection) as sdp_client:
         result = await sdp_client.search_attributes(
@@ -197,7 +200,8 @@ class Client(obex.ClientSession):
             obex.ConnectRequest(
                 obex_version_number=obex.Version.V_1_0,
                 flags=0,
-                maximum_obex_packet_length=MAX_RFCOMM_OBEX_PACKET_LENGTH,
+                maximum_obex_packet_length=(MAX_RFCOMM_OBEX_PACKET_LENGTH if isinstance(
+                    self.bearer, rfcomm.DLC) else self.bearer.mtu),
                 headers=obex.Headers(count=count),
                 final=True,
             ))
@@ -283,7 +287,7 @@ class TransferSession:
 class ServerConnection(obex.ServerSession):
     """OPP connection."""
 
-    def __init__(self, bearer: rfcomm.DLC):
+    def __init__(self, bearer: obex.Bearer):
         self.connections = set[int]()
         self.sessions = dict[int, TransferSession]()
         self.connection_result: asyncio.Future[int |
@@ -300,7 +304,8 @@ class ServerConnection(obex.ServerSession):
             response_code=obex.ResponseCode.SUCCESS,
             obex_version_number=request.obex_version_number,
             flags=request.flags,
-            maximum_obex_packet_length=MAX_RFCOMM_OBEX_PACKET_LENGTH,
+            maximum_obex_packet_length=(MAX_RFCOMM_OBEX_PACKET_LENGTH if isinstance(
+                self.bearer, rfcomm.DLC) else self.bearer.mtu),
             headers=obex.Headers(connection_id=connection_id),
         )
         self.send_response(response)
@@ -360,14 +365,22 @@ class ServerConnection(obex.ServerSession):
 class Server:
     """OPP server."""
 
-    def __init__(self, rfcomm_server: rfcomm.Server) -> None:
-        self.rfcomm_server = rfcomm_server
-        self.device = rfcomm_server.device
-        self.rfcomm_channel = self.rfcomm_server.listen(self._on_rfcomm_dlc)
+    def __init__(self, device: device_lib.Device) -> None:
+        self.device = device
+        rfcomm_server = rfcomm_ext.get_rfcomm_server(device) or rfcomm.Server(device)
+        self.rfcomm_channel = rfcomm_server.listen(self._on_connection)
+        self.l2cap_server = self.device.create_l2cap_server(
+            spec=l2cap.ClassicChannelSpec(
+                mode=l2cap.TransmissionMode.ENHANCED_RETRANSMISSION,
+                fcs_enabled=True,
+                mtu=DEFAULT_L2CAP_MTU,
+            ),
+            handler=self._on_connection,
+        )
         self._pending_connections = asyncio.Queue[ServerConnection]()
 
-    def _on_rfcomm_dlc(self, dlc: rfcomm.DLC) -> None:
-        connection = ServerConnection(dlc)
+    def _on_connection(self, bearer: obex.Bearer) -> None:
+        connection = ServerConnection(bearer)
         self._pending_connections.put_nowait(connection)
 
     async def wait_connection(self) -> ServerConnection:

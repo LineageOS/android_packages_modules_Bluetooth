@@ -14,9 +14,11 @@
 """Tests for Phone Book Access Profile (PBAP) Server implementation on Android."""
 
 import enum
+import itertools
 from typing import Any, TypeAlias
 
 from bumble import core
+from bumble import l2cap
 from bumble import rfcomm
 from mobly import test_runner
 from mobly import signals
@@ -279,6 +281,11 @@ class _DisconnectVariant(enum.IntEnum):
     BEARER = 2
 
 
+class _BearerType(enum.IntEnum):
+    RFCOMM = 1
+    L2CAP = 2
+
+
 class PbapTest(navi_test_base.TwoDevicesTestBase):
     contacts: list[dict[str, Any]]
     call_logs: list[dict[str, Any]]
@@ -330,7 +337,7 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
         }
         await self._setup_paired_devices()
 
-    async def _make_pbap_client_from_ref(self) -> obex.ClientSession:
+    async def _make_pbap_client_from_ref(self, bearer_type: _BearerType) -> obex.ClientSession:
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             self.logger.info("[REF] Connect to DUT.")
             ref_dut_acl = await self.ref.device.connect(self.dut.address,
@@ -345,17 +352,30 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
             if not sdp_info:
                 self.fail("Failed to find SDP record for pbap.")
 
-            self.logger.info("[REF] Connect RFCOMM.")
-            rfcomm_client = await rfcomm.Client(ref_dut_acl).start()
-            self.logger.info("[REF] Open DLC to %d.", sdp_info.rfcomm_channel)
-            ref_dlc = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
-            return obex.ClientSession(ref_dlc)
+            bearer: obex.Bearer
+            if bearer_type == _BearerType.L2CAP:
+                if not sdp_info.goep_l2cap_psm:
+                    self.fail("Failed to find GOEP L2CAP PSM in SDP record.")
+                self.logger.info("[REF] Open L2CAP to %d.", sdp_info.goep_l2cap_psm)
+                bearer = await ref_dut_acl.create_l2cap_channel(
+                    l2cap.ClassicChannelSpec(
+                        psm=sdp_info.goep_l2cap_psm,
+                        mode=l2cap.TransmissionMode.ENHANCED_RETRANSMISSION,
+                        fcs_enabled=True,
+                    ))
+            else:
+                self.logger.info("[REF] Connect RFCOMM.")
+                rfcomm_client = await rfcomm.Client(ref_dut_acl).start()
+                self.logger.info("[REF] Open DLC to %d.", sdp_info.rfcomm_channel)
+                bearer = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
+            return obex.ClientSession(bearer)
 
-    @navi_test_base.parameterized(
-        _DisconnectVariant.ACL,
-        _DisconnectVariant.BEARER,
-    )
-    async def test_connect_disconnect(self, variant: _DisconnectVariant) -> None:
+    @navi_test_base.parameterized(*itertools.product(
+        (_DisconnectVariant.ACL, _DisconnectVariant.BEARER),
+        (_BearerType.RFCOMM, _BearerType.L2CAP),
+    ))
+    async def test_connect_disconnect(self, variant: _DisconnectVariant,
+                                      bearer_type: _BearerType) -> None:
         """Tests connecting and disconnecting PBAP.
 
     Test steps:
@@ -364,9 +384,10 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
 
     Args:
       variant: The disconnect variant.
+      bearer_type: The bearer type.
     """
         with self.dut.bl4a.register_callback(_Module.PBAP) as dut_cb:
-            client = await self._make_pbap_client_from_ref()
+            client = await self._make_pbap_client_from_ref(bearer_type)
             self.logger.info("[REF] Send connect request.")
             connect_response = await client.send_request(_CONNECT_REQUEST)
             self.assertEqual(connect_response.response_code, obex.ResponseCode.SUCCESS)
@@ -380,7 +401,7 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
             match variant:
                 case _DisconnectVariant.ACL:
                     self.logger.info("[REF] Disconnect ACL.")
-                    coroutine = (client.bearer.multiplexer.l2cap_channel.connection.disconnect())
+                    coroutine = list(self.ref.device.connections.values())[0].disconnect()
                 case _DisconnectVariant.BEARER:
                     self.logger.info("[REF] Disconnect bearer.")
                     coroutine = client.bearer.disconnect()
@@ -395,15 +416,22 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
                     state=android_constants.ConnectionState.DISCONNECTED,
                 ),)
 
-    async def test_download_contact(self) -> None:
+    @navi_test_base.parameterized(
+        (_BearerType.RFCOMM,),
+        (_BearerType.L2CAP,),
+    )
+    async def test_download_contact(self, bearer_type: _BearerType) -> None:
         """Tests downloading contact phonebook.
 
     Test steps:
       1. Connect PBAP from REF to DUT.
       2. Get contact phonebook size.
       3. Get contact phonebook.
+
+    Args:
+      bearer_type: The bearer type.
     """
-        client = await self._make_pbap_client_from_ref()
+        client = await self._make_pbap_client_from_ref(bearer_type)
 
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             self.logger.info("[REF] Send OBEX connect request.")
@@ -440,28 +468,37 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
         self.assertEqual(response_app_params.phonebook_size, len(self.contacts) + 1)
 
         self.logger.info("[REF] Get contact phonebook.")
-        request = obex.Request(
-            opcode=obex.Opcode.GET,
-            final=True,
-            headers=obex.Headers(
-                connection_id=connection_id,
-                name="telecom/pb.vcf",
-                type=_PBAP_PHONE_BOOK_TYPE,
-                app_parameters=pbap.ApplicationParameters(
-                    format=pbap.ApplicationParameterValue.Format.V_3_0,
-                    max_list_count=_MAX_LIST_COUNT,
-                    list_start_offset=0,
-                ).to_bytes(),
-            ),
-        )
+        body = b""
+        list_start_offset = 0
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
-            response = await client.send_request(request)
-        self.assertEqual(response.response_code, obex.ResponseCode.SUCCESS)
+            while True:
+                request = obex.Request(
+                    opcode=obex.Opcode.GET,
+                    final=True,
+                    headers=obex.Headers(
+                        connection_id=connection_id,
+                        name="telecom/pb.vcf",
+                        type=_PBAP_PHONE_BOOK_TYPE,
+                        app_parameters=pbap.ApplicationParameters(
+                            format=pbap.ApplicationParameterValue.Format.V_3_0,
+                            max_list_count=_MAX_LIST_COUNT,
+                            list_start_offset=list_start_offset,
+                        ).to_bytes(),
+                    ),
+                )
+                response = await client.send_request(request)
+                body += response.headers.body or response.headers.end_of_body or b""
+                if response.response_code != obex.ResponseCode.CONTINUE:
+                    break
+                if ((app_param_bytes := response.headers.app_parameters) and
+                    (app_params := pbap.ApplicationParameters.from_bytes(app_param_bytes)) and
+                    ((new_list_start_offset := app_params.list_start_offset) is not None)):
+                    list_start_offset = new_list_start_offset
 
         # Check the vCard list.
         # Note: The order of the vCards is not guaranteed. If the behavior is
         # changed in the future, we need to update the test to ignore the order.
-        vcards = _parse_vcard_list(response.headers.body or response.headers.end_of_body or b"")
+        vcards = _parse_vcard_list(body)
         self.logger.debug("<<< %s", vcards)
         self.assertLen(vcards, len(self.contacts) + 1)
         for i, vcard in enumerate(vcards[1:]):
@@ -486,7 +523,7 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
     )
     async def test_download_call_logs(self, phonebook_name: str) -> None:
         """Tests downloading call logs."""
-        client = await self._make_pbap_client_from_ref()
+        client = await self._make_pbap_client_from_ref(_BearerType.RFCOMM)
 
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             self.logger.info("[REF] Send OBEX connect request.")

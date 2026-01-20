@@ -67,7 +67,7 @@ class A2dpSourceTest(navi_test_base.TwoDevicesTestBase):
         with self.dut.bl4a.register_callback(_Module.A2DP) as dut_cb:
             self._setup_a2dp_sink_from_ref([_A2dpCodec.SBC])
             self.logger.info("[DUT] Connect and pair REF.")
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[DUT] Wait for A2DP connected.")
             await dut_cb.wait_for_event(

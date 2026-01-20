@@ -309,6 +309,39 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[DUT] Wait for service changed.")
         await gatt_client.wait_for_event(bl4a_api.GattServiceChanged)
 
+    async def test_reconnect_after_disconnect(self) -> None:
+        """Test disconnect connection.
+
+    Test steps:
+      1. Connect GATT to REF from DUT.
+      2. Discover services from DUT.
+      3. Disconnect GATT from DUT.
+      4. Reconnect GATT to REF from DUT.
+      5. Check connection state.
+    """
+        for _ in range(2):
+            service_uuid = str(uuid.uuid4())
+            self.ref.device.add_service(gatt.Service(uuid=service_uuid, characteristics=[]))
+
+            self.logger.info("[REF] Start advertising.")
+            await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+            self.logger.info("[DUT] Connect to REF.")
+            gatt_client = await self.dut.bl4a.connect_gatt_client(
+                str(self.ref.random_address),
+                android_constants.Transport.LE,
+                android_constants.AddressTypeStatus.RANDOM,
+            )
+
+            self.logger.info("[DUT] Discover services.")
+            services = await gatt_client.discover_services()
+
+            self.logger.info("[DUT] Check services.")
+            service_uuids = [service.uuid for service in services]
+            self.assertIn(service_uuid, service_uuids)
+
+            self.logger.info("[DUT] Disconnect.")
+            await gatt_client.disconnect()
+
 
 if __name__ == "__main__":
     test_runner.main()

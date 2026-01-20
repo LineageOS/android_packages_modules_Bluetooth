@@ -44,7 +44,7 @@ class BluetoothLeBroadcastSnippet : Snippet {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private val broadcastProxy =
-        Utils.getProfileProxy<BluetoothLeBroadcast>(context, BluetoothProfile.LE_AUDIO_BROADCAST)
+        Utils.getProfileProxy(context, BluetoothProfile.LE_AUDIO_BROADCAST) as BluetoothLeBroadcast
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()

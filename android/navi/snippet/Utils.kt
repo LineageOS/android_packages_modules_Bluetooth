@@ -20,14 +20,11 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import com.google.android.mobly.snippet.event.EventCache
 import com.google.android.mobly.snippet.event.SnippetEvent
 import com.google.android.mobly.snippet.rpc.TypeConverter
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.trySendBlocking
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.first
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
@@ -37,33 +34,27 @@ object Utils {
 
     const val TAG = "BtSnippetUtils"
 
-    @Suppress("UNCHECKED_CAST")
-    fun <T> getProfileProxy(context: Context, profile: Int): T {
-        var proxy: BluetoothProfile?
-        runBlocking {
-            val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
-            val bluetoothAdapter = bluetoothManager.adapter
+    fun getProfileProxy(context: Context, profile: Int): BluetoothProfile {
+        val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
+        val bluetoothAdapter = bluetoothManager.adapter
 
-            val flow = callbackFlow {
-                val serviceListener =
-                    object : BluetoothProfile.ServiceListener {
-                        override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
-                            val unused = trySendBlocking(proxy)
-                        }
+        val deferred = CompletableDeferred<BluetoothProfile>()
 
-                        override fun onServiceDisconnected(profile: Int) {}
-                    }
+        bluetoothAdapter.getProfileProxy(
+            context,
+            object : BluetoothProfile.ServiceListener {
+                override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+                    deferred.complete(proxy)
+                }
 
-                bluetoothAdapter.getProfileProxy(context, serviceListener, profile)
-
-                awaitClose {}
-            }
-            proxy = withTimeoutOrNull(5_000) { flow.first() }
-        }
-        if (proxy == null) {
-            Log.w(TAG, "profile proxy $profile is null")
-        }
-        return proxy!! as T
+                override fun onServiceDisconnected(profile: Int) {}
+            },
+            profile,
+        )
+        return runBlocking { withTimeoutOrNull(5.seconds) { deferred.await() } }
+            ?: throw IllegalStateException(
+                "Failed to get profile proxy for profile ${BluetoothProfile.getProfileName(profile)} after 5 seconds."
+            )
     }
 
     /** Converts [JSONArray] to a [List] so that iterators can be used. */

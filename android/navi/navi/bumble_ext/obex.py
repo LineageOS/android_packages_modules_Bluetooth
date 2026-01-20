@@ -27,11 +27,14 @@ import enum
 import logging
 import pprint
 import struct
-from typing import Final, Self, Tuple, Type, cast
+from typing import Final, Self, TypeAlias, cast
 
+from bumble import l2cap
 from bumble import rfcomm
 
 _logger = logging.getLogger(__name__)
+
+Bearer: TypeAlias = rfcomm.DLC | l2cap.ClassicChannel
 
 FINAL_FLAG = 0x80
 
@@ -165,7 +168,7 @@ class Header:
     value: int | str | bytes
 
     @classmethod
-    def parse_from(cls: Type[Self], data: bytes, offset: int = 0) -> Tuple[Self, int]:
+    def parse_from(cls, data: bytes, offset: int = 0) -> tuple[Self, int]:
         """Creates a header from the given bytes."""
         id_ = HeaderIdentifier(data[offset])
         offset += 1
@@ -252,7 +255,7 @@ class Headers:
     single_response_mode_parameters: int | None = None
 
     @classmethod
-    def parse_from(cls: Type[Self], data: bytes, offset: int = 0) -> Tuple[int, Self]:
+    def parse_from(cls, data: bytes, offset: int = 0) -> tuple[int, Self]:
         """Parses a list of headers from the given bytes.
 
     Args:
@@ -262,7 +265,7 @@ class Headers:
     Returns:
       A list of parsed headers.
     """
-        headers = {}
+        headers: dict[str, int | str | bytes] = {}
         while offset < len(data):
             header, offset = Header.parse_from(data, offset)
             headers[header.id.name.lower()] = header.value
@@ -290,7 +293,7 @@ class Request:
     headers: Headers = dataclasses.field(default_factory=Headers)
 
     @classmethod
-    def from_bytes(cls: Type[Self], data: bytes) -> Request:
+    def from_bytes(cls, data: bytes) -> Request:
         """Creates a Request packet from the given bytes.
 
     Args:
@@ -337,7 +340,7 @@ class ConnectRequest(Request):
     opcode: Final[Opcode] = Opcode.CONNECT
 
     @classmethod
-    def from_bytes(cls: Type[Self], data: bytes) -> ConnectRequest:
+    def from_bytes(cls, data: bytes) -> ConnectRequest:
         """Creates a Request packet from the given bytes.
 
     Args:
@@ -377,7 +380,7 @@ class ActionRequest(Request):
     opcode: Final[Opcode] = Opcode.ACTION
 
     @classmethod
-    def from_bytes(cls: Type[Self], data: bytes) -> ActionRequest:
+    def from_bytes(cls, data: bytes) -> ActionRequest:
         """Creates a Request packet from the given bytes.
 
     Args:
@@ -418,7 +421,7 @@ class SetpathRequest(Request):
     constants: int = 0
 
     @classmethod
-    def from_bytes(cls: Type[Self], data: bytes) -> SetpathRequest:
+    def from_bytes(cls, data: bytes) -> SetpathRequest:
         """Creates a Request packet from the given bytes.
 
     Args:
@@ -460,7 +463,7 @@ class Response:
     headers: Headers = dataclasses.field(default_factory=Headers)
 
     @classmethod
-    def from_bytes(cls: Type[Self], data: bytes) -> Response:
+    def from_bytes(cls, data: bytes) -> Response:
         """Creates a Response packet from the given bytes."""
         response_code = data[0]
         final = response_code & FINAL_FLAG
@@ -490,7 +493,7 @@ class ConnectResponse(Response):
     maximum_obex_packet_length: int
 
     @classmethod
-    def from_bytes(cls: Type[Self], data: bytes) -> ConnectResponse:
+    def from_bytes(cls, data: bytes) -> ConnectResponse:
         """Creates a Response packet from the given bytes."""
         (
             response_code,
@@ -531,7 +534,7 @@ class ClientSession:
     connection_id: int | None = None
     peer_max_obex_packet_length: int | None = None
 
-    def __init__(self, bearer: rfcomm.DLC) -> None:
+    def __init__(self, bearer: Bearer) -> None:
         self.bearer = bearer
         self._reassembler = SduReassembler(self._on_sdu)
         self.bearer.sink = self._reassembler.feed
@@ -565,10 +568,7 @@ class ClientSession:
 class ServerSession:
     """OBEX server session."""
 
-    def __init__(
-        self,
-        bearer: rfcomm.DLC,
-    ) -> None:
+    def __init__(self, bearer: Bearer) -> None:
         self.bearer = bearer
         self._reassembler = SduReassembler(self._on_sdu)
         self.bearer.sink = self._reassembler.feed

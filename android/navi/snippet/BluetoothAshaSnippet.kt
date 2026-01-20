@@ -1,0 +1,45 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.android.bluetooth.snippet
+
+import android.bluetooth.BluetoothHearingAid
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.BroadcastReceiver
+import androidx.test.platform.app.InstrumentationRegistry
+import com.google.android.mobly.snippet.Snippet
+import com.google.android.mobly.snippet.rpc.Rpc
+
+/** Snippet for [android.bluetooth.BluetoothHearingAid]. */
+class BluetoothAshaSnippet : Snippet {
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val context = instrumentation.targetContext
+    private val proxy =
+        Utils.getProfileProxy(context, BluetoothProfile.HEARING_AID) as BluetoothHearingAid
+    private val broadcastReceivers = mutableMapOf<String, BroadcastReceiver>()
+    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
+
+    init {
+        instrumentation.uiAutomation.adoptShellPermissionIdentity()
+    }
+
+    /** Set ASHA volume. */
+    @Rpc(description = "Set ASHA volume.")
+    fun setAshaVolume(volume: Int) {
+        proxy.setVolume(volume)
+    }
+}

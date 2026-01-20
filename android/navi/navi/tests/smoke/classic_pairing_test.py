@@ -44,10 +44,7 @@ _TERMINATED_BOND_STATES = (
 )
 _DEFAULT_STEP_TIMEOUT = datetime.timedelta(seconds=10)
 _DEFAULT_STEP_TIMEOUT_SECONDS = _DEFAULT_STEP_TIMEOUT.total_seconds()
-_COD_DEFAULT = 0x1F00
-_COD_HEADSETS = 0x0404
-_PIN_CODE_AUTO_PAIR = "0000"
-_PIN_CODE_DEFAULT = "834701"
+_DEFAULT_PIN_CODE = "834701"
 
 
 class TestVariant(enum.Enum):
@@ -66,7 +63,7 @@ _BumblePairingVariant = pairing_utils.PairingVariant
 
 
 class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
-    """Tests related to Bluetooth Classic pairing."""
+    """Test Bluetooth Classic pairing."""
 
     pairing_delegate: pairing_utils.PairingDelegate
 
@@ -105,9 +102,10 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
                 delegate=pairing_delegate,
             )
 
+        self.logger.info("[REF] Set pairing config factory.")
         self.ref.device.pairing_config_factory = pairing_config_factory
 
-        self.logger.info("[REF] Allow role switch")
+        self.logger.info("[REF] Allow role switch.")
         await self.ref.device.send_command(
             hci.HCI_Write_Default_Link_Policy_Settings_Command(default_link_policy_settings=0x01),
             check_result=True,
@@ -115,9 +113,8 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         dut_cb = self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER)
         self.test_case_context.push(dut_cb)
-        ref_addr = str(self.ref.address)
 
-        ref_dut: device.Connection
+        ref_dut_acl: device.Connection
         auth_task: asyncio.tasks.Task | None = None
         if pairing_direction == _Direction.OUTGOING:
             self.logger.info("[REF] Prepare to accept connection.")
@@ -127,31 +124,38 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
                     role=ref_role,
                     timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
                 ))
+
             self.logger.info("[DUT] Create bond and connect implicitly.")
-            self.assertTrue(self.dut.bt.createBond(ref_addr, android_constants.Transport.CLASSIC))
-            self.logger.info("[REF] Accept connection")
-            ref_dut = await ref_accept_task
+            self.dut.bt.createBond(self.ref.address, android_constants.Transport.CLASSIC)
+
+            self.logger.info("[REF] Accept connection.")
+            ref_dut_acl = await ref_accept_task
         else:
             self.logger.info("[REF] Connect to DUT.")
-            ref_dut = await self.ref.device.connect(
+            ref_dut_acl = await self.ref.device.connect(
                 f"{self.dut.address}/P",
                 transport=core.BT_BR_EDR_TRANSPORT,
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
             )
+
             self.logger.info("[REF] Create bond.")
-            auth_task = asyncio.tasks.create_task(ref_dut.authenticate())
+            auth_task = asyncio.tasks.create_task(ref_dut_acl.authenticate())
+
             self.logger.info("[DUT] Wait for incoming connection.")
             await dut_cb.wait_for_event(
-                event=bl4a_api.AclConnected(address=ref_addr,
-                                            transport=android_constants.Transport.CLASSIC),
+                event=bl4a_api.AclConnected(
+                    address=self.ref.address,
+                    transport=android_constants.Transport.CLASSIC,
+                ),
                 timeout=_DEFAULT_STEP_TIMEOUT,
             )
 
         self.logger.info("[DUT] Wait for pairing request.")
         dut_pairing_event = await dut_cb.wait_for_event(
-            event=bl4a_api.PairingRequest(address=ref_addr, variant=mock.ANY, pin=mock.ANY),
+            event=bl4a_api.PairingRequest(address=self.ref.address, variant=mock.ANY, pin=mock.ANY),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )
+
         ref_accept = variant != TestVariant.REJECTED
         dut_accept = variant != TestVariant.REJECT
         ref_answer: pairing_utils.PairingAnswer
@@ -179,48 +183,51 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
                 ref_answer = ref_accept
             case _:
                 raise ValueError(f"Unsupported IO capability: {ref_io_capability}")
+
         self.assertEqual(dut_pairing_event.variant, expected_dut_pairing_variant)
 
         self.logger.info("[REF] Wait for pairing request.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             ref_pairing_event = await pairing_delegate.pairing_events.get()
 
-        self.logger.info("[REF] Check reported pairing method.")
         self.assertEqual(ref_pairing_event.variant, expected_ref_pairing_variant)
 
         if expected_ref_pairing_variant == _BumblePairingVariant.NUMERIC_COMPARISON:
             self.assertEqual(ref_pairing_event.arg, dut_pairing_event.pin)
 
-        self.logger.info("[DUT] Handle pairing confirmation.")
         if dut_accept:
-            self.dut.bt.setPairingConfirmation(ref_addr, True)
+            self.logger.info("[DUT] Accept pairing.")
+            self.dut.bt.setPairingConfirmation(self.ref.address, True)
         else:
-            self.dut.bt.cancelBond(ref_addr)
+            self.logger.info("[DUT] Cancel bond to reject pairing.")
+            self.dut.bt.cancelBond(self.ref.address)
 
-        self.logger.info("[REF] Handle pairing confirmation.")
         if variant == TestVariant.DISCONNECTED:
-            await ref_dut.disconnect()
-        pairing_delegate.pairing_answers.put_nowait(ref_answer)
+            self.logger.info("[REF] Disconnect.")
+            await ref_dut_acl.disconnect()
+        else:
+            self.logger.info("[REF] Answer pairing request.")
+            pairing_delegate.pairing_answers.put_nowait(ref_answer)
 
         self.logger.info("[DUT] Check final state.")
         expect_state = (android_constants.BondState.BONDED
                         if variant == TestVariant.ACCEPT else android_constants.BondState.NONE)
-        actual_state = (await dut_cb.wait_for_event(
-            event=bl4a_api.BondStateChanged(address=ref_addr,
-                                            state=matcher.any_of(*_TERMINATED_BOND_STATES)),
-            timeout=_DEFAULT_STEP_TIMEOUT,
-        )).state
-        self.assertEqual(actual_state, expect_state)
+        event = await dut_cb.wait_for_event(
+            bl4a_api.BondStateChanged(
+                address=self.ref.address,
+                state=matcher.any_of(*_TERMINATED_BOND_STATES),
+            ),)
+        self.assertEqual(event.state, expect_state)
 
         if auth_task:
-            self.logger.info("[REF] Wait authentication complete.")
+            self.logger.info("[REF] Wait for authentication complete.")
             expected_errors = ([] if variant == TestVariant.ACCEPT else
                                [hci.HCI_Error, asyncio.CancelledError])
             with contextlib.suppress(*expected_errors):
                 async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                     await auth_task
 
-    async def _test_smp_over_classic_async(
+    async def _test_smp_over_classic(
         self,
         expected_key_distribution: _KeyDistribution,
     ) -> None:
@@ -232,30 +239,26 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
     Test steps:
       1. Initiate or accept CTKD on REF.
       2. Wait for CTKD complete.
-      3. Make an LE connection.
-         (If IRK is present, RPA wil be used in this stage, otherwise using
-         identity address.)
-      4. (If LTK present) Encrypt the link to verify LTK.
-      5. (If CSRK present) Verify CSRK lierally.
+      3. Make an LE connection. Use RPA if IRK is exchanged, otherwise use
+      identity address.
+      4. [If LTK] Encrypt the link to verify LTK.
+      5. [If CSRK] Verify CSRK lierally.
 
     Args:
       expected_key_distribution: Keys expected to be distributed.
     """
         pairing_delegate = self.pairing_delegate
-        assert pairing_delegate is not None
 
-        ref_dut = self.ref.device.find_connection_by_bd_addr(hci.Address(f"{self.dut.address}/P"))
-        assert ref_dut is not None
+        if not (ref_dut_acl := self.ref.device.find_connection_by_bd_addr(
+                hci.Address(f"{self.dut.address}/P"))):
+            self.fail("[REF] Failed to find ACL connection with DUT.")
 
-        # #################################
-        # CTKD procedure.
-        # #################################
         ref_pairing_future = asyncio.futures.Future[bumble_keys.PairingKeys]()
         ref_key_updates: asyncio.Queue[None] | None = None
 
         with pyee_extensions.EventWatcher() as watcher:
             # [REF] Watch pairing complete.
-            @watcher.once(ref_dut, "pairing")
+            @watcher.once(ref_dut_acl, ref_dut_acl.EVENT_PAIRING)
             def _(keys: bumble_keys.PairingKeys) -> None:
                 ref_pairing_future.set_result(keys)
 
@@ -263,13 +266,12 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
                 # [REF] IRK exchange will trigger an async resolving list update.
                 ref_key_updates = watcher.async_monitor(self.ref.device, "key_store_update")
 
-            self.logger.info("[REF] REF has role=%s.", _Role(ref_dut.role).name)
             pair_task: asyncio.tasks.Task | None = None
-            if ref_dut.role == _Role.CENTRAL:
-                # [REF] Send SMP pairing request.
-                pair_task = asyncio.tasks.create_task(ref_dut.pair())
+            if ref_dut_acl.role == _Role.CENTRAL:
+                self.logger.info("[REF] Initiate SMP pairing.")
+                pair_task = asyncio.tasks.create_task(ref_dut_acl.pair())
             else:
-                # [REF] Accept SMP pairing request.
+                self.logger.info("[REF] Accept SMP pairing request.")
                 pairing_delegate.acceptions.put_nowait(True)
 
             self.logger.info("[REF] Wait for CTKD complete.")
@@ -287,12 +289,10 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
             self.assertIsNotNone(keys.irk)
             ref_address_type = hci.OwnAddressType.RESOLVABLE_OR_PUBLIC
 
-        # #################################
-        # IRK & LTK verification.
-        # #################################
-
-        self.logger.info("[REF] Create LE L2CAP server and start advertising.")
+        self.logger.info("[REF] Create LE L2CAP server.")
         ref_l2cap_server = self.ref.device.create_l2cap_server(l2cap.LeCreditBasedChannelSpec())
+
+        self.logger.info("[REF] Start advertising.")
         await self.ref.device.start_advertising(own_address_type=ref_address_type)
 
         self.logger.info("[DUT] Make LE connection.")
@@ -305,9 +305,6 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
             address_type=android_constants.AddressTypeStatus.PUBLIC,
         )
 
-        # #################################
-        # CSRK verification.
-        # #################################
         if _KeyDistribution.DISTRIBUTE_SIGNING_KEY in expected_key_distribution:
             self.assertIsNotNone(keys.csrk)
 
@@ -342,12 +339,15 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       ref_io_capability: IO capabilities of the REF device.
       ref_role: ACL role of the REF device.
     """
-        # [REF] Disable SMP over Classic L2CAP channel.
+        self.logger.info("[REF] Disable SMP over Classic L2CAP channel.")
         self.ref.device.l2cap_channel_manager.deregister_fixed_channel(smp.SMP_BR_CID)
+
+        self.logger.info("[REF] Set pairing delegate.")
         self.pairing_delegate = pairing_utils.PairingDelegate(
             io_capability=ref_io_capability,
             auto_accept=True,
         )
+
         await self._test_ssp_pairing_async(
             variant=variant,
             pairing_direction=_Direction.OUTGOING,
@@ -381,12 +381,15 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       variant: variant of pairing actions performmed in the test.
       ref_io_capability: IO capabilities of the REF device.
     """
-        # [REF] Disable SMP over Classic L2CAP channel.
+        self.logger.info("[REF] Disable SMP over Classic L2CAP channel.")
         self.ref.device.l2cap_channel_manager.deregister_fixed_channel(smp.SMP_BR_CID)
+
+        self.logger.info("[REF] Set pairing delegate.")
         self.pairing_delegate = pairing_utils.PairingDelegate(
             io_capability=ref_io_capability,
             auto_accept=True,
         )
+
         await self._test_ssp_pairing_async(
             variant=variant,
             pairing_direction=_Direction.INCOMING,
@@ -424,22 +427,26 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       key_distribution: key distribution in SMP preferred by the REF device.
     """
         ref_io_capability = _IoCapability.DISPLAY_OUTPUT_AND_YES_NO_INPUT
-        # [REF] Enable SMP over Classic L2CAP channel.
+        self.logger.info("[REF] Enable SMP over Classic L2CAP channel.")
         self.ref.device.l2cap_channel_manager.register_fixed_channel(smp.SMP_BR_CID,
                                                                      self.ref.device.on_smp_pdu)
+
+        self.logger.info("[REF] Set pairing delegate.")
         self.pairing_delegate = pairing_utils.PairingDelegate(
             io_capability=ref_io_capability,
             local_initiator_key_distribution=key_distribution,
             local_responder_key_distribution=key_distribution,
             auto_accept=False,
         )
+
         await self._test_ssp_pairing_async(
             variant=TestVariant.ACCEPT,
             pairing_direction=_Direction.OUTGOING,
             ref_io_capability=ref_io_capability,
             ref_role=ref_role,
         )
-        await self._test_smp_over_classic_async(expected_key_distribution=key_distribution)
+
+        await self._test_smp_over_classic(expected_key_distribution=key_distribution)
 
     @navi_test_base.retry(max_count=2)
     async def test_legacy_pairing_incoming(self) -> None:
@@ -456,73 +463,74 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
     """
         self.ref.device.classic_sc_enabled = False
         self.ref.device.classic_ssp_enabled = False
+
+        self.logger.info("[REF] Power on.")
         await self.ref.device.power_on()
 
         dut_cb = self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER)
         self.test_case_context.push(dut_cb)
-        ref_addr = str(self.ref.address)
+
+        self.logger.info("[REF] Set pairing delegate.")
         pairing_delegate = pairing_utils.PairingDelegate(
             io_capability=_IoCapability.KEYBOARD_INPUT_ONLY,
             auto_accept=False,
         )
 
         def pairing_config_factory(connection: device.Connection,) -> pairing.PairingConfig:
-            del connection
+            del connection  # Unused.
             return pairing.PairingConfig(delegate=pairing_delegate)
 
         self.ref.device.pairing_config_factory = pairing_config_factory
 
         self.logger.info("[REF] Connect to DUT.")
-        ref_dut = await self.ref.device.connect(
+        ref_dut_acl = await self.ref.device.connect(
             f"{self.dut.address}/P",
             transport=core.BT_BR_EDR_TRANSPORT,
             timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
         )
         self.logger.info("[REF] Create bond.")
-        auth_task = asyncio.tasks.create_task(ref_dut.authenticate())
+        auth_task = asyncio.tasks.create_task(ref_dut_acl.authenticate())
+
         self.logger.info("[DUT] Wait for incoming connection.")
-        await dut_cb.wait_for_event(
-            event=bl4a_api.AclConnected(address=ref_addr,
-                                        transport=android_constants.Transport.CLASSIC),
-            timeout=_DEFAULT_STEP_TIMEOUT,
-        )
+        await dut_cb.wait_for_event(event=bl4a_api.AclConnected(
+            address=self.ref.address,
+            transport=android_constants.Transport.CLASSIC,
+        ),)
 
         self.logger.info("[REF] Wait for pairing request.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             ref_pairing_request = await pairing_delegate.pairing_events.get()
-            self.assertEqual(
-                ref_pairing_request.variant,
-                _BumblePairingVariant.PIN_CODE_REQUEST,
-            )
+
+        self.assertEqual(
+            ref_pairing_request.variant,
+            _BumblePairingVariant.PIN_CODE_REQUEST,
+        )
 
         self.logger.info("[REF] Handle pairing confirmation.")
-        pairing_delegate.pairing_answers.put_nowait(_PIN_CODE_DEFAULT)
+        pairing_delegate.pairing_answers.put_nowait(_DEFAULT_PIN_CODE)
 
         self.logger.info("[DUT] Wait for pairing request.")
         dut_pairing_request = await dut_cb.wait_for_event(
-            event=bl4a_api.PairingRequest(address=ref_addr, variant=mock.ANY, pin=mock.ANY),
-            timeout=_DEFAULT_STEP_TIMEOUT,
-        )
+            bl4a_api.PairingRequest(address=self.ref.address, variant=mock.ANY, pin=mock.ANY))
+
         self.assertEqual(dut_pairing_request.variant, _AndroidPairingVariant.PIN)
 
         self.logger.info("[DUT] Handle pairing confirmation.")
-        self.dut.bt.setPin(ref_addr, _PIN_CODE_DEFAULT)
+        self.dut.bt.setPin(self.ref.address, _DEFAULT_PIN_CODE)
 
         self.logger.info("[DUT] Check final state.")
-        actual_state = (await dut_cb.wait_for_event(
-            event=bl4a_api.BondStateChanged(address=ref_addr,
-                                            state=matcher.any_of(*_TERMINATED_BOND_STATES)),
-            timeout=_DEFAULT_STEP_TIMEOUT,
-        )).state
-        self.assertEqual(actual_state, android_constants.BondState.BONDED)
+        await dut_cb.wait_for_event(
+            bl4a_api.BondStateChanged(
+                address=self.ref.address,
+                state=android_constants.BondState.BONDED,
+            ),)
 
         self.logger.info("[REF] Wait authentication complete.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             await auth_task
 
-    @navi_test_base.parameterized(*itertools.product((_COD_DEFAULT, _COD_HEADSETS)))
     @navi_test_base.retry(max_count=2)
-    async def test_legacy_pairing_outgoing(self, ref_cod: int) -> None:
+    async def test_legacy_pairing_outgoing(self) -> None:
         """Tests outgoing Legacy Pairing.
 
     Test steps:
@@ -533,29 +541,21 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       5. Wait for pairing requests on REF.
       6. Set pairing PIN on REF.
       7. Verify final states.
-
-    Args:
-      ref_cod: Class of Device code of REF.
     """
-
-        self.logger.info("[REF] Set CoD to %s.", ref_cod)
-        self.ref.device.class_of_device = ref_cod
         self.ref.device.classic_sc_enabled = False
         self.ref.device.classic_ssp_enabled = False
+
+        self.logger.info("[REF] Power on.")
         await self.ref.device.power_on()
+
         dut_cb = self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER)
         self.test_case_context.push(dut_cb)
-        ref_addr = str(self.ref.address)
+
+        self.logger.info("[REF] Set pairing delegate.")
         pairing_delegate = pairing_utils.PairingDelegate(
             io_capability=_IoCapability.KEYBOARD_INPUT_ONLY,
             auto_accept=False,
         )
-
-        auto_pair = ref_cod in (_COD_HEADSETS,)
-        if auto_pair:
-            pin_code = _PIN_CODE_AUTO_PAIR
-        else:
-            pin_code = _PIN_CODE_DEFAULT
 
         def pairing_config_factory(connection: device.Connection,) -> pairing.PairingConfig:
             del connection
@@ -565,43 +565,39 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Search for REF to update CoD.")
         self.dut.bt.startInquiry()
-        await dut_cb.wait_for_event(
-            event=bl4a_api.DeviceFound(address=ref_addr, name=mock.ANY),
-            timeout=_DEFAULT_STEP_TIMEOUT,
-        )
 
-        self.logger.info("[DUT] Create bond and connect implicitly.")
-        self.assertTrue(self.dut.bt.createBond(ref_addr, android_constants.Transport.CLASSIC))
+        await dut_cb.wait_for_event(bl4a_api.DeviceFound(address=self.ref.address, name=mock.ANY),)
 
-        if not auto_pair:
-            self.logger.info("[DUT] Wait for pairing request.")
-            dut_pairing_request = await dut_cb.wait_for_event(
-                event=bl4a_api.PairingRequest(address=ref_addr, variant=mock.ANY, pin=mock.ANY),
-                timeout=_DEFAULT_STEP_TIMEOUT,
-            )
-            self.assertEqual(dut_pairing_request.variant, _AndroidPairingVariant.PIN)
+        self.logger.info("[DUT] Create bond.")
+        self.dut.bt.createBond(self.ref.address, android_constants.Transport.CLASSIC)
 
-            self.logger.info("[DUT] Handle pairing confirmation.")
-            self.dut.bt.setPin(ref_addr, pin_code)
+        self.logger.info("[DUT] Wait for pairing request.")
+        dut_pairing_request = await dut_cb.wait_for_event(
+            bl4a_api.PairingRequest(address=self.ref.address, variant=mock.ANY, pin=mock.ANY))
+
+        self.assertEqual(dut_pairing_request.variant, _AndroidPairingVariant.PIN)
+
+        self.logger.info("[DUT] Handle pairing confirmation.")
+        self.dut.bt.setPin(self.ref.address, _DEFAULT_PIN_CODE)
 
         self.logger.info("[REF] Wait for pairing request.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             ref_pairing_request = await pairing_delegate.pairing_events.get()
-            self.assertEqual(
-                ref_pairing_request.variant,
-                _BumblePairingVariant.PIN_CODE_REQUEST,
-            )
+
+        self.assertEqual(
+            ref_pairing_request.variant,
+            _BumblePairingVariant.PIN_CODE_REQUEST,
+        )
 
         self.logger.info("[REF] Handle pairing confirmation.")
-        pairing_delegate.pairing_answers.put_nowait(pin_code)
+        pairing_delegate.pairing_answers.put_nowait(_DEFAULT_PIN_CODE)
 
         self.logger.info("[DUT] Check final state.")
-        actual_state = (await dut_cb.wait_for_event(
-            event=bl4a_api.BondStateChanged(address=ref_addr,
-                                            state=matcher.any_of(*_TERMINATED_BOND_STATES)),
-            timeout=_DEFAULT_STEP_TIMEOUT,
-        )).state
-        self.assertEqual(actual_state, android_constants.BondState.BONDED)
+        await dut_cb.wait_for_event(
+            bl4a_api.BondStateChanged(
+                address=self.ref.address,
+                state=android_constants.BondState.BONDED,
+            ),)
 
     async def test_remove_bond(self) -> None:
         """Tests removing bond.
@@ -611,7 +607,6 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       2. Remove bond on DUT.
       3. Verify bond state change on DUT.
     """
-        # Prepair pairing.
         await self.classic_connect_and_pair()
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
@@ -621,9 +616,48 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[DUT] Wait for bond state change.")
             await dut_cb.wait_for_event(
                 bl4a_api.BondStateChanged(address=self.ref.address,
-                                          state=android_constants.BondState.NONE),
-                timeout=_DEFAULT_STEP_TIMEOUT,
-            )
+                                          state=android_constants.BondState.NONE))
+
+    async def test_remove_bond_when_no_bond_exists(self) -> None:
+        """Tests removing bond when no bond exists.
+
+    Test steps:
+      1. Remove bond on DUT.
+      2. Verify remove bond failure.
+    """
+        self.logger.info("[DUT] Remove bond.")
+        self.assertFalse(self.dut.bt.removeBond(self.ref.address))
+
+    async def test_remove_bond_when_bluetooth_is_disabled(self) -> None:
+        """Tests removing bond when Bluetooth is disabled.
+
+    Test steps:
+      1. Pair DUT and REF.
+      2. Disable Bluetooth on DUT.
+      3. Remove bond on DUT.
+      4. Verify remove bond failure.
+      5. Enable Bluetooth on DUT and check if bond is not removed.
+    """
+        self.logger.info("[DUT] Pair DUT and REF.")
+        await self.classic_connect_and_pair()
+
+        self.logger.info("[DUT] Disable Bluetooth.")
+        self.assertTrue(self.dut.bt.disable())
+
+        self.logger.info("[DUT] Wait for Bluetooth to be disabled.")
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.OFF)
+
+        self.logger.info("[DUT] Remove bond.")
+        self.assertFalse(self.dut.bt.removeBond(self.ref.address))
+
+        self.logger.info("[DUT] Enable Bluetooth.")
+        self.assertTrue(self.dut.bt.enable())
+
+        self.logger.info("[DUT] Wait for Bluetooth to be enabled.")
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
+
+        self.logger.info("[DUT] Check if bond is not removed.")
+        self.assertIn(self.ref.address, self.dut.bt.getBondedDevices())
 
 
 if __name__ == "__main__":
