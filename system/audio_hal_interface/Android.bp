@@ -66,6 +66,7 @@ cc_library_static {
                 "hidl/codec_status_hidl.cc",
                 "hidl/hearing_aid_software_encoding_hidl.cc",
                 "hidl/le_audio_software_hidl.cc",
+                "le_audio_peripheral.cc",
                 "le_audio_software.cc",
             ],
         },
