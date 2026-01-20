@@ -152,6 +152,7 @@ typedef enum {
   LE_AUDIO_CODEC_INDEX_SOURCE_LC3 = 0,
   LE_AUDIO_CODEC_INDEX_SOURCE_OPUS = 1,
   LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES = 2,
+  LE_AUDIO_CODEC_INDEX_SOURCE_VENDOR_SPECIFIC = 3,
   LE_AUDIO_CODEC_INDEX_SOURCE_INVALID = 1000 * 1000,
 } btle_audio_codec_index_t;
 
@@ -202,7 +203,10 @@ typedef struct btle_audio_codec_config {
   btle_audio_frame_duration_index_t frame_duration = LE_AUDIO_FRAME_DURATION_INDEX_NONE;
   uint8_t codec_frame_blocks_per_sdu = 0;
   uint16_t octets_per_frame = 0;
+  uint16_t min_octets_per_frame = 0;
+  uint16_t max_octets_per_frame = 0;
   int32_t codec_priority = 0;
+  uint64_t codec_id = 0;
 
   bool operator!=(const btle_audio_codec_config& other) const {
     if (codec_type != other.codec_type) {
@@ -223,6 +227,12 @@ typedef struct btle_audio_codec_config {
     if (octets_per_frame != other.octets_per_frame) {
       return true;
     }
+    if (min_octets_per_frame != other.min_octets_per_frame) {
+      return true;
+    }
+    if (max_octets_per_frame != other.max_octets_per_frame) {
+      return true;
+    }
     if (codec_priority != other.codec_priority) {
       return true;
     }
@@ -237,6 +247,8 @@ typedef struct btle_audio_codec_config {
     std::string channel_count_str;
     std::string frame_duration_str;
     std::string octets_per_frame_str;
+    std::string min_octets_per_frame_str;
+    std::string max_octets_per_frame_str;
     std::string codec_priority_str;
 
     switch (codec_type) {
@@ -248,6 +260,9 @@ typedef struct btle_audio_codec_config {
         break;
       case LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES:
         codec_name_str = "Opus Hi-Res";
+        break;
+      case LE_AUDIO_CODEC_INDEX_SOURCE_VENDOR_SPECIFIC:
+        codec_name_str = "Vendor Specific";
         break;
       default:
         codec_name_str = "Unknown LE codec " + std::to_string(codec_type);
@@ -350,11 +365,9 @@ typedef struct btle_audio_codec_config {
         break;
     }
 
-    if (octets_per_frame < 0) {
-      octets_per_frame_str = "Unknown LE octets per frame " + std::to_string(octets_per_frame);
-    } else {
-      octets_per_frame_str = std::to_string(octets_per_frame);
-    }
+    octets_per_frame_str = std::to_string(octets_per_frame);
+    min_octets_per_frame_str = std::to_string(min_octets_per_frame);
+    max_octets_per_frame_str = std::to_string(max_octets_per_frame);
 
     if (codec_priority < -1) {
       codec_priority_str = "Unknown LE codec priority " + std::to_string(codec_priority);
@@ -365,7 +378,10 @@ typedef struct btle_audio_codec_config {
     return "codec: " + codec_name_str + ", sample rate: " + sample_rate_str +
            ", bits per sample: " + bits_per_sample_str + ", channel count: " + channel_count_str +
            ", frame duration: " + frame_duration_str +
-           ", octets per frame: " + octets_per_frame_str + ", codec priroty: " + codec_priority_str;
+           ", octets per frame: " + octets_per_frame_str +
+           ", min octets per frame: " + min_octets_per_frame_str +
+           ", max octets per frame: " + max_octets_per_frame_str +
+           ", codec priroty: " + codec_priority_str + ", codec id: " + std::to_string(codec_id);
   }
 } btle_audio_codec_config_t;
 
