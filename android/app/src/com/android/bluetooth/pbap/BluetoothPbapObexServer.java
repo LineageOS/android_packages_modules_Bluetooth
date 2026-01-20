@@ -635,10 +635,14 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                     + vcard21
                     + " order="
                     + order
-                    + "vcardselector="
+                    + " vcardSelector="
                     + Arrays.toString(vCardSelector)
-                    + "vcardselop="
+                    + " vcardSelectorOperator="
                     + vCardSelectorOperator
+                    + " propertySelector="
+                    + Arrays.toString(propertySelector)
+                    + " supportedFeature="
+                    + Arrays.toString(supportedFeature)
                     + ">";
         }
     }
