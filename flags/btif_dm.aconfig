@@ -17,3 +17,13 @@ flag {
   description: "Decouple the service discovery and pairing process"
   bug: "474029825"
 }
+
+flag {
+    name: "fix_multiple_discovery_stopped_broadcast"
+    namespace: "bluetooth"
+    description: "Ensures BT_DISCOVERY_STOPPED is signaled to the Java layer exactly once when discovery ends or is canceled, by unifying the native signal source and adding deduplication"
+    bug: "477194225"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
