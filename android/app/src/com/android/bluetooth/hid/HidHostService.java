@@ -27,6 +27,10 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
+import static com.android.bluetooth.btservice.AdapterSuspend.AWAKE;
+import static com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP;
+import static com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP;
+
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -132,9 +136,10 @@ public class HidHostService extends ConnectableProfile {
     private static final int BTHH_ERR_TOD_UNSPT = 10; // Remote device not supported
 
     // LINT.IfChange
-    static final int RECONNECT_ALLOWED = 0;
-    static final int RECONNECT_NOT_ALLOWED_TEMPORARY = 1;
-    static final int RECONNECT_NOT_ALLOWED = 2;
+    @VisibleForTesting static final int RECONNECT_ALLOWED = 0;
+    @VisibleForTesting static final int RECONNECT_NOT_ALLOWED_TEMPORARY = 1;
+    @VisibleForTesting static final int RECONNECT_NOT_ALLOWED = 2;
+
     // LINT.ThenChange(/system/btif/src/btif_hh.cc)
 
     public HidHostService(AdapterService adapterService) {
@@ -772,6 +777,44 @@ public class HidHostService extends ConnectableProfile {
         return true;
     }
 
+    /**
+     * Handles suspend state
+     *
+     * @param suspendState state of suspend
+     */
+    public void onSuspendStateChange(int suspendState) {
+        Log.i(TAG, "Enter suspend state " + suspendState);
+        for (BluetoothDevice device : mInputDevices.keySet()) {
+            int transport = getTransport(device);
+
+            // Only LE devices.
+            if (transport != TRANSPORT_LE) {
+                continue;
+            }
+            // If not allowed to connect, do nothing.
+            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
+                continue;
+            }
+
+            switch (suspendState) {
+                case AWAKE -> {
+                    if (getConnectionState(device) == STATE_DISCONNECTED) {
+                        nativeConnect(device, transport, false);
+                    }
+                }
+                case SHALLOW_SLEEP -> {
+                    if (getConnectionState(device) == STATE_CONNECTED) {
+                        nativeDisconnect(device, transport, RECONNECT_ALLOWED);
+                    }
+                }
+                case DEEP_SLEEP -> {
+                    nativeDisconnect(device, transport, RECONNECT_NOT_ALLOWED_TEMPORARY);
+                }
+                default -> {}
+            }
+        }
+    }
+
     // APIs
 
     /**
@@ -851,6 +894,10 @@ public class HidHostService extends ConnectableProfile {
                 .collect(Collectors.toList());
     }
 
+    public List<BluetoothDevice> getConnectedDevices() {
+        return getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTED});
+    }
+
     /**
      * Set connection policy of the profile and connects it if connectionPolicy is {@link
      * BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is {@link
@@ -918,7 +965,7 @@ public class HidHostService extends ConnectableProfile {
     /**
      * @see BluetoothHidHost#getPreferredTransport
      */
-    int getPreferredTransport(BluetoothDevice device) {
+    public int getPreferredTransport(BluetoothDevice device) {
         Log.d(TAG, "getPreferredTransport: device=" + device);
 
         // TODO: Access to mInputDevices should be protected in binder thread

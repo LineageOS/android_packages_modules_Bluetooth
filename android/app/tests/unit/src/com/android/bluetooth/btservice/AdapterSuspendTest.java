@@ -22,9 +22,12 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
+import static com.android.bluetooth.btservice.AdapterSuspend.AWAKE;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE;
+import static com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP;
+import static com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP;
 import static com.android.bluetooth.btservice.RemoteDevices.AclLinkSpec;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -54,6 +57,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.AdvertiseManager;
 import com.android.bluetooth.gatt.GattService;
+import com.android.bluetooth.hid.HidHostService;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.Before;
@@ -83,6 +87,7 @@ public class AdapterSuspendTest {
     @Mock private BluetoothDevice mBluetoothDevice;
     @Mock private GattService mGattService;
     @Mock private RemoteDevices mRemoteDevices;
+    @Mock private HidHostService mHidHostService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final DeviceStateManager mDeviceStateManager =
@@ -99,6 +104,7 @@ public class AdapterSuspendTest {
         doReturn(Optional.of(mGattService)).when(mAdapterService).getGattService();
         doReturn(mAdvertiseManager).when(mGattService).getAdvertiseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
+        doReturn(Optional.of(mHidHostService)).when(mAdapterService).getHidHostService();
 
         mTestLooper = new TestLooper();
 
@@ -125,9 +131,11 @@ public class AdapterSuspendTest {
         if (!Flags.leHidConnectionPolicySuspend()) {
             verify(mAdapterNativeInterface).setDefaultEventMaskExcept(anyLong(), anyLong());
             verify(mAdapterNativeInterface).disconnectAllAcls();
+            verify(mAdapterNativeInterface).clearFilterAcceptList();
+        } else {
+            verify(mAdapterNativeInterface).setSuspendState(true);
         }
         verify(mAdapterNativeInterface).clearEventFilter();
-        verify(mAdapterNativeInterface).clearFilterAcceptList();
     }
 
     @Test
@@ -139,9 +147,11 @@ public class AdapterSuspendTest {
 
         if (!Flags.leHidConnectionPolicySuspend()) {
             verify(mAdapterNativeInterface).setDefaultEventMaskExcept(0, 0);
+            verify(mAdapterNativeInterface).restoreFilterAcceptList();
+        } else {
+            verify(mAdapterNativeInterface).setSuspendState(false);
         }
         verify(mAdapterNativeInterface).clearEventFilter();
-        verify(mAdapterNativeInterface).restoreFilterAcceptList();
         verify(mAdapterService).setScanMode(eq(SCAN_MODE_CONNECTABLE), eq("handleResume"));
     }
 
@@ -154,9 +164,11 @@ public class AdapterSuspendTest {
         if (!Flags.leHidConnectionPolicySuspend()) {
             verify(mAdapterNativeInterface).setDefaultEventMaskExcept(anyLong(), anyLong());
             verify(mAdapterNativeInterface).disconnectAllAcls();
+            verify(mAdapterNativeInterface).clearFilterAcceptList();
+        } else {
+            verify(mAdapterNativeInterface).setSuspendState(true);
         }
         verify(mAdapterNativeInterface).clearEventFilter();
-        verify(mAdapterNativeInterface).clearFilterAcceptList();
     }
 
     @Test
@@ -166,9 +178,11 @@ public class AdapterSuspendTest {
 
         if (!Flags.leHidConnectionPolicySuspend()) {
             verify(mAdapterNativeInterface).setDefaultEventMaskExcept(0, 0);
+            verify(mAdapterNativeInterface).restoreFilterAcceptList();
+        } else {
+            verify(mAdapterNativeInterface).setSuspendState(false);
         }
         verify(mAdapterNativeInterface).clearEventFilter();
-        verify(mAdapterNativeInterface).restoreFilterAcceptList();
         verify(mAdapterService).setSuspendState(false);
     }
 
@@ -208,7 +222,7 @@ public class AdapterSuspendTest {
         List<BluetoothDevice> audioDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
         doReturn(audioDevices)
                 .when(mAdapterService)
-                .getConnectedMediaDevices(BluetoothProfile.HEARING_AID);
+                .getConnectedDevicesForProfile(BluetoothProfile.HEARING_AID);
 
         mAdapterSuspend.handleSuspend(true);
         verify(mAdapterService).acquireWakeLock(any());
@@ -232,7 +246,7 @@ public class AdapterSuspendTest {
         List<BluetoothDevice> audioDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
         doReturn(audioDevices)
                 .when(mAdapterService)
-                .getConnectedMediaDevices(BluetoothProfile.HEARING_AID);
+                .getConnectedDevicesForProfile(BluetoothProfile.HEARING_AID);
 
         mAdapterSuspend.handleSuspend(true);
         verify(mAdapterService).acquireWakeLock(any());
@@ -296,5 +310,57 @@ public class AdapterSuspendTest {
         mAdapterSuspend.aclDisconnected(mBluetoothDevice, TRANSPORT_BREDR);
         verify(mAdapterService, never()).releaseWakeLock(any());
         verify(mAdapterService, never()).acquireWakeLock(any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LE_HID_CONNECTION_POLICY_SUSPEND)
+    public void testNonWakeableSuspendWithLeHid() throws Exception {
+        List<BluetoothDevice> hidDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
+        doReturn(hidDevices)
+                .when(mAdapterService)
+                .getConnectedDevicesForProfile(BluetoothProfile.HID_HOST);
+        doReturn(TRANSPORT_LE).when(mHidHostService).getPreferredTransport(mBluetoothDevice);
+
+        // Setting a "non-wakeable by HID" suspend, this causes deep sleep
+        mAdapterSuspend.handleSuspend(false);
+        verify(mAdapterService).acquireWakeLock(any());
+
+        // Lock isn't released, waiting for HoGP disconnection.
+        mAdapterSuspend.advertiseSuspendReady();
+        verify(mAdapterService, never()).releaseWakeLock(any());
+
+        // Lock is released once profile is disconnected
+        mAdapterSuspend.profileConnectionStateChanged(
+                BluetoothProfile.HID_HOST,
+                mBluetoothDevice,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
+        verify(mAdapterService).releaseWakeLock(any());
+        verify(mHidHostService).onSuspendStateChange(DEEP_SLEEP);
+
+        mAdapterSuspend.handleResume();
+        verify(mHidHostService).onSuspendStateChange(AWAKE);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LE_HID_CONNECTION_POLICY_SUSPEND)
+    public void testWakeableSuspendWithClassicHid() throws Exception {
+        List<BluetoothDevice> hidDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
+        doReturn(hidDevices)
+                .when(mAdapterService)
+                .getConnectedDevicesForProfile(BluetoothProfile.HID_HOST);
+        doReturn(TRANSPORT_BREDR).when(mHidHostService).getPreferredTransport(mBluetoothDevice);
+
+        // Setting a "wakeable by HID" suspend, this causes shallow sleep
+        mAdapterSuspend.handleSuspend(true);
+        verify(mAdapterService).acquireWakeLock(any());
+
+        // BREDR HID shouldn't block profile disconnection, so lock is released
+        mAdapterSuspend.advertiseSuspendReady();
+        verify(mAdapterService).releaseWakeLock(any());
+        verify(mHidHostService).onSuspendStateChange(SHALLOW_SLEEP);
+
+        mAdapterSuspend.handleResume();
+        verify(mHidHostService).onSuspendStateChange(AWAKE);
     }
 }
