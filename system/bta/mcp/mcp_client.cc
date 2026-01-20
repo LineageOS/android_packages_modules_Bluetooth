@@ -39,7 +39,7 @@ using namespace bluetooth::mcp;
 
 namespace {
 class McpClientImpl;
-std::unique_ptr<McpClientImpl> instance = nullptr;
+extern std::unique_ptr<McpClientImpl> instance;
 std::mutex instance_mutex;
 
 /**
@@ -693,6 +693,8 @@ private:
   tGATT_IF gatt_if_ = 0;
   std::list<std::shared_ptr<McpDevice>> devices_;
 };
+
+std::unique_ptr<McpClientImpl> instance = nullptr;
 
 }  // namespace
 

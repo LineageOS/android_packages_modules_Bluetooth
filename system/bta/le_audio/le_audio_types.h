@@ -26,17 +26,16 @@
 #include <bluetooth/types/uuid.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <bit>
 #include <bitset>
 #include <map>
 #include <memory>
 #include <optional>
 #include <string>
-#include <variant>
 #include <vector>
 
 #include "bta/include/bta_le_audio_uuids.h"
-#include "osi/include/alarm.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_iso_api_types.h"
 

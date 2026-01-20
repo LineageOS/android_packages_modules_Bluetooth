@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstring>
 #include <format>
+#include <type_traits>
 
 namespace bluetooth {
 
