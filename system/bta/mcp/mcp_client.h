@@ -22,12 +22,34 @@
 #include <cstdint>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #include "common/strings.h"
 #include "stack/include/gatt_api.h"
 
 namespace bluetooth {
 namespace mcp {
+
+struct Mcs {
+  int id = 0;
+  bool is_gmcs = false;
+  uint16_t start_handle = 0;
+  uint16_t end_handle = 0;
+
+  // Attribute handles for the Media Control Service (MCS) characteristics.
+  uint16_t media_player_name_handle = 0;
+  uint16_t track_changed_handle = 0;
+  uint16_t track_title_handle = 0;
+  uint16_t track_duration_handle = 0;
+  uint16_t track_position_handle = 0;
+  uint16_t playback_speed_handle = 0;
+  uint16_t playing_orders_supported_handle = 0;
+  uint16_t seeking_speed_handle = 0;
+  uint16_t media_state_handle = 0;
+  uint16_t media_control_point_handle = 0;
+  uint16_t opcodes_supported_handle = 0;
+  uint16_t content_control_id_handle = 0;
+};
 
 // Base class for GATT service devices, holding common connection state.
 class GattServiceDevice {
@@ -72,55 +94,60 @@ public:
   void DebugDump(std::stringstream& stream) const {
     GattServiceDevice::DebugDump(stream);
 
-    stream << "\n    Media Player Name Handle: "
-           << bluetooth::common::ToHexString(media_player_name_handle)
-           << "\n    Track Changed Handle: " << bluetooth::common::ToHexString(track_changed_handle)
-           << "\n    Track Title Handle: " << bluetooth::common::ToHexString(track_title_handle)
-           << "\n    Track Duration Handle: "
-           << bluetooth::common::ToHexString(track_duration_handle)
-           << "\n    Track Position Handle: "
-           << bluetooth::common::ToHexString(track_position_handle)
-           << "\n    Playback Speed Handle: "
-           << bluetooth::common::ToHexString(playback_speed_handle)
-           << "\n    Seeking Speed Handle: " << bluetooth::common::ToHexString(seeking_speed_handle)
-           << "\n    Media State Handle: " << bluetooth::common::ToHexString(media_state_handle)
-           << "\n    Media Control Point Handle: "
-           << bluetooth::common::ToHexString(media_control_point_handle)
-           << "\n    Opcodes Supported Handle: "
-           << bluetooth::common::ToHexString(opcodes_supported_handle)
-           << "\n    Content Control ID Handle: "
-           << bluetooth::common::ToHexString(content_control_id_handle) << "\n";
+    stream << "\n    Media Player Name Handle: ";
+    for (const auto& service : services) {
+      stream << "\n    Service ID: " << service.id << (service.is_gmcs ? " (GMCS)" : " (MCS)")
+             << "\n      Media Player Name Handle: "
+             << bluetooth::common::ToHexString(service.media_player_name_handle)
+             << "\n      Track Changed Handle: "
+             << bluetooth::common::ToHexString(service.track_changed_handle)
+             << "\n      Track Title Handle: "
+             << bluetooth::common::ToHexString(service.track_title_handle)
+             << "\n      Track Duration Handle: "
+             << bluetooth::common::ToHexString(service.track_duration_handle)
+             << "\n      Track Position Handle: "
+             << bluetooth::common::ToHexString(service.track_position_handle)
+             << "\n      Playback Speed Handle: "
+             << bluetooth::common::ToHexString(service.playback_speed_handle)
+             << "\n      Seeking Speed Handle: "
+             << bluetooth::common::ToHexString(service.seeking_speed_handle)
+             << "\n      Media State Handle: "
+             << bluetooth::common::ToHexString(service.media_state_handle)
+             << "\n      Media Control Point Handle: "
+             << bluetooth::common::ToHexString(service.media_control_point_handle)
+             << "\n      Opcodes Supported Handle: "
+             << bluetooth::common::ToHexString(service.opcodes_supported_handle)
+             << "\n      Content Control ID Handle: "
+             << bluetooth::common::ToHexString(service.content_control_id_handle) << "\n";
+    }
   }
 
   void ClearHandles() {
     service_found = false;
-    media_player_name_handle = 0;
-    track_changed_handle = 0;
-    track_title_handle = 0;
-    track_duration_handle = 0;
-    track_position_handle = 0;
-    playback_speed_handle = 0;
-    playing_orders_supported_handle = 0;
-    seeking_speed_handle = 0;
-    media_state_handle = 0;
-    media_control_point_handle = 0;
-    opcodes_supported_handle = 0;
-    content_control_id_handle = 0;
+    services.clear();
+    searching_for_gmcs = false;
   }
 
-  // Characteristic handles specific to MCP/MCS
-  uint16_t media_player_name_handle = 0;
-  uint16_t track_changed_handle = 0;
-  uint16_t track_title_handle = 0;
-  uint16_t track_duration_handle = 0;
-  uint16_t track_position_handle = 0;
-  uint16_t playback_speed_handle = 0;
-  uint16_t playing_orders_supported_handle = 0;
-  uint16_t seeking_speed_handle = 0;
-  uint16_t media_state_handle = 0;
-  uint16_t media_control_point_handle = 0;
-  uint16_t opcodes_supported_handle = 0;
-  uint16_t content_control_id_handle = 0;
+  Mcs* GetService(int service_id) {
+    for (auto& s : services) {
+      if (s.id == service_id) {
+        return &s;
+      }
+    }
+    return nullptr;
+  }
+
+  Mcs* GetServiceByHandle(uint16_t handle) {
+    for (auto& s : services) {
+      if (handle >= s.start_handle && handle <= s.end_handle) {
+        return &s;
+      }
+    }
+    return nullptr;
+  }
+
+  std::vector<Mcs> services;
+  bool searching_for_gmcs = false;
 };
 
 }  // namespace mcp

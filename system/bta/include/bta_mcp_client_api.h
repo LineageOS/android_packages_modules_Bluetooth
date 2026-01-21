@@ -38,17 +38,17 @@ public:
   virtual void Disconnect(const RawAddress& address) = 0;
 
   // Media Control Point commands
-  virtual void Play(const RawAddress& address) = 0;
-  virtual void Pause(const RawAddress& address) = 0;
-  virtual void Stop(const RawAddress& address) = 0;
-  virtual void NextTrack(const RawAddress& address) = 0;
-  virtual void PreviousTrack(const RawAddress& address) = 0;
-  virtual void FastRewind(const RawAddress& address) = 0;
-  virtual void FastForward(const RawAddress& address) = 0;
-  virtual void MoveRelative(const RawAddress& address, int32_t offset) = 0;
+  virtual void Play(const RawAddress& address, int service_id) = 0;
+  virtual void Pause(const RawAddress& address, int service_id) = 0;
+  virtual void Stop(const RawAddress& address, int service_id) = 0;
+  virtual void NextTrack(const RawAddress& address, int service_id) = 0;
+  virtual void PreviousTrack(const RawAddress& address, int service_id) = 0;
+  virtual void FastRewind(const RawAddress& address, int service_id) = 0;
+  virtual void FastForward(const RawAddress& address, int service_id) = 0;
+  virtual void MoveRelative(const RawAddress& address, int service_id, int32_t offset) = 0;
 
   // Track Position Characteristic commands
-  virtual void SetTrackPosition(const RawAddress& address, int32_t position) = 0;
+  virtual void SetTrackPosition(const RawAddress& address, int service_id, int32_t position) = 0;
 
   virtual ~McpClient() = default;
 };

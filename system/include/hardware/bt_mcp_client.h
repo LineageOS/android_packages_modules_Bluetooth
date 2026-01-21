@@ -36,19 +36,27 @@ public:
   virtual ~McpClientCallbacks() = default;
   virtual void OnConnectionState(const RawAddress& address, ConnectionState state) = 0;
   virtual void OnDiscovered(const RawAddress& address) = 0;
-  virtual void OnMediaPlayerNameChanged(const RawAddress& address, const std::string& name) = 0;
-  virtual void OnTrackChanged(const RawAddress& address) = 0;
-  virtual void OnTrackTitleChanged(const RawAddress& address, const std::string& title) = 0;
-  virtual void OnTrackDurationChanged(const RawAddress& address, int32_t duration) = 0;
-  virtual void OnTrackPositionChanged(const RawAddress& address, int32_t position) = 0;
-  virtual void OnPlaybackSpeedChanged(const RawAddress& address, int8_t speed) = 0;
-  virtual void OnPlayingOrdersSupportedChanged(const RawAddress& address,
+  virtual void OnMediaPlayerNameChanged(const RawAddress& address, int media_controller_id,
+                                        const std::string& name) = 0;
+  virtual void OnTrackChanged(const RawAddress& address, int media_controller_id) = 0;
+  virtual void OnTrackTitleChanged(const RawAddress& address, int media_controller_id,
+                                   const std::string& title) = 0;
+  virtual void OnTrackDurationChanged(const RawAddress& address, int media_controller_id,
+                                      int32_t duration) = 0;
+  virtual void OnTrackPositionChanged(const RawAddress& address, int media_controller_id,
+                                      int32_t position) = 0;
+  virtual void OnPlaybackSpeedChanged(const RawAddress& address, int media_controller_id,
+                                      int8_t speed) = 0;
+  virtual void OnPlayingOrdersSupportedChanged(const RawAddress& address, int media_controller_id,
                                                uint16_t playing_orders) = 0;
-  virtual void OnSeekingSpeedChanged(const RawAddress& address, int8_t speed) = 0;
-  virtual void OnMediaStateChanged(const RawAddress& address, uint8_t state) = 0;
-  virtual void OnMediaControlResult(const RawAddress& address, uint8_t opcode,
-                                    MediaControlResultCode result) = 0;
-  virtual void OnOpcodesSupportedChanged(const RawAddress& address, uint32_t opcodes) = 0;
+  virtual void OnSeekingSpeedChanged(const RawAddress& address, int media_controller_id,
+                                     int8_t speed) = 0;
+  virtual void OnMediaStateChanged(const RawAddress& address, int media_controller_id,
+                                   uint8_t state) = 0;
+  virtual void OnMediaControlResult(const RawAddress& address, int media_controller_id,
+                                    uint8_t opcode, MediaControlResultCode result) = 0;
+  virtual void OnOpcodesSupportedChanged(const RawAddress& address, int media_controller_id,
+                                         uint32_t opcodes) = 0;
 };
 
 class McpClientInterface {
@@ -59,15 +67,16 @@ public:
   virtual void Cleanup() = 0;
   virtual void Connect(const RawAddress& address) = 0;
   virtual void Disconnect(const RawAddress& address) = 0;
-  virtual void Play(const RawAddress& address) = 0;
-  virtual void Pause(const RawAddress& address) = 0;
-  virtual void Stop(const RawAddress& address) = 0;
-  virtual void NextTrack(const RawAddress& address) = 0;
-  virtual void PreviousTrack(const RawAddress& address) = 0;
-  virtual void FastRewind(const RawAddress& address) = 0;
-  virtual void FastForward(const RawAddress& address) = 0;
-  virtual void MoveRelative(const RawAddress& address, int32_t offset) = 0;
-  virtual void SetTrackPosition(const RawAddress& address, int32_t position) = 0;
+  virtual void Play(const RawAddress& address, int media_controller_id) = 0;
+  virtual void Pause(const RawAddress& address, int media_controller_id) = 0;
+  virtual void Stop(const RawAddress& address, int media_controller_id) = 0;
+  virtual void NextTrack(const RawAddress& address, int media_controller_id) = 0;
+  virtual void PreviousTrack(const RawAddress& address, int media_controller_id) = 0;
+  virtual void FastRewind(const RawAddress& address, int media_controller_id) = 0;
+  virtual void FastForward(const RawAddress& address, int media_controller_id) = 0;
+  virtual void MoveRelative(const RawAddress& address, int media_controller_id, int32_t offset) = 0;
+  virtual void SetTrackPosition(const RawAddress& address, int media_controller_id,
+                                int32_t position) = 0;
 };
 
 }  // namespace mcp
