@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,56 +14,42 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hfp;
+package com.android.bluetooth.hfp
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import static com.google.common.truth.Truth.assertThat;
-
-import android.bluetooth.BluetoothDevice;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link HeadsetVendorSpecificResultCode}. */
+/** Test cases for [HeadsetVendorSpecificResultCode]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HeadsetVendorSpecificResultCodeTest {
-    private static final String TEST_COMMAND = "test_command";
-    private static final String TEST_ARG = "test_arg";
+@RunWith(AndroidJUnit4::class)
+class HeadsetVendorSpecificResultCodeTest {
 
-    private final BluetoothDevice mDevice = getTestDevice(78);
+    private val device = getTestDevice(78)
 
     @Test
-    public void constructor() {
-        HeadsetVendorSpecificResultCode code =
-                new HeadsetVendorSpecificResultCode(mDevice, TEST_COMMAND, TEST_ARG);
-
-        assertThat(code.mDevice).isEqualTo(mDevice);
-        assertThat(code.mCommand).isEqualTo(TEST_COMMAND);
-        assertThat(code.mArg).isEqualTo(TEST_ARG);
+    fun constructor() {
+        val code = HeadsetVendorSpecificResultCode(device, TEST_COMMAND, TEST_ARG)
+        assertThat(code.mDevice).isEqualTo(device)
+        assertThat(code.mCommand).isEqualTo(TEST_COMMAND)
+        assertThat(code.mArg).isEqualTo(TEST_ARG)
     }
 
     @Test
-    public void buildString() {
-        HeadsetVendorSpecificResultCode code =
-                new HeadsetVendorSpecificResultCode(mDevice, TEST_COMMAND, TEST_ARG);
-        StringBuilder builder = new StringBuilder();
+    fun buildString() {
+        val code = HeadsetVendorSpecificResultCode(device, TEST_COMMAND, TEST_ARG)
+        val builder = StringBuilder()
+        code.buildString(builder)
+        val expectedString =
+            "${code.javaClass.simpleName}[device=$device, command=$TEST_COMMAND, arg=$TEST_ARG]"
+        assertThat(builder.toString()).isEqualTo(expectedString)
+    }
 
-        code.buildString(builder);
-
-        String expectedString =
-                code.getClass().getSimpleName()
-                        + "[device="
-                        + mDevice
-                        + ", command="
-                        + TEST_COMMAND
-                        + ", arg="
-                        + TEST_ARG
-                        + "]";
-        assertThat(builder.toString()).isEqualTo(expectedString);
+    companion object {
+        private const val TEST_COMMAND = "test_command"
+        private const val TEST_ARG = "test_arg"
     }
 }
