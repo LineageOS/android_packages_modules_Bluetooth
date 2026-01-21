@@ -58,8 +58,6 @@ import org.robolectric.shadows.ShadowProcess
 class PermissionCheckerTest {
     @get:Rule @JvmField var compatChangeRule: TestRule = PlatformCompatChangeRule()
 
-    private val permissionManager: PermissionManager = mock()
-
     private val application: Application = ApplicationProvider.getApplicationContext()
     private val context: Context = application
     private val shadowPackageManager by lazy { shadowOf(context.packageManager) }
@@ -67,17 +65,8 @@ class PermissionCheckerTest {
         shadowOf(context.getSystemService(DevicePolicyManager::class.java))
     }
 
+    private lateinit var permissionManager: PermissionManager
     private lateinit var permissionChecker: PermissionChecker
-
-    companion object {
-        private const val TEST_APP_UID = Process.FIRST_APPLICATION_UID
-        private const val TEST_APP_PACKAGE_NAME = "com.android.server.bluetooth.test.app"
-        private val source = AttributionSource(TEST_APP_UID, TEST_APP_PACKAGE_NAME, null)
-
-        fun setup(context: Context) {
-            shadowOf(context.packageManager).setPackagesForUid(TEST_APP_UID, TEST_APP_PACKAGE_NAME)
-        }
-    }
 
     @Before
     fun setUp() {
@@ -86,10 +75,7 @@ class PermissionCheckerTest {
         ShadowBinder.setCallingUid(TEST_APP_UID)
         ShadowProcess.setUid(0) // Set the current user to 0 (system user)
 
-        doReturn(PermissionManager.PERMISSION_HARD_DENIED)
-            .whenever(permissionManager)
-            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
-
+        permissionManager = initializePermissionManager()
         permissionChecker = PermissionChecker(context, permissionManager)
     }
 
@@ -101,13 +87,13 @@ class PermissionCheckerTest {
 
     @Test
     fun `enforcePrivileged without permission fails`() {
-        shadowOf(application).denyPermissions(BLUETOOTH_PRIVILEGED)
+        denyBluetoothPrivileged()
         assertFailsWith<SecurityException> { permissionChecker.enforcePrivileged() }
     }
 
     @Test
     fun `enableAllowed with CONNECT permission succeeds`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         permissionChecker.enableAllowed(source, false) // no throw
     }
 
@@ -160,7 +146,7 @@ class PermissionCheckerTest {
         val backgroundUid = UserHandle.getUid(backgroundUserId, UserHandle.getAppId(TEST_APP_UID))
         ShadowBinder.setCallingUid(backgroundUid)
         val backgroundSource = AttributionSource(backgroundUid, TEST_APP_PACKAGE_NAME, null)
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
 
         val exception =
             assertFailsWith<BluetoothPermissionException> {
@@ -180,14 +166,14 @@ class PermissionCheckerTest {
         val backgroundUid = UserHandle.getUid(backgroundUserId, UserHandle.getAppId(TEST_APP_UID))
         ShadowBinder.setCallingUid(backgroundUid)
         val backgroundSource = AttributionSource(backgroundUid, TEST_APP_PACKAGE_NAME, null)
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
 
         permissionChecker.enableAllowed(backgroundSource, false) // no throw
     }
 
     @Test
     fun `getAddressAllowed succeeds with required permissions`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         shadowOf(application).grantPermissions(LOCAL_MAC_ADDRESS)
         permissionChecker.getAddressAllowed(source) // no throw
     }
@@ -200,8 +186,8 @@ class PermissionCheckerTest {
 
     @Test
     fun `getAddressAllowed fails without LOCAL_MAC_ADDRESS`() {
-        grantConnect()
-        shadowOf(application).denyPermissions(LOCAL_MAC_ADDRESS)
+        grantBluetoothConnect(permissionManager)
+        denyBluetoothPrivileged()
         val exception =
             assertFailsWith<BluetoothPermissionException> {
                 permissionChecker.getAddressAllowed(source)
@@ -214,13 +200,13 @@ class PermissionCheckerTest {
 
     @Test
     fun `setNameAllowed with CONNECT permission succeeds`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         permissionChecker.setNameAllowed(source) // no throw
     }
 
     @Test
     fun `getNameAllowed with CONNECT permission succeeds`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         permissionChecker.getNameAllowed(source) // no throw
     }
 
@@ -228,18 +214,18 @@ class PermissionCheckerTest {
     @Config(sdk = [36])
     @EnableCompatChanges(ChangeIds.RESTRICT_ENABLE_DISABLE)
     fun `enableAllowed with compat change enabled succeeds for system app`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
 
-        val applicationInfo =
-            ApplicationInfo().apply {
-                packageName = TEST_APP_PACKAGE_NAME
-                uid = TEST_APP_UID
-                flags = flags or ApplicationInfo.FLAG_SYSTEM
-            }
         shadowPackageManager.installPackage(
             PackageInfoBuilder.newBuilder()
                 .setPackageName(TEST_APP_PACKAGE_NAME)
-                .setApplicationInfo(applicationInfo)
+                .setApplicationInfo(
+                    ApplicationInfo().apply {
+                        packageName = TEST_APP_PACKAGE_NAME
+                        uid = TEST_APP_UID
+                        flags = flags or ApplicationInfo.FLAG_SYSTEM
+                    }
+                )
                 .build()
         )
 
@@ -250,7 +236,7 @@ class PermissionCheckerTest {
     @Config(sdk = [36])
     @EnableCompatChanges(ChangeIds.RESTRICT_ENABLE_DISABLE)
     fun `enableAllowed with compat change enabled succeeds for privileged app`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         shadowOf(application).grantPermissions(BLUETOOTH_PRIVILEGED)
         permissionChecker.enableAllowed(source, true) // no throw
     }
@@ -259,7 +245,7 @@ class PermissionCheckerTest {
     @Config(sdk = [36])
     @EnableCompatChanges(ChangeIds.RESTRICT_ENABLE_DISABLE)
     fun `enableAllowed with compat change enabled succeeds for device owner`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         val componentName = ComponentName(TEST_APP_PACKAGE_NAME, "DeviceAdmin")
         shadowDevicePolicyManager.setDeviceOwner(componentName)
 
@@ -270,7 +256,7 @@ class PermissionCheckerTest {
     @Config(sdk = [36])
     @EnableCompatChanges(ChangeIds.RESTRICT_ENABLE_DISABLE)
     fun `enableAllowed with compat change enabled succeeds for profile owner`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         val componentName = ComponentName(TEST_APP_PACKAGE_NAME, "DeviceAdmin")
         shadowDevicePolicyManager.setProfileOwner(componentName)
 
@@ -279,7 +265,7 @@ class PermissionCheckerTest {
 
     @Test
     fun `factoryResetAllowed with CONNECT permission succeeds`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
         permissionChecker.factoryResetAllowed(source) // no throw
     }
 
@@ -299,7 +285,7 @@ class PermissionCheckerTest {
     @Config(sdk = [36])
     @EnableCompatChanges(ChangeIds.RESTRICT_ENABLE_DISABLE)
     fun `enableAllowed with compat change enabled succeeds for updated system app`() {
-        grantConnect()
+        grantBluetoothConnect(permissionManager)
 
         val applicationInfo =
             ApplicationInfo().apply {
@@ -321,8 +307,8 @@ class PermissionCheckerTest {
     @Config(sdk = [36])
     @EnableCompatChanges(ChangeIds.RESTRICT_ENABLE_DISABLE)
     fun `enableAllowed with compat change enabled succeeds for app with system signature`() {
-        grantConnect()
-        shadowOf(application).denyPermissions(BLUETOOTH_PRIVILEGED)
+        grantBluetoothConnect(permissionManager)
+        denyBluetoothPrivileged()
 
         val sig =
             android.content.pm.SigningInfo(
@@ -363,10 +349,37 @@ class PermissionCheckerTest {
         permissionChecker.enableAllowed(source, true) // no throw
     }
 
-    private fun grantConnect() {
-        shadowOf(application).grantPermissions(BLUETOOTH_CONNECT)
-        doReturn(PermissionManager.PERMISSION_GRANTED)
-            .whenever(permissionManager)
-            .checkPermissionForDataDeliveryFromDataSource(eq(BLUETOOTH_CONNECT), any(), any())
+    companion object {
+        private const val TEST_APP_UID = Process.FIRST_APPLICATION_UID + 140
+        private const val TEST_APP_PACKAGE_NAME = "com.android.server.bluetooth.test.app"
+        private val source = AttributionSource(TEST_APP_UID, TEST_APP_PACKAGE_NAME, null)
+
+        fun setup(context: Context) {
+            shadowOf(context.packageManager).setPackagesForUid(TEST_APP_UID, TEST_APP_PACKAGE_NAME)
+        }
+
+        internal fun initializePermissionManager(): PermissionManager {
+            val permissionManager: PermissionManager = mock()
+            doReturn(PermissionManager.PERMISSION_HARD_DENIED)
+                .whenever(permissionManager)
+                .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
+            return permissionManager
+        }
+
+        internal fun grantBluetoothConnect(mockManager: PermissionManager) {
+            doReturn(PermissionManager.PERMISSION_GRANTED)
+                .whenever(mockManager)
+                .checkPermissionForDataDeliveryFromDataSource(eq(BLUETOOTH_CONNECT), any(), any())
+        }
+
+        internal fun grantBluetoothPrivileged() {
+            val application: Application = ApplicationProvider.getApplicationContext()
+            shadowOf(application).grantPermissions(BLUETOOTH_PRIVILEGED)
+        }
+
+        internal fun denyBluetoothPrivileged() {
+            val application: Application = ApplicationProvider.getApplicationContext()
+            shadowOf(application).denyPermissions(BLUETOOTH_PRIVILEGED)
+        }
     }
 }

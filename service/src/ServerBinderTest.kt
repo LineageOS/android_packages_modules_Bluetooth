@@ -16,8 +16,6 @@
 
 package com.android.server.bluetooth.test
 
-import android.Manifest.permission.BLUETOOTH_CONNECT
-import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.Manifest.permission.DUMP
 import android.Manifest.permission.LOCAL_MAC_ADDRESS
 import android.app.Application
@@ -69,7 +67,6 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     private val callback: IBluetoothManagerCallback.Stub = mock()
     private val tokenBinder: IBinder = mock()
     private val api: BluetoothManagerServiceApi = mock()
-    private val permissionManager: PermissionManager = mock()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val application = ApplicationProvider.getApplicationContext<Application>()
@@ -77,6 +74,8 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     private val looper = HandlerThread("ServerBinderTest").apply { start() }.looper
 
     private val userManager = context.getSystemService(UserManager::class.java)
+
+    private lateinit var permissionManager: PermissionManager
     private lateinit var binder: ServerBinder
 
     @Before
@@ -84,10 +83,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
         BluetoothComponentTest.setup()
         BluetoothRestrictionTest.setup()
 
-        doReturn(PermissionManager.PERMISSION_HARD_DENIED)
-            .whenever(permissionManager)
-            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
-
+        permissionManager = PermissionCheckerTest.initializePermissionManager()
         binder = ServerBinder(looper, api, context, permissionManager)
     }
 
@@ -105,35 +101,35 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
 
     @Test
     fun enable() {
-        grantConnect()
+        grantBluetoothConnect()
         binder.enable(source)
         verify(api).enable(any(), eq(source.packageName!!))
 
-        checkDisallowed { binder.enable(source) }
+        enforceFalseReturnWhenBluetoothDisallowed { binder.enable(source) }
     }
 
     @Test
     fun enableNoAutoConnect() {
-        grantConnect()
+        grantBluetoothConnect()
         binder.enableNoAutoConnect(source)
         verify(api).enableNoAutoConnect(eq(source.packageName!!))
 
-        checkDisallowed { binder.enableNoAutoConnect(source) }
+        enforceFalseReturnWhenBluetoothDisallowed { binder.enableNoAutoConnect(source) }
     }
 
     @Test
     fun disable() {
         assertFailsWith<SecurityException> { binder.disable(source, true) }
-        grantConnect()
+        grantBluetoothConnect()
         binder.disable(source, true)
         verify(api).disable(eq(source.packageName!!), eq(true))
 
         assertFailsWith<SecurityException> { binder.disable(source, false) }
-        grantPrivileged()
+        PermissionCheckerTest.grantBluetoothPrivileged()
         binder.disable(source, false)
         verify(api).disable(eq(source.packageName!!), eq(false))
 
-        checkDisallowed { binder.disable(source, true) }
+        enforceFalseReturnWhenBluetoothDisallowed { binder.disable(source, true) }
     }
 
     @Test
@@ -148,19 +144,19 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
 
     @Test
     fun enableBle() {
-        checkDisallowed { binder.enableBle(source, tokenBinder) }
+        enforceFalseReturnWhenBluetoothDisallowed { binder.enableBle(source, tokenBinder) }
     }
 
     @Test
     fun factoryReset() {
-        grantPrivileged()
-        grantConnect()
+        PermissionCheckerTest.grantBluetoothPrivileged()
+        grantBluetoothConnect()
         binder.factoryReset(source)
     }
 
     @Test
     fun disableBle() {
-        checkDisallowed { binder.disableBle(source, tokenBinder) }
+        enforceFalseReturnWhenBluetoothDisallowed { binder.disableBle(source, tokenBinder) }
     }
 
     @Test
@@ -173,7 +169,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
         assertFailsWith<SecurityException> { binder.setBtHciSnoopLogMode(BT_SNOOP_LOG_MODE_FULL) }
         assertFailsWith<SecurityException> { binder.getBtHciSnoopLogMode() }
 
-        grantPrivileged()
+        PermissionCheckerTest.grantBluetoothPrivileged()
 
         binder.setBtHciSnoopLogMode(BT_SNOOP_LOG_MODE_DISABLED)
         assertThat(binder.getBtHciSnoopLogMode()).isEqualTo(BT_SNOOP_LOG_MODE_DISABLED)
@@ -187,7 +183,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
 
     @Test
     fun getAddress() {
-        grantConnect()
+        grantBluetoothConnect()
         binder.getAddress(source)
         grantLocalMacAddress()
         binder.getAddress(source)
@@ -195,7 +191,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
 
     @Test
     fun name() {
-        grantConnect()
+        grantBluetoothConnect()
         assertFailsWith<IllegalArgumentException> { binder.setName("hey".repeat(300), source) }
         binder.setName(null, source)
         binder.setName("hey", source)
@@ -214,7 +210,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
 
     @Test
     fun factoryReset_permissionDenied() {
-        grantPrivileged()
+        PermissionCheckerTest.grantBluetoothPrivileged()
         doReturn(PermissionManager.PERMISSION_SOFT_DENIED)
             .whenever(permissionManager)
             .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
@@ -236,7 +232,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     )
     @Test
     fun enable_strictConfig() {
-        grantConnect()
+        grantBluetoothConnect()
 
         val sourceNoTag =
             AttributionSource.Builder(Process.SYSTEM_UID)
@@ -259,7 +255,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     @DisableFlags(Flags.FLAG_REJECT_ENABLE_FROM_UNKNOWN_REQUESTER)
     @Test
     fun enable_rejectUnknownRequesterDisabled() {
-        grantConnect()
+        grantBluetoothConnect()
         val packageName = "some.pkg"
         val uid = 12345
         shadowOf(context.packageManager).setPackagesForUid(uid, packageName)
@@ -283,7 +279,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
         assertFailsWith<SecurityException> { binder.isAutoOnEnabled() }
         assertFailsWith<SecurityException> { binder.setAutoOnEnabled(true) }
 
-        grantPrivileged()
+        PermissionCheckerTest.grantBluetoothPrivileged()
 
         binder.isAutoOnSupported()
         binder.isAutoOnEnabled()
@@ -304,7 +300,7 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     @DisableFlags(android.bluetooth.platform.flags.Flags.FLAG_STRICT_CONFIGURATION_IN_SYSTEM_SERVER)
     @Test
     fun enable_strictConfigDisabled_androidPackage() {
-        grantConnect()
+        grantBluetoothConnect()
 
         val sourceNoTag =
             AttributionSource.Builder(Process.SYSTEM_UID)
@@ -334,22 +330,17 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
         verify(api).dump(eq(fd), any(), any())
     }
 
-    private fun checkDisallowed(binderCall: () -> Boolean) {
+    private fun enforceFalseReturnWhenBluetoothDisallowed(binderCall: () -> Boolean) {
         BluetoothRestrictionTest.disallowBluetooth()
         assertThat(binderCall()).isFalse()
         BluetoothRestrictionTest.allowBluetooth()
     }
 
-    private fun grantConnect() {
-        shadowOf(application).grantPermissions(BLUETOOTH_CONNECT)
-        doReturn(PermissionManager.PERMISSION_GRANTED)
-            .whenever(permissionManager)
-            .checkPermissionForDataDeliveryFromDataSource(any(), any(), any())
+    private fun grantBluetoothConnect() {
+        PermissionCheckerTest.grantBluetoothConnect(permissionManager)
     }
 
     private fun grantLocalMacAddress() = shadowOf(application).grantPermissions(LOCAL_MAC_ADDRESS)
-
-    private fun grantPrivileged() = shadowOf(application).grantPermissions(BLUETOOTH_PRIVILEGED)
 
     companion object {
         @JvmStatic
