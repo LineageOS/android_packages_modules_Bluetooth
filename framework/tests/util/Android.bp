@@ -36,6 +36,7 @@ java_library {
         "//cts/tests/tests/bluetooth",
         "//cts/tests/tests/car",
         "//packages/modules/Bluetooth/framework/tests/bumble",
+        "//packages/modules/Bluetooth/framework/tests/unit",
 
         "//cts/hostsidetests/statsdatom/apps/statsdapp",
         "//cts/tests/tests/appop",
