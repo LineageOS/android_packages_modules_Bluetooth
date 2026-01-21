@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,36 +14,32 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.avrcpcontroller;
+package com.android.bluetooth.avrcpcontroller
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link RequestGetImageProperties}. */
+/** Test cases for [RequestGetImageProperties]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class RequestGetImagePropertiesTest {
-    private static final String TEST_IMAGE_HANDLE = "test_image_handle";
+@RunWith(AndroidJUnit4::class)
+class RequestGetImagePropertiesTest {
 
     @Test
-    public void constructor() {
-        RequestGetImageProperties requestGetImageProperties =
-                new RequestGetImageProperties(TEST_IMAGE_HANDLE);
-
-        assertThat(requestGetImageProperties.getImageHandle()).isEqualTo(TEST_IMAGE_HANDLE);
+    fun constructor() {
+        val requestGetImageProperties = RequestGetImageProperties(TEST_IMAGE_HANDLE)
+        assertThat(requestGetImageProperties.imageHandle).isEqualTo(TEST_IMAGE_HANDLE)
     }
 
     @Test
-    public void getType() {
-        RequestGetImageProperties requestGetImageProperties =
-                new RequestGetImageProperties(TEST_IMAGE_HANDLE);
+    fun getType() {
+        val requestGetImageProperties = RequestGetImageProperties(TEST_IMAGE_HANDLE)
+        assertThat(requestGetImageProperties.type).isEqualTo(BipRequest.TYPE_GET_IMAGE_PROPERTIES)
+    }
 
-        assertThat(requestGetImageProperties.getType())
-                .isEqualTo(BipRequest.TYPE_GET_IMAGE_PROPERTIES);
+    companion object {
+        private const val TEST_IMAGE_HANDLE = "test_image_handle"
     }
 }
