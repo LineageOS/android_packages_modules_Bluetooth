@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,32 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice.storage;
+package com.android.bluetooth.btservice.storage
 
-import static com.google.common.truth.Truth.assertThat;
+import android.bluetooth.BluetoothSinkAudioPolicy
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.bluetooth.BluetoothSinkAudioPolicy;
+/** Test cases for [AudioPolicyEntity]. */
+@RunWith(AndroidJUnit4::class)
+class AudioPolicyEntityTest {
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link AudioPolicyEntity}. */
-@RunWith(AndroidJUnit4.class)
-public final class AudioPolicyEntityTest {
     @Test
-    public void constructor() {
-        AudioPolicyEntity entity = new AudioPolicyEntity();
+    fun constructor() {
+        val entity = AudioPolicyEntity()
         assertThat(entity.callEstablishAudioPolicy)
-                .isEqualTo(BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED);
+            .isEqualTo(BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED)
         assertThat(entity.connectingTimeAudioPolicy)
-                .isEqualTo(BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED);
+            .isEqualTo(BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED)
         assertThat(entity.inBandRingtoneAudioPolicy)
-                .isEqualTo(BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED);
+            .isEqualTo(BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED)
     }
 
     @Test
-    public void toString_shouldNotEmpty() {
-        AudioPolicyEntity entity = new AudioPolicyEntity();
-        assertThat(entity.toString()).isNotEmpty();
+    fun toString_shouldNotEmpty() {
+        val entity = AudioPolicyEntity()
+        assertThat(entity.toString()).isNotEmpty()
     }
 }
