@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,39 +14,38 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.mapclient;
+package com.android.bluetooth.mapclient
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayInputStream
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.io.ByteArrayInputStream;
-
-/** Test cases for {@link MessagesListing}. */
+/** Test cases for [MessagesListing]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class MessagesListingTest {
+@RunWith(AndroidJUnit4::class)
+class MessagesListingTest {
 
     @Test
-    public void constructor() {
-        String handle = "FFAB";
-        String subject = "test_subject";
-        final StringBuilder xml = new StringBuilder();
-        xml.append("<msg\n");
-        xml.append("handle=\"" + handle + "\"\n");
-        xml.append("subject=\"" + subject + "\"\n");
-        xml.append("/>\n");
-        ByteArrayInputStream stream = new ByteArrayInputStream(xml.toString().getBytes());
+    fun constructor() {
+        val handle = "FFAB"
+        val subject = "test_subject"
+        val xml =
+            """
+            <msg
+                handle="$handle"
+                subject="$subject"
+            />
+            """
+                .trimIndent()
+        val stream = ByteArrayInputStream(xml.toByteArray())
+        val listing = MessagesListing(stream)
+        assertThat(listing.list).hasSize(1)
 
-        MessagesListing listing = new MessagesListing(stream);
-
-        assertThat(listing.getList()).hasSize(1);
-        Message msg = listing.getList().get(0);
-        assertThat(msg.getHandle()).isEqualTo(handle);
-        assertThat(msg.getSubject()).isEqualTo(subject);
+        val msg = listing.list[0]
+        assertThat(msg.handle).isEqualTo(handle)
+        assertThat(msg.subject).isEqualTo(subject)
     }
 }
