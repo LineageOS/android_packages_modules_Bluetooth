@@ -109,7 +109,7 @@ impl<Cb: Callbacks> Streamer<Cb> {
         if matches!(*state, State::Idle) {
             if self.audio.frame_duration_us != sdu_interval_us {
                 log::error!(
-                    "Unframed SDU is not supported, \n\
+                    "Unframed SDU is not supported\n\
                     SDU interval MUST match the audio frame duration ({} != {})",
                     sdu_interval_us,
                     self.audio.frame_duration_us

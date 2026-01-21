@@ -655,7 +655,7 @@ void dump(int fd) {
   dprintf(fd, "\nconnection_manager state:\n");
   std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   if (bgconn_dev.empty()) {
-    dprintf(fd, "\tno Low Energy connection attempts\n");
+    dprintf(fd, "    no Low Energy connection attempts\n");
     return;
   }
 

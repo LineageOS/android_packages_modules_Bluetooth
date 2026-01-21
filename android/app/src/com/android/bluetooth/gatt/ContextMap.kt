@@ -248,7 +248,7 @@ class ContextMap<C : IInterface> {
     fun dump(sb: StringBuilder) {
         synchronized(appsLock) {
             sb.appendLine("  Entries: ${getAllApps().size}")
-            sb.appendLine("  Last apps: ")
+            sb.appendLine("  Last apps:")
             lastRecords.forEach { sb.appendLine("       $it") }
             sb.appendLine()
         }

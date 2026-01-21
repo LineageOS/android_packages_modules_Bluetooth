@@ -163,7 +163,7 @@ public:
     if (_order_control.size() != _sended_order.size()) {
       _report << __func__ << ": testOrder FAIL: " << "the count of entries which should send ("
               << _order_control.size() << ") is not equal to sended entries("
-              << _sended_order.size() << ")) \n input:\n " << to_string(_order_control)
+              << _sended_order.size() << "))\n input:\n " << to_string(_order_control)
               << "\n sended:\n"
               << to_string(_sended_order) << "\n";
       _order_test_result = false;

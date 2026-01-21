@@ -430,9 +430,9 @@ public:
     std::stringstream stream;
 
     stream << std::format(
-            "AudioContextTypeManager: \n IsInCall: {}, IsInVoip: {}, IsInGame: {}\n, "
-            "local_encoding_contexts_types_.source: {}, local_encoding_contexts_types_.sink: {}\n, "
-            "local_decoding_context_types_(sink): {} \n",
+            "AudioContextTypeManager:\n IsInCall: {}, IsInVoip: {}, IsInGame: {}\n "
+            "local_encoding_contexts_types_.source: {}\n local_encoding_contexts_types_.sink: {}\n "
+            "local_decoding_context_types_(sink): {}\n",
             IsInCall(), IsInVoip(), IsInGame(), ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_));
     dprintf(fd, "%s\n", stream.str().c_str());

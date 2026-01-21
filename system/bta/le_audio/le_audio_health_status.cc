@@ -185,11 +185,11 @@ public:
   }
 
   void Dump(int fd) {
-    dprintf(fd, "  LeAudioHealthStats: \n    groups:");
+    dprintf(fd, "  LeAudioHealthStats:\n    groups:");
     for (const auto& g : group_stats_) {
       dumpsys_group(fd, g);
     }
-    dprintf(fd, "\n    devices: ");
+    dprintf(fd, "\n    devices:");
     for (const auto& dev : devices_stats_) {
       dumpsys_dev(fd, dev);
     }

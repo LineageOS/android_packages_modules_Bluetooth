@@ -35,7 +35,7 @@ public class HandlerForStringBuffer {
     public HandlerForStringBuffer(Operation op, String ownerVCard) {
         mOperation = op;
         mOwnerVCard = ownerVCard;
-        Log.v(TAG, "ownerVCard \n " + mOwnerVCard);
+        Log.v(TAG, "ownerVCard\n " + mOwnerVCard);
     }
 
     public boolean init() {

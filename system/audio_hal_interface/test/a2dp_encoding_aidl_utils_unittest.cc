@@ -137,8 +137,8 @@ TEST_F(A2dpEncodingAidlUtilsTest, StackCodecCapabilitiesSbc) {
 
   ASSERT_TRUE(convertCodecCapabilities(sbc, capabilities, codec_info));
 
-  bluetooth::log::info("codec_info: \n{}", codecInfoToString(codec_info));
-  bluetooth::log::info("result_sbc_codec_info: \n{}", codecInfoToString(result_sbc_codec_info));
+  bluetooth::log::info("codec_info:\n{}", codecInfoToString(codec_info));
+  bluetooth::log::info("result_sbc_codec_info:\n{}", codecInfoToString(result_sbc_codec_info));
 
   ASSERT_EQ(memcmp(codec_info, result_sbc_codec_info, sizeof(result_sbc_codec_info)), 0);
 }
@@ -162,8 +162,8 @@ TEST_F(A2dpEncodingAidlUtilsTest, StackCodecCapabilitiesVendor) {
 
   ASSERT_TRUE(convertCodecCapabilities(ldac, capabilities, codec_info));
 
-  bluetooth::log::info("codec_info: \n{}", codecInfoToString(codec_info));
-  bluetooth::log::info("result_ldac_codec_info: \n{}", codecInfoToString(result_ldac_codec_info));
+  bluetooth::log::info("codec_info:\n{}", codecInfoToString(codec_info));
+  bluetooth::log::info("result_ldac_codec_info:\n{}", codecInfoToString(result_ldac_codec_info));
 
   ASSERT_EQ(memcmp(codec_info, result_ldac_codec_info, sizeof(result_ldac_codec_info)), 0);
 }
