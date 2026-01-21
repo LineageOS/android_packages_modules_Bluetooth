@@ -893,13 +893,14 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
                     ChannelSoundingStopReason::REASON_SECURITY_ENABLE_COMMAND_STATUS_ERROR));
   }
 
-  void send_le_cs_set_default_settings(uint16_t connection_handle) {
+  void send_le_cs_set_default_settings(uint16_t connection_handle,
+                                       CsSyncAntennaSelection selection) {
     log::info("connection_handle:0x{:04x}", connection_handle);
     uint8_t role_enable = (1 << (uint8_t)CsRole::INITIATOR) | 1 << ((uint8_t)CsRole::REFLECTOR);
     hci_layer_->EnqueueCommand(
-            LeCsSetDefaultSettingsBuilder::Create(connection_handle, role_enable,
-                                                  kCsSyncAntennaSelection, kCsMaxTxPower),
-            handler_->BindOnceOn(this, &impl::on_cs_set_default_settings_complete));
+            LeCsSetDefaultSettingsBuilder::Create(connection_handle, role_enable, selection,
+                                                  kCsMaxTxPower),
+            handler_->BindOnceOn(this, &impl::on_cs_set_default_settings_complete, selection));
   }
 
   void send_le_cs_read_remote_fae_table(uint16_t connection_handle) const {
@@ -1201,7 +1202,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       res_it->second.remote_support_phase_based_ranging =
               event_view.GetOptionalSubfeaturesSupported().phase_based_ranging_ == 0x01;
     }
-    send_le_cs_set_default_settings(connection_handle);
+    send_le_cs_set_default_settings(connection_handle, kCsSyncAntennaSelection);
 
     auto req_it = cs_requester_trackers_.find(connection_handle);
     if (req_it != cs_requester_trackers_.end() && req_it->second.measurement_ongoing) {
@@ -1227,7 +1228,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
             event_view.GetOptionalSubfeaturesSupported().phase_based_ranging_);
   }
 
-  void on_cs_set_default_settings_complete(CommandCompleteView view) {
+  void on_cs_set_default_settings_complete(CsSyncAntennaSelection selection,
+                                           CommandCompleteView view) {
     auto complete_view = LeCsSetDefaultSettingsCompleteView::Create(view);
     if (!complete_view.IsValid()) {
       log::warn("Get invalid LeCsSetDefaultSettingsComplete");
@@ -1237,6 +1239,13 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
       log::warn("Received LeCsSetDefaultSettingsComplete with error code {}", error_code);
       uint16_t connection_handle = complete_view.GetConnectionHandle();
+
+      if (selection == CsSyncAntennaSelection::ANTENNAS_IN_ORDER) {
+        log::info("Retry with NO_RECOMMENDATION");
+        send_le_cs_set_default_settings(connection_handle,
+                                        CsSyncAntennaSelection::NO_RECOMMENDATION);
+        return;
+      }
       handle_cs_setup_failure(
               connection_handle, REASON_INTERNAL_ERROR,
               ChannelSoundingStopReason::REASON_SET_DEFAULT_SETTINGS_COMPLETE_FAILED);
