@@ -217,6 +217,10 @@ void LeAclConnection::OnLeSubrateRequestStatus(CommandStatusView status) {
   auto hci_status = subrate_request_status.GetStatus();
   if (hci_status != ErrorCode::SUCCESS) {
     log::info("LeSubrateRequest status {}", ErrorCodeText(hci_status));
+    if (hci_status == ErrorCode::UNKNOWN_CONNECTION) {
+      log::warn("Link has not existed");
+      return;
+    }
     pimpl_->tracker.OnLeSubrateChange(hci_status, 0, 0, 0, 0);
   }
 }
