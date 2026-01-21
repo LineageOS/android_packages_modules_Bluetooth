@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,48 +14,45 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbapclient;
+package com.android.bluetooth.pbapclient
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.obex.PasswordAuthentication;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link PbapClientObexAuthenticator}. */
+/** Test cases for [PbapClientObexAuthenticator]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class PbapClientObexAuthenticatorTest {
+@RunWith(AndroidJUnit4::class)
+class PbapClientObexAuthenticatorTest {
 
-    private PbapClientObexAuthenticator mAuthenticator;
+    private lateinit var authenticator: PbapClientObexAuthenticator
 
     @Before
-    public void setUp() throws Exception {
-        mAuthenticator = new PbapClientObexAuthenticator();
+    fun setUp() {
+        authenticator = PbapClientObexAuthenticator()
     }
 
     @Test
-    public void onAuthenticationChallenge() {
+    fun onAuthenticationChallenge() {
         // Note: onAuthenticationChallenge() does not use any arguments
-        PasswordAuthentication passwordAuthentication =
-                mAuthenticator.onAuthenticationChallenge(
-                        /* description= */ null,
-                        /* isUserIdRequired= */ false,
-                        /* isFullAccess= */ false);
+        val passwordAuthentication =
+            authenticator.onAuthenticationChallenge(
+                /* description= */ null,
+                /* isUserIdRequired= */ false,
+                /* isFullAccess= */ false,
+            )
 
-        assertThat(passwordAuthentication.getPassword())
-                .isEqualTo(mAuthenticator.mSessionKey.getBytes());
+        assertThat(passwordAuthentication.password)
+            .isEqualTo(authenticator.mSessionKey.toByteArray())
     }
 
     @Test
-    public void onAuthenticationResponse() {
-        byte[] userName = new byte[] {};
+    fun onAuthenticationResponse() {
+        val userName = byteArrayOf()
         // Note: onAuthenticationResponse() does not use any arguments
-        assertThat(mAuthenticator.onAuthenticationResponse(userName)).isNull();
+        assertThat(authenticator.onAuthenticationResponse(userName)).isNull()
     }
 }
