@@ -5490,8 +5490,7 @@ public class AdapterService extends Service {
                 deviceProp.isCoordinatedSetMember());
 
         int discoveryResultType = deviceProp.getDiscoveryResultType();
-        if (Flags.getSvcUuidsFromBleAdvData()
-                && discoveryResultType != BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+        if (discoveryResultType != BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
             intent.putExtra(BluetoothDevice.EXTRA_DISCOVERY_RESULT_TYPE, discoveryResultType);
 
             if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_CLASSIC) != 0) {

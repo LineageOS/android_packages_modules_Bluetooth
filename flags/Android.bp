@@ -12,6 +12,7 @@ aconfig_declarations {
     srcs: [
         "24q3_exported_api_flags.aconfig",
         "25q2_exported_api_flags.aconfig",
+        "25q4_exported_api_flags.aconfig",
         "a2dp.aconfig",
         "active_device_manager.aconfig",
         "adapter.aconfig",

@@ -375,7 +375,6 @@ public final class BluetoothGattServer implements BluetoothProfile {
         @Hide
         @Override
         @RequiresNoPermission // Callback to app
-        @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
         public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
             Log.d(
                     TAG,

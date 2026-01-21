@@ -35,7 +35,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.ContentControlIdKeeper;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -49,9 +48,7 @@ public class VapsServerService extends ProfileService {
     private final VapsServerNativeInterface mNativeInterface;
 
     public static boolean isEnabled() {
-        boolean isVapServerEnabled =
-                SystemProperties.getBoolean("bluetooth.profile.vap.server.enabled", false);
-        return Flags.addProfileAsIntentExtra() && isVapServerEnabled;
+        return SystemProperties.getBoolean("bluetooth.profile.vap.server.enabled", false);
     }
 
     public VapsServerService(AdapterService adapterService) {

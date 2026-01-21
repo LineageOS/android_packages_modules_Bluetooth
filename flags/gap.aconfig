@@ -43,14 +43,6 @@ flag {
 }
 
 flag {
-    name: "rssi_scan_filter"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add RSSI ScanFilter"
-    bug: "404986559"
-}
-
-flag {
     name: "fix_private_gatt_advertisement"
     namespace: "bluetooth"
     description: "Fix that private GATT advertising is handled as a normal GATT"
@@ -75,14 +67,6 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "get_svc_uuids_from_ble_adv_data"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add API for getting service UUIDs from BLE advertising data. go/get-service-uuids-from-advertising-data"
-    bug: "389598210"
 }
 
 flag {

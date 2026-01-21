@@ -1402,49 +1402,33 @@ public class RemoteDevices {
                             deviceProperties.setDiscoveryResultType(val[0]);
                     case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
                             AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA -> {
-                        // Flags.getSvcUuidsFromBleAdvData() == true
-
-                        if (Flags.getSvcUuidsBugfix()) {
-                            final ParcelUuid[] newUuids;
-                            if (val.length != 1) {
-                                newUuids = Utils.byteArrayToUuid(val);
-                            } else if (val[0]
-                                    == AbstractionLayer.BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST) {
-                                newUuids = new ParcelUuid[0];
-                            } else {
-                                // val[0] ==
-                                // AbstractionLayer.BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST
-                                newUuids = null;
-                            }
-
-                            Log.d(
-                                    TAG,
-                                    "UUID from EIR/AD. type="
-                                            + type
-                                            + ", newUuids="
-                                            + Arrays.toString(newUuids));
-
-                            if (type
-                                    == AbstractionLayer
-                                            .BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE) {
-                                deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
-                            } else {
-                                // type ==
-                                // AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
-                                deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
-                            }
+                        final ParcelUuid[] newUuids;
+                        if (val.length != 1) {
+                            newUuids = Utils.byteArrayToUuid(val);
+                        } else if (val[0]
+                                == AbstractionLayer.BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST) {
+                            newUuids = new ParcelUuid[0];
                         } else {
-                            if (type
-                                    == AbstractionLayer
-                                            .BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE) {
-                                final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
-                                deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
-                            } else {
-                                // type ==
-                                // AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
-                                final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
-                                deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
-                            }
+                            // val[0] ==
+                            // AbstractionLayer.BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST
+                            newUuids = null;
+                        }
+
+                        Log.d(
+                                TAG,
+                                "UUID from EIR/AD. type="
+                                        + type
+                                        + ", newUuids="
+                                        + Arrays.toString(newUuids));
+
+                        if (type
+                                == AbstractionLayer
+                                        .BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE) {
+                            deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
+                        } else {
+                            // type ==
+                            // AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                            deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
                         }
                     }
                     // RSSI from hal is in one byte

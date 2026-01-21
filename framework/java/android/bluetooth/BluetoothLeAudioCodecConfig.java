@@ -96,7 +96,6 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     public static final int SOURCE_CODEC_TYPE_OPUS = 1;
 
     /** Source codec type for Opus High Resolution. */
-    @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2;
 
     /**
@@ -312,16 +311,10 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                     switch (codecType) {
                         case SOURCE_CODEC_TYPE_LC3 -> CODEC_ID_LC3;
                         case SOURCE_CODEC_TYPE_OPUS -> CODEC_ID_OPUS;
+                        case SOURCE_CODEC_TYPE_OPUS_HI_RES -> CODEC_ID_OPUS;
                         case SOURCE_CODEC_TYPE_VENDOR_SPECIFIC, SOURCE_CODEC_TYPE_INVALID ->
                                 CODEC_ID_INVALID;
-                        default -> {
-                            if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
-                                if (codecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
-                                    yield CODEC_ID_OPUS;
-                                }
-                            }
-                            yield CODEC_ID_INVALID;
-                        }
+                        default -> CODEC_ID_INVALID;
                     };
         } else {
             mCodecId = CODEC_ID_INVALID;
@@ -517,14 +510,9 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
         return switch (mCodecType) {
             case SOURCE_CODEC_TYPE_LC3 -> "LC3";
             case SOURCE_CODEC_TYPE_OPUS -> "Opus";
+            case SOURCE_CODEC_TYPE_OPUS_HI_RES -> "Opus Hi-Res";
             case SOURCE_CODEC_TYPE_INVALID -> "INVALID CODEC";
             default -> {
-                if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
-                    if (mCodecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
-                        yield "Opus Hi-Res";
-                    }
-                }
-
                 if (Flags.leaudioCodecIdSupport()) {
                     if (mCodecType == SOURCE_CODEC_TYPE_VENDOR_SPECIFIC) {
                         yield "VENDOR SPECIFIC CODEC(" + mCodecId + ")";
@@ -686,15 +674,9 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                         switch (codecType) {
                             case SOURCE_CODEC_TYPE_LC3 -> CODEC_ID_LC3;
                             case SOURCE_CODEC_TYPE_OPUS -> CODEC_ID_OPUS;
+                            case SOURCE_CODEC_TYPE_OPUS_HI_RES -> CODEC_ID_OPUS;
                             case SOURCE_CODEC_TYPE_VENDOR_SPECIFIC -> CODEC_ID_INVALID;
-                            default -> {
-                                if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
-                                    if (codecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
-                                        yield CODEC_ID_OPUS;
-                                    }
-                                }
-                                yield CODEC_ID_INVALID;
-                            }
+                            default -> CODEC_ID_INVALID;
                         };
             }
 
@@ -759,9 +741,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
             }
 
             if (mCodecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS
-                    || (Flags.leaudioAddOpusHiResCodecTypeApi()
-                            && mCodecType
-                                    == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES)) {
+                    || mCodecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES) {
                 if (codecId != CODEC_ID_OPUS) {
                     Log.w(TAG, "Invalid codecId for Opus codec. Setting to proper value");
                 }

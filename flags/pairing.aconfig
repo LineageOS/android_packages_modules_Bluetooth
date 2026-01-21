@@ -22,14 +22,6 @@ flag {
 }
 
 flag {
-    name: "link_status_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add Link Status API to BluetoothDevice"
-    bug: "419143231"
-}
-
-flag {
     name: "fix_ongoing_rnr_while_bonding"
     namespace: "bluetooth"
     description: "Fix pairing failure when RNR onging"

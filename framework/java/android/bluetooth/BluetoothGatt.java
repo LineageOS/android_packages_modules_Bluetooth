@@ -175,7 +175,6 @@ public final class BluetoothGatt implements BluetoothProfile {
     /**
      * Connection Subrate mode - Request to disable subrate mode.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_OFF = 0;
 
     /**
@@ -183,29 +182,24 @@ public final class BluetoothGatt implements BluetoothProfile {
      * low burstiness, minimum power consumption. This is the most power-efficient subrate
      * configuration.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_LOW = 1;
 
     /**
      * Connection subrate mode - Requests to enable subrate mode using balanced parameters to
      * provide a compromise between power savings and performance.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_BALANCED = 2;
 
     /**
      * Connection subrate mode - Requests to enable subrate mode with parameters optimized for
      * high burstiness, enhanced data transfer.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_HIGH = 3;
 
     /** Connection Subrate mode - System Update. */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_SYSTEM_UPDATE = 99;
 
     /** Connection Subrate mode - No Update applied due to error. */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_NOT_UPDATED = 255;
 
     @Hide
@@ -848,7 +842,6 @@ public final class BluetoothGatt implements BluetoothProfile {
         @Hide
         @Override
         @RequiresNoPermission // Callback to app
-        @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
         public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
             Log.d(
                     TAG,
@@ -2012,7 +2005,6 @@ public final class BluetoothGatt implements BluetoothProfile {
      * @throws IllegalArgumentException If the parameters are outside of their specified range.
      * @return true, if the request is send to the Bluetooth stack.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},

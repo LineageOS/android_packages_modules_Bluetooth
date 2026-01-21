@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "support_passive_scanning"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Support passive scanning by delivering adv packet w/o scan response"
-    bug: "414501027"
-}
-
-flag {
     name: "upgrade_le_scan_only_screen_on"
     namespace: "bluetooth"
     description: "Allow to upgrade LE scan only when screen is on"

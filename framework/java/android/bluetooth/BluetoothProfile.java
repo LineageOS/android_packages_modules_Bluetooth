@@ -63,7 +63,6 @@ public interface BluetoothProfile {
      *
      * <p>This extra represents the Bluetooth profile that the intent applies to.
      */
-    @FlaggedApi(Flags.FLAG_ADD_PROFILE_AS_INTENT_EXTRA)
     @SuppressLint("ActionValue")
     String EXTRA_PROFILE = "android.bluetooth.profile.extra.PROFILE";
 
