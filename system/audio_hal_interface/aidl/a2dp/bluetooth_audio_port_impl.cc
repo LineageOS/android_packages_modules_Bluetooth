@@ -131,7 +131,8 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::getPresentationPosition(
 
   PresentationPosition::TimeSpec transmittedOctetsTimeStamp;
   if (retval) {
-    transmittedOctetsTimeStamp = timespec_convert_to_hal(data_position);
+    transmittedOctetsTimeStamp.tvSec = static_cast<int64_t>(data_position.tv_sec);
+    transmittedOctetsTimeStamp.tvNSec = static_cast<int64_t>(data_position.tv_nsec);
   } else {
     remote_delay_report_ns = 0;
     total_bytes_read = 0;
@@ -182,10 +183,6 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::updateSinkLatency(int64_t in_latency_
   log::verbose("in_latency_ms: {}", in_latency_ms);
   transport_instance_->UpdateSinkLatency(in_latency_ms);
   return ndk::ScopedAStatus::ok();
-}
-
-PresentationPosition::TimeSpec BluetoothAudioPortImpl::timespec_convert_to_hal(const timespec& ts) {
-  return {.tvSec = static_cast<int64_t>(ts.tv_sec), .tvNSec = static_cast<int64_t>(ts.tv_nsec)};
 }
 
 // Overriding create binder and inherit RT from caller.

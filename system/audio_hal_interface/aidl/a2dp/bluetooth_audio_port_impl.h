@@ -51,10 +51,8 @@ protected:
 
   A2dpTransport* transport_instance_;
   const std::shared_ptr<IBluetoothAudioProvider> provider_;
-  PresentationPosition::TimeSpec timespec_convert_to_hal(const timespec& ts);
 
 private:
-  ndk::ScopedAStatus switchCodec(bool isLowLatency);
   ndk::SpAIBinder createBinder() override;
 };
 
