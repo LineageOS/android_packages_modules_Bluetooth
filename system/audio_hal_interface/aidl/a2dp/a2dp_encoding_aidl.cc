@@ -94,31 +94,6 @@ bool is_hal_offloading() {
          SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH;
 }
 
-// Opens the HAL client interface of the specified session type and check
-// that is is valid. Returns nullptr if the client interface did not open
-// properly.
-static BluetoothAudioClientInterface* new_hal_interface(A2dpTransport* transport_instance) {
-  auto hal_interface = new BluetoothAudioClientInterface(transport_instance);
-  if (hal_interface->IsValid()) {
-    return hal_interface;
-  } else {
-    log::error("BluetoothAudio HAL for a2dp is invalid");
-    delete transport_instance;
-    delete hal_interface;
-    return nullptr;
-  }
-}
-
-/// Delete the selected HAL client interface.
-static void delete_hal_interface(BluetoothAudioClientInterface* hal_interface) {
-  if (hal_interface == nullptr) {
-    return;
-  }
-  auto a2dp_transport = hal_interface->GetTransportInstance();
-  delete a2dp_transport;
-  delete hal_interface;
-}
-
 // Initialize BluetoothAudio HAL: openProvider
 bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
           StreamCallbacks const* stream_callbacks, bool offload_enabled) {
@@ -135,17 +110,28 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
 
   auto a2dp_transport_software =
           new A2dpTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH, stream_callbacks);
-  software_hal_interface = new_hal_interface(a2dp_transport_software);
-  if (software_hal_interface == nullptr) {
+  software_hal_interface = new BluetoothAudioClientInterface(a2dp_transport_software);
+  if (!software_hal_interface->IsValid()) {
+    log::error("BluetoothAudio Software HAL for a2dp is invalid");
+    delete a2dp_transport_software;
+    delete software_hal_interface;
+    software_hal_interface = nullptr;
     return false;
   }
 
   if (offload_enabled && offloading_hal_interface == nullptr) {
     auto a2dp_transport_offload = new A2dpTransport(
             SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH, stream_callbacks);
-    offloading_hal_interface = new_hal_interface(a2dp_transport_offload);
-    if (offloading_hal_interface == nullptr) {
-      delete_hal_interface(software_hal_interface);
+    offloading_hal_interface = new BluetoothAudioClientInterface(a2dp_transport_offload);
+    if (!offloading_hal_interface->IsValid()) {
+      log::error("BluetoothAudio Offload HAL for a2dp is invalid");
+      delete a2dp_transport_offload;
+      delete offloading_hal_interface;
+      offloading_hal_interface = nullptr;
+      // Cleanup software_hal_interface
+      auto a2dp_transport = software_hal_interface->GetTransportInstance();
+      delete a2dp_transport;
+      delete software_hal_interface;
       software_hal_interface = nullptr;
       return false;
     }
