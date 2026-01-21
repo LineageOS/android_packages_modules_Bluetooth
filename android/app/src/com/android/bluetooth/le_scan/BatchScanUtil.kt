@@ -217,7 +217,7 @@ object BatchScanUtil {
 
             var device: BluetoothDevice? = null
             if (Flags.useAddressTypeFromBatchScanResult()) {
-                val addressType = batchRecord[position++].toInt() and 0xFF
+                val addressType = batchRecord[position++].toUnsignedInt()
 
                 val convertedAddressType =
                     when (addressType) {
@@ -250,10 +250,10 @@ object BatchScanUtil {
             position += 2
 
             // Combine advertise packet and scan response packet.
-            val advertisePacketLen = batchRecord[position++].toInt() and 0xFF
+            val advertisePacketLen = batchRecord[position++].toUnsignedInt()
             val advertiseBytes = extractBytes(batchRecord, position, advertisePacketLen)
             position += advertisePacketLen
-            val scanResponsePacketLen = batchRecord[position++].toInt() and 0xFF
+            val scanResponsePacketLen = batchRecord[position++].toUnsignedInt()
             val scanResponseBytes = extractBytes(batchRecord, position, scanResponsePacketLen)
             position += scanResponsePacketLen
             val scanRecordBytes = ByteArray(advertisePacketLen + scanResponsePacketLen)
@@ -299,4 +299,7 @@ object BatchScanUtil {
             }
         }
     }
+
+    /** Converts a [Byte] to an unsigned [Int]. */
+    private fun Byte.toUnsignedInt() = this.toInt() and 0xFF
 }
