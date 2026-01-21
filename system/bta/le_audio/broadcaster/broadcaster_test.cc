@@ -342,7 +342,7 @@ protected:
   void TearDown() override {
     bluetooth::common::g_is_pts_test_mode = false;
     // Message loop cleanup should wait for all the 'till now' scheduled calls
-    // so it should be called right at the very begginning of teardown.
+    // so it should be called right at the very beginning of teardown.
     cleanup_message_loop_thread();
 
     // This is required since Stop() and Cleanup() may trigger some callbacks.
@@ -1049,7 +1049,7 @@ TEST_F(BroadcasterTest, QueuedBroadcastBusyIso) {
 
 constexpr types::LeAudioCodecId kLeAudioCodecIdVendor1 = {
         .coding_format = types::kLeAudioCodingFormatVendorSpecific,
-        // Not a particualr vendor - just some random numbers
+        // Not a particular vendor - just some random numbers
         .vendor_company_id = 0xC0,
         .vendor_codec_id = 0xDE,
 };
