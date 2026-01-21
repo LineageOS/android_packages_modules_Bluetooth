@@ -30,10 +30,6 @@ using namespace bluetooth;
 namespace bluetooth::vcp {
 namespace {
 
-class VolumeRendererImpl;
-std::unique_ptr<VolumeRendererImpl> instance = nullptr;
-std::mutex instance_mutex;
-
 class DefaultVcpServicesFactory : public VcpServicesFactory {
 public:
   std::shared_ptr<vcs::VcsServer> InstantiateVcsServer() override {
@@ -147,6 +143,9 @@ private:
   size_t subservices_registered_cnt_;
   std::list<RawAddress> connected_devices_;
 };
+
+std::unique_ptr<VolumeRendererImpl> instance = nullptr;
+std::mutex instance_mutex;
 
 }  // namespace
 
