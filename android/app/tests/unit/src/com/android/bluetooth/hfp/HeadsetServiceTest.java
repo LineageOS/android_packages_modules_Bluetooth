@@ -839,8 +839,7 @@ public class HeadsetServiceTest {
                 mHeadsetService.getStateMachinesThreadLooper());
         verify(mAudioManager, never()).setA2dpSuspended(true);
         verify(mAudioManager, never()).setLeAudioSuspended(true);
-        HeadsetTestUtils.verifyPhoneStateChangeSetters(
-                mPhoneState, headsetCallState, ASYNC_CALL_TIMEOUT_MILLIS);
+        verifyPhoneStateChangeSetters(mPhoneState, headsetCallState, ASYNC_CALL_TIMEOUT_MILLIS);
     }
 
     /**
@@ -911,8 +910,7 @@ public class HeadsetServiceTest {
         verify(mStateMachines.get(mCurrentDevice))
                 .sendMessage(HeadsetStateMachine.CALL_STATE_CHANGED, headsetCallState);
         // Make sure state is updated once in phone state holder
-        HeadsetTestUtils.verifyPhoneStateChangeSetters(
-                mPhoneState, headsetCallState, ASYNC_CALL_TIMEOUT_MILLIS);
+        verifyPhoneStateChangeSetters(mPhoneState, headsetCallState, ASYNC_CALL_TIMEOUT_MILLIS);
 
         // Set the device first as the active device
         assertThat(mHeadsetService.setActiveDevice(mCurrentDevice)).isTrue();
@@ -1019,8 +1017,7 @@ public class HeadsetServiceTest {
                     .sendMessage(HeadsetStateMachine.CALL_STATE_CHANGED, headsetCallState);
         }
         // Make sure state is updated once in phone state holder
-        HeadsetTestUtils.verifyPhoneStateChangeSetters(
-                mPhoneState, headsetCallState, ASYNC_CALL_TIMEOUT_MILLIS);
+        verifyPhoneStateChangeSetters(mPhoneState, headsetCallState, ASYNC_CALL_TIMEOUT_MILLIS);
     }
 
     /** Verifies that all CLCC responses are sent to the connected device. */
@@ -1543,6 +1540,13 @@ public class HeadsetServiceTest {
         callback.getValue().onAudioDeviceVolumeChanged(attributes, volumeInfo);
         verify(mStateMachines.get(mCurrentDevice))
                 .sendMessage(eq(HeadsetStateMachine.SCO_VOLUME_CHANGED), eq(volumeIndex));
+    }
+
+    private static void verifyPhoneStateChangeSetters(
+            HeadsetPhoneState headsetPhoneState, HeadsetCallState headsetCallState, int timeoutMs) {
+        verify(headsetPhoneState, timeout(timeoutMs)).setNumActiveCall(headsetCallState.mNumActive);
+        verify(headsetPhoneState, timeout(timeoutMs)).setNumHeldCall(headsetCallState.mNumHeld);
+        verify(headsetPhoneState, timeout(timeoutMs)).setCallState(headsetCallState.mCallState);
     }
 
     private void addConnectedDeviceHelper(BluetoothDevice device) {
