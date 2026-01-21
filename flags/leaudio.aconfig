@@ -419,3 +419,13 @@ flag {
     description: "Make TMAP GATT service centralized for central and peripheral Bluetooth services"
     bug: "477546285"
 }
+
+flag {
+    name: "leaudio_allowlist_refactor"
+    namespace: "bluetooth"
+    description: "Refactor LE Audio allowlist to increase device capacity"
+    bug: "477447231"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
