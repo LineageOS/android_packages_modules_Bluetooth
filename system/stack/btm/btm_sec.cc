@@ -3174,11 +3174,6 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     }
   }
 
-  if (is_autonomous_repairing_supported() && status == HCI_SUCCESS) {
-    log::debug("Reset the bond lost status, pairing was successful.");
-    p_device->bond_lost = false;
-  }
-
   /* If this is a bonding procedure can disconnect the link now */
   if (are_bonding) {
     tHCI_ROLE role = HCI_ROLE_UNKNOWN;

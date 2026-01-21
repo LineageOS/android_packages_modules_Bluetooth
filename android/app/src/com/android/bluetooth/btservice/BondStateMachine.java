@@ -569,6 +569,18 @@ public final class BondStateMachine extends StateMachine {
         if (newState == BluetoothDevice.BOND_BONDED && devProp.getLastBondedInitiator().isEmpty()) {
             // save the pairing initiator, because this may not be broadcasted if UUIDs are missing.
             devProp.setLastBondedInitiator(Optional.of(pairingInitiator));
+        } else if (newState == BluetoothDevice.BOND_NONE
+                && oldState == BluetoothDevice.BOND_BONDING) {
+
+            /*
+             * This case is added for autonomous repair scenario, so pairingContext here should be
+             * REPAIRING. But if the newState is BOND_NONE, it means pairing has failed and bond is
+             * going to be removed, so no point in keeping the key missing count alive. Hence the
+             * checks did not account for pairingContext. Also, the bond-state change sequence will
+             * follow now. So, just clear the bond-loss state as the bond is now re-established (in
+             * REPAIRING case), or removed, in both cases key missing count should be reset.
+             */
+            mAdapterService.updateKeyMissingCount(device, false);
         }
 
         // Internal bond state update.

@@ -300,6 +300,9 @@ static void add_advertised_uuids_to_properties(std::vector<bt_property_t>& bt_pr
                                                tBTA_DM_INQ_RES& inq_res,
                                                std::vector<uint8_t>& uuids_value);
 
+void btif_dm_repair_success_cb(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                               PairingType pairing_type, uint8_t fail_reason,
+                               PairingInitiator pairing_initiator);
 /******************************************************************************
  *  Functions
  *****************************************************************************/
@@ -606,6 +609,10 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   if (bond_loss_scenario) {
     if (state == BT_BOND_STATE_BONDED) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_SUCCESS);
+
+      // This indicates that re-pairing was successful, send the bond_state_change sequence.
+      btif_dm_repair_success_cb(bd_addr, transport, pairing_type, pairing_cb.fail_reason,
+                                pairing_initiator);
     } else if (state == BT_BOND_STATE_NONE) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_FAILURE);
       const std::string bd_addr_str = bd_addr.ToString();
@@ -4449,6 +4456,30 @@ void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
       }
     }
   }
+}
+
+void btif_dm_repair_success_cb(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                               PairingType pairing_type, uint8_t fail_reason,
+                               PairingInitiator pairing_initiator) {
+  if (!is_autonomous_repairing_supported() || !btm_is_bond_lost(bd_addr)) {
+    log::error(
+            "Autonomous repair is not supported or bond is not lost. Incorrect state, returning.");
+    return;
+  }
+  log::info("Reset the bond lost status, re-pairing was successful.");
+  btm_update_bond_lost(bd_addr, false);
+
+  // BOND_BONDED -> BOND_NONE
+  GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+          BT_STATUS_SUCCESS, bd_addr, transport, BT_BOND_STATE_NONE, pairing_type, fail_reason,
+          pairing_initiator);
+
+  // BOND_NONE -> BOND_BONDING
+  GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+          BT_STATUS_SUCCESS, bd_addr, transport, BT_BOND_STATE_BONDING, pairing_type, fail_reason,
+          pairing_initiator);
+
+  // BOND_BONDING -> BOND_BONDED, will be sent by the usual process in the caller itself.
 }
 
 namespace bluetooth {
