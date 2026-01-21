@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "audio_hal_interface/le_audio_peripheral.h"
 
-#include "include/hardware/bt_le_audio_server.h"
-#include "include/hardware/bt_mcp_client.h"
-#include "include/hardware/bt_vcp_renderer.h"
-
-bluetooth::le_audio::LeAudioServerInterface* btif_le_audio_server_get_interface();
-void btif_debug_le_audio_server_dump(int fd);
-
-bluetooth::mcp::McpClientInterface* btif_mcp_client_get_interface();
-bluetooth::vcp::VolumeRendererInterface* btif_vcp_renderer_get_interface();
+namespace bluetooth::audio::le_audio {
+IPeripheralAudioProviderFactory* IPeripheralAudioProviderFactory::Get() { return nullptr; }
+IPeripheralAudioSessionFactory* IPeripheralAudioSessionFactory::Get() { return nullptr; }
+}  // namespace bluetooth::audio::le_audio

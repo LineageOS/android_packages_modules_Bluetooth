@@ -58,6 +58,7 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
+#include "bta/include/bta_le_audio_server_api.h"
 #include "bta/include/bta_mcp_client_api.h"
 #include "bta/include/bta_vap_server_api.h"
 #include "bta/include/bta_vcp_controller_api.h"
@@ -907,6 +908,7 @@ static void dump(int fd, const char** /*arguments*/) {
   ::bluetooth::le_audio::has::HasClient::DebugDump(fd);
   ::bluetooth::asha::HearingAid::DebugDump(fd);
   LeAudioClient::DebugDump(fd);
+  btif_debug_le_audio_server_dump(fd);
   LeAudioBroadcaster::DebugDump(fd);
   ::bluetooth::mcp::McpClient::DebugDump(fd);
   VolumeController::DebugDump(fd);
@@ -1002,6 +1004,10 @@ static const void* get_profile_interface(const char* profile_id) {
 
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_ID)) {
     return btif_le_audio_get_interface();
+  }
+
+  if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_PERIPHERAL_ID)) {
+    return btif_le_audio_server_get_interface();
   }
 
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_BROADCASTER_ID)) {

@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "audio_hal_interface/le_audio_software.h"
-#include "le_audio/codec_manager.h"
-#include "le_audio/le_audio_types.h"
+#include "bta/le_audio/codec_manager.h"
+#include "bta/le_audio/le_audio_types.h"
 
 namespace bluetooth::le_audio {
 /* Represents configuration used to configure the local audio sessions and
