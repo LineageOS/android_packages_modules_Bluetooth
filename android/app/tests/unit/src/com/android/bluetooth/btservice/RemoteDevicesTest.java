@@ -39,11 +39,10 @@ import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.isA;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -104,8 +103,8 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -383,6 +382,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testOnVendorSpecificHeadsetEvent_testCorrectPlantronicsXEvent() {
+        // Prepare the base device property
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
         // Verify that correct ACTION_VENDOR_SPECIFIC_HEADSET_EVENT updates battery level
         mRemoteDevices.onVendorSpecificHeadsetEvent(
                 mDevice,
@@ -395,6 +396,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testOnVendorSpecificHeadsetEvent_testCorrectAppleBatteryVsc() {
+        // Prepare the base device property
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
         // Verify that correct ACTION_VENDOR_SPECIFIC_HEADSET_EVENT updates battery level
         mRemoteDevices.onVendorSpecificHeadsetEvent(
                 mDevice,
