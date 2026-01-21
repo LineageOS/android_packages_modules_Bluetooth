@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.net.Uri;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link BluetoothMapContract}. */
-@RunWith(AndroidJUnit4.class)
-public class BluetoothMapContractTest {
-    private static final String TEST_AUTHORITY = "com.test";
-    private static final String ACCOUNT_ID = "test_account_id";
+/** Test cases for [BluetoothMapContract]. */
+@RunWith(AndroidJUnit4::class)
+class BluetoothMapContractTest {
 
     @Test
-    public void testBuildAccountUri() {
-        final String expectedUriString =
-                "content://" + TEST_AUTHORITY + "/" + BluetoothMapContract.TABLE_ACCOUNT;
+    fun testBuildAccountUri() {
+        val expectedUriString = "content://$TEST_AUTHORITY/${BluetoothMapContract.TABLE_ACCOUNT}"
 
-        Uri result = BluetoothMapContract.buildAccountUri(TEST_AUTHORITY);
-        assertThat(result.toString()).isEqualTo(expectedUriString);
+        val result = BluetoothMapContract.buildAccountUri(TEST_AUTHORITY)
+        assertThat(result.toString()).isEqualTo(expectedUriString)
     }
 
     @Test
-    public void testBuildFolderUri() {
-        final String expectedUriString =
-                "content://"
-                        + TEST_AUTHORITY
-                        + "/"
-                        + ACCOUNT_ID
-                        + "/"
-                        + BluetoothMapContract.TABLE_FOLDER;
+    fun testBuildFolderUri() {
+        val expectedUriString =
+            "content://$TEST_AUTHORITY/$ACCOUNT_ID/${BluetoothMapContract.TABLE_FOLDER}"
 
-        Uri result = BluetoothMapContract.buildFolderUri(TEST_AUTHORITY, ACCOUNT_ID);
-        assertThat(result.toString()).isEqualTo(expectedUriString);
+        val result = BluetoothMapContract.buildFolderUri(TEST_AUTHORITY, ACCOUNT_ID)
+        assertThat(result.toString()).isEqualTo(expectedUriString)
+    }
+
+    companion object {
+        private const val TEST_AUTHORITY = "com.test"
+        private const val ACCOUNT_ID = "test_account_id"
     }
 }
