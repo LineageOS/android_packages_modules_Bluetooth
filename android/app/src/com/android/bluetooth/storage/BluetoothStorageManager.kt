@@ -280,9 +280,23 @@ constructor(
         return value.toByteArray()
     }
 
-    fun setCustomMetadata(device: BluetoothDevice, key: Int, value: ByteArray) {
+    fun setCustomMetadata(device: BluetoothDevice, key: Int, value: ByteArray): Boolean {
         validateMetadataKey(key)
+        val isDeviceBonded =
+            Flags.storagePreventCustomMetadataOnUnbondedDevice() &&
+                adapterService.bondedDevices.contains(device)
+
+        var status = !Flags.storagePreventCustomMetadataOnUnbondedDevice()
         dataStore.blockingUpdateData { storage ->
+            if (
+                Flags.storagePreventCustomMetadataOnUnbondedDevice() &&
+                    !isDeviceBonded &&
+                    !storage.devicesMap.contains(device.address)
+            ) {
+                Log.d(TAG, "Device $device is unknown. Metadata $key will not be added")
+                return@blockingUpdateData storage
+            }
+
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
@@ -306,8 +320,10 @@ constructor(
             deviceBuilder.clearCustomMetadata()
             deviceBuilder.putAllCustomMetadata(metadataBuilder)
 
+            status = true
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
+        return status
     }
 
     fun getProfileConnectionPolicy(device: BluetoothDevice, profile: Int): Int {

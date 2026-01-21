@@ -2331,12 +2331,12 @@ public class AdapterService extends Service {
         }
         logManufacturerInfo(device, key, value);
         if (Flags.mainlineBetaStorage()) {
-            mStorage.setCustomMetadata(device, key, value);
+            boolean status = mStorage.setCustomMetadata(device, key, value);
             if (key == BluetoothDevice.METADATA_SOFTWARE_VERSION
                     && getBondState(device) == BOND_BONDED) {
                 mCompanionManager.setCompanionDevice(device, value);
             }
-            return true;
+            return status;
         } else {
             return mDatabaseManager.setCustomMeta(device, key, value); // Migrating
         }
