@@ -32,7 +32,7 @@ cc_library_static {
         "shim/le_advertising_manager.cc",
         "shim/le_scanning_manager.cc",
         "shim/shim.cc",
-        "shim/stack.cc",
+        "shim/stack_impl.cc",
         "shim/utils.cc",
     ],
     include_dirs: [
@@ -94,7 +94,7 @@ cc_test {
         "shim/le_advertising_manager.cc",
         "shim/le_scanning_manager.cc",
         "shim/shim.cc",
-        "shim/stack.cc",
+        "shim/stack_impl.cc",
         "shim/utils.cc",
         "test/common_stack_test.cc",
         "test/main_shim_test.cc",
@@ -133,12 +133,16 @@ cc_test {
     target: {
         android: {
             static_libs: [
+                "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "android.system.suspend-V1-ndk",
                 "android.system.suspend.control-V1-ndk",
                 "libperfetto_client_experimental",
             ],
             shared_libs: [
+                "libhidlbase",
                 "libstatssocket",
+                "libutils",
             ],
         },
     },

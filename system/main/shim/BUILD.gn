@@ -17,7 +17,7 @@
 source_set("BluetoothStackManagerSources") {
   sources = [
     "entry.cc",
-    "stack.cc",
+    "stack_impl.cc",
   ]
 
   include_dirs = [
