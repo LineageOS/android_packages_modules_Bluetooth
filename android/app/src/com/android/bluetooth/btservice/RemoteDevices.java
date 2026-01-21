@@ -406,6 +406,9 @@ public class RemoteDevices {
         private BluetoothSinkAudioPolicy mAudioPolicy;
         private Optional<Integer> mLastBondLossReason = Optional.empty();
 
+        // Stores the PairingInitiator (from AbstractionLayer) of the last BOND_BONDED state change.
+        private Optional<Integer> mLastBondedInitiator = Optional.empty();
+
         private BondStatus mBredrBond;
         private BondStatus mLeBond;
 
@@ -1106,6 +1109,18 @@ public class RemoteDevices {
         public Optional<Integer> getLastBondLossReason() {
             synchronized (mObject) {
                 return mLastBondLossReason;
+            }
+        }
+
+        public void setLastBondedInitiator(Optional<Integer> lastBondedInitiator) {
+            synchronized (mObject) {
+                this.mLastBondedInitiator = lastBondedInitiator;
+            }
+        }
+
+        public Optional<Integer> getLastBondedInitiator() {
+            synchronized (mObject) {
+                return mLastBondedInitiator;
             }
         }
     }

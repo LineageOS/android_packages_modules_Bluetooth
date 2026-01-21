@@ -100,5 +100,11 @@ public final class AbstractionLayer {
     static final int BT_STATUS_AUTH_REJECTED = 11;
     static final int BT_STATUS_AUTH_TIMEOUT = 12;
 
+    static final int BT_PAIRING_INITIATOR_APP = 0;
+    static final int BT_PAIRING_INITIATOR_REMOTE_DEVICE = 1;
+    static final int BT_PAIRING_INITIATOR_SERVICE_ACCESS_REQ = 2;
+    static final int BT_PAIRING_INITIATOR_CTKD = 3;
+    static final int BT_PAIRING_INITIATOR_REPAIRING = 4;
+
     private AbstractionLayer() {}
 }

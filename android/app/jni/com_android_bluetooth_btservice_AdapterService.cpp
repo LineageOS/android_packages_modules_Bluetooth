@@ -318,7 +318,8 @@ static void device_found_callback(int num_properties, bt_property_t* properties)
 
 static void bond_state_changed_callback(bt_status_t status, RawAddress bd_addr,
                                         tBT_TRANSPORT transport, bt_bond_state_t state,
-                                        PairingType pairing_type, int fail_reason) {
+                                        PairingType pairing_type, int fail_reason,
+                                        PairingInitiator pairing_initiator) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -335,7 +336,7 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress bd_addr,
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_bondStateChangeCallback, (jint)status,
                                jaddr.get(), (jint)transport, (jint)state,
                                (jint)pairing_type.algorithm, (jint)pairing_type.variant,
-                               (jint)fail_reason);
+                               (jint)pairing_initiator, (jint)fail_reason);
 }
 
 static void address_consolidate_callback(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
@@ -1982,7 +1983,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
           {"pinRequestCallback", "([B[BIZI)V", &method_pinRequestCallback},
           {"sspRequestCallback", "([BIII)V", &method_sspRequestCallback},
-          {"bondStateChangeCallback", "(I[BIIIII)V", &method_bondStateChangeCallback},
+          {"bondStateChangeCallback", "(I[BIIIIII)V", &method_bondStateChangeCallback},
           {"addressConsolidateCallback", "([B[B)V", &method_addressConsolidateCallback},
           {"leAddressAssociateCallback", "([B[BI)V", &method_leAddressAssociateCallback},
           {"aclStateChangeCallback", "(I[BIIIII)V", &method_aclStateChangeCallback},

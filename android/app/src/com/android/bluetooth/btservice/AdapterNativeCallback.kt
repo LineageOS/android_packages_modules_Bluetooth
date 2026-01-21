@@ -77,6 +77,7 @@ class AdapterNativeCallback(
         newState: Int,
         pairingAlgorithm: Int,
         pairingVariant: Int,
+        pairingInitiator: Int,
         hciReason: Int,
     ) {
         bondStateMachine?.bondStateChangeCallback(
@@ -86,6 +87,7 @@ class AdapterNativeCallback(
             newState,
             pairingAlgorithm,
             pairingVariant,
+            pairingInitiator,
             hciReason,
         )
     }
