@@ -80,7 +80,6 @@ public final class BluetoothCodecType implements Parcelable {
     public static final long CODEC_ID_OPUS = 0x000100e0ff;
 
     /** LHDC codec identifier. See {@link BluetoothCodecType#getCodecId}. */
-    @FlaggedApi(Flags.FLAG_A2DP_LHDC_API)
     public static final long CODEC_ID_LHDCV5 = 0x4c35_053a_ffL;
 
     @Hide
@@ -282,11 +281,9 @@ public final class BluetoothCodecType implements Parcelable {
             return new BluetoothCodecType(
                     BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, CODEC_ID_OPUS, "Opus");
         }
-        if (Flags.a2dpLhdcApi()) {
-            if (codecId == CODEC_ID_LHDCV5) {
-                return new BluetoothCodecType(
-                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID, CODEC_ID_LHDCV5, "LHDCV5");
-            }
+        if (codecId == CODEC_ID_LHDCV5) {
+            return new BluetoothCodecType(
+                    BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID, CODEC_ID_LHDCV5, "LHDCV5");
         }
         return null;
     }

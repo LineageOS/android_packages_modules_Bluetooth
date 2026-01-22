@@ -271,7 +271,6 @@ public abstract class BluetoothGattCallback {
      * @param status {@link BluetoothGatt#GATT_SUCCESS} if the connection subrating has been updated
      *     successfully
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public void onSubrateChange(
             @NonNull BluetoothGatt gatt,
             @BluetoothGatt.OnSubrateChangeModeValues int subrateMode,

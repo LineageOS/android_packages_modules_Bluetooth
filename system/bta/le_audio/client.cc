@@ -6656,14 +6656,12 @@ public:
 
         if (audio_sender_state_ == AudioState::READY_TO_START) {
           startSendingAudioWrapper(group);
-          if (com_android_bluetooth_flags_add_profile_as_intent_extra()) {
-            auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
-            if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
-              log::info(" audio sender: NotifyVaSessionStarted");
-              if (group) {
-                bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
-                        GetGroupDevices(group->group_id_), true);
-              }
+          auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+          if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+            log::info(" audio sender: NotifyVaSessionStarted");
+            if (group) {
+              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+                      GetGroupDevices(group->group_id_), true);
             }
           }
         } else if (audio_sender_state_ == AudioState::STARTED) {
@@ -6679,14 +6677,12 @@ public:
 
         if (audio_receiver_state_ == AudioState::READY_TO_START) {
           startReceivingAudioWrapper(group);
-          if (com_android_bluetooth_flags_add_profile_as_intent_extra()) {
-            auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
-            if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
-              log::info(" audio receiver: NotifyVaSessionStarted");
-              if (group) {
-                bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
-                        GetGroupDevices(group->group_id_), true);
-              }
+          auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+          if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+            log::info(" audio receiver: NotifyVaSessionStarted");
+            if (group) {
+              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+                      GetGroupDevices(group->group_id_), true);
             }
           }
         } else if (audio_receiver_state_ == AudioState::STARTED) {
@@ -6827,21 +6823,19 @@ public:
           HandlePendingDeviceDisconnection(group);
         }
 
-        if (com_android_bluetooth_flags_add_profile_as_intent_extra()) {
-          if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
+        if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
+          log::info(" Status Idle: NotifyVaSessionStopped");
+          if (group) {
+            bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+                    GetGroupDevices(group->group_id_), true);
+          }
+        } else {
+          auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+          if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" Status Idle: NotifyVaSessionStopped");
             if (group) {
               bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
                       GetGroupDevices(group->group_id_), true);
-            }
-          } else {
-            auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
-            if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
-              log::info(" Status Idle: NotifyVaSessionStopped");
-              if (group) {
-                bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
-                        GetGroupDevices(group->group_id_), true);
-              }
             }
           }
         }

@@ -79,14 +79,6 @@ flag {
 }
 
 flag {
-    name: "prioritized_in_ear_routing"
-    namespace: "bluetooth"
-    description: "Prioritized routing by checking in-ear state when multiple devices connected"
-    bug: "420509925"
-    is_exported: true
-}
-
-flag {
     name: "consistent_battery_level"
     namespace: "bluetooth"
     description: "Do not reset battey level from BAS to prevent battey level fluctuation"

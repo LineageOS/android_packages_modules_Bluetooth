@@ -127,14 +127,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_add_opus_hi_res_codec_type_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add OPUS codec type to LE Audio API"
-    bug: "419699224"
-}
-
-flag {
     name: "leaudio_broadcast_source_channel_map_classification"
     namespace: "bluetooth"
     description: "Uses channel classification from buds who synced with the phone's broadcast stream to determine the BIG channel map"

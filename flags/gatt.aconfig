@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "le_subrate_api"
-    namespace: "bluetooth"
-    description: "New API to control LE subrate parameters"
-    bug: "384794418"
-    is_exported: true
-}
-
-flag {
     name: "gatt_multi_bearer_connections"
     namespace: "bluetooth"
     description: "Run all advertise functions on a single thread"

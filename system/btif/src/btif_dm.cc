@@ -1433,8 +1433,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           break;
         }
 
-        if (com_android_bluetooth_flags_get_svc_uuids_from_ble_adv_data() &&
-            com_android_bluetooth_flags_get_svc_uuids_bugfix()) {
+        if (com_android_bluetooth_flags_get_svc_uuids_bugfix()) {
           std::vector<bt_property_t> bt_properties;
           bt_properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
           bt_properties.push_back(bt_property_t{BT_PROPERTY_REMOTE_RSSI,
@@ -1615,9 +1614,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
 
         // Scope needs to persist until `invoke_device_found_cb` below.
         std::vector<uint8_t> uuids_value;
-        if (com_android_bluetooth_flags_get_svc_uuids_from_ble_adv_data()) {
-          add_advertised_uuids_to_properties(bt_properties, p_search_data->inq_res, uuids_value);
-        }
+        add_advertised_uuids_to_properties(bt_properties, p_search_data->inq_res, uuids_value);
 
         // Floss needs appearance for metrics purposes
         uint16_t appearance = 0;
@@ -1684,10 +1681,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
 static void add_advertised_uuids_to_properties(std::vector<bt_property_t>& bt_properties,
                                                tBTA_DM_INQ_RES& inq_res,
                                                std::vector<uint8_t>& uuids_value) {
-  if (!com_android_bluetooth_flags_get_svc_uuids_from_ble_adv_data()) {
-    return;
-  }
-
   if (!uuids_value.empty()) {
     log::error("uuids_value is not empty!");
     return;

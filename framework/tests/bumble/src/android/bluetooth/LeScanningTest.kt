@@ -477,7 +477,6 @@ class LeScanningTest {
     }
 
     @Test
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.support_passive_scanning")
     fun startScan_scanType(@TestParameter isActive: Boolean) {
         val requestBuilder = AdvertiseRequest.newBuilder()
 

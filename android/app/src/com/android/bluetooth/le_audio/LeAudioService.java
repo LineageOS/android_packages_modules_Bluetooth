@@ -5666,13 +5666,6 @@ public class LeAudioService extends ConnectableProfile {
             int groupId,
             BluetoothLeAudioCodecConfig inputCodecConfig,
             BluetoothLeAudioCodecConfig outputCodecConfig) {
-        if (!Flags.leaudioAddOpusHiResCodecTypeApi()) {
-            Log.w(
-                    TAG,
-                    "storeActiveGroupCodecConfigPreference() skipped due to disabled feature flag");
-            return;
-        }
-
         Log.d(
                 TAG,
                 "storeActiveGroupCodecConfigPreference("
@@ -5720,13 +5713,6 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private void restoreActiveGroupCodecConfigPreference(int groupId) {
-        if (!Flags.leaudioAddOpusHiResCodecTypeApi()) {
-            Log.w(
-                    TAG,
-                    "storeActiveGroupCodecConfigPreference() skipped due to disabled feature flag");
-            return;
-        }
-
         Log.d(TAG, "restoreActiveGroupCodecConfigPreference(" + groupId + ")");
 
         // Reload the active group codec preferences map from storage

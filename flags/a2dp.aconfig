@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "a2dp_lhdc_api"
-    namespace: "bluetooth"
-    description: "API change for LHDC codec support"
-    is_exported: true
-    bug: "380118954"
-}
-
-flag {
     name: "a2dp_disconnect_reason_api"
     namespace: "bluetooth"
     description: "Define the extra parameter DISCONNECTED_REASON for a2dp.CONNECTION_STATE_CHANGED intent"

@@ -3389,10 +3389,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API,
-        Flags.FLAG_MAINLINE_BETA_STORAGE
-    })
+    @EnableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetCodecConfigPreference() {
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
 
@@ -3452,7 +3449,6 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetCodecConfigPreference_old() {
         // Not connected device
@@ -3511,10 +3507,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API,
-        Flags.FLAG_MAINLINE_BETA_STORAGE
-    })
+    @EnableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testCodecConfigPreferenceRestore() {
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
         connectTestDevice(mSingleDevice, TEST_GROUP_ID);
@@ -3564,7 +3557,6 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testCodecConfigPreferenceRestore_old() {
         // Not connected device
@@ -3650,7 +3642,6 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetGetCodecConfigPreferenceOpus() {
         // Not connected device
