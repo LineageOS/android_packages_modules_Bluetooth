@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,62 +14,55 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.testing.EqualsTester
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.google.common.testing.EqualsTester;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link Msg}. */
+/** Test cases for [Msg]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class MsgTest {
-    private static final long TEST_ID = 1;
-    private static final long TEST_FOLDER_ID = 1;
-    private static final int TEST_READ_FLAG = 1;
+@RunWith(AndroidJUnit4::class)
+class MsgTest {
 
     @Test
-    public void constructor() {
-        BluetoothMapContentObserver.Msg msg =
-                new BluetoothMapContentObserver.Msg(TEST_ID, TEST_FOLDER_ID, TEST_READ_FLAG);
-
-        assertThat(msg.id).isEqualTo(TEST_ID);
-        assertThat(msg.folderId).isEqualTo(TEST_FOLDER_ID);
-        assertThat(msg.flagRead).isEqualTo(TEST_READ_FLAG);
+    fun constructor() {
+        val msg = BluetoothMapContentObserver.Msg(TEST_ID, TEST_FOLDER_ID, TEST_READ_FLAG)
+        assertThat(msg.id).isEqualTo(TEST_ID)
+        assertThat(msg.folderId).isEqualTo(TEST_FOLDER_ID)
+        assertThat(msg.flagRead).isEqualTo(TEST_READ_FLAG)
     }
 
     @Test
-    public void hashCode_returnsExpectedResult() {
-        BluetoothMapContentObserver.Msg msg =
-                new BluetoothMapContentObserver.Msg(TEST_ID, TEST_FOLDER_ID, TEST_READ_FLAG);
-
-        int expected = 31 + (int) (TEST_ID ^ (TEST_ID >>> 32));
-        assertThat(msg.hashCode()).isEqualTo(expected);
+    fun hashCode_returnsExpectedResult() {
+        val msg = BluetoothMapContentObserver.Msg(TEST_ID, TEST_FOLDER_ID, TEST_READ_FLAG)
+        val expected = 31 + (TEST_ID xor (TEST_ID ushr 32)).toInt()
+        assertThat(msg.hashCode()).isEqualTo(expected)
     }
 
     @Test
-    public void equals() {
-        long idOne = 1;
-        long idTwo = 2;
-        BluetoothMapContentObserver.Msg msg =
-                new BluetoothMapContentObserver.Msg(idOne, TEST_FOLDER_ID, TEST_READ_FLAG);
-        BluetoothMapContentObserver.Msg msgWithSameId =
-                new BluetoothMapContentObserver.Msg(idOne, TEST_FOLDER_ID, TEST_READ_FLAG);
-        BluetoothMapContentObserver.Msg msgWithDifferentId =
-                new BluetoothMapContentObserver.Msg(idTwo, TEST_FOLDER_ID, TEST_READ_FLAG);
+    fun equals() {
+        val idOne = 1L
+        val idTwo = 2L
+        val msg = BluetoothMapContentObserver.Msg(idOne, TEST_FOLDER_ID, TEST_READ_FLAG)
+        val msgWithSameId = BluetoothMapContentObserver.Msg(idOne, TEST_FOLDER_ID, TEST_READ_FLAG)
+        val msgWithDifferentId =
+            BluetoothMapContentObserver.Msg(idTwo, TEST_FOLDER_ID, TEST_READ_FLAG)
+        val msgOfDifferentClass = "msg_of_different_class"
 
-        String msgOfDifferentClass = "msg_of_different_class";
+        EqualsTester()
+            .addEqualityGroup(msg, msg, msgWithSameId)
+            .addEqualityGroup(msgWithDifferentId, msgWithDifferentId)
+            .addEqualityGroup(msgOfDifferentClass)
+            .testEquals()
+    }
 
-        new EqualsTester()
-                .addEqualityGroup(msg, msg, msgWithSameId)
-                .addEqualityGroup(msgWithDifferentId, msgWithDifferentId)
-                .addEqualityGroup(msgOfDifferentClass)
-                .testEquals();
+    companion object {
+        private const val TEST_ID = 1L
+        private const val TEST_FOLDER_ID = 1L
+        private const val TEST_READ_FLAG = 1
     }
 }
