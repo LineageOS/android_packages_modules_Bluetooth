@@ -21,11 +21,15 @@
 
 #include <bluetooth/types/address.h>
 
+#include <functional>
+
 #include "port_api.h"
 #include "test/common/mock_functions.h"
 
-int PORT_CheckConnection(uint8_t /* handle */, RawAddress* /* bd_addr */, uint16_t* /* p_lcid */) {
+std::function<int(uint8_t, RawAddress*, uint16_t*)> PORT_CheckConnection_Fn;
+int PORT_CheckConnection(uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
   inc_func_call_count(__func__);
+  if (PORT_CheckConnection_Fn) return PORT_CheckConnection_Fn(handle, bd_addr, p_lcid);
   return 0;
 }
 int PORT_ClearKeepHandleFlag(uint8_t /* port_handle */) {
@@ -82,12 +86,16 @@ int RFCOMM_ControlReqFromBTSOCK(uint8_t /* dlci */, const RawAddress& /* bd_addr
   inc_func_call_count(__func__);
   return 0;
 }
-int RFCOMM_RemoveConnection(uint8_t /* handle */) {
+std::function<int(uint8_t)> RFCOMM_RemoveConnection_Fn;
+int RFCOMM_RemoveConnection(uint8_t handle) {
   inc_func_call_count(__func__);
+  if (RFCOMM_RemoveConnection_Fn) return RFCOMM_RemoveConnection_Fn(handle);
   return 0;
 }
-int RFCOMM_RemoveServer(uint8_t /* handle */) {
+std::function<int(uint8_t)> RFCOMM_RemoveServer_Fn;
+int RFCOMM_RemoveServer(uint8_t handle) {
   inc_func_call_count(__func__);
+  if (RFCOMM_RemoveServer_Fn) return RFCOMM_RemoveServer_Fn(handle);
   return 0;
 }
 int PORT_GetSecurityMask(uint8_t /* handle */, uint16_t* /* sec_mask */) {
