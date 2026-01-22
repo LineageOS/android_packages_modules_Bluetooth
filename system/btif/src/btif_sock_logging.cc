@@ -86,7 +86,7 @@ void btif_sock_connection_logger(const RawAddress& address, int port, int type, 
 }
 
 void btif_sock_dump(int fd) {
-  dprintf(fd, "\nSocket Events: \n");
+  dprintf(fd, "\nSocket Events:\n");
   dprintf(fd,
           "  Time        \tAddress          \tState             \tRole"
           "              \tChannel   \tType     \tServerName\n");

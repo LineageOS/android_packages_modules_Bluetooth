@@ -201,7 +201,7 @@ public:
   void Dump(int fd) {
     std::stringstream stream;
     int n = Size();
-    stream << "     == number of inputs: " << n << " == \n";
+    stream << "     == number of inputs: " << n << " ==\n";
 
     for (auto const& v : volume_audio_inputs) {
       stream << "   id: " << +v.id << "\n"
@@ -291,7 +291,7 @@ public:
   void Dump(int fd) {
     std::stringstream stream;
     int n = Size();
-    stream << "     == number of offsets: " << n << " == \n";
+    stream << "     == number of offsets: " << n << " ==\n";
 
     for (auto const& v : volume_offsets) {
       stream << "   id: " << +v.id << "\n"

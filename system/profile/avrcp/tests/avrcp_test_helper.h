@@ -128,9 +128,9 @@ public:
     pkt_to_compare_to_->Serialize(packet2);
 
     if (packet1->GetData() != packet2->GetData()) {
-      *listener << "\nPacket to compare to: \n";
+      *listener << "\nPacket to compare to:\n";
       *listener << packet2->ToString();
-      *listener << "\nActual packet: \n";
+      *listener << "\nActual packet:\n";
       *listener << packet1->ToString();
     }
 

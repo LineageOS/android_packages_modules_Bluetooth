@@ -67,6 +67,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
+import com.android.bluetooth.util.Text;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -347,7 +348,7 @@ public class GattService extends ProfileService {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-        sb.append(GattUtil.dump(mAdvertiseManager, mClientMap, mServerManager).indent(2));
+        sb.append(Text.indent(GattUtil.dump(mAdvertiseManager, mClientMap, mServerManager), "  "));
     }
 
     public IBinder getBluetoothAdvertise() {

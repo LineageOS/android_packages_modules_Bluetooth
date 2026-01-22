@@ -88,7 +88,7 @@ public:
 
   void DebugDump(int fd) {
     std::stringstream stream;
-    stream << "   == device address: " << address.ToRedactedStringForLogging() << " == \n";
+    stream << "   == device address: " << address.ToRedactedStringForLogging() << " ==\n";
 
     if (connection_id == GATT_INVALID_CONN_ID) {
       stream << "    Not connected\n";

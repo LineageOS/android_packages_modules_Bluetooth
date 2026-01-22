@@ -343,7 +343,7 @@ public class LeAudioStackEvent {
                 for (BluetoothLeAudioCodecConfig n : value) {
                     valueStr = valueStr.concat(n.toString() + "\n");
                 }
-                yield "{input local capa codec = \n" + valueStr + "}";
+                yield "{input local capa codec =\n" + valueStr + "}";
             }
             case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED -> {
                 for (BluetoothLeAudioCodecConfig n : value) {
@@ -363,7 +363,7 @@ public class LeAudioStackEvent {
                 for (BluetoothLeAudioCodecConfig n : value) {
                     valueStr = valueStr.concat(n.toString() + "\n");
                 }
-                yield "{output local capa codec = \n" + valueStr + "}";
+                yield "{output local capa codec =\n" + valueStr + "}";
             }
             case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED -> {
                 for (BluetoothLeAudioCodecConfig n : value) {

@@ -852,7 +852,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
                 sm.dump(sb);
             }
         }
-        ProfileService.println(sb, "mFoundSetMemberToGroupId: ");
+        ProfileService.println(sb, "mFoundSetMemberToGroupId:");
         for (Map.Entry<BluetoothDevice, Integer> entry : mFoundSetMemberToGroupId.entrySet()) {
             ProfileService.println(
                     sb, "  member device: " + entry.getKey() + ", group ID: " + entry.getValue());

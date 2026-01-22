@@ -1523,7 +1523,7 @@ impl IBluetoothMediaCallback for MediaCallback {
                 wrapped_binary.push_str(&to_split_binary);
                 format!(
                     "\n--------{} packet loss--------\n\
-                       Decoded Packets: {}, Packet Loss Ratio: {} \n\
+                       Decoded Packets: {}, Packet Loss Ratio: {}\n\
                        {} [begin]\n\
                        {} [end]\n\
                        In Hex format:\n\

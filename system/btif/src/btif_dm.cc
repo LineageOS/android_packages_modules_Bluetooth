@@ -4256,7 +4256,7 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_functio
 
 void btif_debug_bond_event_dump(int fd) {
   std::unique_lock<std::mutex> lock(bond_event_lock);
-  dprintf(fd, "\nBond Events: \n");
+  dprintf(fd, "\nBond Events:\n");
   dprintf(fd, "  Total Number of events: %zu\n", btif_num_bond_events);
   if (btif_num_bond_events > 0) {
     dprintf(fd, "  Time          address            Function             State\n");

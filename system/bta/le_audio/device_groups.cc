@@ -2707,15 +2707,15 @@ void LeAudioDeviceGroup::PrintDebugState(void) const {
             << ", state: " << bluetooth::common::ToString(GetState())
             << ", target state: " << bluetooth::common::ToString(GetTargetState())
             << ", cig state: " << bluetooth::common::ToString(cig.GetState())
-            << ", \n group supported contexts: "
+            << "\n group supported contexts: "
             << bluetooth::common::ToString(GetSupportedContexts())
-            << ", \n group available contexts: "
+            << "\n group available contexts: "
             << bluetooth::common::ToString(GetAvailableContexts())
-            << ", \n group user allowed contexts: "
+            << "\n group user allowed contexts: "
             << bluetooth::common::ToString(GetAllowedContextMask())
-            << ", \n configuration context type: "
-            << bluetooth::common::ToString(GetConfigurationContextType())
-            << ", \n active config: \"" << (active_conf ? active_conf->name : " not set") << "\"";
+            << "\n configuration context type: "
+            << bluetooth::common::ToString(GetConfigurationContextType()) << "\n active config: \""
+            << (active_conf ? active_conf->name : " not set") << "\"";
 
   auto& cises = cig.GetCises();
   if (cises.size() > 0) {
@@ -2740,10 +2740,10 @@ void LeAudioDeviceGroup::PrintDebugState(void) const {
 
     debug_str << "\n presentation_delay for sink (speaker): " << +sink_delay
               << " us, presentation_delay for source (microphone): " << +source_delay
-              << "us, \n MtoS transport latency:  " << +max_transport_latency_mtos
+              << "us\n MtoS transport latency:  " << +max_transport_latency_mtos
               << ", StoM transport latency: " << +max_transport_latency_stom
-              << ", \n MtoS Phy: " << loghex(phy_mtos) << ", MtoS sdu: " << loghex(phy_stom)
-              << " \n MtoS sdu: " << +sdu_mts << ", StoM sdu: " << +sdu_stom;
+              << "\n MtoS Phy: " << loghex(phy_mtos) << ", MtoS sdu: " << loghex(phy_stom)
+              << "\n MtoS sdu: " << +sdu_mts << ", StoM sdu: " << +sdu_stom;
   }
 
   log::info("{}", debug_str.str());

@@ -6170,7 +6170,7 @@ public class LeAudioService extends ConnectableProfile {
     public void dump(StringBuilder sb) {
         super.dump(sb);
         ProfileService.println(sb, "isDualModeAudioEnabled: " + Utils.isDualModeAudioEnabled());
-        ProfileService.println(sb, "Active Groups information: ");
+        ProfileService.println(sb, "Active Groups information:");
         ProfileService.println(sb, "  currentlyActiveGroupId: " + getActiveGroupId());
         ProfileService.println(sb, "  mActiveAudioOutDevice: " + mActiveAudioOutDevice);
         ProfileService.println(sb, "  mActiveAudioInDevice: " + mActiveAudioInDevice);
