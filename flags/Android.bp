@@ -24,7 +24,6 @@ aconfig_declarations {
         "btm_iso.aconfig",
         "classic_connections.aconfig",
         "connectivity.aconfig",
-        "dis.aconfig",
         "framework.aconfig",
         "gap.aconfig",
         "gatt.aconfig",

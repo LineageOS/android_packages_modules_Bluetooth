@@ -684,7 +684,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
     fun clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsLessThanThrottleMs() {
         service.mRssiCache[device.address] =
             GattService.RssiCacheEntry(timeProvider.elapsedRealtime(), TEST_RSSI)
@@ -698,7 +697,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
     fun clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsMoreThanThrottleMs() {
         service.mRssiCache[device.address] =
             GattService.RssiCacheEntry(timeProvider.elapsedRealtime(), TEST_RSSI)
@@ -711,7 +709,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
     fun clientOnReadRemoteRssiFromNative() {
         service.onReadRemoteRssiFromNative(CLIENT_IF, device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
 

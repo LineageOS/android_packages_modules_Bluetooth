@@ -14,7 +14,6 @@ aconfig("bluetooth_flags_c_lib") {
     "btm_iso.aconfig",
     "classic_connections.aconfig",
     "connectivity.aconfig",
-    "dis.aconfig",
     "framework.aconfig",
     "gap.aconfig",
     "gatt.aconfig",

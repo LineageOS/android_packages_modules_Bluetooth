@@ -1220,8 +1220,7 @@ public:
       bool in_accept_list_due_to_direct_connect =
               direct_connections_.find(address_with_type) != direct_connections_.end();
       if (already_in_accept_list && (in_accept_list_due_to_direct_connect || !is_direct) &&
-          (!com::android::bluetooth::flags::allow_rearm_if_suspend_scan_params_used() ||
-           is_using_system_suspend_scan_params_ == system_suspend_)) {
+          is_using_system_suspend_scan_params_ == system_suspend_) {
         log::info("Device {} already in accept list. Stop here.", address_with_type);
         return;
       }

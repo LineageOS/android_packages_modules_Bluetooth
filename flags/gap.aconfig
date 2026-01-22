@@ -60,16 +60,6 @@ flag {
 }
 
 flag {
-    name: "read_rssi_throttling"
-    namespace: "bluetooth"
-    description: "Modify API to throttle the ability of a client app to trigger remote RSSI reads"
-    bug: "414510325"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "handle_encryption_fail_before_sdp_when_paring"
     namespace: "bluetooth"
     description: "handle encryption failure before SDP when pairing cause no SDP records but bonded"
@@ -84,16 +74,6 @@ flag {
     namespace: "bluetooth"
     description: "Save db cache for just bonded device if available"
     bug: "417859848"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "get_svc_uuids_bugfix"
-    namespace: "bluetooth"
-    description: "Bug fixes for the flag get_svc_uuids_from_ble_adv_data"
-    bug: "428792613"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

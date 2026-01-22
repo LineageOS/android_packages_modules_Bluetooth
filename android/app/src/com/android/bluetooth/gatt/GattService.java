@@ -817,7 +817,7 @@ public class GattService extends ProfileService {
             return;
         }
 
-        if (Flags.readRssiThrottling() && status == BluetoothGatt.GATT_SUCCESS) {
+        if (status == BluetoothGatt.GATT_SUCCESS) {
             Log.d(TAG, "onReadRemoteRssi(): Putting timestamp and rssi into cache");
             mRssiCache.put(
                     device.getAddress(), new RssiCacheEntry(mTimeProvider.elapsedRealtime(), rssi));
@@ -1388,7 +1388,7 @@ public class GattService extends ProfileService {
         }
         final var clientIf = clientApp.getId();
         Log.d(TAG, "readRemoteRssi(): device=" + device);
-        if (Flags.readRssiThrottling() && mRssiReadThrottleMs > 0) {
+        if (mRssiReadThrottleMs > 0) {
             final var entry = mRssiCache.get(device.getAddress());
             if (entry != null
                     && (mTimeProvider.elapsedRealtime() - entry.readTimeStamp)
