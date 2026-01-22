@@ -108,29 +108,23 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
     return false;
   }
 
-  auto a2dp_transport_software =
-          new A2dpTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH, stream_callbacks);
-  software_hal_interface = new BluetoothAudioClientInterface(a2dp_transport_software);
+  software_hal_interface = new BluetoothAudioClientInterface(
+          SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH, stream_callbacks);
   if (!software_hal_interface->IsValid()) {
     log::error("BluetoothAudio Software HAL for a2dp is invalid");
-    delete a2dp_transport_software;
     delete software_hal_interface;
     software_hal_interface = nullptr;
     return false;
   }
 
   if (offload_enabled && offloading_hal_interface == nullptr) {
-    auto a2dp_transport_offload = new A2dpTransport(
+    offloading_hal_interface = new BluetoothAudioClientInterface(
             SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH, stream_callbacks);
-    offloading_hal_interface = new BluetoothAudioClientInterface(a2dp_transport_offload);
     if (!offloading_hal_interface->IsValid()) {
       log::error("BluetoothAudio Offload HAL for a2dp is invalid");
-      delete a2dp_transport_offload;
       delete offloading_hal_interface;
       offloading_hal_interface = nullptr;
       // Cleanup software_hal_interface
-      auto a2dp_transport = software_hal_interface->GetTransportInstance();
-      delete a2dp_transport;
       delete software_hal_interface;
       software_hal_interface = nullptr;
       return false;
@@ -162,12 +156,10 @@ bool init_decoder(StreamCallbacks const* stream_callbacks, bool offload_enabled)
   }
 
   if (offload_enabled) {
-    auto transport = new A2dpTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH,
-                                       stream_callbacks);
-    decoder_offloading_hal_interface = new BluetoothAudioClientInterface(transport);
+    decoder_offloading_hal_interface = new BluetoothAudioClientInterface(
+            SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH, stream_callbacks);
     if (!decoder_offloading_hal_interface->IsValid()) {
       log::error("BluetoothAudio HAL for a2dp decoder is invalid");
-      delete transport;
       delete decoder_offloading_hal_interface;
       return false;
     }
@@ -187,23 +179,17 @@ void cleanup() {
   transport->ResetPresentationPosition();
   active_hal_interface = nullptr;
 
-  transport = software_hal_interface->GetTransportInstance();
   delete software_hal_interface;
   software_hal_interface = nullptr;
-  delete transport;
   if (offloading_hal_interface != nullptr) {
-    transport = offloading_hal_interface->GetTransportInstance();
     delete offloading_hal_interface;
     offloading_hal_interface = nullptr;
-    delete transport;
   }
 
   if (com::android::bluetooth::flags::a2dp_sink_offload() &&
       decoder_offloading_hal_interface != nullptr) {
-    transport = decoder_offloading_hal_interface->GetTransportInstance();
     delete decoder_offloading_hal_interface;
     decoder_offloading_hal_interface = nullptr;
-    delete transport;
   }
 
   remote_delay = 0;

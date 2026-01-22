@@ -91,7 +91,7 @@ inline BluetoothAudioStatus StatusToHalStatus(Status ack) {
  ***/
 class BluetoothAudioClientInterface {
 public:
-  BluetoothAudioClientInterface(A2dpTransport* instance);
+  BluetoothAudioClientInterface(SessionType sessionType, StreamCallbacks const* stream_callbacks);
   virtual ~BluetoothAudioClientInterface();
 
   bool IsValid() const;
