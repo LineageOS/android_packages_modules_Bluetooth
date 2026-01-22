@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "allow_rearm_if_suspend_scan_params_used"
-    namespace: "bluetooth"
-    description: "When suspend scan params are used, allow re-arm connection even if device is in accept list"
-    bug: "435261884"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_intent_selection_for_acl"
     namespace: "bluetooth"
     description: "Fix the intent selection for ACL connection and disconnection"
