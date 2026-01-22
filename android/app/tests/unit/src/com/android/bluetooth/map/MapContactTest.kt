@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,67 +14,61 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.SignedLongLong
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.SignedLongLong;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link MapContact}. */
+/** Test cases for [MapContact]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class MapContactTest {
-    private static final long TEST_NON_ZERO_ID = 1;
-    private static final long TEST_ZERO_ID = 0;
-    private static final String TEST_NAME = "test_name";
+@RunWith(AndroidJUnit4::class)
+class MapContactTest {
 
     @Test
-    public void constructor() {
-        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
-
-        assertThat(contact.id()).isEqualTo(TEST_NON_ZERO_ID);
-        assertThat(contact.name()).isEqualTo(TEST_NAME);
+    fun constructor() {
+        val contact = MapContact(TEST_NON_ZERO_ID, TEST_NAME)
+        assertThat(contact.id).isEqualTo(TEST_NON_ZERO_ID)
+        assertThat(contact.name).isEqualTo(TEST_NAME)
     }
 
     @Test
-    public void getXBtUidString_withZeroId() {
-        MapContact contact = new MapContact(TEST_ZERO_ID, TEST_NAME);
-
-        assertThat(contact.getXBtUidString()).isNull();
+    fun getXBtUidString_withZeroId() {
+        val contact = MapContact(TEST_ZERO_ID, TEST_NAME)
+        assertThat(contact.getXBtUidString()).isNull()
     }
 
     @Test
-    public void getXBtUidString_withNonZeroId() {
-        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
-
+    fun getXBtUidString_withNonZeroId() {
+        val contact = MapContact(TEST_NON_ZERO_ID, TEST_NAME)
         assertThat(contact.getXBtUidString())
-                .isEqualTo(BluetoothMapUtils.getLongLongAsString(TEST_NON_ZERO_ID, 0));
+            .isEqualTo(BluetoothMapUtils.getLongLongAsString(TEST_NON_ZERO_ID, 0))
     }
 
     @Test
-    public void getXBtUid_withZeroId() {
-        MapContact contact = new MapContact(TEST_ZERO_ID, TEST_NAME);
-
-        assertThat(contact.getXBtUid()).isNull();
+    fun getXBtUid_withZeroId() {
+        val contact = MapContact(TEST_ZERO_ID, TEST_NAME)
+        assertThat(contact.getXBtUid()).isNull()
     }
 
     @Test
-    public void getXBtUid_withNonZeroId() {
-        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
-
-        assertThat(contact.getXBtUid()).isEqualTo(new SignedLongLong(TEST_NON_ZERO_ID, 0));
+    fun getXBtUid_withNonZeroId() {
+        val contact = MapContact(TEST_NON_ZERO_ID, TEST_NAME)
+        assertThat(contact.getXBtUid()).isEqualTo(SignedLongLong(TEST_NON_ZERO_ID, 0))
     }
 
     @Test
-    public void toString_returnsName() {
-        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
+    fun toString_returnsName() {
+        val contact = MapContact(TEST_NON_ZERO_ID, TEST_NAME)
+        assertThat(contact.toString()).isEqualTo(TEST_NAME)
+    }
 
-        assertThat(contact.toString()).isEqualTo(TEST_NAME);
+    companion object {
+        private const val TEST_NON_ZERO_ID = 1L
+        private const val TEST_ZERO_ID = 0L
+        private const val TEST_NAME = "test_name"
     }
 }
