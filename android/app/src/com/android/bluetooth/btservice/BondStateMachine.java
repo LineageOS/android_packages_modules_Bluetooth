@@ -219,6 +219,7 @@ public final class BondStateMachine extends StateMachine {
             boolean result = false;
 
             if ((mDevices.contains(dev) || mDevicesWaitingForUuids.contains(dev))
+                    && !(msg.what == MESSAGE_REMOVE_BOND && Flags.cancelPairingWhileRemoveBond())
                     && msg.what != MESSAGE_CANCEL_BOND
                     && msg.what != MESSAGE_BOND_STATE_CHANGE
                     && msg.what != MESSAGE_PAIRING_REQUEST
