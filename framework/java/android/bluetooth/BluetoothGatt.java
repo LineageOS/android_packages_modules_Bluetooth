@@ -172,14 +172,12 @@ public final class BluetoothGatt implements BluetoothProfile {
      */
     public static final int CONNECTION_PRIORITY_DCK = 3;
 
-    /**
-     * Connection Subrate mode - Request to disable subrate mode.
-     */
+    /** Connection Subrate mode - Request to disable subrate mode. */
     public static final int SUBRATE_MODE_OFF = 0;
 
     /**
-     * Connection Subrate mode - Requests to enable subrate mode with parameters optimized for
-     * low burstiness, minimum power consumption. This is the most power-efficient subrate
+     * Connection Subrate mode - Requests to enable subrate mode with parameters optimized for low
+     * burstiness, minimum power consumption. This is the most power-efficient subrate
      * configuration.
      */
     public static final int SUBRATE_MODE_LOW = 1;
@@ -191,8 +189,8 @@ public final class BluetoothGatt implements BluetoothProfile {
     public static final int SUBRATE_MODE_BALANCED = 2;
 
     /**
-     * Connection subrate mode - Requests to enable subrate mode with parameters optimized for
-     * high burstiness, enhanced data transfer.
+     * Connection subrate mode - Requests to enable subrate mode with parameters optimized for high
+     * burstiness, enhanced data transfer.
      */
     public static final int SUBRATE_MODE_HIGH = 3;
 
@@ -1991,8 +1989,8 @@ public final class BluetoothGatt implements BluetoothProfile {
     /**
      * Request LE subrate mode.
      *
-     * <p>Configure/Request subrating with this API, sending a subrate request to the remote
-     * device based on Subrate Mode. This function should be used in conjunction with {@link
+     * <p>Configure/Request subrating with this API, sending a subrate request to the remote device
+     * based on Subrate Mode. This function should be used in conjunction with {@link
      * requestConnectionPriority} to manage link latency and power consumption effectively.
      *
      * <p>This method requires the calling app to have the {@link
