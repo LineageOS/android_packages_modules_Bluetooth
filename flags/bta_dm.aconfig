@@ -7,13 +7,3 @@ flag {
     description: "Feature to enable sniff offload with VSC based control"
     bug: "416419075"
 }
-
-flag {
-    name: "complete_disc_if_no_rnr"
-    namespace: "bluetooth"
-    description: "Send discovery complete if canceling RNR fails"
-    bug: "424232101"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
