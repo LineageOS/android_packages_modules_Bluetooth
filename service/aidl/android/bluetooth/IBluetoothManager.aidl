@@ -81,7 +81,7 @@ interface IBluetoothManager {
 
     // SnoopLogMode
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    void setBtHciSnoopLogMode(int mode);
+    int setBtHciSnoopLogMode(int mode);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     int getBtHciSnoopLogMode();
 
