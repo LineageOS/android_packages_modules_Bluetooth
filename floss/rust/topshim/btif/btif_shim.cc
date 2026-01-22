@@ -75,8 +75,10 @@ static void ssp_request_cb(RawAddress remote_bd_addr, PairingVariant pairing_var
 }
 
 static void bond_state_cb(bt_status_t status, RawAddress remote_bd_addr, tBT_TRANSPORT transport,
-                          bt_bond_state_t state, PairingType pairing_type, int fail_reason) {
-  rusty::bond_state_cb(status, remote_bd_addr, transport, state, pairing_type, fail_reason);
+                          bt_bond_state_t state, PairingType pairing_type, int fail_reason,
+                          PairingInitiator pairing_initiator) {
+  rusty::bond_state_cb(status, remote_bd_addr, transport, state, pairing_type, fail_reason,
+                       pairing_initiator);
 }
 
 static void acl_state_cb(bt_status_t status, AclLinkSpec& link_spec, bt_acl_state_t state,
@@ -159,7 +161,7 @@ void BtIntf::bluetooth_init(bool guest_mode, bool is_common_criteria_mode,
   ::bluetooth_init(&internal::bt_callbacks, guest_mode, is_common_criteria_mode,
                    config_compare_result, is_atv,
                    std::string(hci_instance_name.data(), hci_instance_name.size()),
-                   &internal::bt_os_callouts);
+                   &internal::bt_os_callouts, /* autonomous_repairing_initiation = */ false);
 }
 
 void BtIntf::bluetooth_enable() const {
