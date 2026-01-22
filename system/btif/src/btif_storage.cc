@@ -865,7 +865,7 @@ bt_status_t btif_storage_add_bredr_keys(const RawAddress& addr, const PairingTyp
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_ALGORITHM,
                              static_cast<int>(pairing_type.algorithm));
 
-  int pairing_variant = pairing_type.algorithm == PairingAlgorithm::LEGACY
+  int pairing_variant = pairing_type.algorithm == PairingAlgorithm::BREDR_LEGACY
                                 ? static_cast<int>(pairing_type.legacy_variant)
                                 : static_cast<int>(pairing_type.variant);
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_VARIANT, pairing_variant);
@@ -1375,7 +1375,7 @@ std::optional<PairingType> btif_storage_get_bredr_pairing_type(const RawAddress&
     return std::nullopt;
   }
 
-  if (pairing_type.algorithm == PairingAlgorithm::LEGACY) {
+  if (pairing_type.algorithm == PairingAlgorithm::BREDR_LEGACY) {
     pairing_type.legacy_variant = static_cast<LegacyPairingVariant>(variant);
   } else if (pairing_type.algorithm == PairingAlgorithm::SC) {
     pairing_type.variant = static_cast<PairingVariant>(variant);

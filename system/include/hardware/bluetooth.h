@@ -612,7 +612,8 @@ typedef struct {
 
 enum class PairingAlgorithm : uint8_t {
   NONE, /* Indicates pairing information is not available */
-  LEGACY, /* Used by both BR/EDR and LE */
+  LE_LEGACY,
+  BREDR_LEGACY,
   SSP, /* Secure Simple Pairing (only used for BR/EDR) */
   SC,  /* Secure Connections (for both BR/EDR and LE) */
 };
@@ -620,7 +621,8 @@ enum class PairingAlgorithm : uint8_t {
 static inline std::string pairing_algorithm_text(const PairingAlgorithm& pairing_algorithm) {
   switch (pairing_algorithm) {
     CASE_RETURN_STRING(PairingAlgorithm::NONE);
-    CASE_RETURN_STRING(PairingAlgorithm::LEGACY);
+    CASE_RETURN_STRING(PairingAlgorithm::BREDR_LEGACY);
+    CASE_RETURN_STRING(PairingAlgorithm::LE_LEGACY);
     CASE_RETURN_STRING(PairingAlgorithm::SC);
     CASE_RETURN_STRING(PairingAlgorithm::SSP);
     default:
@@ -660,7 +662,7 @@ struct PairingType {
 
 static inline std::string pairing_type_text(const PairingType& pairing_type) {
   return pairing_algorithm_text(pairing_type.algorithm) + "-" +
-         (pairing_type.algorithm == PairingAlgorithm::LEGACY
+         (pairing_type.algorithm == PairingAlgorithm::BREDR_LEGACY
                   ? legacy_pairing_variant_text(pairing_type.legacy_variant)
                   : pairing_variant_text(pairing_type.variant));
 }
