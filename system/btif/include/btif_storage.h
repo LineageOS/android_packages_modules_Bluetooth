@@ -54,15 +54,25 @@
 
 /*******************************************************************************
  *
- * Function         btif_in_fetch_bonded_devices
+ * Function         btif_in_fetch_bonded_device
  *
- * Description      Helper function to fetch the bonded devices
- *                  from NVRAM
+ * Description      Helper function to fetch the bonded device from NVRAM
  *
  * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
 bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr);
+
+/*******************************************************************************
+ *
+ * Function         btif_in_load_bonded_device
+ *
+ * Description      Helper function to load the bonded device from NVRAM, and add it to the BTA.
+ *
+ * Returns          None
+ *
+ ******************************************************************************/
+void btif_in_load_bonded_device(const RawAddress& addr, bool add);
 
 typedef struct {
   uint32_t num_devices;

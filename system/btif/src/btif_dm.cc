@@ -614,13 +614,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
                                 pairing_initiator);
     } else if (state == BT_BOND_STATE_NONE) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_FAILURE);
-      const std::string bd_addr_str = bd_addr.ToString();
-      bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
+      btif_in_load_bonded_device(bd_addr, /*add=*/true);  // refresh the device information
+
       log::debug(
-              "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, "
-              "fetching "
-              "device details from persistent storage: {}",
-              bt_status_text(fetch_status));
+              "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, fetching "
+              "device details from persistent storage.");
       status = BT_STATUS_SUCCESS;
       state = BT_BOND_STATE_BONDED;
     }
