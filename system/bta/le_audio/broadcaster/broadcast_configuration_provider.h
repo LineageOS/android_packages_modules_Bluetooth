@@ -170,7 +170,7 @@ static const types::DataPathConfiguration lc3_data_path = {
                 {
                         .codecId = kLeAudioCodecIdLc3,
                         .isTransparent = true,
-                        .controllerDelayUs = 0x00000000,  // irrlevant for transparent mode
+                        .controllerDelayUs = 0x00000000,  // irrelevant for transparent mode
                         .configuration = {},
                 },
 };
