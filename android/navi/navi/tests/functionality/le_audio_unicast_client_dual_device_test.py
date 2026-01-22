@@ -316,20 +316,17 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
 
     _PROXY = TypeVar("_PROXY", bound=gatt_client.ProfileServiceProxy)
 
-    async def _make_service_clients(self, proxy_class: type[_PROXY]) -> list[_PROXY]:
+    async def _make_service_client(self, ref: device.Device, proxy_class: type[_PROXY]) -> _PROXY:
         self.logger.info("[REF] Connect %s", proxy_class.__name__)
-        clients = []
-        for ref in self.refs:
-            ref_dut_acl = ref.device.find_connection_by_bd_addr(hci.Address(self.dut.address),
-                                                                transport=core.BT_LE_TRANSPORT)
-            if not ref_dut_acl:
-                self.fail("No ACL connection found")
-            async with device.Peer(ref_dut_acl) as peer:
-                client = peer.create_service_proxy(proxy_class)
-                if not client:
-                    self.fail("Failed to connect %s", proxy_class.__name__)
-                clients.append(client)
-        return clients
+        ref_dut_acl = ref.find_connection_by_bd_addr(hci.Address(self.dut.address),
+                                                     transport=core.BT_LE_TRANSPORT)
+        if not ref_dut_acl:
+            self.fail("No ACL connection found")
+        async with device.Peer(ref_dut_acl) as peer:
+            client = peer.create_service_proxy(proxy_class)
+            if not client:
+                self.fail("Failed to connect %s", proxy_class.__name__)
+            return client
 
     @override
     async def async_setup_class(self) -> None:
@@ -853,10 +850,13 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             self.logger.info("[REF] Connect GMCS")
-            ref_mcp_clients = await self._make_service_clients(_GenericMediaControlServiceProxy)
+            ref_mcp_clients = await asyncio.gather(*[
+                self._make_service_client(ref.device, _GenericMediaControlServiceProxy)
+                for ref in self.refs
+            ])
             self.logger.info("[REF] Subscribe MCP characteristics")
-            for ref_mcp_client in ref_mcp_clients:
-                await ref_mcp_client.subscribe_characteristics()
+            await asyncio.gather(
+                *[ref_mcp_client.subscribe_characteristics() for ref_mcp_client in ref_mcp_clients])
 
         media_states = [
             await gatt_helper.MutableCharacteristicState.create(ref_mcp_client.media_state)
@@ -911,11 +911,15 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             self.logger.info("[REF] Connect TBS")
-            ref_tbs_clients = await self._make_service_clients(
-                ccp.GenericTelephoneBearerServiceProxy)
+            ref_tbs_clients = await asyncio.gather(*[
+                self._make_service_client(ref.device, ccp.GenericTelephoneBearerServiceProxy)
+                for ref in self.refs
+            ])
             self.logger.info("[REF] Read and subscribe TBS characteristics")
-            for ref_tbs_client in ref_tbs_clients:
-                await ref_tbs_client.read_and_subscribe_characteristics()
+            await asyncio.gather(*[
+                ref_tbs_client.read_and_subscribe_characteristics()
+                for ref_tbs_client in ref_tbs_clients
+            ])
 
         expected_call_index = 1
         call = self.dut.bl4a.make_phone_call(_CALLER_NAME, _CALLER_NUMBER, _Direction.INCOMING)

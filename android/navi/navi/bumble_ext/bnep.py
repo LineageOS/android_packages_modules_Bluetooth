@@ -21,12 +21,11 @@ from __future__ import annotations
 
 import dataclasses
 import struct
-from typing import Final, Type
+from typing import Final, Self
 
 from bumble import core
 from bumble import hci
 from bumble import utils
-from typing_extensions import Self
 
 
 class BnepError(core.ProtocolError):
@@ -83,7 +82,7 @@ class Packet:
     payload: bytes = b''
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Packet:
+    def from_bytes(cls, pdu: bytes) -> Packet:
         """Creates a packet from the given bytes.
 
     Args:
@@ -122,7 +121,7 @@ class GeneralEthernet(Packet):
     packet_type: Final[PacketType] = PacketType.GENERAL_ETHERNET
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Self:
+    def from_bytes(cls, pdu: bytes) -> Self:
         return cls(
             extension_flag=pdu[0] >> 7,
             destination_address=_parse_random_address(pdu, 1),
@@ -150,7 +149,7 @@ class Control(Packet):
     packet_type: Final[PacketType] = PacketType.CONTROL
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Self:
+    def from_bytes(cls, pdu: bytes) -> Self:
         return cls(
             extension_flag=pdu[0] >> 7,
             control_type=pdu[1],
@@ -173,7 +172,7 @@ class CompressedEthernet(Packet):
     packet_type: Final[PacketType] = PacketType.COMPRESSED_ETHERNET
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Self:
+    def from_bytes(cls, pdu: bytes) -> Self:
         return cls(
             extension_flag=pdu[0] >> 7,
             networking_protocol_type=struct.unpack_from('>H', pdu, 1)[0],
@@ -198,7 +197,7 @@ class CompressedEthernetSourceOnly(Packet):
     packet_type: Final[PacketType] = PacketType.COMPRESSED_ETHERNET_SOURCE_ONLY
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Self:
+    def from_bytes(cls, pdu: bytes) -> Self:
         return cls(
             extension_flag=pdu[0] >> 7,
             source_address=_parse_random_address(pdu, 1),
@@ -225,7 +224,7 @@ class CompressedEthernetDestOnly(Packet):
     packet_type: Final[PacketType] = PacketType.COMPRESSED_ETHERNET_DEST_ONLY
 
     @classmethod
-    def from_bytes(cls: Type[Self], pdu: bytes) -> Self:
+    def from_bytes(cls, pdu: bytes) -> Self:
         return cls(
             extension_flag=pdu[0] >> 7,
             destination_address=_parse_random_address(pdu, 1),

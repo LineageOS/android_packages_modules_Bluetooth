@@ -54,6 +54,7 @@
 #define BT_PROFILE_LE_AUDIO_BROADCASTER_ID "le_audio_broadcaster"
 #define BT_PROFILE_LE_AUDIO_ID "le_audio"
 #define BT_PROFILE_MAP_CLIENT_ID "map_client"
+#define BT_PROFILE_MCP_CLIENT_ID "mcp_client"
 #define BT_PROFILE_PAN_ID "pan"
 #define BT_PROFILE_SDP_CLIENT_ID "sdp"
 #define BT_PROFILE_SOCKETS_ID "socket"

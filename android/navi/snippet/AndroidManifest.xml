@@ -53,6 +53,7 @@
                        com.google.android.bluetooth.snippet.AudioSnippet,
                        com.google.android.bluetooth.snippet.BluetoothA2dpSnippet,
                        com.google.android.bluetooth.snippet.BluetoothAdapterSnippet,
+                       com.google.android.bluetooth.snippet.BluetoothAshaSnippet,
                        com.google.android.bluetooth.snippet.BluetoothGattClientSnippet,
                        com.google.android.bluetooth.snippet.BluetoothGattServerSnippet,
                        com.google.android.bluetooth.snippet.BluetoothHapClientSnippet,

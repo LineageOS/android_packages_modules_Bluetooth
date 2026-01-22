@@ -18,10 +18,6 @@
 
 #include <bluetooth/types/uuid.h>
 
-#include <optional>
-#include <string>
-#include <vector>
-
 namespace bluetooth {
 namespace mcp {
 
@@ -86,14 +82,6 @@ static constexpr uint8_t kPlayingOrderNewestOnce = 0x07;
 static constexpr uint8_t kPlayingOrderNewestRepeat = 0x08;
 static constexpr uint8_t kPlayingOrderShuffleOnce = 0x09;
 static constexpr uint8_t kPlayingOrderShuffleRepeat = 0x0A;
-
-// Result codes for Media Control Point operations.
-enum class MediaControlResultCode : uint8_t {
-  SUCCESS = 0x01,
-  OPCODE_NOT_SUPPORTED = 0x02,
-  MEDIA_PLAYER_INACTIVE = 0x03,
-  COMMAND_CANNOT_BE_COMPLETED = 0x04,
-};
 
 }  // namespace mcp
 }  // namespace bluetooth

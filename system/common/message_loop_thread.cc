@@ -40,6 +40,7 @@ namespace bluetooth {
 namespace common {
 
 tBlockedThreads MessageLoopThread::blocked_threads_;
+int MessageLoopThread::sync_task_posted_count_ = 0;
 static constexpr int kRealTimeFifoSchedulingPriority = 1;
 
 static base::TimeDelta timeDeltaFromMicroseconds(std::chrono::microseconds t) {

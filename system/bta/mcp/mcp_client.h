@@ -25,13 +25,31 @@
 #include <vector>
 
 #include "common/strings.h"
-#include "hardware/bt_le_audio.h"
-#include "mcp_types.h"
-#include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
 
 namespace bluetooth {
 namespace mcp {
+
+struct Mcs {
+  int id = 0;
+  bool is_gmcs = false;
+  uint16_t start_handle = 0;
+  uint16_t end_handle = 0;
+
+  // Attribute handles for the Media Control Service (MCS) characteristics.
+  uint16_t media_player_name_handle = 0;
+  uint16_t track_changed_handle = 0;
+  uint16_t track_title_handle = 0;
+  uint16_t track_duration_handle = 0;
+  uint16_t track_position_handle = 0;
+  uint16_t playback_speed_handle = 0;
+  uint16_t playing_orders_supported_handle = 0;
+  uint16_t seeking_speed_handle = 0;
+  uint16_t media_state_handle = 0;
+  uint16_t media_control_point_handle = 0;
+  uint16_t opcodes_supported_handle = 0;
+  uint16_t content_control_id_handle = 0;
+};
 
 // Base class for GATT service devices, holding common connection state.
 class GattServiceDevice {
@@ -73,85 +91,63 @@ public:
     uint16_t conn_id;
   };
 
-  void DebugDump(std::stringstream& stream) const;
+  void DebugDump(std::stringstream& stream) const {
+    GattServiceDevice::DebugDump(stream);
+
+    stream << "\n    Media Player Name Handle: ";
+    for (const auto& service : services) {
+      stream << "\n    Service ID: " << service.id << (service.is_gmcs ? " (GMCS)" : " (MCS)")
+             << "\n      Media Player Name Handle: "
+             << bluetooth::common::ToHexString(service.media_player_name_handle)
+             << "\n      Track Changed Handle: "
+             << bluetooth::common::ToHexString(service.track_changed_handle)
+             << "\n      Track Title Handle: "
+             << bluetooth::common::ToHexString(service.track_title_handle)
+             << "\n      Track Duration Handle: "
+             << bluetooth::common::ToHexString(service.track_duration_handle)
+             << "\n      Track Position Handle: "
+             << bluetooth::common::ToHexString(service.track_position_handle)
+             << "\n      Playback Speed Handle: "
+             << bluetooth::common::ToHexString(service.playback_speed_handle)
+             << "\n      Seeking Speed Handle: "
+             << bluetooth::common::ToHexString(service.seeking_speed_handle)
+             << "\n      Media State Handle: "
+             << bluetooth::common::ToHexString(service.media_state_handle)
+             << "\n      Media Control Point Handle: "
+             << bluetooth::common::ToHexString(service.media_control_point_handle)
+             << "\n      Opcodes Supported Handle: "
+             << bluetooth::common::ToHexString(service.opcodes_supported_handle)
+             << "\n      Content Control ID Handle: "
+             << bluetooth::common::ToHexString(service.content_control_id_handle) << "\n";
+    }
+  }
 
   void ClearHandles() {
     service_found = false;
-    media_player_name_handle = 0;
-    track_changed_handle = 0;
-    track_title_handle = 0;
-    track_duration_handle = 0;
-    track_position_handle = 0;
-    playback_speed_handle = 0;
-    playing_orders_supported_handle = 0;
-    seeking_speed_handle = 0;
-    media_state_handle = 0;
-    media_control_point_handle = 0;
-    opcodes_supported_handle = 0;
-    content_control_id_handle = 0;
+    services.clear();
+    searching_for_gmcs = false;
   }
 
-  // Characteristic handles specific to MCP/MCS
-  uint16_t media_player_name_handle = 0;
-  uint16_t track_changed_handle = 0;
-  uint16_t track_title_handle = 0;
-  uint16_t track_duration_handle = 0;
-  uint16_t track_position_handle = 0;
-  uint16_t playback_speed_handle = 0;
-  uint16_t playing_orders_supported_handle = 0;
-  uint16_t seeking_speed_handle = 0;
-  uint16_t media_state_handle = 0;
-  uint16_t media_control_point_handle = 0;
-  uint16_t opcodes_supported_handle = 0;
-  uint16_t content_control_id_handle = 0;
-};
+  Mcs* GetService(int service_id) {
+    for (auto& s : services) {
+      if (s.id == service_id) {
+        return &s;
+      }
+    }
+    return nullptr;
+  }
 
-// Interface for MCP Client callbacks.
-class McpClientCallbacks {
-public:
-  virtual ~McpClientCallbacks() = default;
-  virtual void OnConnectionState(const RawAddress& address, le_audio::ConnectionState state) = 0;
-  virtual void OnDiscovered(const RawAddress& address) = 0;
-  virtual void OnMediaPlayerNameChanged(const RawAddress& address, const std::string& name) = 0;
-  virtual void OnTrackChanged(const RawAddress& address) = 0;
-  virtual void OnTrackTitleChanged(const RawAddress& address, const std::string& title) = 0;
-  virtual void OnTrackDurationChanged(const RawAddress& address, int32_t duration) = 0;
-  virtual void OnTrackPositionChanged(const RawAddress& address, int32_t position) = 0;
-  virtual void OnPlaybackSpeedChanged(const RawAddress& address, int8_t speed) = 0;
-  virtual void OnPlayingOrdersSupportedChanged(const RawAddress& address,
-                                               uint16_t playing_orders) = 0;
-  virtual void OnSeekingSpeedChanged(const RawAddress& address, int8_t speed) = 0;
-  virtual void OnMediaStateChanged(const RawAddress& address, uint8_t state) = 0;
-  virtual void OnMediaControlResult(const RawAddress& address, uint8_t opcode,
-                                    MediaControlResultCode result) = 0;
-  virtual void OnOpcodesSupportedChanged(const RawAddress& address, uint32_t opcodes) = 0;
-};
+  Mcs* GetServiceByHandle(uint16_t handle) {
+    for (auto& s : services) {
+      if (handle >= s.start_handle && handle <= s.end_handle) {
+        return &s;
+      }
+    }
+    return nullptr;
+  }
 
-// Main interface for the MCP Client module.
-class McpClient {
-public:
-  static void Initialize(McpClientCallbacks* callbacks, base::Closure initCb);
-  static void Cleanup();
-  static McpClient* Get();
-  static void DebugDump(int fd);
-
-  virtual void Connect(const RawAddress& address) = 0;
-  virtual void Disconnect(const RawAddress& address) = 0;
-
-  // Media Control Point commands
-  virtual void Play(const RawAddress& address) = 0;
-  virtual void Pause(const RawAddress& address) = 0;
-  virtual void Stop(const RawAddress& address) = 0;
-  virtual void NextTrack(const RawAddress& address) = 0;
-  virtual void PreviousTrack(const RawAddress& address) = 0;
-  virtual void FastRewind(const RawAddress& address) = 0;
-  virtual void FastForward(const RawAddress& address) = 0;
-  virtual void MoveRelative(const RawAddress& address, int32_t offset) = 0;
-
-  // Track Position Characteristic commands
-  virtual void SetTrackPosition(const RawAddress& address, int32_t position) = 0;
-
-  virtual ~McpClient() = default;
+  std::vector<Mcs> services;
+  bool searching_for_gmcs = false;
 };
 
 }  // namespace mcp

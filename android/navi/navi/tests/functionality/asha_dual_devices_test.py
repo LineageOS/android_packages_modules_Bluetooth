@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import enum
 import functools
 from typing import TypeAlias, cast
 
@@ -34,6 +33,8 @@ from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import pyee_extensions
 
+# pylint: disable=cell-var-from-loop
+
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
 _DEFAULT_ADVERTISING_INTERVAL = 100
 _STREAMING_TIME_SECONDS = 1.0
@@ -49,18 +50,13 @@ _Module: TypeAlias = bl4a_api.Module
 _CallbackHandler: TypeAlias = bl4a_api.CallbackHandler
 
 
-@enum.unique
-class _StreamType(enum.Enum):
-    MEDIA = enum.auto()
-    VOICE_COMM = enum.auto()
-
-
 class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
     NUM_REF_DEVICES = 2
     ref_asha_services: list[asha.AshaService] = []
 
     @override
     async def async_setup_class(self) -> None:
+        self.condition = asyncio.Condition()
         await super().async_setup_class()
 
         if self.dut.getprop(_PROPERTY_ASHA_ENABLED) != 'true':
@@ -68,9 +64,24 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
 
     @override
     async def async_setup_test(self) -> None:
-        self.ref_asha_services = []
+        self.ref_asha_services = list[asha.AshaService]()
         await super().async_setup_test()
         await self._prepare_paired_devices()
+
+        async def on_state_change() -> None:
+            async with self.condition:
+                self.condition.notify_all()
+
+        watcher = pyee_extensions.EventWatcher()
+        self.test_case_context.enter_context(watcher)
+        for asha_service in self.ref_asha_services:
+            watcher.on(asha_service, asha_service.Event.STARTED, on_state_change)
+            watcher.on(asha_service, asha_service.Event.STOPPED, on_state_change)
+
+        self.logger.info('Wait for all ASHA services to be stopped')
+        async with self.condition:
+            await self.condition.wait_for(lambda: all(
+                asha_service.active_codec is None for asha_service in self.ref_asha_services))
 
     async def _prepare_paired_devices(self) -> None:
         """Pairs DUT with REF devices."""
@@ -154,8 +165,11 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
                             state=android_constants.ConnectionState.CONNECTED,
                         ),)
 
-    @navi_test_base.parameterized(_StreamType.MEDIA, _StreamType.VOICE_COMM)
-    async def test_streaming(self, stream_type: _StreamType) -> None:
+    @navi_test_base.parameterized(
+        bl4a_api.AudioAttributes.Usage.VOICE_COMMUNICATION,
+        bl4a_api.AudioAttributes.Usage.MEDIA,
+    )
+    async def test_streaming(self, usage: bl4a_api.AudioAttributes.Usage) -> None:
         """Tests ASHA streaming.
 
     Test Steps:
@@ -166,7 +180,7 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
       5. Stop streaming.
 
     Args:
-      stream_type: The stream type to test.
+      usage: The usage of stream to test.
     """
 
         audio_sinks = [asyncio.Queue[bytes](), asyncio.Queue[bytes]()]
@@ -174,18 +188,8 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
         for asha_service, audio_sink in zip(self.ref_asha_services, audio_sinks):
             asha_service.audio_sink = audio_sink.put_nowait
 
-        watcher = pyee_extensions.EventWatcher()
-        start_event_lists = [
-            watcher.async_monitor(asha_service, asha.AshaService.Event.STARTED)
-            for asha_service in self.ref_asha_services
-        ]
-        stop_event_lists = [
-            watcher.async_monitor(asha_service, asha.AshaService.Event.STOPPED)
-            for asha_service in self.ref_asha_services
-        ]
-
         with contextlib.ExitStack() as exit_stack:
-            if stream_type == _StreamType.VOICE_COMM:
+            if usage == bl4a_api.AudioAttributes.Usage.VOICE_COMMUNICATION:
                 self.logger.info('[DUT] Start phone call')
                 exit_stack.enter_context(
                     self.dut.bl4a.make_phone_call(
@@ -194,12 +198,19 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
                         direction=constants.Direction.OUTGOING,
                     ))
 
+            self.logger.info('[DUT] Set audio attributes.')
+            self.dut.bl4a.set_audio_attributes(bl4a_api.AudioAttributes(usage=usage),
+                                               handle_audio_focus=False)
+
             self.logger.info('[DUT] Start streaming')
             await asyncio.to_thread(self.dut.bt.audioPlaySine)
+            self.test_case_context.callback(self.dut.bt.audioStop)
             for i in range(len(self.refs)):
                 async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                     self.logger.info('[REF-%d] Wait for audio started', i)
-                    await start_event_lists[i].get()
+                    async with self.condition:
+                        await self.condition.wait_for(
+                            lambda: self.ref_asha_services[i].active_codec is not None)
                     self.logger.info('[REF-%d] Wait for audio data', i)
                     await audio_sinks[i].get()
 
@@ -210,7 +221,9 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
             for i in range(len(self.refs)):
                 async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                     self.logger.info('[REF-%d] Wait for audio stopped', i)
-                    await stop_event_lists[i].get()
+                    async with self.condition:
+                        await self.condition.wait_for(
+                            lambda: self.ref_asha_services[i].active_codec is None)
 
     async def test_set_volume(self) -> None:
         """Tests ASHA set volume.

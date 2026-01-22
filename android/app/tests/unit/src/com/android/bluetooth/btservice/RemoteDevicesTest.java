@@ -39,11 +39,10 @@ import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.isA;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -104,10 +103,11 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /** Test cases for {@link RemoteDevices}. */
 @MediumTest
@@ -382,6 +382,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testOnVendorSpecificHeadsetEvent_testCorrectPlantronicsXEvent() {
+        // Prepare the base device property
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
         // Verify that correct ACTION_VENDOR_SPECIFIC_HEADSET_EVENT updates battery level
         mRemoteDevices.onVendorSpecificHeadsetEvent(
                 mDevice,
@@ -394,6 +396,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testOnVendorSpecificHeadsetEvent_testCorrectAppleBatteryVsc() {
+        // Prepare the base device property
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
         // Verify that correct ACTION_VENDOR_SPECIFIC_HEADSET_EVENT updates battery level
         mRemoteDevices.onVendorSpecificHeadsetEvent(
                 mDevice,
@@ -1360,17 +1364,15 @@ public class RemoteDevicesTest {
         int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
 
         // Add maxDevices devices
-        List<BluetoothDevice> devices = new ArrayList<>();
-        for (int i = 0; i < maxDevices; i++) {
-            String address = String.format("%02X:00:00:00:00:00", i);
-            DeviceProperties prop =
-                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
-            devices.add(prop.getDevice());
-            if (i == 0) {
-                // First device has a package associated
-                prop.addPackage("com.test.package");
-            }
-        }
+        List<BluetoothDevice> devices =
+                fillLruCacheWithDevices(
+                        maxDevices,
+                        (i, prop) -> {
+                            if (i == 0) {
+                                // First device has a package associated
+                                prop.addPackage("com.test.package");
+                            }
+                        });
 
         // WHEN adding the another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
@@ -1381,5 +1383,78 @@ public class RemoteDevicesTest {
 
         // The second device (without package) should be evicted instead
         assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNull();
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction_noEligibleDeviceToEvict() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // GIVEN a full cache where all devices are ineligible for eviction (bonded or connected)
+        List<BluetoothDevice> devices =
+                fillLruCacheWithDevices(
+                        maxDevices,
+                        (i, prop) -> {
+                            if (i % 2 == 0) {
+                                prop.setBondState(BluetoothDevice.BOND_BONDED);
+                            } else {
+                                prop.setConnected(TRANSPORT_BREDR, 123);
+                            }
+                        });
+
+        // WHEN adding another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN no device should be evicted
+        for (BluetoothDevice device : devices) {
+            assertThat(mRemoteDevices.getDeviceProperties(device)).isNotNull();
+        }
+        // And the new device should be present, exceeding the cache size temporarily
+        assertThat(mRemoteDevices.getDevice(newAddress)).isNotNull();
+    }
+
+    @Test
+    public void testAddDeviceProperties_lruEviction_evictsCandidateWithPackageWhenNoBetterOption() {
+        int maxDevices = RemoteDevices.MAX_DEVICE_QUEUE_SIZE;
+
+        // GIVEN a full cache where one device is bonded and the rest are "last resort" candidates
+        List<BluetoothDevice> devices =
+                fillLruCacheWithDevices(
+                        maxDevices,
+                        (i, prop) -> {
+                            if (i == 0) {
+                                prop.setBondState(BluetoothDevice.BOND_BONDED);
+                            } else {
+                                prop.addPackage("com.test.package." + i);
+                            }
+                        });
+
+        // WHEN adding another device
+        String newAddress = "FF:FF:FF:FF:FF:FF";
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+
+        // THEN the first device (bonded) should NOT be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
+        // The second device (the first "last resort" candidate) should be evicted
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(1))).isNull();
+        // The third device should still be present
+        assertThat(mRemoteDevices.getDeviceProperties(devices.get(2))).isNotNull();
+        // And the new device should be present
+        assertThat(mRemoteDevices.getDevice(newAddress)).isNotNull();
+    }
+
+    private List<BluetoothDevice> fillLruCacheWithDevices(
+            int count, BiConsumer<Integer, DeviceProperties> propertySetter) {
+        List<BluetoothDevice> devices = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String address = String.format("%02X:00:00:00:00:00", i);
+            DeviceProperties prop =
+                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+            devices.add(prop.getDevice());
+            if (propertySetter != null) {
+                propertySetter.accept(i, prop);
+            }
+        }
+        return devices;
     }
 }

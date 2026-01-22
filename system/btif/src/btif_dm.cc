@@ -121,16 +121,16 @@ constexpr char kBtmLogTagSdp[] = "SDP";
  *  Constants & Macros
  *****************************************************************************/
 
-constinit Uuid UUID_HEARING_AID("FDF0");
-constinit Uuid UUID_VC("1844");
-constinit Uuid UUID_CSIS("1846");
-constinit Uuid UUID_LE_AUDIO("184E");
-constinit Uuid UUID_LE_MIDI("03B80E5A-EDE8-4B33-A751-6CE34EC4C700");
-constinit Uuid UUID_HAS("1854");
-constinit Uuid UUID_BASS("184F");
-constinit Uuid UUID_BATTERY("180F");
-constinit Uuid UUID_A2DP_SINK("110B");
-constinit Uuid UUID_GMAP("1858");
+static constinit Uuid UUID_HEARING_AID("FDF0");
+static constinit Uuid UUID_VC("1844");
+static constinit Uuid UUID_CSIS("1846");
+static constinit Uuid UUID_LE_AUDIO("184E");
+static constinit Uuid UUID_LE_MIDI("03B80E5A-EDE8-4B33-A751-6CE34EC4C700");
+static constinit Uuid UUID_HAS("1854");
+static constinit Uuid UUID_BASS("184F");
+static constinit Uuid UUID_BATTERY("180F");
+static constinit Uuid UUID_A2DP_SINK("110B");
+static constinit Uuid UUID_GMAP("1858");
 
 #define BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING 2
 

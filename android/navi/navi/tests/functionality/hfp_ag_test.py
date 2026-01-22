@@ -20,20 +20,41 @@ from bumble import device as bumble_device
 from bumble import hci
 from bumble import hfp
 from bumble import rfcomm
+from typing_extensions import override
 
 from navi.bumble_ext import hfp as hfp_ext
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
+from navi.utils import constants
 
 _DEFAULT_STEP_TIMEOUT_SECONDS = 15.0
 _HFP_SDP_HANDLE = 1
+_CALLER_NAME = "Pixel Bluetooth"
+_CALLER_NUMBER = "123456789"
 
 _AudioCodec = hfp.AudioCodec
 _Module = bl4a_api.Module
 
 
+class NoReplyCodecNegotiationHfProtocol(hfp_ext.HfProtocol):
+    """A custom HFP HF protocol that does not reply to codec negotiation."""
+
+    @override
+    async def setup_codec_connection(self, codec_id: int) -> None:
+        # Do nothing, to simulate a timeout
+        pass
+
+
 class HfpAgTest(navi_test_base.TwoDevicesTestBase):
+
+    @override
+    async def async_teardown_test(self) -> None:
+        self.dut.bt.audioStop()
+        # Make sure Bumble is off to cancel any running tasks.
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await self.ref.close()
+        await super().async_teardown_test()
 
     async def _pair_and_connect_with_hfp_server_on_ref(self) -> None:
         """Setup HFP connection establishment right after a pairing session."""
@@ -45,7 +66,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             )
 
             self.logger.info("[DUT] Connect and pair REF.")
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await dut_cb.wait_for_event(
@@ -181,3 +202,94 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
                 bl4a_api.ProfileActiveDeviceChanged(address=None),
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
             )
+
+    async def _pair_and_connect_with_custom_hfp_server_on_ref(
+        self,
+        hfp_protocol_class: type[hfp_ext.HfProtocol],
+    ) -> None:
+        """Setup HFP connection with a custom HF protocol."""
+        with (self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_cb,):
+            hfp_protocol_class.setup_server(
+                self.ref.device,
+                sdp_handle=_HFP_SDP_HANDLE,
+                configuration=hfp_ext.make_hf_configuration(
+                    supported_hf_features=[hfp.HfFeature.CODEC_NEGOTIATION],
+                    supported_audio_codecs=[
+                        _AudioCodec.CVSD,
+                        _AudioCodec.MSBC,
+                        _AudioCodec.LC3_SWB,
+                    ],
+                ),
+            )
+
+            self.logger.info("[DUT] Connect and pair REF with %s.", hfp_protocol_class.__name__)
+            await self.classic_connect_and_pair()
+
+            self.logger.info("[DUT] Wait for HFP connected.")
+            await dut_cb.wait_for_event(
+                bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),
+                timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+            )
+
+    async def test_sco_codec_negotiation_timeout(self) -> None:
+        """Tests DUT handling of SCO codec negotiation timeout.
+
+    Test steps:
+      1. DUT and REF pair and connect HFP.
+      2. DUT initiates an outgoing call, starting SCO connection.
+      3. REF (custom HFP HF) does not reply to codec negotiation.
+      4. DUT experiences codec negotiation timeout.
+      5. Verify communication device falls back to non BT SCO device.
+
+    Test Result:
+      DUT should gracefully handle the SCO codec negotiation timeout.
+    """
+
+        # Step 1: DUT and REF pair and connect HFP.
+        self.logger.info("[DUT] Setup pairing and initial HFP connection with no reply HF.")
+        await self._pair_and_connect_with_custom_hfp_server_on_ref(NoReplyCodecNegotiationHfProtocol
+                                                                  )
+
+        # Step 2: DUT initiates an outgoing call, starting SCO connection.
+        self.logger.info("[DUT] Initiating outgoing call to trigger SCO.")
+
+        with self.dut.bl4a.register_callback(bl4a_api.Module.HFP_AG) as dut_hfp_ag_cb:
+            with self.dut.bl4a.make_phone_call(
+                    caller_name=_CALLER_NAME,
+                    caller_number=_CALLER_NUMBER,
+                    direction=constants.Direction.OUTGOING,
+            ):
+                # Step 3: REF (custom HFP HF) does not reply to codec negotiation.
+                # Step 4: DUT experiences codec negotiation timeout.
+
+                self.logger.info("[DUT] Start streaming.")
+                self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
+                await asyncio.to_thread(self.dut.bt.audioPlaySine)
+
+                self.logger.info("[DUT] Waiting for SCO negotiation to timeout.")
+                async with self.assert_timeout(
+                        delay=5.0,
+                        msg="SCO audio should not become active due to timeout.",
+                ):
+                    await dut_hfp_ag_cb.wait_for_event(
+                        bl4a_api.HfpAgAudioStateChanged(
+                            address=self.ref.address,
+                            state=android_constants.ScoState.CONNECTED,
+                        ))
+                self.logger.info("[DUT] SCO codec negotiation timeout, as expected.")
+
+                # Step 5: Verify communication device falls back to non BT SCO device.
+                # After SCO codec negotiation timeout, Bluetooth notifies Audio of the
+                # SCO connection failure, prompting Audio to switch the communication
+                # device from SCO to the default device.
+                self.logger.info("[DUT] Check communication device fallback to non BT SCO device.")
+                info_dict = self.dut.bt.getCommunicationDevice()
+                if not info_dict:
+                    self.fail("Communication device is empty.")
+                device = bl4a_api.AudioDeviceInfo.from_mapping(info_dict)
+                self.logger.info("[DUT] Current communication device: %s", device)
+                self.assertNotEqual(
+                    device.device_type,
+                    android_constants.AudioDeviceType.BLUETOOTH_SCO,
+                    "Communication device should not the Bluetooth SCO.",
+                )

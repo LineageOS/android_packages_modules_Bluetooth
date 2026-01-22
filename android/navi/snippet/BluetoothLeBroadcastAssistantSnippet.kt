@@ -48,10 +48,8 @@ class BluetoothLeBroadcastAssistantSnippet : Snippet {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private val bassProxy =
-        Utils.getProfileProxy<BluetoothLeBroadcastAssistant>(
-            context,
-            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
-        )
+        Utils.getProfileProxy(context, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)
+            as BluetoothLeBroadcastAssistant
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private var callbacks =
         mutableMapOf<String, Pair<BluetoothLeBroadcastAssistant.Callback, BroadcastReceiver>>()
@@ -113,6 +111,24 @@ class BluetoothLeBroadcastAssistantSnippet : Snippet {
                 putInt(SnippetConstants.FIELD_SOURCE_ID, sourceId)
                 putString(SnippetConstants.FIELD_DEVICE, state.sourceDevice.address)
                 putInt(SnippetConstants.FIELD_BROADCAST_ID, state.broadcastId)
+            }
+        }
+
+        override fun onSourceAdded(sink: BluetoothDevice, sourceId: Int, reason: Int) {
+            Log.d(TAG, "onSourceAdded: $sink, $sourceId, $reason")
+            postSnippetEvent(callbackId, SnippetConstants.BASS_SOURCE_ADDED) {
+                putString(SnippetConstants.FIELD_SINK_DEVICE, sink.address)
+                putInt(SnippetConstants.FIELD_SOURCE_ID, sourceId)
+                putInt(SnippetConstants.FIELD_REASON, reason)
+            }
+        }
+
+        override fun onSourceRemoved(sink: BluetoothDevice, sourceId: Int, reason: Int) {
+            Log.d(TAG, "onSourceRemoved: $sink, $sourceId, $reason")
+            postSnippetEvent(callbackId, SnippetConstants.BASS_SOURCE_REMOVED) {
+                putString(SnippetConstants.FIELD_SINK_DEVICE, sink.address)
+                putInt(SnippetConstants.FIELD_SOURCE_ID, sourceId)
+                putInt(SnippetConstants.FIELD_REASON, reason)
             }
         }
     }

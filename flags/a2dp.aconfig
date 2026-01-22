@@ -136,3 +136,23 @@ flag {
     description: "API change for A2DP Sink Offload"
     bug: "460665704"
 }
+
+flag {
+    name: "cleanup_avdt_on_sdp_result_when_closing"
+    namespace: "bluetooth"
+    description: "Cleanup AVDT on SDP result in BTA stream closing state"
+    bug: "477007557"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_handle_sa_reconfig_in_native"
+    namespace: "bluetooth"
+    description: "Handle Spatial Audio codec reconfiguration in Native instead of Java"
+    bug: "476380771"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

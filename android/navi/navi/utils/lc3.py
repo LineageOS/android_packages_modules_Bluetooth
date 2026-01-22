@@ -15,8 +15,16 @@
 
 import array
 import enum
+import logging
 
-from navi.utils import lc3_pybind
+# pylint: disable=g-import-not-at-top
+try:
+    from navi.utils import lc3_pybind
+
+    AVAILABLE = True
+except ImportError:
+    logging.warning("LC3 encoder and decoder are not available.")
+    AVAILABLE = False
 
 Buffer = bytes | bytearray | memoryview
 

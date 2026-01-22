@@ -22,7 +22,7 @@ dependencies = [
     "absl-py",
     # Only for local test.
     "pytest",
-    "bumble == 0.0.219",
+    "bumble == 0.0.223",
     "snippet-uiautomator"
 ]
 

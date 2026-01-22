@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "include/hardware/bt_mcp_client.h"
 #include "include/hardware/bt_vcp_renderer.h"
 
+bluetooth::mcp::McpClientInterface* btif_mcp_client_get_interface();
 bluetooth::vcp::VolumeRendererInterface* btif_vcp_renderer_get_interface();

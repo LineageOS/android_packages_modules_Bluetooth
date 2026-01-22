@@ -38,7 +38,7 @@ class BluetoothHapClientSnippet : Snippet {
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val bluetoothAdapter = bluetoothManager.adapter
     private val proxy =
-        Utils.getProfileProxy<BluetoothHapClient>(context, BluetoothProfile.HAP_CLIENT)
+        Utils.getProfileProxy(context, BluetoothProfile.HAP_CLIENT) as BluetoothHapClient
     private val callbacks =
         mutableMapOf<String, Pair<BluetoothHapClient.Callback, BroadcastReceiver>>()
 

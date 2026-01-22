@@ -125,6 +125,15 @@ class ShellCommandTest(flags: FlagsWrapper, private val returnValue: Boolean) {
 
     @Test
     fun onCommand_unknown_doNotCrash() {
+        assertThat(
+                binder.handleShellCommand(
+                    outPipe[1],
+                    outPipe[1],
+                    outPipe[1],
+                    arrayOf("not a known command"),
+                )
+            )
+            .isEqualTo(-1)
         assertThat(shellCommand.onCommand("not a known command")).isEqualTo(-1)
     }
 

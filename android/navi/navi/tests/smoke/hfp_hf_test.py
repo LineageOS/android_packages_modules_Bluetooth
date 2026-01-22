@@ -137,7 +137,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Connect and pair REF.")
         with self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF) as dut_cb:
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await self._wait_for_hfp_state(dut_cb, _HfpState.CONNECTED)
@@ -232,7 +232,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
                 self.fail(f"Unsupported codec: {codec}")
 
         with (self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF) as dut_hfp_cb,):
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await self._wait_for_hfp_state(dut_hfp_cb, _HfpState.CONNECTED)
@@ -305,7 +305,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF) as dut_hfp_cb,
                 self.dut.bl4a.register_callback(bl4a_api.Module.AUDIO) as dut_audio_cb,
         ):
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             ref_volumes = asyncio.Queue[int]()
             self.logger.info("[REF] Wait for HFP connected.")
@@ -360,7 +360,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
         self.dut.shell(f"dumpsys battery set level {initial_battery_level}")
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF) as dut_cb:
-            await self.classic_connect_and_pair()
+            await self.classic_connect_and_pair(connect_profiles=True)
 
             self.logger.info("[REF] Wait for HFP connected.")
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
@@ -421,7 +421,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
         self.test_case_context.push(hf_cb)
         self.test_case_context.push(telecom_cb)
 
-        await self.classic_connect_and_pair()
+        await self.classic_connect_and_pair(connect_profiles=True)
 
         self.logger.info("[REF] Wait for HFP connected.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):

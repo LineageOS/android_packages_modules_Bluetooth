@@ -21,6 +21,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioDeviceAttributes
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
@@ -29,6 +30,7 @@ import android.media.AudioManager.OnCommunicationDeviceChangedListener
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import androidx.media3.common.AudioAttributes
@@ -105,7 +107,7 @@ class AudioSnippet : Snippet {
                     for (addedDevice in addedDevices) {
                         postSnippetEvent(callbackId, SnippetConstants.AUDIO_DEVICE_ADDED) {
                             putString(SnippetConstants.FIELD_DEVICE, addedDevice.address)
-                            putInt(SnippetConstants.FIELD_TRANSPORT, addedDevice.type)
+                            putInt(SnippetConstants.FIELD_TYPE, addedDevice.type)
                         }
                     }
                 }
@@ -114,7 +116,7 @@ class AudioSnippet : Snippet {
                     for (removedDevice in removedDevices) {
                         postSnippetEvent(callbackId, SnippetConstants.AUDIO_DEVICE_REMOVED) {
                             putString(SnippetConstants.FIELD_DEVICE, removedDevice.address)
-                            putInt(SnippetConstants.FIELD_TRANSPORT, removedDevice.type)
+                            putInt(SnippetConstants.FIELD_TYPE, removedDevice.type)
                         }
                     }
                 }
@@ -132,7 +134,7 @@ class AudioSnippet : Snippet {
                         SnippetConstants.AUDIO_COMMUNICATION_DEVICE_CHANGED,
                     ) {
                         putString(SnippetConstants.FIELD_DEVICE, device.address)
-                        putInt(SnippetConstants.FIELD_TRANSPORT, device.type)
+                        putInt(SnippetConstants.FIELD_TYPE, device.type)
                     }
                 }
             }
@@ -163,12 +165,25 @@ class AudioSnippet : Snippet {
                                 )
                             }
                         }
+
+                        AudioManager.ACTION_MICROPHONE_MUTE_CHANGED -> {
+                            postSnippetEvent(callbackId, SnippetConstants.MUTE_CHANGED) {
+                                putBoolean(
+                                    SnippetConstants.FIELD_STATE,
+                                    audioManager.isMicrophoneMute,
+                                )
+                            }
+                        }
                     }
                 }
             }
+
         context.registerReceiver(
             broadcastReceiver,
-            IntentFilter(AudioManager.ACTION_VOLUME_CHANGED),
+            IntentFilter().apply {
+                addAction(AudioManager.ACTION_VOLUME_CHANGED)
+                addAction(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED)
+            },
         )
 
         callbacks[callbackId] =
@@ -304,6 +319,22 @@ class AudioSnippet : Snippet {
         player.play()
     }
 
+    /** Plays 1000Hz sine wave with surround sound. */
+    @Rpc(description = "Play 1000Hz sine wave with surround sound (5.1 channels).")
+    @RunOnUiThread
+    fun playSineSurrounded(@RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
+        val fileUri =
+            Uri.Builder()
+                .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+                .path(R.raw.sine1000hz_5_1_ch.toString())
+                .build()
+        player.setMediaItem(MediaItem.fromUri(fileUri))
+        player.prepare()
+        player.play()
+    }
+
     /** Plays audio file with [fileUri] . */
     @Rpc(description = "Play audio from a given file path")
     @RunOnUiThread
@@ -432,12 +463,11 @@ class AudioSnippet : Snippet {
 
     /** Stops a recorder streaming to [outputPath]. */
     @Rpc(description = "Stop recording")
-    @RunOnUiThread
     fun stopRecording(outputPath: String) {
         recorders.remove(outputPath)?.let { (recorder, deferred) ->
             recorder.stop()
             recorder.release()
-            val outputBuffer = runBlocking { withTimeout(1.seconds) { deferred.await() } }
+            val outputBuffer = runBlocking { withTimeout(5.seconds) { deferred.await() } }
             FileOutputStream(outputPath).use {
                 // Write the wave header.
                 it.write(
@@ -495,6 +525,65 @@ class AudioSnippet : Snippet {
         player.setPreferredAudioDevice(null)
     }
 
+    /** Gets the currently selected communication device. */
+    @Rpc(description = "Get the currently selected communication device")
+    fun getCommunicationDevice(): Bundle? {
+        return audioManager.getCommunicationDevice()?.let { device ->
+            Bundle().apply {
+                putString(SnippetConstants.FIELD_DEVICE, device.address)
+                putInt(SnippetConstants.FIELD_TYPE, device.type)
+            }
+        }
+    }
+
+    /** Checks if spatializer is available. */
+    @Rpc(description = "Check if spatializer is available")
+    fun isSpatializerAvailable(): Boolean {
+        return audioManager.spatializer.isAvailable
+    }
+
+    @Rpc(description = "Check if spatializer is enabled")
+    fun setSpatializerEnabled(enabled: Boolean) {
+        audioManager.spatializer.isEnabled = enabled
+    }
+
+    @Rpc(description = "Add compatible Spatializer devices")
+    fun addCompatibleSpatizlierDevice(role: Int, type: Int, address: String) {
+        audioManager.spatializer.addCompatibleAudioDevice(
+            AudioDeviceAttributes(role, type, address)
+        )
+    }
+
+    @Rpc(description = "Remove compatible Spatializer device")
+    fun removeCompatibleSpatizlierDevice(role: Int, type: Int, address: String) {
+        audioManager.spatializer.removeCompatibleAudioDevice(
+            AudioDeviceAttributes(role, type, address)
+        )
+    }
+
+    @Rpc(description = "Clear all compatible Spatializer devices")
+    fun clearCompatibleSpatizlierDevices() {
+        for (device in audioManager.spatializer.compatibleAudioDevices) {
+            audioManager.spatializer.removeCompatibleAudioDevice(device)
+        }
+    }
+
+    @Rpc(description = "Get compatible Spatializer devices")
+    fun setHeadtrackerEnabled(role: Int, type: Int, address: String, enabled: Boolean) {
+        audioManager.spatializer.setHeadTrackerEnabled(
+            enabled,
+            AudioDeviceAttributes(role, type, address),
+        )
+    }
+
+    @Rpc(description = "Get compatible Spatializer devices")
+    fun getHeadtrackerEnabled(role: Int, type: Int, address: String): Boolean =
+        audioManager.spatializer.isHeadTrackerEnabled(AudioDeviceAttributes(role, type, address))
+
+    @Rpc(description = "Get compatible Spatializer devices")
+    fun getCompatibleSpatizlierDevices(): List<String> =
+        audioManager.spatializer.compatibleAudioDevices.map { it.address }
+
     /** Sets volume of [streamType] to [volume]. */
     @Rpc(description = "Set volume")
     fun setVolume(streamType: Int, volume: Int) {
@@ -512,6 +601,22 @@ class AudioSnippet : Snippet {
     /** Gets the min volume of [streamType]. */
     @Rpc(description = "Get the min volume")
     fun getMinVolume(streamType: Int): Int = audioManager.getStreamMinVolume(streamType)
+
+    /** Sets the vendor parameters to audio. */
+    @Rpc(description = "Set the vendor parameters")
+    fun setParameters(parameters: String) {
+        audioManager.setParameters(parameters)
+    }
+
+    /** Gets the mute state */
+    @Rpc(description = "Get the microphone mute state")
+    fun getMicrophoneMuteState(): Boolean = audioManager.isMicrophoneMute
+
+    /** Sets the mute state */
+    @Rpc(description = "Set the microphone mute state")
+    fun setMicrophoneMuteState(isMute: Boolean) {
+        audioManager.isMicrophoneMute = isMute
+    }
 
     private companion object {
         const val TAG = "AudioSnippet"

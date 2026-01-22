@@ -16,10 +16,11 @@
 See more: https://source.android.com/docs/core/connect/bluetooth/asha
 """
 
+from collections.abc import Callable
 import enum
 import logging
 import struct
-from typing import Any, Callable
+from typing import Any
 
 from bumble import core
 from bumble import device as bumble_device

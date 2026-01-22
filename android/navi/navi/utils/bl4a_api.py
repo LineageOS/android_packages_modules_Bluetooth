@@ -523,6 +523,19 @@ class A2dpPlayingStateChanged(JsonDeserializableEvent):
 
 
 @dataclasses.dataclass
+class A2dpCodecConfigChanged(JsonDeserializableEvent):
+    """android.bluetooth.a2dp.profile.action.CODEC_CONFIG_CHANGED."""
+
+    EVENT_NAME = snippet_constants.A2DP_CODEC_CONFIG_CHANGED
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    codec_type: android_constants.A2dpCodecType = dataclasses.field(metadata={
+        _FIELD: snippet_constants.A2DP_FIELD_CODEC_TYPE,
+        _MAPPER: android_constants.A2dpCodecType,
+    })
+
+
+@dataclasses.dataclass
 class AdapterStateChanged(JsonDeserializableEvent):
     """android.bluetooth.adapter.action.STATE_CHANGED.
 
@@ -584,11 +597,26 @@ class AudioDeviceAdded(JsonDeserializableEvent):
 
     address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
     device_type: android_constants.AudioDeviceType = dataclasses.field(metadata={
-        _FIELD: snippet_constants.FIELD_TRANSPORT,
+        _FIELD: snippet_constants.FIELD_TYPE,
         _MAPPER: android_constants.AudioDeviceType,
     })
 
     EVENT_NAME = snippet_constants.AUDIO_DEVICE_ADDED
+
+
+@dataclasses.dataclass
+class AudioDeviceInfo:
+    """android.media.AudioDeviceInfo."""
+
+    address: str
+    device_type: android_constants.AudioDeviceType
+
+    @classmethod
+    def from_mapping(cls, mapping: Mapping[str, Any]) -> AudioDeviceInfo:
+        return cls(
+            address=mapping[snippet_constants.FIELD_DEVICE],
+            device_type=android_constants.AudioDeviceType(mapping[snippet_constants.FIELD_TYPE]),
+        )
 
 
 @dataclasses.dataclass
@@ -597,7 +625,7 @@ class CommunicationDeviceChanged(JsonDeserializableEvent):
 
     address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
     device_type: android_constants.AudioDeviceType = dataclasses.field(metadata={
-        _FIELD: snippet_constants.FIELD_TRANSPORT,
+        _FIELD: snippet_constants.FIELD_TYPE,
         _MAPPER: android_constants.AudioDeviceType,
     })
 
@@ -760,6 +788,19 @@ class VolumeChanged(JsonDeserializableEvent):
     volume_value: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_VALUE})
 
     EVENT_NAME = snippet_constants.VOLUME_CHANGED
+
+
+@dataclasses.dataclass
+class MuteChanged(JsonDeserializableEvent):
+    """Event for audiomanager.ACTION_MICROPHONE_MUTE_CHANGED when mute state changes.
+
+  Attributes:
+    is_mute: whether the microphone is muted.
+  """
+
+    is_mute: bool = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_STATE})
+
+    EVENT_NAME = snippet_constants.MUTE_CHANGED
 
 
 @dataclasses.dataclass
@@ -1140,6 +1181,51 @@ class AicsSetGainModeFailed(JsonDeserializableEvent):
 
 
 @dataclasses.dataclass
+class VocsOffsetStateChanged(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothVolumeControl.Callback.onVolumeOffsetChanged."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    instance_id: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_INSTANCE_ID})
+    offset: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_OFFSET})
+
+    EVENT_NAME = snippet_constants.VOLUME_OFFSET_CHANGED
+
+
+@dataclasses.dataclass
+class VocsAudioLocationChanged(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothVolumeControl.Callback.onVolumeOffsetAudioLocationChanged."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    instance_id: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_INSTANCE_ID})
+    audio_location: int = dataclasses.field(
+        metadata={_FIELD: snippet_constants.FIELD_AUDIO_LOCATION})
+
+    EVENT_NAME = snippet_constants.VOLUME_OFFSET_AUDIO_LOCATION_CHANGED
+
+
+@dataclasses.dataclass
+class VocsAudioDescriptionChanged(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothVolumeControl.Callback.onVolumeOffsetAudioDescriptionChanged."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    instance_id: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_INSTANCE_ID})
+    audio_description: str = dataclasses.field(
+        metadata={_FIELD: snippet_constants.FIELD_AUDIO_DESCRIPTION})
+
+    EVENT_NAME = snippet_constants.VOLUME_OFFSET_AUDIO_DESCRIPTION_CHANGED
+
+
+@dataclasses.dataclass
+class DeviceVolumeChanged(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothVolumeControl.Callback.onDeviceVolumeChanged."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    volume: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_VOLUME})
+
+    EVENT_NAME = snippet_constants.DEVICE_VOLUME_CHANGED
+
+
+@dataclasses.dataclass
 class VoiceCommand(JsonDeserializableEvent):
     """android.intent.action.VOICE_COMMAND.
 
@@ -1149,6 +1235,33 @@ class VoiceCommand(JsonDeserializableEvent):
 
     state: bool
     EVENT_NAME = snippet_constants.VOICE_COMMAND
+
+
+@dataclasses.dataclass
+class HidHostHandshake(JsonDeserializableEvent):
+    """HID Host handshake."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    status: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_STATUS})
+    EVENT_NAME = snippet_constants.HID_HOST_HANDSHAKE
+
+
+@dataclasses.dataclass
+class HidHostReport(JsonDeserializableEvent):
+    """HID Host action report."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    report: bytearray = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_REPORT})
+    EVENT_NAME = snippet_constants.HID_HOST_REPORT
+
+
+@dataclasses.dataclass
+class HidHostIdleTimeChanged(JsonDeserializableEvent):
+    """HID Host action idle time changed."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    idle_time: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_IDLE_TIME})
+    EVENT_NAME = snippet_constants.HID_HOST_IDLE_TIME_CHANGED
 
 
 @dataclasses.dataclass
@@ -1422,8 +1535,16 @@ class AudioAttributes:
         SONIFICATION = 4
         ULTRASOUND = 1997
 
+    class Flag(enum.IntFlag):
+        """Audio Flag."""
+
+        AUDIBILITY_ENFORCED = 0x1 << 0
+        HW_AV_SYNC = 0x1 << 4
+        LOW_LATENCY = 0x1 << 8
+
     content_type: ContentType | None = None
     usage: Usage | None = None
+    flags: int | None = None
 
 
 @dataclasses.dataclass

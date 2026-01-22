@@ -35,12 +35,9 @@
 #include "utils.h"
 
 using bluetooth::hci::Address;
-using bluetooth::hci::AddressType;
 using bluetooth::hci::AdvertiserAddressType;
-using bluetooth::hci::ErrorCode;
 using bluetooth::hci::GapData;
 using bluetooth::shim::parse_gap_data;
-using std::vector;
 using namespace bluetooth;
 
 namespace {
@@ -113,7 +110,7 @@ public:
   }
 
   // ::BleAdvertiserInterface
-  void SetData(int advertiser_id, bool set_scan_rsp, vector<uint8_t> data,
+  void SetData(int advertiser_id, bool set_scan_rsp, std::vector<uint8_t> data,
                ::BleAdvertiserInterface::StatusCallback /* cb */) override {
     log::info("in shim layer");
     std::vector<GapData> advertising_data = {};

@@ -1852,13 +1852,15 @@ static void gatt_bonded_check_add_address(const RawAddress& bda) {
   }
 }
 
+namespace bluetooth::legacy::testing {
 std::optional<bool> OVERRIDE_GATT_LOAD_BONDED = std::nullopt;
+}  // namespace bluetooth::legacy::testing
 
 static bool gatt_load_bonded_is_enabled() {
   static const bool sGATT_LOAD_BONDED =
           bluetooth::os::GetSystemPropertyBool("bluetooth.gatt.load_bonded.enabled", false);
-  if (OVERRIDE_GATT_LOAD_BONDED.has_value()) {
-    return OVERRIDE_GATT_LOAD_BONDED.value();
+  if (bluetooth::legacy::testing::OVERRIDE_GATT_LOAD_BONDED.has_value()) {
+    return bluetooth::legacy::testing::OVERRIDE_GATT_LOAD_BONDED.value();
   }
   return sGATT_LOAD_BONDED;
 }

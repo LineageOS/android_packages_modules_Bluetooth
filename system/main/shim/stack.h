@@ -16,9 +16,6 @@
 
 #pragma once
 
-#include <functional>
-#include <mutex>
-
 #include "hci/acl_manager/acl_manager_classic.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/distance_measurement_manager.h"
@@ -28,7 +25,6 @@
 #include "hci/remote_name_request.h"
 #include "lpp/lpp_offload_interface.h"
 #include "os/handler.h"
-#include "os/thread.h"
 
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {
@@ -54,51 +50,30 @@ class Stack {
 public:
   static Stack* GetInstance();
 
-  Stack();
-  Stack(const Stack&) = delete;
-  Stack& operator=(const Stack&) = delete;
-
   virtual ~Stack() = default;
 
   // Running mode, everything is up
-  void StartEverything();
+  virtual void StartEverything() = 0;
 
-  void Stop();
-  bool IsRunning();
+  virtual void Stop() = 0;
+  virtual bool IsRunning() = 0;
 
-  virtual Acl* GetAcl() const;
-  virtual storage::StorageModule* GetStorage() const;
-  virtual hal::SnoopLogger* GetSnoopLogger() const;
-  virtual lpp::LppOffloadInterface* GetLppOffloadInterface() const;
-  virtual hci::HciInterface* GetHciLayer() const;
-  virtual hci::Controller* GetController() const;
-  virtual hci::RemoteNameRequestModule* GetRemoteNameRequest() const;
-  virtual hci::acl_manager::AclManagerClassic* GetAclManagerClassic() const;
-  virtual hci::AclManagerLe* GetAclManagerLe() const;
-  virtual hci::MsftExtensionManager* GetMsftExtensionManager() const;
-  virtual hci::LeScanningManager* GetLeScanningManager() const;
-  virtual hci::LeAdvertisingManager* GetLeAdvertisingManager() const;
-  virtual hci::DistanceMeasurementManager* GetDistanceMeasurementManager() const;
-  os::Handler* GetHandler();
+  virtual Acl* GetAcl() const = 0;
+  virtual storage::StorageModule* GetStorage() const = 0;
+  virtual hal::SnoopLogger* GetSnoopLogger() const = 0;
+  virtual lpp::LppOffloadInterface* GetLppOffloadInterface() const = 0;
+  virtual hci::HciInterface* GetHciLayer() const = 0;
+  virtual hci::Controller* GetController() const = 0;
+  virtual hci::RemoteNameRequestModule* GetRemoteNameRequest() const = 0;
+  virtual hci::acl_manager::AclManagerClassic* GetAclManagerClassic() const = 0;
+  virtual hci::AclManagerLe* GetAclManagerLe() const = 0;
+  virtual hci::MsftExtensionManager* GetMsftExtensionManager() const = 0;
+  virtual hci::LeScanningManager* GetLeScanningManager() const = 0;
+  virtual hci::LeAdvertisingManager* GetLeAdvertisingManager() const = 0;
+  virtual hci::DistanceMeasurementManager* GetDistanceMeasurementManager() const = 0;
+  virtual os::Handler* GetHandler() = 0;
 
-  void Dump(int fd, std::promise<void> promise) const;
-
-private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
-
-  mutable std::recursive_mutex mutex_;
-  bool is_running_ = false;
-  os::Thread* stack_thread_ = nullptr;
-  os::Handler* stack_handler_ = nullptr;
-
-  os::Thread* management_thread_ = nullptr;
-  os::Handler* management_handler_ = nullptr;
-
-  void handle_start_up();
-  void handle_start_up_old(std::promise<void> promise);
-  void handle_shut_down();
-  void handle_shut_down_old(std::promise<void> promise);
+  virtual void Dump(int fd, std::promise<void> promise) const = 0;
 };
 
 }  // namespace shim

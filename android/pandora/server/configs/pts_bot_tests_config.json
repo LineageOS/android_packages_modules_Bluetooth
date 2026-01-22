@@ -563,6 +563,14 @@
     "SM/PER/SCPK/BV-03-C",
     "SM/PER/SIE/BV-01-C",
     "SM/PER/SIP/BV-01-C",
+    "TMAP/CG/VRC/BV-02-C",
+    "TMAP/CG/VRC/BV-02-C_LT2",
+    "TMAP/CG/VRC/BV-03-C",
+    "TMAP/CG/VRC/BV-03-C_LT2",
+    "TMAP/UMS/VRC/BV-02-C",
+    "TMAP/UMS/VRC/BV-02-C_LT2",
+    // skipped due to issues with Cuttlefish mock radio during outgoing calls
+    "TMAP/CG/VRC/BV-07-C",
     "VCP/VC/SPE/BI-06-C",
     "VCP/VC/SPE/BI-14-C",
     "VCP/VC/VCCP/BV-06-C"
@@ -2396,9 +2404,9 @@
     "TSPC_TMAP_56_10": true,
     "TSPC_TMAP_56_11": true,
     "TSPC_TMAP_56_12": true,
-    "TSPC_TMAP_57_1": true,
-    "TSPC_TMAP_57_2": true,
-    "TSPC_TMAP_57_3": true,
+    "TSPC_TMAP_57_1": false,
+    "TSPC_TMAP_57_2": false,
+    "TSPC_TMAP_57_3": false,
     "TSPC_TMAP_130_1": true,
     "TSPC_TMAP_130_2": true,
     "TSPC_TMAP_130_3": true,
@@ -2408,8 +2416,9 @@
     "TSPC_TMAP_152_1": true,
     "TSPC_TMAP_153_1": true,
     "TSPC_TMAP_153_3": true,
-    "TSPC_TMAP_153_5": true,
+    "TSPC_TMAP_153_5": false,
     "TSPC_TMAP_154_1": true,
+    "TSPC_TMAP_155_1": false,
     "TSPC_TMAP_156_1": true,
     "TSPC_VCP_1_2": true,
     "TSPC_VCP_2_2": true,
@@ -2556,6 +2565,12 @@
     "SDP": {},
     "SM": {},
     "SPP": {},
+    "TMAP": {
+        "TSPX_delete_link_key": "TRUE",
+        "TSPX_delete_ltk": "TRUE",
+        "TSPX_iut_GAP_connection_role": "Central",
+        "TSPX_Phone_Number": "+1234567890"
+    },
     "VCP": {}
   },
   "flags": [
@@ -2724,6 +2739,15 @@
       },
       "tests": [
         "GMCS"
+      ]
+    },
+    {
+      "system_properties": {
+        "bluetooth.le_audio.software_datapath_test.enabled": "true",
+        "persist.bluetooth.leaudio.device.set.state.timeoutms": "20000"
+      },
+      "tests": [
+        "TMAP"
       ]
     }
   ]

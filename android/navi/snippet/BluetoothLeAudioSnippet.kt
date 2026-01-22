@@ -35,7 +35,7 @@ class BluetoothLeAudioSnippet : Snippet {
     private val context = instrumentation.targetContext
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val leaProxy =
-        Utils.getProfileProxy<BluetoothLeAudio>(context, BluetoothProfile.LE_AUDIO)
+        Utils.getProfileProxy(context, BluetoothProfile.LE_AUDIO) as BluetoothLeAudio
     private val callbacks = mutableMapOf<String, BroadcastReceiver>()
 
     init {

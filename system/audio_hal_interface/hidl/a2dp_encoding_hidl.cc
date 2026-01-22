@@ -53,8 +53,6 @@ namespace audio {
 namespace hidl {
 namespace a2dp {
 
-using ::bluetooth::audio::a2dp::ahal_codec_configuration;
-
 static bluetooth::audio::a2dp::StreamCallbacks null_stream_callbacks;
 static bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks_ = &null_stream_callbacks;
 

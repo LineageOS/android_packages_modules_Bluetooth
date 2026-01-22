@@ -205,7 +205,8 @@ public class BassClientService extends ConnectableProfile {
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Boolean> mEncryptionStates = new ConcurrentHashMap<>();
 
-    private final BroadcastReceiver mEncryptionStateReceiver =
+    @VisibleForTesting
+    final BroadcastReceiver mEncryptionStateReceiver =
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -622,7 +623,7 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    public Boolean isEncrypted(BluetoothDevice device) {
+    public boolean isEncrypted(BluetoothDevice device) {
         return mEncryptionStates.getOrDefault(device, false);
     }
 

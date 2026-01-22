@@ -112,7 +112,7 @@ internal class ActiveLog(
     internal val reason: Reason,
     internal val packageName: String,
     internal val enable: Boolean,
-    internal val isBle: Boolean,
+    private val isBle: Boolean,
 ) {
     val timestamp = System.currentTimeMillis()
     val action: String

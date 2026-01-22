@@ -302,9 +302,9 @@ public class AdapterSuspend {
             mAdapterService
                     .getGattService()
                     .ifPresent(
-                            gattService -> {
+                            gatt -> {
                                 mDelayedSuspendTasks.add(SuspendTasks.ADVERTISEMENT);
-                                gattService.getAdvertiseManager().enterSuspend();
+                                gatt.getAdvertiseManager().enterSuspend();
                             });
         }
 
@@ -351,7 +351,7 @@ public class AdapterSuspend {
             }
         }
 
-        if (Flags.adapterSuspendAdvertisement()) {
+        if (mPauseAdvertisementOnSuspend && Flags.adapterSuspendAdvertisement()) {
             mAdapterService
                     .getGattService()
                     .ifPresent(gatt -> gatt.getAdvertiseManager().exitSuspend());

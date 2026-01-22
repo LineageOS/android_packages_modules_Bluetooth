@@ -13,7 +13,6 @@
 #  limitations under the License.
 """Tests for HID over GATT Profile(GATT) implementation on Android."""
 
-import asyncio
 import contextlib
 import struct
 
@@ -28,8 +27,10 @@ from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
+from navi.utils import input as input_utils
 
 _VIDEO_SERVICE_NAME = "video"
+_DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 
 
 class HogpTest(navi_test_base.TwoDevicesTestBase):
@@ -49,7 +50,7 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
                 gatt.Descriptor(
                     gatt.GATT_REPORT_REFERENCE_DESCRIPTOR,
                     gatt.Descriptor.READABLE,
-                    bytes([0x01, hid.ReportType.INPUT.value]),
+                    bytes([0x01, hid.ReportType.INPUT_REPORT.value]),
                 )
             ],
         )
@@ -64,7 +65,7 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
                 gatt.Descriptor(
                     gatt.GATT_REPORT_REFERENCE_DESCRIPTOR,
                     gatt.Descriptor.READABLE,
-                    bytes([0x01, hid.ReportType.OUTPUT.value]),
+                    bytes([0x01, hid.ReportType.OUTPUT_REPORT.value]),
                 )
             ],
         )
@@ -78,7 +79,7 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
                 gatt.Descriptor(
                     gatt.GATT_REPORT_REFERENCE_DESCRIPTOR,
                     gatt.Descriptor.READABLE,
-                    bytes([0x02, hid.ReportType.INPUT.value]),
+                    bytes([0x02, hid.ReportType.INPUT_REPORT.value]),
                 )
             ],
         )
@@ -89,7 +90,7 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
                     gatt.GATT_PROTOCOL_MODE_CHARACTERISTIC,
                     gatt.Characteristic.Properties.READ,
                     gatt.Characteristic.READABLE,
-                    bytes([hid.ReportProtocol.REPORT.value]),
+                    bytes([hid.ProtocolMode.REPORT_PROTOCOL.value]),
                 ),
                 gatt.Characteristic(
                     gatt.GATT_HID_INFORMATION_CHARACTERISTIC,
@@ -120,7 +121,7 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
-        if (self.dut.device.adb.getprop(hid.PROPERTY_HID_HOST_SUPPORTED) != "true"):
+        if self.dut.device.adb.getprop(hid.PROPERTY_HID_HOST_SUPPORTED) != "true":
             raise signals.TestAbortClass("HID host is not supported on DUT")
 
         # Stay awake during the test.
@@ -194,11 +195,12 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
         await self.test_connect()
         report_characteristic = self.ref_keyboard_input_report_characteristic
 
-        dut_input_cb = self.dut.bl4a.register_callback(bl4a_api.Module.INPUT)
-        self.test_case_context.push(dut_input_cb)
+        input_monitor = await input_utils.InputMonitor.create(self.dut.device.serial)
+        self.test_case_context.push(input_monitor)
 
-        # Wait for the InputActivity to be ready.
-        await asyncio.sleep(0.5)
+        self.logger.info("[DUT] Wait for input ready")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["Bumble Keyboard"])
 
         for hid_key in range(constants.UsbHidKeyCode.A, constants.UsbHidKeyCode.Z + 1):
             hid_key_code = constants.UsbHidKeyCode(hid_key)
@@ -207,17 +209,16 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
             report_characteristic.value = bytes([0x00, 0x00, hid_key, 0x00, 0x00, 0x00, 0x00, 0x00])
             await self.ref.device.notify_subscribers(report_characteristic)
             self.logger.info("[DUT] Wait for key %s down", android_key_code.name)
-            await dut_input_cb.wait_for_event(
-                bl4a_api.KeyEvent(key_code=android_key_code,
-                                  action=android_constants.KeyAction.DOWN))
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                await input_monitor.wait_for_event(["EV_KEY", f"KEY_{hid_key_code.name}", "DOWN"])
 
             self.logger.info("[REF] Release HID key %s", hid_key_code.name)
             report_characteristic.value = bytes(8)
 
             self.logger.info("[DUT] Wait for key %s up", android_key_code.name)
             await self.ref.device.notify_subscribers(report_characteristic)
-            await dut_input_cb.wait_for_event(
-                bl4a_api.KeyEvent(key_code=android_key_code, action=android_constants.KeyAction.UP))
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                await input_monitor.wait_for_event(["EV_KEY", f"KEY_{hid_key_code.name}", "UP"])
 
     async def test_mouse_click(self) -> None:
         """Tests the HID mouse click.
@@ -231,27 +232,28 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
         await self.test_connect()
         report_characteristic = self.ref_mouse_input_report_characteristic
 
-        dut_input_cb = self.dut.bl4a.register_callback(bl4a_api.Module.INPUT)
-        self.test_case_context.push(dut_input_cb)
+        input_monitor = await input_utils.InputMonitor.create(self.dut.device.serial)
+        self.test_case_context.push(input_monitor)
 
-        # Wait for the InputActivity to be ready.
-        await asyncio.sleep(0.5)
+        self.logger.info("[DUT] Wait for input ready")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["Bumble Mouse"])
 
         self.logger.info("[REF] Press Primary button")
         report_characteristic.value = struct.pack("<BhhB", 0x01, 0, 0, 0)
         await self.ref.device.notify_subscribers(report_characteristic)
 
         self.logger.info("[DUT] Wait for button press")
-        event = await dut_input_cb.wait_for_event(bl4a_api.MotionEvent)
-        self.assertEqual(event.action, android_constants.MotionAction.BUTTON_PRESS)
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["EV_KEY", "BTN_MOUSE", "DOWN"])
 
         self.logger.info("[REF] Release Primary button")
         report_characteristic.value = struct.pack("<BhhB", 0x00, 0, 0, 0)
         await self.ref.device.notify_subscribers(report_characteristic)
 
-        self.logger.info("[DUT] Wait for button down")
-        event = await dut_input_cb.wait_for_event(bl4a_api.MotionEvent)
-        self.assertEqual(event.action, android_constants.MotionAction.BUTTON_RELEASE)
+        self.logger.info("[DUT] Wait for button up")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["EV_KEY", "BTN_MOUSE", "UP"])
 
     async def test_mouse_movement(self) -> None:
         """Tests the HID mouse movement.
@@ -265,41 +267,28 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
         await self.test_connect()
         report_characteristic = self.ref_mouse_input_report_characteristic
 
-        dut_input_cb = self.dut.bl4a.register_callback(bl4a_api.Module.INPUT)
-        self.test_case_context.push(dut_input_cb)
+        input_monitor = await input_utils.InputMonitor.create(self.dut.device.serial)
+        self.test_case_context.push(input_monitor)
 
-        # Wait for the InputActivity to be ready.
-        await asyncio.sleep(0.5)
+        self.logger.info("[DUT] Wait for input ready")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["Bumble Mouse"])
 
         self.logger.info("[REF] Move on X axis")
         report_characteristic.value = struct.pack("<BhhB", 0, 1, 0, 0)
         await self.ref.device.notify_subscribers(report_characteristic)
 
         self.logger.info("[DUT] Wait for hover movement")
-        await dut_input_cb.wait_for_event(
-            bl4a_api.MotionEvent,
-            lambda e: e.action in (
-                android_constants.MotionAction.HOVER_MOVE,
-                android_constants.MotionAction.HOVER_ENTER,
-                android_constants.MotionAction.HOVER_EXIT,
-            ),
-        )
-        # Clear all events.
-        dut_input_cb.get_all_events(bl4a_api.MotionEvent)
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["EV_REL", " REL_X"])
 
         self.logger.info("[REF] Move on Y axis")
         report_characteristic.value = struct.pack("<BhhB", 0x00, 0, 1, 0)
         await self.ref.device.notify_subscribers(report_characteristic)
 
         self.logger.info("[DUT] Wait for hover movement")
-        await dut_input_cb.wait_for_event(
-            bl4a_api.MotionEvent,
-            lambda e: e.action in (
-                android_constants.MotionAction.HOVER_MOVE,
-                android_constants.MotionAction.HOVER_ENTER,
-                android_constants.MotionAction.HOVER_EXIT,
-            ),
-        )
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            await input_monitor.wait_for_event(["EV_REL", " REL_Y"])
 
 
 if __name__ == "__main__":

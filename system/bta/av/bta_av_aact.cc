@@ -863,7 +863,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   log::info("peer {}", p_scb->PeerAddress());
 
   /* free any buffers */
-  p_scb->sdp_discovery_started = false;
+  bta_av_free_sdb(p_scb, NULL);
   p_scb->SetAvdtpVersion(0);
 
   /* initialize some control block variables */
@@ -1364,7 +1364,7 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
  ******************************************************************************/
 void bta_av_connect_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   log::verbose("peer {} coll_mask=0x{:02x}", p_scb->PeerAddress(), p_scb->coll_mask);
-  p_scb->sdp_discovery_started = false;
+  bta_av_free_sdb(p_scb, NULL);
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
     /* SNK initiated L2C connection while SRC was doing SDP.    */
     /* Wait until timeout to check if SNK starts signalling.    */
@@ -1393,8 +1393,10 @@ void bta_av_sdp_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->open_status = BTA_AV_FAIL_SDP;
   }
 
-  p_scb->sdp_discovery_started = false;
-  bta_av_str_closed(p_scb, p_data);
+  bta_av_free_sdb(p_scb, NULL);
+  if (!com_android_bluetooth_flags_cleanup_avdt_on_sdp_result_when_closing()) {
+    bta_av_str_closed(p_scb, p_data);
+  }
 }
 
 /*******************************************************************************

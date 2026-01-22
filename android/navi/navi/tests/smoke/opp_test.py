@@ -23,6 +23,7 @@ from typing import TypeAlias
 import uuid
 
 from bumble import core
+from bumble import l2cap
 from bumble import rfcomm
 from mobly import test_runner
 from mobly import signals
@@ -41,7 +42,7 @@ _DEFAULT_TIMEOUT_SECONDS = 30.0
 _UI_TIMEOUT = datetime.timedelta(seconds=10.0)
 _TEST_FILE_MIME_TYPE = 'text/plain'
 _VIDEO_SERVICE_NAME = 'video'
-_TEST_DATA = bytes(i % 256 for i in range(500000))
+_TEST_DATA = bytes(i % 256 for i in range(200000))
 _POSITIVE_BUTTON_RESOURCE_ID = 'android:id/button1'
 _NEGATIVE_BUTTON_RESOURCE_ID = 'android:id/button2'
 
@@ -86,8 +87,7 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
             await self.ref.reset()
 
         # Set up OPP server on REF.
-        rfcomm_server = rfcomm.Server(self.ref.device)
-        self.ref_opp_server = opp.Server(rfcomm_server)
+        self.ref_opp_server = opp.Server(self.ref.device)
         self.ref.device.sdp_service_records = {
             _OPP_SERVICE_RECORD_HANDLE:
                 opp.make_sdp_records(
@@ -95,6 +95,7 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
                         service_record_handle=_OPP_SERVICE_RECORD_HANDLE,
                         rfcomm_channel=self.ref_opp_server.rfcomm_channel,
                         profile_version=opp.Version.V_1_2,
+                        goep_l2cap_psm=self.ref_opp_server.l2cap_server.psm,
                     ))
         }
 
@@ -125,7 +126,7 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
         self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
         self.dut.shell('input keyevent KEYCODE_HOME')
 
-    async def _make_opp_client_from_ref(self) -> opp.Client:
+    async def _make_opp_client_from_ref(self, use_l2cap: bool) -> opp.Client:
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             self.logger.info('[REF] Connect to DUT.')
             ref_dut_acl = await self.ref.device.connect(self.dut.address,
@@ -139,12 +140,28 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
             if not sdp_info:
                 self.fail('Failed to find SDP record for OPP.')
 
-            self.logger.info('[REF] Connect to OPP.')
-            rfcomm_client = await rfcomm.Client(ref_dut_acl).start()
-            ref_dlc = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
-            return opp.Client(ref_dlc)
+            bearer: obex.Bearer
+            if use_l2cap:
+                if not sdp_info.goep_l2cap_psm:
+                    self.fail('Failed to find L2CAP PSM for OPP.')
+                self.logger.info('[REF] Connect to OPP over L2CAP.')
+                bearer = await ref_dut_acl.create_l2cap_channel(
+                    l2cap.ClassicChannelSpec(
+                        psm=sdp_info.goep_l2cap_psm,
+                        mode=l2cap.TransmissionMode.ENHANCED_RETRANSMISSION,
+                        fcs_enabled=True,
+                    ))
+            else:
+                self.logger.info('[REF] Connect to OPP.')
+                rfcomm_client = await rfcomm.Client(ref_dut_acl).start()
+                bearer = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
+            return opp.Client(bearer)
 
-    async def test_outbound_single_file(self) -> None:
+    @navi_test_base.named_parameterized(
+        rfcomm=False,
+        l2cap=True,
+    )
+    async def test_outbound_single_file(self, use_l2cap: bool) -> None:
         """Tests sending a single file from DUT to REF.
 
     Test steps:
@@ -155,7 +172,22 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
       5. Wait for OPP connection on REF.
       6. Wait for file transfer to complete on REF.
       7. Check the received file on REF.
+
+    Args:
+      use_l2cap: Whether to use L2CAP for OPP connection.
     """
+        self.ref.device.sdp_service_records = {
+            _OPP_SERVICE_RECORD_HANDLE:
+                opp.make_sdp_records(
+                    opp.SdpInfo(
+                        service_record_handle=_OPP_SERVICE_RECORD_HANDLE,
+                        rfcomm_channel=self.ref_opp_server.rfcomm_channel,
+                        profile_version=opp.Version.V_1_2,
+                        goep_l2cap_psm=(self.ref_opp_server.l2cap_server.psm
+                                        if use_l2cap else None),
+                    ))
+        }
+
         user_id = self.dut.adb.current_user_id
         # [DUT] Generate a test file.
         with tempfile.NamedTemporaryFile(
@@ -196,7 +228,11 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
         self.assertStartsWith(received_file.file_type, _TEST_FILE_MIME_TYPE)
         self.assertEqual(received_file.body, _TEST_DATA)
 
-    async def test_inbound_single_file(self) -> None:
+    @navi_test_base.named_parameterized(
+        rfcomm=False,
+        l2cap=True,
+    )
+    async def test_inbound_single_file(self, use_l2cap: bool) -> None:
         """Tests sending a single file from REF to DUT.
 
     Test steps:
@@ -206,6 +242,9 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
       4. Start file transfer from REF.
       5. Accept file transfer on DUT.
       6. Wait for file transfer to complete on REF.
+
+    Args:
+      use_l2cap: Whether to use L2CAP for OPP connection.
     """
         user_id = self.dut.adb.current_user_id
         file_name = 'opp_test_file.txt'
@@ -215,7 +254,7 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
             self.dut.shell(f'test -f {file_name_pattern_android} && '
                            f'rm {file_name_pattern_android}')
 
-        opp_client = await self._make_opp_client_from_ref()
+        opp_client = await self._make_opp_client_from_ref(use_l2cap)
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             await opp_client.connect(count=1)
 
@@ -256,7 +295,11 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
 
         check_file_on_dut()
 
-    async def test_inbound_transfer_reject(self) -> None:
+    @navi_test_base.named_parameterized(
+        rfcomm=False,
+        l2cap=True,
+    )
+    async def test_inbound_transfer_reject(self, use_l2cap: bool) -> None:
         """Tests sending files from REF to DUT and reject the transfer on DUT.
 
     Test steps:
@@ -266,10 +309,13 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
       4. Start file transfer from REF.
       5. Reject file transfer on DUT.
       6. Wait for file transfer to complete on REF.
+
+    Args:
+      use_l2cap: Whether to use L2CAP for OPP connection.
     """
         file_name = 'opp_test_file.txt'
 
-        opp_client = await self._make_opp_client_from_ref()
+        opp_client = await self._make_opp_client_from_ref(use_l2cap)
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             await opp_client.connect(count=1)
 

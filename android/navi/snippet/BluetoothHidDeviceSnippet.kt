@@ -31,7 +31,7 @@ class BluetoothHidDeviceSnippet : Snippet {
     private val context = instrumentation.targetContext
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val proxy =
-        Utils.getProfileProxy<BluetoothHidDevice>(context, BluetoothProfile.HID_DEVICE)
+        Utils.getProfileProxy(context, BluetoothProfile.HID_DEVICE) as BluetoothHidDevice
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
@@ -65,6 +65,35 @@ class BluetoothHidDeviceSnippet : Snippet {
         }
     }
 
+    /** Gets the connected devices. */
+    @Rpc(description = "Gets the connected devices.")
+    fun getHidDeviceConnectedDevices(): List<String> {
+        return proxy.connectedDevices.map { it.address }
+    }
+
+    /**
+     * Get a list of devices that match any of the given connection states.
+     *
+     * @param states An array of states (e.g., [STATE_CONNECTED, STATE_CONNECTING]).
+     * @return A list of device addresses.
+     */
+    @Rpc(description = "Get a list of devices that match any of the given connection states")
+    fun getHidDeviceDevicesMatchingConnectionStates(states: IntArray): List<String> {
+        return proxy.getDevicesMatchingConnectionStates(states).map { it.address }
+    }
+
+    /**
+     * Get the current connection state of the profile.
+     *
+     * @param address The remote device address.
+     * @return The connection state (STATE_CONNECTED, STATE_DISCONNECTED, etc).
+     */
+    @Rpc(description = "Get the current connection state of the profile")
+    fun getHidDeviceConnectionState(address: String): Int {
+        val device = bluetoothAdapter.getRemoteDevice(address)
+        return proxy.getConnectionState(device)
+    }
+
     /** Sends a report from the HID Device. */
     @Rpc(description = "Sends a report from the HID Device.")
     fun hidDeviceSendReport(address: String, id: Int, data: ByteArray): Boolean {
@@ -82,6 +111,16 @@ class BluetoothHidDeviceSnippet : Snippet {
     @Rpc(description = "Reports an error from the HID Device.")
     fun hidDeviceReportError(address: String, error: Int): Boolean {
         return proxy.reportError(bluetoothAdapter.getRemoteDevice(address), error.toByte())
+    }
+
+    /**
+     * Gets the application name of the current HidDeviceService user.
+     *
+     * @return The current user name, or empty string if cannot get the name.
+     */
+    @Rpc(description = "Gets the application name of the current HidDeviceService user")
+    fun getHidDeviceUserAppName(): String {
+        return BluetoothHidDevice::class.java.getMethod("getUserAppName").invoke(proxy) as String
     }
 
     /** Connects to the HID host Device. */

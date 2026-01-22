@@ -46,53 +46,8 @@ class AicsTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.getprop(_Property.VCP_CONTROLLER_ENABLED) != 'true':
             raise signals.TestAbortClass('VCP Controller is not enabled on DUT.')
 
-    async def _setup_writable_aics_and_connect(self,) -> bl4a_api.AudioInputControl:
-        """Sets up VCS with one writable AICS and connects."""
-        aics_service = aics_ext.AudioInputControlService()
-
-        volume_control_service = vcs.VolumeControlService(included_services=[aics_service])
-        sirk = secrets.token_bytes(csip.SET_IDENTITY_RESOLVING_KEY_LENGTH)
-        self.ref.device.add_services([
-            volume_control_service,
-            cap.CommonAudioServiceService(
-                csip.CoordinatedSetIdentificationService(
-                    set_identity_resolving_key=sirk,
-                    set_identity_resolving_key_type=csip.SirkType.PLAINTEXT,
-                    coordinated_set_size=1,
-                )),
-        ])
-
-        self.logger.info('[DUT] Create bond with REF')
-        with self.dut.bl4a.register_callback(bl4a_api.Module.VOLUME_CONTROL) as aics_cb:
-            self.logger.info('[DUT] Setting VCP connection policy...')
-            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM, self.ref)
-            self.dut.bt.vcpSetConnectionPolicy(self.ref.random_address,
-                                               android_constants.ConnectionPolicy.ALLOWED)
-            self.logger.info('[DUT] Waiting for VCP connection...')
-            await aics_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.CONNECTED,
-                ))
-
-        # TODO: Must set gain mode via GATT to avoid
-        # IllegalArgumentException. Investigate if this requirement is a bug.
-        gatt_client = await self.dut.bl4a.connect_gatt_client(
-            self.ref.random_address, transport=android_constants.Transport.LE)
-        await gatt_client.discover_services()
-        await gatt_client.get_services()
-
-        aics_cb = self.dut.bl4a.get_aics(self.ref.random_address, 0)
-
-        async with self.assert_not_timeout(_TIMEOUT):
-            await aics_cb.set_gain_mode(aics.GainMode.MANUAL)
-        self.test_case_context.enter_context(aics_cb)
-        return aics_cb
-
-    async def test_get_default_aics_properties(self) -> None:
-        """Tests default AICS properties."""
-        aics_cb = await self._setup_writable_aics_and_connect()
-
+    async def _check_default_aics_properties(self, aics_cb: bl4a_api.AudioInputControl) -> None:
+        """Checks default AICS properties."""
         async with self.assert_not_timeout(_TIMEOUT):
             self.assertEqual(await aics_cb.get_description(), 'Bluetooth')
             self.assertEqual(await aics_cb.get_gain_setting_unit(), 1)
@@ -108,6 +63,51 @@ class AicsTest(navi_test_base.TwoDevicesTestBase):
                 await aics_cb.get_gain_mode(),
                 aics.GainMode.MANUAL,
             )
+
+    async def _setup_writable_aics_and_connect(self,) -> bl4a_api.AudioInputControl:
+        """Sets up VCS with one writable AICS and connects."""
+        aics_service = aics_ext.AudioInputControlService(
+            audio_input_description=aics.AudioInputDescription(audio_input_description='Bluetooth'))
+
+        volume_control_service = vcs.VolumeControlService(
+            included_services=[aics_service],
+            volume_flags=vcs.VolumeFlags.VOLUME_SETTING_PERSISTED,
+        )
+        sirk = secrets.token_bytes(csip.SET_IDENTITY_RESOLVING_KEY_LENGTH)
+        self.ref.device.add_services([
+            volume_control_service,
+            cap.CommonAudioServiceService(
+                csip.CoordinatedSetIdentificationService(
+                    set_identity_resolving_key=sirk,
+                    set_identity_resolving_key_type=csip.SirkType.PLAINTEXT,
+                    coordinated_set_size=1,
+                )),
+        ])
+
+        self.logger.info('[DUT] Create bond with REF')
+        with self.dut.bl4a.register_callback(bl4a_api.Module.VOLUME_CONTROL) as vcp_cb:
+            self.logger.info('[DUT] Setting VCP connection policy...')
+            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM, self.ref)
+            self.dut.bt.vcpSetConnectionPolicy(self.ref.random_address,
+                                               android_constants.ConnectionPolicy.ALLOWED)
+            self.logger.info('[DUT] Waiting for VCP connection...')
+            await vcp_cb.wait_for_event(
+                bl4a_api.ProfileConnectionStateChanged(
+                    address=self.ref.random_address,
+                    state=android_constants.ConnectionState.CONNECTED,
+                ))
+
+        self.logger.info('[DUT] Getting AICS...')
+        aics_cb = self.dut.bl4a.get_aics(self.ref.random_address, 0)
+        self.test_case_context.enter_context(aics_cb)
+        self.logger.info('[DUT] Waiting for AICS properties to be ready...')
+        await aics_cb.wait_for_event(bl4a_api.AicsGainSettingChanged(gain_setting=0))
+        await aics_cb.wait_for_event(bl4a_api.AicsMuteChanged(mute=aics.Mute.NOT_MUTED))
+        await aics_cb.wait_for_event(bl4a_api.AicsGainModeChanged(gain_mode=aics.GainMode.MANUAL))
+        await aics_cb.wait_for_event(bl4a_api.AicsDescriptionChanged(description='Bluetooth'))
+        self.logger.info('[DUT] Checking default AICS properties...')
+        await self._check_default_aics_properties(aics_cb)
+        return aics_cb
 
     async def test_aics_set_description(self) -> None:
         """Tests that AICS description can be set."""

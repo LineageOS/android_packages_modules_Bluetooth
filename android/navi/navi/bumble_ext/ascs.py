@@ -111,7 +111,7 @@ class AudioStreamEndpointCharacteristic(gatt.Characteristic):
             await cis_link.setup_data_path(direction=device.CisLink.Direction(self.role.value))
             if self.role == ascs.AudioRole.SINK:
                 self.state = self.State.STREAMING
-                await self.service.device.notify_subscribers(self, self.value)
+                await self.service.device.notify_subscribers(self, self.data_value)
 
     def on_cis_disconnection(self, reason: int) -> None:
         del reason  # Unused.
@@ -256,7 +256,7 @@ class AudioStreamEndpointCharacteristic(gatt.Characteristic):
             )
         self.state = self.State.RELEASING
         # Notify state change to RELEASING before transferring to IDLE.
-        await self.service.device.notify_subscribers(self, self.value)
+        await self.service.device.notify_subscribers(self, self.data_value)
         self.state = self.State.IDLE
         return (ascs.AseResponseCode.SUCCESS, ascs.AseReasonCode.NONE)
 
@@ -271,7 +271,7 @@ class AudioStreamEndpointCharacteristic(gatt.Characteristic):
         self.emit(self.EVENT_STATE_CHANGE)
 
     @property
-    def value(self) -> bytes:
+    def data_value(self) -> bytes:
         """Returns ascs.ASE_ID, ascs.ASE_STATE, and ASE Additional Parameters."""
 
         if self.state == self.State.CODEC_CONFIGURED:
@@ -312,14 +312,14 @@ class AudioStreamEndpointCharacteristic(gatt.Characteristic):
 
         return bytes([self.ase_id, self.state]) + additional_parameters
 
-    @value.setter
-    def value(self, new_value: bytes) -> None:
+    @data_value.setter
+    def data_value(self, new_value: bytes) -> None:
         # Readonly. Do nothing in the setter, but required by the interface.
         del new_value  # Unused.
 
     def on_read(self, connection: device.Connection) -> bytes:
         del connection  # Unused.
-        return self.value
+        return self.data_value
 
     def __str__(self) -> str:
         return (f'AseStateMachine(id={self.ase_id}, role={self.role.name} '
@@ -479,7 +479,7 @@ class AudioStreamControlService(gatt.TemplateService):
 
         for ase_id, *_ in responses:
             if ase := self.ase_state_machines.get(ase_id):
-                await self.device.notify_subscribers(ase, ase.value)
+                await self.device.notify_subscribers(ase, ase.data_value)
 
 
 # -----------------------------------------------------------------------------

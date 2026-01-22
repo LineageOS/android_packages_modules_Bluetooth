@@ -22,7 +22,7 @@ import io
 import subprocess
 import sys
 import time
-from typing import Self, Type
+from typing import Self
 import uuid
 
 from bumble import device as bumble_device
@@ -161,7 +161,7 @@ class CrownDevice:
 
     @classmethod
     async def from_android_device(
-        cls: Type[Self],
+        cls,
         device: android_device.AndroidDevice,
         config: bumble_device.DeviceConfiguration | None = None,
         start_timeout: float = 10.0,

@@ -30,6 +30,8 @@ from navi.utils import bl4a_api
 from navi.utils import pyee_extensions
 from navi.utils import retry
 
+# pylint: disable=cell-var-from-loop
+
 _DEFAULT_TIMEOUT_SECONDS = 15.0
 _MIN_ADVERTISING_INTERVAL_MS = 20
 _DISCOVERY_TIMEOUT_SECONDS = 12.0
@@ -394,7 +396,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                 pa_sync_result = asyncio.get_running_loop().create_future()
                 pa_sync.once(pa_sync.EVENT_ESTABLISHMENT, lambda: pa_sync_result.set_result(None))
                 pa_sync.once(
-                    pa_sync.EVENT_ERROR,
+                    pa_sync.EVENT_ESTABLISHMENT_ERROR,
                     lambda: pa_sync_result.set_exception(hci.HCI_Error(pa_sync.status)),
                 )
                 self.logger.info("[REF] Waiting for PA sync establishment.")
@@ -556,18 +558,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             event = await scan_cb.wait_for_event(bl4a_api.ScanResult)
             self.assertEqual(event.address, target_address)
 
-    @navi_test_base.parameterized(
-        (android_constants.ConnectionPriority.BALANCED, 30, 50),
-        (android_constants.ConnectionPriority.HIGH, 11.25, 15),
-        (android_constants.ConnectionPriority.LOW_POWER, 100, 150),
-        (android_constants.ConnectionPriority.DCK, 30, 30),
-    )
-    async def test_le_connection_priority(
-        self,
-        priority: android_constants.ConnectionPriority,
-        min_interval: float,
-        max_interval: int,
-    ) -> None:
+    async def test_le_connection_priority(self) -> None:
         """Tests LE connection priority.
 
     Test steps:
@@ -578,11 +569,6 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
       5. Connect to REF.
       6. Request connection priority on DUT.
       7. Check that the connection parameters is updated on DUT.
-
-    Args:
-      priority: connection priority to be set on DUT.
-      min_interval: minimum connection interval expected on REF.
-      max_interval: maximum connection interval expected on REF.
     """
         self.logger.info("[REF] Start advertising")
         await self.ref.device.start_advertising(
@@ -598,26 +584,94 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[DUT] GATT client connected")
 
         ref_connection = list(self.ref.device.connections.values())[0]
-        ref_connection_update_future: asyncio.Future[None] = (
-            asyncio.get_running_loop().create_future())
-        ref_connection.once(
-            ref_connection.EVENT_CONNECTION_PARAMETERS_UPDATE,
-            lambda: ref_connection_update_future.set_result(None),
+        connection_parameters = [
+            (android_constants.ConnectionPriority.DCK, 30.0, 30.0),
+            (android_constants.ConnectionPriority.HIGH, 11.25, 15.0),
+            (android_constants.ConnectionPriority.BALANCED, 30.0, 50.0),
+            (android_constants.ConnectionPriority.LOW_POWER, 100.0, 150.0),
+        ]
+        if (connection_parameters[0][1] < ref_connection.parameters.connection_interval <
+                connection_parameters[0][2]):
+            # If connection parameters is already in the expected range, reverse the
+            # order to make sure the connection parameters is always updated.
+            connection_parameters = connection_parameters[::-1]
+
+        condition = asyncio.Condition()
+
+        @ref_connection.on(ref_connection.EVENT_CONNECTION_PARAMETERS_UPDATE)
+        async def _() -> None:
+            async with condition:
+                condition.notify_all()
+
+        for priority, min_interval, max_interval in connection_parameters:
+            self.logger.info("[DUT] Request connection priority.")
+            await gatt_client.request_connection_priority(priority)
+            self.logger.info(
+                "[REF] Wait for connection interval update to [%s, %s].",
+                min_interval,
+                max_interval,
+            )
+            async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS), condition:
+                await condition.wait_for(
+                    lambda: min_interval <= ref_connection.parameters.connection_interval <=
+                    max_interval,)
+            self.logger.info(
+                "[REF] Connection interval is updated to %s",
+                ref_connection.parameters.connection_interval,
+            )
+
+    async def test_request_subrate(self) -> None:
+        """Tests requesting LE subrate.
+
+    Test steps:
+      1. Enable subrating on REF.
+      2. Start advertising on REF.
+      3. Connect GATT client to REF.
+      4. Request subrate mode on DUT.
+      5. Check that the subrate mode is updated on REF.
+    """
+        # TODO: Re-enable this when subrate manager is ready.
+        if not self.dut.device.is_emulator:
+            self.skipTest("Not stable on real device.")
+
+        # TODO: Check if DUT supports LE subrating.
+        if not self.ref.device.supports_le_features(hci.LeFeatureMask.CONNECTION_SUBRATING):
+            self.skipTest("REF does not support LE subrating.")
+
+        self.logger.info("[REF] Start advertising")
+        await self.ref.device.start_advertising(
+            own_address_type=hci.OwnAddressType.RANDOM,
+            advertising_type=device.AdvertisingType.UNDIRECTED_CONNECTABLE_SCANNABLE,
         )
-        ref_connection.once(
-            ref_connection.EVENT_CONNECTION_PARAMETERS_UPDATE_FAILURE,
-            lambda status: ref_connection_update_future.set_exception(hci.HCI_StatusError(status)),
+        self.logger.info("[DUT] Connect GATT client to REF")
+        gatt_client = await self.dut.bl4a.connect_gatt_client(
+            address=self.ref.random_address,
+            transport=android_constants.Transport.LE,
+            address_type=android_constants.AddressTypeStatus.RANDOM,
         )
-        self.logger.info("[DUT] Request connection priority.")
-        await gatt_client.request_connection_priority(priority)
-        self.logger.info("[REF] Wait for connection priority update.")
+        self.test_case_context.push(gatt_client)
+        self.logger.info("[DUT] GATT client connected")
+
+        ref_subrate_changed = asyncio.get_running_loop().create_future()
+        ref_connection = list(self.ref.device.connections.values())[0]
+
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
-            await ref_connection_update_future
-        self.assertBetween(
-            ref_connection.parameters.connection_interval,
-            min_interval,
-            max_interval,
+            dut_features = await ref_connection.get_remote_le_features()
+
+        if not (dut_features & hci.LeFeatureMask.CONNECTION_SUBRATING and
+                dut_features & hci.LeFeatureMask.CONNECTION_SUBRATING_HOST_SUPPORT):
+            self.skipTest("DUT does not support LE subrating.")
+
+        ref_connection.once(
+            ref_connection.EVENT_LE_SUBRATE_CHANGE,
+            lambda: ref_subrate_changed.set_result(None),
         )
+        self.logger.info("[DUT] Request subrate mode.")
+        await gatt_client.request_subrate_mode(android_constants.LeSubrateMode.HIGH)
+
+        self.logger.info("[REF] Wait for subrate mode change.")
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
+            await ref_subrate_changed
 
 
 if __name__ == "__main__":
