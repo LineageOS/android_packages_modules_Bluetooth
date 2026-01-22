@@ -276,7 +276,6 @@ public class CoverArtTest {
      * This verifies that descriptors for sizes smaller than the thumbnail are accepted.
      */
     @Test
-    @EnableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
     public void testGetImageWithSmallerDescriptor_whenFlagEnabled() {
         CoverArt artwork = new CoverArt(mImage);
         BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 100, 100);
