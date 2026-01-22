@@ -96,16 +96,6 @@ flag {
 }
 
 flag {
-    name: "read_ppcp_only_for_success"
-    namespace: "bluetooth"
-    description: "Read ppcp only for successful service discovery operations"
-    bug: "417846831"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "save_cache_for_bonded_device"
     namespace: "bluetooth"
     description: "Save db cache for just bonded device if available"
