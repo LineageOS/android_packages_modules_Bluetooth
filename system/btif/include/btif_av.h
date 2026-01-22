@@ -104,6 +104,7 @@ BtStatus btif_av_source_set_silence_device(const RawAddress& peer_address, bool 
 BtStatus btif_av_source_set_active_device(const RawAddress& peer_address);
 BtStatus btif_av_source_set_codec_config_preference(
         const RawAddress& peer_address, std::vector<btav_a2dp_codec_config_t> codec_preferences);
+void btif_av_source_set_low_latency_codec(bool is_low_latency);
 void btif_av_source_cleanup();
 
 /* Interface methods for the A2DP sink stack. */

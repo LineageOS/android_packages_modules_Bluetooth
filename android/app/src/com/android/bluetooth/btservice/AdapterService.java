@@ -1911,6 +1911,9 @@ public class AdapterService extends Service {
     }
 
     void switchCodecCallback(boolean isLowLatencyBufferSize) {
+        if (Flags.a2dpHandleSaReconfigInNative()) {
+            throw new IllegalStateException("Reconfig is in native");
+        }
         List<BluetoothDevice> activeDevices = getActiveDevices(BluetoothProfile.A2DP);
         int size = activeDevices.size();
         if (size != 1) {

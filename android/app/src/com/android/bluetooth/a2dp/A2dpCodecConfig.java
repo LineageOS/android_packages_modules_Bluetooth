@@ -371,6 +371,9 @@ class A2dpCodecConfig {
 
     public void switchCodecByBufferSize(
             BluetoothDevice device, boolean isLowLatency, int currentCodecType) {
+        if (Flags.a2dpHandleSaReconfigInNative()) {
+            throw new IllegalStateException("Reconfig is in native");
+        }
         if ((isLowLatency && currentCodecType == BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS)
                 || (!isLowLatency
                         && currentCodecType != BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS)) {
