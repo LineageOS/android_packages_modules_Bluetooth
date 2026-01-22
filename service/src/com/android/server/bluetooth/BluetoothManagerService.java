@@ -1285,8 +1285,7 @@ public class BluetoothManagerService {
                         recoverBluetoothServiceFromError(true);
                     }
                     // If we tried to enable BT while BT was in the process of shutting down,
-                    // wait for the BT process to fully tear down and then force a restart
-                    // here. This is a bit of a hack (b/29363429).
+                    // wait for the BT process to fully tear down and then force a restart here.
                     if (prevState == State.BLE_TURNING_OFF && newState == State.OFF) {
                         if (mHandler.hasMessages(0, ON_AIRPLANE_MODE_CHANGED_TOKEN)) {
                             mHandler.removeCallbacksAndMessages(ON_AIRPLANE_MODE_CHANGED_TOKEN);
