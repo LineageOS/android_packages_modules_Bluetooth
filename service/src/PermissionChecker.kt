@@ -237,14 +237,7 @@ internal class PermissionChecker(
         if (isPrivileged(source.uid) || isSystem(source)) {
             return true
         }
-        // DevicePolicyManager is started after Bluetooth and cannot be passed in constructor
-        val devicePolicyManager = context.getSystemService(DevicePolicyManager::class.java)
-        if (devicePolicyManager == null) {
-            Log.w(TAG, "isExcludedFromCompatChange: Error retrieving DevicePolicyManager service")
-            return false
-        }
-        return isDeviceOwner(devicePolicyManager, source) ||
-            isProfileOwner(devicePolicyManager, source)
+        return isDeviceOwner(source) || isProfileOwner(source)
     }
 
     @Suppress("IncorrectRequiresPermissionPropagation") // No permission enforcement
@@ -271,10 +264,13 @@ internal class PermissionChecker(
         }
     }
 
-    private fun isDeviceOwner(
-        devicePolicyManager: DevicePolicyManager,
-        source: AttributionSource,
-    ): Boolean {
+    private fun isDeviceOwner(source: AttributionSource): Boolean {
+        // DevicePolicyManager is started after Bluetooth and cannot be passed in constructor
+        val devicePolicyManager = context.getSystemService(DevicePolicyManager::class.java)
+        if (devicePolicyManager == null) {
+            Log.w(TAG, "isDeviceOwner: Error retrieving DevicePolicyManager service")
+            return false
+        }
         val callingIdentity = Binder.clearCallingIdentity()
         try {
             val deviceOwnerUser = devicePolicyManager.deviceOwnerUser ?: return false
@@ -288,10 +284,7 @@ internal class PermissionChecker(
         }
     }
 
-    private fun isProfileOwner(
-        devicePolicyManager: DevicePolicyManager,
-        source: AttributionSource,
-    ): Boolean {
+    private fun isProfileOwner(source: AttributionSource): Boolean {
         val userContext =
             try {
                 context.createPackageContextAsUser(
@@ -303,6 +296,13 @@ internal class PermissionChecker(
                 Log.e(TAG, "Unknown package name")
                 return false
             }
+        // DevicePolicyManager is started after Bluetooth and cannot be passed in constructor
+        val devicePolicyManager = userContext.getSystemService(DevicePolicyManager::class.java)
+        if (devicePolicyManager == null) {
+            Log.w(TAG, "isDeviceOwner: Error retrieving DevicePolicyManager service")
+            return false
+        }
+        // isProfileOwnerApp is UserHandle aware and need to be fetch using the userContext
         return devicePolicyManager.isProfileOwnerApp(source.packageName)
     }
 }
