@@ -26,12 +26,10 @@ import android.bluetooth.BluetoothGattService
 import android.bluetooth.IBluetoothGattServerCallback
 import android.content.AttributionSource
 import android.os.IBinder
-import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
@@ -263,7 +261,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -293,7 +290,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverReadDescriptor_AppAndDescriptorExist_requestSentToApp() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -324,7 +320,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverWriteCharacteristic_AppAndCharacteristicExist_requestSentToApp() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -361,7 +356,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverWriteDescriptor_AppAndDescriptorExist_requestSentToApp() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -399,7 +393,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverExecuteWrite_writePreparedWrite_writeSentAndAppResponds() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -441,7 +434,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverExecuteWrite_cancelPreparedWrite_cancelSentAndAppResponds() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -483,7 +475,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverSendResponse_requestContextExists_responseSent() {
         // Stage valid service/characteristic and request to respond to
         serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()
@@ -512,7 +503,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverSendResponse_requestContextDoesNotExist_responseNotSent() {
         // Stage valid service/characteristic and request that we _could_ respond to
         serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()
@@ -566,7 +556,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverSendResponse_withSameTransactionIdAndDifferentBearers_responsesSent() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -637,7 +626,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverSendResponse_usingRequestIdBelongingToAnotherServer_responseNotSent() {
         // Stage request for server, then register a new server
         serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()

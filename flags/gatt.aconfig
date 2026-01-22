@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "gatt_multi_bearer_transactions"
-    namespace: "bluetooth"
-    description: "Make transaction IDs local to a device/bearer"
-    bug: "418050422"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "tbs_gatt_no_longer_calls_framework"
     namespace: "bluetooth"
     description: "TbsGatt will avoid BluetoothGattServerProxy and use GattServer directly"

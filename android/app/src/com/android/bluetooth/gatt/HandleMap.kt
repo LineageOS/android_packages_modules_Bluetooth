@@ -17,7 +17,6 @@
 package com.android.bluetooth.gatt
 
 import android.util.Log
-import com.android.bluetooth.flags.Flags
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -161,38 +160,6 @@ class HandleMap {
         }
 
     /*
-     * Please do not use. Remove when flag::gatt_multi_bearer_transactions is removed
-     */
-    fun addRequest(connId: Int, requestId: Int, handle: Int) {
-        check(!Flags.gattMultiBearerTransactions()) { "Unavailable in gattMultiBearerTransactions" }
-        requestMap[requestId] = RequestData(connId, handle)
-    }
-
-    /*
-     * Please do not use. Remove when flag::gatt_multi_bearer_transactions is removed
-     */
-    fun deleteRequest(requestId: Int) {
-        check(!Flags.gattMultiBearerTransactions()) { "Unavailable in gattMultiBearerTransactions" }
-        requestMap.remove(requestId)
-    }
-
-    /*
-     * Please do not use. Remove when flag::gatt_multi_bearer_transactions is removed
-     */
-    fun getRequestDataByRequestId(requestId: Int): RequestData? {
-        check(!Flags.gattMultiBearerTransactions()) { "Unavailable in gattMultiBearerTransactions" }
-        val data = requestMap[requestId]
-        val header = "getRequestDataByRequestId($requestId):"
-        if (data == null) {
-            Log.e(TAG, "$header Not found!")
-        } else {
-            Log.d(TAG, "$header connId=${data.connId}, handle=${data.handle}")
-        }
-
-        return data
-    }
-
-    /*
      * Store a request context in this handle map and receive an integer identifier to that
      * request. This requestId will belong to the
      *
@@ -286,17 +253,8 @@ class HandleMap {
             }
         }
         sb.appendLine("  Requests: ${requestMap.size}")
-        if (Flags.gattMultiBearerTransactions()) {
-            for (context in requestContextMap.values) {
-                sb.appendLine("      $context")
-            }
-        } else {
-            for ((key, request) in requestMap) {
-                sb.appendLine(
-                    "RequestData<request_id/transaction_id: $key, conn_id: ${request.connId}" +
-                        ", handle: ${request.handle}>"
-                )
-            }
+        for (context in requestContextMap.values) {
+            sb.appendLine("      $context")
         }
     }
 

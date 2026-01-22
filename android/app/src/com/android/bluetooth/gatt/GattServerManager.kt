@@ -334,13 +334,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -364,13 +358,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -397,13 +385,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -439,13 +421,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -476,14 +452,8 @@ class GattServerManager(
         )
         val app = serverMap.getByConnId(connId) ?: return
 
-        val requestId: Int
         val handle = HandleMap.HANDLE_PREPARED_WRITE
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(app.id, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(app.id, connId, transId, handle)
 
         callbackToApp { app.callback.onExecuteWrite(device, requestId, execWrite == 1) }
     }
@@ -764,33 +734,16 @@ class GattServerManager(
         var connId = 0
         var transId = -1
 
-        var requestContext: HandleMap.RequestContext? = null
-        var requestData: HandleMap.RequestData? = null
-
-        if (Flags.gattMultiBearerTransactions()) {
-            requestContext = handleMap.getRequestContext(serverIf, requestId)
-            if (requestContext != null) {
-                connId = requestContext.connId
-                transId = requestContext.transactionId
-                handle = requestContext.handle
-            }
-        } else {
-            transId = requestId
-            requestData = handleMap.getRequestDataByRequestId(requestId)
-            if (requestData != null) {
-                handle = requestData.handle
-                connId = requestData.connId
-            }
+        var requestContext = handleMap.getRequestContext(serverIf, requestId)
+        if (requestContext != null) {
+            connId = requestContext.connId
+            transId = requestContext.transactionId
+            handle = requestContext.handle
         }
 
-        if (requestContext == null && requestData == null) {
+        if (requestContext == null) {
             Log.w(TAG, "sendResponse($callback): No record of request we're responding to")
-            if (Flags.gattMultiBearerTransactions()) {
-                return
-            } else {
-                val connections = serverMap.getConnectionsByDevice(serverIf, device)
-                connId = if (connections.isEmpty()) 0 else connections[0].connId
-            }
+            return
         }
 
         nativeInterface.gattServerSendResponse(
@@ -804,11 +757,7 @@ class GattServerManager(
             0,
         )
 
-        if (Flags.gattMultiBearerTransactions()) {
-            handleMap.deleteRequestContext(serverIf, requestId)
-        } else {
-            handleMap.deleteRequest(requestId)
-        }
+        handleMap.deleteRequestContext(serverIf, requestId)
     }
 
     fun sendNotification(
