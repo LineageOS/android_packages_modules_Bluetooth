@@ -441,11 +441,15 @@ public class LeAudioServiceTest {
     }
 
     private void assertTmapRole(int expectedMasks, int... supportedProfiles) {
-        // revert the profile set in setup
+        // revert the profile set
         ExtendedMockito.doReturn(false)
                 .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST));
         ExtendedMockito.doReturn(false)
                 .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
+        ExtendedMockito.doReturn(false)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL));
+        ExtendedMockito.doReturn(false)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.MCP_SERVER));
         for (int profile : supportedProfiles) {
             ExtendedMockito.doReturn(true).when(() -> Config.isProfileSupported(profile));
         }
