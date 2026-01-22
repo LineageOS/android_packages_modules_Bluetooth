@@ -89,21 +89,19 @@ static void dis_gatt_c_read_dis_value_cmpl(tCONN_ID conn_id) {
     dis_cb.p_read_dis_cback = NULL;
   }
 
-  if (com_android_bluetooth_flags_queue_dis_requests()) {
-    while (!dis_cb.pend_reqs.empty()) {
-      tDIS_REQ req = dis_cb.pend_reqs.front();
-      dis_cb.pend_reqs.pop();
-      log::info("Dequeue pending DIS request. Address:{}, mask:0x{:04x}", req.addr, req.mask);
+  while (!dis_cb.pend_reqs.empty()) {
+    tDIS_REQ req = dis_cb.pend_reqs.front();
+    dis_cb.pend_reqs.pop();
+    log::info("Dequeue pending DIS request. Address:{}, mask:0x{:04x}", req.addr, req.mask);
 
-      /* only process the pending DIS if the device is connected */
-      uint16_t _conn_id;
-      if (GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, req.addr, &_conn_id, BT_TRANSPORT_LE) &&
-          DIS_ReadDISInfo(req.addr, req.p_read_dis_cback, req.mask)) {
-        break;
-      } else if (req.p_read_dis_cback) {
-        tDIS_VALUE empty = {};
-        req.p_read_dis_cback(req.addr, &empty);
-      }
+    // Only process the pending DIS if the device is connected
+    uint16_t _conn_id;
+    if (GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, req.addr, &_conn_id, BT_TRANSPORT_LE) &&
+        DIS_ReadDISInfo(req.addr, req.p_read_dis_cback, req.mask)) {
+      break;
+    } else if (req.p_read_dis_cback) {
+      tDIS_VALUE empty = {};
+      req.p_read_dis_cback(req.addr, &empty);
     }
   }
 }
@@ -216,8 +214,8 @@ void dis_c_cmpl_cback(tSRVC_CLCB* p_clcb, tGATTC_OPTYPE op, tGATT_STATUS status,
         break;
 
         break;
-    } /* end switch */
-  } /* end if */
+    }  // end switch
+  }  // end if
 
   dis_cb.dis_read_uuid_idx++;
 
@@ -236,7 +234,7 @@ void dis_c_cmpl_cback(tSRVC_CLCB* p_clcb, tGATTC_OPTYPE op, tGATT_STATUS status,
 bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback, tDIS_ATTR_MASK mask) {
   tCONN_ID conn_id;
 
-  /* Initialize the DIS client if it hasn't been initialized already. */
+  // Initialize the DIS client if it hasn't been initialized already.
   srvc_eng_init();
 
   if (p_cback == NULL) {
@@ -244,11 +242,7 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback, tDIS_
   }
 
   if (dis_cb.dis_read_uuid_idx != 0xff) {
-    if (!com_android_bluetooth_flags_queue_dis_requests()) {
-      /* For now we only handle one at a time */
-      return false;
-    }
-    /* GATT is busy, so let's queue the request */
+    // GATT is busy, so let's queue the request
     tDIS_REQ req = {
             .p_read_dis_cback = p_cback,
             .mask = mask,
@@ -259,35 +253,22 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback, tDIS_
     return true;
   }
 
-  if (com_android_bluetooth_flags_queue_dis_requests()) {
-    /* For now, we don't serve the request if GATT isn't connected.
-     * We need to call GATT_Connect and implement the handler for both success and failure case. */
-    if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id, BT_TRANSPORT_LE)) {
-      return false;
-    }
+  // For now, we don't serve the request if GATT isn't connected.
+  // We need to call GATT_Connect and implement the handler for both success and failure case.
+  if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id, BT_TRANSPORT_LE)) {
+    return false;
   }
 
   dis_cb.p_read_dis_cback = p_cback;
-  /* Mark currently active operation */
+  // Mark currently active operation
   dis_cb.dis_read_uuid_idx = 0;
 
   dis_cb.request_mask = mask;
 
   log::verbose("BDA: {} cl_read_uuid: 0x{:04x}", peer_bda, dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
 
-  /* need to enhance it as multiple service is needed */
+  // Need to enhance it as multiple service is needed
   srvc_eng_request_channel(peer_bda, SRVC_ID_DIS);
-
-  if (!com_android_bluetooth_flags_queue_dis_requests()) {
-    if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id, BT_TRANSPORT_LE)) {
-      conn_id = GATT_INVALID_CONN_ID;
-    }
-
-    if (conn_id == GATT_INVALID_CONN_ID) {
-      return GATT_Connect(srvc_eng_cb.gatt_if, peer_bda, BTM_BLE_DIRECT_CONNECTION, BT_TRANSPORT_LE,
-                          false);
-    }
-  }
 
   return dis_gatt_c_read_dis_req(conn_id);
 }
