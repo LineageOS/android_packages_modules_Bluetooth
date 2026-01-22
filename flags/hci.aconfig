@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "acl_fix_in_and_out_connection_reqs"
-    namespace: "bluetooth"
-    description: "Fix ACL scheduler when incoming and outgoing request occur simultaneously"
-    bug: "419027922"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "discard_unknown_acl_packet"
     namespace: "bluetooth"
     description: "Fix retry_unknown_acl to properly discard invalid ACL packets"

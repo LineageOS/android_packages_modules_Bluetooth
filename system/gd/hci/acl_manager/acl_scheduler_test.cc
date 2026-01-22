@@ -215,8 +215,6 @@ TEST_F(AclSchedulerTest, UnknownConnectionCallback) {
 }
 
 TEST_F(AclSchedulerTest, TiebreakForOutgoingConnection) {
-  com::android::bluetooth::flags::provider_->acl_fix_in_and_out_connection_reqs(true);
-
   auto promise1 = std::promise<void>{};
   auto future1 = promise1.get_future();
   auto promise2 = std::promise<void>{};
