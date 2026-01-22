@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name:"channel_sounding_offload"
-    namespace: "bluetooth"
-    description: "Add mechanism to handle channel sounding offload"
-    bug: "423421929"
-}
-
-flag {
     name: "channel_sounding_26q1_fix"
     namespace: "bluetooth"
     description: "Fix issues found in UPF and vendor-reported issues"
