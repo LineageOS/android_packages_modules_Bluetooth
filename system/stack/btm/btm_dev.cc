@@ -82,7 +82,7 @@ static inline void validate_bredr_pairing_type(const RawAddress& bd_addr,
     case PairingAlgorithm::NONE:
       log::error("{} pairing algorithm is NONE", bd_addr);
       return;
-    case PairingAlgorithm::LEGACY:
+    case PairingAlgorithm::BREDR_LEGACY:
       if (pairing_type.legacy_variant != LegacyPairingVariant::PIN &&
           pairing_type.legacy_variant != LegacyPairingVariant::PIN_16) {
         log::error("{} invalid legacy pairing variant {}", bd_addr, pairing_type.legacy_variant);

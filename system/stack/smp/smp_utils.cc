@@ -1597,5 +1597,5 @@ void print128(const Octet16& x, const char* key_name) {
 PairingAlgorithm smp_get_pairing_algorithm(tSMP_CB* p_cb) {
   return (p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) && (p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT)
                  ? PairingAlgorithm::SC
-                 : PairingAlgorithm::LEGACY;
+                 : PairingAlgorithm::LE_LEGACY;
 }

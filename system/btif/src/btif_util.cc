@@ -391,12 +391,13 @@ std::string dump_rc_pdu(uint8_t pdu) {
  * `packages/modules/Bluetooth/system/include/hardware/bluetooth.h`
  * @param transport The respective transport for this pairing.
  * @return The defined API BluetoothDevice.PairingAlgorithm corresponding to the input pairing
- * algorithm and transport.
+ * algorithm and transport. Just do a (-1) to account for the NONE case as Java doesn't have a NONE
+ * case, but its better to have a mappable value.
  */
 int map_pairing_algo_to_api(PairingAlgorithm pairing_algo, tBT_TRANSPORT transport) {
   if (transport == BT_TRANSPORT_LE) {
     switch (pairing_algo) {
-      case PairingAlgorithm::LEGACY:
+      case PairingAlgorithm::LE_LEGACY:
         return API_PAIRING_ALGORITHM_LE_LEGACY;
       case PairingAlgorithm::SC:
         return API_PAIRING_ALGORITHM_SC;
@@ -405,7 +406,7 @@ int map_pairing_algo_to_api(PairingAlgorithm pairing_algo, tBT_TRANSPORT transpo
     }
   } else if (transport == BT_TRANSPORT_BR_EDR) {
     switch (pairing_algo) {
-      case PairingAlgorithm::LEGACY:
+      case PairingAlgorithm::BREDR_LEGACY:
         return API_PAIRING_ALGORITHM_BREDR_LEGACY;
       case PairingAlgorithm::SSP:
         return API_PAIRING_ALGORITHM_BREDR_SSP;
