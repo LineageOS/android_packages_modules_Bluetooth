@@ -566,6 +566,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   // TODO (b/472924859): Use appropriate pairing initiator value which will be passed through the
   // callers.
   PairingInitiator pairing_initiator = PairingInitiator::APP;
+  PairingType api_pairing_type = pairing_type;
+  // Update the pairing algorithm to the API pairing algorithm.
+  // Note: this value will only be useful for Java now.
+  api_pairing_type.algorithm = static_cast<PairingAlgorithm>(
+          map_pairing_algo_to_api(api_pairing_type.algorithm, transport));
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_BOND_STATE_CHANGED, state);
 
   if (bond_loss_scenario) {
@@ -586,7 +591,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
               std::format("Crosskey bt_status:{} bond_state:{} reason:{}", bt_status_text(status),
                           state, hci_reason_code_text(to_hci_reason_code(pairing_cb.fail_reason))));
       GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
-              status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason,
+              status, bd_addr, transport, state, api_pairing_type, pairing_cb.fail_reason,
               pairing_initiator);
     }
     return;
@@ -601,16 +606,17 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
 
   log::info(
           "{}[{}] Bond state changed to state={}[0:none, 1:bonding, "
-          "2:bonded],prev_state={}, sdp_attempts={}, pairing_algorithm={}",
+          "2:bonded],prev_state={}, sdp_attempts={}, (native_)pairing_algorithm={}, "
+          "(API_)pairing_algorithm={}",
           bd_addr, bt_transport_text(transport), state, pairing_cb.state, pairing_cb.sdp_attempts,
-          pairing_type.algorithm);
+          pairing_type.algorithm, api_pairing_type.algorithm);
 
   if (bond_loss_scenario) {
     if (state == BT_BOND_STATE_BONDED) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_SUCCESS);
 
       // This indicates that re-pairing was successful, send the bond_state_change sequence.
-      btif_dm_repair_success_cb(bd_addr, transport, pairing_type, pairing_cb.fail_reason,
+      btif_dm_repair_success_cb(bd_addr, transport, api_pairing_type, pairing_cb.fail_reason,
                                 pairing_initiator);
     } else if (state == BT_BOND_STATE_NONE) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_FAILURE);
@@ -640,7 +646,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
                  std::format("bt_status:{} bond_state:{} reason:{}", bt_status_text(status), state,
                              hci_reason_code_text(to_hci_reason_code(pairing_cb.fail_reason))));
   GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
-          status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason,
+          status, bd_addr, transport, state, api_pairing_type, pairing_cb.fail_reason,
           pairing_initiator);
 
   if ((state == BT_BOND_STATE_NONE) && (pairing_cb.bd_addr != bd_addr) && is_bonding_or_sdp()) {
