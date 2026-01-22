@@ -1433,29 +1433,19 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           break;
         }
 
-        if (com_android_bluetooth_flags_get_svc_uuids_bugfix()) {
-          std::vector<bt_property_t> bt_properties;
-          bt_properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
-          bt_properties.push_back(bt_property_t{BT_PROPERTY_REMOTE_RSSI,
-                                                sizeof(p_search_data->inq_res.rssi),
-                                                &(p_search_data->inq_res.rssi)});
-          bt_properties.push_back(
-                  bt_property_t{BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type});
+        std::vector<bt_property_t> bt_properties;
+        bt_properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
+        bt_properties.push_back(bt_property_t{BT_PROPERTY_REMOTE_RSSI,
+                                              sizeof(p_search_data->inq_res.rssi),
+                                              &(p_search_data->inq_res.rssi)});
+        bt_properties.push_back(
+                bt_property_t{BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type});
 
-          // Report the advertised Service UUIDs.
-          std::vector<uint8_t> uuids_value;
-          add_advertised_uuids_to_properties(bt_properties, p_search_data->inq_res, uuids_value);
-          GetInterfaceToProfiles()->events->invoke_device_found_cb(bt_properties.size(),
-                                                                   bt_properties.data());
-        } else {
-          bt_property_t bt_property[] = {
-                  {BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr},
-                  {BT_PROPERTY_REMOTE_RSSI, sizeof(p_search_data->inq_res.rssi),
-                   &(p_search_data->inq_res.rssi)},
-                  {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type}};
-          GetInterfaceToProfiles()->events->invoke_device_found_cb(ARRAY_SIZE(bt_property),
-                                                                   bt_property);
-        }
+        // Report the advertised Service UUIDs.
+        std::vector<uint8_t> uuids_value;
+        add_advertised_uuids_to_properties(bt_properties, p_search_data->inq_res, uuids_value);
+        GetInterfaceToProfiles()->events->invoke_device_found_cb(bt_properties.size(),
+                                                                 bt_properties.data());
         break;
       }
 
@@ -1701,7 +1691,7 @@ static void add_advertised_uuids_to_properties(std::vector<bt_property_t>& bt_pr
       uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
     }
 
-    if (com_android_bluetooth_flags_get_svc_uuids_bugfix() && uuids_value.empty()) {
+    if (uuids_value.empty()) {
       if (uuid_type_exists) {
         log::debug("UUID types exist, but uuid list is empty");
         uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST);

@@ -22,7 +22,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.ParcelUuid
-import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -204,7 +203,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_bugfix")
     @Test
     fun doesNotContainAnyUuidDataType_shouldReturnNullUuid(
         @TestParameter usePublicAddress: Boolean,
@@ -227,7 +225,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_bugfix")
     @Test
     fun uuidTypesAreRemovedFromAdvertisement_shouldReturnNullUuid(
         @TestParameter usePublicAddress: Boolean,
