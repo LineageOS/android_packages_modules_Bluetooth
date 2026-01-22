@@ -190,7 +190,7 @@
            {"setVaeNameNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(setVaeNameNative)},
            {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
    };
-   const char* jniNativeInterfaceClass = "com/android/bluetooth/vaps/VapsServerNativeInterface";
+   const char* jniNativeInterfaceClass = "com/android/bluetooth/vap/VapServerNativeInterface";
    const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
    if (result != 0) {
      return result;
@@ -203,7 +203,7 @@
            {"onStartVaSession", "([B)V", &method_onStartVaSession},
            {"onStopVaSession", "([B)V", &method_onStopVaSession},
    };
-   GET_JAVA_METHODS(env, "com/android/bluetooth/vaps/VapsServerNativeCallback", javaMethods);
+   GET_JAVA_METHODS(env, "com/android/bluetooth/vap/VapServerNativeCallback", javaMethods);
 
    return 0;
  }
