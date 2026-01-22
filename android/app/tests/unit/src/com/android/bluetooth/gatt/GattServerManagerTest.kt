@@ -134,7 +134,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverDisconnect_multipleBearersConnected_allBearersDisconnected() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -163,7 +162,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverClientConnects_bearerExistsForSameDevice_stateDoesNotChange() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -187,7 +185,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverClientDisconnects_bearerStillExistsForDevice_stateDoesNotChange() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -694,7 +691,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_multipleBearersConnectedPrefLe_leTransportUsed() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
@@ -708,7 +704,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_multipleBearersConnectedPrefBredr_BredrTransportUsed() {
         register(TRANSPORT_BREDR, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
@@ -722,7 +717,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_twoBearersConnectedPrefAutoBredrOldest_bredrTransportUsed() {
         register(TRANSPORT_AUTO, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
@@ -736,7 +730,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_twoBearersConnectedPrefAutoLeOldest_leTransportUsed() {
         register(TRANSPORT_AUTO, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
@@ -762,7 +755,6 @@ class GattServerManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_noBearersThatMatchPref_notificationSentOnOldest() {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
