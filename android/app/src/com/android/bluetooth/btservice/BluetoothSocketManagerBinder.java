@@ -248,6 +248,13 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             enforceSocketOffloadSupport(type);
         }
 
+        if ((Flags.fixedPsmForOffloadSocket()
+                && type == BluetoothSocket.TYPE_LE
+                && !Util.checkCallerHasPrivilegedPermission(mService))) {
+            // for non privileged app, ignore the input LE CoC Psm
+            port = BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
+        }
+
         Log.i(
                 TAG,
                 "createSocketChannelWithOffload: type="
