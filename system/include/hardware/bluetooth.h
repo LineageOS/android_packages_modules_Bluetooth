@@ -642,6 +642,14 @@ static inline std::string legacy_pairing_variant_text(const LegacyPairingVariant
   }
 }
 
+enum class PairingInitiator : uint8_t {
+  APP,
+  REMOTE_DEVICE,
+  SERVICE_ACCESS_REQ,
+  CTKD,
+  REPAIRING,
+};
+
 struct PairingType {
   PairingAlgorithm algorithm;
   union {
@@ -709,7 +717,8 @@ typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, PairingVariant p
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
 typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress remote_bd_addr,
                                             tBT_TRANSPORT transport, bt_bond_state_t state,
-                                            PairingType pairing_type, int fail_reason);
+                                            PairingType pairing_type, int fail_reason,
+                                            PairingInitiator pairing_initiator);
 
 /** Bluetooth Address consolidate callback */
 /* Callback to inform upper layer that these two addresses come from same

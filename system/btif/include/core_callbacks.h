@@ -46,7 +46,8 @@ struct EventCallbacks {
                                      RawAddress raw_address, uint8_t address_type);
   void (*invoke_bond_state_changed_cb)(bt_status_t status, RawAddress bd_addr,
                                        tBT_TRANSPORT transport, bt_bond_state_t state,
-                                       PairingType pairing_type, int fail_reason);
+                                       PairingType pairing_type, int fail_reason,
+                                       PairingInitiator pairing_initiator);
   void (*invoke_address_consolidate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
   void (*invoke_le_address_associate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                          uint8_t identity_address_type);

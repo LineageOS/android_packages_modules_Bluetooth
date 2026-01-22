@@ -246,9 +246,8 @@ TEST_F(BtifDmWithStackTest, auth_cmpl_evt_fails_when_bonding) {
   // Mock the bond state changed callback to capture the latest state.
   latest_bond_state = BT_BOND_STATE_NONE;
   bluetooth::core::testing::mock_event_callbacks.invoke_bond_state_changed_cb =
-          [](bt_status_t, RawAddress, tBT_TRANSPORT, bt_bond_state_t state, PairingType, int) {
-            latest_bond_state = state;
-          };
+          [](bt_status_t, RawAddress, tBT_TRANSPORT, bt_bond_state_t state, PairingType, int,
+             PairingInitiator) { latest_bond_state = state; };
 
   // Simulate a PIN request to transition the internal state to BONDING.
   tBTA_DM_SEC sec_event_pin_req{};
@@ -275,9 +274,8 @@ TEST_F(BtifDmWithStackTest, auth_cmpl_evt_fails_when_not_bonding) {
   // Mock the bond state changed callback to count invocations.
   bond_state_changed_cb_count = 0;
   bluetooth::core::testing::mock_event_callbacks.invoke_bond_state_changed_cb =
-          [](bt_status_t, RawAddress, tBT_TRANSPORT, bt_bond_state_t, PairingType, int) {
-            bond_state_changed_cb_count++;
-          };
+          [](bt_status_t, RawAddress, tBT_TRANSPORT, bt_bond_state_t, PairingType, int,
+             PairingInitiator) { bond_state_changed_cb_count++; };
 
   // The initial state is BT_BOND_STATE_NONE (not bonding).
   // Simulate an authentication complete event with a failure status.
