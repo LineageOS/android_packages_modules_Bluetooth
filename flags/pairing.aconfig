@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "concurrent_incoming_outgoing_pairing"
-    namespace: "bluetooth"
-    description: "Handle concurrent incoming and outgoing pairing requests"
-    bug: "431870814"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "role_switch_after_encryption"
     namespace: "bluetooth"
     description: "Role switch after encryption if security procedure was initiated locally"

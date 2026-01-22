@@ -1825,20 +1825,6 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool outgo
  *
  ******************************************************************************/
 void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
-  if (!com_android_bluetooth_flags_concurrent_incoming_outgoing_pairing()) {
-    if ((BtmSecurity::Get().pairing_state_ != BTM_PAIR_STATE_IDLE) &&
-        (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
-        (BtmSecurity::Get().link_spec_.addrt.bda == bda)) {
-      log::verbose("Security Manager: reject connect request from bonding device {}",
-                   BtmSecurity::Get().link_spec_);
-
-      /* incoming connection from bonding device is rejected */
-      BtmSecurity::Get().pairing_flags_ |= BTM_PAIR_FLAGS_REJECTED_CONNECT;
-      btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
-      return;
-    }
-  }
-
   // Host is not interested or approved connection. Save BDA and DC and pass request to L2CAP
   BtmSecurity::Get().connecting_bda_ = bda;
   BtmSecurity::Get().connecting_dc_ = dc;
@@ -3658,11 +3644,9 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
                        tHCI_ROLE assigned_role) {
   uint8_t bit_shift = 0;
 
-  if (com_android_bluetooth_flags_concurrent_incoming_outgoing_pairing()) {
-    if (status == HCI_ERR_CONNECTION_EXISTS) {
-      log::warn("Connection already exists, ignore");
-      return;
-    }
+  if (status == HCI_ERR_CONNECTION_EXISTS) {
+    log::warn("Connection already exists, ignore");
+    return;
   }
 
   BtmDevice* p_device = btm_get_dev(bda);
