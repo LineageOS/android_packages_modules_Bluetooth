@@ -116,7 +116,7 @@ void BluetoothTest::SetUp() {
   remove("/data/misc/bluedroid/bt_config.conf.encrypted-checksum");
 
   instance = this;
-  bluetooth_init(&callbacks, false, false, 0, false, "default", nullptr);
+  bluetooth_init(&callbacks, false, false, 0, false, "default", nullptr, false);
   wakelock_set_os_callouts(nullptr);  // To force using 'native' wakelock in tests
 }
 

@@ -214,7 +214,7 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
   bluetooth_cleanup();  // init is called during SetUp, so we need to cleanup first
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
-    bluetooth_init(callbacks, false, false, 0, false, "default", nullptr);
+    bluetooth_init(callbacks, false, false, 0, false, "default", nullptr, false);
     wakelock_set_os_callouts(nullptr);  // To force using 'native' wakelock in tests
     bluetooth_enable("test_name");
     semaphore_wait(adapter_state_changed_callback_sem_);
@@ -229,7 +229,7 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
   }
 
   // re-init to allow proper shutdown to happen
-  bluetooth_init(callbacks, false, false, 0, false, "default", nullptr);
+  bluetooth_init(callbacks, false, false, 0, false, "default", nullptr, false);
 }
 
 }  // namespace bttest

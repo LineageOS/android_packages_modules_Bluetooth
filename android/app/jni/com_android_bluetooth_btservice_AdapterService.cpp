@@ -910,7 +910,8 @@ static bt_os_callouts_t sBluetoothOsCallouts = {
 };
 
 static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCommonCriteriaMode,
-                       int configCompareResult, jboolean isAtvDevice, jstring jHciInstanceName) {
+                       int configCompareResult, jboolean isAtvDevice, jstring jHciInstanceName,
+                       jboolean platformSupportAutonomousRepairingInitiation) {
   std::unique_lock<std::shared_timed_mutex> lock(jniObjMutex);
 
   log::verbose("");
@@ -929,7 +930,7 @@ static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCo
 
   bluetooth_init(&sBluetoothCallbacks, isGuest == JNI_TRUE, isCommonCriteriaMode == JNI_TRUE,
                  configCompareResult, isAtvDevice == JNI_TRUE, std::move(hci_instance_name),
-                 &sBluetoothOsCallouts);
+                 &sBluetoothOsCallouts, platformSupportAutonomousRepairingInitiation == JNI_TRUE);
 
   sBluetoothSocketInterface = reinterpret_cast<const btsock_interface_t*>(
           sBluetoothInterface->get_profile_interface(BT_PROFILE_SOCKETS_ID));
@@ -1895,7 +1896,7 @@ static jboolean restoreFilterAcceptListNative(JNIEnv* /* env */, jobject /* obj 
 
 static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
   const JNINativeMethod methods[] = {
-          {"initNative", "(ZZIZLjava/lang/String;)Z", reinterpret_cast<void*>(initNative)},
+          {"initNative", "(ZZIZLjava/lang/String;Z)Z", reinterpret_cast<void*>(initNative)},
           {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
           {"enableNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(enableNative)},
           {"disableNative", "()V", reinterpret_cast<void*>(disableNative)},

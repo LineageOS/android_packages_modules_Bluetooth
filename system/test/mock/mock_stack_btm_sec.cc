@@ -32,7 +32,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "stack/btm/btm_sec.h"
 
 // Original usings
 
@@ -403,5 +402,6 @@ bool is_autonomous_repairing_supported() {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::is_autonomous_repairing_supported();
 }
+void set_autonomous_repairing_supported(bool) { inc_func_call_count(__func__); }
 // Mocked functions complete
 // END mockcify generation

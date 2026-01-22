@@ -855,7 +855,7 @@ typedef struct {
  */
 void bluetooth_init(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_criteria_mode,
                     int config_compare_result, bool is_atv, const std::string hci_instance_name,
-                    bt_os_callouts_t* callouts);
+                    bt_os_callouts_t* callouts, bool autonomous_repairing_initiation);
 
 /** Enable Bluetooth. */
 void bluetooth_enable(const std::string local_name);

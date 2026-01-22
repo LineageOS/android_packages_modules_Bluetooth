@@ -114,6 +114,7 @@
 #include "osi/include/wakelock.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
+#include "stack/btm/btm_sec_utils.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/a2dp_api.h"
 #include "stack/include/avct_api.h"
@@ -422,8 +423,9 @@ int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
 
 void bluetooth_init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
                     int config_compare_result, bool is_atv, const std::string hci_instance_name,
-                    bt_os_callouts_t* callouts) {
+                    bt_os_callouts_t* callouts, bool autonomous_repairing_initiation) {
   log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
+  set_autonomous_repairing_supported(autonomous_repairing_initiation);
 
   log::info(
           "start_restricted={} common_criteria_mode={}, config_compare_result={} instance_name={}",
