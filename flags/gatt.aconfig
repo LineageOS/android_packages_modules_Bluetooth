@@ -61,16 +61,6 @@ flag {
 }
 
 flag {
-    name: "disconnect_acl_on_gatt_timeout"
-    namespace: "bluetooth"
-    description: "Disconnect ACL when a gatt response or confirmation timeout occurs"
-    bug: "438985552"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_use_better_start_handle_in_service_changed"
     namespace: "bluetooth"
     description: "Don't use 0x0001 in all the use cases when application adds or remove a service"

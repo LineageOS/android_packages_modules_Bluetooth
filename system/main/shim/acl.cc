@@ -960,13 +960,9 @@ struct shim::Acl::impl {
     }
 
     auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
-    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
-      GetAclManagerLe()->RemoveFromBackgroundList(remote_address_with_type);
-      connection_manager::on_removed_from_accept_list(
-              ToRawAddress(remote_address_with_type.GetAddress()));
-    } else {
-      connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
-    }
+    GetAclManagerLe()->RemoveFromBackgroundList(remote_address_with_type);
+    connection_manager::on_removed_from_accept_list(
+            ToRawAddress(remote_address_with_type.GetAddress()));
     connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
     log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type, handle);
     BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
