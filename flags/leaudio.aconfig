@@ -117,16 +117,6 @@ flag {
 }
 
 flag {
-    name: "do_not_hardcode_tmap_role_mask"
-    namespace: "bluetooth"
-    description: "When initializing TMAP role mask in LeAudioService, make it a function of enabled services"
-    bug: "399410612"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_broadcast_source_channel_map_classification"
     namespace: "bluetooth"
     description: "Uses channel classification from buds who synced with the phone's broadcast stream to determine the BIG channel map"

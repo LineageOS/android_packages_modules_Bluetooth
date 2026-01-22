@@ -319,56 +319,30 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         // Initialize Broadcast native interface
-        if (Flags.doNotHardcodeTmapRoleMask()) {
-            int mask = 0;
-            if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
-                // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
-                mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
-            }
-            if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
-                // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
-                mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
-            }
-            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
-                Log.i(TAG, "Init Le Audio broadcaster");
-                final var broadcastNativeInterface =
-                        requireNonNullElseGet(
-                                leAudioBroadcasterNativeInterface,
-                                () ->
-                                        new LeAudioBroadcasterNativeInterface(
-                                                getAdapterService(), this));
-                broadcastNativeInterface.init();
-                mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
-
-                mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
-            } else {
-                mLeAudioBroadcasterNativeInterface = Optional.empty();
-                Log.w(TAG, "Le Audio Broadcasts not supported.");
-            }
-            mTmapRoleMask = mask;
-        } else {
-            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
-                Log.i(TAG, "Init Le Audio broadcaster");
-                final var broadcastNativeInterface =
-                        requireNonNullElseGet(
-                                leAudioBroadcasterNativeInterface,
-                                () ->
-                                        new LeAudioBroadcasterNativeInterface(
-                                                getAdapterService(), this));
-                broadcastNativeInterface.init();
-                mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
-                mTmapRoleMask =
-                        LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG
-                                | LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS
-                                | LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
-            } else {
-                mTmapRoleMask =
-                        LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG
-                                | LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
-                mLeAudioBroadcasterNativeInterface = Optional.empty();
-                Log.w(TAG, "Le Audio Broadcasts not supported.");
-            }
+        int mask = 0;
+        if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
+            // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
+            mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
         }
+        if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
+            // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
+            mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
+        }
+        if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
+            Log.i(TAG, "Init Le Audio broadcaster");
+            final var broadcastNativeInterface =
+                    requireNonNullElseGet(
+                            leAudioBroadcasterNativeInterface,
+                            () -> new LeAudioBroadcasterNativeInterface(getAdapterService(), this));
+            broadcastNativeInterface.init();
+            mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
+
+            mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
+        } else {
+            mLeAudioBroadcasterNativeInterface = Optional.empty();
+            Log.w(TAG, "Le Audio Broadcasts not supported.");
+        }
+        mTmapRoleMask = mask;
 
         mTmapStarted = registerTmap();
 
