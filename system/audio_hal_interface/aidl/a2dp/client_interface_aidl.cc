@@ -47,7 +47,7 @@ BluetoothAudioClientInterface::BluetoothAudioClientInterface(
       latency_modes_({LatencyMode::FREE}) {
   death_recipient_ =
           ::ndk::ScopedAIBinder_DeathRecipient(AIBinder_DeathRecipient_new(binderDiedCallbackAidl));
-  transport_ = new A2dpTransport(sessionType, stream_callbacks);
+  transport_ = std::make_shared<A2dpTransport>(sessionType, stream_callbacks);
   FetchAudioProvider();
 }
 
@@ -55,8 +55,6 @@ BluetoothAudioClientInterface::~BluetoothAudioClientInterface() {
   if (provider_factory_ != nullptr) {
     AIBinder_unlinkToDeath(provider_factory_->asBinder().get(), death_recipient_.get(), nullptr);
   }
-  delete transport_;
-  transport_ = nullptr;
 }
 
 bool BluetoothAudioClientInterface::IsValid() const { return provider_ != nullptr; }
