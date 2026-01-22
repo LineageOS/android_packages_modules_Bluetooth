@@ -376,6 +376,15 @@ public:
     sirk_ = sirk;
   }
 
+  bool IsUnsafe(void) const {
+    log::verbose("group_id: {}, is_unsafe: {}", group_id_, is_unsafe_);
+    return is_unsafe_;
+  }
+  void SetUnsafe() {
+    log::info("group_id: {}", group_id_);
+    is_unsafe_ = true;
+  }
+
   int GetNumOfConnectedDevices(void) {
     return std::count_if(devices_.begin(), devices_.end(),
                          [](auto& d) { return d->IsConnected(); });
@@ -536,6 +545,13 @@ private:
   bool sirk_available_ = false;
   int size_;
   bluetooth::Uuid uuid_;
+
+  /* When CSIS detects any misconfiguration on the remote CSIS set,
+   * the CSIS group should be disabled and is treated as unsafe i.e. Disconnected from the CSIS
+   * Server. One of the example could be multiple CSIS Sets which uses the same SIRK, as this might
+   * break the user experiance, especially when SIZE of the CSIS group changes dynamically.
+   */
+  bool is_unsafe_ = false;
 
   std::vector<std::shared_ptr<CsisDevice>> devices_;
   CsisDiscoveryState member_discovery_state_;
