@@ -638,9 +638,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
     if (!bluetooth::metrics::SaveDeviceOnMetricIdAllocator(bd_addr)) {
       log::error("Fail to save metric id for device:{}", bd_addr);
     }
-    if (com_android_bluetooth_flags_save_cache_for_bonded_device()) {
-      bta_gattc_link_cache_for_bonded_device(bd_addr);
-    }
+    bta_gattc_link_cache_for_bonded_device(bd_addr);
   }
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Bond state changed",
                  std::format("bt_status:{} bond_state:{} reason:{}", bt_status_text(status), state,
