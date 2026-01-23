@@ -33,21 +33,24 @@
  *
  * Returns true if removed OK, false if not found or ACL link is active.
  */
-bool BTM_SecDeleteDevice(const RawAddress& bd_addr);
+bool btm_sec_delete_device(const RawAddress& bd_addr);
+void btm_sec_add_device(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                        const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
+                        uint8_t pin_length);
 
 /*******************************************************************************
  *
- * Function         BTM_SecClearSecurityFlags
+ * Function         btm_sec_clear_security_flags
  *
  * Description      Reset the security flags (mark as not-paired) for a given
  *                  remove device.
  *
  ******************************************************************************/
-void BTM_SecClearSecurityFlags(const RawAddress& bd_addr);
+void btm_sec_clear_security_flags(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         BTM_SecReadDevName
+ * Function         btm_sec_read_dev_name
  *
  * Description      Looks for the device name in the security database for the
  *                  specified BD address.
@@ -55,19 +58,19 @@ void BTM_SecClearSecurityFlags(const RawAddress& bd_addr);
  * Returns          Pointer to the name or NULL
  *
  ******************************************************************************/
-const char* BTM_SecReadDevName(const RawAddress& bd_addr);
+const char* btm_sec_read_dev_name(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         BTM_SecReadDevName
+ * Function         btm_sec_read_dev_class
  *
  * Description      Looks for the device name in the security database for the
- *                  specified BD address.
+ *                  class of device of the specified BD address.
  *
- * Returns          Pointer to the name or NULL
+ * Returns          The class of the device
  *
  ******************************************************************************/
-DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr);
+DEV_CLASS btm_sec_read_dev_class(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *

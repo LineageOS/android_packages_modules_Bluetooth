@@ -62,9 +62,11 @@
 #include "storage_helper.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
+#include "test/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_stack_btm_iso.h"
 #include "test/mock/mock_stack_gatt_api.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -431,6 +433,16 @@ protected:
       mock_le_audio_sink_hal_client_ = nullptr;
       is_audio_unicast_sink_acquired = false;
     });
+  }
+
+  void SetUpMockSecurity() {
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
+
+    ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(Return(true));
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(_, _)).WillByDefault(Return(true));
+    ON_CALL(mock_btm_security_, BTM_SetEncryption(_, _, _, _, _))
+            .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
   }
 
   void SetUpMockAudioHal() {
@@ -1715,7 +1727,7 @@ protected:
               return kIsoClientHandle;
             });
 
-    ON_CALL(mock_btm_interface_, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
+    SetUpMockSecurity();
 
     // Required since we call OnAudioDataReady()
     const auto codec_location = ::bluetooth::le_audio::types::CodecLocation::HOST;
@@ -1812,6 +1824,8 @@ protected:
       LeAudioClient::Cleanup();
       ASSERT_FALSE(LeAudioClient::IsLeAudioClientRunning());
     }
+
+    reset_mock_btm_client_interface();
 
     owned_mock_le_audio_sink_hal_client_.reset();
     owned_mock_le_audio_source_hal_client_.reset();
@@ -1988,10 +2002,9 @@ protected:
   void ConnectLeAudio(const RawAddress& address, bool isEncrypted = true,
                       bool expect_connected_event = true) {
     // by default indicate link as encrypted
-    ON_CALL(mock_btm_interface_, BTM_IsEncrypted(address, _))
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _))
             .WillByDefault(DoAll(Return(isEncrypted)));
-
-    ON_CALL(mock_btm_interface_, IsDeviceBonded(address, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(address, _)).WillByDefault(DoAll(Return(true)));
 
     EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, _))
             .Times(1);
@@ -3089,6 +3102,7 @@ protected:
   NiceMock<MockFunction<bool()>> mock_hal_2_1_verifier;
 
   NiceMock<bluetooth::manager::MockBtmInterface> mock_btm_interface_;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
   NiceMock<gatt::MockBtaGattInterface> mock_gatt_interface_;
   NiceMock<gatt::MockBtaGattQueue> mock_gatt_queue_;
   tBTA_GATTC_CBACK* gatt_callback = nullptr;
@@ -3593,8 +3607,7 @@ TEST_F(UnicastTest, ConnectAndSetupPhy) {
   EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
   InjectPhyChangedEvent(conn_id, 0, 0, GATT_REQ_NOT_SUPPORTED);
   SyncOnMainLoop();
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
   InjectEncryptionChangedEvent(test_address0);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_btm_interface_);
@@ -3607,7 +3620,7 @@ TEST_F(UnicastTest, ConnectAndSetupPhy) {
 
   EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
 
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _))
           .WillByDefault(DoAll(Return(false)));
   InjectConnectedEvent(test_address0, 1);
   SyncOnMainLoop();
@@ -3616,8 +3629,7 @@ TEST_F(UnicastTest, ConnectAndSetupPhy) {
   EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
   InjectPhyChangedEvent(conn_id, 0, 0, GATT_REQ_NOT_SUPPORTED);
   SyncOnMainLoop();
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
   InjectEncryptionChangedEvent(test_address0);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_btm_interface_);
@@ -4007,8 +4019,7 @@ TEST_F(UnicastTest, ConnectRemoteServiceDiscoveryCompleteBeforeEncryption) {
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnConnectionState(ConnectionState::CONNECTED, test_address0))
           .Times(1);
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
   InjectEncryptionChangedEvent(test_address0);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -4023,10 +4034,10 @@ TEST_F(UnicastTest, DisconnectWhenLinkKeyIsGone) {
               OnConnectionState(ConnectionState::DISCONNECTED, test_address0))
           .Times(1);
 
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _))
           .WillByDefault(DoAll(Return(false)));
 
-  ON_CALL(mock_btm_interface_, SetEncryption(test_address0, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address0, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_ERR_KEY_MISSING));
 
   EXPECT_CALL(mock_gatt_interface_, Close(conn_id)).Times(1);
@@ -4333,10 +4344,8 @@ TEST_F(UnicastTestNoInit, ConnectFailedDueToInvalidParameters) {
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _))
           .Times(1);
 
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address1, _))
-          .WillByDefault(DoAll(Return(true)));
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address1, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
 
@@ -4443,10 +4452,8 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsBroakenStorage) {
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _))
           .Times(1);
 
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address1, _))
-          .WillByDefault(DoAll(Return(true)));
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address1, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
 
@@ -4589,10 +4596,8 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsCsisGrouped) {
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _))
           .Times(1);
 
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address1, _))
-          .WillByDefault(DoAll(Return(true)));
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address1, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
 
@@ -4845,10 +4850,8 @@ TEST_F(UnicastTestNoInit, ServiceChangedBeforeServiceIsConnected) {
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _))
           .Times(1);
 
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address1, _))
-          .WillByDefault(DoAll(Return(true)));
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address1, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
 
@@ -4972,8 +4975,7 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsCsisGroupedDifferently) {
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnConnectionState(ConnectionState::CONNECTED, test_address0))
           .Times(1);
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   // First device will got connected
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address0, BTM_BLE_DIRECT_CONNECTION, _))
@@ -4987,8 +4989,7 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsCsisGroupedDifferently) {
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnConnectionState(ConnectionState::CONNECTED, test_address1))
           .Times(0);
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address1, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address1, _)).WillByDefault(DoAll(Return(true)));
 
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _))
           .Times(0);
@@ -5032,7 +5033,7 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsCsisGroupedDifferently) {
           .Times(1);
 
   /* Keep device in Getting Ready state */
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _))
           .WillByDefault(DoAll(Return(false)));
   ON_CALL(mock_btm_interface_, SetEncryption(test_address0, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
@@ -6588,7 +6589,7 @@ TEST_F(UnicastTest, ConnectAfterRemove) {
           LeAudioClient::Get(), test_address0));
   SyncOnMainLoop();
 
-  ON_CALL(mock_btm_interface_, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(DoAll(Return(false)));
 
   do_in_main_thread(base::BindOnce(&LeAudioClient::Connect, base::Unretained(LeAudioClient::Get()),
                                    test_address0));
@@ -13916,8 +13917,7 @@ TEST_F(UnicastTestCsis, DisconnectAclBeforeGettingReadResponses) {
                                 group_id_1_size_, 1 /* rank */, GATT_INTERNAL_ERROR);
   groups[test_address0] = group_id_1_;
   // by default indicate link as encrypted
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
-          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address0, BTM_BLE_DIRECT_CONNECTION, _))
           .Times(1);

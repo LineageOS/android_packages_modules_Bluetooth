@@ -31,11 +31,11 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
-#include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
-#include "stack/include/btm_ble_sec_api.h"
+#include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 
 using namespace bluetooth;
@@ -73,9 +73,10 @@ static bool gatt_sign_data(tGATT_CLCB* p_clcb) {
   }
 
   p_signature = p_attr->value + p_attr->len;
-  if (BTM_BleDataSignature(p_clcb->p_tcb->peer_bda, p_data,
-                           (uint16_t)(p_attr->len + 3), /* 3 = 2 byte handle + opcode */
-                           p_signature)) {
+  if (get_btm_client_interface().security.BTM_BleDataSignature(
+              p_clcb->p_tcb->peer_bda, p_data,
+              (uint16_t)(p_attr->len + 3), /* 3 = 2 byte handle + opcode */
+              p_signature)) {
     p_attr->len += BTM_BLE_AUTH_SIGN_LEN;
     gatt_set_ch_state(p_clcb->p_tcb, GATT_CH_OPEN);
     gatt_act_write(p_clcb, GATT_SEC_SIGN_DATA);
@@ -112,7 +113,8 @@ void gatt_verify_signature(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf) {
   p = p_orig + cmd_len - 4;
   STREAM_TO_UINT32(counter, p);
 
-  if (!BTM_BleVerifySignature(tcb.peer_bda, p_orig, cmd_len, counter, p)) {
+  if (!get_btm_client_interface().security.BTM_BleVerifySignature(tcb.peer_bda, p_orig, cmd_len,
+                                                                  counter, p)) {
     /* if this is a bad signature, assume from attacker, ignore it  */
     log::error("Signature Verification Failed, data ignored");
     return;
@@ -177,7 +179,7 @@ static void gatt_enc_cmpl_cback(RawAddress bd_addr, tBT_TRANSPORT transport, voi
     bool status = false;
     if (result == tBTM_STATUS::BTM_SUCCESS) {
       if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM) {
-        status = BTM_IsLinkKeyAuthed(bd_addr, transport);
+        status = btm_is_link_key_authed(bd_addr, transport);
       } else {
         status = true;
       }
@@ -282,16 +284,19 @@ static tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
     return act;
   }
 
-  tBTM_BLE_SEC_REQ_ACT sec_act = btm_ble_link_sec_check(p_tcb->peer_bda, auth_req);
+  tBTM_BLE_SEC_REQ_ACT sec_act =
+          get_btm_client_interface().security.BTM_BleLinkSecCheck(p_tcb->peer_bda, auth_req);
 
   /* if a encryption is pending, need to wait */
   if (sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD && auth_req != GATT_AUTH_REQ_NONE) {
     return GATT_SEC_ENC_PENDING;
   }
 
-  is_link_key_known = BTM_IsBonded(p_tcb->peer_bda, p_clcb->p_tcb->transport);
-  is_link_encrypted = BTM_IsEncrypted(p_tcb->peer_bda, p_clcb->p_tcb->transport);
-  is_key_mitm = BTM_IsLinkKeyAuthed(p_tcb->peer_bda, p_clcb->p_tcb->transport);
+  is_link_key_known = get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda,
+                                                                       p_clcb->p_tcb->transport);
+  is_link_encrypted = get_btm_client_interface().security.BTM_IsEncrypted(p_tcb->peer_bda,
+                                                                          p_clcb->p_tcb->transport);
+  is_key_mitm = btm_is_link_key_authed(p_tcb->peer_bda, p_clcb->p_tcb->transport);
 
   /* first check link key upgrade required or not */
   switch (auth_req) {
@@ -320,7 +325,7 @@ static tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
       /* this is a write command request
          check data signing required or not */
       if (!is_link_encrypted) {
-        btm_ble_get_enc_key_type(p_tcb->peer_bda, &key_type);
+        get_btm_client_interface().security.BTM_BleGetEncKeyType(p_tcb->peer_bda, &key_type);
 
         if ((key_type & BTM_LE_KEY_LCSRK) && ((auth_req == GATT_AUTH_REQ_SIGNED_NO_MITM) ||
                                               (auth_req == GATT_AUTH_REQ_SIGNED_MITM))) {
@@ -352,9 +357,10 @@ static tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
 tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb) {
   tGATT_STATUS encrypt_status = GATT_NOT_ENCRYPTED;
 
-  bool encrypted = BTM_IsEncrypted(tcb.peer_bda, tcb.transport);
-  bool link_key_known = BTM_IsBonded(tcb.peer_bda, tcb.transport);
-  bool link_key_authed = BTM_IsLinkKeyAuthed(tcb.peer_bda, tcb.transport);
+  bool encrypted = get_btm_client_interface().security.BTM_IsEncrypted(tcb.peer_bda, tcb.transport);
+  bool link_key_known =
+          get_btm_client_interface().security.BTM_IsBonded(tcb.peer_bda, tcb.transport);
+  bool link_key_authed = btm_is_link_key_authed(tcb.peer_bda, tcb.transport);
 
   if (encrypted && link_key_known) {
     encrypt_status = GATT_ENCRYPED_NO_MITM;
@@ -421,8 +427,8 @@ bool gatt_security_check_start(tGATT_CLCB* p_clcb) {
         log::verbose("Encrypt now or key upgreade first");
         tBTM_BLE_SEC_ACT btm_ble_sec_act;
         gatt_convert_sec_action(gatt_sec_act, &btm_ble_sec_act);
-        tBTM_STATUS btm_status = BTM_SetEncryption(p_tcb->peer_bda, p_tcb->transport,
-                                                   gatt_enc_cmpl_cback, NULL, btm_ble_sec_act);
+        tBTM_STATUS btm_status = get_btm_client_interface().security.BTM_SetEncryption(
+                p_tcb->peer_bda, p_tcb->transport, gatt_enc_cmpl_cback, NULL, btm_ble_sec_act);
         if ((btm_status != tBTM_STATUS::BTM_SUCCESS) &&
             (btm_status != tBTM_STATUS::BTM_CMD_STARTED)) {
           log::error("BTM_SetEncryption failed btm_status={}", btm_status);

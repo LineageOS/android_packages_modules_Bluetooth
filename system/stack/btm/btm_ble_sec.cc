@@ -53,7 +53,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_ble_privacy.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"
@@ -77,8 +76,8 @@ static constexpr char kPropertyCtkdDisableCsrkDistribution[] =
 /******************************************************************************/
 /* External Function to be called by other modules                            */
 /******************************************************************************/
-void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
-                         tBLE_ADDR_TYPE addr_type) {
+void btm_sec_add_ble_device(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
+                            tBLE_ADDR_TYPE addr_type) {
   log::debug("dev_type=0x{:x}", dev_type);
 
   BtmDevice* p_device = btm_get_dev(bd_addr);
@@ -141,7 +140,7 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
 
 /*******************************************************************************
  *
- * Function         BTM_SecAddBleKey
+ * Function         btm_sec_add_ble_key
  *
  * Description      Add/modify LE device information.  This function will be
  *                  normally called during host startup to restore all required
@@ -152,8 +151,8 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
  *                  key              - LE key value
  *
  ******************************************************************************/
-void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-                      const tBTM_LE_KEY_VALUE& key) {
+void btm_sec_add_ble_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                         const tBTM_LE_KEY_VALUE& key) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr ||
       (key_type != BTM_LE_KEY_PENC && key_type != BTM_LE_KEY_PID && key_type != BTM_LE_KEY_PCSRK &&
@@ -173,7 +172,7 @@ void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
 
 /*******************************************************************************
  *
- * Function         BTM_BleLoadLocalKeys
+ * Function         btm_ble_load_local_keys
  *
  * Description      Local local identity key, encryption root or sign counter.
  *
@@ -185,7 +184,7 @@ void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
  * Returns          non2.
  *
  ******************************************************************************/
-void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {
+void btm_ble_load_local_keys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {
   tBTM_SEC_DEVCB* p_devcb = &BtmSecurity::Get().devcb_;
   log::verbose("type:{}", key_type);
   if (p_key != NULL) {
@@ -206,13 +205,15 @@ void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {
 }
 
 /** Returns local device encryption root (ER) */
-const Octet16& BTM_GetDeviceEncRoot() { return BtmSecurity::Get().devcb_.ble_encryption_key_value; }
+const Octet16& btm_get_device_enc_root() {
+  return BtmSecurity::Get().devcb_.ble_encryption_key_value;
+}
 
 /** Returns local device identity root (IR). */
-const Octet16& BTM_GetDeviceIDRoot() { return BtmSecurity::Get().devcb_.id_keys.irk; }
+const Octet16& btm_get_device_id_root() { return BtmSecurity::Get().devcb_.id_keys.irk; }
 
 /** Return local device DHK. */
-const Octet16& BTM_GetDeviceDHK() { return BtmSecurity::Get().devcb_.id_keys.dhk; }
+const Octet16& btm_get_device_dhk() { return BtmSecurity::Get().devcb_.id_keys.dhk; }
 
 /*******************************************************************************
  *
@@ -228,7 +229,7 @@ const Octet16& BTM_GetDeviceDHK() { return BtmSecurity::Get().devcb_.id_keys.dhk
  * Returns          None
  *
  ******************************************************************************/
-void BTM_SecurityGrant(const RawAddress& bd_addr, tBTM_STATUS res) {
+void btm_security_grant(const RawAddress& bd_addr, tBTM_STATUS res) {
   const tSMP_STATUS res_smp =
           (res == tBTM_STATUS::BTM_SUCCESS) ? SMP_SUCCESS : SMP_REPEATED_ATTEMPTS;
   log::verbose("bd_addr:{}, res:{}", bd_addr, smp_status_text(res_smp));
@@ -252,7 +253,7 @@ void BTM_SecurityGrant(const RawAddress& bd_addr, tBTM_STATUS res) {
  *                  p_passkey    - pointer to array with the passkey
  *
  ******************************************************************************/
-void BTM_BlePasskeyReply(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t passkey) {
+void btm_ble_passkey_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t passkey) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   log::verbose("bd_addr:{}, res:{}", bd_addr, res);
   if (p_device == nullptr) {
@@ -282,7 +283,7 @@ void BTM_BlePasskeyReply(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t pa
  *                  res          - comparison result tBTM_STATUS::BTM_SUCCESS if success
  *
  ******************************************************************************/
-void BTM_BleConfirmReply(const RawAddress& bd_addr, tBTM_STATUS res) {
+void btm_ble_confirm_reply(const RawAddress& bd_addr, tBTM_STATUS res) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   log::verbose("bd_addr:{}, res:{}", bd_addr, res);
   if (p_device == nullptr) {
@@ -315,7 +316,8 @@ void BTM_BleConfirmReply(const RawAddress& bd_addr, tBTM_STATUS res) {
  *                                "Security Manager TK Value".
  *
  ******************************************************************************/
-void BTM_BleOobDataReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t len, uint8_t* p_data) {
+void btm_ble_oob_data_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t len,
+                            uint8_t* p_data) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     log::error("Unknown device:{}", bd_addr);
@@ -344,7 +346,8 @@ void BTM_BleOobDataReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t len
  *                  p_r         - pointer to Randomizer
  *
  ******************************************************************************/
-void BTM_BleSecureConnectionOobDataReply(const RawAddress& bd_addr, uint8_t* p_c, uint8_t* p_r) {
+void btm_ble_secure_connection_oob_data_reply(const RawAddress& bd_addr, uint8_t* p_c,
+                                              uint8_t* p_r) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     log::error("Unknown device:{}", bd_addr);
@@ -419,8 +422,8 @@ static tBTM_SEC_ACTION btm_ble_determine_security_act(bool outgoing, const RawAd
     return BTM_SEC_OK;
   }
 
-  bool is_link_encrypted = BTM_IsEncrypted(bdaddr, BT_TRANSPORT_LE);
-  bool is_key_mitm = BTM_IsLinkKeyAuthed(bdaddr, BT_TRANSPORT_LE);
+  bool is_link_encrypted = get_security_client_interface().BTM_IsEncrypted(bdaddr, BT_TRANSPORT_LE);
+  bool is_key_mitm = btm_is_link_key_authed(bdaddr, BT_TRANSPORT_LE);
 
   if (auth_req & BTM_LE_AUTH_REQ_MITM) {
     if (!is_key_mitm) {
@@ -472,8 +475,8 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, boo
     return tBTM_STATUS::BTM_ILLEGAL_VALUE;
   }
 
-  bool is_encrypted = BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
-  bool is_bonded = BTM_IsBonded(bd_addr, BT_TRANSPORT_LE);
+  bool is_encrypted = get_security_client_interface().BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
+  bool is_bonded = get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_LE);
 
   if (!outgoing) {
     if ((p_serv_rec->security_flags & BTM_SEC_IN_ENCRYPT) && !is_encrypted) {
@@ -525,7 +528,8 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, boo
 
   l2cble_update_sec_act(bd_addr, sec_act);
 
-  BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, p_callback, p_ref_data, ble_sec_act);
+  get_security_client_interface().BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, p_callback,
+                                                    p_ref_data, ble_sec_act);
 
   return tBTM_STATUS::BTM_SUCCESS;
 }
@@ -751,7 +755,7 @@ void btm_ble_update_sec_key_size(const RawAddress& bd_addr, uint8_t enc_key_size
 
 /*******************************************************************************
  *
- * Function         btm_ble_read_sec_key_size
+ * Function         BTM_BleReadSecKeySize
  *
  * Description      update the current link encryption key size
  *
@@ -1616,8 +1620,8 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
  * Returns          true if signing successful, otherwise false.
  *
  ******************************************************************************/
-bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
-                          BLE_SIGNATURE signature) {
+bool btm_ble_data_signature(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
+                            BLE_SIGNATURE signature) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
 
   if (p_device == NULL) {
@@ -1667,8 +1671,8 @@ bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text, uint16_t l
  * Returns          true if signature verified correctly; otherwise false.
  *
  ******************************************************************************/
-bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
-                            uint32_t counter, uint8_t* p_comp) {
+bool btm_ble_verify_signature(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
+                              uint32_t counter, uint8_t* p_comp) {
   bool verified = false;
   BtmDevice* p_device = btm_get_dev(bd_addr);
   uint8_t p_mac[BTM_CMAC_TLEN_SIZE];
@@ -1704,7 +1708,7 @@ bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t
  * Returns          void
  *
  ******************************************************************************/
-void BTM_BleSirkConfirmDeviceReply(const RawAddress& bd_addr, tBTM_STATUS res) {
+void btm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, tBTM_STATUS res) {
   const BtmDevice* p_device = btm_find_dev(bd_addr);
   tSMP_STATUS res_smp = (res == tBTM_STATUS::BTM_SUCCESS) ? SMP_SUCCESS : SMP_FAIL;
 
@@ -1862,7 +1866,7 @@ bool btm_ble_get_acl_remote_addr(uint16_t hci_handle, RawAddress& conn_addr,
   return st;
 }
 
-std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) {
+std::optional<Octet16> btm_ble_get_peer_ltk(const RawAddress address) {
   const BtmDevice* p_device = btm_find_dev(address);
   if (p_device == nullptr) {
     return std::nullopt;
@@ -1871,7 +1875,7 @@ std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) {
   return p_device->sec_rec.ble_keys.pltk;
 }
 
-std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) {
+std::optional<Octet16> btm_ble_get_peer_irk(const RawAddress address) {
   const BtmDevice* p_device = btm_find_dev(address);
   if (p_device == nullptr) {
     return std::nullopt;
@@ -1880,7 +1884,7 @@ std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) {
   return p_device->sec_rec.ble_keys.irk;
 }
 
-std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) {
+std::optional<tBLE_BD_ADDR> btm_ble_get_identity_address(const RawAddress address) {
   const BtmDevice* p_device = btm_find_dev(address);
   if (p_device == nullptr) {
     return std::nullopt;

@@ -1576,7 +1576,7 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
   }
 
   if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
-    BTM_SecClrServiceByPsm(p_rcb->psm);
+    get_btm_client_interface().security.BTM_SecClrServiceByPsm(p_rcb->psm);
   }
 
   /* Free the timer */

@@ -42,14 +42,14 @@
 #include "osi/include/allocator.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
-#include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_api.h"
-#include "stack/include/btm_ble_sec_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/smp_status.h"
@@ -587,7 +587,7 @@ static BT_HDR* smp_build_identity_info_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
-  const Octet16& irk = BTM_GetDeviceIDRoot();
+  const Octet16& irk = get_btm_client_interface().security.BTM_GetDeviceIDRoot();
 
   UINT8_TO_STREAM(p, SMP_OPCODE_IDENTITY_INFO);
   ARRAY_TO_STREAM(p, irk.data(), kOctet16Length);
@@ -1491,7 +1491,8 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
                   },
           .pairing_algorithm = PairingAlgorithm::SC,
   };
-  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, lle_key, true);
+  get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LENC, lle_key,
+                                                       true);
 
   tBTM_LE_KEY_VALUE ple_key = {
           .penc_key =
@@ -1504,7 +1505,8 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
           .pairing_algorithm = PairingAlgorithm::SC,
   };
   ple_key.penc_key.rand = ZERO_OCTET8;
-  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, ple_key, true);
+  get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PENC, ple_key,
+                                                       true);
 }
 
 /** The function calculates MacKey and LTK and saves them in CB. To calculate

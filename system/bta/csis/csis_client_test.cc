@@ -38,6 +38,8 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_uuid16.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 bool gatt_cl_read_sirk_req(const RawAddress& /*peer_bda*/,
                            base::OnceCallback<void(tGATT_STATUS status, const RawAddress&,
@@ -66,6 +68,7 @@ using testing::DoAll;
 using testing::DoDefault;
 using testing::Invoke;
 using testing::Mock;
+using testing::NiceMock;
 using testing::NotNull;
 using testing::Return;
 using testing::SaveArg;
@@ -372,9 +375,12 @@ protected:
     SetMockCsisLockCallback(&csis_lock_cb);
     callbacks.reset(new MockCsisCallbacks());
 
-    ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
 
-    ON_CALL(btm_interface, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(DoAll(Return(true)));
+
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(true)));
 
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
             .WillByDefault(
@@ -431,6 +437,7 @@ protected:
 
   void TearDown(void) override {
     services_map.clear();
+    reset_mock_btm_client_interface();
     callbacks.reset();
     CsisClient::CleanUp();
     gatt::SetMockBtaGattInterface(nullptr);
@@ -625,6 +632,7 @@ protected:
   gatt::MockBtaGattInterface gatt_interface;
   gatt::MockBtaGattQueue gatt_queue;
   MockCsisLockCallback csis_lock_cb;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
   tBTA_GATTC_CBACK* gatt_callback;
   const uint8_t gatt_if = 0xff;
   std::map<uint16_t, std::list<gatt::Service>> services_map;
@@ -736,7 +744,7 @@ TEST_F(CsisClientTest, test_connect_after_remove) {
   CsisClient::Get()->RemoveDevice(test_address);
 
   EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::DISCONNECTED));
-  ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(Return(false));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(Return(false));
   CsisClient::Get()->Connect(test_address);
   Mock::VerifyAndClearExpectations(callbacks.get());
 
@@ -863,7 +871,7 @@ TEST_F(CsisClientTest, test_search_complete_before_encryption) {
   EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::CONNECTED)).Times(0);
   EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _, _, _, _)).Times(0);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
 
   InjectConnectedEvent(test_address, 1);
   GetSearchCompleteEvent(1);
@@ -873,7 +881,7 @@ TEST_F(CsisClientTest, test_search_complete_before_encryption) {
   EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::CONNECTED)).Times(1);
   EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _, _, _, _)).Times(1);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(true)));
   EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _)).Times(1);
 
   InjectEncryptionEvent(test_address, 1);
@@ -891,8 +899,8 @@ TEST_F(CsisClientTest, test_disconnect_when_link_key_is_gone) {
   TestConnect(test_address, false);
   EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::CONNECTED)).Times(0);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
-  ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_ERR_KEY_MISSING));
 
   EXPECT_CALL(gatt_interface, Close(1));
@@ -1244,7 +1252,8 @@ TEST_F(CsisClientTest, test_not_open_duplicate_active_scan_while_bonding_set_mem
   result.inq_res.eir_len = 8;
   result.inq_res.bd_addr = test_address2;
 
-  ON_CALL(btm_interface, IsDeviceBonded(test_address2, BT_TRANSPORT_LE)).WillByDefault(Return(false));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address2, BT_TRANSPORT_LE))
+          .WillByDefault(Return(false));
   // CSIS client should process set member event to JNI
   EXPECT_CALL(*callbacks, OnSetMemberAvailable(test_address2, 1));
 
@@ -1340,7 +1349,7 @@ TEST_F(CsisClientTest, test_not_report_set_member_after_remove_first_device) {
   result.inq_res.eir_len = 8;
   result.inq_res.bd_addr = test_address2;
 
-  ON_CALL(btm_interface, IsDeviceBonded(test_address2, BT_TRANSPORT_LE))
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address2, BT_TRANSPORT_LE))
           .WillByDefault(Return(false));
   // CSIS client should NOT process set member event to JNI
   EXPECT_CALL(*callbacks, OnSetMemberAvailable(test_address2, 1)).Times(0);
@@ -1738,7 +1747,7 @@ TEST_F(CsisClientTest, test_bonding_failed) {
   result.inq_res.eir_len = 8;
   result.inq_res.bd_addr = test_address2;
 
-  ON_CALL(btm_interface, IsDeviceBonded(test_address2, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address2, _)).WillByDefault(DoAll(Return(false)));
 
   // CSIS client should process Set Member Available event to JNI
   EXPECT_CALL(*callbacks, OnSetMemberAvailable(test_address2, 1));

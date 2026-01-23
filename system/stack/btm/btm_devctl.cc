@@ -174,8 +174,9 @@ void BTM_reset_complete() {
   }
 
   if (!com_android_bluetooth_flags_local_pin_key_type()) {
-    BTM_SetPinType(BtmSecurity::Get().cfg_.pin_type, BtmSecurity::Get().cfg_.pin_code,
-                   BtmSecurity::Get().cfg_.pin_code_len);
+    get_security_client_interface().BTM_SetPinType(BtmSecurity::Get().cfg_.pin_type,
+                                                   BtmSecurity::Get().cfg_.pin_code,
+                                                   BtmSecurity::Get().cfg_.pin_code_len);
   }
 
   decode_controller_support();

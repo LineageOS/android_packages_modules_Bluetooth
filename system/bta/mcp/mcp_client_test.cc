@@ -28,6 +28,8 @@
 #include "test/common/bta_gatt_queue_mock.h"
 #include "test/common/btm_api_mock.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 using namespace bluetooth;
 using namespace bluetooth::mcp;
@@ -74,6 +76,9 @@ public:
     gatt::SetMockBtaGattInterface(&gatt_client_interface_);
     gatt::SetMockBtaGattQueue(&gatt_queue_mock_);
 
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
+
     BtaAppRegisterCallback app_register_callback;
     EXPECT_CALL(gatt_client_interface_, AppRegister(_, NotNull(), _, _))
             .WillOnce(Invoke([&](auto, tBTA_GATTC_CBACK* cb, BtaAppRegisterCallback app_cb, auto) {
@@ -91,6 +96,7 @@ public:
   void TearDown() override {
     McpClient::Cleanup();
     mcp_client_ = nullptr;
+    reset_mock_btm_client_interface();
     gatt::SetMockBtaGattInterface(nullptr);
     gatt::SetMockBtaGattQueue(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
@@ -202,16 +208,19 @@ protected:
   NiceMock<gatt::MockBtaGattInterface> gatt_client_interface_;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue_mock_;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
 };
 
 TEST_F(McpClientTest, initialize_and_cleanup) { ASSERT_NE(mcp_client_, nullptr); }
 
 TEST_F(McpClientTest, connect_and_discover_flow) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
 
   EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
-  EXPECT_CALL(btm_interface, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
   SimulateGattConnect(kTestAddress, kTestConnId);
 
@@ -219,7 +228,8 @@ TEST_F(McpClientTest, connect_and_discover_flow) {
 }
 
 TEST_F(McpClientTest, play_command) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -231,7 +241,8 @@ TEST_F(McpClientTest, play_command) {
 }
 
 TEST_F(McpClientTest, media_state_notification) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -251,7 +262,8 @@ TEST_F(McpClientTest, media_state_notification) {
 }
 
 TEST_F(McpClientTest, media_control_point_indication) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -281,7 +293,7 @@ TEST_F(McpClientTest, validation_failed_missing_mandatory_characteristic) {
                                              kMediaPlayerNameHandle, kOpcodesSupportedHandle};
 
   for (uint16_t missing_handle : mandatory_handles) {
-    EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE))
+    EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
             .WillOnce(Return(true));
     mcp_client_->Connect(kTestAddress);
     SimulateGattConnect(kTestAddress, kTestConnId);
@@ -314,7 +326,8 @@ TEST_F(McpClientTest, validation_failed_missing_mandatory_characteristic) {
 }
 
 TEST_F(McpClientTest, optional_characteristics_missing_success) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
 
@@ -351,7 +364,8 @@ TEST_F(McpClientTest, optional_characteristics_missing_success) {
 }
 
 TEST_F(McpClientTest, discover_fallback_to_gmcs) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
 
@@ -395,7 +409,8 @@ TEST_F(McpClientTest, discover_fallback_to_gmcs) {
 }
 
 TEST_F(McpClientTest, multiple_services_discovery_and_operation) {
-  EXPECT_CALL(btm_interface, IsDeviceBonded(kTestAddress, BT_TRANSPORT_LE)).WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
 

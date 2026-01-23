@@ -45,6 +45,8 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 bool gatt_profile_get_eatt_support(const RawAddress& /*addr*/) { return true; }
 
@@ -628,11 +630,14 @@ protected:
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
 
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
+
     encryption_result = true;
 
-    ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(DoAll(Return(true)));
 
-    ON_CALL(btm_interface, SetEncryption(_, _, _, _, _))
+    ON_CALL(mock_btm_security_, BTM_SetEncryption(_, _, _, _, _))
             .WillByDefault(Invoke([this](const RawAddress& bd_addr, tBT_TRANSPORT /*transport*/,
                                          tBTM_SEC_CALLBACK* /*p_callback*/, void* /*p_ref_data*/,
                                          tBTM_BLE_SEC_ACT /*sec_act*/) -> tBTM_STATUS {
@@ -718,6 +723,7 @@ protected:
 
   void TearDown(void) override {
     services_map.clear();
+    reset_mock_btm_client_interface();
     gatt::SetMockBtaGattQueue(nullptr);
     gatt::SetMockBtaGattInterface(nullptr);
     bluetooth::storage::SetMockBtifStorageInterface(nullptr);
@@ -748,7 +754,7 @@ protected:
   }
 
   void TestConnect(const RawAddress& address) {
-    ON_CALL(btm_interface, BTM_IsEncrypted(address, _))
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _))
             .WillByDefault(DoAll(Return(encryption_result)));
 
     EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, _));
@@ -856,10 +862,10 @@ protected:
   void SetEncryptionResult(const RawAddress& address, bool success) {
     encryption_result = success;
 
-    ON_CALL(btm_interface, BTM_IsEncrypted(address, _))
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _))
             .WillByDefault(DoAll(Return(encryption_result)));
 
-    ON_CALL(btm_interface, IsDeviceBonded(address, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(address, _)).WillByDefault(DoAll(Return(true)));
   }
 
   void InjectNotifyReadPresetResponse(uint16_t conn_id, RawAddress const& address, uint16_t handle,
@@ -1116,6 +1122,7 @@ protected:
   NiceMock<gatt::MockBtaGattInterface> gatt_interface;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue;
   NiceMock<MockCsisClient> mock_csis_client_module_;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
   tBTA_GATTC_CBACK* gatt_callback;
   const uint8_t gatt_if = 0xfe;
   std::map<uint8_t, RawAddress> connected_devices;
@@ -1189,7 +1196,7 @@ TEST_F(HasClientTest, test_connect_after_remove) {
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
 
   // Device has no Link Key
-  ON_CALL(btm_interface, IsDeviceBonded(test_address, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address, _)).WillByDefault(DoAll(Return(true)));
   HasClient::Get()->Connect(test_address);
   Mock::VerifyAndClearExpectations(&callbacks);
 }
@@ -1257,7 +1264,7 @@ TEST_F(HasClientTest, test_service_discovery_complete_before_encryption) {
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
 
   SetEncryptionResult(test_address, false);
-  ON_CALL(btm_interface, SetEncryption(_, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(_, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
 
   TestConnect(test_address);
@@ -1280,8 +1287,8 @@ TEST_F(HasClientTest, test_disconnect_when_link_key_is_gone) {
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
-  ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_ERR_KEY_MISSING));
 
   auto test_conn_id = GetTestConnId(test_address);

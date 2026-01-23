@@ -45,6 +45,7 @@
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_addr.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
@@ -482,7 +483,7 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   btm_cb.neighbor.le_scan.results++;
 
   // Do not update device properties of already bonded devices.
-  if (!BTM_IsBonded(raw_address)) {
+  if (!get_btm_client_interface().security.BTM_IsBonded(raw_address, BT_TRANSPORT_AUTO)) {
     // Prevent updating properties without scan response
     if (!(event_type & kScannableMask) || (event_type & kScanResponseMask) ||
         msft_adv_monitor_enabled_) {

@@ -28,7 +28,6 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
 #include "bta/test/common/bta_gatt_queue_mock.h"
-#include "bta/test/common/btm_api_mock.h"
 #include "bta/test/common/mock_csis_client.h"
 #include "bta/test/common/mock_device_groups.h"
 #include "bta/vcp/vcp_controller_types.h"
@@ -39,6 +38,8 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 struct alarm_t {
   alarm_callback_t cb = nullptr;
@@ -445,14 +446,15 @@ protected:
 
     com::android::bluetooth::flags::provider_->vcp_skip_redundant_operation_writes(true);
 
-    bluetooth::manager::SetMockBtmInterface(&btm_interface);
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     MockDeviceGroups::SetMockInstanceForTesting(&mock_groups_module_);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
     reset_mock_function_count_map();
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
 
-    ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(DoAll(Return(true)));
 
     // Store group callbacks so that we could inject grouping events
     group_callbacks_ = nullptr;
@@ -555,9 +557,9 @@ protected:
 
   void TearDown(void) override {
     services_map.clear();
+    reset_mock_btm_client_interface();
     gatt::SetMockBtaGattQueue(nullptr);
     gatt::SetMockBtaGattInterface(nullptr);
-    bluetooth::manager::SetMockBtmInterface(nullptr);
     AlarmMock::Reset();
   }
 
@@ -582,7 +584,7 @@ protected:
 
   void TestConnect(const RawAddress& address) {
     // by default indicate link as encrypted
-    ON_CALL(btm_interface, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(true)));
 
     EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true));
     VolumeController::Get()->Connect(address);
@@ -612,7 +614,7 @@ protected:
 
   void TestAddFromStorage(const RawAddress& address) {
     // by default indicate link as encrypted
-    ON_CALL(btm_interface, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(true)));
 
     EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true));
     VolumeController::Get()->AddFromStorage(address);
@@ -698,9 +700,9 @@ protected:
   }
 
   void SetEncryptionResult(const RawAddress& address, bool success) {
-    ON_CALL(btm_interface, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(false)));
-    ON_CALL(btm_interface, IsDeviceBonded(address, _)).WillByDefault(DoAll(Return(true)));
-    ON_CALL(btm_interface, SetEncryption(address, _, _, _, BTM_BLE_SEC_ENCRYPT))
+    ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(false)));
+    ON_CALL(mock_btm_security_, BTM_IsBonded(address, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(mock_btm_security_, BTM_SetEncryption(address, _, _, _, BTM_BLE_SEC_ENCRYPT))
             .WillByDefault(
                     Invoke([&success, this](const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                             tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
@@ -713,7 +715,8 @@ protected:
                       GetEncryptionCompleteEvt(bd_addr);
                       return tBTM_STATUS::BTM_SUCCESS;
                     }));
-    EXPECT_CALL(btm_interface, SetEncryption(address, _, _, _, BTM_BLE_SEC_ENCRYPT)).Times(1);
+    EXPECT_CALL(mock_btm_security_, BTM_SetEncryption(address, _, _, _, BTM_BLE_SEC_ENCRYPT))
+            .Times(1);
   }
 
   void SetSampleDatabaseVCS(uint16_t conn_id) {
@@ -749,11 +752,11 @@ protected:
   }
 
   NiceMock<MockVolumeControllerCallbacks> callbacks;
-  NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
   MockCsisClient mock_csis_client_module_;
   NiceMock<MockDeviceGroups> mock_groups_module_;
   NiceMock<gatt::MockBtaGattInterface> gatt_interface;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
 
   tBTA_GATTC_CBACK* gatt_callback;
   const uint8_t gatt_if = 0xff;
@@ -831,7 +834,7 @@ TEST_F(VolumeControlTest, test_connect_after_remove) {
   Mock::VerifyAndClearExpectations(&callbacks);
 
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
-  ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(DoAll(Return(false)));
 
   VolumeController::Get()->Connect(test_address);
   Mock::VerifyAndClearExpectations(&callbacks);
@@ -1011,15 +1014,14 @@ TEST_F(VolumeControlTest, test_disconnect_when_link_key_gone) {
   TestAppRegister();
   TestAddFromStorage(test_address);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
-  ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, BTM_BLE_SEC_ENCRYPT))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address, _, _, _, BTM_BLE_SEC_ENCRYPT))
           .WillByDefault(Return(tBTM_STATUS::BTM_ERR_KEY_MISSING));
 
   // autoconnect - don't indicate disconnection
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
   EXPECT_CALL(gatt_interface, Close(1));
   GetConnectedEvent(test_address, 1);
-  Mock::VerifyAndClearExpectations(&btm_interface);
   TestAppUnregister();
 }
 
@@ -1031,7 +1033,6 @@ TEST_F(VolumeControlTest, test_reconnect_after_encryption_failed) {
   // autoconnect - don't indicate disconnection
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
   GetConnectedEvent(test_address, 1);
-  Mock::VerifyAndClearExpectations(&btm_interface);
   SetEncryptionResult(test_address, true);
   GetConnectedEvent(test_address, 1);
   TestAppUnregister();
@@ -1043,21 +1044,20 @@ TEST_F(VolumeControlTest, test_service_discovery_completed_before_encryption) {
   TestAppRegister();
   TestConnect(test_address);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
-  ON_CALL(btm_interface, IsDeviceBonded(test_address, _)).WillByDefault(DoAll(Return(true)));
-  ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
 
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
   uint16_t conn_id = 1;
   GetConnectedEvent(test_address, conn_id);
   GetSearchCompleteEvent(conn_id);
-  Mock::VerifyAndClearExpectations(&btm_interface);
   Mock::VerifyAndClearExpectations(&callbacks);
 
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(true)));
   EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _));
 
   GetEncryptionCompleteEvt(test_address);

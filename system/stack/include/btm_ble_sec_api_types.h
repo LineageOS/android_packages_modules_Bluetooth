@@ -21,9 +21,37 @@
 #include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
+#include <string>
 
+#include "macros.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
+
+typedef enum : uint8_t {
+  BTM_BLE_SEC_REQ_ACT_NONE = 0,
+  /* encrypt the link using current key or key refresh */
+  BTM_BLE_SEC_REQ_ACT_ENCRYPT = 1,
+  BTM_BLE_SEC_REQ_ACT_PAIR = 2,
+  /* discard the sec request while encryption is started but not completed */
+  BTM_BLE_SEC_REQ_ACT_DISCARD = 3,
+} tBTM_BLE_SEC_REQ_ACT;
+
+inline std::string btm_ble_sec_req_act_text(const tBTM_BLE_SEC_REQ_ACT& action) {
+  switch (action) {
+    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_NONE);
+    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_ENCRYPT);
+    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_PAIR);
+    CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_DISCARD);
+    default:
+      return "UNKNOWN ACTION";
+  }
+}
+
+namespace std {
+template <>
+struct formatter<tBTM_BLE_SEC_REQ_ACT>
+    : string_formatter<tBTM_BLE_SEC_REQ_ACT, &btm_ble_sec_req_act_text> {};
+}  // namespace std
 
 //////////////////////////////////////////////////////////
 ////// from btm_ble_api_types.h
