@@ -545,6 +545,16 @@ public class AvrcpTargetService extends ProfileService {
             return;
         }
 
+        if (KeyEvent.KEYCODE_VOLUME_UP == keyCode || KeyEvent.KEYCODE_VOLUME_DOWN == keyCode) {
+            mAudioManager.adjustSuggestedStreamVolume(
+                    KeyEvent.KEYCODE_VOLUME_UP == keyCode
+                            ? AudioManager.ADJUST_RAISE
+                            : AudioManager.ADJUST_LOWER,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.FLAG_SHOW_UI);
+            return;
+        }
+
         int action = pushed ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
         KeyEvent event = new KeyEvent(action, keyCode);
         mAudioManager.dispatchMediaKeyEvent(event);
