@@ -43,6 +43,8 @@
 #define HCI_GRP_TESTING_CMDS (0x06 << 10)            /* 0x1800 */
 #define HCI_GRP_BLE_CMDS (0x08 << 10)                /* 0x2000 (LE Commands) */
 
+#define HCI_DEVELOPMENT_FEATURE (0x3E << 10) /* 0xFB00 */
+
 #define HCI_GRP_VENDOR_SPECIFIC (0x3F << 10) /* 0xFC00 */
 
 /*
@@ -568,6 +570,7 @@ constexpr uint8_t HCI_LE_STATES_INIT_CENTRAL_PERIPHERAL_BIT = 41;
 
 /* ULP HCI Event */
 #define HCI_BLE_EVENT 0x3e
+#define HCI_DEVELOPMENT_EVENT 0xfe
 /* ULP Event sub code */
 #define HCI_BLE_CONN_COMPLETE_EVT 0x01
 #define HCI_BLE_ADV_PKT_RPT_EVT 0x02

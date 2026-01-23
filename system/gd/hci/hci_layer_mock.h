@@ -53,6 +53,10 @@ public:
   MOCK_METHOD((void), RegisterLeEventHandler,
               (SubeventCode, common::ContextualCallback<void(LeMetaEventView)>), (override));
   MOCK_METHOD((void), UnregisterLeEventHandler, (SubeventCode), (override));
+  MOCK_METHOD((void), RegisterDevelopmentEventHandler,
+              (DevelopmentSubeventCode, common::ContextualCallback<void(DevelopmentEventView)>),
+              (override));
+  MOCK_METHOD((void), UnregisterDevelopmentEventHandler, (DevelopmentSubeventCode), (override));
   MOCK_METHOD((void), RegisterVendorSpecificEventHandler,
               (VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>),
               (override));

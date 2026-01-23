@@ -163,6 +163,18 @@ void HciLayerFake::UnregisterLeEventHandler(SubeventCode subevent_code) {
   registered_le_events_.erase(subevent_code);
 }
 
+void HciLayerFake::RegisterDevelopmentEventHandler(
+        DevelopmentSubeventCode subevent_code,
+        common::ContextualCallback<void(DevelopmentEventView)> event_handler) {
+  std::lock_guard lock(mutex_);
+  registered_development_events_[subevent_code] = event_handler;
+}
+
+void HciLayerFake::UnregisterDevelopmentEventHandler(DevelopmentSubeventCode subevent_code) {
+  std::lock_guard lock(mutex_);
+  registered_development_events_.erase(subevent_code);
+}
+
 void HciLayerFake::RegisterVendorSpecificEventHandler(
         VseSubeventCode subevent_code,
         common::ContextualCallback<void(VendorSpecificEventView)> event_handler) {
@@ -213,6 +225,19 @@ void HciLayerFake::IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event
   SubeventCode subevent_code = meta_event_view.GetSubeventCode();
   ASSERT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end());
   registered_le_events_[subevent_code](meta_event_view);
+}
+
+void HciLayerFake::IncomingDevelopmentEvent(
+        std::unique_ptr<DevelopmentEventBuilder> event_builder) {
+  std::lock_guard lock(mutex_);
+  auto packet = GetPacketView(std::move(event_builder));
+  EventView event = EventView::Create(packet);
+  DevelopmentEventView development_event_view = DevelopmentEventView::Create(event);
+  ASSERT_TRUE(development_event_view.IsValid());
+  DevelopmentSubeventCode subevent_code = development_event_view.GetSubeventCode();
+  ASSERT_TRUE(registered_development_events_.find(subevent_code) !=
+              registered_development_events_.end());
+  registered_development_events_[subevent_code](development_event_view);
 }
 
 void HciLayerFake::CommandCompleteCallback(EventView event) {

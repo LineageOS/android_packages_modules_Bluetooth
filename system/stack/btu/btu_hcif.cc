@@ -184,6 +184,8 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
       break;
     case HCI_VENDOR_SPECIFIC_EVT:
       break;
+    case HCI_DEVELOPMENT_EVENT:
+      break;
 
     case HCI_CONNECTION_COMP_EVT:     // EventCode::CONNECTION_COMPLETE
     case HCI_CONNECTION_REQUEST_EVT:  // EventCode::CONNECTION_REQUEST
@@ -211,7 +213,7 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
 static void btu_hcif_process_event(uint8_t /* controller_id */, const BT_HDR* p_msg) {
   uint8_t* p = (uint8_t*)(p_msg + 1) + p_msg->offset;
   uint8_t hci_evt_code, hci_evt_len;
-  uint8_t ble_sub_code;
+  uint8_t sub_code;
   STREAM_TO_UINT8(hci_evt_code, p);
   STREAM_TO_UINT8(hci_evt_len, p);
 
@@ -296,10 +298,10 @@ static void btu_hcif_process_event(uint8_t /* controller_id */, const BT_HDR* p_
       break;
 
     case HCI_BLE_EVENT: {
-      STREAM_TO_UINT8(ble_sub_code, p);
+      STREAM_TO_UINT8(sub_code, p);
 
       uint8_t ble_evt_len = hci_evt_len - 1;
-      switch (ble_sub_code) {
+      switch (sub_code) {
         case HCI_BLE_READ_REMOTE_FEAT_CMPL_EVT:
           btm_ble_read_remote_features_complete(p, ble_evt_len);
           break;
@@ -317,16 +319,24 @@ static void btu_hcif_process_event(uint8_t /* controller_id */, const BT_HDR* p_
         case HCI_BLE_CIS_REQ_EVT:
         case HCI_BLE_BIG_SYNC_EST_EVT:
         case HCI_BLE_BIG_SYNC_LOST_EVT:
-          IsoManager::GetInstance()->HandleHciEvent(ble_sub_code, p, ble_evt_len);
+          IsoManager::GetInstance()->HandleHciEvent(sub_code, p, ble_evt_len);
           break;
 
         default:
           log::error(
                   "Unexpectedly received LE sub_event_code:0x{:02x} that should "
                   "not be handled here",
-                  ble_sub_code);
+                  sub_code);
           break;
       }
+    } break;
+
+    case HCI_DEVELOPMENT_EVENT: {
+      STREAM_TO_UINT8(sub_code, p);
+      // Reserved for internal and IOP testing of under-development SIG featuress. Invoke the
+      // handler with the sub_code for feature development. Please do not submit any code here.
+
+      log::info("Unexpectedly received the development sub event code:0x{:02x}", sub_code);
     } break;
 
       // Events now captured by gd::hci_layer module

@@ -66,6 +66,12 @@ public:
 
   void UnregisterLeEventHandler(SubeventCode subevent_code) override;
 
+  void RegisterDevelopmentEventHandler(
+          DevelopmentSubeventCode subevent_code,
+          common::ContextualCallback<void(DevelopmentEventView)> event_handler) override;
+
+  void UnregisterDevelopmentEventHandler(DevelopmentSubeventCode subevent_code) override;
+
   void RegisterVendorSpecificEventHandler(
           VseSubeventCode subevent_code,
           common::ContextualCallback<void(VendorSpecificEventView)> event_handler) override;
@@ -78,6 +84,9 @@ public:
           LOCKS_EXCLUDED(mutex_);
 
   void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder)
+          LOCKS_EXCLUDED(mutex_);
+
+  void IncomingDevelopmentEvent(std::unique_ptr<DevelopmentEventBuilder> event_builder)
           LOCKS_EXCLUDED(mutex_);
 
   void CommandCompleteCallback(EventView event) LOCKS_EXCLUDED(mutex_);
@@ -119,6 +128,8 @@ private:
           GUARDED_BY(mutex_);
   std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_
           GUARDED_BY(mutex_);
+  std::map<DevelopmentSubeventCode, common::ContextualCallback<void(DevelopmentEventView)>>
+          registered_development_events_ GUARDED_BY(mutex_);
   std::map<VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>>
           registered_vs_events_ GUARDED_BY(mutex_);
   uint16_t vendor_connection_handle_min_ GUARDED_BY(mutex_) = 0;
