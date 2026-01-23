@@ -450,7 +450,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     match the permission enforced by the sendBroadcast() call. This check only
                     tracks variables initialized with 'new Intent(ACTION)' or assigned with
                     'intent.setAction(ACTION)' within the same method.
-                        """
+                    """
                         .trimIndent(),
                 category = Category.SECURITY,
                 priority = 6,
@@ -468,7 +468,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     """
                     An overriding method must be annotated with @RequiresPermission and it must be
                     equivalent to the annotation on the super method.",
-                        """
+                    """
                         .trimIndent(),
                 category = Category.SECURITY,
                 priority = 6,
@@ -488,7 +488,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     own @RequiresPermission annotation. This annotation must be specific enough to
                     cover all permissions required by the APIs it calls (not "too narrow"), but
                     should not declare permissions that are never used (not "too broad").
-                        """
+                    """
                         .trimIndent(),
                 category = Category.SECURITY,
                 priority = 6,
