@@ -29,6 +29,8 @@ interface IBluetoothHeadset {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getConnectionState(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getCodecType(in BluetoothDevice device, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean startVoiceRecognition(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean stopVoiceRecognition(in BluetoothDevice device, in AttributionSource attributionSource);
