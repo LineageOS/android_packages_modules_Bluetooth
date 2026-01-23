@@ -306,10 +306,12 @@ java_defaults {
             // "ExportedService", // TODO: b/289445022 - enable this check
             "ExtraText",
             "ExtraTranslation",
+            // "FlaggedApi", // TODO we must enforce this when fixed
             "GestureBackNavigation",
             "GuardedLogInvocation",
             "HandlerLeak",
             "InflateParams",
+            // "InlinedApi", // TODO we must enforce this
             // "InvalidPermission", // TODO: b/289445022 - enable this check
             "LabelFor",
             "MissingClass",
@@ -335,6 +337,7 @@ java_defaults {
             "VisibleForTests",
             "Wakelock",
             "WakelockTimeout",
+            "WrongConstant",
         ],
         extra_check_modules: ["BluetoothLintChecker"],
     },
