@@ -1031,6 +1031,9 @@ pub type AclLinkSpec = bindings::AclLinkSpec;
 #[gen_cxx_extern_trivial]
 type CxxPairingType = bindings::PairingType;
 
+#[gen_cxx_extern_trivial_tuple]
+struct CxxPairingInitiator(bindings::PairingInitiator);
+
 /// An enum representing `bt_callbacks_t` from btif.
 #[derive(Clone, Debug)]
 pub enum BaseCallbacks {
@@ -1084,7 +1087,8 @@ cb_variant!(BaseCb, bond_state_cb -> BaseCallbacks::BondState,
     CxxBtTransport -> _,
     CxxBtBondState -> BtBondState,
     CxxPairingType -> _,
-    i32
+    i32,
+    CxxPairingInitiator -> _
 );
 cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, CxxBtThreadEvent -> BtThreadEvent);
 cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
@@ -1165,6 +1169,10 @@ pub(crate) mod ffi {
         #[namespace = ""]
         #[cxx_name = "PairingType"]
         type PairingType = super::CxxPairingType;
+
+        #[namespace = ""]
+        #[cxx_name = "PairingInitiator"]
+        type PairingInitiator = super::CxxPairingInitiator;
 
         #[namespace = ""]
         #[cxx_name = "bt_cb_thread_evt"]
@@ -1275,6 +1283,7 @@ pub(crate) mod ffi {
             state: BtBondState,
             pairing_type: PairingType,
             bond_result: i32,
+            pairing_initiator: PairingInitiator,
         );
         fn thread_evt_cb(evt: BtThreadEvent);
         fn acl_state_cb(
