@@ -159,8 +159,10 @@ public class HearingAidService extends ConnectableProfile {
 
         mHandler.removeCallbacksAndMessages(null);
 
-        mAudioManager.unregisterAudioDeviceCallback(mAudioManagerOnAudioDevicesAddedCallback);
-        mAudioManager.unregisterAudioDeviceCallback(mAudioManagerOnAudioDevicesRemovedCallback);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.unregisterAudioDeviceCallback(mAudioManagerOnAudioDevicesAddedCallback);
+            mAudioManager.unregisterAudioDeviceCallback(mAudioManagerOnAudioDevicesRemovedCallback);
+        }
     }
 
     /**
@@ -506,6 +508,15 @@ public class HearingAidService extends ConnectableProfile {
         return activeDevices;
     }
 
+    /**
+     * Get the current active device
+     *
+     * @return the current active device
+     */
+    public BluetoothDevice getActiveDevice() {
+        return mActiveDevice;
+    }
+
     void onConnectionStateChangedFromNative(BluetoothDevice device, int state) {
         synchronized (mStateMachines) {
             var stateMachine = mStateMachines.get(device);
@@ -554,6 +565,9 @@ public class HearingAidService extends ConnectableProfile {
     private class AudioManagerOnAudioDevicesRemovedCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
             for (AudioDeviceInfo deviceInfo : removedDevices) {
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_HEARING_AID) {
                     Log.d(TAG, " onAudioDevicesRemoved: device type: " + deviceInfo.getType());
@@ -572,6 +586,9 @@ public class HearingAidService extends ConnectableProfile {
     private class AudioManagerOnAudioDevicesAddedCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
             for (AudioDeviceInfo deviceInfo : addedDevices) {
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_HEARING_AID) {
                     Log.d(TAG, " onAudioDevicesAdded: device type: " + deviceInfo.getType());
@@ -584,6 +601,40 @@ public class HearingAidService extends ConnectableProfile {
                 }
             }
         }
+    }
+
+    /**
+     * Handle when AudioManager add audio device.
+     *
+     * @return true if the success, otherwise false
+     */
+    public boolean handleAudioDeviceAdded() {
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            return false;
+        }
+        if (mAudioManager == null) {
+            Log.w(TAG, "onAudioDevicesAdded: mAudioManager is null");
+            return false;
+        }
+        notifyActiveDeviceChanged();
+        return true;
+    }
+
+    /**
+     * Handle when AudioManager remove audio device.
+     *
+     * @return true if the success, otherwise false
+     */
+    public boolean handleAudioDeviceRemoved() {
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            return false;
+        }
+        if (mAudioManager == null) {
+            Log.w(TAG, "onAudioDevicesRemoved: mAudioManager is null");
+            return false;
+        }
+        notifyActiveDeviceChanged();
+        return true;
     }
 
     private HearingAidStateMachine getOrCreateStateMachine(BluetoothDevice device) {
@@ -654,14 +705,15 @@ public class HearingAidService extends ConnectableProfile {
                         + ". Stop audio: "
                         + stopAudio);
 
-        if (device != null) {
-            mAudioManager.registerAudioDeviceCallback(
-                    mAudioManagerOnAudioDevicesAddedCallback, mHandler);
-        } else {
-            mAudioManager.registerAudioDeviceCallback(
-                    mAudioManagerOnAudioDevicesRemovedCallback, mHandler);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            if (device != null) {
+                mAudioManager.registerAudioDeviceCallback(
+                        mAudioManagerOnAudioDevicesAddedCallback, mHandler);
+            } else {
+                mAudioManager.registerAudioDeviceCallback(
+                        mAudioManagerOnAudioDevicesRemovedCallback, mHandler);
+            }
         }
-
         mAudioManager.handleBluetoothActiveDeviceChanged(
                 device,
                 previousAudioDevice,

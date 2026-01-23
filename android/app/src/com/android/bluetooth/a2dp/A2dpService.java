@@ -155,7 +155,9 @@ public class A2dpService extends ConnectableProfile {
         mA2dpOffloadEnabled = getAdapterService().isA2dpOffloadEnabled();
         Log.d(TAG, "A2DP offload flag set to " + mA2dpOffloadEnabled);
 
-        mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
+        }
     }
 
     public static boolean isEnabled() {
@@ -175,7 +177,9 @@ public class A2dpService extends ConnectableProfile {
         removeActiveDevice(true);
 
         // Step 7: Unregister Audio Device Callback
-        mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
+        }
 
         // Step 6: Cleanup native interface
         mNativeInterface.cleanup();
@@ -991,6 +995,9 @@ public class A2dpService extends ConnectableProfile {
     private class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
             synchronized (mStateMachines) {
                 for (AudioDeviceInfo deviceInfo : addedDevices) {
                     if (deviceInfo.getType() != AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
@@ -1040,6 +1047,9 @@ public class A2dpService extends ConnectableProfile {
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
             synchronized (mStateMachines) {
                 for (AudioDeviceInfo deviceInfo : removedDevices) {
                     if (deviceInfo.getType() != AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
@@ -1063,6 +1073,50 @@ public class A2dpService extends ConnectableProfile {
                                     + mActiveDevice);
                 }
             }
+        }
+    }
+
+    /**
+     * Handle when AudioManager add audio device.
+     *
+     * @param device added audio device
+     * @return true if the exposed active device changed, otherwise false
+     */
+    public boolean handleAudioDeviceAdded(BluetoothDevice device) {
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            return false;
+        }
+        synchronized (mStateMachines) {
+            /* Don't expose already exposed active device */
+            if (device.equals(mExposedActiveDevice)) {
+                Log.d(TAG, " onAudioDevicesAdded: " + device + " is already exposed");
+                return false;
+            }
+
+            if (!device.equals(mActiveDevice)) {
+                Log.e(
+                        TAG,
+                        "Added device does not match to the one activated here. ("
+                                + device
+                                + " != "
+                                + mActiveDevice
+                                + ")");
+                return false;
+            }
+
+            mExposedActiveDevice = device;
+            updateAndBroadcastActiveDevice(device);
+        }
+        return true;
+    }
+
+    /** Handle when AudioManager remove audio device. */
+    public void handleAudioDeviceRemoved() {
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            return;
+        }
+        synchronized (mStateMachines) {
+            mExposedActiveDevice = null;
         }
     }
 
