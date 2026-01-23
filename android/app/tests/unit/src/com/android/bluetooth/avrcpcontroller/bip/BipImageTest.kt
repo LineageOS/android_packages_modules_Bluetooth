@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,71 +14,65 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.avrcpcontroller;
+package com.android.bluetooth.avrcpcontroller
 
-import static com.google.common.truth.Truth.assertThat;
+import android.graphics.BitmapFactory
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.TestUtils
+import com.android.bluetooth.tests.R
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+/** Test cases for [BipImage]. */
+@RunWith(AndroidJUnit4::class)
+class BipImageTest {
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.tests.R;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.io.InputStream;
-
-/** Test cases for {@link BipImage}. */
-@RunWith(AndroidJUnit4.class)
-public class BipImageTest {
-
-    private static final String IMAGE_HANDLE = "123456789";
-
-    private final Resources mTestResources = TestUtils.getTestApplicationResources();
+    private val testResources = TestUtils.getTestApplicationResources()
 
     @Test
-    public void testParseImage_200by200() {
-        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_200_200);
-        BipImage image = new BipImage(IMAGE_HANDLE, imageInputStream);
+    fun testParseImage_200by200() {
+        val imageInputStream = testResources.openRawResource(R.raw.image_200_200)
+        val image = BipImage(IMAGE_HANDLE, imageInputStream)
+        val expectedInputStream = testResources.openRawResource(R.raw.image_200_200)
+        val bitmap = BitmapFactory.decodeStream(expectedInputStream)
 
-        InputStream expectedInputStream = mTestResources.openRawResource(R.raw.image_200_200);
-        Bitmap bitmap = BitmapFactory.decodeStream(expectedInputStream);
-
-        assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
-        assertThat(bitmap.sameAs(image.getImage())).isTrue();
+        assertThat(image.imageHandle).isEqualTo(IMAGE_HANDLE)
+        assertThat(bitmap.sameAs(image.image)).isTrue()
     }
 
     @Test
-    public void testParseImage_600by600() {
-        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_600_600);
-        BipImage image = new BipImage(IMAGE_HANDLE, imageInputStream);
+    fun testParseImage_600by600() {
+        val imageInputStream = testResources.openRawResource(R.raw.image_600_600)
+        val image = BipImage(IMAGE_HANDLE, imageInputStream)
+        val expectedInputStream = testResources.openRawResource(R.raw.image_600_600)
+        val bitmap = BitmapFactory.decodeStream(expectedInputStream)
 
-        InputStream expectedInputStream = mTestResources.openRawResource(R.raw.image_600_600);
-        Bitmap bitmap = BitmapFactory.decodeStream(expectedInputStream);
-
-        assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
-        assertThat(bitmap.sameAs(image.getImage())).isTrue();
+        assertThat(image.imageHandle).isEqualTo(IMAGE_HANDLE)
+        assertThat(bitmap.sameAs(image.image)).isTrue()
     }
 
     @Test
-    public void testMakeFromImage_200by200() {
-        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_200_200);
-        Bitmap bitmap = BitmapFactory.decodeStream(imageInputStream);
-        BipImage image = new BipImage(IMAGE_HANDLE, bitmap);
-        assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
-        assertThat(bitmap.sameAs(image.getImage())).isTrue();
+    fun testMakeFromImage_200by200() {
+        val imageInputStream = testResources.openRawResource(R.raw.image_200_200)
+        val bitmap = BitmapFactory.decodeStream(imageInputStream)
+        val image = BipImage(IMAGE_HANDLE, bitmap)
+
+        assertThat(image.imageHandle).isEqualTo(IMAGE_HANDLE)
+        assertThat(bitmap.sameAs(image.image)).isTrue()
     }
 
     @Test
-    public void testMakeFromImage_600by600() {
-        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_600_600);
-        Bitmap bitmap = BitmapFactory.decodeStream(imageInputStream);
-        BipImage image = new BipImage(IMAGE_HANDLE, bitmap);
-        assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
-        assertThat(bitmap.sameAs(image.getImage())).isTrue();
+    fun testMakeFromImage_600by600() {
+        val imageInputStream = testResources.openRawResource(R.raw.image_600_600)
+        val bitmap = BitmapFactory.decodeStream(imageInputStream)
+        val image = BipImage(IMAGE_HANDLE, bitmap)
+
+        assertThat(image.imageHandle).isEqualTo(IMAGE_HANDLE)
+        assertThat(bitmap.sameAs(image.image)).isTrue()
+    }
+
+    companion object {
+        private const val IMAGE_HANDLE = "123456789"
     }
 }
