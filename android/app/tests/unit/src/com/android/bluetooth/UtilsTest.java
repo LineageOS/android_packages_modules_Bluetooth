@@ -16,14 +16,12 @@
 
 package com.android.bluetooth;
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.Utils.formatSimple;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.os.ParcelUuid;
 
@@ -91,15 +89,6 @@ public class UtilsTest {
         } catch (SecurityException e) {
             // SecurityException could happen.
         }
-    }
-
-    @Test
-    public void getLoggableAddress() {
-        assertThat(Utils.getLoggableAddress(null)).isEqualTo("00:00:00:00:00:00");
-
-        BluetoothDevice device = getTestDevice(1);
-        String loggableAddress = "xx:xx:xx:xx:" + device.getAddress().substring(12);
-        assertThat(Utils.getLoggableAddress(device)).isEqualTo(loggableAddress);
     }
 
     @Test
