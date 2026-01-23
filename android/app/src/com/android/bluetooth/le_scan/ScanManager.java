@@ -93,7 +93,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Class that handles Bluetooth LE scan related operations. */
-class ScanManager {
+public class ScanManager {
     private static final String TAG = ScanUtil.TAG_PREFIX + ScanManager.class.getSimpleName();
 
     // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. To be deleted [START]
@@ -178,6 +178,7 @@ class ScanManager {
     private final DisplayManager mDisplayManager;
     private final ActivityManager mActivityManager;
     private final LocationManager mLocationManager;
+    private final ScanThrottler mScanThrottler;
     private final BatchScanThrottler mBatchScanThrottler;
     // Whether or not MSFT-based scanning hardware offload is available on this device
     private final boolean mIsMsftSupported;
@@ -302,6 +303,7 @@ class ScanManager {
         IntentFilter locationIntentFilter = new IntentFilter(LocationManager.MODE_CHANGED_ACTION);
         locationIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
+        mScanThrottler = new ScanThrottler(this);
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
         Log.d(TAG, "MSFT: isSupported=" + mIsMsftSupported + ", useFiltering=" + mUseMsftFiltering);
@@ -878,7 +880,7 @@ class ScanManager {
     private void updateRegularScanClientsScreenOff() {
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
-            if (updateScanModeScreenOff(client)) {
+            if (mScanThrottler.throttleScanModeScreenOff(client)) {
                 updatedScanParams = true;
             }
         }
@@ -887,42 +889,11 @@ class ScanManager {
         }
     }
 
-    private boolean updateScanModeScreenOff(ScanClient client) {
-        if (isOpportunisticScanClient(client)) {
-            return false;
-        }
-        int updatedScanMode = client.getScanModeApp();
-        final var scanModeString = scanModeToString(updatedScanMode);
-        if (!isAppForeground(client) || isForceDowngradedScanClient(client)) {
-            updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
-        } else {
-            // The following codes are effectively only for services
-            // Apps are either already or will be soon handled by handleImportanceChange().
-            switch (updatedScanMode) {
-                case ScanSettings.SCAN_MODE_LOW_POWER ->
-                        updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
-                case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
-                        updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
-                case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                        updatedScanMode = ScanSettings.SCAN_MODE_LOW_LATENCY;
-                default -> {
-                    return false;
-                }
-            }
-        }
-        final var updatedScanModeString = scanModeToString(updatedScanMode);
-        Log.d(
-                TAG,
-                ("updateScanModeScreenOff(): for " + client)
-                        + (" from=" + scanModeString + " to=" + updatedScanModeString));
-        return client.updateScanMode(updatedScanMode);
-    }
-
     /**
      * Services and Apps are assumed to be in the foreground by default unless it changes to the
      * background triggering onUidImportance().
      */
-    private boolean isAppForeground(ScanClient client) {
+    boolean isAppForeground(ScanClient client) {
         return mIsUidForegroundMap.get(client.getAppUid(), DEFAULT_UID_IS_FOREGROUND);
     }
 
@@ -933,7 +904,7 @@ class ScanManager {
         if (mScreenOn) {
             return updateScanModeScreenOn(client);
         } else {
-            return updateScanModeScreenOff(client);
+            return mScanThrottler.throttleScanModeScreenOff(client);
         }
     }
 
@@ -1085,7 +1056,7 @@ class ScanManager {
         if (mScreenOn) {
             return updateScanModeScreenOn(client);
         } else {
-            return updateScanModeScreenOff(client);
+            return mScanThrottler.throttleScanModeScreenOff(client);
         }
     }
 
