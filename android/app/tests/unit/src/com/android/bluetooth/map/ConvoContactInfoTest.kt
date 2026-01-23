@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,57 +14,53 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.google.common.truth.Truth.assertThat;
+import android.database.MatrixCursor
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.database.MatrixCursor;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link ConvoContactInfo}. */
+/** Test cases for [BluetoothMapContentObserver.ConvoContactInfo]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class ConvoContactInfoTest {
+@RunWith(AndroidJUnit4::class)
+class ConvoContactInfoTest {
 
     @Test
-    public void setConvoColumns() {
-        BluetoothMapContentObserver.ConvoContactInfo info =
-                new BluetoothMapContentObserver.ConvoContactInfo();
-        MatrixCursor cursor =
-                new MatrixCursor(
-                        new String[] {
-                            BluetoothMapContract.ConvoContactColumns.CONVO_ID,
-                            BluetoothMapContract.ConvoContactColumns.NAME,
-                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                            BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
-                            BluetoothMapContract.ConvoContactColumns.UCI,
-                            BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
-                            BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
-                            BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
-                            BluetoothMapContract.ConvoContactColumns.PRIORITY,
-                            BluetoothMapContract.ConvoContactColumns.LAST_ONLINE
-                        });
+    fun setConvoColumns() {
+        val info = BluetoothMapContentObserver.ConvoContactInfo()
+        val cursor =
+            MatrixCursor(
+                arrayOf(
+                    BluetoothMapContract.ConvoContactColumns.CONVO_ID,
+                    BluetoothMapContract.ConvoContactColumns.NAME,
+                    BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                    BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                    BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
+                    BluetoothMapContract.ConvoContactColumns.UCI,
+                    BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
+                    BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
+                    BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
+                    BluetoothMapContract.ConvoContactColumns.PRIORITY,
+                    BluetoothMapContract.ConvoContactColumns.LAST_ONLINE,
+                )
+            )
+        info.setConvoColumns(cursor)
 
-        info.setConvoColumns(cursor);
-
-        assertThat(info.mContactColConvoId).isEqualTo(0);
-        assertThat(info.mContactColName).isEqualTo(1);
-        assertThat(info.mContactColNickname).isEqualTo(2);
-        assertThat(info.mContactColBtUid).isEqualTo(3);
-        assertThat(info.mContactColChatState).isEqualTo(4);
-        assertThat(info.mContactColUci).isEqualTo(5);
-        assertThat(info.mContactColNickname).isEqualTo(2);
-        assertThat(info.mContactColLastActive).isEqualTo(6);
-        assertThat(info.mContactColName).isEqualTo(1);
-        assertThat(info.mContactColPresenceState).isEqualTo(7);
-        assertThat(info.mContactColPresenceText).isEqualTo(8);
-        assertThat(info.mContactColPriority).isEqualTo(9);
-        assertThat(info.mContactColLastOnline).isEqualTo(10);
+        assertThat(info.mContactColConvoId).isEqualTo(0)
+        assertThat(info.mContactColName).isEqualTo(1)
+        assertThat(info.mContactColNickname).isEqualTo(2)
+        assertThat(info.mContactColBtUid).isEqualTo(3)
+        assertThat(info.mContactColChatState).isEqualTo(4)
+        assertThat(info.mContactColUci).isEqualTo(5)
+        assertThat(info.mContactColNickname).isEqualTo(2)
+        assertThat(info.mContactColLastActive).isEqualTo(6)
+        assertThat(info.mContactColName).isEqualTo(1)
+        assertThat(info.mContactColPresenceState).isEqualTo(7)
+        assertThat(info.mContactColPresenceText).isEqualTo(8)
+        assertThat(info.mContactColPriority).isEqualTo(9)
+        assertThat(info.mContactColLastOnline).isEqualTo(10)
     }
 }
