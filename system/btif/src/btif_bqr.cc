@@ -972,7 +972,7 @@ static int OpenBtSchedulingTraceLogFile() {
 }
 
 void DebugDump(int fd) {
-  dprintf(fd, "\nBT Quality Report Events: \n");
+  dprintf(fd, "\nBT Quality Report Events:\n");
 
   if (kpBqrEventQueue.Empty()) {
     dprintf(fd, "Event queue is empty.\n");

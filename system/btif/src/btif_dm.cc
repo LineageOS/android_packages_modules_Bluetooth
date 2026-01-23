@@ -299,6 +299,9 @@ static void add_advertised_uuids_to_properties(std::vector<bt_property_t>& bt_pr
                                                tBTA_DM_INQ_RES& inq_res,
                                                std::vector<uint8_t>& uuids_value);
 
+void btif_dm_repair_success_cb(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                               PairingType pairing_type, uint8_t fail_reason,
+                               PairingInitiator pairing_initiator);
 /******************************************************************************
  *  Functions
  *****************************************************************************/
@@ -559,7 +562,26 @@ static void wipe_le_audio_metadata_cache_for_pairing_device() {
 static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
                                tBT_TRANSPORT transport, bt_bond_state_t state,
                                PairingType pairing_type = kPairingTypeNone) {
+  bool bond_loss_scenario = is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr);
+  // TODO (b/472924859): Use appropriate pairing initiator value which will be passed through the
+  // callers.
+  PairingInitiator pairing_initiator = PairingInitiator::APP;
+  PairingType api_pairing_type = pairing_type;
+  // Update the pairing algorithm to the API pairing algorithm.
+  // Note: this value will only be useful for Java now.
+  api_pairing_type.algorithm = static_cast<PairingAlgorithm>(
+          map_pairing_algo_to_api(api_pairing_type.algorithm, transport));
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_BOND_STATE_CHANGED, state);
+
+  if (bond_loss_scenario) {
+    /**
+     * For ACTION_BOND_STATE_CHANGED, the `EXTRA_PAIRING_CONTEXT` should only hold
+     * `PAIRING_CONTEXT_REPAIRING` (if applicable), as otherwise its pairing which is not
+     * required to be set.
+     * Set the initiator as `REPAIRING` which indicates repairing the bond.
+     */
+    pairing_initiator = PairingInitiator::REPAIRING;
+  }
 
   if ((pairing_cb.state == state) && (state == BT_BOND_STATE_BONDING)) {
     // Cross key pairing so send callback for static address
@@ -569,7 +591,8 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
               std::format("Crosskey bt_status:{} bond_state:{} reason:{}", bt_status_text(status),
                           state, hci_reason_code_text(to_hci_reason_code(pairing_cb.fail_reason))));
       GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
-              status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason);
+              status, bd_addr, transport, state, api_pairing_type, pairing_cb.fail_reason,
+              pairing_initiator);
     }
     return;
   }
@@ -583,21 +606,25 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
 
   log::info(
           "{}[{}] Bond state changed to state={}[0:none, 1:bonding, "
-          "2:bonded],prev_state={}, sdp_attempts={}, pairing_algorithm={}",
+          "2:bonded],prev_state={}, sdp_attempts={}, (native_)pairing_algorithm={}, "
+          "(API_)pairing_algorithm={}",
           bd_addr, bt_transport_text(transport), state, pairing_cb.state, pairing_cb.sdp_attempts,
-          pairing_type.algorithm);
+          pairing_type.algorithm, api_pairing_type.algorithm);
 
-  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) {
+  if (bond_loss_scenario) {
     if (state == BT_BOND_STATE_BONDED) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_SUCCESS);
+
+      // This indicates that re-pairing was successful, send the bond_state_change sequence.
+      btif_dm_repair_success_cb(bd_addr, transport, api_pairing_type, pairing_cb.fail_reason,
+                                pairing_initiator);
     } else if (state == BT_BOND_STATE_NONE) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_FAILURE);
-      const std::string bd_addr_str = bd_addr.ToString();
-      bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
+      btif_in_load_bonded_device(bd_addr, /*add=*/true);  // refresh the device information
+
       log::debug(
               "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, fetching "
-              "device details from persistent storage: {}",
-              bt_status_text(fetch_status));
+              "device details from persistent storage.");
       status = BT_STATUS_SUCCESS;
       state = BT_BOND_STATE_BONDED;
     }
@@ -619,7 +646,8 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
                  std::format("bt_status:{} bond_state:{} reason:{}", bt_status_text(status), state,
                              hci_reason_code_text(to_hci_reason_code(pairing_cb.fail_reason))));
   GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
-          status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason);
+          status, bd_addr, transport, state, api_pairing_type, pairing_cb.fail_reason,
+          pairing_initiator);
 
   if ((state == BT_BOND_STATE_NONE) && (pairing_cb.bd_addr != bd_addr) && is_bonding_or_sdp()) {
     log::warn("Ignoring bond state changed for unexpected device: {} pairing: {}", bd_addr,
@@ -4256,7 +4284,7 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_functio
 
 void btif_debug_bond_event_dump(int fd) {
   std::unique_lock<std::mutex> lock(bond_event_lock);
-  dprintf(fd, "\nBond Events: \n");
+  dprintf(fd, "\nBond Events:\n");
   dprintf(fd, "  Total Number of events: %zu\n", btif_num_bond_events);
   if (btif_num_bond_events > 0) {
     dprintf(fd, "  Time          address            Function             State\n");
@@ -4434,6 +4462,30 @@ void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
       }
     }
   }
+}
+
+void btif_dm_repair_success_cb(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                               PairingType pairing_type, uint8_t fail_reason,
+                               PairingInitiator pairing_initiator) {
+  if (!is_autonomous_repairing_supported() || !btm_is_bond_lost(bd_addr)) {
+    log::error(
+            "Autonomous repair is not supported or bond is not lost. Incorrect state, returning.");
+    return;
+  }
+  log::info("Reset the bond lost status, re-pairing was successful.");
+  btm_update_bond_lost(bd_addr, false);
+
+  // BOND_BONDED -> BOND_NONE
+  GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+          BT_STATUS_SUCCESS, bd_addr, transport, BT_BOND_STATE_NONE, pairing_type, fail_reason,
+          pairing_initiator);
+
+  // BOND_NONE -> BOND_BONDING
+  GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+          BT_STATUS_SUCCESS, bd_addr, transport, BT_BOND_STATE_BONDING, pairing_type, fail_reason,
+          pairing_initiator);
+
+  // BOND_BONDING -> BOND_BONDED, will be sent by the usual process in the caller itself.
 }
 
 namespace bluetooth {

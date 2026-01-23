@@ -31,18 +31,30 @@ import kotlin.text.Charsets.UTF_8
  * is useful for avoiding the standard [prependIndent] behavior of adding an indent to the blank
  * line that follows a trailing newline character (`\n`).
  *
+ * This function also prevent adding indent on empty/blank lines.
+ *
  * Example:
  * ```
  * "Hi\n".prependIndent("  ") // returns "  Hi\n  " (undesired)
  * "Hi\n".indent("  ")        // returns "  Hi\n"   (desired)
+ * "Hi\n  \nFoo".indent("  ") // returns "  Hi\n\n  Foo"   (desired)
  * ```
  *
- * On a string with no trailing newline, the behavior will be the exact same as [prependIndent]
+ * As opposed to [prependIndent], the behavior doesn't guarantee a minimal length of line
  *
  * @param indent The string to prepend to each line (defaults to four spaces)
- * @return The indented string, with no trailing indent on the final newline
+ * @return The indented string
  */
-fun String.indent(indent: String = "    ") = trimEnd().prependIndent(indent)
+fun String.indent(indent: String = "    ") = trimEnd().prependIndentExceptEmpty(indent)
+
+private fun String.prependIndentExceptEmpty(indent: String) =
+    this.lines().joinToString("\n") { line ->
+        if (line.isNotBlank()) {
+            indent + line
+        } else {
+            ""
+        }
+    }
 
 /**
  * Returns the longest prefix of a string for which the UTF-8 encoding fits into the given number of

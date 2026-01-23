@@ -1276,6 +1276,30 @@ TEST_F(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
   // btsnoop file should exist.
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_filtered_));
 }
+
+// Test that DumpSnoozLogToFile recreates the log directory if it has been
+// removed. This is particularly relevant for snooz (disabled mode), where the
+// directory is not created at startup but only when the snooz log is dumped.
+TEST_F(SnoopLoggerTest, recreate_log_directory_on_dump_test) {
+  // Clean up any previous logs and ensure the directory does not exist.
+  std::filesystem::remove_all(temp_dir_);
+  ASSERT_FALSE(std::filesystem::exists(temp_dir_));
+
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  snoop_logger->Capture(kInformationRequest, SnoopLogger::Direction::OUTGOING,
+                        SnoopLogger::PacketType::CMD);
+
+  // The directory should not have been created by the constructor in disabled mode
+  ASSERT_FALSE(std::filesystem::exists(temp_dir_));
+
+  snoop_logger->DumpSnoozLogToFile();
+
+  // The directory should be created by DumpSnoozLogToFile
+  ASSERT_TRUE(std::filesystem::exists(temp_dir_));
+  ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
+
+  snoop_logger.reset();
+}
 #endif  // __ANDROID__
 
 }  // namespace bluetooth::hal

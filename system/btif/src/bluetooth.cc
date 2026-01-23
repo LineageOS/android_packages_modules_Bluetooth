@@ -114,6 +114,7 @@
 #include "osi/include/wakelock.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
+#include "stack/btm/btm_sec_utils.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/a2dp_api.h"
 #include "stack/include/avct_api.h"
@@ -422,8 +423,9 @@ int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
 
 void bluetooth_init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
                     int config_compare_result, bool is_atv, const std::string hci_instance_name,
-                    bt_os_callouts_t* callouts) {
+                    bt_os_callouts_t* callouts, bool autonomous_repairing_initiation) {
   log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
+  set_autonomous_repairing_supported(autonomous_repairing_initiation);
 
   log::info(
           "start_restricted={} common_criteria_mode={}, config_compare_result={} instance_name={}",
@@ -1378,15 +1380,15 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c, Octet16 
 }
 
 void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, tBT_TRANSPORT transport,
-                                  bt_bond_state_t state, PairingType pairing_type,
-                                  int fail_reason) {
+                                  bt_bond_state_t state, PairingType pairing_type, int fail_reason,
+                                  PairingInitiator pairing_initiator) {
   do_in_jni_thread(base::BindOnce(
           [](bt_status_t status, RawAddress bd_addr, tBT_TRANSPORT transport, bt_bond_state_t state,
-             PairingType pairing_type, int fail_reason) {
+             PairingType pairing_type, int fail_reason, PairingInitiator pairing_initiator) {
             HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, bd_addr, transport, state,
-                      pairing_type, fail_reason);
+                      pairing_type, fail_reason, pairing_initiator);
           },
-          status, bd_addr, transport, state, pairing_type, fail_reason));
+          status, bd_addr, transport, state, pairing_type, fail_reason, pairing_initiator));
 }
 
 void invoke_address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
@@ -1471,6 +1473,8 @@ void invoke_switch_buffer_size_cb(bool is_low_latency_buffer_size) {
 }
 
 void invoke_switch_codec_cb(bool is_low_latency_buffer_size) {
+  log::assert_that(!com::android::bluetooth::flags::a2dp_handle_sa_reconfig_in_native(),
+                   "Reconfig is in native");
   do_in_jni_thread(base::BindOnce(
           [](bool is_low_latency_buffer_size) {
             HAL_CBACK(bt_hal_cbacks, switch_codec_cb, is_low_latency_buffer_size);

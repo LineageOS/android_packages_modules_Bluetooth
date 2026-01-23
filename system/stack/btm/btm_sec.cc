@@ -3174,11 +3174,6 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     }
   }
 
-  if (is_autonomous_repairing_supported() && status == HCI_SUCCESS) {
-    log::debug("Reset the bond lost status, pairing was successful.");
-    p_device->bond_lost = false;
-  }
-
   /* If this is a bonding procedure can disconnect the link now */
   if (are_bonding) {
     tHCI_ROLE role = HCI_ROLE_UNKNOWN;
@@ -4515,7 +4510,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
 
   /* received PIN code request. must be non-sm4 */
   p_device->sm4 = BTM_SM4_KNOWN;
-  p_device->sec_rec.pairing_algorithm = PairingAlgorithm::LEGACY;
+  p_device->sec_rec.pairing_algorithm = PairingAlgorithm::BREDR_LEGACY;
 
   if (BtmSecurity::Get().pairing_state_ == BTM_PAIR_STATE_IDLE) {
     BtmSecurity::Get().link_spec_.addrt.bda = p_bda;
@@ -5084,7 +5079,7 @@ static bool btm_sec_check_prefetch_pin(BtmDevice* p_device) {
   }
 
   BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_PIN);
-  p_device->sec_rec.pairing_algorithm = PairingAlgorithm::LEGACY;
+  p_device->sec_rec.pairing_algorithm = PairingAlgorithm::BREDR_LEGACY;
 
   /* If we got a PIN, use that, else try to get one */
   if (BtmSecurity::Get().pin_code_len_) {
@@ -5327,7 +5322,7 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool hos
     } else if (bluetooth::shim::GetController()->SupportsSimplePairing()) {
       p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SSP;
     } else {
-      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::LEGACY;
+      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::BREDR_LEGACY;
     }
   }
 

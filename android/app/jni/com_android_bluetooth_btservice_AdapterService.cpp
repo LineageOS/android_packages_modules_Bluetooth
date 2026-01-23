@@ -21,6 +21,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/JNIPlatformHelp.h>
@@ -318,7 +319,8 @@ static void device_found_callback(int num_properties, bt_property_t* properties)
 
 static void bond_state_changed_callback(bt_status_t status, RawAddress bd_addr,
                                         tBT_TRANSPORT transport, bt_bond_state_t state,
-                                        PairingType pairing_type, int fail_reason) {
+                                        PairingType pairing_type, int fail_reason,
+                                        PairingInitiator pairing_initiator) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -335,7 +337,7 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress bd_addr,
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_bondStateChangeCallback, (jint)status,
                                jaddr.get(), (jint)transport, (jint)state,
                                (jint)pairing_type.algorithm, (jint)pairing_type.variant,
-                               (jint)fail_reason);
+                               (jint)pairing_initiator, (jint)fail_reason);
 }
 
 static void address_consolidate_callback(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
@@ -640,6 +642,8 @@ static void switch_buffer_size_callback(bool is_low_latency_buffer_size) {
 }
 
 static void switch_codec_callback(bool is_low_latency_buffer_size) {
+  log::assert_that(!com::android::bluetooth::flags::a2dp_handle_sa_reconfig_in_native(),
+                   "Reconfig is in native");
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -910,7 +914,8 @@ static bt_os_callouts_t sBluetoothOsCallouts = {
 };
 
 static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCommonCriteriaMode,
-                       int configCompareResult, jboolean isAtvDevice, jstring jHciInstanceName) {
+                       int configCompareResult, jboolean isAtvDevice, jstring jHciInstanceName,
+                       jboolean platformSupportAutonomousRepairingInitiation) {
   std::unique_lock<std::shared_timed_mutex> lock(jniObjMutex);
 
   log::verbose("");
@@ -929,7 +934,7 @@ static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCo
 
   bluetooth_init(&sBluetoothCallbacks, isGuest == JNI_TRUE, isCommonCriteriaMode == JNI_TRUE,
                  configCompareResult, isAtvDevice == JNI_TRUE, std::move(hci_instance_name),
-                 &sBluetoothOsCallouts);
+                 &sBluetoothOsCallouts, platformSupportAutonomousRepairingInitiation == JNI_TRUE);
 
   sBluetoothSocketInterface = reinterpret_cast<const btsock_interface_t*>(
           sBluetoothInterface->get_profile_interface(BT_PROFILE_SOCKETS_ID));
@@ -1895,7 +1900,7 @@ static jboolean restoreFilterAcceptListNative(JNIEnv* /* env */, jobject /* obj 
 
 static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
   const JNINativeMethod methods[] = {
-          {"initNative", "(ZZIZLjava/lang/String;)Z", reinterpret_cast<void*>(initNative)},
+          {"initNative", "(ZZIZLjava/lang/String;Z)Z", reinterpret_cast<void*>(initNative)},
           {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
           {"enableNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(enableNative)},
           {"disableNative", "()V", reinterpret_cast<void*>(disableNative)},
@@ -1982,7 +1987,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
           {"pinRequestCallback", "([B[BIZI)V", &method_pinRequestCallback},
           {"sspRequestCallback", "([BIII)V", &method_sspRequestCallback},
-          {"bondStateChangeCallback", "(I[BIIIII)V", &method_bondStateChangeCallback},
+          {"bondStateChangeCallback", "(I[BIIIIII)V", &method_bondStateChangeCallback},
           {"addressConsolidateCallback", "([B[B)V", &method_addressConsolidateCallback},
           {"leAddressAssociateCallback", "([B[BI)V", &method_leAddressAssociateCallback},
           {"aclStateChangeCallback", "(I[BIIIII)V", &method_aclStateChangeCallback},

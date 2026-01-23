@@ -612,7 +612,8 @@ typedef struct {
 
 enum class PairingAlgorithm : uint8_t {
   NONE, /* Indicates pairing information is not available */
-  LEGACY, /* Used by both BR/EDR and LE */
+  LE_LEGACY,
+  BREDR_LEGACY,
   SSP, /* Secure Simple Pairing (only used for BR/EDR) */
   SC,  /* Secure Connections (for both BR/EDR and LE) */
 };
@@ -620,7 +621,8 @@ enum class PairingAlgorithm : uint8_t {
 static inline std::string pairing_algorithm_text(const PairingAlgorithm& pairing_algorithm) {
   switch (pairing_algorithm) {
     CASE_RETURN_STRING(PairingAlgorithm::NONE);
-    CASE_RETURN_STRING(PairingAlgorithm::LEGACY);
+    CASE_RETURN_STRING(PairingAlgorithm::BREDR_LEGACY);
+    CASE_RETURN_STRING(PairingAlgorithm::LE_LEGACY);
     CASE_RETURN_STRING(PairingAlgorithm::SC);
     CASE_RETURN_STRING(PairingAlgorithm::SSP);
     default:
@@ -642,6 +644,14 @@ static inline std::string legacy_pairing_variant_text(const LegacyPairingVariant
   }
 }
 
+enum class PairingInitiator : uint8_t {
+  APP,
+  REMOTE_DEVICE,
+  SERVICE_ACCESS_REQ,
+  CTKD,
+  REPAIRING,
+};
+
 struct PairingType {
   PairingAlgorithm algorithm;
   union {
@@ -652,7 +662,7 @@ struct PairingType {
 
 static inline std::string pairing_type_text(const PairingType& pairing_type) {
   return pairing_algorithm_text(pairing_type.algorithm) + "-" +
-         (pairing_type.algorithm == PairingAlgorithm::LEGACY
+         (pairing_type.algorithm == PairingAlgorithm::BREDR_LEGACY
                   ? legacy_pairing_variant_text(pairing_type.legacy_variant)
                   : pairing_variant_text(pairing_type.variant));
 }
@@ -709,7 +719,8 @@ typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, PairingVariant p
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
 typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress remote_bd_addr,
                                             tBT_TRANSPORT transport, bt_bond_state_t state,
-                                            PairingType pairing_type, int fail_reason);
+                                            PairingType pairing_type, int fail_reason,
+                                            PairingInitiator pairing_initiator);
 
 /** Bluetooth Address consolidate callback */
 /* Callback to inform upper layer that these two addresses come from same
@@ -855,7 +866,7 @@ typedef struct {
  */
 void bluetooth_init(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_criteria_mode,
                     int config_compare_result, bool is_atv, const std::string hci_instance_name,
-                    bt_os_callouts_t* callouts);
+                    bt_os_callouts_t* callouts, bool autonomous_repairing_initiation);
 
 /** Enable Bluetooth. */
 void bluetooth_enable(const std::string local_name);

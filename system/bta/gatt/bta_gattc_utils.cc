@@ -959,6 +959,6 @@ void bta_gatt_client_dump(int fd) {
 
   stream << "  -- used: " << entry_count << "\n";
   entry_count = 0;
-  dprintf(fd, "BTA_GATTC_CB state %s \n%s\n", bta_gattc_state_text(bta_gattc_cb.state).c_str(),
+  dprintf(fd, "BTA_GATTC_CB state %s\n%s\n", bta_gattc_state_text(bta_gattc_cb.state).c_str(),
           stream.str().c_str());
 }

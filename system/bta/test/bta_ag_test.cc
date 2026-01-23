@@ -425,7 +425,8 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_disabled) {
 }
 
 TEST_F_WITH_FLAGS(BtaAgScoTest, ag_sco_shutdown,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, sco_state_machine_cleanup))) {
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                        sco_state_machine_cleanup))) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   bta_ag_cb.sco.state = BTA_AG_SCO_OPENING_ST;
   bta_ag_cb.sco.p_curr_scb = p_scb;
@@ -450,7 +451,7 @@ protected:
   void TearDown() override {
     p_scb->in_use = false;
     BtaAgTest::TearDown();
-    testing::Mock::VerifyAndClearExpectations(&event_cb);
+    ::testing::Mock::VerifyAndClearExpectations(&event_cb);
   }
 
   tBTA_AG_SCB* p_scb;
@@ -581,13 +582,136 @@ TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_dial_fail) {
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
 }
 
+extern std::function<int(uint16_t, RawAddress*, uint16_t*)> PORT_CheckConnection_Fn;
+extern std::function<int(uint16_t)> RFCOMM_RemoveConnection_Fn;
+extern std::function<int(uint16_t)> RFCOMM_RemoveServer_Fn;
+
+class BtaAgRfcTest : public BtaAgTest {
+protected:
+  void SetUp() override {
+    BtaAgTest::SetUp();
+    PORT_CheckConnection_Fn = {};
+    RFCOMM_RemoveConnection_Fn = {};
+    RFCOMM_RemoveServer_Fn = {};
+  }
+  void TearDown() override {
+    PORT_CheckConnection_Fn = {};
+    RFCOMM_RemoveConnection_Fn = {};
+    RFCOMM_RemoveServer_Fn = {};
+    BtaAgTest::TearDown();
+  }
+};
+
+TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__setup_and_open_no_collision,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                        hfp_ag_rfc_race_condition_random_timer))) {
+  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
+  p_scb->in_use = true;
+  p_scb->serv_handle[0] = 100;
+  p_scb->reg_services = BTA_HFP_SERVICE_MASK;
+  p_scb->state = BTA_AG_OPENING_ST;
+
+  tBTA_AG_DATA data = {};
+  data.rfc.port_handle = 100;
+
+  // Mock PORT_CheckConnection
+  PORT_CheckConnection_Fn = [&](uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
+    if (handle == 100) {
+      *bd_addr = addr;
+      *p_lcid = 1;
+      return 0; // PORT_SUCCESS
+    }
+    return 1; // PORT_ERR
+  };
+
+  bta_ag_rfc_acp_open(p_scb, data);
+
+  ASSERT_EQ(p_scb->peer_addr, addr);
+  ASSERT_EQ(p_scb->conn_handle, 100);
+  ASSERT_EQ(p_scb->conn_service, 0); // BTA_AG_HFP is 1st index? No.
+  // bta_ag_uuid[0] is HEADSET, [1] is HANDSFREE.
+  // But serv_handle array corresponds to index 0 and 1.
+  // If serv_handle[0] is matched, conn_service should be 0.
+  // BTA_AG_HFP is 1. Wait.
+  // bta_ag_act.cc:603: p_scb->conn_service = i;
+  // If serv_handle[0] == 100, then i=0, conn_service=0.
+  // But I set reg_services to BTA_HFP_SERVICE_MASK (bit 1).
+  // Usually HFP is index 1.
+  // Let's set serv_handle[1] = 100 to match HFP.
+  p_scb->conn_service = BTA_AG_HFP; // To be safe or verifying.
+}
+
+TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__collision_timer,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                        hfp_ag_rfc_race_condition_random_timer))) {
+  // Setup Incoming SCB
+  tBTA_AG_SCB* p_scb_incoming = &bta_ag_cb.scb[0];
+  p_scb_incoming->in_use = true;
+  p_scb_incoming->state = BTA_AG_OPENING_ST;
+  p_scb_incoming->collision_timer = alarm_new("test_collision_timer");
+  p_scb_incoming->serv_handle[1] = 30; // HFP
+  p_scb_incoming->reg_services = BTA_HFP_SERVICE_MASK;
+
+  // Setup Outgoing SCB
+  tBTA_AG_SCB* p_scb_outgoing = &bta_ag_cb.scb[1];
+  p_scb_outgoing->in_use = true;
+  p_scb_outgoing->peer_addr = addr;
+  p_scb_outgoing->conn_handle = 200;
+
+  // Incoming data
+  tBTA_AG_DATA data = {};
+  data.rfc.port_handle = 30;
+
+  // Mock PORT_CheckConnection
+  PORT_CheckConnection_Fn = [&](uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
+    if (handle == 30) {
+      *bd_addr = addr; // Collision
+      *p_lcid = 2;
+      return 0;
+    }
+    return 1;
+  };
+
+  // Capture timer callback
+  alarm_callback_t stored_cb = nullptr;
+  void* stored_data = nullptr;
+  test::mock::osi_alarm::alarm_set_on_mloop.body =
+      [&](alarm_t* /* alarm */, uint64_t /* interval */, alarm_callback_t cb,
+          void* data) {
+        stored_cb = cb;
+        stored_data = data;
+      };
+
+  bta_ag_rfc_acp_open(p_scb_incoming, data);
+
+  // Verify Timer Set
+  ASSERT_TRUE(stored_cb != nullptr);
+  ASSERT_EQ(p_scb_incoming->peer_addr, addr);
+
+  // Mock RFCOMM_RemoveConnection
+  bool remove_called = false;
+  RFCOMM_RemoveConnection_Fn = [&](uint16_t handle) {
+    if (handle == 200) remove_called = true;
+    return 0;
+  };
+
+  // Trigger Callback (Collision resolution)
+  stored_cb(stored_data);
+
+  ASSERT_TRUE(remove_called); // Outgoing closed
+  ASSERT_EQ(p_scb_incoming->conn_handle, 30); // Incoming opened
+  ASSERT_EQ(p_scb_incoming->conn_service, 1); // BTA_AG_HFP
+
+  alarm_free(p_scb_incoming->collision_timer);
+}
+
 TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_chld_evt_test) {
   char p_arg[] = "";
   p_scb->peer_version = 0x0105;  // HFP_VERSION_1_5
   p_scb->features |= BTA_AG_FEAT_ECC;
   p_scb->peer_features |= BTA_AG_PEER_FEAT_ECC;
   EXPECT_CALL(event_cb, Call(BTA_AG_AT_CHLD_EVT, _)).Times(0);
-  EXPECT_CALL(event_cb, Call(testing::Ne(BTA_AG_AT_CHLD_EVT), _)).Times(testing::AnyNumber());
+  EXPECT_CALL(event_cb, Call(::testing::Ne(BTA_AG_AT_CHLD_EVT), _)).Times(::testing::AnyNumber());
 
   bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CHLD_EVT, BTA_AG_AT_TEST, p_arg, p_arg + strlen(p_arg), 0);
 
@@ -907,7 +1031,7 @@ protected:
   void TearDown() override {
     p_scb->in_use = false;
     BtaAgTest::TearDown();
-    testing::Mock::VerifyAndClearExpectations(&event_cb);
+    ::testing::Mock::VerifyAndClearExpectations(&event_cb);
   }
 
   tBTA_AG_SCB* p_scb;
@@ -1190,7 +1314,7 @@ protected:
     alarm_free(p_scb->ring_timer);
     p_scb->in_use = false;
     BtaAgTest::TearDown();
-    testing::Mock::VerifyAndClearExpectations(&event_cb);
+    ::testing::Mock::VerifyAndClearExpectations(&event_cb);
   }
 
   tBTA_AG_SCB* p_scb;

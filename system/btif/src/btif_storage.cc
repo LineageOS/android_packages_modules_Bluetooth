@@ -412,7 +412,7 @@ static bool cfg2prop(const RawAddress* addr, bt_property_t* prop) {
 
 /*******************************************************************************
  *
- * Function         btif_in_fetch_bonded_devices
+ * Function         btif_in_fetch_bonded_device
  *
  * Description      Helper function to fetch the bonded devices
  *                  from NVRAM
@@ -503,6 +503,54 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_
     }
   }
   return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_in_load_bonded_device
+ *
+ * Description      Helper function to load the bonded device from NVRAM, and add it to the BTA.
+ *                  This function loads the bonded device and basically refreshes the device
+ *                  information.
+ *
+ * Returns          None
+ *
+ ******************************************************************************/
+void btif_in_load_bonded_device(const RawAddress& addr, bool add) {
+  bool bt_linkkey_file_found = false;
+  auto bdstr = addr.ToString();
+
+  log::verbose("Remote device:{}", addr);
+  LinkKey link_key;
+  size_t size = sizeof(link_key);
+  if (btif_config_get_bin(bdstr, BTIF_STORAGE_KEY_LINK_KEY, link_key.data(), &size)) {
+    int linkkey_type;
+    if (btif_config_get_int(bdstr, BTIF_STORAGE_KEY_LINK_KEY_TYPE, &linkkey_type)) {
+      if (add) {
+        DEV_CLASS dev_class = {0, 0, 0};
+        int cod;
+        int pin_length = 0;
+        if (btif_config_get_int(bdstr, BTIF_STORAGE_KEY_DEV_CLASS, &cod)) {
+          dev_class = uint2devclass((uint32_t)cod);
+        }
+        btif_config_get_int(bdstr, BTIF_STORAGE_KEY_PIN_LENGTH, &pin_length);
+        PairingType pairing_type =
+                btif_storage_get_bredr_pairing_type(addr).value_or(kPairingTypeNone);
+        BTA_DmAddDevice(addr, dev_class, pairing_type, link_key, static_cast<uint8_t>(linkkey_type),
+                        pin_length);
+
+        int device_type = BT_DEVICE_TYPE_UNKNOWN;
+        if (btif_config_get_int(bdstr, BTIF_STORAGE_KEY_DEV_TYPE, &device_type) &&
+            (device_type == BT_DEVICE_TYPE_DUMO)) {
+          btif_gatts_add_bonded_dev_from_nv(addr);
+        }
+      }
+      bt_linkkey_file_found = true;
+    }
+  }
+  if (!btif_in_fetch_bonded_ble_device(bdstr, add, nullptr) && !bt_linkkey_file_found) {
+    log::verbose("No link key or ble key found for device:{}", addr);
+  }
 }
 
 static bool btif_read_le_key(const RawAddress& addr, const tBLE_ADDR_TYPE addr_type,
@@ -817,7 +865,7 @@ bt_status_t btif_storage_add_bredr_keys(const RawAddress& addr, const PairingTyp
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_ALGORITHM,
                              static_cast<int>(pairing_type.algorithm));
 
-  int pairing_variant = pairing_type.algorithm == PairingAlgorithm::LEGACY
+  int pairing_variant = pairing_type.algorithm == PairingAlgorithm::BREDR_LEGACY
                                 ? static_cast<int>(pairing_type.legacy_variant)
                                 : static_cast<int>(pairing_type.variant);
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_VARIANT, pairing_variant);
@@ -1327,7 +1375,7 @@ std::optional<PairingType> btif_storage_get_bredr_pairing_type(const RawAddress&
     return std::nullopt;
   }
 
-  if (pairing_type.algorithm == PairingAlgorithm::LEGACY) {
+  if (pairing_type.algorithm == PairingAlgorithm::BREDR_LEGACY) {
     pairing_type.legacy_variant = static_cast<LegacyPairingVariant>(variant);
   } else if (pairing_type.algorithm == PairingAlgorithm::SC) {
     pairing_type.variant = static_cast<PairingVariant>(variant);

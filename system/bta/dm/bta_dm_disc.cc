@@ -285,8 +285,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
       // Some devices provide PPCP values that are incompatible with the device-side firmware.
       log::info("disable PPCP read: interop matched name {} address {}", remote_name,
                 bta_dm_discovery_cb.peer_bdaddr);
-    } else if (!com_android_bluetooth_flags_read_ppcp_only_for_success() ||
-               disc_result.result == BTA_SUCCESS) {
+    } else if (disc_result.result == BTA_SUCCESS) {
       log::info("reading PPCP");
       GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
     }

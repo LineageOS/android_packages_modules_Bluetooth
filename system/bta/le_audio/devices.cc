@@ -1303,9 +1303,9 @@ void LeAudioDevice::DisconnectAcl(void) {
 
 void LeAudioDevice::SetAvailableContexts(BidirectionalPair<AudioContexts> contexts) {
   log::debug(
-          "{}: \n\t previous_contexts_.sink: {} \n\t previous_contexts_.source: {} "
+          "{}:\n\t previous_contexts_.sink: {}\n\t previous_contexts_.source: {} "
           " "
-          "\n\t new_contexts.sink: {} \n\t new_contexts.source: {} \n\t",
+          "\n\t new_contexts.sink: {}\n\t new_contexts.source: {}\n\t",
           address_, avail_contexts_.sink.to_string(), avail_contexts_.source.to_string(),
           contexts.sink.to_string(), contexts.source.to_string());
 

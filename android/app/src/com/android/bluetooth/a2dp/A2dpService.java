@@ -1329,6 +1329,9 @@ public class A2dpService extends ConnectableProfile {
     }
 
     public void switchCodecByBufferSize(BluetoothDevice device, boolean isLowLatency) {
+        if (Flags.a2dpHandleSaReconfigInNative()) {
+            throw new IllegalStateException("Reconfig is in native");
+        }
         if (getOptionalCodecsEnabled(device) != BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED) {
             return;
         }

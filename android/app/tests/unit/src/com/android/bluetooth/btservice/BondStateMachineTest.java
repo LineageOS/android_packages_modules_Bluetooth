@@ -185,6 +185,7 @@ public class BondStateMachineTest {
                 BOND_NONE,
                 0,
                 0,
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP,
                 0);
         syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
         mStateMachine.bondStateChangeCallback(
@@ -194,6 +195,7 @@ public class BondStateMachineTest {
                 BOND_NONE,
                 0,
                 0,
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP,
                 0);
         syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
 
@@ -253,6 +255,7 @@ public class BondStateMachineTest {
                 BOND_BONDED,
                 0,
                 0,
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP,
                 TEST_BOND_REASON);
 
         RemoteDevices.DeviceProperties testDeviceProperties =
@@ -662,7 +665,13 @@ public class BondStateMachineTest {
                 mStateMachine.handlePendingUuids(mDevice);
             } else {
                 mStateMachine.handleBondStateChanged(
-                        mDevice, BluetoothDevice.TRANSPORT_BREDR, newState, 0, 0, TEST_BOND_REASON);
+                        mDevice,
+                        BluetoothDevice.TRANSPORT_BREDR,
+                        newState,
+                        0,
+                        0,
+                        AbstractionLayer.BT_PAIRING_INITIATOR_APP,
+                        TEST_BOND_REASON);
             }
         } catch (IllegalArgumentException e) {
             // Do nothing.

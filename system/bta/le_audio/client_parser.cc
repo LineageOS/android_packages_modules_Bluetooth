@@ -338,7 +338,7 @@ bool PrepareAseCtpCodecConfig(const std::vector<struct ctp_codec_conf>& confs,
             "Codec configuration\n\tAse id: 0x{:x}\n\tTarget latency: "
             "0x{:x}\n\tTarget PHY: 0x{:x}\n\tCoding format: 0x{:x}\n\tVendor codec "
             "company ID: 0x{:x}\n\tVendor codec ID: 0x{:x}\n\tCodec config len: "
-            "{}\n\tCodec spec conf: \n{}",
+            "{}\n\tCodec spec conf:\n{}",
             conf.ase_id, conf.target_latency, conf.target_phy, conf.codec_id.coding_format,
             conf.codec_id.vendor_company_id, conf.codec_id.vendor_codec_id,
             static_cast<int>(conf.codec_config.size()), conf_ents_str.str());
@@ -661,7 +661,7 @@ bool ParseSupportedAudioContexts(types::BidirectionalPair<types::AudioContexts>&
   STREAM_TO_UINT16(contexts.source.value_ref(), value);
 
   log::info(
-          "Supported Audio Contexts: \n\tSupported Sink Contexts: {}\n\tSupported "
+          "Supported Audio Contexts:\n\tSupported Sink Contexts: {}\n\tSupported "
           "Source Contexts: {}",
           contexts.sink.to_string(), contexts.source.to_string());
 
@@ -679,7 +679,7 @@ bool ParseAvailableAudioContexts(types::BidirectionalPair<types::AudioContexts>&
   STREAM_TO_UINT16(contexts.source.value_ref(), value);
 
   log::info(
-          "Available Audio Contexts: \n\tAvailable Sink Contexts: {}\n\tAvailable "
+          "Available Audio Contexts:\n\tAvailable Sink Contexts: {}\n\tAvailable "
           "Source Contexts: {}",
           contexts.sink.to_string(), contexts.source.to_string());
 

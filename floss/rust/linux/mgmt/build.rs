@@ -16,7 +16,7 @@ fn gen_mod_rs<P: AsRef<Path>>(out_dir: PathBuf, inputs: &[P]) {
 
     for i in 0..inputs.len() {
         let stem = inputs[i].as_ref().file_stem().unwrap();
-        f.write_all(format!("pub mod {}; \n", stem.to_str().unwrap()).as_bytes()).unwrap();
+        f.write_all(format!("pub mod {};\n", stem.to_str().unwrap()).as_bytes()).unwrap();
     }
 }
 

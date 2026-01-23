@@ -146,7 +146,8 @@ void ssp_request_callback(RawAddress /* remote_bd_addr */, PairingVariant /* pai
                           uint32_t /* pass_key */, int /* pairing_algorithm */) {}
 void bond_state_changed_callback(bt_status_t /* status */, RawAddress /* remote_bd_addr */,
                                  tBT_TRANSPORT /* transport */, bt_bond_state_t /* state */,
-                                 PairingType /* pairing_type */, int /* fail_reason */) {}
+                                 PairingType /* pairing_type */, int /* fail_reason */,
+                                 PairingInitiator /* pairing_initiator */) {}
 void address_consolidate_callback(RawAddress /* main_bd_addr */,
                                   RawAddress /* secondary_bd_addr */) {}
 void le_address_associate_callback(RawAddress /* main_bd_addr */,

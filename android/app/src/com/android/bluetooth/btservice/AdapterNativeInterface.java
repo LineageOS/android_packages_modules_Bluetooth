@@ -53,7 +53,8 @@ public class AdapterNativeInterface {
                 isCommonCriteriaMode,
                 configCompareResult,
                 isAtvDevice,
-                hciInstanceName);
+                hciInstanceName,
+                android.bluetooth.platform.flags.Flags.autonomousRepairingInitiation());
     }
 
     void cleanup() {
@@ -285,7 +286,8 @@ public class AdapterNativeInterface {
             boolean isCommonCriteriaMode,
             int configCompareResult,
             boolean isAtvDevice,
-            String hciInstanceName);
+            String hciInstanceName,
+            boolean autonomousRepairingInitiation);
 
     private native void cleanupNative();
 
