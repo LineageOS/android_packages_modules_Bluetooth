@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,68 +14,64 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.google.common.truth.Truth.assertThat;
+import android.database.MatrixCursor
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
+import java.nio.charset.StandardCharsets
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.database.MatrixCursor;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.nio.charset.StandardCharsets;
-
-/** Test cases for {@link BluetoothMapUtils}. */
+/** Test cases for [BluetoothMapUtils]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothMapUtilsTest {
-
-    private static final String TEXT = "코드";
-    private static final String QUOTED_PRINTABLE_ENCODED_TEXT = "=EC=BD=94=EB=93=9C";
-    private static final String BASE64_ENCODED_TEXT = "7L2U65Oc";
+@RunWith(AndroidJUnit4::class)
+class BluetoothMapUtilsTest {
 
     @Test
-    public void encodeQuotedPrintable_withNullInput_returnsNull() {
-        assertThat(BluetoothMapUtils.encodeQuotedPrintable(null)).isNull();
+    fun encodeQuotedPrintable_withNullInput_returnsNull() {
+        assertThat(BluetoothMapUtils.encodeQuotedPrintable(null)).isNull()
     }
 
     @Test
-    public void encodeQuotedPrintable() {
-        assertThat(BluetoothMapUtils.encodeQuotedPrintable(TEXT.getBytes(StandardCharsets.UTF_8)))
-                .isEqualTo(QUOTED_PRINTABLE_ENCODED_TEXT);
-    }
-
-    @Test
-    public void quotedPrintableToUtf8() {
-        assertThat(BluetoothMapUtils.quotedPrintableToUtf8(QUOTED_PRINTABLE_ENCODED_TEXT, null))
-                .isEqualTo(TEXT.getBytes(StandardCharsets.UTF_8));
-    }
-
-    @Test
-    public void printCursor_doesNotCrash() {
-        MatrixCursor cursor =
-                new MatrixCursor(
-                        new String[] {BluetoothMapContract.PresenceColumns.LAST_ONLINE, "Name"});
-        cursor.addRow(new Object[] {345345226L, "test_name"});
-        cursor.moveToFirst();
-
-        BluetoothMapUtils.printCursor(cursor);
-    }
-
-    @Test
-    public void stripEncoding_quotedPrintable() {
+    fun encodeQuotedPrintable() {
         assertThat(
-                        BluetoothMapUtils.stripEncoding(
-                                "=?UTF-8?Q?" + QUOTED_PRINTABLE_ENCODED_TEXT + "?="))
-                .isEqualTo(TEXT);
+                BluetoothMapUtils.encodeQuotedPrintable(TEXT.toByteArray(StandardCharsets.UTF_8))
+            )
+            .isEqualTo(QUOTED_PRINTABLE_ENCODED_TEXT)
     }
 
     @Test
-    public void stripEncoding_base64() {
-        assertThat(BluetoothMapUtils.stripEncoding("=?UTF-8?B?" + BASE64_ENCODED_TEXT + "?="))
-                .isEqualTo(TEXT);
+    fun quotedPrintableToUtf8() {
+        assertThat(BluetoothMapUtils.quotedPrintableToUtf8(QUOTED_PRINTABLE_ENCODED_TEXT, null))
+            .isEqualTo(TEXT.toByteArray(StandardCharsets.UTF_8))
+    }
+
+    @Test
+    fun printCursor_doesNotCrash() {
+        val cursor = MatrixCursor(arrayOf(BluetoothMapContract.PresenceColumns.LAST_ONLINE, "Name"))
+        cursor.addRow(arrayOf<Any>(345345226L, "test_name"))
+        cursor.moveToFirst()
+
+        BluetoothMapUtils.printCursor(cursor)
+    }
+
+    @Test
+    fun stripEncoding_quotedPrintable() {
+        assertThat(BluetoothMapUtils.stripEncoding("=?UTF-8?Q?$QUOTED_PRINTABLE_ENCODED_TEXT?="))
+            .isEqualTo(TEXT)
+    }
+
+    @Test
+    fun stripEncoding_base64() {
+        assertThat(BluetoothMapUtils.stripEncoding("=?UTF-8?B?$BASE64_ENCODED_TEXT?="))
+            .isEqualTo(TEXT)
+    }
+
+    companion object {
+        private const val TEXT = "코드"
+        private const val QUOTED_PRINTABLE_ENCODED_TEXT = "=EC=BD=94=EB=93=9C"
+        private const val BASE64_ENCODED_TEXT = "7L2U65Oc"
     }
 }
