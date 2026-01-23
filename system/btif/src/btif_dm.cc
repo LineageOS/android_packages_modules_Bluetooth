@@ -249,6 +249,9 @@ static skip_sdp_entry_t sdp_rejectlist[] = {{76}};  // Apple Mouse and Keyboard
 /* This flag will be true if HCI_Inquiry is in progress */
 static bool btif_dm_inquiry_in_progress = false;
 
+/* This variable is used to track the discovery state to be passed to the upper layer */
+static bt_discovery_state_t btif_dm_discovery_state = BT_DISCOVERY_STOPPED;
+
 /*******************************************************************************
  *  Static variables
  ******************************************************************************/
@@ -292,6 +295,7 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_functio
 static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
                               bool during_device_search);
 
+static void btif_dm_report_discovery_state_change(bt_discovery_state_t state);
 static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len,
                                            const RawAddress& bdaddr, std::list<Uuid>* p_uuid_list);
 
@@ -1646,7 +1650,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
     } break;
 
     case BTA_DM_DISC_CMPL_EVT: {
-      GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
+      btif_dm_report_discovery_state_change(BT_DISCOVERY_STOPPED);
     } break;
     case BTA_DM_SEARCH_CANCEL_CMPL_EVT: {
       /* if inquiry is not in progress and we get a cancel event, then
@@ -1659,7 +1663,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
        *
        */
       if (!btif_dm_inquiry_in_progress) {
-        GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
+        btif_dm_report_discovery_state_change(BT_DISCOVERY_STOPPED);
       }
     } break;
     default:
@@ -2348,10 +2352,21 @@ void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
   btif_dm_inquiry_in_progress = (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
 
   if (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED) {
-    GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(BT_DISCOVERY_STARTED);
+    btif_dm_report_discovery_state_change(BT_DISCOVERY_STARTED);
   } else if (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_CANCELLED) {
-    GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
+    btif_dm_report_discovery_state_change(BT_DISCOVERY_STOPPED);
   }
+}
+
+static void btif_dm_report_discovery_state_change(bt_discovery_state_t state) {
+  if (com_android_bluetooth_flags_fix_multiple_discovery_stopped_broadcast()) {
+    if (state == btif_dm_discovery_state) {
+      log::info("Skipping discovery state change broadcast, already in the current state");
+      return;
+    }
+    btif_dm_discovery_state = state;
+  }
+  GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(state);
 }
 
 static void btif_add_local_irk_to_resolving_list() {
