@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,65 +14,52 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hfpclient;
+package com.android.bluetooth.hfpclient
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.lang.reflect.Field;
-
-/** Test cases for {@link StackEvent}. */
+/** Test cases for [StackEvent]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class StackEventTest {
+@RunWith(AndroidJUnit4::class)
+class StackEventTest {
 
     @Test
-    public void toString_returnsInfo() {
-        int type = StackEvent.EVENT_TYPE_RING_INDICATION;
+    fun toString_returnsInfo() {
+        val type = StackEvent.EVENT_TYPE_RING_INDICATION
 
-        StackEvent event = new StackEvent(type);
-        String expectedString =
-                "StackEvent {type:"
-                        + StackEvent.eventTypeToString(type)
-                        + ", value1:"
-                        + event.valueInt
-                        + ", value2:"
-                        + event.valueInt2
-                        + ", value3:"
-                        + event.valueInt3
-                        + ", value4:"
-                        + event.valueInt4
-                        + ", string: \""
-                        + event.valueString
-                        + "\""
-                        + ", device:"
-                        + event.device
-                        + "}";
+        val event = StackEvent(type)
+        val expectedString =
+            "StackEvent {type:${StackEvent.eventTypeToString(type)}" +
+                ", value1:${event.valueInt}" +
+                ", value2:${event.valueInt2}" +
+                ", value3:${event.valueInt3}" +
+                ", value4:${event.valueInt4}" +
+                ", string: \"${event.valueString}\"" +
+                ", device:${event.device}}"
 
-        assertThat(event.toString()).isEqualTo(expectedString);
+        assertThat(event.toString()).isEqualTo(expectedString)
     }
 
     @Test
-    public void testToString_allEventFields_toStringMatchesName() throws IllegalAccessException {
-        Class<StackEvent> stackEventClass = StackEvent.class;
-        Field[] fields = stackEventClass.getFields();
-        for (Field field : fields) {
-            Class<?> t = field.getType();
-            String fieldName = field.getName();
+    @Throws(IllegalAccessException::class)
+    fun toString_allEventFields_toStringMatchesName() {
+        val stackEventClass = StackEvent::class.java
+        for (field in stackEventClass.fields) {
+            val type = field.type
+            val fieldName = field.name
             if (fieldName.startsWith("EVENT_TYPE")) {
-                if (t == int.class) {
-                    int stackEventType = field.getInt(null);
-                    if (fieldName.equals("EVENT_TYPE_UNKNOWN_EVENT")) {
+                if (type == Int::class.javaPrimitiveType) {
+                    val stackEventType = field.getInt(null)
+                    if (fieldName == "EVENT_TYPE_UNKNOWN_EVENT") {
                         assertThat(StackEvent.eventTypeToString(stackEventType))
-                                .isEqualTo("EVENT_TYPE_UNKNOWN:" + stackEventType);
+                            .isEqualTo("EVENT_TYPE_UNKNOWN:$stackEventType")
                     } else {
-                        String eventTypeToString = StackEvent.eventTypeToString(stackEventType);
-                        assertThat(eventTypeToString).isEqualTo(fieldName);
+                        val eventTypeToString = StackEvent.eventTypeToString(stackEventType)
+                        assertThat(eventTypeToString).isEqualTo(fieldName)
                     }
                 }
             }
