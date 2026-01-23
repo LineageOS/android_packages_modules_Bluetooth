@@ -610,6 +610,7 @@ void gatt_profile_db_init(void);
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state);
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb);
 void gatt_init_srv_chg(void);
+void gatt_init_le(void);
 void gatt_init_br();
 void gatt_proc_srv_chg(uint16_t start_handle);
 void gatt_send_srv_chg_ind(const RawAddress& peer_bda, uint16_t start_handle);
