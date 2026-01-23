@@ -15,78 +15,70 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.mcp;
+package com.android.bluetooth.mcp
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import android.bluetooth.BluetoothDevice
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.le_audio.LeAudioService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.util.Optional
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.util.Optional;
-
-/** Test cases for {@link McpService}. */
+/** Test cases for [McpService]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class McpServiceTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class McpServiceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private MediaControlProfile mMediaControlProfile;
-    @Mock private AdapterService mAdapterService;
-    @Mock private LeAudioService mLeAudioService;
+    @Mock private lateinit var mediaControlProfile: MediaControlProfile
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var leAudioService: LeAudioService
 
-    private McpService mMcpService;
+    private lateinit var mcpService: McpService
 
     @Before
-    public void setUp() {
-        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        mMcpService = new McpService(mAdapterService, mMediaControlProfile);
-        mMcpService.setAvailable(true);
+    fun setUp() {
+        doReturn(Optional.of(leAudioService)).whenever(adapterService).leAudioService
+        mcpService = McpService(adapterService, mediaControlProfile)
+        mcpService.isAvailable = true
     }
 
     @After
-    public void tearDown() {
-        mMcpService.cleanup();
+    fun tearDown() {
+        mcpService.cleanup()
     }
 
     @Test
-    public void testAuthorization() {
-        BluetoothDevice device0 = getTestDevice(0);
-        BluetoothDevice device1 = getTestDevice(1);
+    fun testAuthorization() {
+        val device0 = getTestDevice(0)
+        val device1 = getTestDevice(1)
 
-        mMcpService.setDeviceAuthorized(device0, true);
-        verify(mMediaControlProfile).onDeviceAuthorizationSet(eq(device0));
-        assertThat(mMcpService.getDeviceAuthorization(device0))
-                .isEqualTo(BluetoothDevice.ACCESS_ALLOWED);
+        mcpService.setDeviceAuthorized(device0, true)
+        verify(mediaControlProfile).onDeviceAuthorizationSet(eq(device0))
+        assertThat(mcpService.getDeviceAuthorization(device0))
+            .isEqualTo(BluetoothDevice.ACCESS_ALLOWED)
 
-        mMcpService.setDeviceAuthorized(device1, false);
-        verify(mMediaControlProfile).onDeviceAuthorizationSet(eq(device1));
-        assertThat(mMcpService.getDeviceAuthorization(device1))
-                .isEqualTo(BluetoothDevice.ACCESS_REJECTED);
+        mcpService.setDeviceAuthorized(device1, false)
+        verify(mediaControlProfile).onDeviceAuthorizationSet(eq(device1))
+        assertThat(mcpService.getDeviceAuthorization(device1))
+            .isEqualTo(BluetoothDevice.ACCESS_REJECTED)
     }
 
     @Test
-    public void testDumpDoesNotCrash() {
-        mMcpService.dump(new StringBuilder());
+    fun testDumpDoesNotCrash() {
+        mcpService.dump(StringBuilder())
     }
 }
