@@ -30,12 +30,12 @@ void tACL_CONN::Reset() {
   link_super_tout = 0;
   pkt_types_mask = 0;
   disconnect_reason = 0;
-  encrypt_state_ = BTM_ACL_ENCRYPT_STATE_IDLE;
+  encrypt_state_ = BtmAclEncryptState::kIdle;
   is_encrypted = false;
   link_role = HCI_ROLE_CENTRAL;
   switch_role_failed_attempts = 0;
   memset(&remote_version_info, 0, sizeof(remote_version_info));
   rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
-  switch_role_state_ = BTM_ACL_SWKEY_STATE_IDLE;
+  switch_role_state_ = BtmAclSwitchKeyState::kIdle;
   sca = 0;
 }
