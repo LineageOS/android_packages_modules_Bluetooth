@@ -412,3 +412,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_centralize_tmap"
+    namespace: "bluetooth"
+    description: "Make TMAP GATT service centralized for central and peripheral Bluetooth services"
+    bug: "477546285"
+}
