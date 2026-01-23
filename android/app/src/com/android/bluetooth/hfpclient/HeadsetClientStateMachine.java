@@ -2098,8 +2098,21 @@ public class HeadsetClientStateMachine extends StateMachine {
                 new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
                 Util.getTempBroadcastOptions());
 
-        HfpClientConnectionService.onConnectionStateChanged(
-                mAdapterService, device, newState, prevState);
+        mAdapterService
+                .getRemoteDevices()
+                .handleHeadsetClientConnectionStateChanged(device, prevState, newState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(
+                BluetoothProfile.HEADSET_CLIENT, prevState, newState);
+        mAdapterService
+                .getPbapClientService()
+                .ifPresent(
+                        pC ->
+                                pC.handleHeadsetClientConnectionStateChanged(
+                                        device, prevState, newState));
+        mAdapterService.updateProfileConnectionAdapterProperties(
+                device, BluetoothProfile.HEADSET_CLIENT, newState, prevState);
+
+        HfpClientConnectionService.onConnectionStateChanged(device, newState, prevState);
     }
 
     boolean isConnected() {

@@ -74,6 +74,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
+import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.tests.bluetooth.MockitoRule;
@@ -102,6 +103,7 @@ public class HeadsetClientStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private PbapClientService mPbapClientService;
     @Mock private Resources mMockHfpResources;
     @Mock private HeadsetService mHeadsetService;
     @Mock private HeadsetClientService mHeadsetClientService;
@@ -134,6 +136,8 @@ public class HeadsetClientStateMachineTest {
         doReturn(2000)
                 .when(mMockHfpResources)
                 .getInteger(eq(R.integer.hfp_clcc_poll_interval_during_call));
+
+        doReturn(Optional.of(mPbapClientService)).when(mAdapterService).getPbapClientService();
 
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         doReturn(true).when(mNativeInterface).sendAndroidAt(any(), anyString());
