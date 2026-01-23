@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,87 +14,79 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbap;
+package com.android.bluetooth.pbap
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothProfile
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link BluetoothPbapServiceBinder}. */
+/** Test cases for [BluetoothPbapServiceBinder]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothPbapServiceBinderTest {
+@RunWith(AndroidJUnit4::class)
+class BluetoothPbapServiceBinderTest {
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private BluetoothPbapService mService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: BluetoothPbapService
 
-    private final BluetoothDevice mDevice = getTestDevice(60);
+    private val device = getTestDevice(60)
 
-    private BluetoothPbapServiceBinder mBinder;
+    private lateinit var binder: BluetoothPbapServiceBinder
 
     @Before
-    public void setUp() {
-        mBinder = new BluetoothPbapServiceBinder(mService);
+    fun setUp() {
+        binder = BluetoothPbapServiceBinder(service)
     }
 
     @Test
-    public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mDevice, mSource);
+    fun disconnect_callsServiceMethod() {
+        binder.disconnect(device, source)
 
-        verify(mService).disconnect(mDevice);
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(mSource);
+    fun getConnectedDevices_callsServiceMethod() {
+        binder.getConnectedDevices(source)
 
-        verify(mService).getConnectedDevices();
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates_callsServiceMethod() {
-        int[] states = new int[] {STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
+    fun getDevicesMatchingConnectionStates_callsServiceMethod() {
+        val states = intArrayOf(BluetoothProfile.STATE_CONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
 
-        verify(mService).getDevicesMatchingConnectionStates(states);
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, mSource);
+    fun getConnectionState_callsServiceMethod() {
+        binder.getConnectionState(device, source)
 
-        verify(mService).getConnectionState(mDevice);
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setConnectionPolicy_callsServiceMethod() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
+    fun setConnectionPolicy_callsServiceMethod() {
+        val connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED
+        binder.setConnectionPolicy(device, connectionPolicy, source)
 
-        verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void cleanUp_doesNotCrash() {
-        mBinder.cleanup();
+    fun cleanUp_doesNotCrash() {
+        binder.cleanup()
     }
 }
