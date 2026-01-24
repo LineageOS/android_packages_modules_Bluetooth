@@ -548,10 +548,10 @@ impl CommandHandler {
 
         let command = get_arg(args, 0)?;
 
-        if matches!(&command[..], "show" | "discoverable" | "connectable" | "set-name") {
-            if !self.lock_context().adapter_ready {
-                return Err(self.adapter_not_ready());
-            }
+        if matches!(&command[..], "show" | "discoverable" | "connectable" | "set-name")
+            && !self.lock_context().adapter_ready
+        {
+            return Err(self.adapter_not_ready());
         }
 
         match &command[..] {
@@ -743,13 +743,13 @@ impl CommandHandler {
                     None => println!("Battery status for device {} could not be fetched", address),
                     Some(set) => {
                         if set.batteries.is_empty() {
-                            println!("Battery set for device {} is empty", set.address.to_string());
+                            println!("Battery set for device {} is empty", set.address);
                             return Ok(());
                         }
 
                         println!(
                             "Battery data for '{}' from source '{}' and uuid '{}':",
-                            set.address.to_string(),
+                            set.address,
                             set.source_uuid.clone(),
                             set.source_info.clone()
                         );
@@ -812,7 +812,7 @@ impl CommandHandler {
                 if bonding_attempt.is_some() {
                     return Err(format!(
                         "Already bonding [{}]. Cancel bonding first.",
-                        bonding_attempt.as_ref().unwrap().address.to_string(),
+                        bonding_attempt.as_ref().unwrap().address,
                     )
                     .into());
                 }
@@ -1147,7 +1147,11 @@ impl CommandHandler {
                 let oppurtunistic = self.lock_context().gatt_client_context.connect_opportunistic;
                 let phy = self.lock_context().gatt_client_context.connect_phy;
 
-                println!("Initiating GATT client connect. client_id: {}, addr: {}, is_direct: {}, transport: {:?}, oppurtunistic: {}, phy: {:?}", client_id, addr.to_string(), is_direct, transport, oppurtunistic, phy);
+                println!(
+                    "Initiating GATT client connect. client_id: {}, addr: {}, is_direct: {}, \
+                        transport: {:?}, oppurtunistic: {}, phy: {:?}",
+                    client_id, addr, is_direct, transport, oppurtunistic, phy
+                );
                 self.lock_context().gatt_dbus.as_ref().unwrap().client_connect(
                     client_id,
                     addr,
@@ -1697,7 +1701,7 @@ impl CommandHandler {
                     .adv_sets
                     .iter_mut()
                     .filter_map(|(_, s)| {
-                        if !(s.adv_id.map_or(false, |id| id == adv_id)) {
+                        if s.adv_id != Some(adv_id) {
                             return None;
                         }
                         s.params.connectable = connectable;
@@ -1746,8 +1750,7 @@ impl CommandHandler {
                     .or(Err("Failed parsing adv_id"))?;
 
                 let mut context = self.context.lock().unwrap();
-                if !context.adv_sets.iter().any(|(_, s)| s.adv_id.map_or(false, |id| id == adv_id))
-                {
+                if !context.adv_sets.iter().any(|(_, s)| s.adv_id == Some(adv_id)) {
                     return Err("Failed to find advertising set".into());
                 }
 
