@@ -50,7 +50,7 @@ import com.android.bluetooth.pbap.BluetoothPbapService;
 import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.tbs.TbsService;
-import com.android.bluetooth.vaps.VapsServerService;
+import com.android.bluetooth.vap.VapServerService;
 import com.android.bluetooth.vc.VolumeControlService;
 
 import java.util.Arrays;
@@ -140,7 +140,7 @@ public class Config {
                 new ProfileConfig(LeAudioService.isEnabled(), BluetoothProfile.LE_AUDIO),
                 new ProfileConfig(
                         LeAudioBroadcast.isEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
-                new ProfileConfig(VapsServerService.isEnabled(), BluetoothProfile.VAPS_SERVER),
+                new ProfileConfig(VapServerService.isEnabled(), BluetoothProfile.VAP_SERVER),
             };
 
     private static final ProfileConfig[] PROFILE_SERVICES_AND_FLAGS;
@@ -247,7 +247,7 @@ public class Config {
         setProfileEnabled(BluetoothProfile.LE_CALL_CONTROL, enable);
         setProfileEnabled(BluetoothProfile.MCP_SERVER, enable);
         setProfileEnabled(BluetoothProfile.VOLUME_CONTROL, enable);
-        setProfileEnabled(BluetoothProfile.VAPS_SERVER, enable);
+        setProfileEnabled(BluetoothProfile.VAP_SERVER, enable);
     }
 
     private static void setLeAudioBroadcastProfileStatus(Boolean enable) {
