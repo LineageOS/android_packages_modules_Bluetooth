@@ -36,7 +36,6 @@
 #include "btif/include/btif_profile_queue.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
-#include "common/message_loop_thread.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
@@ -85,12 +84,7 @@ static_assert(BTA_HH_INCLUDED,
               "  Host interface device profile is always enabled in the bluetooth stack"
               "*** Conditional Compilation Directive error");
 
-using bluetooth::common::MessageLoopThread;
-using bluetooth::log::assert_that;
-using bluetooth::log::error;
-using bluetooth::log::fatal;
-using bluetooth::log::info;
-using bluetooth::log::warn;
+using namespace bluetooth;
 
 // If initialized, any of the bluetooth API functions can be called.
 // (e.g. turning logging on and off, enabling/disabling the stack, etc)
@@ -143,14 +137,14 @@ static const module_t* get_local_module(const char* name) {
     }
   }
 
-  fatal("Cannot find module {}, aborting", name);
+  log::fatal("Cannot find module {}, aborting", name);
   return nullptr;
 }
 
 // Synchronous function to initialize the stack
 void stack_init(bluetooth::core::CoreInterface* interface) {
-  info("Initializing the stack");
-  assert_that(!stack_is_initialized, "assert failed: !stack_is_initialized");
+  log::info("Initializing the stack");
+  log::assert_that(!stack_is_initialized, "assert failed: !stack_is_initialized");
 
   // all callbacks out of libbluetooth-core happen via this interface
   interfaceToProfiles = interface;
@@ -170,14 +164,14 @@ void stack_init(bluetooth::core::CoreInterface* interface) {
 
   // stack init is synchronous, so no waiting necessary here
   stack_is_initialized = true;
-  info("finished");
+  log::info("finished");
 }
 
 // Synchronous function to start up the stack
 void stack_enable(ProfileStartCallback startProfiles, const std::string local_name) {
-  info("Bringing up the stack");
-  assert_that(!is_running, "assert failed: !is_running");
-  assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
+  log::info("Bringing up the stack");
+  log::assert_that(!is_running, "assert failed: !is_running");
+  log::assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
 
   get_btm_client_interface().lifecycle.btm_init();
   module_start_up(get_local_module(BTIF_CONFIG_MODULE));
@@ -209,13 +203,13 @@ void stack_enable(ProfileStartCallback startProfiles, const std::string local_na
   bluetooth::ras::GetRasClient()->Initialize();
 
   is_running = true;
-  info("finished");
+  log::info("finished");
   do_in_jni_thread(base::BindOnce(event_signal_stack_up, nullptr));
 }
 
 void stack_disable(ProfileStopCallback stopProfiles) {
-  info("Bringing down the stack");
-  assert_that(is_running, "assert failed: is_running");
+  log::info("Bringing down the stack");
+  log::assert_that(is_running, "assert failed: is_running");
 
   future_t* local_hack_future = future_new();
   hack_future = local_hack_future;
@@ -255,15 +249,15 @@ void stack_disable(ProfileStopCallback stopProfiles) {
           std::move(off_promise)));
   off_future.wait();  // TODO: remove this future entirely
 
-  info("finished");
+  log::info("finished");
 }
 
 // Synchronous function to clean up the stack
 void stack_cleanup() {
-  info("Cleaning up the stack");
-  assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
+  log::info("Cleaning up the stack");
+  log::assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
   stack_is_initialized = false;
-  assert_that(!is_running, "assert failed: !is_running");
+  log::assert_that(!is_running, "assert failed: !is_running");
 
   btif_cleanup_bluetooth();
 
@@ -279,7 +273,7 @@ void stack_cleanup() {
   module_clean_up(get_local_module(BTIF_CONFIG_MODULE));
   module_clean_up(get_local_module(DEVICE_IOT_CONFIG_MODULE));
 
-  info("Gd shim module disabled");
+  log::info("Gd shim module disabled");
   module_shut_down(get_local_module(GD_SHIM_MODULE));
 
   module_clean_up(get_local_module(OSI_MODULE));
@@ -289,7 +283,7 @@ void stack_cleanup() {
   }
 
   module_management_stop();
-  info("finished");
+  log::info("finished");
 }
 
 static void event_signal_stack_up(void* /* context */) {
