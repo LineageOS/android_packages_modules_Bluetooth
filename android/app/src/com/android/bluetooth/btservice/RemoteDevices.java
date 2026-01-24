@@ -1724,7 +1724,7 @@ public class RemoteDevices {
             }
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_CONNECTION,
-                    Utils.getLoggableAddress(device), /* success */
+                    device.toString(), /* success */
                     1, /* reason */
                     "");
         } else {
@@ -1770,7 +1770,7 @@ public class RemoteDevices {
             }
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_DISCONNECTION,
-                    Utils.getLoggableAddress(device),
+                    device.toString(),
                     BluetoothAdapter.BluetoothConnectionCallback.disconnectReasonToString(
                             Util.hciToAndroidDisconnectReason(hciReason)));
         }
