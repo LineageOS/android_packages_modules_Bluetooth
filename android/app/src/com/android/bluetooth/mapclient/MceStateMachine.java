@@ -297,13 +297,7 @@ class MceStateMachine extends StateMachine {
         if (mDevice == null) {
             return;
         }
-        Log.d(
-                TAG,
-                Utils.getLoggableAddress(mDevice)
-                        + ": Connection state changed, prev="
-                        + prevState
-                        + ", new="
-                        + state);
+        Log.d(TAG, mDevice + ": Connection state changed, prev=" + prevState + ", new=" + state);
         setState(state);
 
         mAdapterService.updateProfileConnectionAdapterProperties(
@@ -350,7 +344,7 @@ class MceStateMachine extends StateMachine {
             String message,
             PendingIntent sentIntent,
             PendingIntent deliveredIntent) {
-        Log.d(TAG, Utils.getLoggableAddress(mDevice) + ": Send, message=" + message);
+        Log.d(TAG, mDevice + ": Send, message=" + message);
         if (contacts == null || contacts.length <= 0) {
             return false;
         }
@@ -518,7 +512,7 @@ class MceStateMachine extends StateMachine {
         public void enter() {
             Log.d(
                     TAG,
-                    Utils.getLoggableAddress(mDevice)
+                    mDevice
                             + " [Disconnected]: Entered, message="
                             + getMessageName(getCurrentMessage().what));
             onConnectionStateChanged(mPreviousState, STATE_DISCONNECTED);
@@ -537,7 +531,7 @@ class MceStateMachine extends StateMachine {
         public void enter() {
             Log.d(
                     TAG,
-                    Utils.getLoggableAddress(mDevice)
+                    mDevice
                             + " [Connecting]: Entered, message="
                             + getMessageName(getCurrentMessage().what));
             onConnectionStateChanged(mPreviousState, STATE_CONNECTING);
@@ -546,27 +540,20 @@ class MceStateMachine extends StateMachine {
             mAdapterService.sdpSearch(mDevice, BluetoothUuid.MAS);
 
             sendMessageDelayed(MSG_CONNECTING_TIMEOUT, CONNECT_TIMEOUT.toMillis());
-            Log.i(TAG, Utils.getLoggableAddress(mDevice) + " [Connecting]: Await SDP results");
+            Log.i(TAG, mDevice + " [Connecting]: Await SDP results");
         }
 
         @Override
         public boolean processMessage(Message message) {
-            Log.d(
-                    TAG,
-                    Utils.getLoggableAddress(mDevice)
-                            + " [Connecting]: Received "
-                            + getMessageName(message.what));
+            Log.d(TAG, mDevice + " [Connecting]: Received " + getMessageName(message.what));
 
             switch (message.what) {
                 case MSG_MAS_SDP_DONE -> {
-                    Log.i(TAG, Utils.getLoggableAddress(mDevice) + " [Connecting]: SDP Complete");
+                    Log.i(TAG, mDevice + " [Connecting]: SDP Complete");
                     if (mMasClient == null) {
                         SdpMasRecord record = (SdpMasRecord) message.obj;
                         if (record == null) {
-                            Log.e(
-                                    TAG,
-                                    Utils.getLoggableAddress(mDevice)
-                                            + " [Connecting]: SDP record is null");
+                            Log.e(TAG, mDevice + " [Connecting]: SDP record is null");
                             return NOT_HANDLED;
                         }
                         mMasClient =
@@ -577,25 +564,15 @@ class MceStateMachine extends StateMachine {
                 }
                 case MSG_MAS_SDP_UNSUCCESSFUL -> {
                     int sdpStatus = message.arg1;
-                    Log.i(
-                            TAG,
-                            Utils.getLoggableAddress(mDevice)
-                                    + " [Connecting]: SDP unsuccessful, status="
-                                    + sdpStatus);
+                    Log.i(TAG, mDevice + " [Connecting]: SDP unsuccessful, status=" + sdpStatus);
                     if (sdpStatus == SDP_BUSY) {
-                        Log.d(
-                                TAG,
-                                Utils.getLoggableAddress(mDevice)
-                                        + " [Connecting]: SDP was busy, try again");
+                        Log.d(TAG, mDevice + " [Connecting]: SDP was busy, try again");
                         mAdapterService.sdpSearch(mDevice, BluetoothUuid.MAS);
                     } else {
                         // This means the status is 0 (success, but no record) or 1 (organic
                         // failure). We historically have never retried SDP in failure cases, so we
                         // don't need to wait for the timeout anymore.
-                        Log.d(
-                                TAG,
-                                Utils.getLoggableAddress(mDevice)
-                                        + " [Connecting]: SDP failed completely, disconnecting");
+                        Log.d(TAG, mDevice + " [Connecting]: SDP failed completely, disconnecting");
                         transitionTo(mDisconnecting);
                     }
                 }
@@ -612,7 +589,7 @@ class MceStateMachine extends StateMachine {
                 default -> {
                     Log.w(
                             TAG,
-                            Utils.getLoggableAddress(mDevice)
+                            mDevice
                                     + " [Connecting]: Unexpected message: "
                                     + getMessageName(message.what));
                     return NOT_HANDLED;
@@ -633,7 +610,7 @@ class MceStateMachine extends StateMachine {
         public void enter() {
             Log.d(
                     TAG,
-                    Utils.getLoggableAddress(mDevice)
+                    mDevice
                             + " [Connected]: Entered, message="
                             + getMessageName(getCurrentMessage().what));
 
@@ -663,16 +640,12 @@ class MceStateMachine extends StateMachine {
             mMasClient.makeRequest(requestForOwnNumber);
             sendMessageDelayed(
                     MSG_SEARCH_OWN_NUMBER_TIMEOUT, requestForOwnNumber, sOwnNumberSearchTimeoutMs);
-            Log.i(TAG, Utils.getLoggableAddress(mDevice) + "[Connected]: Find phone number");
+            Log.i(TAG, mDevice + "[Connected]: Find phone number");
         }
 
         @Override
         public boolean processMessage(Message message) {
-            Log.d(
-                    TAG,
-                    Utils.getLoggableAddress(mDevice)
-                            + " [Connected]: Received "
-                            + getMessageName(message.what));
+            Log.d(TAG, mDevice + " [Connected]: Received " + getMessageName(message.what));
             switch (message.what) {
                 case MSG_DISCONNECT -> {
                     if (mDevice.equals(message.obj)) {
@@ -737,11 +710,7 @@ class MceStateMachine extends StateMachine {
                     } else if (message.obj instanceof RequestPushMessage) {
                         RequestPushMessage requestPushMessage = (RequestPushMessage) message.obj;
                         String messageHandle = requestPushMessage.getMsgHandle();
-                        Log.i(
-                                TAG,
-                                Utils.getLoggableAddress(mDevice)
-                                        + " [Connected]: Message Sent, handle="
-                                        + messageHandle);
+                        Log.i(TAG, mDevice + " [Connected]: Message Sent, handle=" + messageHandle);
                         if (Flags.useEntireMessageHandle()) {
                             // some test devices don't populate messageHandle field.
                             // in such cases, no need to wait up for response for such messages.
@@ -808,7 +777,7 @@ class MceStateMachine extends StateMachine {
                 default -> {
                     Log.w(
                             TAG,
-                            Utils.getLoggableAddress(mDevice)
+                            mDevice
                                     + " [Connected]: Unexpected message: "
                                     + getMessageName(message.what));
                     return NOT_HANDLED;
@@ -834,17 +803,10 @@ class MceStateMachine extends StateMachine {
          * @param event - object describing the remote event
          */
         private void processNotification(EventReport event) {
-            Log.i(
-                    TAG,
-                    Utils.getLoggableAddress(mDevice)
-                            + " [Connected]: Received Notification, event="
-                            + event);
+            Log.i(TAG, mDevice + " [Connected]: Received Notification, event=" + event);
 
             if (event == null) {
-                Log.w(
-                        TAG,
-                        Utils.getLoggableAddress(mDevice)
-                                + "[Connected]: Notification event is null");
+                Log.w(TAG, mDevice + "[Connected]: Notification event is null");
                 return;
             }
 
@@ -902,7 +864,7 @@ class MceStateMachine extends StateMachine {
         private void processMessageListing(RequestGetMessagesListing request) {
             Log.i(
                     TAG,
-                    Utils.getLoggableAddress(mDevice)
+                    mDevice
                             + " [Connected]: Received Message Listing, listing="
                             + (request != null
                                     ? (request.getList() != null
@@ -918,7 +880,7 @@ class MceStateMachine extends StateMachine {
                     com.android.bluetooth.mapclient.Message msg = messageListing.get(i);
                     Log.d(
                             TAG,
-                            Utils.getLoggableAddress(mDevice)
+                            mDevice
                                     + " [Connected]: fetch message content, handle="
                                     + msg.getHandle());
                     // A message listing coming from the server should always have up to date data
@@ -982,7 +944,7 @@ class MceStateMachine extends StateMachine {
          * downloading existing messages of off MSE.
          */
         private void notificationRegistrationAndStartDownloadMessages() {
-            Log.i(TAG, Utils.getLoggableAddress(mDevice) + "[Connected]: Queue Message downloads");
+            Log.i(TAG, mDevice + "[Connected]: Queue Message downloads");
             mMasClient.makeRequest(new RequestSetNotificationRegistration(true));
             sendMessage(MSG_GET_MESSAGE_LISTING, FOLDER_SENT);
             sendMessage(MSG_GET_MESSAGE_LISTING, FOLDER_INBOX);
@@ -1211,7 +1173,7 @@ class MceStateMachine extends StateMachine {
         public void enter() {
             Log.d(
                     TAG,
-                    Utils.getLoggableAddress(mDevice)
+                    mDevice
                             + " [Disconnecting]: Entered, message="
                             + getMessageName(getCurrentMessage().what));
 
@@ -1229,11 +1191,7 @@ class MceStateMachine extends StateMachine {
 
         @Override
         public boolean processMessage(Message message) {
-            Log.d(
-                    TAG,
-                    Utils.getLoggableAddress(mDevice)
-                            + " [Disconnecting]: Received "
-                            + getMessageName(message.what));
+            Log.d(TAG, mDevice + " [Disconnecting]: Received " + getMessageName(message.what));
             switch (message.what) {
                 case MSG_DISCONNECTING_TIMEOUT, MSG_MAS_DISCONNECTED -> {
                     mMasClient = null;
@@ -1245,7 +1203,7 @@ class MceStateMachine extends StateMachine {
                 default -> {
                     Log.w(
                             TAG,
-                            Utils.getLoggableAddress(mDevice)
+                            mDevice
                                     + " [Disconnecting]: Unexpected message: "
                                     + getMessageName(message.what));
                     return NOT_HANDLED;

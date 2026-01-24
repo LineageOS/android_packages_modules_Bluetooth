@@ -127,14 +127,6 @@ public final class Utils {
         DualModeAudioSetting.sEnabled = enabled;
     }
 
-    public static String getLoggableAddress(@Nullable BluetoothDevice device) {
-        if (device == null) {
-            return "00:00:00:00:00:00";
-        } else {
-            return "xx:xx:xx:xx:" + device.toString().substring(12);
-        }
-    }
-
     public static String getAddressStringFromByte(byte[] address) {
         if (address == null || address.length != BD_ADDR_LEN) {
             return null;

@@ -2,7 +2,6 @@ use clap::{App, AppSettings, Arg};
 use dbus_projection::DisconnectWatcher;
 use dbus_tokio::connection;
 use futures::future;
-use libc;
 use nix::sys::signal;
 use std::error::Error;
 use std::sync::{Arc, Condvar, Mutex};

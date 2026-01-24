@@ -40,7 +40,6 @@ import android.telephony.TelephonyManager;
 import android.util.ArraySet;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
@@ -457,11 +456,7 @@ class MapClientContent {
 
     /** cleanUp clear the subscription info and content on shutdown */
     void cleanUp() {
-        debug(
-                "cleanUp(device="
-                        + Utils.getLoggableAddress(mDevice)
-                        + ", subscriptionId="
-                        + mSubscriptionId);
+        debug("cleanUp(device=" + mDevice + ", subscriptionId=" + mSubscriptionId);
         mResolver.unregisterContentObserver(mContentObserver);
         clearMessages(mContext, mSubscriptionId);
         try {

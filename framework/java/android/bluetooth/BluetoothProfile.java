@@ -186,7 +186,7 @@ public interface BluetoothProfile {
     @Hide int GMAP = 31;
 
     /** Voice Assistant Profile and Service */
-    @Hide int VAPS_SERVER = 32;
+    @Hide int VAP_SERVER = 32;
 
     /** Le Audio Server Profile */
     @FlaggedApi(Flags.FLAG_LEAUDIO_PERIPHERAL_FEATURE)
@@ -211,7 +211,7 @@ public interface BluetoothProfile {
         /* Max profile ID. This value should be updated whenever a new profile is added to match the
          * largest value assigned to a profile.
          */
-        return VAPS_SERVER;
+        return VAP_SERVER;
     }
 
     /** Max profile ID. */
@@ -403,7 +403,7 @@ public interface BluetoothProfile {
             case HAP_CLIENT -> "HAP_CLIENT";
             case LE_AUDIO_BROADCAST_ASSISTANT -> "LE_AUDIO_BROADCAST_ASSISTANT";
             case BATTERY -> "BATTERY";
-            case VAPS_SERVER -> "VAPS_SERVER";
+            case VAP_SERVER -> "VAP_SERVER";
             default -> "UNKNOWN_PROFILE (" + profile + ")";
         };
     }
