@@ -31,6 +31,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.Utils.joinUninterruptibly;
 import static com.android.bluetooth.btservice.RemoteDevices.ACL_CONNECTION_DELIVERY_GROUP_POLICY;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -164,6 +165,7 @@ public class RemoteDevicesTest {
     public void tearDown() {
         mTestLooperManager.release();
         mHandlerThread.quit();
+        joinUninterruptibly(mHandlerThread);
     }
 
     @Test
