@@ -57,20 +57,20 @@ struct BTM_CanReadDiscoverableCharacteristics {
 };
 extern struct BTM_CanReadDiscoverableCharacteristics BTM_CanReadDiscoverableCharacteristics;
 
-// Name: BTM_ConfirmReqReply
+// Name: btm_confirm_req_reply
 // Params: tBTM_STATUS res, const RawAddress& bd_addr
 // Return: void
-struct BTM_ConfirmReqReply {
+struct btm_confirm_req_reply {
   std::function<void(tBTM_STATUS res, const RawAddress& bd_addr)> body{
           [](tBTM_STATUS /* res */, const RawAddress& /* bd_addr */) {}};
   void operator()(tBTM_STATUS res, const RawAddress& bd_addr) { body(res, bd_addr); }
 };
-extern struct BTM_ConfirmReqReply BTM_ConfirmReqReply;
+extern struct btm_confirm_req_reply btm_confirm_req_reply;
 
-// Name: BTM_IsAuthenticated
+// Name: btm_is_authenticated
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Return: bool
-struct BTM_IsAuthenticated {
+struct btm_is_authenticated {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, tBT_TRANSPORT transport)> body{
           [](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */) {
@@ -80,12 +80,12 @@ struct BTM_IsAuthenticated {
     return body(bd_addr, transport);
   }
 };
-extern struct BTM_IsAuthenticated BTM_IsAuthenticated;
+extern struct btm_is_authenticated btm_is_authenticated;
 
-// Name: BTM_IsEncrypted
+// Name: btm_is_encrypted
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Return: bool
-struct BTM_IsEncrypted {
+struct btm_is_encrypted {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, tBT_TRANSPORT transport)> body{
           [](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */) {
@@ -95,12 +95,12 @@ struct BTM_IsEncrypted {
     return body(bd_addr, transport);
   }
 };
-extern struct BTM_IsEncrypted BTM_IsEncrypted;
+extern struct btm_is_encrypted btm_is_encrypted;
 
-// Name: BTM_IsLinkKeyAuthed
+// Name: btm_is_link_key_authed
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Return: bool
-struct BTM_IsLinkKeyAuthed {
+struct btm_is_link_key_authed {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, tBT_TRANSPORT transport)> body{
           [](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */) {
@@ -110,12 +110,12 @@ struct BTM_IsLinkKeyAuthed {
     return body(bd_addr, transport);
   }
 };
-extern struct BTM_IsLinkKeyAuthed BTM_IsLinkKeyAuthed;
+extern struct btm_is_link_key_authed btm_is_link_key_authed;
 
-// Name: BTM_IsBonded
+// Name: btm_is_bonded
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Return: bool
-struct BTM_IsBonded {
+struct btm_is_bonded {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, tBT_TRANSPORT transport)> body{
           [](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */) {
@@ -125,12 +125,12 @@ struct BTM_IsBonded {
     return body(bd_addr, transport);
   }
 };
-extern struct BTM_IsBonded BTM_IsBonded;
+extern struct btm_is_bonded btm_is_bonded;
 
-// Name: BTM_PINCodeReply
+// Name: btm_pin_code_reply
 // Params: const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, PinCode pin_code
 // p_pin Return: void
-struct BTM_PINCodeReply {
+struct btm_pin_code_reply {
   std::function<void(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, PinCode pin_code)>
           body{[](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */, uint8_t /* pin_len */,
                   PinCode /* pin_code */) {}};
@@ -138,44 +138,44 @@ struct BTM_PINCodeReply {
     body(bd_addr, res, pin_len, pin_code);
   }
 };
-extern struct BTM_PINCodeReply BTM_PINCodeReply;
+extern struct btm_pin_code_reply btm_pin_code_reply;
 
-// Name: BTM_PasskeyReqReply
+// Name: btm_passkey_req_reply
 // Params: tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey
 // Return: void
-struct BTM_PasskeyReqReply {
+struct btm_passkey_req_reply {
   std::function<void(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey)> body{
           [](tBTM_STATUS /* res */, const RawAddress& /* bd_addr */, uint32_t /* passkey */) {}};
   void operator()(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey) {
     body(res, bd_addr, passkey);
   }
 };
-extern struct BTM_PasskeyReqReply BTM_PasskeyReqReply;
+extern struct btm_passkey_req_reply btm_passkey_req_reply;
 
-// Name: BTM_PeerSupportsSecureConnections
+// Name: btm_peer_supports_secure_connections
 // Params: const RawAddress& bd_addr
 // Return: bool
-struct BTM_PeerSupportsSecureConnections {
+struct btm_peer_supports_secure_connections {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr)> body{
           [](const RawAddress& /* bd_addr */) { return return_value; }};
   bool operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
-extern struct BTM_PeerSupportsSecureConnections BTM_PeerSupportsSecureConnections;
+extern struct btm_peer_supports_secure_connections btm_peer_supports_secure_connections;
 
-// Name: BTM_ReadLocalOobData
+// Name: btm_read_local_oob_data
 // Params: void
 // Return: void
-struct BTM_ReadLocalOobData {
+struct btm_read_local_oob_data {
   std::function<void(void)> body{[](void) {}};
   void operator()(void) { body(); }
 };
-extern struct BTM_ReadLocalOobData BTM_ReadLocalOobData;
+extern struct btm_read_local_oob_data btm_read_local_oob_data;
 
-// Name: BTM_RemoteOobDataReply
+// Name: btm_remote_oob_data_reply
 // Params: tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c, const
 // Octet16& r Return: void
-struct BTM_RemoteOobDataReply {
+struct btm_remote_oob_data_reply {
   std::function<void(tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c,
                      const Octet16& r)>
           body{[](tBTM_STATUS /* res */, const RawAddress& /* bd_addr */, const Octet16& /* c */,
@@ -184,13 +184,13 @@ struct BTM_RemoteOobDataReply {
     body(res, bd_addr, c, r);
   }
 };
-extern struct BTM_RemoteOobDataReply BTM_RemoteOobDataReply;
+extern struct btm_remote_oob_data_reply btm_remote_oob_data_reply;
 
-// Name: BTM_SecBond
+// Name: btm_sec_bond
 // Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT
 // transport, tBT_DEVICE_TYPE device_type, uint8_t pin_len, uint8_t* p_pin
 // Return: tBTM_STATUS
-struct BTM_SecBond {
+struct btm_sec_bond {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                             tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type)>
@@ -202,78 +202,78 @@ struct BTM_SecBond {
     return body(bd_addr, addr_type, transport, device_type);
   }
 };
-extern struct BTM_SecBond BTM_SecBond;
+extern struct btm_sec_bond btm_sec_bond;
 
-// Name: BTM_SecBondCancel
+// Name: btm_sec_bond_cancel
 // Params: const RawAddress& bd_addr
 // Return: tBTM_STATUS
-struct BTM_SecBondCancel {
+struct btm_sec_bond_cancel {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr)> body{
           [](const RawAddress& /* bd_addr */) { return return_value; }};
   tBTM_STATUS operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
-extern struct BTM_SecBondCancel BTM_SecBondCancel;
+extern struct btm_sec_bond_cancel btm_sec_bond_cancel;
 
-// Name: BTM_SecClrService
+// Name: btm_sec_clr_service
 // Params: uint8_t service_id
 // Return: uint8_t
-struct BTM_SecClrService {
+struct btm_sec_clr_service {
   static uint8_t return_value;
   std::function<uint8_t(uint8_t service_id)> body{
           [](uint8_t /* service_id */) { return return_value; }};
   uint8_t operator()(uint8_t service_id) { return body(service_id); }
 };
-extern struct BTM_SecClrService BTM_SecClrService;
+extern struct btm_sec_clr_service btm_sec_clr_service;
 
-// Name: BTM_SecClrServiceByPsm
+// Name: btm_sec_clr_service_by_psm
 // Params: uint16_t psm
 // Return: uint8_t
-struct BTM_SecClrServiceByPsm {
+struct btm_sec_clr_service_by_psm {
   static uint8_t return_value;
   std::function<uint8_t(uint16_t psm)> body{[](uint16_t /* psm */) { return return_value; }};
   uint8_t operator()(uint16_t psm) { return body(psm); }
 };
-extern struct BTM_SecClrServiceByPsm BTM_SecClrServiceByPsm;
+extern struct btm_sec_clr_service_by_psm btm_sec_clr_service_by_psm;
 
-// Name: BTM_SecGetDeviceLinkKeyType
+// Name: btm_sec_get_device_link_key_type
 // Params: const RawAddress& bd_addr
 // Return: tBTM_LINK_KEY_TYPE
-struct BTM_SecGetDeviceLinkKeyType {
+struct btm_sec_get_device_link_key_type {
   static tBTM_LINK_KEY_TYPE return_value;
   std::function<tBTM_LINK_KEY_TYPE(const RawAddress& bd_addr)> body{
           [](const RawAddress& /* bd_addr */) { return return_value; }};
   tBTM_LINK_KEY_TYPE operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
-extern struct BTM_SecGetDeviceLinkKeyType BTM_SecGetDeviceLinkKeyType;
+extern struct btm_sec_get_device_link_key_type btm_sec_get_device_link_key_type;
 
-// Name: BTM_SecIsLeSecurityPending
+// Name: btm_sec_is_le_security_pending
 // Params: const RawAddress& bd_addr
 // Return: bool
-struct BTM_SecIsLeSecurityPending {
+struct btm_sec_is_le_security_pending {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr)> body{
           [](const RawAddress& /* bd_addr */) { return return_value; }};
   bool operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
-extern struct BTM_SecIsLeSecurityPending BTM_SecIsLeSecurityPending;
+extern struct btm_sec_is_le_security_pending btm_sec_is_le_security_pending;
 
-// Name: BTM_SecRegister
+// Name: btm_sec_register
 // Params: const tBTM_APPL_INFO* p_cb_info
 // Return: bool
-struct BTM_SecRegister {
+struct btm_sec_register {
   static bool return_value;
   std::function<bool(const tBTM_APPL_INFO* p_cb_info)> body{
           [](const tBTM_APPL_INFO* /* p_cb_info */) { return return_value; }};
   bool operator()(const tBTM_APPL_INFO* p_cb_info) { return body(p_cb_info); }
 };
-extern struct BTM_SecRegister BTM_SecRegister;
+extern struct btm_sec_register btm_sec_register;
 
-// Name: BTM_SetEncryption
+// Name: btm_set_encryption
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport,
 // tBTM_SEC_CALLBACK* p_callback, void* p_ref_data, tBTM_BLE_SEC_ACT sec_act
 // Return: tBTM_STATUS
-struct BTM_SetEncryption {
+struct btm_set_encryption {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                             tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
@@ -287,25 +287,25 @@ struct BTM_SetEncryption {
     return body(bd_addr, transport, p_callback, p_ref_data, sec_act);
   }
 };
-extern struct BTM_SetEncryption BTM_SetEncryption;
+extern struct btm_set_encryption btm_set_encryption;
 
-// Name: BTM_SetPinType
+// Name: btm_set_pin_type
 // Params: uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len
 // Return: void
-struct BTM_SetPinType {
+struct btm_set_pin_type {
   std::function<void(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len)> body{
           [](uint8_t /* pin_type */, PinCode /* pin_code */, uint8_t /* pin_code_len */) {}};
   void operator()(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
     body(pin_type, pin_code, pin_code_len);
   }
 };
-extern struct BTM_SetPinType BTM_SetPinType;
+extern struct btm_set_pin_type btm_set_pin_type;
 
-// Name: BTM_SetSecurityLevel
+// Name: btm_set_security_level
 // Params: bool outgoing, const char* p_name, uint8_t service_id, uint16_t
 // sec_level, uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id Return:
 // bool
-struct BTM_SetSecurityLevel {
+struct btm_set_security_level {
   static bool return_value;
   std::function<bool(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
                      uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id)>
@@ -317,7 +317,7 @@ struct BTM_SetSecurityLevel {
     return body(outgoing, p_name, service_id, sec_level, psm, mx_proto_id, mx_chan_id);
   }
 };
-extern struct BTM_SetSecurityLevel BTM_SetSecurityLevel;
+extern struct btm_set_security_level btm_set_security_level;
 
 // Name: BTM_update_version_info
 // Params: const RawAddress& bd_addr, const remote_version_info&
@@ -778,6 +778,40 @@ struct is_autonomous_repairing_supported {
   bool operator()(void) { return body(); }
 };
 extern struct is_autonomous_repairing_supported is_autonomous_repairing_supported;
+
+// Name: btm_get_security_mode
+// Params: void
+// Return: uint8_t
+struct btm_get_security_mode {
+  static uint8_t return_value;
+  std::function<uint8_t(void)> body{[](void) { return return_value; }};
+  uint8_t operator()(void) { return body(); }
+};
+extern struct btm_get_security_mode btm_get_security_mode;
+
+// Name: btm_sec_report_bond_loss
+// Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
+// Return: tBTM_STATUS
+struct btm_sec_report_bond_loss {
+  static tBTM_STATUS return_value;
+  std::function<tBTM_STATUS(const RawAddress& bd_addr, tBT_TRANSPORT transport)> body{
+          [](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */) {
+            return return_value;
+          }};
+  tBTM_STATUS operator()(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+    return body(bd_addr, transport);
+  }
+};
+extern struct btm_sec_report_bond_loss btm_sec_report_bond_loss;
+
+// Name: btm_sec_hci_delete_stored_link_key
+// Params: const RawAddress& bd_addr
+// Return: void
+struct btm_sec_hci_delete_stored_link_key {
+  std::function<void(const RawAddress& bd_addr)> body{[](const RawAddress& /* bd_addr */) {}};
+  void operator()(const RawAddress& bd_addr) { body(bd_addr); }
+};
+extern struct btm_sec_hci_delete_stored_link_key btm_sec_hci_delete_stored_link_key;
 
 }  // namespace stack_btm_sec
 }  // namespace mock

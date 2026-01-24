@@ -263,8 +263,7 @@ public class LeAudioServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(
-                Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK, Flags.FLAG_MAINLINE_BETA_STORAGE);
+        return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
     }
 
     public LeAudioServiceTest(FlagsWrapper flags) {
@@ -395,43 +394,36 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportLeCallControl_isCG() {
         assertTmapRole(TMAP_ROLE_FLAG_CG, LE_CALL_CONTROL);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportMcpServer_isUMS() {
         assertTmapRole(TMAP_ROLE_FLAG_UMS, MCP_SERVER);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportLeCallControlAndMcpServer_isCGAndUMS() {
         assertTmapRole(TMAP_ROLE_FLAG_CG | TMAP_ROLE_FLAG_UMS, LE_CALL_CONTROL, MCP_SERVER);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportBroadcast_isBMS() {
         assertTmapRole(TMAP_ROLE_FLAG_BMS, LE_AUDIO_BROADCAST);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportBroadcastAndLeCallControl_isBMSAndCG() {
         assertTmapRole(TMAP_ROLE_FLAG_CG | TMAP_ROLE_FLAG_BMS, LE_AUDIO_BROADCAST, LE_CALL_CONTROL);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportBroadcastAndMcpServer_isBMSAndUMS() {
         assertTmapRole(TMAP_ROLE_FLAG_UMS | TMAP_ROLE_FLAG_BMS, LE_AUDIO_BROADCAST, MCP_SERVER);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
     public void tmapRoleMask_whenSupportLeCallControlAndBroadcastAndMcpServer_isBMSAndUMSAndCG() {
         assertTmapRole(
                 TMAP_ROLE_FLAG_CG | TMAP_ROLE_FLAG_UMS | TMAP_ROLE_FLAG_BMS,
@@ -3389,10 +3381,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API,
-        Flags.FLAG_MAINLINE_BETA_STORAGE
-    })
+    @EnableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetCodecConfigPreference() {
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
 
@@ -3452,7 +3441,6 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetCodecConfigPreference_old() {
         // Not connected device
@@ -3511,10 +3499,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API,
-        Flags.FLAG_MAINLINE_BETA_STORAGE
-    })
+    @EnableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testCodecConfigPreferenceRestore() {
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
         connectTestDevice(mSingleDevice, TEST_GROUP_ID);
@@ -3564,7 +3549,6 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testCodecConfigPreferenceRestore_old() {
         // Not connected device
@@ -3650,7 +3634,6 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetGetCodecConfigPreferenceOpus() {
         // Not connected device

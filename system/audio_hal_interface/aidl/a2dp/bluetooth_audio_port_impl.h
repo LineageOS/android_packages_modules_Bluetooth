@@ -34,7 +34,7 @@ using ::aidl::android::hardware::bluetooth::audio::PresentationPosition;
 
 class BluetoothAudioPortImpl : public BnBluetoothAudioPort {
 public:
-  BluetoothAudioPortImpl(A2dpTransport* transport_instance,
+  BluetoothAudioPortImpl(const std::shared_ptr<A2dpTransport>& transport_instance,
                          const std::shared_ptr<IBluetoothAudioProvider>& provider);
 
   ndk::ScopedAStatus startStream(bool is_low_latency) override;
@@ -49,12 +49,12 @@ public:
 protected:
   virtual ~BluetoothAudioPortImpl();
 
-  A2dpTransport* transport_instance_;
+  // Using weak_ptr here as BluetoothAudioPortImpl instance is shared with the BT Audio HAL and can
+  // outlive the BluetoothAudioClientInterface and by extension this A2dpTransport instance.
+  std::weak_ptr<A2dpTransport> transport_instance_;
   const std::shared_ptr<IBluetoothAudioProvider> provider_;
-  PresentationPosition::TimeSpec timespec_convert_to_hal(const timespec& ts);
 
 private:
-  ndk::ScopedAStatus switchCodec(bool isLowLatency);
   ndk::SpAIBinder createBinder() override;
 };
 

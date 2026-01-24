@@ -822,8 +822,8 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
         sec_event.auth_cmpl.fail_reason = static_cast<tHCI_STATUS>(
                 BTA_DM_AUTH_CONVERT_SMP_CODE(static_cast<uint8_t>(p_data->complt.reason)));
 
-        if (BTM_IsBonded(bda) && p_data->complt.reason == SMP_CONN_TOUT &&
-            !p_data->complt.smp_over_br) {
+        if (get_btm_client_interface().security.BTM_IsBonded(bda, BT_TRANSPORT_AUTO) &&
+            p_data->complt.reason == SMP_CONN_TOUT && !p_data->complt.smp_over_br) {
           // Bonded device failed to encrypt - to test this remove battery from
           // HID device right after connection, but before encryption is
           // established

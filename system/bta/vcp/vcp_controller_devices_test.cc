@@ -29,9 +29,10 @@
 
 #include "bta/test/common/bta_gatt_api_mock.h"
 #include "bta/test/common/bta_gatt_queue_mock.h"
-#include "bta/test/common/btm_api_mock.h"
 #include "gatt/database_builder.h"
 #include "stack/include/bt_uuid16.h"
+#include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 namespace bluetooth {
 namespace vcp {
@@ -224,7 +225,8 @@ protected:
     device = new VolumeControllerDevice(GetTestAddress(1), true);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
-    bluetooth::manager::SetMockBtmInterface(&btm_interface);
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
 
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
             .WillByDefault(Invoke(
@@ -259,7 +261,7 @@ protected:
   }
 
   void TearDown() override {
-    bluetooth::manager::SetMockBtmInterface(nullptr);
+    reset_mock_btm_client_interface();
     gatt::SetMockBtaGattQueue(nullptr);
     gatt::SetMockBtaGattInterface(nullptr);
     delete device;
@@ -403,7 +405,7 @@ protected:
   VolumeControllerDevice* device = nullptr;
   NiceMock<gatt::MockBtaGattInterface> gatt_interface;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue;
-  NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
   std::list<gatt::Service> services;
 };
 
@@ -921,10 +923,10 @@ TEST_F(VolumeControllerDeviceTest, test_enqueue_remaining_requests_multiread) {
 }
 
 TEST_F(VolumeControllerDeviceTest, test_check_link_encrypted) {
-  ON_CALL(btm_interface, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(true)));
   ASSERT_EQ(true, device->IsEncryptionEnabled());
 
-  ON_CALL(btm_interface, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(false)));
   ASSERT_NE(true, device->IsEncryptionEnabled());
 }
 

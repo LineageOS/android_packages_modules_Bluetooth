@@ -91,11 +91,11 @@ inline BluetoothAudioStatus StatusToHalStatus(Status ack) {
  ***/
 class BluetoothAudioClientInterface {
 public:
-  BluetoothAudioClientInterface(A2dpTransport* instance);
+  BluetoothAudioClientInterface(SessionType sessionType, StreamCallbacks const* stream_callbacks);
   virtual ~BluetoothAudioClientInterface();
 
   bool IsValid() const;
-  A2dpTransport* GetTransportInstance() const { return transport_; }
+  std::shared_ptr<A2dpTransport> GetTransportInstance() const { return transport_; }
 
   std::vector<AudioCapabilities> GetAudioCapabilities() const;
 
@@ -169,7 +169,7 @@ protected:
           std::string() + IBluetoothAudioProviderFactory::descriptor + "/default";
 
 private:
-  A2dpTransport* transport_;
+  std::shared_ptr<A2dpTransport> transport_;
   std::vector<AudioCapabilities> capabilities_;
   std::vector<LatencyMode> latency_modes_;
 

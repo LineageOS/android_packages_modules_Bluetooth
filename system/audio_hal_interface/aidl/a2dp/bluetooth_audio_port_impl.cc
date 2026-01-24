@@ -85,14 +85,20 @@ static int audioContextPriority(btav_a2dp_codec_audio_context_t context) {
 using ::bluetooth::common::StopWatchLegacy;
 
 BluetoothAudioPortImpl::BluetoothAudioPortImpl(
-        A2dpTransport* transport_instance, const std::shared_ptr<IBluetoothAudioProvider>& provider)
+        const std::shared_ptr<A2dpTransport>& transport_instance,
+        const std::shared_ptr<IBluetoothAudioProvider>& provider)
     : transport_instance_(transport_instance), provider_(provider) {}
 
 BluetoothAudioPortImpl::~BluetoothAudioPortImpl() {}
 
 ndk::ScopedAStatus BluetoothAudioPortImpl::startStream(bool is_low_latency) {
   StopWatchLegacy stop_watch(__func__);
-  Status ack = transport_instance_->StartRequest(is_low_latency);
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  Status ack = transport->StartRequest(is_low_latency);
   if (ack != Status::PENDING) {
     auto aidl_retval = provider_->streamStarted(StatusToHalStatus(ack));
     if (!aidl_retval.isOk()) {
@@ -104,7 +110,12 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::startStream(bool is_low_latency) {
 
 ndk::ScopedAStatus BluetoothAudioPortImpl::suspendStream() {
   StopWatchLegacy stop_watch(__func__);
-  Status ack = transport_instance_->SuspendRequest();
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  Status ack = transport->SuspendRequest();
   if (ack != Status::PENDING) {
     auto aidl_retval = provider_->streamSuspended(StatusToHalStatus(ack));
     if (!aidl_retval.isOk()) {
@@ -116,7 +127,12 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::suspendStream() {
 
 ndk::ScopedAStatus BluetoothAudioPortImpl::stopStream() {
   StopWatchLegacy stop_watch(__func__);
-  transport_instance_->StopRequest();
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  transport->StopRequest();
   return ndk::ScopedAStatus::ok();
 }
 
@@ -126,12 +142,18 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::getPresentationPosition(
   uint64_t remote_delay_report_ns;
   uint64_t total_bytes_read;
   timespec data_position;
-  bool retval = transport_instance_->GetPresentationPosition(&remote_delay_report_ns,
-                                                             &total_bytes_read, &data_position);
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  bool retval = transport->GetPresentationPosition(&remote_delay_report_ns, &total_bytes_read,
+                                                   &data_position);
 
   PresentationPosition::TimeSpec transmittedOctetsTimeStamp;
   if (retval) {
-    transmittedOctetsTimeStamp = timespec_convert_to_hal(data_position);
+    transmittedOctetsTimeStamp.tvSec = static_cast<int64_t>(data_position.tv_sec);
+    transmittedOctetsTimeStamp.tvNSec = static_cast<int64_t>(data_position.tv_nsec);
   } else {
     remote_delay_report_ns = 0;
     total_bytes_read = 0;
@@ -164,7 +186,12 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::updateSourceMetadata(
     }
   }
 
-  transport_instance_->SourceMetadataChanged(current_context);
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  transport->SourceMetadataChanged(current_context);
   return ndk::ScopedAStatus::ok();
 }
 
@@ -174,18 +201,24 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::updateSinkMetadata(
 }
 
 ndk::ScopedAStatus BluetoothAudioPortImpl::setLatencyMode(LatencyMode latency_mode) {
-  transport_instance_->SetLatencyMode(latency_mode);
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  transport->SetLatencyMode(latency_mode);
   return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus BluetoothAudioPortImpl::updateSinkLatency(int64_t in_latency_ms) {
   log::verbose("in_latency_ms: {}", in_latency_ms);
-  transport_instance_->UpdateSinkLatency(in_latency_ms);
+  auto transport = transport_instance_.lock();
+  if (!transport) {
+    log::error("Invalid call to dropped audio port instance");
+    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+  }
+  transport->UpdateSinkLatency(in_latency_ms);
   return ndk::ScopedAStatus::ok();
-}
-
-PresentationPosition::TimeSpec BluetoothAudioPortImpl::timespec_convert_to_hal(const timespec& ts) {
-  return {.tvSec = static_cast<int64_t>(ts.tv_sec), .tvNSec = static_cast<int64_t>(ts.tv_nsec)};
 }
 
 // Overriding create binder and inherit RT from caller.

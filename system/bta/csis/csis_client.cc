@@ -67,8 +67,8 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 
 using base::OnceClosure;
@@ -176,7 +176,8 @@ public:
         return;
       }
 
-      if (!p_data->auth_cmpl.success && !BTM_IsBonded(p_data->auth_cmpl.bd_addr, BT_TRANSPORT_LE)) {
+      if (!p_data->auth_cmpl.success && !get_btm_client_interface().security.BTM_IsBonded(
+                                                p_data->auth_cmpl.bd_addr, BT_TRANSPORT_LE)) {
         instance->BondingFailed(p_data->auth_cmpl.bd_addr);
       }
     });
@@ -300,7 +301,7 @@ public:
 
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
-      if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+      if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
         log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
         return;
@@ -1309,14 +1310,14 @@ private:
    * encrypted_sirk: LE order
    */
   bool sdf(const RawAddress& address, const Octet16& encrypted_sirk, Octet16& sirk) {
-    auto pltk = BTM_BleGetPeerLTK(address);
+    auto pltk = get_btm_client_interface().security.BTM_BleGetPeerLTK(address);
     if (!pltk.has_value()) {
       log::error("No security for {}", address);
       return false;
     }
 
 #ifdef CSIS_DEBUG
-    auto irk = BTM_BleGetPeerIRK(address);
+    auto irk = get_btm_client_interface().security.BTM_BleGetPeerIRK(address);
     log::info("LTK {}", base::HexEncode(pltk.value().data(), 16));
     log::info("IRK {}", irk.has_value() ? base::HexEncode(irk.value().data(), 16) : 0x00);
 #endif
@@ -1415,9 +1416,9 @@ private:
     /* Make sure device is not already bonded which could
      * be a case for dual mode devices where
      */
-    if (BTM_IsBonded(result->bd_addr, BT_TRANSPORT_LE)) {
+    if (get_btm_client_interface().security.BTM_IsBonded(result->bd_addr, BT_TRANSPORT_LE)) {
       log::verbose("Device {} already bonded. Identity address: {}", result->bd_addr,
-                   *BTM_BleGetIdentityAddress(result->bd_addr));
+                   *get_btm_client_interface().security.BTM_BleGetIdentityAddress(result->bd_addr));
       return;
     }
 
@@ -1556,9 +1557,9 @@ private:
     /* Make sure device is not already bonded which could
      * be a case for dual mode devices where
      */
-    if (BTM_IsBonded(result->bd_addr, BT_TRANSPORT_LE)) {
+    if (get_btm_client_interface().security.BTM_IsBonded(result->bd_addr, BT_TRANSPORT_LE)) {
       log::verbose("Device {} already bonded. Identity address: {}", result->bd_addr,
-                   *BTM_BleGetIdentityAddress(result->bd_addr));
+                   *get_btm_client_interface().security.BTM_BleGetIdentityAddress(result->bd_addr));
       return;
     }
 
@@ -1959,7 +1960,8 @@ private:
 
       case BTA_GATTC_ENC_CMPL_CB_EVT: {
         tBTM_STATUS encryption_status;
-        if (BTM_IsEncrypted(p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE)) {
+        if (get_btm_client_interface().security.BTM_IsEncrypted(p_data->enc_cmpl.remote_bda,
+                                                                BT_TRANSPORT_LE)) {
           encryption_status = tBTM_STATUS::BTM_SUCCESS;
         } else {
           encryption_status = tBTM_STATUS::BTM_FAILED_ON_SECURITY;
@@ -2012,21 +2014,21 @@ private:
     device->conn_id = evt.conn_id;
     BtaGattQueue::Clean(evt.conn_id);
     /* Verify bond */
-    if (BTM_SecIsLeSecurityPending(device->addr)) {
+    if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(device->addr)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT) */
       return;
     }
 
     /* verify bond */
-    if (BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       /* if link has been encrypted */
       OnEncrypted(device);
       return;
     }
 
-    tBTM_STATUS result =
-            BTM_SetEncryption(device->addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
+    tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+            device->addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
 
     log::info("Encryption required for {}. Request result: 0x{:02x}", device->addr, result);
 
@@ -2074,7 +2076,7 @@ private:
     }
 
     /* verify encryption enabled */
-    if (!BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (!get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       log::warn("Device not yet bonded - waiting for encryption");
       return;
     }

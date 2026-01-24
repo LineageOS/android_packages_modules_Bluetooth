@@ -787,11 +787,7 @@ void gatt_rsp_timeout(void* data) {
     EattExtension::GetInstance()->Disconnect(p_clcb->p_tcb->peer_bda, p_clcb->cid);
   } else {
     log::warn("conn_id: 0x{:04x} disconnecting GATT...", p_clcb->conn_id);
-    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
-      gatt_force_disconnect(p_clcb->p_tcb, "stack::gatt::gatt_utils::gatt_rsp_timeout");
-    } else {
-      gatt_disconnect(p_clcb->p_tcb);
-    }
+    gatt_force_disconnect(p_clcb->p_tcb, "stack::gatt::gatt_utils::gatt_rsp_timeout");
   }
 }
 
@@ -829,11 +825,7 @@ void gatt_indication_confirmation_timeout(void* data) {
   }
 
   log::warn("disconnecting... bda:{} transport:{}", p_tcb->peer_bda, p_tcb->transport);
-  if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
-    gatt_force_disconnect(p_tcb, "stack::gatt::gatt_utils::gatt_indication_confirmation_timeout");
-  } else {
-    gatt_disconnect(p_tcb);
-  }
+  gatt_force_disconnect(p_tcb, "stack::gatt::gatt_utils::gatt_indication_confirmation_timeout");
 }
 
 /*******************************************************************************
@@ -889,12 +881,12 @@ std::list<tGATT_SRV_LIST_ELEM>::iterator gatt_sr_find_i_rcb_by_handle(uint16_t h
 void gatt_sr_get_sec_info(const RawAddress& rem_bda, tBT_TRANSPORT transport,
                           tGATT_SEC_FLAG* p_sec_flag, uint8_t* p_key_size) {
   tGATT_SEC_FLAG flags = {};
-  flags.is_link_key_known = BTM_IsBonded(rem_bda, transport);
-  flags.is_link_key_authed = BTM_IsLinkKeyAuthed(rem_bda, transport);
-  flags.is_encrypted = BTM_IsEncrypted(rem_bda, transport);
+  flags.is_link_key_known = get_btm_client_interface().security.BTM_IsBonded(rem_bda, transport);
+  flags.is_link_key_authed = btm_is_link_key_authed(rem_bda, transport);
+  flags.is_encrypted = get_btm_client_interface().security.BTM_IsEncrypted(rem_bda, transport);
   flags.can_read_discoverable_characteristics = BTM_CanReadDiscoverableCharacteristics(rem_bda);
 
-  *p_key_size = btm_ble_read_sec_key_size(rem_bda);
+  *p_key_size = get_btm_client_interface().security.BTM_BleReadSecKeySize(rem_bda);
   *p_sec_flag = flags;
 }
 /*******************************************************************************

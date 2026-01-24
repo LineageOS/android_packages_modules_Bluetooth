@@ -43,14 +43,6 @@ flag {
 }
 
 flag {
-    name: "rssi_scan_filter"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add RSSI ScanFilter"
-    bug: "404986559"
-}
-
-flag {
     name: "fix_private_gatt_advertisement"
     namespace: "bluetooth"
     description: "Fix that private GATT advertising is handled as a normal GATT"
@@ -68,48 +60,10 @@ flag {
 }
 
 flag {
-    name: "read_rssi_throttling"
-    namespace: "bluetooth"
-    description: "Modify API to throttle the ability of a client app to trigger remote RSSI reads"
-    bug: "414510325"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "get_svc_uuids_from_ble_adv_data"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add API for getting service UUIDs from BLE advertising data. go/get-service-uuids-from-advertising-data"
-    bug: "389598210"
-}
-
-flag {
     name: "handle_encryption_fail_before_sdp_when_paring"
     namespace: "bluetooth"
     description: "handle encryption failure before SDP when pairing cause no SDP records but bonded"
     bug: "418212151"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "save_cache_for_bonded_device"
-    namespace: "bluetooth"
-    description: "Save db cache for just bonded device if available"
-    bug: "417859848"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "get_svc_uuids_bugfix"
-    namespace: "bluetooth"
-    description: "Bug fixes for the flag get_svc_uuids_from_ble_adv_data"
-    bug: "428792613"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -245,6 +199,16 @@ flag {
     namespace: "bluetooth"
     description: "Use the address type from batch scan result"
     bug: "469914545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "track_ad_type_flag_change"
+    namespace: "bluetooth"
+    description: "Track ad type flag value change in advertising reports during discovery"
+    bug: "475648435"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

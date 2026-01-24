@@ -424,11 +424,9 @@ public class ScanController {
                             && !isScanResponse
                             && !mIsMsftAdvMonitorEnabled;
 
-            if (Flags.supportPassiveScanning()
-                    && ((settings.getScanType() == ScanSettings.SCAN_TYPE_ACTIVE
-                                    && requiresScanResponse)
-                            || (settings.getScanType() == ScanSettings.SCAN_TYPE_PASSIVE
-                                    && isScanResponse))) {
+            if ((settings.getScanType() == ScanSettings.SCAN_TYPE_ACTIVE && requiresScanResponse)
+                    || (settings.getScanType() == ScanSettings.SCAN_TYPE_PASSIVE
+                            && isScanResponse)) {
                 scanTypeMismatch.add(client);
                 continue;
             }

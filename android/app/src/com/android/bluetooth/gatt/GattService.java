@@ -17,6 +17,7 @@
 package com.android.bluetooth.gatt;
 
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
@@ -817,7 +818,7 @@ public class GattService extends ProfileService {
             return;
         }
 
-        if (Flags.readRssiThrottling() && status == BluetoothGatt.GATT_SUCCESS) {
+        if (status == BluetoothGatt.GATT_SUCCESS) {
             Log.d(TAG, "onReadRemoteRssi(): Putting timestamp and rssi into cache");
             mRssiCache.put(
                     device.getAddress(), new RssiCacheEntry(mTimeProvider.elapsedRealtime(), rssi));
@@ -1388,7 +1389,7 @@ public class GattService extends ProfileService {
         }
         final var clientIf = clientApp.getId();
         Log.d(TAG, "readRemoteRssi(): device=" + device);
-        if (Flags.readRssiThrottling() && mRssiReadThrottleMs > 0) {
+        if (mRssiReadThrottleMs > 0) {
             final var entry = mRssiCache.get(device.getAddress());
             if (entry != null
                     && (mTimeProvider.elapsedRealtime() - entry.readTimeStamp)
@@ -1539,15 +1540,30 @@ public class GattService extends ProfileService {
         }
     }
 
+    private boolean shouldBlockMessaging(BluetoothDevice device) {
+        // This flag implies reverting the change made by Flags.gattMessagingPermissions
+        if (Flags.checkMapclientConnectionPolicyForAncs()) {
+            return getAdapterService()
+                    .getMapClientService()
+                    .map(
+                            mapClientService ->
+                                    mapClientService.getConnectionPolicy(device)
+                                            != CONNECTION_POLICY_ALLOWED)
+                    .orElse(false);
+        } else if (Flags.gattMessagingPermissions()) {
+            return getAdapterService().getMessageAccessPermission(device)
+                    != BluetoothDevice.ACCESS_ALLOWED;
+        } else {
+            return false;
+        }
+    }
+
     private boolean isRestrictedSrvcUuid(final UUID uuid, BluetoothDevice device) {
         return isFidoSrvcUuid(uuid)
                 || isAndroidTvRemoteSrvcUuid(uuid)
                 || isLeAudioSrvcUuid(uuid)
                 || isAndroidHeadtrackerSrvcUuid(uuid)
-                || (Flags.gattMessagingPermissions()
-                        && isAppleNotificationCenterSrvcUuid(uuid)
-                        && getAdapterService().getMessageAccessPermission(device)
-                                != BluetoothDevice.ACCESS_ALLOWED);
+                || (isAppleNotificationCenterSrvcUuid(uuid) && shouldBlockMessaging(device));
     }
 
     private int getDeviceType(BluetoothDevice device) {

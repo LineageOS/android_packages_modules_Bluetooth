@@ -71,12 +71,12 @@
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "profiles_api.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api_types.h"  // tBTM_RSSI_RESULT
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
@@ -595,23 +595,23 @@ public:
       log::warn("Unable to set BLE data length peer:{} size:{}", address, 167);
     }
 
-    if (BTM_SecIsLeSecurityPending(address)) {
+    if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(address)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT) */
       return;
     }
 
     /* verify bond */
-    if (BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
+    if (get_btm_client_interface().security.BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
       /* if link has been encrypted */
       OnEncryptionComplete(address, true);
       return;
     }
 
-    if (BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       /* if bonded and link not encrypted */
-      BTM_SetEncryption(address, BT_TRANSPORT_LE, encryption_callback, nullptr,
-                        BTM_BLE_SEC_ENCRYPT);
+      get_btm_client_interface().security.BTM_SetEncryption(
+              address, BT_TRANSPORT_LE, encryption_callback, nullptr, BTM_BLE_SEC_ENCRYPT);
       return;
     }
 
@@ -1076,7 +1076,8 @@ public:
     log::info("read PSM: bd_addr={} psm=0x{:x}", hearingDevice->address, psm);
 
     if (hearingDevice->gap_handle == GAP_INVALID_HANDLE &&
-        BTM_IsEncrypted(hearingDevice->address, BT_TRANSPORT_LE)) {
+        get_btm_client_interface().security.BTM_IsEncrypted(hearingDevice->address,
+                                                            BT_TRANSPORT_LE)) {
       ConnectSocket(hearingDevice, psm);
     }
   }
@@ -2178,7 +2179,8 @@ static void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) 
         return;
       }
       instance->OnEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                                     BTM_IsEncrypted(p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
+                                     get_btm_client_interface().security.BTM_IsEncrypted(
+                                             p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
       break;
 
     case BTA_GATTC_CONN_UPDATE_EVT:

@@ -38,15 +38,16 @@ namespace audio {
 namespace aidl {
 namespace a2dp {
 
-BluetoothAudioClientInterface::BluetoothAudioClientInterface(A2dpTransport* instance)
+BluetoothAudioClientInterface::BluetoothAudioClientInterface(
+        SessionType sessionType, StreamCallbacks const* stream_callbacks)
     : provider_(nullptr),
       provider_factory_(nullptr),
       session_started_(false),
       data_mq_(nullptr),
-      transport_(instance),
       latency_modes_({LatencyMode::FREE}) {
   death_recipient_ =
           ::ndk::ScopedAIBinder_DeathRecipient(AIBinder_DeathRecipient_new(binderDiedCallbackAidl));
+  transport_ = std::make_shared<A2dpTransport>(sessionType, stream_callbacks);
   FetchAudioProvider();
 }
 

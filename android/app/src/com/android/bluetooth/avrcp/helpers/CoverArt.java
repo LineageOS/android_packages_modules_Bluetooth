@@ -25,7 +25,6 @@ import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
 import com.android.bluetooth.avrcpcontroller.BipImageFormat;
 import com.android.bluetooth.avrcpcontroller.BipImageProperties;
 import com.android.bluetooth.avrcpcontroller.BipPixel;
-import com.android.bluetooth.flags.Flags;
 
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
@@ -127,8 +126,7 @@ public class CoverArt {
             return null;
         }
 
-        if (!isDescriptorPixelValid(descriptor)
-                || !Flags.implementGetImageFromDescriptorForCoverArt()) {
+        if (!isDescriptorPixelValid(descriptor)) {
             debug("getImage - descriptor pixels is not valid, returning default image.");
             return getImage();
         }
@@ -226,9 +224,7 @@ public class CoverArt {
         BipPixel pixel = descriptor.getPixel();
 
         if (pixel != null
-                && ((Flags.implementGetImageFromDescriptorForCoverArt()
-                                && PIXEL_THUMBNAIL.isBiggerOrEquals(pixel))
-                        || PIXEL_THUMBNAIL.equals(pixel))) {
+                && (PIXEL_THUMBNAIL.isBiggerOrEquals(pixel) || PIXEL_THUMBNAIL.equals(pixel))) {
             return true;
         }
         return false;

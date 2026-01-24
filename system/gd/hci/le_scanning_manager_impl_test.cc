@@ -358,10 +358,8 @@ TEST_F(LeScanningManagerTest, legacy_adv_scan_ind_report_with_scan_response) {
   // Scannable & not connectable!
   report.event_type_ = AdvertisingEventType::ADV_SCAN_IND;
 
-  if (com_android_bluetooth_flags_support_passive_scanning()) {
-    uint16_t extended_event_type = kLegacy | kScannable;
-    EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
-  }
+  uint16_t extended_event_type = kLegacy | kScannable;
+  EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
 
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
 
@@ -369,7 +367,7 @@ TEST_F(LeScanningManagerTest, legacy_adv_scan_ind_report_with_scan_response) {
   scan_response.event_type_ = AdvertisingEventType::SCAN_RESPONSE;
 
   // The 'connectable' bit should NOT be set.
-  uint16_t extended_event_type = kLegacy | kScannable | kScanResponse;
+  extended_event_type = kLegacy | kScannable | kScanResponse;
   EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
 
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({scan_response}));
@@ -389,16 +387,14 @@ TEST_F(LeScanningManagerTest, legacy_adv_ind_report_with_scan_response) {
   LeAdvertisingResponse report = make_advertising_report();
   // Scannable & connectable!
   report.event_type_ = AdvertisingEventType::ADV_IND;
-  if (com_android_bluetooth_flags_support_passive_scanning()) {
-    uint16_t extended_event_type = kLegacy | kScannable | kConnectable;
-    EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
-  }
+  uint16_t extended_event_type = kLegacy | kScannable | kConnectable;
+  EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
 
   LeAdvertisingResponse scan_response = make_advertising_report();
   scan_response.event_type_ = AdvertisingEventType::SCAN_RESPONSE;
 
-  uint16_t extended_event_type = kLegacy | kScannable | kConnectable | kScanResponse;
+  extended_event_type = kLegacy | kScannable | kConnectable | kScanResponse;
   EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
 
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({scan_response}));
@@ -883,7 +879,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   }
   scan_response_report.advertising_data_ = adv_data;
 
-  if (com_android_bluetooth_flags_support_passive_scanning()) {
+  {
     auto result_without_scan_response = std::vector<uint8_t>();
     packet::BitInserter it(result_without_scan_response);
     flags_data.Serialize(it);

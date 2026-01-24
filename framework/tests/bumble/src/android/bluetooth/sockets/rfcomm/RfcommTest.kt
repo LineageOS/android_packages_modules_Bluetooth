@@ -456,9 +456,7 @@ class RfcommTest {
      * - Create listening socket and connect
      * - Disconnect RFCOMM from remote device
      */
-    @RequiresFlagsEnabled(
-        "com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req",
-    )
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req")
     @Test
     fun serverSecureConnectThenRemoteDisconnect() {
         updateSecurityConfig()
@@ -476,9 +474,7 @@ class RfcommTest {
      * - Create listening socket and connect
      * - Disconnect RFCOMM from local device
      */
-    @RequiresFlagsEnabled(
-        "com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req",
-    )
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req")
     @Test
     fun serverSecureConnectThenLocalDisconnect() {
         updateSecurityConfig()

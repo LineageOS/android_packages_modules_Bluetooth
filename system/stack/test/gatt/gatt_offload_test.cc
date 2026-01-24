@@ -34,6 +34,8 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/main_thread.h"
+#include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_security_client_interface.h"
 
 // To override the mock function to return a specific handle.
 extern struct btm_client_interface_t mock_btm_client_interface;
@@ -47,6 +49,7 @@ using bluetooth::hal::GattSession;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::MockFunction;
+using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SaveArg;
 
@@ -128,6 +131,8 @@ protected:
     bluetooth::lpp::testing::mock_lpp_offload_interface_ = mock_.get();
     mock_metrics_logger_ = std::make_shared<bluetooth::metrics::MockMetrics>();
     bluetooth::metrics::MockMetrics::SetInstance(mock_metrics_logger_);
+    set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface_security(mock_btm_security_);
 
     EXPECT_CALL(*mock_, InitializeGattHal(_))
             .WillOnce(DoAll(SaveArg<0>(&gatt_hal_callback_), Return(true)));
@@ -143,6 +148,7 @@ protected:
   }
 
   void TearDown() override {
+    reset_mock_btm_client_interface();
     bluetooth::lpp::testing::mock_lpp_offload_interface_ = nullptr;
     bluetooth::metrics::MockMetrics::SetInstance(nullptr);
     mock_metrics_logger_ = nullptr;
@@ -152,6 +158,7 @@ protected:
 
   std::unique_ptr<bluetooth::lpp::testing::MockLppOffloadInterface> mock_;
   GattHalCallback* gatt_hal_callback_ = nullptr;
+  NiceMock<MockSecurityClientInterface> mock_btm_security_;
   std::shared_ptr<bluetooth::metrics::MockMetrics> mock_metrics_logger_;
 };
 
@@ -313,13 +320,8 @@ TEST_P(GattOffloadPermissionTest, OffloadCharacteristicsPermissionFail) {
            .properties = params.properties,
            .permissions = params.permissions}};
 
-  mock_btm_client_interface.security.BTM_IsEncrypted = [](const RawAddress& /* bd_addr */,
-                                                          tBT_TRANSPORT /* transport */) {
-    return mock_is_encrypted_;
-  };
-  mock_btm_client_interface.security.BTM_IsBonded = [](const RawAddress&, tBT_TRANSPORT) {
-    return mock_is_bonded_;
-  };
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(_, _)).WillByDefault(Return(mock_is_encrypted_));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(Return(mock_is_bonded_));
 
   std::promise<btgatt_offload_result_t> promise;
   auto future = promise.get_future();
@@ -372,12 +374,8 @@ TEST_F(GattOffloadPermissionTest, offload_characteristics_invalid_db_element_typ
            .type = BTGATT_DB_INCLUDED_SERVICE,
            .attribute_handle = 2}};
 
-  mock_btm_client_interface.security.BTM_IsEncrypted = [](const RawAddress&, tBT_TRANSPORT) {
-    return true;
-  };
-  mock_btm_client_interface.security.BTM_IsBonded = [](const RawAddress&, tBT_TRANSPORT) {
-    return true;
-  };
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(_, _)).WillByDefault(Return(true));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(Return(true));
 
   std::promise<btgatt_offload_result_t> promise;
   auto future = promise.get_future();

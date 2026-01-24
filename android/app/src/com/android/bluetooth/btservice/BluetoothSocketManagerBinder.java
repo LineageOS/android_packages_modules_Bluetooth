@@ -26,10 +26,10 @@ import android.bluetooth.IBluetoothSocketManager;
 import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.ParcelFileDescriptor;
-import com.android.bluetooth.BluetoothStatsLog;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;

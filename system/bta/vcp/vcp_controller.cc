@@ -52,6 +52,7 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "vcp/vcp_controller_types.h"
 
@@ -149,7 +150,7 @@ public:
 
     auto device = volume_control_devices_.FindByAddress(address);
     if (!device) {
-      if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+      if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
         bluetooth::log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
         return;
@@ -1726,7 +1727,8 @@ private:
 
       case BTA_GATTC_ENC_CMPL_CB_EVT: {
         tBTM_STATUS encryption_status;
-        if (BTM_IsEncrypted(p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE)) {
+        if (get_btm_client_interface().security.BTM_IsEncrypted(p_data->enc_cmpl.remote_bda,
+                                                                BT_TRANSPORT_LE)) {
           encryption_status = tBTM_STATUS::BTM_SUCCESS;
         } else {
           encryption_status = tBTM_STATUS::BTM_FAILED_ON_SECURITY;

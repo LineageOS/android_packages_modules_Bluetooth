@@ -27,8 +27,8 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
-#include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 
 tBTM_STATUS bluetooth::shim::BTM_ClearEventFilter() {
@@ -115,7 +115,7 @@ tBTM_STATUS bluetooth::shim::BTM_SetEventFilterInquiryResultAllDevices() {
 }
 
 tBTM_STATUS bluetooth::shim::BTM_BleResetId() {
-  btm_ble_reset_id();
+  get_security_client_interface().BTM_BleResetId();
   return tBTM_STATUS::BTM_SUCCESS;
 }
 

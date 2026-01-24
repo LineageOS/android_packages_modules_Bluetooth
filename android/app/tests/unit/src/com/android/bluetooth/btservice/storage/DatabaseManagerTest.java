@@ -49,7 +49,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
@@ -434,7 +433,6 @@ public final class DatabaseManagerTest {
 
     @Test
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
-    @EnableFlags(Flags.FLAG_SUPPORT_ZOOMED_IN_ICON_METADATA)
     public void testSetGetCustomMeta() {
         int badKey = 100;
         byte[] value = "input value".getBytes();
@@ -2037,7 +2035,6 @@ public final class DatabaseManagerTest {
 
     @Test
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
-    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public void testSetGetLeAudioUnicastInputOutputCodecPreferenceList() {
         Metadata data = new Metadata(mDevice1.getAddress());
         mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), data);

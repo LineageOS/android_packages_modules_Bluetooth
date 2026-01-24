@@ -200,29 +200,22 @@ class GattServerManager(
         // Look at new set of connections to determine overall connection state to share outward
         val connectionState: Int
         val stateToReport: Boolean
-        if (Flags.gattMultiBearerConnections()) {
-            val currentlyConnected = !serverMap.getConnectionsByDevice(serverIf, device).isEmpty()
-            if (!previouslyConnected && currentlyConnected) {
-                Log.i(TAG, "$header Has its first bearer and is now connected")
-                stateToReport = true
-                connectionState = BluetoothProtoEnums.CONNECTION_STATE_CONNECTED
-            } else if (previouslyConnected && !currentlyConnected) {
-                Log.i(TAG, "$header Has no more bearers and is disconnected")
-                stateToReport = false
-                connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED
-            } else {
-                Log.d(
-                    TAG,
-                    "$header Event dropped, previouslyConnected=$previouslyConnected" +
-                        ", currentlyConnected=$currentlyConnected",
-                )
-                return
-            }
+        val currentlyConnected = !serverMap.getConnectionsByDevice(serverIf, device).isEmpty()
+        if (!previouslyConnected && currentlyConnected) {
+            Log.i(TAG, "$header Has its first bearer and is now connected")
+            stateToReport = true
+            connectionState = BluetoothProtoEnums.CONNECTION_STATE_CONNECTED
+        } else if (previouslyConnected && !currentlyConnected) {
+            Log.i(TAG, "$header Has no more bearers and is disconnected")
+            stateToReport = false
+            connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED
         } else {
-            stateToReport = connected
-            connectionState =
-                if (connected) BluetoothProtoEnums.CONNECTION_STATE_CONNECTED
-                else BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED
+            Log.d(
+                TAG,
+                "$header Event dropped, previouslyConnected=$previouslyConnected" +
+                    ", currentlyConnected=$currentlyConnected",
+            )
+            return
         }
 
         var applicationUid = -1
@@ -341,13 +334,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -371,13 +358,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -404,13 +385,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -446,13 +421,7 @@ class GattServerManager(
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
-        val requestId: Int
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
 
         val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
@@ -483,14 +452,8 @@ class GattServerManager(
         )
         val app = serverMap.getByConnId(connId) ?: return
 
-        val requestId: Int
         val handle = HandleMap.HANDLE_PREPARED_WRITE
-        if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(app.id, connId, transId, handle)
-        } else {
-            requestId = transId
-            handleMap.addRequest(connId, transId, handle)
-        }
+        val requestId = handleMap.addRequestContext(app.id, connId, transId, handle)
 
         callbackToApp { app.callback.onExecuteWrite(device, requestId, execWrite == 1) }
     }
@@ -619,27 +582,20 @@ class GattServerManager(
             return
         }
         val serverIf = serverApp.id
-        if (Flags.gattMultiBearerConnections()) {
-            val connections = serverMap.getConnectionsByDevice(serverIf, device)
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
 
-            // If we don't have any known connection IDs, we could have a pending connection. We can
-            // use connId => 0 to cancel all pending connections with the given device. Otherwise,
-            // disconnect all bearers
-            if (connections.isEmpty()) {
-                Log.d(TAG, "serverDisconnect(): Cancel pending connections for $device")
-                nativeInterface.gattServerDisconnect(serverIf, device, 0)
-            } else {
-                for (connection in connections) {
-                    val id = connection.connId
-                    Log.d(TAG, "serverDisconnect(): $device, connId=$id")
-                    nativeInterface.gattServerDisconnect(serverIf, device, id)
-                }
-            }
+        // If we don't have any known connection IDs, we could have a pending connection. We can
+        // use connId => 0 to cancel all pending connections with the given device. Otherwise,
+        // disconnect all bearers
+        if (connections.isEmpty()) {
+            Log.d(TAG, "serverDisconnect(): Cancel pending connections for $device")
+            nativeInterface.gattServerDisconnect(serverIf, device, 0)
         } else {
-            val connections = serverMap.getConnectionsByDevice(serverIf, device)
-            val connId = if (connections.isEmpty()) null else connections[0].connId
-            Log.d(TAG, "serverDisconnect(): $device, connId=$connId")
-            nativeInterface.gattServerDisconnect(serverIf, device, connId ?: 0)
+            for (connection in connections) {
+                val id = connection.connId
+                Log.d(TAG, "serverDisconnect(): $device, connId=$id")
+                nativeInterface.gattServerDisconnect(serverIf, device, id)
+            }
         }
     }
 
@@ -778,33 +734,16 @@ class GattServerManager(
         var connId = 0
         var transId = -1
 
-        var requestContext: HandleMap.RequestContext? = null
-        var requestData: HandleMap.RequestData? = null
-
-        if (Flags.gattMultiBearerTransactions()) {
-            requestContext = handleMap.getRequestContext(serverIf, requestId)
-            if (requestContext != null) {
-                connId = requestContext.connId
-                transId = requestContext.transactionId
-                handle = requestContext.handle
-            }
-        } else {
-            transId = requestId
-            requestData = handleMap.getRequestDataByRequestId(requestId)
-            if (requestData != null) {
-                handle = requestData.handle
-                connId = requestData.connId
-            }
+        var requestContext = handleMap.getRequestContext(serverIf, requestId)
+        if (requestContext != null) {
+            connId = requestContext.connId
+            transId = requestContext.transactionId
+            handle = requestContext.handle
         }
 
-        if (requestContext == null && requestData == null) {
+        if (requestContext == null) {
             Log.w(TAG, "sendResponse($callback): No record of request we're responding to")
-            if (Flags.gattMultiBearerTransactions()) {
-                return
-            } else {
-                val connections = serverMap.getConnectionsByDevice(serverIf, device)
-                connId = if (connections.isEmpty()) 0 else connections[0].connId
-            }
+            return
         }
 
         nativeInterface.gattServerSendResponse(
@@ -818,11 +757,7 @@ class GattServerManager(
             0,
         )
 
-        if (Flags.gattMultiBearerTransactions()) {
-            handleMap.deleteRequestContext(serverIf, requestId)
-        } else {
-            handleMap.deleteRequest(requestId)
-        }
+        handleMap.deleteRequestContext(serverIf, requestId)
     }
 
     fun sendNotification(
@@ -850,27 +785,21 @@ class GattServerManager(
         var connId: Int? = null
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
 
-        if (Flags.gattMultiBearerConnections()) {
-            // The list is sorted by oldest first. Grab the oldest bearer that matches our transport
-            // preference. If the transport is AUTO then use the oldest bearer available
-            for (connection in connections) {
-                if (
-                    transportPreference == BluetoothDevice.TRANSPORT_AUTO ||
-                        transportPreference == connection.transport
-                ) {
-                    connId = connection.connId
-                    break
-                }
+        // The list is sorted by oldest first. Grab the oldest bearer that matches our transport
+        // preference. If the transport is AUTO then use the oldest bearer available
+        for (connection in connections) {
+            if (
+                transportPreference == BluetoothDevice.TRANSPORT_AUTO ||
+                    transportPreference == connection.transport
+            ) {
+                connId = connection.connId
+                break
             }
+        }
 
-            // If there was no transport that matches the preference, use the oldest bearer
-            if (connId == null && !connections.isEmpty()) {
-                connId = connections[0].connId
-            }
-        } else {
-            if (!connections.isEmpty()) {
-                connId = connections[0].connId
-            }
+        // If there was no transport that matches the preference, use the oldest bearer
+        if (connId == null && !connections.isEmpty()) {
+            connId = connections[0].connId
         }
 
         if (connId == null || connId == 0) {

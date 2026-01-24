@@ -1117,7 +1117,7 @@ static void gap_release_ccb(tGAP_CCB* p_ccb) {
   }
 
   /* Free the security record for this PSM */
-  BTM_SecClrServiceByPsm(p_ccb->psm);
+  get_btm_client_interface().security.BTM_SecClrServiceByPsm(p_ccb->psm);
   if (p_ccb->transport == BT_TRANSPORT_BR_EDR) {
     stack::l2cap::get_interface().L2CA_Deregister(p_ccb->psm);
   }

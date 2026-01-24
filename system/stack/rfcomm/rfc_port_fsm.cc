@@ -168,7 +168,11 @@ void rfc_port_sm_state_closed(tPORT* p_port, RfcommPortEvent event, void* p_data
       return;
 
     case RFC_PORT_EVENT_TIMEOUT:
-      PORT_TimeOutCloseMux(p_port->p_mcb);
+      if (com_android_bluetooth_flags_release_port_instead_mux_when_timeout_after_closed()) {
+        PORT_DlcReleaseInd(p_port->p_mcb, p_port->dlci);
+      } else {
+        PORT_TimeOutCloseMux(p_port->p_mcb);
+      }
       log::error("Port error state {} event {}", rfcomm_port_state_text(p_port->sm_cb.state),
                  rfcomm_port_event_text(event));
       return;

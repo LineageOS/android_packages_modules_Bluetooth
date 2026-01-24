@@ -261,12 +261,6 @@ constructor(
         if (key >= 0 && key <= BluetoothDevice.getMaxMetadataKey()) {
             return
         }
-        if (Flags.supportZoomedInIconMetadata() && key == BluetoothDevice.METADATA_ZOOMED_IN_ICON) {
-            // When cleaning the supportZoomedInIconMetadata flag, update METADATA_MAX_KEY to
-            // METADATA_ZOOMED_IN_ICON
-            return
-        }
-
         throw IllegalArgumentException("Invalid metadata key: $key")
     }
 

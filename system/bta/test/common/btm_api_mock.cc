@@ -27,7 +27,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_addr.h"
-#include "stack/include/btm_ble_sec_api.h"
+#include "stack/include/btm_sec_api.h"
 #include "test/mock/mock_stack_btm_interface.h"
 
 using namespace bluetooth;

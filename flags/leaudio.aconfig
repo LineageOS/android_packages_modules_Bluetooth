@@ -117,24 +117,6 @@ flag {
 }
 
 flag {
-    name: "do_not_hardcode_tmap_role_mask"
-    namespace: "bluetooth"
-    description: "When initializing TMAP role mask in LeAudioService, make it a function of enabled services"
-    bug: "399410612"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_add_opus_hi_res_codec_type_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add OPUS codec type to LE Audio API"
-    bug: "419699224"
-}
-
-flag {
     name: "leaudio_broadcast_source_channel_map_classification"
     namespace: "bluetooth"
     description: "Uses channel classification from buds who synced with the phone's broadcast stream to determine the BIG channel map"
@@ -429,4 +411,11 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "leaudio_centralize_tmap"
+    namespace: "bluetooth"
+    description: "Make TMAP GATT service centralized for central and peripheral Bluetooth services"
+    bug: "477546285"
 }

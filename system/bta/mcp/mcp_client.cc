@@ -31,6 +31,7 @@
 #include "mcp/mcp_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/gatt_api.h"
 
@@ -101,7 +102,7 @@ public:
       log::warn("Connect requested for already tracked device {}", address);
       return;
     }
-    if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       log::error("Connecting {} when not bonded", address);
       callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
       return;
@@ -209,7 +210,8 @@ public:
         break;
       case BTA_GATTC_ENC_CMPL_CB_EVT:
         OnEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                             BTM_IsEncrypted(p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
+                             get_btm_client_interface().security.BTM_IsEncrypted(
+                                     p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
         break;
       case BTA_GATTC_SRVC_CHG_EVT:
         OnServiceChangeEvent(p_data->service_changed.remote_bda);
@@ -287,11 +289,11 @@ private:
     }
     callbacks_->OnConnectionState(evt.remote_bda, ConnectionState::CONNECTED);
 
-    if (BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       OnEncryptionComplete(device->addr, true);
     } else {
-      tBTM_STATUS result = BTM_SetEncryption(device->addr, BT_TRANSPORT_LE, nullptr, nullptr,
-                                             BTM_BLE_SEC_ENCRYPT);
+      tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+              device->addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
 
       if (result == tBTM_STATUS::BTM_ERR_KEY_MISSING) {
         log::error("Link key unknown for {}, disconnect profile", device->addr);

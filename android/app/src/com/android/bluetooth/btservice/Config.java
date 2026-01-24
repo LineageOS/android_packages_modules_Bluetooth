@@ -247,9 +247,7 @@ public class Config {
         setProfileEnabled(BluetoothProfile.LE_CALL_CONTROL, enable);
         setProfileEnabled(BluetoothProfile.MCP_SERVER, enable);
         setProfileEnabled(BluetoothProfile.VOLUME_CONTROL, enable);
-        if (Flags.addProfileAsIntentExtra()) {
-            setProfileEnabled(BluetoothProfile.VAPS_SERVER, enable);
-        }
+        setProfileEnabled(BluetoothProfile.VAPS_SERVER, enable);
     }
 
     private static void setLeAudioBroadcastProfileStatus(Boolean enable) {

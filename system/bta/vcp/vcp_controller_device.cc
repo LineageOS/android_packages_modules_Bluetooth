@@ -40,6 +40,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "vcp/vcp_controller_types.h"
 
@@ -693,12 +694,12 @@ bool VolumeControllerDevice::ExtAudioInControlPointOperation(uint8_t ext_input_i
 }
 
 bool VolumeControllerDevice::IsEncryptionEnabled() {
-  return BTM_IsEncrypted(address, BT_TRANSPORT_LE);
+  return get_btm_client_interface().security.BTM_IsEncrypted(address, BT_TRANSPORT_LE);
 }
 
 bool VolumeControllerDevice::EnableEncryption() {
-  tBTM_STATUS result =
-          BTM_SetEncryption(address, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
+  tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+          address, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
   log::info("{}: result=0x{:02x}", address, result);
 
   return result != tBTM_STATUS::BTM_ERR_KEY_MISSING;

@@ -34,8 +34,8 @@
 #include "bta/dm/bta_dm_sec_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_device_type.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
 
@@ -88,7 +88,7 @@ void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len, uin
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmLocalOob(void) { BTM_ReadLocalOobData(); }
+void BTA_DmLocalOob(void) { get_btm_client_interface().security.BTM_ReadLocalOobData(); }
 
 /*******************************************************************************
  *
@@ -237,7 +237,7 @@ void BTA_DmBleSecurityGrant(const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res
     }
   }(res);
 
-  BTM_SecurityGrant(bd_addr, btm_status);
+  get_btm_client_interface().security.BTM_SecurityGrant(bd_addr, btm_status);
 }
 
 /*******************************************************************************

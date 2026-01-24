@@ -172,40 +172,32 @@ public final class BluetoothGatt implements BluetoothProfile {
      */
     public static final int CONNECTION_PRIORITY_DCK = 3;
 
-    /**
-     * Connection Subrate mode - Request to disable subrate mode.
-     */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
+    /** Connection Subrate mode - Request to disable subrate mode. */
     public static final int SUBRATE_MODE_OFF = 0;
 
     /**
-     * Connection Subrate mode - Requests to enable subrate mode with parameters optimized for
-     * low burstiness, minimum power consumption. This is the most power-efficient subrate
+     * Connection Subrate mode - Requests to enable subrate mode with parameters optimized for low
+     * burstiness, minimum power consumption. This is the most power-efficient subrate
      * configuration.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_LOW = 1;
 
     /**
      * Connection subrate mode - Requests to enable subrate mode using balanced parameters to
      * provide a compromise between power savings and performance.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_BALANCED = 2;
 
     /**
-     * Connection subrate mode - Requests to enable subrate mode with parameters optimized for
-     * high burstiness, enhanced data transfer.
+     * Connection subrate mode - Requests to enable subrate mode with parameters optimized for high
+     * burstiness, enhanced data transfer.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_HIGH = 3;
 
     /** Connection Subrate mode - System Update. */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_SYSTEM_UPDATE = 99;
 
     /** Connection Subrate mode - No Update applied due to error. */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_NOT_UPDATED = 255;
 
     @Hide
@@ -848,7 +840,6 @@ public final class BluetoothGatt implements BluetoothProfile {
         @Hide
         @Override
         @RequiresNoPermission // Callback to app
-        @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
         public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
             Log.d(
                     TAG,
@@ -1998,8 +1989,8 @@ public final class BluetoothGatt implements BluetoothProfile {
     /**
      * Request LE subrate mode.
      *
-     * <p>Configure/Request subrating with this API, sending a subrate request to the remote
-     * device based on Subrate Mode. This function should be used in conjunction with {@link
+     * <p>Configure/Request subrating with this API, sending a subrate request to the remote device
+     * based on Subrate Mode. This function should be used in conjunction with {@link
      * requestConnectionPriority} to manage link latency and power consumption effectively.
      *
      * <p>This method requires the calling app to have the {@link
@@ -2012,7 +2003,6 @@ public final class BluetoothGatt implements BluetoothProfile {
      * @throws IllegalArgumentException If the parameters are outside of their specified range.
      * @return true, if the request is send to the Bluetooth stack.
      */
-    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},

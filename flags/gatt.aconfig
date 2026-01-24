@@ -2,34 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "le_subrate_api"
-    namespace: "bluetooth"
-    description: "New API to control LE subrate parameters"
-    bug: "384794418"
-    is_exported: true
-}
-
-flag {
-    name: "gatt_multi_bearer_connections"
-    namespace: "bluetooth"
-    description: "Run all advertise functions on a single thread"
-    bug: "412464556"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "gatt_multi_bearer_transactions"
-    namespace: "bluetooth"
-    description: "Make transaction IDs local to a device/bearer"
-    bug: "418050422"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "tbs_gatt_no_longer_calls_framework"
     namespace: "bluetooth"
     description: "TbsGatt will avoid BluetoothGattServerProxy and use GattServer directly"
@@ -66,16 +38,6 @@ flag {
     namespace: "bluetooth"
     description: "Add subrate manager to control LE subrate parameters"
     bug: "433670627"
-}
-
-flag {
-    name: "disconnect_acl_on_gatt_timeout"
-    namespace: "bluetooth"
-    description: "Disconnect ACL when a gatt response or confirmation timeout occurs"
-    bug: "438985552"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {

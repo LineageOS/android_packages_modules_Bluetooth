@@ -39,14 +39,6 @@ flag {
 }
 
 flag {
-    name: "support_zoomed_in_icon_metadata"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add api support for a zoomed in icon metadata"
-    bug: "417245933"
-}
-
-flag {
     name: "merge_call_with_held_conference"
     namespace: "bluetooth"
     description: "Merge the active call with held conference call"
@@ -147,6 +139,7 @@ flag {
 flag {
     name: "hfp_get_codec_api"
     namespace: "bluetooth"
+    is_exported: true
     description: "Add api support for get hfp connection codec type"
     bug: "464401354"
 }

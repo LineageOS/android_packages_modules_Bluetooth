@@ -379,16 +379,16 @@ struct btm_ble_ltk_request_reply {
 };
 extern struct btm_ble_ltk_request_reply btm_ble_ltk_request_reply;
 
-// Name: btm_ble_read_sec_key_size
+// Name: BTM_BleReadSecKeySize
 // Params: const RawAddress& bd_addr
 // Return: uint8_t
-struct btm_ble_read_sec_key_size {
+struct BTM_BleReadSecKeySize {
   static uint8_t return_value;
   std::function<uint8_t(const RawAddress& bd_addr)> body{
           [](const RawAddress& /* bd_addr */) { return return_value; }};
   uint8_t operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
-extern struct btm_ble_read_sec_key_size btm_ble_read_sec_key_size;
+extern struct BTM_BleReadSecKeySize BTM_BleReadSecKeySize;
 
 // Name: btm_ble_reset_id
 // Params: void

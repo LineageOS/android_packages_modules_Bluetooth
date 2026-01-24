@@ -348,6 +348,39 @@ public final class BluetoothHeadset implements BluetoothProfile {
     public static final String EXTRA_HF_INDICATORS_IND_VALUE =
             "android.bluetooth.headset.extra.HF_INDICATORS_IND_VALUE";
 
+    @Hide
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = {"CODEC_TYPE_"},
+            value = {
+                CODEC_TYPE_LC3_SWB,
+                CODEC_TYPE_MSBC,
+                CODEC_TYPE_CVSD,
+                CODEC_TYPE_VENDOR_SPECIFIC,
+                CODEC_TYPE_UNSUPPORTED
+            })
+    public @interface CodecType {}
+
+    /** HFP codec type is not supported or cannot be determined */
+    @FlaggedApi(Flags.FLAG_HFP_GET_CODEC_API)
+    public static final int CODEC_TYPE_UNSUPPORTED = -1;
+
+    /** HFP vendor specific codec Type */
+    @FlaggedApi(Flags.FLAG_HFP_GET_CODEC_API)
+    public static final int CODEC_TYPE_VENDOR_SPECIFIC = 0;
+
+    /** HFP codec type CVSD */
+    @FlaggedApi(Flags.FLAG_HFP_GET_CODEC_API)
+    public static final int CODEC_TYPE_CVSD = 1;
+
+    /** HFP codec type mSBC */
+    @FlaggedApi(Flags.FLAG_HFP_GET_CODEC_API)
+    public static final int CODEC_TYPE_MSBC = 2;
+
+    /** HFP codec type LC3 SWB */
+    @FlaggedApi(Flags.FLAG_HFP_GET_CODEC_API)
+    public static final int CODEC_TYPE_LC3_SWB = 3;
+
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
 
@@ -1239,6 +1272,39 @@ public final class BluetoothHeadset implements BluetoothProfile {
             }
         }
         return false;
+    }
+
+    /**
+     * Get the codec type of the given HFP connected device.
+     *
+     * <p>This method returns the codec type that has been negotiated between the AG and HF which is
+     * available once the HFP SLC is established and the codec negotiation process is completed. The
+     * negotiated codec can be retrieved regardless of whether a SCO audio connection is currently
+     * active or not.
+     *
+     * @param device The remote Bluetooth device. Must not be null.
+     * @return The codec type of the given HFP connected device. Returns {@link
+     *     #CODEC_TYPE_UNSUPPORTED} if Bluetooth is off, the profile is not connected, the device is
+     *     not connected, the codec negotiation is not completed, or an error occurs.
+     */
+    @FlaggedApi(Flags.FLAG_HFP_GET_CODEC_API)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public @CodecType int getCodecType(@NonNull BluetoothDevice device) {
+        if (DBG) log("getCodecType()");
+        requireNonNull(device);
+        final IBluetoothHeadset service = getService();
+        if (service == null) {
+            Log.w(TAG, "Proxy not attached to service");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else if (isEnabled()) {
+            try {
+                return service.getCodecType(device, mAttributionSource);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return CODEC_TYPE_UNSUPPORTED;
     }
 
     @UnsupportedAppUsage

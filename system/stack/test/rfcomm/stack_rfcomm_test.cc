@@ -138,6 +138,37 @@ public:
     ASSERT_EQ(rfc_cb.port.port[client_handle - 1].p_mcb->state, RFC_MX_STATE_CONFIGURE);
   }
 
+  /*
+   * Start Connecting steps:
+   * 1. Open a server port
+   * 2. Send a connection request
+   */
+  void StartConnecting(uint8_t scn, uint16_t mtu, uint16_t out_lcid, RawAddress peer_addr,
+                       uint8_t& server_handle, uint8_t& client_handle) {
+    log::verbose("Step 1");
+    int status = RFCOMM_CreateConnectionWithSecurity(UUID_SERIAL_PORT, scn, true, mtu,
+                                                     RawAddress::kAny, &server_handle,
+                                                     port_mgmt_cback_0, 0, RfcommCfgInfo{});
+    ASSERT_EQ(status, PORT_SUCCESS);
+    ASSERT_NE(server_handle, 0);
+
+    status = PORT_SetEventMaskAndCallback(server_handle, PORT_EV_RXCHAR, port_event_cback_0);
+    ASSERT_EQ(status, PORT_SUCCESS);
+
+    log::verbose("Step 2");
+    EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_ConnectReq(BT_PSM_RFCOMM, peer_addr))
+            .Times(1)
+            .WillOnce(Return(out_lcid));
+    status = RFCOMM_CreateConnectionWithSecurity(UUID_SERIAL_PORT, scn, false, mtu, peer_addr,
+                                                 &client_handle, port_mgmt_cback_1, 0,
+                                                 RfcommCfgInfo{});
+    ASSERT_EQ(status, PORT_SUCCESS);
+    ASSERT_NE(client_handle, 0);
+
+    status = PORT_SetEventMaskAndCallback(client_handle, PORT_EV_RXCHAR, port_event_cback_1);
+    ASSERT_EQ(status, PORT_SUCCESS);
+  }
+
 protected:
   static const uint16_t acl_handle = 0x0008;
   static const uint8_t test_scn = 7;
@@ -467,4 +498,45 @@ TEST_F(StackRfcommTest, collide_then_close_outgoing_after_timeout) {
   l2cap_appl_info_.pL2CA_DisconnectInd_Cb(outgoing_lcid, false);
   log::verbose("Step 7");
   ASSERT_EQ(p_mcb->state, RFC_MX_STATE_IDLE);
+}
+
+
+
+TEST_F(StackRfcommTest, rfc_port_sm_state_closed_RFC_PORT_EVENT_TIMEOUT) {
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
+
+  StartConnecting(test_scn, test_mtu, outgoing_lcid, test_peer_addr, server_handle, client_handle);
+  tPORT* p_port = &rfc_cb.port.port[client_handle - 1];
+  p_port->sm_cb.state = RFC_STATE_CLOSED;
+
+  // Case 1: Flag enabled
+  set_com_android_bluetooth_flags_release_port_instead_mux_when_timeout_after_closed(
+      true);
+  EXPECT_CALL(rfcomm_callback_,
+              PortManagementCallback(tPORT_RESULT::PORT_CLOSED, client_handle, 1));
+  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, nullptr);
+
+  // Re-establish connection for Case 2
+  ASSERT_EQ(PORT_SUCCESS, RFCOMM_RemoveConnection(client_handle));
+  ASSERT_EQ(PORT_SUCCESS, RFCOMM_RemoveServer(server_handle));
+
+  tRFC_MCB* p_mcb_cleanup = rfc_find_lcid_mcb(outgoing_lcid);
+  if (p_mcb_cleanup) {
+    rfc_release_multiplexer_channel(p_mcb_cleanup);
+  }
+
+  rfc_cb.port.port[client_handle - 1].state = PORT_CONNECTION_STATE_CLOSED;
+  rfc_cb.port.port[client_handle - 1].in_use = false;
+
+  StartConnecting(test_scn, test_mtu, outgoing_lcid, test_peer_addr, server_handle, client_handle);
+  p_port = &rfc_cb.port.port[client_handle - 1];
+  p_port->sm_cb.state = RFC_STATE_CLOSED;
+
+  // Case 2: Flag disabled
+  set_com_android_bluetooth_flags_release_port_instead_mux_when_timeout_after_closed(
+      false);
+  EXPECT_CALL(rfcomm_callback_,
+              PortManagementCallback(tPORT_RESULT::PORT_PEER_TIMEOUT, client_handle, 1));
+  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, nullptr);
 }

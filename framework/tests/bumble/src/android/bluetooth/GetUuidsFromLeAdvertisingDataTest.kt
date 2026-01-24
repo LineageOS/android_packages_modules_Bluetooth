@@ -22,7 +22,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.ParcelUuid
-import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -106,7 +105,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         }
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromServiceUuid(
         @TestParameter usePublicAddress: Boolean,
@@ -134,7 +132,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromServiceData(
         @TestParameter usePublicAddress: Boolean,
@@ -161,7 +158,6 @@ class GetUuidsFromLeAdvertisingDataTest {
     }
 
     // Due to packet size limit in legacy advertising, separate test for 128 bit UUID.
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromServiceData_128BitUuid(
         @TestParameter usePublicAddress: Boolean,
@@ -182,7 +178,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromBothServiceUuidAndData(
         @TestParameter usePublicAddress: Boolean,
@@ -208,10 +203,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled(
-        "com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data",
-        "com.android.bluetooth.flags.get_svc_uuids_bugfix",
-    )
     @Test
     fun doesNotContainAnyUuidDataType_shouldReturnNullUuid(
         @TestParameter usePublicAddress: Boolean,
@@ -234,10 +225,6 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled(
-        "com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data",
-        "com.android.bluetooth.flags.get_svc_uuids_bugfix",
-    )
     @Test
     fun uuidTypesAreRemovedFromAdvertisement_shouldReturnNullUuid(
         @TestParameter usePublicAddress: Boolean,

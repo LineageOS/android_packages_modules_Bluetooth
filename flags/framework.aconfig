@@ -22,22 +22,6 @@ flag {
 }
 
 flag {
-    name: "add_profile_as_intent_extra"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add Profile as intent extra"
-    bug: "419074085"
-}
-
-flag {
-    name: "key_missing_count_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Promote getKeyMissingCount as public API"
-    bug: "421357557"
-}
-
-flag {
     name: "coalesce_acl_connection_broadcasts"
     namespace: "bluetooth"
     description: "Set delivery group policy to coalesce ACL connection state change broadcasts."

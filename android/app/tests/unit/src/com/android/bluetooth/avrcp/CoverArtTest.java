@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -276,7 +275,6 @@ public class CoverArtTest {
      * This verifies that descriptors for sizes smaller than the thumbnail are accepted.
      */
     @Test
-    @EnableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
     public void testGetImageWithSmallerDescriptor_whenFlagEnabled() {
         CoverArt artwork = new CoverArt(mImage);
         BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 100, 100);
