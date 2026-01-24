@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::ClientContext;
-use crate::{console_yellow, print_info};
+use crate::{console_yellow, print_info, ClientContext};
 
 use bt_topshim::btif::Uuid;
 use bt_topshim::profiles::gatt::{LeDiscMode, LePhy};

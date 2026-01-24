@@ -338,24 +338,29 @@ pub fn generate_dbus_interface_client(attr: TokenStream, item: TokenStream) -> T
     // Iterate on every methods of a trait impl
     for item in ast.items {
         if let ImplItem::Method(method) = item {
-            // Find the #[dbus_method] attribute
+            // Find the #[dbus_method] attribute and keep others for later use
+            let mut attrs = quote! {};
             let mut dbus_method_attr = None;
             for attr in &method.attrs {
-                if attr.path.get_ident().unwrap().to_string().eq("dbus_method") {
+                if attr.path.is_ident("dbus_method") {
                     dbus_method_attr = Some(attr);
-                    break;
+                } else {
+                    attrs = quote! {
+                        #attrs
+                        #attr
+                    };
                 }
             }
 
             // If the method is not marked with #[dbus_method], just copy the original method body.
-            if dbus_method_attr.is_none() {
+            let Some(dbus_method_attr) = dbus_method_attr else {
                 methods = quote! {
                     #methods
 
                     #method
                 };
                 continue;
-            }
+            };
 
             // For RPC-friendly method, copy the original signature but add public, async, and wrap
             // the return with Result.
@@ -371,11 +376,12 @@ pub fn generate_dbus_interface_client(attr: TokenStream, item: TokenStream) -> T
                 }
             };
             let rpc_sig = quote! {
+                #attrs
                 pub #rpc_sig
             };
 
             let dbus_method_name =
-                if let Meta::List(meta_list) = dbus_method_attr.unwrap().parse_meta().unwrap() {
+                if let Meta::List(meta_list) = dbus_method_attr.parse_meta().unwrap() {
                     Some(meta_list.nested[0].clone())
                 } else {
                     None
