@@ -249,7 +249,7 @@ impl StateMachineProxy {
     }
 
     pub fn get_adapters(&self) -> Vec<AdapterState> {
-        self.state.lock().unwrap().iter().map(|(_, a)| a.clone()).collect::<Vec<AdapterState>>()
+        self.state.lock().unwrap().values().cloned().collect()
     }
 
     pub fn get_valid_adapters(&self) -> Vec<AdapterState> {
@@ -288,7 +288,7 @@ fn pid_inotify_async_fd() -> AsyncFd<inotify::Inotify> {
 /// Given an pid path, returns the adapter index for that pid path.
 fn get_hci_index_from_pid_path(path: &str) -> Option<VirtualHciIndex> {
     path.rsplit_once('/')
-        .or_else(|| Some(("", path))) // Contains no '/', so |path| is the last component.
+        .or(Some(("", path))) // Contains no '/', so |path| is the last component.
         .and_then(|tup| tup.1.strip_prefix("bluetooth"))
         .and_then(|s| s.strip_suffix(".pid"))
         .and_then(|p| p.parse::<i32>().ok())
@@ -329,7 +329,7 @@ fn configure_pid(pid_tx: mpsc::Sender<Message>) {
         loop {
             let r = pid_async_fd.readable_mut();
             let mut fd_ready =
-                r.await.expect(format!("pid file in {} never became readable", PID_DIR).as_str());
+                r.await.unwrap_or_else(|_| panic!("pid file in {} never became readable", PID_DIR));
             let mut buffer: [u8; 1024] = [0; 1024];
             debug!("Found new pid inotify entries. Reading them");
             match fd_ready.try_io(|inner| inner.get_mut().read_events(&mut buffer)) {
@@ -942,7 +942,7 @@ pub trait ProcessManager {
     /// # Args
     /// * `virtual_hci` - Virtual index of adapter used for apis.
     /// * `real_hci` - Real index of the adapter on the system. This can
-    ///                  change during a single boot.
+    ///   change during a single boot.
     fn start(&mut self, virtual_hci: VirtualHciIndex, real_hci: RealHciIndex);
 
     /// Stop the adapter process.
