@@ -256,8 +256,6 @@ class ServerBinder(
         return runOnServerThread { api.setAutoOnEnabled(status) }
     }
 
-    override fun getServiceMessenger() = null // TODO remove entirely and in testing class
-
     override fun handleShellCommand(
         `in`: ParcelFileDescriptor,
         out: ParcelFileDescriptor,
