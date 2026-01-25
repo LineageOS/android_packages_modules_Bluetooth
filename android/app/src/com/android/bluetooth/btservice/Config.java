@@ -43,6 +43,7 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_audio.LeAudioTmapService;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
+import com.android.bluetooth.mcp.McpClientService;
 import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
@@ -90,7 +91,7 @@ public class Config {
 
     /** List of profile services related to LE audio peripheral role */
     private static final int[] LE_AUDIO_UNICAST_PERIPHERAL_PROFILES = {
-        BluetoothProfile.LE_AUDIO_PERIPHERAL,
+        BluetoothProfile.LE_AUDIO_PERIPHERAL, BluetoothProfile.MCP_CLIENT,
     };
 
     /**
@@ -149,6 +150,7 @@ public class Config {
                 new ProfileConfig(
                         LeAudioPeripheralService.isEnabled(), BluetoothProfile.LE_AUDIO_PERIPHERAL),
                 new ProfileConfig(LeAudioTmapService.isEnabled(), BluetoothProfile.TMAP_SERVER),
+                new ProfileConfig(McpClientService.isEnabled(), BluetoothProfile.MCP_CLIENT),
             };
 
     private Config() {}

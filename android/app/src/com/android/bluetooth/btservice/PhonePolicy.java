@@ -281,6 +281,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         final var leAudio = mAdapterService.getLeAudioService();
         final var pan = mAdapterService.getPanService();
         final var volumeControl = mAdapterService.getVolumeControlService();
+        final var mcpClient = mAdapterService.getMcpClientService();
 
         final boolean isBypassLeAudioAllowlist =
                 SystemProperties.getBoolean(BYPASS_LE_AUDIO_ALLOWLIST_PROPERTY, false);
@@ -504,6 +505,19 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             } else {
                 mAdapterService.setProfileConnectionPolicy(
                         device, BluetoothProfile.BATTERY, CONNECTION_POLICY_ALLOWED);
+            }
+        }
+
+        if (mcpClient.isPresent()
+                && mcpClient.get().isEnabled()
+                && Util.arrayContains(uuids, BluetoothUuid.GENERIC_MEDIA_CONTROL)
+                && (mcpClient.get().getConnectionPolicy(device) == CONNECTION_POLICY_UNKNOWN)) {
+            Log.d(TAG, log + "Setting MCP_CLIENT priority");
+            if (mAutoConnectProfilesSupported) {
+                mcpClient.get().setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+            } else {
+                mAdapterService.setProfileConnectionPolicy(
+                        device, BluetoothProfile.MCP_CLIENT, CONNECTION_POLICY_ALLOWED);
             }
         }
     }

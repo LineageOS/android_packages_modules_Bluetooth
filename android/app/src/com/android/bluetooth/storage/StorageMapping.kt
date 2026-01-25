@@ -236,6 +236,8 @@ private val policyAccessorMap =
             ProfilePolicyAccessor({ it.sap }, { b, status -> b.setSap(status) }),
         BluetoothProfile.VOLUME_CONTROL to
             ProfilePolicyAccessor({ it.vcp }, { b, status -> b.setVcp(status) }),
+        BluetoothProfile.MCP_CLIENT to
+            ProfilePolicyAccessor({ it.mcpClient }, { b, status -> b.setMcpClient(status) }),
     )
 
 /** Return accessor to the proto field for ProfileConnectionPolicies. */

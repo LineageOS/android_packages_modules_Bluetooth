@@ -162,6 +162,7 @@ import com.android.bluetooth.le_scan.ScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanUtil;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
+import com.android.bluetooth.mcp.McpClientService;
 import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.notification.NotificationHelperService;
@@ -954,6 +955,10 @@ public class AdapterService extends Service {
                 BluetoothProfile.LE_AUDIO_PERIPHERAL, LeAudioPeripheralService.class);
     }
 
+    public Optional<McpClientService> getMcpClientService() {
+        return getStartedProfile(BluetoothProfile.MCP_CLIENT, McpClientService.class);
+    }
+
     public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
     }
@@ -1398,6 +1403,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
             case BluetoothProfile.LE_AUDIO_PERIPHERAL -> new LeAudioPeripheralService(this);
             case BluetoothProfile.TMAP_SERVER -> new LeAudioTmapService(this);
+            case BluetoothProfile.MCP_CLIENT -> new McpClientService(this);
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }
@@ -2050,6 +2056,7 @@ public class AdapterService extends Service {
         connectEnabledProfile(BluetoothProfile.LE_AUDIO, device);
         connectEnabledProfile(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, device);
         connectEnabledProfile(BluetoothProfile.BATTERY, device);
+        connectEnabledProfile(BluetoothProfile.MCP_CLIENT, device);
         return BluetoothStatusCodes.SUCCESS;
     }
 
@@ -3796,6 +3803,9 @@ public class AdapterService extends Service {
         if (connectIfProfileSupported(BluetoothProfile.BATTERY, device)) {
             numProfilesConnected++;
         }
+        if (connectIfProfileSupported(BluetoothProfile.MCP_CLIENT, device)) {
+            numProfilesConnected++;
+        }
 
         Log.i(TAG, "connectAllSupportedProfiles: # of Profiles Connected: " + numProfilesConnected);
     }
@@ -3855,6 +3865,7 @@ public class AdapterService extends Service {
         disconnectEnabledProfile(BluetoothProfile.LE_AUDIO, device);
         disconnectEnabledProfile(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, device);
         disconnectEnabledProfile(BluetoothProfile.BATTERY, device);
+        disconnectEnabledProfile(BluetoothProfile.MCP_CLIENT, device);
         return BluetoothStatusCodes.SUCCESS;
     }
 
@@ -4484,6 +4495,7 @@ public class AdapterService extends Service {
         handleBondStateChange(BluetoothProfile.VOLUME_CONTROL, device, fromState, toState);
         handleBondStateChange(BluetoothProfile.PBAP, device, fromState, toState);
         handleBondStateChange(BluetoothProfile.CSIP_SET_COORDINATOR, device, fromState, toState);
+        handleBondStateChange(BluetoothProfile.MCP_CLIENT, device, fromState, toState);
         if (toState == BOND_NONE) {
             mStorage.removeDevice(device);
         }
