@@ -71,6 +71,12 @@ static constexpr uint8_t kMcpOpcodeGotoGroup = 0x44;
 static constexpr uint32_t kTrackPositionUnavailable = 0xFFFFFFFF;
 static constexpr uint32_t kTrackDurationUnknown = 0xFFFFFFFF;
 
+// Media State values
+static constexpr uint8_t kMediaStateInactive = 0x00;
+static constexpr uint8_t kMediaStatePlaying = 0x01;
+static constexpr uint8_t kMediaStatePaused = 0x02;
+static constexpr uint8_t kMediaStateSeeking = 0x03;
+
 // Playing Order values
 static constexpr uint8_t kPlayingOrderSingleOnce = 0x01;
 static constexpr uint8_t kPlayingOrderSingleRepeat = 0x02;

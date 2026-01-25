@@ -24,6 +24,26 @@ namespace mcp {
 
 enum class ConnectionState { DISCONNECTED = 0, CONNECTING, CONNECTED, DISCONNECTING };
 
+enum class MediaState : uint8_t {
+  INACTIVE = 0x00,
+  PLAYING = 0x01,
+  PAUSED = 0x02,
+  SEEKING = 0x03,
+};
+
+enum class PlayingOrder : uint8_t {
+  SINGLE_ONCE = 0x01,
+  SINGLE_REPEAT = 0x02,
+  IN_ORDER_ONCE = 0x03,
+  IN_ORDER_REPEAT = 0x04,
+  OLDEST_ONCE = 0x05,
+  OLDEST_REPEAT = 0x06,
+  NEWEST_ONCE = 0x07,
+  NEWEST_REPEAT = 0x08,
+  SHUFFLE_ONCE = 0x09,
+  SHUFFLE_REPEAT = 0x0A,
+};
+
 enum class MediaControlResultCode : uint8_t {
   SUCCESS = 0x01,
   OPCODE_NOT_SUPPORTED = 0x02,
@@ -47,12 +67,14 @@ public:
                                       int32_t position) = 0;
   virtual void OnPlaybackSpeedChanged(const RawAddress& address, int media_controller_id,
                                       int8_t speed) = 0;
+  virtual void OnPlayingOrderChanged(const RawAddress& address, int media_controller_id,
+                                     PlayingOrder playing_order) = 0;
   virtual void OnPlayingOrdersSupportedChanged(const RawAddress& address, int media_controller_id,
                                                uint16_t playing_orders) = 0;
   virtual void OnSeekingSpeedChanged(const RawAddress& address, int media_controller_id,
                                      int8_t speed) = 0;
   virtual void OnMediaStateChanged(const RawAddress& address, int media_controller_id,
-                                   uint8_t state) = 0;
+                                   MediaState state) = 0;
   virtual void OnMediaControlResult(const RawAddress& address, int media_controller_id,
                                     uint8_t opcode, MediaControlResultCode result) = 0;
   virtual void OnOpcodesSupportedChanged(const RawAddress& address, int media_controller_id,
@@ -77,6 +99,8 @@ public:
   virtual void MoveRelative(const RawAddress& address, int media_controller_id, int32_t offset) = 0;
   virtual void SetTrackPosition(const RawAddress& address, int media_controller_id,
                                 int32_t position) = 0;
+  virtual void SetPlayingOrder(const RawAddress& address, int media_controller_id,
+                               PlayingOrder playing_order) = 0;
 };
 
 }  // namespace mcp
@@ -86,6 +110,10 @@ namespace std {
 template <>
 struct formatter<bluetooth::mcp::ConnectionState>
     : enum_formatter<bluetooth::mcp::ConnectionState> {};
+template <>
+struct formatter<bluetooth::mcp::MediaState> : enum_formatter<bluetooth::mcp::MediaState> {};
+template <>
+struct formatter<bluetooth::mcp::PlayingOrder> : enum_formatter<bluetooth::mcp::PlayingOrder> {};
 template <>
 struct formatter<bluetooth::mcp::MediaControlResultCode>
     : enum_formatter<bluetooth::mcp::MediaControlResultCode> {};

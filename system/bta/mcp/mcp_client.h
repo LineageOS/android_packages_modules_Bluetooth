@@ -43,6 +43,7 @@ struct Mcs {
   uint16_t track_duration_handle = 0;
   uint16_t track_position_handle = 0;
   uint16_t playback_speed_handle = 0;
+  uint16_t playing_order_handle = 0;
   uint16_t playing_orders_supported_handle = 0;
   uint16_t seeking_speed_handle = 0;
   uint16_t media_state_handle = 0;
@@ -109,6 +110,10 @@ public:
              << bluetooth::common::ToHexString(service.track_position_handle)
              << "\n      Playback Speed Handle: "
              << bluetooth::common::ToHexString(service.playback_speed_handle)
+             << "\n      Playing Order Handle: "
+             << bluetooth::common::ToHexString(service.playing_order_handle)
+             << "\n      Playing Order Supported Handle: "
+             << bluetooth::common::ToHexString(service.playing_orders_supported_handle)
              << "\n      Seeking Speed Handle: "
              << bluetooth::common::ToHexString(service.seeking_speed_handle)
              << "\n      Media State Handle: "

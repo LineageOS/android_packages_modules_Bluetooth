@@ -47,8 +47,12 @@ public:
   virtual void FastForward(const RawAddress& address, int service_id) = 0;
   virtual void MoveRelative(const RawAddress& address, int service_id, int32_t offset) = 0;
 
-  // Track Position Characteristic commands
+  // Track Position Characteristic command
   virtual void SetTrackPosition(const RawAddress& address, int service_id, int32_t position) = 0;
+
+  // Playing Order Characteristic command
+  virtual void SetPlayingOrder(const RawAddress& address, int media_controller_id,
+                               PlayingOrder playing_order) = 0;
 
   virtual ~McpClient() = default;
 };

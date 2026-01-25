@@ -180,6 +180,24 @@ public:
                                       GATT_WRITE_NO_RSP, nullptr, nullptr);
   }
 
+  void SetPlayingOrder(const RawAddress& address, int service_id,
+                       PlayingOrder playing_order) override {
+    auto device = FindDevice(address);
+    if (!device || !device->IsConnected()) {
+      log::error("Device not ready for SetPlayingOrder: {}", address);
+      return;
+    }
+    auto service = device->GetService(service_id);
+    if (!service || service->playing_order_handle == 0) {
+      log::error("Service not ready for SetPlayingOrder: {}", address);
+      return;
+    }
+    std::vector<uint8_t> value(1);
+    value[0] = static_cast<uint8_t>(playing_order);
+    BtaGattQueue::WriteCharacteristic(device->conn_id, service->playing_order_handle, value,
+                                      GATT_WRITE_NO_RSP, nullptr, nullptr);
+  }
+
   void DebugDump(int fd) {
     std::stringstream stream;
     stream << "McpClient:\n";
@@ -253,6 +271,8 @@ public:
       ParseMediaStateNotification(device, *service, value, len);
     } else if (handle == service->opcodes_supported_handle) {
       ParseOpcodesSupported(device, *service, value, len);
+    } else if (handle == service->playing_order_handle) {
+      ParsePlayingOrderNotification(device, *service, value, len);
     } else if (handle == service->playing_orders_supported_handle) {
       ParsePlayingOrdersSupported(device, *service, value, len);
     }
@@ -441,6 +461,8 @@ private:
           mcs->track_position_handle = chrc.value_handle;
         } else if (chrc.uuid == kPlaybackSpeedUuid) {
           mcs->playback_speed_handle = chrc.value_handle;
+        } else if (chrc.uuid == kPlayingOrderUuid) {
+          mcs->playing_order_handle = chrc.value_handle;
         } else if (chrc.uuid == kPlayingOrderSupportedUuid) {
           mcs->playing_orders_supported_handle = chrc.value_handle;
         } else if (chrc.uuid == kSeekingSpeedUuid) {
@@ -530,7 +552,7 @@ private:
       log::error("Invalid Media State notification from device: {}, len: {}", device->addr, len);
       return;
     }
-    callbacks_->OnMediaStateChanged(device->addr, service.id, value[0]);
+    callbacks_->OnMediaStateChanged(device->addr, service.id, static_cast<MediaState>(value[0]));
   }
 
   void ParsePlaybackSpeedNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
@@ -540,6 +562,16 @@ private:
       return;
     }
     callbacks_->OnPlaybackSpeedChanged(device->addr, service.id, static_cast<int8_t>(value[0]));
+  }
+
+  void ParsePlayingOrderNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
+                                     const uint8_t* value, uint16_t len) {
+    if (len != 1) {
+      log::error("Invalid Playing Order notification from device: {}, len: {}", device->addr, len);
+      return;
+    }
+    callbacks_->OnPlayingOrderChanged(device->addr, service.id,
+                                      static_cast<PlayingOrder>(value[0]));
   }
 
   void ParsePlayingOrdersSupported(const std::shared_ptr<McpDevice>& device, const Mcs& service,
@@ -608,6 +640,8 @@ private:
       ParsePlaybackSpeedNotification(device, *service, evt.value, evt.len);
     } else if (evt.handle == service->seeking_speed_handle) {
       ParseSeekingSpeedNotification(device, *service, evt.value, evt.len);
+    } else if (evt.handle == service->playing_order_handle) {
+      ParsePlayingOrderNotification(device, *service, evt.value, evt.len);
     } else if (evt.handle == service->media_state_handle) {
       ParseMediaStateNotification(device, *service, evt.value, evt.len);
     } else {
@@ -641,6 +675,10 @@ private:
         BtaGattQueue::ReadCharacteristic(device->conn_id, service.track_position_handle,
                                          OnGattReadStatic, nullptr);
       }
+      if (service.playing_order_handle != kInvalidGattHandle) {
+        BtaGattQueue::ReadCharacteristic(device->conn_id, service.playing_order_handle,
+                                         OnGattReadStatic, nullptr);
+      }
       if (service.playing_orders_supported_handle != kInvalidGattHandle) {
         BtaGattQueue::ReadCharacteristic(device->conn_id, service.playing_orders_supported_handle,
                                          OnGattReadStatic, nullptr);
@@ -668,6 +706,9 @@ private:
       }
       if (service.playback_speed_handle != kInvalidGattHandle) {
         BTA_GATTC_DeregisterForNotifications(gatt_if_, device->addr, service.playback_speed_handle);
+      }
+      if (service.playing_order_handle != kInvalidGattHandle) {
+        BTA_GATTC_DeregisterForNotifications(gatt_if_, device->addr, service.playing_order_handle);
       }
       if (service.seeking_speed_handle != kInvalidGattHandle) {
         BTA_GATTC_DeregisterForNotifications(gatt_if_, device->addr, service.seeking_speed_handle);
@@ -713,6 +754,9 @@ private:
       }
       if (service.playback_speed_handle != kInvalidGattHandle) {
         BTA_GATTC_RegisterForNotifications(gatt_if_, device->addr, service.playback_speed_handle);
+      }
+      if (service.playing_order_handle != kInvalidGattHandle) {
+        BTA_GATTC_RegisterForNotifications(gatt_if_, device->addr, service.playing_order_handle);
       }
       if (service.seeking_speed_handle != kInvalidGattHandle) {
         BTA_GATTC_RegisterForNotifications(gatt_if_, device->addr, service.seeking_speed_handle);
