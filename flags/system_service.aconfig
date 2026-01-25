@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "bluetooth_system_server_messenger"
-    namespace: "bluetooth"
-    description: "Replace binder call to the system server with a Messenger to enforce thread safety"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "321804999"
-}
-
-flag {
     name: "skip_ble_on_when_turning_off"
     namespace: "bluetooth"
     description: "Now that transitioning from ON to BLE_ON go through OFF, we should not broadcast BLE_ON when going OFF."
