@@ -36,7 +36,6 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelUuid;
@@ -73,7 +72,6 @@ public class HfpClientConnectionServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientService mHeadsetClientService;
     @Mock private TelecomManager mTelecomManager;
-    @Mock private Resources mResources;
 
     private static final String TEST_NUMBER = "000-111-2222";
 
@@ -102,10 +100,6 @@ public class HfpClientConnectionServiceTest {
         doReturn(mHfpClientConnectionService)
                 .when(mHfpClientConnectionService)
                 .getApplicationContext();
-        doReturn(mResources).when(mHfpClientConnectionService).getResources();
-        doReturn(true)
-                .when(mResources)
-                .getBoolean(R.bool.hfp_client_connection_service_support_emergency_call);
 
         mockGetSystemService(mHfpClientConnectionService, TelecomManager.class, mTelecomManager);
         doReturn(getPhoneAccount(mDevice)).when(mTelecomManager).getPhoneAccount(any());

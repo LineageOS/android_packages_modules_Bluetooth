@@ -359,15 +359,8 @@ public class HfpClientConnectionService extends ConnectionService {
                         new ComponentName(this, HfpClientConnectionService.class),
                         device.getAddress());
 
-        int capabilities = PhoneAccount.CAPABILITY_CALL_PROVIDER;
-        if (getApplicationContext()
-                .getResources()
-                .getBoolean(
-                        com.android.bluetooth.R.bool
-                                .hfp_client_connection_service_support_emergency_call)) {
-            // Need to have an emergency call capability to place emergency call
-            capabilities |= PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS;
-        }
+        int capabilities = PhoneAccount.CAPABILITY_CALL_PROVIDER
+                | PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS;
 
         PhoneAccount account =
                 new PhoneAccount.Builder(handle, "HFP " + device.toString())
