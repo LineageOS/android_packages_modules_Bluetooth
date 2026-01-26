@@ -170,10 +170,9 @@ void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int, 
   test::mock::bta_dm_act::bta_dm_ble_update_conn_params(bd_addr, min_int, max_int, latency, timeout,
                                                         min_ce_len, max_ce_len);
 }
-void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                 tBT_DEVICE_TYPE device_type) {
+void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_bond(bd_addr, addr_type, transport, device_type);
+  test::mock::bta_dm_act::bta_dm_bond(bd_addr, addr_type, transport);
 }
 void bta_dm_bond_cancel(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);

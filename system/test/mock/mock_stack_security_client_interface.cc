@@ -138,11 +138,10 @@ MockSecurityClientInterface::MockSecurityClientInterface() {
             .BTM_SecClrServiceByPsm(psm);
   };
   SecurityClientInterface::BTM_SecBond = [](const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                                            tBT_TRANSPORT transport,
-                                            tBT_DEVICE_TYPE device_type) -> tBTM_STATUS {
+                                            tBT_TRANSPORT transport) -> tBTM_STATUS {
     return static_cast<MockSecurityClientInterface&>(
                    const_cast<SecurityClientInterface&>(get_security_client_interface()))
-            .BTM_SecBond(bd_addr, addr_type, transport, device_type);
+            .BTM_SecBond(bd_addr, addr_type, transport);
   };
   SecurityClientInterface::BTM_SecBondCancel = [](const RawAddress& bd_addr) -> tBTM_STATUS {
     return static_cast<MockSecurityClientInterface&>(

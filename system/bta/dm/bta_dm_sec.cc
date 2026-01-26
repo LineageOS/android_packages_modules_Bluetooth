@@ -134,19 +134,16 @@ void bta_dm_remote_key_missing(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON
 }
 
 /** Bonds with peer device */
-void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                 tBT_DEVICE_TYPE device_type) {
-  log::debug("Bonding with peer device:{} type:{} transport:{} type:{}", bd_addr,
-             AddressTypeText(addr_type), bt_transport_text(transport), DeviceTypeText(device_type));
+void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
+  log::debug("Bonding with peer device:{} type:{} transport:{}", bd_addr,
+             AddressTypeText(addr_type), bt_transport_text(transport));
 
-  tBTA_DM_SEC sec_event;
-
-  tBTM_STATUS status = get_btm_client_interface().security.BTM_SecBond(bd_addr, addr_type,
-                                                                       transport, device_type);
+  tBTM_STATUS status =
+          get_btm_client_interface().security.BTM_SecBond(bd_addr, addr_type, transport);
 
   // TODO (b/440298497): If the link exist with the bd_addr device, disconnect it now, as per status
-  if (bta_dm_sec_cb.p_sec_cback && (status != tBTM_STATUS::BTM_CMD_STARTED)) {
-    memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
+  if (bta_dm_sec_cb.p_sec_cback && status != tBTM_STATUS::BTM_CMD_STARTED) {
+    tBTA_DM_SEC sec_event = {};
     sec_event.auth_cmpl.bd_addr = bd_addr;
     bd_name_from_char_pointer(sec_event.auth_cmpl.bd_name,
                               get_btm_client_interface().security.BTM_SecReadDevName(bd_addr));

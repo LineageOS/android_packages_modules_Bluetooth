@@ -51,9 +51,9 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
                uint32_t /* mx_chan_id */));
   MOCK_METHOD((uint8_t), BTM_SecClrService, (uint8_t /* service_id */));
   MOCK_METHOD((uint8_t), BTM_SecClrServiceByPsm, (uint16_t /* psm */));
-  MOCK_METHOD((tBTM_STATUS), BTM_SecBond,
+  MOCK_METHOD(tBTM_STATUS, BTM_SecBond,
               (const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-               tBT_TRANSPORT /* transport */, tBT_DEVICE_TYPE /* device_type */));
+               tBT_TRANSPORT /* transport */));
   MOCK_METHOD((tBTM_STATUS), BTM_SecBondCancel, (const RawAddress& /* bd_addr */));
   MOCK_METHOD((void), BTM_RemoteOobDataReply,
               (tBTM_STATUS /* res */, const RawAddress& /* bd_addr */, const Octet16& /* c */,

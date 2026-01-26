@@ -191,9 +191,9 @@ void btm_remote_oob_data_reply(tBTM_STATUS res, const RawAddress& bd_addr, const
   test::mock::stack_btm_sec::btm_remote_oob_data_reply(res, bd_addr, c, r);
 }
 tBTM_STATUS btm_sec_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
+                         tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::btm_sec_bond(bd_addr, addr_type, transport, device_type);
+  return test::mock::stack_btm_sec::btm_sec_bond(bd_addr, addr_type, transport);
 }
 tBTM_STATUS btm_sec_bond_cancel(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);

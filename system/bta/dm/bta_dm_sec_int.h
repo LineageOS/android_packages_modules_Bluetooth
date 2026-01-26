@@ -78,8 +78,7 @@ void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept, uint32_t p
 void bta_dm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, bool accept);
 void bta_dm_ble_sirk_sec_cb_register(tBTA_DM_SEC_CBACK* p_cback);
 void bta_dm_ble_auth_cmpl_cb_register(tBTA_DM_SEC_CBACK* p_cback);
-void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                 tBT_DEVICE_TYPE device_type);
+void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);
 void bta_dm_bond_cancel(const RawAddress& bd_addr);
 void bta_dm_remove_device(const RawAddress& bd_addr);
 void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg);

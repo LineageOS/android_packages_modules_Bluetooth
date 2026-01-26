@@ -188,18 +188,17 @@ extern struct btm_remote_oob_data_reply btm_remote_oob_data_reply;
 
 // Name: btm_sec_bond
 // Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT
-// transport, tBT_DEVICE_TYPE device_type, uint8_t pin_len, uint8_t* p_pin
+// transport
 // Return: tBTM_STATUS
 struct btm_sec_bond {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                            tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type)>
+                            tBT_TRANSPORT transport)>
           body{[](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-                  tBT_TRANSPORT /* transport */,
-                  tBT_DEVICE_TYPE /* device_type */) { return return_value; }};
+                  tBT_TRANSPORT /* transport */) { return return_value; }};
   tBTM_STATUS operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
-    return body(bd_addr, addr_type, transport, device_type);
+                         tBT_TRANSPORT transport) {
+    return body(bd_addr, addr_type, transport);
   }
 };
 extern struct btm_sec_bond btm_sec_bond;

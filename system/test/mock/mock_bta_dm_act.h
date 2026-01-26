@@ -275,16 +275,14 @@ struct bta_dm_ble_update_conn_params {
 extern struct bta_dm_ble_update_conn_params bta_dm_ble_update_conn_params;
 
 // Name: bta_dm_bond
-// Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT
-// transport, tBT_DEVICE_TYPE device_type Return: void
+// Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport
+// Return: void
 struct bta_dm_bond {
-  std::function<void(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                     tBT_DEVICE_TYPE device_type)>
+  std::function<void(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport)>
           body{[](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-                  tBT_TRANSPORT /* transport */, tBT_DEVICE_TYPE /* device_type */) {}};
-  void operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                  tBT_DEVICE_TYPE device_type) {
-    body(bd_addr, addr_type, transport, device_type);
+                  tBT_TRANSPORT /* transport */) {}};
+  void operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
+    body(bd_addr, addr_type, transport);
   }
 };
 extern struct bta_dm_bond bta_dm_bond;
