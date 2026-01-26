@@ -2,6 +2,16 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "leaudio_csis_handle_misconfigured_sets"
+    namespace: "bluetooth"
+    description: "Disconnect CSIS from devices which has invalid SIRK"
+    bug: "478807871"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_improve_state_machine_invalid_status"
     namespace: "bluetooth"
     description: "Improve handling state machine internal invalid status"
