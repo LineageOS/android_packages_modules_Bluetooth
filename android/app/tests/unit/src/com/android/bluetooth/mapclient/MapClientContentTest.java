@@ -38,6 +38,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.UserManager;
 import android.provider.Telephony.Mms;
 import android.provider.Telephony.Sms;
 import android.telephony.SubscriptionInfo;
@@ -76,6 +77,8 @@ public class MapClientContentTest {
     @Mock private MapClientContent.Callbacks mCallbacks;
     @Mock private SubscriptionManager mSubscriptionManager;
     @Mock private SubscriptionInfo mSubscription;
+    @Mock private UserManager mUserManager;
+    @Mock private Bundle mRestrictions;
 
     private static final String TAG = MapClientContentTest.class.getSimpleName();
 
@@ -110,6 +113,8 @@ public class MapClientContentTest {
 
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
         mockGetSystemService(mAdapterService, SubscriptionManager.class, mSubscriptionManager);
+        mockGetSystemService(mAdapterService, UserManager.class, mUserManager);
+        when(mUserManager.getUserRestrictions()).thenReturn(mRestrictions);
 
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Arrays.asList(mSubscription));
@@ -470,6 +475,36 @@ public class MapClientContentTest {
         mMapClientContent.dump(sb);
 
         assertThat(sb.toString()).isNotNull();
+    }
+
+    /** Test that messages are not stored when SMS is disallowed for the user. */
+    @Test
+    public void testStoreMessage_whenSmsDisallowed_doesNotStoreMessage() {
+        when(mRestrictions.getBoolean(UserManager.DISALLOW_SMS)).thenReturn(true);
+        mMapClientContent = new MapClientContent(mAdapterService, mCallbacks, mDevice);
+
+        // Attempt to store an SMS message
+        mMapClientContent.storeMessage(mTestMessage1, HANDLE_1, TIMESTAMP, MESSAGE_SEEN);
+        assertThat(mFakeSmsContentProvider.mContentValues).isEmpty();
+
+        // Attempt to store an MMS message
+        mMapClientContent.storeMessage(mTestMessage2, HANDLE_2, TIMESTAMP, MESSAGE_SEEN);
+        assertThat(mFakeMmsContentProvider.mContentValues).isEmpty();
+    }
+
+    /** Test that messages are stored when SMS is allowed for the user. */
+    @Test
+    public void testStoreMessage_whenSmsAllowed_storesMessage() {
+        when(mRestrictions.getBoolean(UserManager.DISALLOW_SMS)).thenReturn(false);
+        mMapClientContent = new MapClientContent(mAdapterService, mCallbacks, mDevice);
+
+        // Attempt to store an SMS message
+        mMapClientContent.storeMessage(mTestMessage1, HANDLE_1, TIMESTAMP, MESSAGE_SEEN);
+        assertThat(mFakeSmsContentProvider.mContentValues).hasSize(1);
+
+        // Attempt to store an MMS message
+        mMapClientContent.storeMessage(mTestMessage2, HANDLE_2, TIMESTAMP, MESSAGE_SEEN);
+        assertThat(mFakeMmsContentProvider.mContentValues).hasSize(1);
     }
 
     void createTestMessages() {
