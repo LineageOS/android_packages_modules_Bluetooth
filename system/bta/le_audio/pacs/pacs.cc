@@ -95,7 +95,12 @@ struct Pacs::service_impl {
   std::optional<Pacs::ServiceDescriptor> pending_gatt_svc_descriptor_ = std::nullopt;
 
   // Control point operation data
-  std::map<RawAddress, bool> pending_request_by_address_;
+  struct CtpRequest {
+    uint32_t trans_id;
+    tCONN_ID conn_id;
+    tGATT_WRITE_REQ write_req;
+  };
+  std::map<RawAddress, CtpRequest> pending_request_by_address_;
 
   // Member variables should appear before the WeakPtrFactory, to ensure
   // that any WeakPtrs are invalidated before its members
@@ -508,7 +513,7 @@ struct Pacs::service_impl {
       log::warn("Invalid value for Audio Location write.");
       if (write_req.need_rsp) {
         BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          GATT_INVALID_ATTR_LEN, nullptr);
+                          GATT_WRITE_REQ_REJECTED, nullptr);
       }
       return;
     }
@@ -530,12 +535,10 @@ struct Pacs::service_impl {
 
     AudioLocations new_locations(char_view.GetAudioLocations());
 
-    pending_request_by_address_[pac_device->pseudo_addr] = true;
+    pending_request_by_address_[pac_device->pseudo_addr] =
+            CtpRequest{p_data->req_data.trans_id, p_data->req_data.conn_id,
+                       p_data->req_data.p_data->write_req};
     callbacks_->OnAudioLocationsWritten(pac_device->pseudo_addr, direction, new_locations);
-
-    if (write_req.need_rsp) {
-      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, nullptr);
-    }
   }
 
   void OnGattWriteCharacteristic(tBTA_GATTS* p_data) {
@@ -750,6 +753,28 @@ struct Pacs::service_impl {
   uint16_t GetConnectionId(const RawAddress& pseudo_addr) const {
     return device_tracker_.FindConnectionId(pseudo_addr);
   }
+
+  void ConfirmAudioLocationsWritten(const RawAddress& pseudo_addr, bool is_accepted) {
+    auto conn_id = device_tracker_.FindConnectionId(pseudo_addr);
+    if (conn_id == GATT_INVALID_CONN_ID) {
+      log::warn("Device {} not connected", pseudo_addr);
+      return;
+    }
+
+    auto const& pac_device = device_tracker_.FindConnectedDevice(conn_id);
+    log::assert_that(pac_device.get() != nullptr, "Missing connected device data");
+
+    auto request = pending_request_by_address_.find(pseudo_addr);
+    if (request != pending_request_by_address_.end()) {
+      log::warn("Device {} has a pending request, rejecting new one.", pac_device->pseudo_addr);
+      const auto& req = request->second;
+      if (req.write_req.need_rsp) {
+        BTA_GATTS_SendRsp(req.conn_id, req.trans_id,
+                          is_accepted ? GATT_SUCCESS : GATT_WRITE_REQ_REJECTED, nullptr);
+      }
+      pending_request_by_address_.erase(pseudo_addr);
+    }
+  }
 };
 
 // Interface implementation
@@ -777,8 +802,8 @@ uint16_t Pacs::GetConnectionId(const RawAddress& pseudo_addr) const {
   return service_impl_->GetConnectionId(pseudo_addr);
 }
 
-void Pacs::ConfirmAudioLocationsWritten(const RawAddress& pseudo_addr) {
-  service_impl_->pending_request_by_address_.erase(pseudo_addr);
+void Pacs::ConfirmAudioLocationsWritten(const RawAddress& pseudo_addr, bool is_accepted) {
+  service_impl_->ConfirmAudioLocationsWritten(pseudo_addr, is_accepted);
 }
 
 void Pacs::Dump(std::stringstream& stream) const {

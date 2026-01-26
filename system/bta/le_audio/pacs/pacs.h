@@ -212,8 +212,9 @@ public:
    * processed.
    *
    * @param pseudo_addr The address of the device.
+   * @param accepted Whether the change was accepted.
    */
-  virtual void ConfirmAudioLocationsWritten(const RawAddress& pseudo_addr);
+  virtual void ConfirmAudioLocationsWritten(const RawAddress& pseudo_addr, bool accepted);
   /**
    * @brief Dumps the state of the service to the given stream.
    *

@@ -640,17 +640,27 @@ struct Ascs::service_impl {
     switch (event) {
       case BTA_GATTS_CONNECT_EVT: {
         // TODO: Inject an initial state of the connected PAC device from the persistent storage
-        //       (e.g. CCCD values). For now, start with an empty state for all devices.
-        auto asc_device = device_tracker_.OnGattConnectedEventHandler(p_data, AscDevice());
-        if (asc_device) {
-          callbacks_->OnDeviceConnected(asc_device->pseudo_addr);
+        //       (e.g. CCCD values). For now, start with an empty state for all devices and notify
+        //       the device as connected, when it subscribes to the ASE Control Point notifications
+        if (auto asc_device = device_tracker_.OnGattConnectedEventHandler(p_data, AscDevice())) {
+          auto const& char_meta = char_metadata_by_value_handle_.at(ase_ctp_characteristic_handle_);
+
+          // Notify as connected if the control point notifications are enabled
+          if (asc_device->GetDescriptorValueAsU16(char_meta.cccd_handle) != GATT_CLT_CONFIG_NONE) {
+            callbacks_->OnDeviceConnected(asc_device->pseudo_addr);
+          }
         }
       } break;
       case BTA_GATTS_DISCONNECT_EVT: {
-        auto asc_device = device_tracker_.OnGattDisconnectedEventHandler(p_data);
-        if (asc_device) {
+        if (auto asc_device = device_tracker_.OnGattDisconnectedEventHandler(p_data)) {
+          auto const& char_meta = char_metadata_by_value_handle_.at(ase_ctp_characteristic_handle_);
+
           pending_request_by_address_.erase(asc_device->pseudo_addr);
-          callbacks_->OnDeviceDisconnected(asc_device->pseudo_addr);
+
+          // Notify as disconnected if the control point notifications were enabled
+          if (asc_device->GetDescriptorValueAsU16(char_meta.cccd_handle) != GATT_CLT_CONFIG_NONE) {
+            callbacks_->OnDeviceDisconnected(asc_device->pseudo_addr);
+          }
         }
       } break;
       case BTA_GATTS_REG_EVT:
@@ -666,7 +676,23 @@ struct Ascs::service_impl {
         device_tracker_.OnGattReadDescriptor(p_data);
         break;
       case BTA_GATTS_WRITE_DESCRIPTOR_EVT:
-        device_tracker_.OnGattWriteDescriptor(p_data);
+        if (auto asc_device = device_tracker_.FindConnectedDevice(p_data->req_data.conn_id)) {
+          auto const& char_meta = char_metadata_by_value_handle_.at(ase_ctp_characteristic_handle_);
+          auto const old_descr_val = asc_device->GetDescriptorValueAsU16(char_meta.cccd_handle);
+          device_tracker_.OnGattWriteDescriptor(p_data);
+
+          // Notify as connected if the control point notifications are enabled
+          if (p_data->req_data.p_data->write_req.handle == char_meta.cccd_handle) {
+            auto const new_descr_val = asc_device->GetDescriptorValueAsU16(char_meta.cccd_handle);
+            if (new_descr_val != old_descr_val) {
+              if (new_descr_val == GATT_CLT_CONFIG_NONE) {
+                callbacks_->OnDeviceDisconnected(asc_device->pseudo_addr);
+              } else if (old_descr_val == GATT_CLT_CONFIG_NONE) {
+                callbacks_->OnDeviceConnected(asc_device->pseudo_addr);
+              }
+            }
+          }
+        }
         break;
       default:
         log::verbose("Unhandled event {}", gatt_server_event_text(event));
