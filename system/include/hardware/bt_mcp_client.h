@@ -99,6 +99,8 @@ public:
   virtual void MoveRelative(const RawAddress& address, int media_controller_id, int32_t offset) = 0;
   virtual void SetTrackPosition(const RawAddress& address, int media_controller_id,
                                 int32_t position) = 0;
+  virtual void SetPlaybackSpeed(const RawAddress& address, int media_controller_id,
+                                int8_t speed) = 0;
   virtual void SetPlayingOrder(const RawAddress& address, int media_controller_id,
                                PlayingOrder playing_order) = 0;
 };

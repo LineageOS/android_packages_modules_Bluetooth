@@ -132,6 +132,10 @@ public:
     EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, address, kTrackDurationHandle));
     EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, address, kTrackPositionHandle));
     EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, address, kPlayingOrderHandle));
+    EXPECT_CALL(gatt_client_interface_,
+                RegisterForNotifications(_, address, kOpcodesSupportedHandle));
+    EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, address, kPlaybackSpeedHandle));
+    EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, address, kSeekingSpeedHandle));
     EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kMediaPlayerNameHandle, _, _));
     EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kMediaStateHandle, _, _));
     EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kOpcodesSupportedHandle, _, _));
@@ -140,6 +144,8 @@ public:
     EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kTrackPositionHandle, _, _));
     EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kPlayingOrdersSupportedHandle, _, _));
     EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kPlayingOrderHandle, _, _));
+    EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kPlaybackSpeedHandle, _, _));
+    EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(conn_id, kSeekingSpeedHandle, _, _));
     EXPECT_CALL(*mock_callbacks_, OnDiscovered(address));
 
     (*gatt_callback_)(BTA_GATTC_SEARCH_CMPL_EVT, &p_data_search_cmpl);
@@ -186,6 +192,13 @@ public:
             builder, kTrackPositionHandle, kTrackPositionUuid,
             GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE | GATT_CHAR_PROP_BIT_NOTIFY,
             missing_handles);
+    AddCharacteristicToBuilder(
+            builder, kPlaybackSpeedHandle, kPlaybackSpeedUuid,
+            GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE | GATT_CHAR_PROP_BIT_NOTIFY,
+            missing_handles);
+    AddCharacteristicToBuilder(builder, kSeekingSpeedHandle, kSeekingSpeedUuid,
+                               GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY,
+                               missing_handles);
     AddCharacteristicToBuilder(builder, kContentControlIdHandle, kContentControlIdUuid,
                                GATT_CHAR_PROP_BIT_READ, missing_handles);
 
@@ -207,6 +220,8 @@ protected:
   const uint16_t kTrackPositionHandle = 0x0022;
   const uint16_t kContentControlIdHandle = 0x0024;
   const uint16_t kPlayingOrderHandle = 0x0026;
+  const uint16_t kPlaybackSpeedHandle = 0x0028;
+  const uint16_t kSeekingSpeedHandle = 0x002A;
 
   std::list<gatt::Service> fake_services_;
   tBTA_GATTC_CBACK* gatt_callback_ = nullptr;
@@ -379,7 +394,8 @@ TEST_F(McpClientTest, optional_characteristics_missing_success) {
   search_cmpl_data.status = GATT_SUCCESS;
   tBTA_GATTC p_data_search_cmpl = {.search_cmpl = search_cmpl_data};
 
-  fake_services_ = BuildServices({kMcpHandle, kOpcodesSupportedHandle});
+  fake_services_ = BuildServices(
+          {kMcpHandle, kOpcodesSupportedHandle, kPlaybackSpeedHandle, kSeekingSpeedHandle});
   EXPECT_CALL(gatt_client_interface_, GetServices(kTestConnId)).WillOnce(Return(&fake_services_));
 
   EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, kTestAddress, kMediaStateHandle));
@@ -541,5 +557,60 @@ TEST_F(McpClientTest, multiple_services_discovery_and_operation) {
   notify_data.handle = kMediaStateHandle + offset;
   notify_data.value[0] = 0x02;
   p_data.notify = notify_data;
+  (*gatt_callback_)(BTA_GATTC_NOTIF_EVT, &p_data);
+}
+
+TEST_F(McpClientTest, playback_speed_command) {
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
+  mcp_client_->Connect(kTestAddress);
+  SimulateGattConnect(kTestAddress, kTestConnId);
+  SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
+
+  std::vector<uint8_t> expected_value = {10};
+  EXPECT_CALL(gatt_queue_mock_, WriteCharacteristic(kTestConnId, kPlaybackSpeedHandle,
+                                                    expected_value, GATT_WRITE_NO_RSP, _, _));
+  mcp_client_->SetPlaybackSpeed(kTestAddress, 0, 10);
+}
+
+TEST_F(McpClientTest, playback_speed_notification) {
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
+  mcp_client_->Connect(kTestAddress);
+  SimulateGattConnect(kTestAddress, kTestConnId);
+  SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
+
+  std::vector<uint8_t> value = {20};
+  EXPECT_CALL(*mock_callbacks_, OnPlaybackSpeedChanged(kTestAddress, 0, 20));
+
+  tBTA_GATTC_NOTIFY notify_data;
+  notify_data.conn_id = kTestConnId;
+  notify_data.bda = kTestAddress;
+  notify_data.handle = kPlaybackSpeedHandle;
+  notify_data.len = (uint8_t)value.size();
+  notify_data.is_notify = true;
+  std::copy(value.begin(), value.end(), notify_data.value);
+  tBTA_GATTC p_data = {.notify = notify_data};
+  (*gatt_callback_)(BTA_GATTC_NOTIF_EVT, &p_data);
+}
+
+TEST_F(McpClientTest, seeking_speed_notification) {
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
+  mcp_client_->Connect(kTestAddress);
+  SimulateGattConnect(kTestAddress, kTestConnId);
+  SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
+
+  std::vector<uint8_t> value = {5};
+  EXPECT_CALL(*mock_callbacks_, OnSeekingSpeedChanged(kTestAddress, 0, 5));
+
+  tBTA_GATTC_NOTIFY notify_data;
+  notify_data.conn_id = kTestConnId;
+  notify_data.bda = kTestAddress;
+  notify_data.handle = kSeekingSpeedHandle;
+  notify_data.len = (uint8_t)value.size();
+  notify_data.is_notify = true;
+  std::copy(value.begin(), value.end(), notify_data.value);
+  tBTA_GATTC p_data = {.notify = notify_data};
   (*gatt_callback_)(BTA_GATTC_NOTIF_EVT, &p_data);
 }

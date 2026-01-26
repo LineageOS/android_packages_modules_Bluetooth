@@ -50,6 +50,9 @@ public:
   // Track Position Characteristic command
   virtual void SetTrackPosition(const RawAddress& address, int service_id, int32_t position) = 0;
 
+  // Playback Speed Characteristic command
+  virtual void SetPlaybackSpeed(const RawAddress& address, int service_id, int8_t speed) = 0;
+
   // Playing Order Characteristic command
   virtual void SetPlayingOrder(const RawAddress& address, int media_controller_id,
                                PlayingOrder playing_order) = 0;

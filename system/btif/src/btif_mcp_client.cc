@@ -103,6 +103,11 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
                                media_controller_id, position));
   }
 
+  void SetPlaybackSpeed(const RawAddress& address, int media_controller_id, int8_t speed) override {
+    do_in_main_thread(BindOnce(&McpClient::SetPlaybackSpeed, Unretained(McpClient::Get()), address,
+                               media_controller_id, speed));
+  }
+
   void SetPlayingOrder(const RawAddress& address, int media_controller_id,
                        PlayingOrder playing_order) override {
     do_in_main_thread(BindOnce(&McpClient::SetPlayingOrder, Unretained(McpClient::Get()), address,

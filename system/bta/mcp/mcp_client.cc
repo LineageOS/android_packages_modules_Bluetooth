@@ -180,6 +180,23 @@ public:
                                       GATT_WRITE_NO_RSP, nullptr, nullptr);
   }
 
+  void SetPlaybackSpeed(const RawAddress& address, int service_id, int8_t speed) override {
+    auto device = FindDevice(address);
+    if (!device || !device->IsConnected()) {
+      log::error("Device not ready for SetPlaybackSpeed: {}", address);
+      return;
+    }
+    auto service = device->GetService(service_id);
+    if (!service || service->playback_speed_handle == 0) {
+      log::error("Service not ready for SetPlaybackSpeed: {}", address);
+      return;
+    }
+    std::vector<uint8_t> value(1);
+    value[0] = static_cast<uint8_t>(speed);
+    BtaGattQueue::WriteCharacteristic(device->conn_id, service->playback_speed_handle, value,
+                                      GATT_WRITE_NO_RSP, nullptr, nullptr);
+  }
+
   void SetPlayingOrder(const RawAddress& address, int service_id,
                        PlayingOrder playing_order) override {
     auto device = FindDevice(address);
@@ -275,6 +292,10 @@ public:
       ParsePlayingOrderNotification(device, *service, value, len);
     } else if (handle == service->playing_orders_supported_handle) {
       ParsePlayingOrdersSupported(device, *service, value, len);
+    } else if (handle == service->playback_speed_handle) {
+      ParsePlaybackSpeedNotification(device, *service, value, len);
+    } else if (handle == service->seeking_speed_handle) {
+      ParseSeekingSpeedNotification(device, *service, value, len);
     }
   }
 
@@ -683,6 +704,14 @@ private:
         BtaGattQueue::ReadCharacteristic(device->conn_id, service.playing_orders_supported_handle,
                                          OnGattReadStatic, nullptr);
       }
+      if (service.playback_speed_handle != kInvalidGattHandle) {
+        BtaGattQueue::ReadCharacteristic(device->conn_id, service.playback_speed_handle,
+                                         OnGattReadStatic, nullptr);
+      }
+      if (service.seeking_speed_handle != kInvalidGattHandle) {
+        BtaGattQueue::ReadCharacteristic(device->conn_id, service.seeking_speed_handle,
+                                         OnGattReadStatic, nullptr);
+      }
     }
   }
 
@@ -719,6 +748,10 @@ private:
       if (service.media_control_point_handle != kInvalidGattHandle) {
         BTA_GATTC_DeregisterForNotifications(gatt_if_, device->addr,
                                              service.media_control_point_handle);
+      }
+      if (service.opcodes_supported_handle != kInvalidGattHandle) {
+        BTA_GATTC_DeregisterForNotifications(gatt_if_, device->addr,
+                                             service.opcodes_supported_handle);
       }
     }
   }
@@ -767,6 +800,10 @@ private:
       if (service.media_control_point_handle != kInvalidGattHandle) {
         BTA_GATTC_RegisterForNotifications(gatt_if_, device->addr,
                                            service.media_control_point_handle);
+      }
+      if (service.opcodes_supported_handle != kInvalidGattHandle) {
+        BTA_GATTC_RegisterForNotifications(gatt_if_, device->addr,
+                                           service.opcodes_supported_handle);
       }
     }
   }

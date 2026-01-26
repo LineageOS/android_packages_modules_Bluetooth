@@ -477,6 +477,18 @@ static void setTrackPositionNative(JNIEnv* env, jobject /* object */, jbyteArray
   sMcpClientInterface->SetTrackPosition(bd_addr, media_controller_id, position);
 }
 
+static void setPlaybackSpeedNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                   jint media_controller_id, jbyte speed) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sMcpClientInterface) {
+    log::error("sMcpClientInterface is null");
+    return;
+  }
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sMcpClientInterface->SetPlaybackSpeed(bd_addr, media_controller_id, speed);
+}
+
 static void setPlayingOrderNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                   jint media_controller_id, jint playing_order) {
   log::info("");
@@ -505,6 +517,7 @@ int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
           {"fastForwardNative", "([BI)V", reinterpret_cast<void*>(fastForwardNative)},
           {"moveRelativeNative", "([BII)V", reinterpret_cast<void*>(moveRelativeNative)},
           {"setTrackPositionNative", "([BII)V", reinterpret_cast<void*>(setTrackPositionNative)},
+          {"setPlaybackSpeedNative", "([BIB)V", reinterpret_cast<void*>(setPlaybackSpeedNative)},
           {"setPlayingOrderNative", "([BII)V", reinterpret_cast<void*>(setPlayingOrderNative)},
   };
   const char* jniNativeInterfaceClass = "com/android/bluetooth/mcp/McpClientNativeInterface";
