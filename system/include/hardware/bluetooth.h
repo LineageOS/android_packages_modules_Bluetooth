@@ -558,6 +558,16 @@ typedef enum {
 /** Bluetooth Bond state */
 typedef enum { BT_BOND_STATE_NONE, BT_BOND_STATE_BONDING, BT_BOND_STATE_BONDED } bt_bond_state_t;
 
+static inline std::string bt_bond_state_text(const bt_bond_state_t& state) {
+  switch (state) {
+    CASE_RETURN_STRING(BT_BOND_STATE_NONE);
+    CASE_RETURN_STRING(BT_BOND_STATE_BONDING);
+    CASE_RETURN_STRING(BT_BOND_STATE_BONDED);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(bt_bond_state_t, state);
+  }
+}
+
 /** Bluetooth Pairing Variant */
 enum class PairingVariant : uint8_t {
   PASSKEY_CONFIRMATION,
@@ -1159,7 +1169,7 @@ struct formatter<bt_status_t> : enum_formatter<bt_status_t> {};
 template <>
 struct formatter<bt_scan_mode_t> : enum_formatter<bt_scan_mode_t> {};
 template <>
-struct formatter<bt_bond_state_t> : enum_formatter<bt_bond_state_t> {};
+struct formatter<bt_bond_state_t> : string_formatter<bt_bond_state_t, &bt_bond_state_text> {};
 template <>
 struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
 template <>

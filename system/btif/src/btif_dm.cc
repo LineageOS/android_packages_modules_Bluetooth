@@ -182,10 +182,21 @@ struct btif_dm_pairing_cb_t {
   ServiceDiscoveryState sdp_over_classic;
 };
 
+static inline std::string ServiceDiscoveryStateText(
+        const btif_dm_pairing_cb_t::ServiceDiscoveryState& state) {
+  switch (state) {
+    CASE_RETURN_STRING(btif_dm_pairing_cb_t::ServiceDiscoveryState::NOT_STARTED);
+    CASE_RETURN_STRING(btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED);
+    CASE_RETURN_STRING(btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(btif_dm_pairing_cb_t::ServiceDiscoveryState, state);
+  }
+}
+
 namespace std {
 template <>
 struct formatter<btif_dm_pairing_cb_t::ServiceDiscoveryState>
-    : enum_formatter<btif_dm_pairing_cb_t::ServiceDiscoveryState> {};
+    : string_formatter<btif_dm_pairing_cb_t::ServiceDiscoveryState, &ServiceDiscoveryStateText> {};
 }  // namespace std
 
 // TODO(jpawlowski): unify ?
@@ -4316,24 +4327,28 @@ void btif_debug_bond_event_dump(int fd) {
         break;
     }
 
-    const char* bond_state;
-    switch (event->state) {
-      case BT_BOND_STATE_NONE:
-        bond_state = "BOND_STATE_NONE";
-        break;
-      case BT_BOND_STATE_BONDING:
-        bond_state = "BOND_STATE_BONDING";
-        break;
-      case BT_BOND_STATE_BONDED:
-        bond_state = "BOND_STATE_BONDED";
-        break;
-      default:
-        bond_state = "Invalid bond state";
-        break;
-    }
-
     dprintf(fd, "  %s  %s  %s  %s\n", eventtime,
-            event->bd_addr.ToRedactedStringForLogging().c_str(), func_name, bond_state);
+            event->bd_addr.ToRedactedStringForLogging().c_str(), func_name,
+            bt_bond_state_text(event->state).c_str());
+  }
+
+  // Dump pairing state
+  if (is_bonding_or_sdp()) {
+    dprintf(fd,
+            "\nPairing state:%s device:%s[%s] bond_type:%s is_locally_initiated:%s io_cap:%s "
+            "is_ssp:%s is_le_only:%s is_le_nc:%s sdp_attempts:%d is_ctkd:%s pairing_type:%s "
+            "gatt_over_le:%s sdp_over_classic:%s\n",
+            bt_bond_state_text(pairing_cb.state).c_str(),
+            pairing_cb.bd_addr.ToRedactedStringForLogging().c_str(),
+            pairing_cb.static_bdaddr.ToRedactedStringForLogging().c_str(),
+            bond_type_text(pairing_cb.bond_type).c_str(),
+            pairing_cb.is_local_initiated ? "true" : "false",
+            BtIoCapText(pairing_cb.io_cap).c_str(), pairing_cb.is_ssp ? "true" : "false",
+            pairing_cb.is_le_only ? "true" : "false", pairing_cb.is_le_nc ? "true" : "false",
+            pairing_cb.sdp_attempts, pairing_cb.is_ctkd ? "true" : "false",
+            pairing_type_text(pairing_cb.pairing_type).c_str(),
+            ServiceDiscoveryStateText(pairing_cb.gatt_over_le).c_str(),
+            ServiceDiscoveryStateText(pairing_cb.sdp_over_classic).c_str());
   }
 }
 
