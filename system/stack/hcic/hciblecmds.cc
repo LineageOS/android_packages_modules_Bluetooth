@@ -592,3 +592,26 @@ void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
+
+void btsnd_hcic_ble_accept_cis_req(uint16_t cis_conn_handle) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  p->offset = 0;
+  p->len = HCIC_PREAMBLE_SIZE + sizeof(cis_conn_handle);
+
+  uint8_t* pp = (uint8_t*)(p + 1);
+  UINT16_TO_STREAM(pp, HCI_LE_ACCEPT_CIS_REQ);
+  UINT8_TO_STREAM(pp, sizeof(cis_conn_handle));
+  UINT16_TO_STREAM(pp, cis_conn_handle);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_ble_reject_cis_req(uint16_t cis_conn_handle, uint8_t reason,
+                                   base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  uint8_t param[sizeof(cis_conn_handle) + sizeof(reason)];
+  uint8_t* pp = param;
+
+  UINT16_TO_STREAM(pp, cis_conn_handle);
+  UINT8_TO_STREAM(pp, reason);
+  btu_hcif_send_cmd_with_cb(HCI_LE_REJ_CIS_REQ, param, sizeof(param), std::move(cb));
+}

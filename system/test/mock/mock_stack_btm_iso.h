@@ -31,6 +31,7 @@ public:
 
   virtual ~MockIsoManager() = default;
 
+  // clang-format off
   MOCK_METHOD((bluetooth::hci::iso_manager::IsoClientHandle), RegisterCallbacks,
               (bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks),
               (const));
@@ -65,10 +66,19 @@ public:
   MOCK_METHOD((void), HandleDisconnect, (uint16_t handle, uint8_t reason));
   MOCK_METHOD((void), HandleNumComplDataPkts, (uint16_t handle, uint16_t credits));
   MOCK_METHOD((void), HandleHciEvent, (uint8_t sub_code, uint8_t* params, uint16_t length));
+  MOCK_METHOD((bool), AddIncomingCisEventsListener,
+              (bluetooth::hci::iso_manager::IsoClientHandle client_handle,
+               const RawAddress& pseudo_address, uint8_t cig_id, uint8_t cis_id));
+  MOCK_METHOD((void), RemoveIncomingCisEventsListener,
+              (bluetooth::hci::iso_manager::IsoClientHandle client_handle,
+               const RawAddress& pseudo_address, uint8_t cig_id, uint8_t cis_id));
+  MOCK_METHOD((void), AcceptIncomingCisConnection, (uint16_t conn_handle));
+  MOCK_METHOD((void), RejectIncomingCisConnection, (uint16_t conn_handle, uint8_t reason));
 
   MOCK_METHOD((void), Start, ());
   MOCK_METHOD((void), Stop, ());
 
   MOCK_METHOD((void), SetBigChannelMapClassificationByConnHandles,
               (uint8_t action, uint8_t big_handle, const std::vector<uint16_t>& handles));
+  // clang-format on
 };
