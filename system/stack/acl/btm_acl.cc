@@ -1429,21 +1429,18 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
  ******************************************************************************/
 tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
   tACL_CONN* p = NULL;
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
 
   /* If someone already waiting on the version, do not allow another */
   if (btm_cb.devcb.p_rssi_cmpl_cb) {
     return tBTM_STATUS::BTM_BUSY;
   }
 
-  get_btm_client_interface().peer.BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
-
-  if (dev_type & BT_DEVICE_TYPE_BLE) {
+  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(remote_bda);
+  if (dev_info.device_type & BT_DEVICE_TYPE_BLE) {
     p = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
   }
 
-  if (p == NULL && dev_type & BT_DEVICE_TYPE_BREDR) {
+  if (p == NULL && dev_info.device_type & BT_DEVICE_TYPE_BREDR) {
     p = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
   }
 

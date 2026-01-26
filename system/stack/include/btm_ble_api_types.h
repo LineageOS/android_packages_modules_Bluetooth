@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "stack/include/bt_device_type.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 
@@ -513,9 +514,22 @@ typedef struct {
 
 typedef void(tBTM_BLE_CTRL_FEATURES_CBACK)(tHCI_STATUS status);
 
+typedef struct {
+  RawAddress addr;
+  tBLE_ADDR_TYPE addr_type;
+  tBT_DEVICE_TYPE device_type;
+} DevInfo;
+
+static inline std::string DeviceInfoText(const DevInfo& dev_info) {
+  return std::format("{}({}) Device type: {})", dev_info.addr.ToRedactedStringForLogging(),
+                     AddressTypeText(dev_info.addr_type), DeviceTypeText(dev_info.device_type));
+}
+
 namespace std {
 template <>
 struct formatter<tBTM_BLE_CONN_TYPE> : enum_formatter<tBTM_BLE_CONN_TYPE> {};
+template <>
+struct formatter<DevInfo> : string_formatter<DevInfo, &DeviceInfoText> {};
 }  // namespace std
 
 #endif  // BTM_BLE_API_TYPES_H

@@ -786,10 +786,8 @@ bool is_device_le_audio_capable(const RawAddress bd_addr) {
     return true;
   }
 
-  tBT_DEVICE_TYPE tmp_dev_type;
-  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
-  get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &addr_type);
-  if (tmp_dev_type & BT_DEVICE_TYPE_BLE) {
+  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
+  if (dev_info.device_type & BT_DEVICE_TYPE_BLE) {
     /* LE Audio capable device is discoverable over both LE and Classic using
      * same address. Prefer to use LE transport, as we don't know if it can do
      * CTKD from Classic to LE */
@@ -849,10 +847,8 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr, tBT_TRANSPORT trans
     if (btif_storage_get_remote_addr_type(bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
       // Try to read address type. OOB pairing might have set it earlier, but
       // didn't store it, it defaults to BLE_ADDR_PUBLIC
-      uint8_t tmp_dev_type;
-      tBLE_ADDR_TYPE tmp_addr_type = BLE_ADDR_PUBLIC;
-      get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
-      addr_type = tmp_addr_type;
+      auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
+      addr_type = dev_info.addr_type;
 
       btif_storage_set_remote_addr_type(bd_addr, addr_type);
     }

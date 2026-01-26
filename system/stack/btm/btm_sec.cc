@@ -756,12 +756,11 @@ tBTM_STATUS btm_sec_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
       transport = BT_TRANSPORT_LE;
     }
   }
-  tBT_DEVICE_TYPE dev_type;
 
-  BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
+  auto dev_info = BTM_ReadDevInfo(bd_addr);
   /* LE device, do SMP pairing */
-  if ((transport == BT_TRANSPORT_LE && (dev_type & BT_DEVICE_TYPE_BLE) == 0) ||
-      (transport == BT_TRANSPORT_BR_EDR && (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
+  if ((transport == BT_TRANSPORT_LE && (dev_info.device_type & BT_DEVICE_TYPE_BLE) == 0) ||
+      (transport == BT_TRANSPORT_BR_EDR && (dev_info.device_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     log::warn("Requested transport and supported transport don't match");
     bluetooth::metrics::LogBluetoothEvent(bd_addr, bluetooth::metrics::EventType::TRANSPORT_MATCH,
                                           bluetooth::metrics::State::FAIL);

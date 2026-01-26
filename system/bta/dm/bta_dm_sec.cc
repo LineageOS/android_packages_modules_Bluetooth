@@ -340,8 +340,10 @@ static tBTM_STATUS bta_dm_new_link_key_cback(const RawAddress& bd_addr, DEV_CLAS
   sec_event.auth_cmpl.fail_reason = HCI_SUCCESS;
 
   // Report the BR link key based on the BR/EDR address and type
-  get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type,
-                                                  &sec_event.auth_cmpl.addr_type);
+  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
+  sec_event.auth_cmpl.dev_type = dev_info.device_type;
+  sec_event.auth_cmpl.addr_type = dev_info.addr_type;
+
   if (bta_dm_sec_cb.p_sec_cback) {
     bta_dm_sec_cb.p_sec_cback(event, &sec_event);
   }
@@ -379,8 +381,9 @@ static void bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
       bd_name_copy(sec_event.auth_cmpl.bd_name, bd_name);
 
       // Report the BR link key based on the BR/EDR address and type
-      get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type,
-                                                      &sec_event.auth_cmpl.addr_type);
+      auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
+      sec_event.auth_cmpl.dev_type = dev_info.device_type;
+      sec_event.auth_cmpl.addr_type = dev_info.addr_type;
       sec_event.auth_cmpl.fail_reason = reason;
 
       bta_dm_sec_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
@@ -810,10 +813,11 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_KEY_EVT, &sec_event);
       break;
 
-    case BTM_LE_COMPLT_EVT:
+    case BTM_LE_COMPLT_EVT: {
+      auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bda);
       sec_event.auth_cmpl.bd_addr = bda;
-      get_btm_client_interface().peer.BTM_ReadDevInfo(bda, &sec_event.auth_cmpl.dev_type,
-                                                      &sec_event.auth_cmpl.addr_type);
+      sec_event.auth_cmpl.dev_type = dev_info.device_type;
+      sec_event.auth_cmpl.addr_type = dev_info.addr_type;
       bd_name_from_char_pointer(sec_event.auth_cmpl.bd_name,
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
 
@@ -851,8 +855,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
       if (bta_dm_sec_cb.p_ble_auth_cmpl_cback) {
         bta_dm_sec_cb.p_ble_auth_cmpl_cback(BTA_DM_BLE_AUTH_CMPL_EVT, &sec_event);
       }
-
-      break;
+    } break;
 
     case BTM_LE_ADDR_ASSOC_EVT:
       sec_event.proc_id_addr.pairing_bda = bda;

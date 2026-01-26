@@ -43,8 +43,6 @@ void btm_iot_save_remote_properties(tACL_CONN* p_acl_cb) {
   BD_NAME bd_name;
   bt_property_t prop_name;
   uint32_t cod = 0;
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
 
   // save remote name to iot conf file
   if (BTM_GetRemoteDeviceName(p_acl_cb->link_spec.addrt.bda, bd_name)) {
@@ -66,16 +64,15 @@ void btm_iot_save_remote_properties(tACL_CONN* p_acl_cb) {
 
   DEVICE_IOT_CONFIG_ADDR_SET_INT(p_acl_cb->link_spec.addrt.bda, IOT_CONF_KEY_DEVCLASS, (int)cod);
 
-  get_btm_client_interface().peer.BTM_ReadDevInfo(p_acl_cb->link_spec.addrt.bda, &dev_type,
-                                                  &addr_type);
+  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(p_acl_cb->link_spec.addrt.bda);
 
   // save remote dev type to iot conf file
   DEVICE_IOT_CONFIG_ADDR_SET_INT(p_acl_cb->link_spec.addrt.bda, IOT_CONF_KEY_DEVTYPE,
-                                 (int)dev_type);
+                                 (int)dev_info.device_type);
 
   // save remote addr type to iot conf file
   DEVICE_IOT_CONFIG_ADDR_SET_INT(p_acl_cb->link_spec.addrt.bda, IOT_CONF_KEY_ADDRTYPE,
-                                 (int)addr_type);
+                                 (int)dev_info.addr_type);
 
   // save default recorded value to iot conf file
   DEVICE_IOT_CONFIG_ADDR_SET_INT(p_acl_cb->link_spec.addrt.bda, IOT_CONF_KEY_RECORDED,

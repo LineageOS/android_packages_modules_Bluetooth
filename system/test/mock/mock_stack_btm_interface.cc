@@ -63,9 +63,7 @@ struct btm_client_interface_t default_btm_client_interface = {
                 .BTM_ReadRemoteFeatures = [](const RawAddress& /* addr */) -> uint8_t* {
                   return hci_feature_bytes_per_page;
                 },
-                .BTM_ReadDevInfo = [](const RawAddress& /* remote_bda */,
-                                      tBT_DEVICE_TYPE* /* p_dev_type */,
-                                      tBLE_ADDR_TYPE* /* p_addr_type */) {},
+                .BTM_ReadDevInfo = [](const RawAddress& /* remote_bda */) -> DevInfo { return {}; },
                 .BTM_GetMaxPacketSize = [](const RawAddress& /* bd_addr */) -> uint16_t {
                   return 0;
                 },
