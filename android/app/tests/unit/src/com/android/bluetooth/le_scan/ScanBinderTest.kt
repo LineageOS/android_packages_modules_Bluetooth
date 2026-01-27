@@ -42,6 +42,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -77,7 +78,7 @@ class ScanBinderTest {
             }
             .whenever(scanController)
             .fetchOnScanThread<Any>(any(), any())
-        whenever(adapterService.state).thenReturn(State.ON)
+        doReturn(State.ON).whenever(adapterService).state
         binder = ScanBinder(adapterService, scanController)
     }
 
@@ -159,7 +160,7 @@ class ScanBinderTest {
 
     @Test
     fun startScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
-        whenever(adapterService.state).thenReturn(State.BLE_ON)
+        doReturn(State.BLE_ON).whenever(adapterService).state
         val scannerId = 1
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
