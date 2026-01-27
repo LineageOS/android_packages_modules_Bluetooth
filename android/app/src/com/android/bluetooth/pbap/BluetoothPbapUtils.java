@@ -67,9 +67,6 @@ class BluetoothPbapUtils {
 
     private static final long QUERY_CONTACT_RETRY_INTERVAL = 4000;
 
-    private static final int PHOTO_DIMENSION_LIMIT_IN_PIXELS = 300;
-    private static final int PHOTO_FILE_SIZE_LIMIT_IN_BYTES = 50 * 1024; // 50KB
-
     static AtomicLong sDbIdentifier = new AtomicLong();
 
     static long sPrimaryVersionCounter = 0;
@@ -175,20 +172,22 @@ class BluetoothPbapUtils {
             }
         }
 
-        if (Flags.increaseContactImageResolution()
-                && !(Flags.disableHighResImagesOnLowRam()
-                        && ctx.getSystemService(ActivityManager.class).isLowRamDevice())) {
-            return new VCardComposer(
-                    ctx,
-                    ctx.getContentResolver(),
-                    vType,
-                    null,
-                    true,
-                    new VCardComposer.PhotoOptions(
-                            PHOTO_DIMENSION_LIMIT_IN_PIXELS, PHOTO_FILE_SIZE_LIMIT_IN_BYTES));
+        return new VCardComposer(ctx, vType, true);
+    }
+
+    static boolean shouldAttemptHighResPhoto(final Context ctx) {
+        if (!Flags.increaseContactImageResolution()) {
+            return false;
         }
 
-        return new VCardComposer(ctx, vType, true);
+        if (Flags.disableHighResImagesOnLowRam()) {
+            ActivityManager am = ctx.getSystemService(ActivityManager.class);
+            if (am != null && am.isLowRamDevice()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static synchronized String getProfileName(Context context) {

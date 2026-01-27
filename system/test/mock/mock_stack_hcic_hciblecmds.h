@@ -429,6 +429,27 @@ struct btsnd_hcic_ble_big_terminate_sync {
 };
 extern struct btsnd_hcic_ble_big_terminate_sync btsnd_hcic_ble_big_terminate_sync;
 
+// Name: btsnd_hcic_ble_accept_cis_req
+// Params: uint16_t cis_conn_handle
+// Return: void
+struct btsnd_hcic_ble_accept_cis_req {
+  std::function<void(uint16_t)> body{};
+  void operator()(uint16_t cis_conn_handle) { body(cis_conn_handle); }
+};
+extern struct btsnd_hcic_ble_accept_cis_req btsnd_hcic_ble_accept_cis_req;
+
+// Name: btsnd_hcic_ble_reject_cis_req
+// Params: uint16_t cis_conn_handle, uint8_t reason, base::OnceCallback<void(uint8_t*, uint16_t)> cb
+// Return: void
+struct btsnd_hcic_ble_reject_cis_req {
+  std::function<void(uint16_t, uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{};
+  void operator()(uint16_t cis_conn_handle, uint8_t reason,
+                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+    body(cis_conn_handle, reason, std::move(cb));
+  }
+};
+extern struct btsnd_hcic_ble_reject_cis_req btsnd_hcic_ble_reject_cis_req;
+
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock
 }  // namespace test

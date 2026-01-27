@@ -61,6 +61,11 @@ public:
 
   virtual void TerminateBig(uint8_t big_handle, uint8_t reason) = 0;
 
+  virtual void AcceptCis(uint16_t cis_conn_handle) = 0;
+
+  virtual void RejectCis(uint16_t cis_conn_handle, uint8_t reason,
+                         base::OnceCallback<void(uint8_t*, uint16_t)> cb) = 0;
+
   virtual void BigCreateSync(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
                              const std::array<uint8_t, 16>& bcast_code, uint8_t mse,
                              uint16_t sync_timeout, const std::vector<uint8_t>& bis) = 0;
@@ -73,6 +78,7 @@ public:
 
 class MockHcicInterface : public HcicInterface {
 public:
+  // clang-format off
   MOCK_METHOD((void), SetCigParams,
               (uint8_t cig_id, struct bluetooth::hci::iso_manager::cig_create_params cig_params,
                base::OnceCallback<void(uint8_t*, uint16_t)> cb),
@@ -114,6 +120,13 @@ public:
               (uint8_t action, uint8_t big_handle, const std::vector<uint16_t>& conn_handles),
               (override));
 
+  MOCK_METHOD((void), AcceptCis, (uint16_t cis_conn_handle), (override));
+
+  MOCK_METHOD((void), RejectCis,
+              (uint16_t cis_conn_handle, uint8_t reason,
+               base::OnceCallback<void(uint8_t*, uint16_t)> cb),
+              (override));
+
   MOCK_METHOD((void), BigCreateSync,
               (uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
                (const std::array<uint8_t, 16>& bcast_code), uint8_t mse, uint16_t sync_timeout,
@@ -122,6 +135,7 @@ public:
 
   MOCK_METHOD((void), BigTerminateSync,
               (uint8_t big_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb), (override));
+  // clang-format on
 };
 
 void SetMockHcicInterface(MockHcicInterface* mock_hcic_interface);

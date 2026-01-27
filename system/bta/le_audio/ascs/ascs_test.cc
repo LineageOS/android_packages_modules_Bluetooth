@@ -413,6 +413,12 @@ public:
                                tGATTS_RSP* p_msg) {
               ASSERT_EQ(GATT_SUCCESS, status);
 
+              // Detects response to CCC descriptor write request
+              if (p_msg == nullptr || (p_msg->attr_value.len == 0)) {
+                log::debug("Most likely just a descriptor write response");
+                return;
+              }
+
               log::info("Verify the response against the service descriptor values");
               auto value = std::make_shared<std::vector<uint8_t>>(
                       p_msg->attr_value.value, p_msg->attr_value.value + p_msg->attr_value.len);
@@ -427,6 +433,12 @@ public:
       auto test_dev = GetTestAddress(dev);
       EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
       InjectGattConnectedEvent(test_dev);
+
+      // Client subscribes to notifications on the ASE Control Point
+      EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
+      InjectCccDescriptorWriteRequest(test_dev,
+                                      uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                      GATT_CLT_CONFIG_NOTIFICATION);
 
       // Verify the Sink ASE states are fetched
       for (uint8_t idx = 0; idx < svc_desc_.num_sink_ases; ++idx) {
@@ -467,12 +479,24 @@ TEST_F(AscsTests, RegisterGattService) {
 TEST_F(AscsTests, ConnectDisconnectSingleDevice) {
   auto test_dev1 = GetTestAddress(0x10);
 
-  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev1));
   InjectGattConnectedEvent(test_dev1);
+
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev1));
+  InjectCccDescriptorWriteRequest(test_dev1,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
   Mock::VerifyAndClearExpectations(&asc_callbacks_);
   ASSERT_NE(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev1));
 
+  // Client unsubscribes
   EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev1));
+  InjectCccDescriptorWriteRequest(test_dev1,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NONE);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+
+  // GATT transport disconnects
   InjectGattDisconnectedEvent(test_dev1);
   ASSERT_EQ(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev1));
 }
@@ -481,8 +505,14 @@ TEST_F(AscsTests, ConnectDisconnect) {
   const size_t num_devices = 11;
   for (auto dev = num_devices; dev; --dev) {
     auto test_dev = GetTestAddress(dev);
-    EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
     InjectGattConnectedEvent(test_dev);
+
+    // Client subscribes to notifications on the ASE Control Point
+    EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
+    InjectCccDescriptorWriteRequest(test_dev,
+                                    uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                    GATT_CLT_CONFIG_NOTIFICATION);
+
     ASSERT_NE(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev));
     Mock::VerifyAndClearExpectations(&asc_callbacks_);
   }
@@ -491,11 +521,102 @@ TEST_F(AscsTests, ConnectDisconnect) {
 
   for (auto dev = num_devices; dev; --dev) {
     auto test_dev = GetTestAddress(dev);
+
+    // Client unsubscribes
     EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev));
+    InjectCccDescriptorWriteRequest(test_dev,
+                                    uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                    GATT_CLT_CONFIG_NONE);
+    Mock::VerifyAndClearExpectations(&asc_callbacks_);
+
+    // GATT transport disconnects
     InjectGattDisconnectedEvent(test_dev);
     ASSERT_EQ(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev));
     Mock::VerifyAndClearExpectations(&asc_callbacks_);
   }
+}
+
+TEST_F(AscsTests, ConnectNoOp) {
+  auto test_dev = GetTestAddress(0x10);
+
+  InjectGattConnectedEvent(test_dev);
+
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+  ASSERT_NE(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev));
+
+  // Client subscribes again with the same value - no new connection cb
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev)).Times(0);
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+
+  // Client unsubscribes
+  EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev));
+  InjectCccDescriptorWriteRequest(
+          test_dev, uuid::kAudioStreamEndpointControlPointCharacteristicUuid, GATT_CLT_CONFIG_NONE);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+
+  // Client unsubscribes again with the same value - no new disconnection cb
+  EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev)).Times(0);
+  InjectCccDescriptorWriteRequest(
+          test_dev, uuid::kAudioStreamEndpointControlPointCharacteristicUuid, GATT_CLT_CONFIG_NONE);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+}
+
+TEST_F(AscsTests, CccpReSubscribeDoesNotTriggerCallbacks) {
+  auto test_dev = GetTestAddress(0x10);
+
+  InjectGattConnectedEvent(test_dev);
+
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+  ASSERT_NE(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev));
+
+  // Client re-subscribes with indications - no new connection cb
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev)).Times(0);
+  EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev)).Times(0);
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_INDICATION);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+
+  // Client re-subscribes with notifications - no new connection cb
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev)).Times(0);
+  EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev)).Times(0);
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+}
+
+TEST_F(AscsTests, DisconnectTransportWhileSubscribed) {
+  auto test_dev = GetTestAddress(0x10);
+
+  InjectGattConnectedEvent(test_dev);
+
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
+  ASSERT_NE(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev));
+
+  // Disconnect transport without unsubscribing
+  EXPECT_CALL(asc_callbacks_, OnDeviceDisconnected(test_dev));
+  InjectGattDisconnectedEvent(test_dev);
+  ASSERT_EQ(GATT_INVALID_CONN_ID, ascs_->GetConnectionId(test_dev));
+  Mock::VerifyAndClearExpectations(&asc_callbacks_);
 }
 
 TEST_F(AscsTests, RemoteReadAseStateIdle) {
@@ -735,6 +856,12 @@ TEST_F(AscsTests, UpdateAseStateNotifies) {
   EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
   InjectGattConnectedEvent(test_dev);
 
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+
   // Client subscribes to notifications on the Sink ASE
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
   InjectCccDescriptorWriteRequest(test_dev, uuid::kSinkAudioStreamEndpointUuid,
@@ -764,6 +891,12 @@ TEST_F(AscsTests, RemoteWriteAseCtpEmptyPayload) {
   EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
   InjectGattConnectedEvent(test_dev);
 
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
+
   // Client sends an empty write request
   EXPECT_CALL(asc_callbacks_, OnAseControlPointRequest(_, _)).Times(0);
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_INVALID_ATTR_LEN, _));
@@ -775,6 +908,12 @@ TEST_F(AscsTests, RemoteWriteAseCtpInvalidPacket) {
 
   EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
   InjectGattConnectedEvent(test_dev);
+
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
 
   // Client sends a malformed packet (invalid opcode)
   std::vector<uint8_t> invalid_packet = {0xFF /* invalid opcode */, 0x01 /* num ases */,
@@ -789,7 +928,7 @@ TEST_F(AscsTests, UpdateAseStateNoSubscription) {
   auto test_dev = GetTestAddress(0x10);
   const uint8_t sink_ase_id = 0x01;
 
-  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
+  EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev)).Times(0);
   InjectGattConnectedEvent(test_dev);
 
   // Do NOT subscribe to notifications
@@ -808,6 +947,12 @@ TEST_F(AscsTests, UpdateAseStateTwice) {
 
   EXPECT_CALL(asc_callbacks_, OnDeviceConnected(test_dev));
   InjectGattConnectedEvent(test_dev);
+
+  // Client subscribes to notifications on the ASE Control Point
+  EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
+  InjectCccDescriptorWriteRequest(test_dev,
+                                  uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+                                  GATT_CLT_CONFIG_NOTIFICATION);
 
   // Client subscribes to notifications on the Sink ASE
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));

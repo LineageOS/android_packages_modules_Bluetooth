@@ -31,6 +31,7 @@ from mmi2grpc.gap import GAPProxy
 from mmi2grpc.gatt import GATTProxy
 from mmi2grpc.gmap import GMAPProxy
 from mmi2grpc.gmcs import GMCSProxy
+from mmi2grpc.gtbs import GTBSProxy
 from mmi2grpc.hap import HAPProxy
 from mmi2grpc.hfp import HFPProxy
 from mmi2grpc.hid import HIDProxy
@@ -84,6 +85,7 @@ class IUT:
         self._gatt = None
         self._gmap = None
         self._gmcs = None
+        self._gtbs = None
         self._hap = None
         self._gap = None
         self._hfp = None
@@ -139,6 +141,7 @@ class IUT:
         self._gap = None
         self._gmap = None
         self._gmcs = None
+        self._gtbs = None
         self._hfp = None
         self._l2cap = None
         self._hid = None
@@ -259,6 +262,13 @@ class IUT:
                 self._gmcs = GMCSProxy(
                     grpc.insecure_channel(f"localhost:{self.pandora_server_port}"), self.rootcanal)
             return self._gmcs.interact(test, interaction, description, pts_address)
+        # Handles GTBS MMIs.
+        if profile in ("GTBS",):
+            if not self._gtbs:
+                self._gtbs = GTBSProxy(
+                    grpc.insecure_channel(f"localhost:{self.pandora_server_port}"), self.rootcanal,
+                    self.modem)
+            return self._gtbs.interact(test, interaction, description, pts_address)
         # Handles GAP MMIs.
         if profile in ("HAP"):
             if not self._hap:

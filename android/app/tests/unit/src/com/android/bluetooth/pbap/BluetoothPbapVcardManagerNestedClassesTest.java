@@ -180,7 +180,12 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
         when(contactCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID))
                 .thenReturn(contactIdColumn);
 
+        int contactStarredColumn = 9;
+        when(contactCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.STARRED))
+                .thenReturn(contactStarredColumn);
+
         long[] contactIds = new long[] {1001, 1001, 1002, 1002, 1003, 1003, 1004};
+        long[] contactStarreds = new long[] {1, 1, 0, 0, 1, 1, 0};
         AtomicInteger currentPos = new AtomicInteger(-1);
         when(contactCursor.moveToNext())
                 .thenAnswer(
@@ -193,6 +198,8 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
                         });
         when(contactCursor.getLong(contactIdColumn))
                 .thenAnswer(invocation -> contactIds[currentPos.get()]);
+        when(contactCursor.getLong(contactStarredColumn))
+                .thenAnswer(invocation -> contactStarreds[currentPos.get()]);
 
         int offset = 3;
         Cursor resultCursor = ContactCursorFilter.filterByOffset(contactCursor, offset);
@@ -200,6 +207,7 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
         // Should return cursor containing [1003]
         assertThat(resultCursor.getCount()).isEqualTo(1);
         assertThat(getContactsIdFromCursor(resultCursor, 0)).isEqualTo(1003);
+        assertThat(getContactsStarredFromCursor(resultCursor, 0)).isEqualTo(1);
     }
 
     @Test
@@ -209,7 +217,12 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
         when(contactCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID))
                 .thenReturn(contactIdColumn);
 
+        int contactStarredColumn = 9;
+        when(contactCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.STARRED))
+                .thenReturn(contactStarredColumn);
+
         long[] contactIds = new long[] {1001, 1001, 1002, 1002, 1003, 1003, 1004};
+        long[] contactStarreds = new long[] {1, 1, 0, 0, 1, 1, 0};
         AtomicInteger currentPos = new AtomicInteger(-1);
         when(contactCursor.moveToNext())
                 .thenAnswer(
@@ -222,6 +235,8 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
                         });
         when(contactCursor.getLong(contactIdColumn))
                 .thenAnswer(invocation -> contactIds[currentPos.get()]);
+        when(contactCursor.getLong(contactStarredColumn))
+                .thenAnswer(invocation -> contactStarreds[currentPos.get()]);
 
         int startPoint = 2;
         int endPoint = 4;
@@ -233,10 +248,20 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
         assertThat(getContactsIdFromCursor(resultCursor, 0)).isEqualTo(1002);
         assertThat(getContactsIdFromCursor(resultCursor, 1)).isEqualTo(1003);
         assertThat(getContactsIdFromCursor(resultCursor, 2)).isEqualTo(1004);
+
+        assertThat(getContactsStarredFromCursor(resultCursor, 0)).isEqualTo(0);
+        assertThat(getContactsStarredFromCursor(resultCursor, 1)).isEqualTo(1);
+        assertThat(getContactsStarredFromCursor(resultCursor, 2)).isEqualTo(0);
     }
 
     private static long getContactsIdFromCursor(Cursor cursor, int position) {
         int index = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID);
+        cursor.moveToPosition(position);
+        return cursor.getLong(index);
+    }
+
+    private static long getContactsStarredFromCursor(Cursor cursor, int position) {
+        int index = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.STARRED);
         cursor.moveToPosition(position);
         return cursor.getLong(index);
     }

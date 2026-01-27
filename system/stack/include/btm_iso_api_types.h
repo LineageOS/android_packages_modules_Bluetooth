@@ -70,6 +70,8 @@ constexpr uint8_t kIsoEventCisDataAvailable = 0x00;
 constexpr uint8_t kIsoEventCisEstablishCmpl = 0x01;
 constexpr uint8_t kIsoEventCisDisconnected = 0x02;
 constexpr uint8_t kIsoEventBisDataAvailable = 0x03;
+constexpr uint8_t kIsoEventCisRequest = 0x04;
+constexpr uint8_t kIsoEventCisRequestRejectStatus = 0x05;
 
 constexpr uint8_t kIsoEventCigOnCreateCmpl = 0x00;
 constexpr uint8_t kIsoEventCigOnReconfigureCmpl = 0x01;
@@ -139,6 +141,18 @@ struct cis_establish_cmpl_evt {
   uint16_t max_pdu_mtos;
   uint16_t max_pdu_stom;
   uint16_t iso_itv;
+};
+
+struct cis_request_evt {
+  uint16_t acl_conn_hdl;
+  uint16_t cis_conn_hdl;
+  uint8_t cig_id;
+  uint8_t cis_id;
+};
+
+struct reject_cis_request_reject_status {
+  uint8_t status;
+  uint16_t cis_conn_hdl;
 };
 
 struct cis_disconnected_evt {

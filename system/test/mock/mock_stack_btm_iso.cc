@@ -203,6 +203,35 @@ void IsoManager::Stop() {
   mock_pimpl_ = nullptr;
 }
 
+bool IsoManager::AddIncomingCisEventsListener(iso_manager::IsoClientHandle client_handle,
+                                              const RawAddress& pseudo_address, uint8_t cig_id,
+                                              uint8_t cis_id) {
+  if (pimpl_) {
+    return pimpl_->AddIncomingCisEventsListener(client_handle, pseudo_address, cig_id, cis_id);
+  }
+  return false;
+}
+
+void IsoManager::RemoveIncomingCisEventsListener(iso_manager::IsoClientHandle client_handle,
+                                                 const RawAddress& pseudo_address, uint8_t cig_id,
+                                                 uint8_t cis_id) {
+  if (pimpl_) {
+    pimpl_->RemoveIncomingCisEventsListener(client_handle, pseudo_address, cig_id, cis_id);
+  }
+}
+
+void IsoManager::AcceptIncomingCisConnection(uint16_t conn_handle) {
+  if (pimpl_) {
+    pimpl_->AcceptIncomingCisConnection(conn_handle);
+  }
+}
+
+void IsoManager::RejectIncomingCisConnection(uint16_t conn_handle, uint8_t reason) {
+  if (pimpl_) {
+    pimpl_->RejectIncomingCisConnection(conn_handle, reason);
+  }
+}
+
 int IsoManager::GetNumberOfActiveIso() { return pimpl_->GetNumberOfActiveIso(); }
 
 void IsoManager::Dump(int /* fd */) {}

@@ -10,16 +10,15 @@ rule com.android.internal.util.** com.android.bluetooth.jarjar.@0
 rule com.android.modules.expresslog.** com.android.bluetooth.jarjar.@0
 rule com.android.bluetooth.flags.** com.android.bluetooth.jarjar.@0
 rule bluetooth.constants.** com.android.bluetooth.jarjar.@0
-rule android.os.Flags com.android.bluetooth.jarjar.@0
-rule android.os.CustomFeatureFlags com.android.bluetooth.jarjar.@0
-rule android.os.FeatureFlagsImpl com.android.bluetooth.jarjar.@0
-rule android.os.FakeFeatureFlagsImpl com.android.bluetooth.jarjar.@0
-rule android.os.FeatureFlags com.android.bluetooth.jarjar.@0
 
+rule android.os.*FeatureFlags* com.android.bluetooth.jarjar.@0
+rule android.os.FeatureFlags* com.android.bluetooth.jarjar.@0
+rule android.os.Flags* com.android.bluetooth.jarjar.@0
+
+rule android.media.audio.*FeatureFlags* com.android.bluetooth.jarjar.@0
+rule android.media.audio.FeatureFlags* com.android.bluetooth.jarjar.@0
 rule android.media.audio.Flags com.android.bluetooth.jarjar.@0
-rule android.media.audio.CustomFeatureFlags com.android.bluetooth.jarjar.@0
-rule android.media.audio.FeatureFlagsImpl com.android.bluetooth.jarjar.@0
-rule android.media.audio.FakeFeatureFlagsImpl com.android.bluetooth.jarjar.@0
-rule android.media.audio.FeatureFlags com.android.bluetooth.jarjar.@0
 
+rule android.bluetooth.platform.flags.*FeatureFlags* com.android.bluetooth.jarjar.@0
+rule android.bluetooth.platform.flags.FeatureFlags* com.android.bluetooth.jarjar.@0
 rule android.bluetooth.platform.flags.Flags com.android.bluetooth.jarjar.@0

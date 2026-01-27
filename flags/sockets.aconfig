@@ -87,3 +87,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fixed_psm_for_offload_socket"
+    namespace: "bluetooth"
+    description: "Support LE CoC with fixed PSM for offload sockets"
+    bug: "478274484"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

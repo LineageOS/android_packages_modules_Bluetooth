@@ -82,8 +82,10 @@ typedef enum GattStatus : uint8_t {
   GATT_ALREADY_OPEN = 0x91, /* 0x91 */
   GATT_CANCEL = 0x92,       /* 0x92 */
   GATT_CONNECTION_TIMEOUT = 0x93,
-  /* = 0xE0 ~ 0xFC reserved for future use */
+  /* = 0xE0 ~ 0xFB reserved for future use */
 
+  /* Write Request Rejected */
+  GATT_WRITE_REQ_REJECTED = 0xFC,
   /* Client Characteristic Configuration Descriptor Improperly Configured */
   GATT_CCC_CFG_ERR = 0xFD,
   /* Procedure Already in progress */

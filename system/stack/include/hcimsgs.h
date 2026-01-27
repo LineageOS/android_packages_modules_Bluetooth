@@ -374,4 +374,9 @@ void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction, ui
 void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
                                                            const std::vector<uint16_t>& handles);
 
+void btsnd_hcic_ble_accept_cis_req(uint16_t cis_conn_handle);
+
+void btsnd_hcic_ble_reject_cis_req(uint16_t cis_conn_handle, uint8_t reason,
+                                   base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 #endif

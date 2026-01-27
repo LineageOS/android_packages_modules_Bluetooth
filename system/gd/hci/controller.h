@@ -29,7 +29,7 @@ class Controller {
 public:
   static constexpr uint64_t kDefaultEventMask = 0x3dbfffffffffffff;
   static constexpr uint64_t kDefaultEventMaskPage2 = 0x2000000;
-  static constexpr uint64_t kDefaultLeEventMask = 0x000000077d02fe7f;
+  static constexpr uint64_t kDefaultLeEventMask = 0x000000077f02fe7f;
   static constexpr uint64_t kLeCSEventMask = 0x0007f80000000000;
 
   Controller() = default;
