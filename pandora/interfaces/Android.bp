@@ -5,9 +5,9 @@ package {
 java_library {
     name: "pandora-grpc-java",
     visibility: [
-        "//packages/modules/Bluetooth/android/pandora/server",
         "//packages/modules/Bluetooth/framework/tests/bumble",
         "//packages/modules/Bluetooth/framework/tests/metrics:__subpackages__",
+        "//packages/modules/Bluetooth/tests/pandora/server",
     ],
     srcs: [
         ":pandora_interfaces-protos",
@@ -35,9 +35,9 @@ java_library {
 java_library {
     name: "pandora-proto-java",
     visibility: [
-        "//packages/modules/Bluetooth/android/pandora/server",
         "//packages/modules/Bluetooth/framework/tests/bumble",
         "//packages/modules/Bluetooth/framework/tests/metrics:__subpackages__",
+        "//packages/modules/Bluetooth/tests/pandora/server",
     ],
     srcs: [
         ":libprotobuf-internal-protos",
