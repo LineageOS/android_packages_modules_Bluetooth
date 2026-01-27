@@ -27,6 +27,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
@@ -217,9 +218,9 @@ class ScanFilterQueueTest {
 
         // Mock a ScanFilter since creating one with addressType and IRK requires SystemApi.
         val mockFilter = mock<ScanFilter>()
-        whenever(mockFilter.deviceAddress).thenReturn(deviceAddress)
-        whenever(mockFilter.addressType).thenReturn(addressType)
-        whenever(mockFilter.irk).thenReturn(irk)
+        doReturn(deviceAddress).whenever(mockFilter).deviceAddress
+        doReturn(addressType).whenever(mockFilter).addressType
+        doReturn(irk).whenever(mockFilter).irk
 
         // Add the mocked filter to the queue.
         queue.addScanFilter(mockFilter)
