@@ -57,3 +57,11 @@ flag {
     description: "Support native pa callback"
     bug: "462892602"
 }
+
+flag {
+    name: "scan_allowance_throttling_enabled"
+    namespace: "bluetooth"
+    description: "The flag enables scan throttling using allowance."
+    bug: "478996075"
+}
+
