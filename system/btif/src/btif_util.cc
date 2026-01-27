@@ -385,49 +385,6 @@ std::string dump_rc_pdu(uint8_t pdu) {
 }
 
 /**
- * Maps the native pairing algorithm to the corresponding API definition in `BluetoothDevice.java`.
- *
- * @param pairing_algo The native pairing algorithm to map, refer to `PairingAlgorithm` defined in
- * `packages/modules/Bluetooth/system/include/hardware/bluetooth.h`
- * @param transport The respective transport for this pairing.
- * @return The defined API BluetoothDevice.PairingAlgorithm corresponding to the input pairing
- * algorithm and transport. Just do a (-1) to account for the NONE case as Java doesn't have a NONE
- * case, but its better to have a mappable value.
- */
-int map_pairing_algo_to_api(PairingAlgorithm pairing_algo, tBT_TRANSPORT transport) {
-  if (transport == BT_TRANSPORT_LE) {
-    switch (pairing_algo) {
-      case PairingAlgorithm::LE_LEGACY:
-        return API_PAIRING_ALGORITHM_LE_LEGACY;
-      case PairingAlgorithm::SC:
-        return API_PAIRING_ALGORITHM_SC;
-      default:
-        break;
-    }
-  } else if (transport == BT_TRANSPORT_BR_EDR) {
-    switch (pairing_algo) {
-      case PairingAlgorithm::BREDR_LEGACY:
-        return API_PAIRING_ALGORITHM_BREDR_LEGACY;
-      case PairingAlgorithm::SSP:
-        return API_PAIRING_ALGORITHM_BREDR_SSP;
-      case PairingAlgorithm::SC:
-        return API_PAIRING_ALGORITHM_SC;
-      default:
-        break;
-    }
-  }
-
-  bluetooth::log::error(
-          "map_pairing_algo_to_api: Incorrect transport or pairing algo, transport: {}, "
-          "pairingAlgo: {}",
-          transport, pairing_algo);
-
-  // As this is not a critical failure, we return a logical default instead of failing.
-  return (transport == BT_TRANSPORT_LE) ? API_PAIRING_ALGORITHM_LE_LEGACY
-                                        : API_PAIRING_ALGORITHM_BREDR_LEGACY;
-}
-
-/**
  * Function         compare_pairing_type_for_downgrade
  *
  * Description      Return true if a pairing request is a security downgrade, and should be rejected

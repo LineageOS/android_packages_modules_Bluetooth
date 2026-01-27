@@ -1499,8 +1499,10 @@ public class RemoteDevices {
 
     private static void updateBondStatus(
             DeviceProperties deviceProperties, int transport, byte[] pairingType) {
-        final int pairingAlgorithm = pairingType[0];
+        final int nativePairingAlgorithm = pairingType[0];
         final int nativePairingVariant = pairingType[1];
+        final int pairingAlgorithm =
+                BondStateMachine.getPairingAlgorithm(transport, nativePairingAlgorithm);
         final int pairingVariant =
                 BondStateMachine.getPairingVariant(
                         transport, pairingAlgorithm, nativePairingVariant);

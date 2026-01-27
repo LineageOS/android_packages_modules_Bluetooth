@@ -1321,15 +1321,15 @@ void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod
           bd_addr, bd_name, cod, min_16_digit, pairing_algorithm));
 }
 
-void invoke_ssp_request_cb(RawAddress bd_addr, PairingVariant pairing_variant, uint32_t pass_key,
-                           int pairing_algorithm) {
+void invoke_ssp_request_cb(RawAddress bd_addr, int transport, PairingVariant pairing_variant,
+                           uint32_t pass_key, int pairing_algorithm) {
   do_in_jni_thread(base::BindOnce(
-          [](RawAddress bd_addr, PairingVariant pairing_variant, uint32_t pass_key,
+          [](RawAddress bd_addr, int transport, PairingVariant pairing_variant, uint32_t pass_key,
              int pairing_algorithm) {
-            HAL_CBACK(bt_hal_cbacks, ssp_request_cb, bd_addr, pairing_variant, pass_key,
+            HAL_CBACK(bt_hal_cbacks, ssp_request_cb, bd_addr, transport, pairing_variant, pass_key,
                       pairing_algorithm);
           },
-          bd_addr, pairing_variant, pass_key, pairing_algorithm));
+          bd_addr, transport, pairing_variant, pass_key, pairing_algorithm));
 }
 
 void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c, Octet16 r,
