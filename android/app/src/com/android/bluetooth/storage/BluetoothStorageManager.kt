@@ -39,7 +39,9 @@ import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
 import com.android.bluetooth.storage.MediaProfile.Type as MediaProfile
 import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
+import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.indent
+import com.android.bluetooth.util.toTable
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
@@ -56,28 +58,15 @@ import kotlinx.coroutines.runBlocking
 private const val TAG = "BluetoothStorageManager"
 private const val COMPACTION_THRESHOLD = 100_000
 
-// delete _value redundant proto entries
-private val PATTERN_DELETE_VALUE_FIELD by lazy { "^.*_value: \\d+$".toRegex() }
-
-// remove mutable_devices entries in dump
-private val PATTERN_DELETE_MUTABLE by lazy {
-    "\\nmutable_devices \\{\\n.*?\\n\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
-}
-// remove mutable_profile_connection_policies entries in dump
-private val PATTERN_DELETE_MUTABLE_POLICIES by lazy {
-    "\\n    mutable_profile_connection_policies \\{\\n.*?\\n    \\}"
-        .toRegex(RegexOption.DOT_MATCHES_ALL)
-}
-// remove mutable_profile_connection_policies entries in dump
-private val PATTERN_DELETE_MUTABLE_CUSTOM_METADATA by lazy {
-    "\\n    mutable_custom_metadata \\{\\n.*?\\n    \\}".toRegex(RegexOption.DOT_MATCHES_ALL)
-}
-// remove mutable_profile_connection_policies entries in dump
-private val PATTERN_REFORMAT_POLICIES by lazy {
-    "\\n    profile_connection_policies \\{\\n.*?key: (\\d+).*?value: ([a-z]+).*?\\n    \\}"
-        .toRegex(RegexOption.DOT_MATCHES_ALL)
-}
 private val PATTERN_TO_OBFUSCATE = "(?:(?:[0-9A-F]{2}:){4})([0-9A-F]{2}:[0-9A-F]{2})".toRegex()
+private val PATTERN_DELETE_VALUE_FIELD = "^.*_value: \\d+$".toRegex()
+
+private fun String.cleanProtoDump(): String {
+    return this.lineSequence()
+        .filterNot { it.matches(PATTERN_DELETE_VALUE_FIELD) }
+        .filterNot { it.trimStart().startsWith("#") }
+        .joinToString("\n")
+}
 
 private fun UserStorage.Builder.getExistingOrNewDeviceBuilder(device: BluetoothDevice) =
     this.devicesMap[device.address]?.toBuilder()
@@ -105,7 +94,7 @@ constructor(
 ) {
     private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
-    private val eventLog = BluetoothEventLogger(30, TAG) // Dumpsys logger
+    private val eventLog = BluetoothEventLogger(30, "$TAG.EventLog") // Dumpsys logger
 
     // The DataStore instance that handles the UserStorage proto.
     // Data is stored in a file named "user_storage" in the app's device protected storage.
@@ -163,20 +152,75 @@ constructor(
     fun dump(sb: StringBuilder) {
         eventLog.dump(sb)
 
-        sb.appendLine(
-            currentStorage
-                .toString()
-                .replace(PATTERN_DELETE_MUTABLE, "")
-                .replace(PATTERN_DELETE_MUTABLE_CUSTOM_METADATA, "")
-                .replace(PATTERN_DELETE_MUTABLE_POLICIES, "")
-                .replace(PATTERN_REFORMAT_POLICIES, "\n    Profile policy for $1: $2")
-                .lineSequence()
-                .filterNot(PATTERN_DELETE_VALUE_FIELD::containsMatchIn)
-                .joinToString("\n")
-                .anonymizeAddress()
-                .replace("a2_dp", "a2dp") // Fix proto parsing of letter after a digit
-                .indent("  ")
+        val storage = currentStorage
+        sb.appendLine("\nBluetoothStorageManager.Database:")
+
+        val databaseDump = StringBuilder()
+        databaseDump.appendLine("current_connection_number: ${storage.currentConnectionNumber}")
+        databaseDump.appendLine(
+            "active_a2dp_devices: ${storage.activeA2DpDevicesList.map { it.anonymizeAddress() }}"
         )
+        databaseDump.appendLine(
+            "active_hfp_devices: ${storage.activeHfpDevicesList.map { it.anonymizeAddress() }}"
+        )
+
+        for ((address, device) in storage.devicesMap.toSortedMap()) {
+            databaseDump.appendLine("\nDevice: ${address.anonymizeAddress()} {")
+            databaseDump.appendLine(dumpDevice(device).indent("  "))
+            databaseDump.appendLine("}")
+        }
+        sb.appendLine(databaseDump.toString().indent("  "))
+    }
+
+    private fun dumpDevice(device: Device): String = buildString {
+        appendLine("connection_counter: ${device.connectionCounter}")
+
+        if (device.hasProfileConnectionPolicies()) {
+            appendLine("Profile Connection Policies:")
+            appendLine(
+                device.profileConnectionPolicies
+                    .toString()
+                    .cleanProtoDump()
+                    .replace("a2_dp", "a2dp") // Fix proto parsing of letter after a digit
+                    .indent("  ")
+            )
+        }
+        if (device.hasPermissions()) {
+            appendLine("Permissions:")
+            appendLine(device.permissions.toString().cleanProtoDump().indent("  "))
+        }
+        if (device.hasA2DpSettings()) {
+            appendLine("A2DP Settings:")
+            appendLine(device.a2DpSettings.toString().cleanProtoDump().indent("  "))
+        }
+        if (device.hasAvrcpSettings()) {
+            appendLine("AVRCP Settings:")
+            appendLine(device.avrcpSettings.toString().cleanProtoDump().indent("  "))
+        }
+        if (device.hasHfpClientSettings()) {
+            appendLine("HFP Client Settings:")
+            appendLine(device.hfpClientSettings.toString().cleanProtoDump().indent("  "))
+        }
+        if (device.hasLeAudioSettings()) {
+            appendLine("LE Audio Settings:")
+            appendLine(device.leAudioSettings.toString().cleanProtoDump().indent("  "))
+        }
+        if (device.hasMicrophonePreferredForCalls()) {
+            appendLine("microphone_preferred_for_calls: ${device.microphonePreferredForCalls}")
+        }
+        if (device.keyMissingCount > 0) {
+            appendLine("key_missing_count: ${device.keyMissingCount}")
+        }
+
+        if (device.customMetadataMap.isNotEmpty()) {
+            appendLine("Custom Metadata:")
+            val table =
+                device.customMetadataMap.entries.toTable(
+                    Column("Key", 4) { it.key },
+                    Column("Value") { it.value.toStringUtf8() },
+                )
+            appendLine(table.indent("  "))
+        }
     }
 
     /**
