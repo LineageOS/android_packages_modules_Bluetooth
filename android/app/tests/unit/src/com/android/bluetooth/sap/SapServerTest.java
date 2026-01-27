@@ -44,13 +44,13 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -124,7 +124,7 @@ public class SapServerTest {
     @Test
     public void setNotification() {
         NotificationManager notificationManager = mock(NotificationManager.class);
-        when(mContext.getSystemService(NotificationManager.class)).thenReturn(notificationManager);
+        doReturn(notificationManager).when(mContext).getSystemService(NotificationManager.class);
 
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         int type = DISC_GRACEFUL;
@@ -139,7 +139,7 @@ public class SapServerTest {
     @Test
     public void clearNotification() {
         NotificationManager notificationManager = mock(NotificationManager.class);
-        when(mContext.getSystemService(NotificationManager.class)).thenReturn(notificationManager);
+        doReturn(notificationManager).when(mContext).getSystemService(NotificationManager.class);
 
         mSapServer.clearNotification();
 
@@ -158,7 +158,7 @@ public class SapServerTest {
     public void onConnectRequest_whenStateIsConnecting_callsSendRilMessage() {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
 
@@ -222,8 +222,8 @@ public class SapServerTest {
     public void sendRilMessage_success() throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
-        when(mockReceiver.isProxyValid()).thenReturn(true);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
+        doReturn(true).when(mockReceiver).isProxyValid();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
 
@@ -237,8 +237,8 @@ public class SapServerTest {
     public void sendRilMessage_whenSapProxyIsNull_sendsErrorClientMessage() throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
-        when(mockReceiver.isProxyValid()).thenReturn(false);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
+        doReturn(false).when(mockReceiver).isProxyValid();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
 
@@ -253,7 +253,7 @@ public class SapServerTest {
     public void sendRilMessage_whenIAEIsThrown_sendsErrorClientMessage() throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
 
@@ -270,8 +270,8 @@ public class SapServerTest {
             throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
-        when(mockReceiver.isProxyValid()).thenReturn(true);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
+        doReturn(true).when(mockReceiver).isProxyValid();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
 
@@ -298,8 +298,8 @@ public class SapServerTest {
     public void handleRilInd_whenStateIsConnected_callsSendClientMessage() {
         int disconnectionType = DISC_GRACEFUL;
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_RIL_UNSOL_DISCONNECT_IND);
-        when(msg.getDisconnectionType()).thenReturn(disconnectionType);
+        doReturn(ID_RIL_UNSOL_DISCONNECT_IND).when(msg).getMsgType();
+        doReturn(disconnectionType).when(msg).getDisconnectionType();
         mSapServer.mSapHandler = mHandler;
 
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
@@ -318,10 +318,10 @@ public class SapServerTest {
     public void handleRilInd_whenStateIsDisconnected_callsSendDisconnectInd() {
         int disconnectionType = DISC_GRACEFUL;
         NotificationManager notificationManager = mock(NotificationManager.class);
-        when(mContext.getSystemService(NotificationManager.class)).thenReturn(notificationManager);
+        doReturn(notificationManager).when(mContext).getSystemService(NotificationManager.class);
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_RIL_UNSOL_DISCONNECT_IND);
-        when(msg.getDisconnectionType()).thenReturn(disconnectionType);
+        doReturn(ID_RIL_UNSOL_DISCONNECT_IND).when(msg).getMsgType();
+        doReturn(disconnectionType).when(msg).getDisconnectionType();
         mSapServer.mSapHandler = mHandler;
 
         mSapServer.changeState(SapServer.SAP_STATE.DISCONNECTED);
@@ -343,10 +343,10 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_connectRespMsg_whenInCallOngoingState() {
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_CONNECT_RESP);
+        doReturn(ID_CONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTING_CALL_ONGOING);
-        when(msg.getConnectionStatus()).thenReturn(CON_STATUS_OK);
+        doReturn(CON_STATUS_OK).when(msg).getConnectionStatus();
         mSapServer.handleRfcommReply(msg);
 
         assertThat(mSapServer.mState).isEqualTo(SapServer.SAP_STATE.CONNECTED);
@@ -355,10 +355,10 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_connectRespMsg_whenNotInCallOngoingState_okStatus() {
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_CONNECT_RESP);
+        doReturn(ID_CONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
-        when(msg.getConnectionStatus()).thenReturn(CON_STATUS_OK);
+        doReturn(CON_STATUS_OK).when(msg).getConnectionStatus();
         mSapServer.handleRfcommReply(msg);
 
         assertThat(mSapServer.mState).isEqualTo(SapServer.SAP_STATE.CONNECTED);
@@ -367,10 +367,10 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_connectRespMsg_whenNotInCallOngoingState_ongoingCallStatus() {
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_CONNECT_RESP);
+        doReturn(ID_CONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
-        when(msg.getConnectionStatus()).thenReturn(CON_STATUS_OK_ONGOING_CALL);
+        doReturn(CON_STATUS_OK_ONGOING_CALL).when(msg).getConnectionStatus();
         mSapServer.handleRfcommReply(msg);
 
         assertThat(mSapServer.mState).isEqualTo(SapServer.SAP_STATE.CONNECTING_CALL_ONGOING);
@@ -379,12 +379,12 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_connectRespMsg_whenNotInCallOngoingState_errorStatus() {
         AlarmManager alarmManager = mock(AlarmManager.class);
-        when(mContext.getSystemService(AlarmManager.class)).thenReturn(alarmManager);
+        doReturn(alarmManager).when(mContext).getSystemService(AlarmManager.class);
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_CONNECT_RESP);
+        doReturn(ID_CONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
-        when(msg.getConnectionStatus()).thenReturn(CON_STATUS_ERROR_CONNECTION);
+        doReturn(CON_STATUS_ERROR_CONNECTION).when(msg).getConnectionStatus();
         mSapServer.handleRfcommReply(msg);
 
         verify(mSapServer).startDisconnectTimer(anyInt(), anyInt());
@@ -393,7 +393,7 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_disconnectRespMsg_whenInDisconnectingState() {
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_DISCONNECT_RESP);
+        doReturn(ID_DISCONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.DISCONNECTING);
         mSapServer.handleRfcommReply(msg);
@@ -404,7 +404,7 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_disconnectRespMsg_whenInConnectedState_shutDown() {
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_DISCONNECT_RESP);
+        doReturn(ID_DISCONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.mIsLocalInitDisconnect = true;
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
@@ -416,9 +416,9 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_disconnectRespMsg_whenInConnectedState_startsDisconnectTimer() {
         AlarmManager alarmManager = mock(AlarmManager.class);
-        when(mContext.getSystemService(AlarmManager.class)).thenReturn(alarmManager);
+        doReturn(alarmManager).when(mContext).getSystemService(AlarmManager.class);
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_DISCONNECT_RESP);
+        doReturn(ID_DISCONNECT_RESP).when(msg).getMsgType();
 
         mSapServer.mIsLocalInitDisconnect = false;
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
@@ -431,7 +431,7 @@ public class SapServerTest {
     public void handleRfcommReply_statusIndMsg_whenInDisconnectingState_doesNotSendMessage()
             throws Exception {
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_STATUS_IND);
+        doReturn(ID_STATUS_IND).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.DISCONNECTING);
         mSapServer.handleRfcommReply(msg);
@@ -442,9 +442,9 @@ public class SapServerTest {
     @Test
     public void handleRfcommReply_statusIndMsg_whenInConnectedState_setsNotification() {
         NotificationManager notificationManager = mock(NotificationManager.class);
-        when(mContext.getSystemService(NotificationManager.class)).thenReturn(notificationManager);
+        doReturn(notificationManager).when(mContext).getSystemService(NotificationManager.class);
         SapMessage msg = mock(SapMessage.class);
-        when(msg.getMsgType()).thenReturn(ID_STATUS_IND);
+        doReturn(ID_STATUS_IND).when(msg).getMsgType();
 
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
         mSapServer.handleRfcommReply(msg);
@@ -455,7 +455,7 @@ public class SapServerTest {
     @Test
     public void startDisconnectTimer_and_stopDisconnectTimer() {
         AlarmManager alarmManager = mock(AlarmManager.class);
-        when(mContext.getSystemService(AlarmManager.class)).thenReturn(alarmManager);
+        doReturn(alarmManager).when(mContext).getSystemService(AlarmManager.class);
 
         mSapServer.startDisconnectTimer(SapMessage.DISC_FORCED, 1_000);
         verify(alarmManager).set(anyInt(), anyLong(), any(PendingIntent.class));
@@ -467,12 +467,12 @@ public class SapServerTest {
     @Test
     public void isCallOngoing() {
         TelephonyManager telephonyManager = mock(TelephonyManager.class);
-        when(mContext.getSystemService(TelephonyManager.class)).thenReturn(telephonyManager);
+        doReturn(telephonyManager).when(mContext).getSystemService(TelephonyManager.class);
 
-        when(telephonyManager.getCallState()).thenReturn(TelephonyManager.CALL_STATE_OFFHOOK);
+        doReturn(TelephonyManager.CALL_STATE_OFFHOOK).when(telephonyManager).getCallState();
         assertThat(mSapServer.isCallOngoing()).isTrue();
 
-        when(telephonyManager.getCallState()).thenReturn(TelephonyManager.CALL_STATE_IDLE);
+        doReturn(TelephonyManager.CALL_STATE_IDLE).when(telephonyManager).getCallState();
         assertThat(mSapServer.isCallOngoing()).isFalse();
     }
 
@@ -529,8 +529,8 @@ public class SapServerTest {
     @Test
     public void handleMessage_forRfcReplyMsg_callsHandleRfcommReply() {
         SapMessage sapMsg = mock(SapMessage.class);
-        when(sapMsg.getMsgType()).thenReturn(ID_CONNECT_RESP);
-        when(sapMsg.getConnectionStatus()).thenReturn(CON_STATUS_OK);
+        doReturn(ID_CONNECT_RESP).when(sapMsg).getMsgType();
+        doReturn(CON_STATUS_OK).when(sapMsg).getConnectionStatus();
         mSapServer.changeState(SapServer.SAP_STATE.DISCONNECTED);
 
         Message message = Message.obtain();
@@ -550,7 +550,7 @@ public class SapServerTest {
     public void handleMessage_forRilConnectMsg_callsSendRilMessage() throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
         mSapServer.setTestMode(TEST_MODE_ENABLE);
@@ -572,12 +572,12 @@ public class SapServerTest {
     public void handleMessage_forRilReqMsg_callsSendRilMessage() throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
         Object lock = new Object();
-        when(mockReceiver.getSapProxyLock()).thenReturn(lock);
+        doReturn(lock).when(mockReceiver).getSapProxyLock();
         mSapServer.mRilBtReceiver = mockReceiver;
         mSapServer.mSapHandler = mHandler;
 
         SapMessage sapMsg = mock(SapMessage.class);
-        when(sapMsg.getMsgType()).thenReturn(ID_CONNECT_REQ);
+        doReturn(ID_CONNECT_REQ).when(sapMsg).getMsgType();
 
         Message message = Message.obtain();
         message.what = SAP_MSG_RIL_REQ;
@@ -595,8 +595,8 @@ public class SapServerTest {
     @Test
     public void handleMessage_forRilIndMsg_callsHandleRilInd() throws Exception {
         SapMessage sapMsg = mock(SapMessage.class);
-        when(sapMsg.getMsgType()).thenReturn(ID_RIL_UNSOL_DISCONNECT_IND);
-        when(sapMsg.getDisconnectionType()).thenReturn(DISC_GRACEFUL);
+        doReturn(ID_RIL_UNSOL_DISCONNECT_IND).when(sapMsg).getMsgType();
+        doReturn(DISC_GRACEFUL).when(sapMsg).getDisconnectionType();
         mSapServer.changeState(SapServer.SAP_STATE.CONNECTED);
         mSapServer.mSapHandler = mHandler;
 
@@ -616,7 +616,7 @@ public class SapServerTest {
     @Test
     public void handleMessage_forRilSocketClosedMsg_startsDisconnectTimer() throws Exception {
         AlarmManager alarmManager = mock(AlarmManager.class);
-        when(mContext.getSystemService(AlarmManager.class)).thenReturn(alarmManager);
+        doReturn(alarmManager).when(mContext).getSystemService(AlarmManager.class);
 
         Message message = Message.obtain();
         message.what = SAP_RIL_SOCK_CLOSED;

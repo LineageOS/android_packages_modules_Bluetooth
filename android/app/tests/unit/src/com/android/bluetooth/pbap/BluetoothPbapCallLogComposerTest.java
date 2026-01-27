@@ -27,7 +27,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.database.Cursor;
 import android.net.Uri;
@@ -78,8 +77,8 @@ public class BluetoothPbapCallLogComposerTest {
                 .when(mPbapCallProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         final int validRowCount = 5;
-        when(mMockCursor.getCount()).thenReturn(validRowCount);
-        when(mMockCursor.moveToFirst()).thenReturn(true);
+        doReturn(validRowCount).when(mMockCursor).getCount();
+        doReturn(true).when(mMockCursor).moveToFirst();
 
         mComposer =
                 new BluetoothPbapCallLogComposer(
@@ -121,7 +120,7 @@ public class BluetoothPbapCallLogComposerTest {
 
     @Test
     public void testInit_failWhenCursorRowCountIsZero() {
-        when(mMockCursor.getCount()).thenReturn(0);
+        doReturn(0).when(mMockCursor).getCount();
 
         assertThat(mComposer.init(CALL_LOG_URI, SELECTION, SELECTION_ARGS, SORT_ORDER)).isFalse();
         assertThat(mComposer.getErrorReason()).isEqualTo(FAILURE_REASON_NO_ENTRY);
@@ -130,7 +129,7 @@ public class BluetoothPbapCallLogComposerTest {
 
     @Test
     public void testInit_failWhenCursorMoveToFirstFails() {
-        when(mMockCursor.moveToFirst()).thenReturn(false);
+        doReturn(false).when(mMockCursor).moveToFirst();
 
         assertThat(mComposer.init(CALL_LOG_URI, SELECTION, SELECTION_ARGS, SORT_ORDER)).isFalse();
         assertThat(mComposer.getErrorReason()).isEqualTo(FAILURE_REASON_NO_ENTRY);
@@ -179,7 +178,7 @@ public class BluetoothPbapCallLogComposerTest {
     public void testGetCount_success() {
         mComposer.init(CALL_LOG_URI, SELECTION, SELECTION_ARGS, SORT_ORDER);
         final int cursorRowCount = 15;
-        when(mMockCursor.getCount()).thenReturn(cursorRowCount);
+        doReturn(cursorRowCount).when(mMockCursor).getCount();
 
         assertThat(mComposer.getCount()).isEqualTo(cursorRowCount);
     }
@@ -193,7 +192,7 @@ public class BluetoothPbapCallLogComposerTest {
     public void testIsAfterLast_success() {
         mComposer.init(CALL_LOG_URI, SELECTION, SELECTION_ARGS, SORT_ORDER);
         final boolean cursorIsAfterLast = true;
-        when(mMockCursor.isAfterLast()).thenReturn(cursorIsAfterLast);
+        doReturn(cursorIsAfterLast).when(mMockCursor).isAfterLast();
 
         assertThat(mComposer.isAfterLast()).isEqualTo(cursorIsAfterLast);
     }

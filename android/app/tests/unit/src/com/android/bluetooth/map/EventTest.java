@@ -20,8 +20,8 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.os.Looper;
@@ -78,8 +78,8 @@ public class EventTest {
         BluetoothMapMasInstance mockMas = mock(BluetoothMapMasInstance.class);
 
         // Functions that get called when BluetoothMapContentObserver is created
-        when(mockUserService.isUserUnlocked()).thenReturn(true);
-        when(mockContext.getContentResolver()).thenReturn(mockResolver);
+        doReturn(true).when(mockUserService).isUserUnlocked();
+        doReturn(mockResolver).when(mockContext).getContentResolver();
         mockGetSystemService(mockContext, TelephonyManager.class);
         mockGetSystemService(mockContext, UserManager.class, mockUserService);
         mObserver = new BluetoothMapContentObserver(mockContext, null, mockMas, null, true);

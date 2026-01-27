@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import android.content.ContentProviderClient;
 import android.database.MatrixCursor;
@@ -147,13 +146,15 @@ public class BluetoothMapObexServerTest {
     @Test
     public void setOwnerStatus_withAppParamsInvalid() throws Exception {
         BluetoothMapAppParams params = mock(BluetoothMapAppParams.class);
-        when(params.getPresenceAvailability())
-                .thenReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
-        when(params.getPresenceStatus()).thenReturn(null);
-        when(params.getLastActivity())
-                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
-        when(params.getChatState()).thenReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
-        when(params.getChatStateConvoIdString()).thenReturn(null);
+        doReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER)
+                .when(params)
+                .getPresenceAvailability();
+        doReturn(null).when(params).getPresenceStatus();
+        doReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER)
+                .when(params)
+                .getLastActivity();
+        doReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER).when(params).getChatState();
+        doReturn(null).when(params).getChatStateConvoIdString();
 
         assertThat(mObexServer.setOwnerStatus(params))
                 .isEqualTo(ResponseCodes.OBEX_HTTP_PRECON_FAILED);
@@ -163,7 +164,7 @@ public class BluetoothMapObexServerTest {
     public void setOwnerStatus_withNonNullBundle() throws Exception {
         setUpBluetoothMapAppParams(mParams);
         Bundle bundle = new Bundle();
-        when(mProviderClient.call(any(), any(), any())).thenReturn(bundle);
+        doReturn(bundle).when(mProviderClient).call(any(), any(), any());
 
         assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
     }
@@ -171,7 +172,7 @@ public class BluetoothMapObexServerTest {
     @Test
     public void setOwnerStatus_withNullBundle() throws Exception {
         setUpBluetoothMapAppParams(mParams);
-        when(mProviderClient.call(any(), any(), any())).thenReturn(null);
+        doReturn(null).when(mProviderClient).call(any(), any(), any());
 
         assertThat(mObexServer.setOwnerStatus(mParams))
                 .isEqualTo(ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED);

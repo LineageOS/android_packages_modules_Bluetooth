@@ -29,7 +29,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMapClient;
@@ -114,10 +113,11 @@ public class MapClientContentTest {
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
         mockGetSystemService(mAdapterService, SubscriptionManager.class, mSubscriptionManager);
         mockGetSystemService(mAdapterService, UserManager.class, mUserManager);
-        when(mUserManager.getUserRestrictions()).thenReturn(mRestrictions);
+        doReturn(mRestrictions).when(mUserManager).getUserRestrictions();
 
-        when(mSubscriptionManager.getActiveSubscriptionInfoList())
-                .thenReturn(Arrays.asList(mSubscription));
+        doReturn(Arrays.asList(mSubscription))
+                .when(mSubscriptionManager)
+                .getActiveSubscriptionInfoList();
         createTestMessages();
     }
 
@@ -405,8 +405,9 @@ public class MapClientContentTest {
         MapClientContent.clearAllContent(mAdapterService);
         verify(mSubscriptionManager, never()).removeSubscriptionInfoRecord(any(), anyInt());
 
-        when(mSubscription.getSubscriptionType())
-                .thenReturn(SubscriptionManager.SUBSCRIPTION_TYPE_REMOTE_SIM);
+        doReturn(SubscriptionManager.SUBSCRIPTION_TYPE_REMOTE_SIM)
+                .when(mSubscription)
+                .getSubscriptionType();
         MapClientContent.clearAllContent(mAdapterService);
         verify(mSubscriptionManager)
                 .removeSubscriptionInfoRecord(
@@ -416,7 +417,7 @@ public class MapClientContentTest {
     /** Test to validate that cleaning content does not crash when no subscription are available. */
     @Test
     public void testCleanUpWithNoSubscriptions() {
-        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(null);
+        doReturn(null).when(mSubscriptionManager).getActiveSubscriptionInfoList();
 
         MapClientContent.clearAllContent(mAdapterService);
     }
@@ -480,7 +481,7 @@ public class MapClientContentTest {
     /** Test that messages are not stored when SMS is disallowed for the user. */
     @Test
     public void testStoreMessage_whenSmsDisallowed_doesNotStoreMessage() {
-        when(mRestrictions.getBoolean(UserManager.DISALLOW_SMS)).thenReturn(true);
+        doReturn(true).when(mRestrictions).getBoolean(UserManager.DISALLOW_SMS);
         mMapClientContent = new MapClientContent(mAdapterService, mCallbacks, mDevice);
 
         // Attempt to store an SMS message
@@ -495,7 +496,7 @@ public class MapClientContentTest {
     /** Test that messages are stored when SMS is allowed for the user. */
     @Test
     public void testStoreMessage_whenSmsAllowed_storesMessage() {
-        when(mRestrictions.getBoolean(UserManager.DISALLOW_SMS)).thenReturn(false);
+        doReturn(false).when(mRestrictions).getBoolean(UserManager.DISALLOW_SMS);
         mMapClientContent = new MapClientContent(mAdapterService, mCallbacks, mDevice);
 
         // Attempt to store an SMS message
@@ -569,12 +570,12 @@ public class MapClientContentTest {
                 String sortOrder) {
             Cursor cursor = Mockito.mock(Cursor.class);
 
-            when(cursor.moveToFirst()).thenReturn(true);
-            when(cursor.moveToNext()).thenReturn(true).thenReturn(false);
+            doReturn(true).when(cursor).moveToFirst();
+            doReturn(true).doReturn(false).when(cursor).moveToNext();
 
-            when(cursor.getLong(anyInt())).thenReturn((long) mContentValues.size());
-            when(cursor.getString(anyInt())).thenReturn(String.valueOf(mContentValues.size()));
-            when(cursor.getInt(anyInt())).thenReturn(READ);
+            doReturn((long) mContentValues.size()).when(cursor).getLong(anyInt());
+            doReturn(String.valueOf(mContentValues.size())).when(cursor).getString(anyInt());
+            doReturn(READ).when(cursor).getInt(anyInt());
             return cursor;
         }
 
@@ -610,8 +611,8 @@ public class MapClientContentTest {
                 String sortOrder) {
             // Return empty cursor
             Cursor cursor = Mockito.mock(Cursor.class);
-            when(cursor.moveToFirst()).thenReturn(false);
-            when(cursor.moveToNext()).thenReturn(false);
+            doReturn(false).when(cursor).moveToFirst();
+            doReturn(false).when(cursor).moveToNext();
             return cursor;
         }
 
