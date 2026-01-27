@@ -19,6 +19,7 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.le.ScanSettings
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.le_scan.ScanUtil.isDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isForceDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient
 import com.android.bluetooth.le_scan.ScanUtil.minScanMode
@@ -147,5 +148,18 @@ class ScanThrottler(
         }
 
         return false
+    }
+
+    fun revertDowngradeScanModeFromMaxDuty(client: ScanClient, isScreenOn: Boolean): Boolean {
+        if (!isDowngradedScanClient(client)) {
+            return false
+        }
+        client.ifAppScanStatsPresent { stats -> stats.setScanDowngrade(client.scannerId, false) }
+        Log.d(TAG, "revertDowngradeScanModeFromMaxDuty() for $client")
+        return if (isScreenOn) {
+            throttleScanModeScreenOn(client)
+        } else {
+            throttleScanModeScreenOff(client)
+        }
     }
 }

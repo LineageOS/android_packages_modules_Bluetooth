@@ -29,7 +29,6 @@ import static com.android.bluetooth.le_scan.ScanUtil.clearAutoBatchScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.getAggressiveClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isAutoBatchScanClientEnabled;
 import static com.android.bluetooth.le_scan.ScanUtil.isBatchClient;
-import static com.android.bluetooth.le_scan.ScanUtil.isDowngradedScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isExemptFromAutoBatchScanUpdate;
 import static com.android.bluetooth.le_scan.ScanUtil.isExemptFromScanTimeout;
 import static com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient;
@@ -807,7 +806,7 @@ public class ScanManager {
         Log.d(TAG, "handleClearConnectingState()");
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
-            if (revertDowngradeScanModeFromMaxDuty(client)) {
+            if (mScanThrottler.revertDowngradeScanModeFromMaxDuty(client, mScreenOn)) {
                 updatedScanParams = true;
                 Log.d(TAG, "downgraded scanMode is reverted for " + client);
             }
@@ -1001,19 +1000,6 @@ public class ScanManager {
 
         if (updatedScanParams) {
             configureRegularScanParams();
-        }
-    }
-
-    private boolean revertDowngradeScanModeFromMaxDuty(ScanClient client) {
-        if (!isDowngradedScanClient(client)) {
-            return false;
-        }
-        client.ifAppScanStatsPresent(stats -> stats.setScanDowngrade(client.getScannerId(), false));
-        Log.d(TAG, "revertDowngradeScanModeFromMaxDuty() for " + client);
-        if (mScreenOn) {
-            return mScanThrottler.throttleScanModeScreenOn(client);
-        } else {
-            return mScanThrottler.throttleScanModeScreenOff(client);
         }
     }
 
