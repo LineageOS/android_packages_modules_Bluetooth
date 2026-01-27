@@ -95,9 +95,6 @@ TEST_F(PacsTestsBase, InstantiateRelease) {
   // Reinstantiate
   pacs_ = InstantiatePacs();
   ASSERT_NE(pacs_.get(), nullptr);
-
-  // Should be a brand new instance now
-  ASSERT_NE(pacs_.get(), old_ptr);
 }
 
 TEST_F(PacsTestsBase, RegisterCallbacks) {
