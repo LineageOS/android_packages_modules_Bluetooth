@@ -114,7 +114,6 @@ public class ScanManager {
     private static final int FOREGROUND_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
     private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
     private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
-    private static final int SCAN_MODE_MAX_IN_CONCURRENCY = ScanSettings.SCAN_MODE_BALANCED;
 
     // Timeout for each controller operation.
     private static final int OPERATION_TIME_OUT_MILLIS = 500;
@@ -301,7 +300,7 @@ public class ScanManager {
         IntentFilter locationIntentFilter = new IntentFilter(LocationManager.MODE_CHANGED_ACTION);
         locationIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
-        mScanThrottler = new ScanThrottler(this);
+        mScanThrottler = new ScanThrottler(this, mAdapterService);
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
         Log.d(TAG, "MSFT: isSupported=" + mIsMsftSupported + ", useFiltering=" + mUseMsftFiltering);
@@ -770,7 +769,7 @@ public class ScanManager {
         mIsConnecting = true;
         Log.d(TAG, "handleConnectingState()");
         for (ScanClient client : mRegularScanClients) {
-            if (downgradeScanModeFromMaxDuty(client)) {
+            if (mScanThrottler.downgradeScanModeFromMaxDuty(client)) {
                 updatedScanParams = true;
                 Log.d(TAG, "scanMode is downgraded by connecting for " + client);
             }
@@ -908,7 +907,7 @@ public class ScanManager {
 
     private boolean updateScanModeConcurrency(ScanClient client) {
         if (mIsConnecting) {
-            return downgradeScanModeFromMaxDuty(client);
+            return mScanThrottler.downgradeScanModeFromMaxDuty(client);
         }
         return false;
     }
@@ -1003,24 +1002,6 @@ public class ScanManager {
         if (updatedScanParams) {
             configureRegularScanParams();
         }
-    }
-
-    private boolean downgradeScanModeFromMaxDuty(ScanClient client) {
-        if (client.getAppScanStats() == null
-                || mAdapterService.getScanDowngradeDuration().equals(Duration.ZERO)) {
-            return false;
-        }
-        final int updatedScanMode =
-                minScanMode(client.getSettings().getScanMode(), SCAN_MODE_MAX_IN_CONCURRENCY);
-        if (client.updateScanMode(updatedScanMode)) {
-            client.getAppScanStats().setScanDowngrade(client.getScannerId(), true);
-            Log.d(
-                    TAG,
-                    "downgradeScanModeFromMaxDuty(): "
-                            + ("for " + client + " to=" + scanModeToString(updatedScanMode)));
-            return true;
-        }
-        return false;
     }
 
     private boolean revertDowngradeScanModeFromMaxDuty(ScanClient client) {

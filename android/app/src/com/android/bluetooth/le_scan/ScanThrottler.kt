@@ -18,10 +18,12 @@ package com.android.bluetooth.le_scan
 
 import android.bluetooth.le.ScanSettings
 import android.util.Log
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.isForceDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient
 import com.android.bluetooth.le_scan.ScanUtil.minScanMode
 import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
+import java.time.Duration
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanThrottler"
 
@@ -29,7 +31,10 @@ private const val TAG = ScanUtil.TAG_PREFIX + "ScanThrottler"
  * Throttler to adjusts scan settings based on system state, like screen status, app visibility
  * (foreground vs. background) and hardware resource contention (connecting state).
  */
-class ScanThrottler(private val scanManager: ScanManager) {
+class ScanThrottler(
+    private val scanManager: ScanManager,
+    private val adapterService: AdapterService,
+) {
 
     fun throttleScanMode(client: ScanClient, targetMode: Int, isScreenOn: Boolean): Boolean {
         var targetScanMode = targetMode
@@ -122,6 +127,25 @@ class ScanThrottler(private val scanManager: ScanManager) {
             )
             return true
         }
+        return false
+    }
+
+    fun downgradeScanModeFromMaxDuty(client: ScanClient): Boolean {
+        if (client.appScanStats == null || adapterService.scanDowngradeDuration == Duration.ZERO) {
+            return false
+        }
+
+        val updatedScanMode = minScanMode(client.settings.scanMode, ScanSettings.SCAN_MODE_BALANCED)
+
+        if (client.updateScanMode(updatedScanMode)) {
+            client.appScanStats!!.setScanDowngrade(client.scannerId, true)
+            Log.d(
+                TAG,
+                "downgradeScanModeFromMaxDuty(): for $client to=${scanModeToString(updatedScanMode)}",
+            )
+            return true
+        }
+
         return false
     }
 }
