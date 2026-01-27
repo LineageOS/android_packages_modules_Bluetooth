@@ -77,7 +77,7 @@ java_sdk_library {
         "//packages/modules/Bluetooth/android/app:__subpackages__",
         "//packages/modules/Bluetooth/framework/tests/bumble",
         "//packages/modules/Bluetooth/service",
-        "//packages/modules/Bluetooth/tests/pandora/server",
+        "//packages/modules/Bluetooth/tests/pandora/android_server",
         "//packages/services/Car/car-builtin-lib",
         // TODO(b/431798751)
         "//packages/services/Car/tests/CarBuiltinLibUnitTest",

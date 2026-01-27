@@ -23,7 +23,7 @@ genrule {
         "protoc-gen-pandora_interfaces-python",
     ],
     cmd: "$(location aprotoc)" +
-        "    -Ipackages/modules/Bluetooth/pandora/interfaces" +
+        "    -Ipackages/modules/Bluetooth/tests/pandora/interfaces" +
         "    -Iexternal/pandora/bt-test-interfaces" +
         "    -Iexternal/protobuf/src" +
         "    --plugin=protoc-gen-grpc=$(location protoc-gen-pandora_interfaces-python)" +
