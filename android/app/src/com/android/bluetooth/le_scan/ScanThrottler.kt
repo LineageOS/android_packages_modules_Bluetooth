@@ -74,4 +74,17 @@ class ScanThrottler(private val scanManager: ScanManager) {
         }
         return false
     }
+
+    fun throttleScanModeScreenOn(client: ScanClient): Boolean {
+        val targetScanMode = client.scanModeApp
+        if (throttleScanMode(client, targetScanMode, isScreenOn = true)) {
+            Log.d(
+                TAG,
+                "throttleScanModeScreenOn(): for $client from=${scanModeToString(targetScanMode)} " +
+                    "to=${scanModeToString(client.settings.scanMode)}",
+            )
+            return true
+        }
+        return false
+    }
 }

@@ -902,7 +902,7 @@ public class ScanManager {
             return true;
         }
         if (mScreenOn) {
-            return updateScanModeScreenOn(client);
+            return mScanThrottler.throttleScanModeScreenOn(client);
         } else {
             return mScanThrottler.throttleScanModeScreenOff(client);
         }
@@ -1013,22 +1013,6 @@ public class ScanManager {
         }
     }
 
-    private boolean updateScanModeScreenOn(ScanClient client) {
-        if (isOpportunisticScanClient(client)) {
-            return false;
-        }
-        final var scanModeApp = client.getScanModeApp();
-        final int scanMode = isAppForeground(client) ? scanModeApp : SCAN_MODE_APP_IN_BACKGROUND;
-        final int maxScanMode =
-                isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
-        Log.d(
-                TAG,
-                ("updateScanModeScreenOn(): for " + client)
-                        + (" from=" + scanModeToString(scanModeApp))
-                        + (" to=" + scanModeToString(minScanMode(scanMode, maxScanMode))));
-        return client.updateScanMode(minScanMode(scanMode, maxScanMode));
-    }
-
     private boolean downgradeScanModeFromMaxDuty(ScanClient client) {
         if (client.getAppScanStats() == null
                 || mAdapterService.getScanDowngradeDuration().equals(Duration.ZERO)) {
@@ -1054,7 +1038,7 @@ public class ScanManager {
         client.ifAppScanStatsPresent(stats -> stats.setScanDowngrade(client.getScannerId(), false));
         Log.d(TAG, "revertDowngradeScanModeFromMaxDuty() for " + client);
         if (mScreenOn) {
-            return updateScanModeScreenOn(client);
+            return mScanThrottler.throttleScanModeScreenOn(client);
         } else {
             return mScanThrottler.throttleScanModeScreenOff(client);
         }
@@ -1094,7 +1078,7 @@ public class ScanManager {
     private void updateRegularScanClientsScreenOn() {
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
-            if (updateScanModeScreenOn(client)) {
+            if (mScanThrottler.throttleScanModeScreenOn(client)) {
                 updatedScanParams = true;
             }
         }
