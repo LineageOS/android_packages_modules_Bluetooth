@@ -4190,13 +4190,12 @@ public:
     /* Send data to the controller */
     if (left_cis_handle) {
       IsoManager::GetInstance()->SendIsoData(
-              left_cis_handle, (const uint8_t*)sw_enc_left->GetDecodedSamples().data(), byte_count);
+              left_cis_handle, (const uint8_t*)sw_enc_left->GetOutputBuffer().data(), byte_count);
     }
 
     if (right_cis_handle) {
       IsoManager::GetInstance()->SendIsoData(
-              right_cis_handle, (const uint8_t*)sw_enc_right->GetDecodedSamples().data(),
-              byte_count);
+              right_cis_handle, (const uint8_t*)sw_enc_right->GetOutputBuffer().data(), byte_count);
     }
   }
 
@@ -4231,11 +4230,11 @@ public:
       sw_enc_left->Encode((const uint8_t*)data.data(), 2, byte_count);
       // Output to the left channel buffer with `byte_count` offset
       sw_enc_right->Encode((const uint8_t*)data.data() + 2, 2, byte_count,
-                           &sw_enc_left->GetDecodedSamples(), byte_count);
+                           &sw_enc_left->GetOutputBuffer(), byte_count);
     }
 
     IsoManager::GetInstance()->SendIsoData(cis_handle,
-                                           (const uint8_t*)sw_enc_left->GetDecodedSamples().data(),
+                                           (const uint8_t*)sw_enc_left->GetOutputBuffer().data(),
                                            byte_count * num_channels);
   }
 
@@ -4331,12 +4330,12 @@ public:
     if (!left_cis_handle || !right_cis_handle) {
       /* mono or just one device connected */
       decoder->Decode(data, size);
-      SendAudioDataToAF(&decoder->GetDecodedSamples());
+      SendAudioDataToAF(&decoder->GetOutputBuffer());
       return;
     }
     /* both devices are connected */
 
-    if (cached_channel_ == nullptr || cached_channel_->GetDecodedSamples().empty()) {
+    if (cached_channel_ == nullptr || cached_channel_->GetOutputBuffer().empty()) {
       /* First packet received, cache it. We need both channel data to send it
        * to AF. */
       decoder->Decode(data, size);
@@ -4352,7 +4351,7 @@ public:
       if (timestamp == cached_channel_timestamp_) {
         /* Ready to mix data and send out to AF */
         decoder->Decode(data, size);
-        SendAudioDataToAF(&sw_dec_left->GetDecodedSamples(), &sw_dec_right->GetDecodedSamples());
+        SendAudioDataToAF(&sw_dec_left->GetOutputBuffer(), &sw_dec_right->GetOutputBuffer());
 
         CleanCachedMicrophoneData();
         return;
@@ -4361,7 +4360,7 @@ public:
       /* 2nd Channel is in the future compared to the cached data.
        Send the cached data to AF, and keep the new channel data in cache.
        This should happen only during stream setup */
-      SendAudioDataToAF(&decoder->GetDecodedSamples());
+      SendAudioDataToAF(&decoder->GetOutputBuffer());
 
       decoder->Decode(data, size);
       cached_channel_timestamp_ = timestamp;
@@ -4373,7 +4372,7 @@ public:
      * data */
 
     /* Send the cached data out */
-    SendAudioDataToAF(&decoder->GetDecodedSamples());
+    SendAudioDataToAF(&decoder->GetOutputBuffer());
 
     /* Cache the data in case 2nd channel connects */
     decoder->Decode(data, size);
@@ -4990,7 +4989,7 @@ public:
   }
 
   void LogStreamStarted(LeAudioDeviceGroup* group, int active_group_id,
-                                     LeAudioContextType context_type) {
+                        LeAudioContextType context_type) {
     if (!group) {
       return;
     }

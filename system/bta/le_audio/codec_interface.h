@@ -64,7 +64,7 @@ public:
   virtual bool IsReady();
   virtual uint16_t GetNumOfSamplesPerChannel();
   virtual uint8_t GetNumOfBytesPerSample();
-  virtual std::vector<int16_t>& GetDecodedSamples();
+  virtual std::vector<int16_t>& GetOutputBuffer();
 
 private:
   struct Impl;
