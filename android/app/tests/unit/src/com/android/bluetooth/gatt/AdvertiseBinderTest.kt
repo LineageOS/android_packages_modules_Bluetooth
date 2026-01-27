@@ -31,18 +31,17 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.Mockito.any
-import org.mockito.Mockito.doAnswer
-import org.mockito.Mockito.doReturn
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 /** Test cases for [AdvertiseBinder]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class AdvertiseBinderTest {
-
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var source: AttributionSource
@@ -73,8 +72,8 @@ class AdvertiseBinderTest {
         val periodicData = AdvertiseData.Builder().build()
         val duration = 1
         val maxExtAdvEvents = 2
-        val serverCallback = mock(IBluetoothGattServerCallback::class.java)
-        val callback = mock(IAdvertisingSetCallback::class.java)
+        val serverCallback = mock<IBluetoothGattServerCallback>()
+        val callback = mock<IAdvertisingSetCallback>()
 
         binder.startAdvertisingSet(
             parameters,
@@ -105,7 +104,7 @@ class AdvertiseBinderTest {
 
     @Test
     fun stopAdvertisingSet() {
-        val callback = mock(IAdvertisingSetCallback::class.java)
+        val callback = mock<IAdvertisingSetCallback>()
 
         binder.stopAdvertisingSet(callback, source)
         verify(advertiseManager).stopAdvertisingSet(callback)

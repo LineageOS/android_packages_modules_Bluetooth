@@ -33,11 +33,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.InOrder
 import org.mockito.Mock
-import org.mockito.Mockito.doReturn
-import org.mockito.Mockito.inOrder
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @SmallTest

@@ -33,11 +33,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.Mockito.any
-import org.mockito.Mockito.doAnswer
-import org.mockito.Mockito.doReturn
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 /** Test cases for [DistanceMeasurementBinder]. */
@@ -91,7 +91,7 @@ class DistanceMeasurementBinderTest {
                 .setDurationSeconds(123)
                 .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
                 .build()
-        val callback = mock(IDistanceMeasurementCallback::class.java)
+        val callback = mock<IDistanceMeasurementCallback>()
         binder.startDistanceMeasurement(ParcelUuid(uuid), params, callback, source)
         verify(distanceMeasurementManager)
             .startDistanceMeasurement(uuid, source.uid, params, callback)
