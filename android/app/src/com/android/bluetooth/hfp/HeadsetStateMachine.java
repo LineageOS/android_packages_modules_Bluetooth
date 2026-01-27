@@ -131,6 +131,10 @@ class HeadsetStateMachine extends StateMachine {
     static final int MIC_MUTE = 0;
     static final int MIC_UNMUTE = 15;
 
+    // Mirror AudioManager.FLAG_ABSOLUTE_VOLUME before the complete switch
+    // to the ADVM APIs
+    static final int FLAG_ABSOLUTE_VOLUME = 1 << 13;
+
     private static final HeadsetAgIndicatorEnableState DEFAULT_AG_INDICATOR_ENABLE_STATE =
             new HeadsetAgIndicatorEnableState(true, true, true, true);
 
@@ -1985,6 +1989,7 @@ class HeadsetStateMachine extends StateMachine {
             mSpeakerVolume = volume;
             boolean showVolume = SystemProperties.getBoolean(HFP_VOLUME_CONTROL_ENABLED, true);
             int flag = showVolume && (mCurrentState == mAudioOn) ? AudioManager.FLAG_SHOW_UI : 0;
+            flag |= FLAG_ABSOLUTE_VOLUME;
             int volStream =
                     android.media.audio.Flags.deprecateStreamBtSco()
                             ? AudioManager.STREAM_VOICE_CALL
