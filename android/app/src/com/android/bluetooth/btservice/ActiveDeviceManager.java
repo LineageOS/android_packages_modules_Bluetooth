@@ -1492,7 +1492,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 }
             }
         }
-        if (Flags.admIterateDevicesOnFallback()) {
+        if (Flags.admFixFallbackDeviceSearch()) {
             if (connectedDevices.isEmpty()) {
                 return false;
             }

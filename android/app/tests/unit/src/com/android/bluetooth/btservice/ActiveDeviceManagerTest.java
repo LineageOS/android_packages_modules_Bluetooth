@@ -1362,7 +1362,7 @@ public class ActiveDeviceManagerTest {
      * </pre>
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_ITERATE_DEVICES_ON_FALLBACK)
+    @EnableFlags(Flags.FLAG_ADM_FIX_FALLBACK_DEVICE_SEARCH)
     public void leAudioFallbackLeaudioToLeaudio_autonomousInactive() {
         /* LeAudio device from group 1 - not ready for stream */
         doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice);
@@ -3521,7 +3521,7 @@ public class ActiveDeviceManagerTest {
      */
     @Test
     @DisableFlags(Flags.FLAG_ADM_USE_SET_ACTIVE_DEVICE_HELPERS)
-    @DisableFlags(Flags.FLAG_ADM_ITERATE_DEVICES_ON_FALLBACK)
+    @DisableFlags(Flags.FLAG_ADM_FIX_FALLBACK_DEVICE_SEARCH)
     public void setActiveDevice_leAudioToHfp() {
         doReturn(List.of(mLeAudioDevice)).when(mLeAudioService).getActiveDevices();
         doReturn(null).when(mLeAudioService).getLeadDevice(null);
