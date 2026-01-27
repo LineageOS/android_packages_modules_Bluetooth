@@ -104,4 +104,24 @@ class ScanThrottler(private val scanManager: ScanManager) {
         }
         return false
     }
+
+    fun throttleScanModeBackgroundUid(client: ScanClient, uid: Int, isScreenOn: Boolean): Boolean {
+        var scanMode = client.settings.scanMode
+        val throttledScanMode =
+            if (isScreenOn) {
+                minScanMode(ScanSettings.SCAN_MODE_LOW_POWER, scanMode)
+            } else {
+                minScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF, scanMode)
+            }
+        if (client.updateScanMode(throttledScanMode)) {
+            Log.d(
+                TAG,
+                "throttleScanModeBackgroundUid(): for $client uid=$uid " +
+                    "isForeground=${scanManager.isAppForeground(client)} " +
+                    "scanMode=${scanModeToString(client.settings.scanMode)}",
+            )
+            return true
+        }
+        return false
+    }
 }

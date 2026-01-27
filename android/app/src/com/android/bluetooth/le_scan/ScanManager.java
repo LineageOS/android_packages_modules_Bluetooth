@@ -113,7 +113,6 @@ public class ScanManager {
 
     private static final int FOREGROUND_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
     private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
-    private static final int SCAN_MODE_APP_IN_BACKGROUND = ScanSettings.SCAN_MODE_LOW_POWER;
     private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
     private static final int SCAN_MODE_MAX_IN_CONCURRENCY = ScanSettings.SCAN_MODE_BALANCED;
 
@@ -990,10 +989,7 @@ public class ScanManager {
                     updatedScanParams = true;
                 }
             } else {
-                final int scanMode = scanSettings.getScanMode();
-                final int maxScanMode =
-                        mScreenOn ? SCAN_MODE_APP_IN_BACKGROUND : ScanSettings.SCAN_MODE_SCREEN_OFF;
-                if (client.updateScanMode(minScanMode(scanMode, maxScanMode))) {
+                if (mScanThrottler.throttleScanModeBackgroundUid(client, uid, mScreenOn)) {
                     updatedScanParams = true;
                 }
             }
