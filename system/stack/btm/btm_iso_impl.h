@@ -1263,6 +1263,31 @@ struct iso_impl {
                      stream_ptr->conn_handle);
     log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
 
+    if (stream_ptr->state_flags & kStateFlagIsIncoming) {
+      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+
+      // Invalidates the CIS connection handle to disarm the removal guard, allowing the listener to
+      // be safely unregistered without side effects.
+      [&] {
+        auto pseudo_address = cis_hdl_to_addr.find(handle);
+        if (pseudo_address == cis_hdl_to_addr.end()) {
+          return;
+        }
+        auto incoming_iso_groups = peer_addr_to_listening_groups_map_.find(pseudo_address->second);
+        if (incoming_iso_groups != peer_addr_to_listening_groups_map_.end()) {
+          for (auto& group : incoming_iso_groups->second) {
+            // Look into the CIGs
+            for (auto& cis_it : group.cis_ids_to_stream_conn_handle_map) {
+              if (cis_it.second == handle) {
+                cis_it.second = INVALID_ACL_HANDLE;
+                return;
+              }
+            }
+          }
+        }
+      }();
+    }
+
     if (stream_ptr->state_flags & kStateFlagIsConnecting) {
       log::info("{}, cis_handle: {:#x} waiting for cis established event with cancel status",
                 cis_hdl_to_addr[handle], handle);
