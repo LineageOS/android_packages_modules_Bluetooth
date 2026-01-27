@@ -26,7 +26,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.admin.DevicePolicyManager;
 import android.bluetooth.BluetoothDevice;
@@ -226,14 +225,14 @@ public class AtPhonebookTest {
     @Test
     public void processCpbrCommand_withMobilePhonebook() {
         Cursor mockCursorOne = mock(Cursor.class);
-        when(mockCursorOne.getCount()).thenReturn(1);
-        when(mockCursorOne.getColumnIndex(Phone.TYPE)).thenReturn(1); // TypeColumn
-        when(mockCursorOne.getColumnIndex(Phone.NUMBER)).thenReturn(2); // numberColumn
-        when(mockCursorOne.getColumnIndex(Phone.DISPLAY_NAME)).thenReturn(3); // nameColumn
-        when(mockCursorOne.getInt(1)).thenReturn(Phone.TYPE_WORK);
-        when(mockCursorOne.getString(2)).thenReturn(null);
-        when(mockCursorOne.getString(3)).thenReturn(null);
-        when(mockCursorOne.moveToNext()).thenReturn(false);
+        doReturn(1).when(mockCursorOne).getCount();
+        doReturn(1).when(mockCursorOne).getColumnIndex(Phone.TYPE); // TypeColumn
+        doReturn(2).when(mockCursorOne).getColumnIndex(Phone.NUMBER); // numberColumn
+        doReturn(3).when(mockCursorOne).getColumnIndex(Phone.DISPLAY_NAME); // nameColumn
+        doReturn(Phone.TYPE_WORK).when(mockCursorOne).getInt(1);
+        doReturn(null).when(mockCursorOne).getString(2);
+        doReturn(null).when(mockCursorOne).getString(3);
+        doReturn(false).when(mockCursorOne).moveToNext();
         doReturn(mockCursorOne)
                 .when(mHfpMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any());
@@ -263,21 +262,21 @@ public class AtPhonebookTest {
     @Test
     public void processCpbrCommand_withMissedCalls() {
         Cursor mockCursorOne = mock(Cursor.class);
-        when(mockCursorOne.getCount()).thenReturn(1);
-        when(mockCursorOne.getColumnIndexOrThrow(CallLog.Calls.NUMBER)).thenReturn(1);
-        when(mockCursorOne.getColumnIndexOrThrow(CallLog.Calls.NUMBER_PRESENTATION)).thenReturn(2);
+        doReturn(1).when(mockCursorOne).getCount();
+        doReturn(1).when(mockCursorOne).getColumnIndexOrThrow(CallLog.Calls.NUMBER);
+        doReturn(2).when(mockCursorOne).getColumnIndexOrThrow(CallLog.Calls.NUMBER_PRESENTATION);
         String number = "1".repeat(31);
-        when(mockCursorOne.getString(1)).thenReturn(number);
-        when(mockCursorOne.getInt(2)).thenReturn(CallLog.Calls.PRESENTATION_RESTRICTED);
+        doReturn(number).when(mockCursorOne).getString(1);
+        doReturn(CallLog.Calls.PRESENTATION_RESTRICTED).when(mockCursorOne).getInt(2);
         doReturn(mockCursorOne)
                 .when(mHfpMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any());
 
         Cursor mockCursorTwo = mock(Cursor.class);
-        when(mockCursorTwo.moveToFirst()).thenReturn(true);
+        doReturn(true).when(mockCursorTwo).moveToFirst();
         String name = "k".repeat(30);
-        when(mockCursorTwo.getString(0)).thenReturn(name);
-        when(mockCursorTwo.getInt(1)).thenReturn(1);
+        doReturn(name).when(mockCursorTwo).getString(0);
+        doReturn(1).when(mockCursorTwo).getInt(1);
         doReturn(mockCursorTwo)
                 .when(mHfpMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
@@ -305,21 +304,21 @@ public class AtPhonebookTest {
     @Test
     public void processCpbrCommand_withReceivedCallsAndCharsetGsm() {
         Cursor mockCursorOne = mock(Cursor.class);
-        when(mockCursorOne.getCount()).thenReturn(1);
-        when(mockCursorOne.getColumnIndexOrThrow(CallLog.Calls.NUMBER)).thenReturn(1);
-        when(mockCursorOne.getColumnIndexOrThrow(CallLog.Calls.NUMBER_PRESENTATION)).thenReturn(-1);
+        doReturn(1).when(mockCursorOne).getCount();
+        doReturn(1).when(mockCursorOne).getColumnIndexOrThrow(CallLog.Calls.NUMBER);
+        doReturn(-1).when(mockCursorOne).getColumnIndexOrThrow(CallLog.Calls.NUMBER_PRESENTATION);
         String number = "1".repeat(31);
-        when(mockCursorOne.getString(1)).thenReturn(number);
-        when(mockCursorOne.getInt(2)).thenReturn(CallLog.Calls.PRESENTATION_RESTRICTED);
+        doReturn(number).when(mockCursorOne).getString(1);
+        doReturn(CallLog.Calls.PRESENTATION_RESTRICTED).when(mockCursorOne).getInt(2);
         doReturn(mockCursorOne)
                 .when(mHfpMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any());
 
         Cursor mockCursorTwo = mock(Cursor.class);
-        when(mockCursorTwo.moveToFirst()).thenReturn(true);
+        doReturn(true).when(mockCursorTwo).moveToFirst();
         String name = "k".repeat(30);
-        when(mockCursorTwo.getString(0)).thenReturn(name);
-        when(mockCursorTwo.getInt(1)).thenReturn(1);
+        doReturn(name).when(mockCursorTwo).getString(0);
+        doReturn(1).when(mockCursorTwo).getInt(1);
         doReturn(mockCursorTwo)
                 .when(mHfpMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
@@ -353,13 +352,13 @@ public class AtPhonebookTest {
         Uri uri = DevicePolicyUtils.getEnterprisePhoneUri(mAdapterService);
 
         Cursor mockCursorOne = mock(Cursor.class);
-        when(mockCursorOne.getCount()).thenReturn(1);
-        when(mockCursorOne.getColumnIndex(Phone.TYPE)).thenReturn(1); // TypeColumn
-        when(mockCursorOne.getColumnIndex(Phone.NUMBER)).thenReturn(2); // numberColumn
-        when(mockCursorOne.getColumnIndex(Phone.DISPLAY_NAME)).thenReturn(-1); // nameColumn
-        when(mockCursorOne.getInt(1)).thenReturn(Phone.TYPE_WORK);
-        when(mockCursorOne.getString(2)).thenReturn(encodingNeededNumber);
-        when(mockCursorOne.moveToNext()).thenReturn(false);
+        doReturn(1).when(mockCursorOne).getCount();
+        doReturn(1).when(mockCursorOne).getColumnIndex(Phone.TYPE); // TypeColumn
+        doReturn(2).when(mockCursorOne).getColumnIndex(Phone.NUMBER); // numberColumn
+        doReturn(-1).when(mockCursorOne).getColumnIndex(Phone.DISPLAY_NAME); // nameColumn
+        doReturn(Phone.TYPE_WORK).when(mockCursorOne).getInt(1);
+        doReturn(encodingNeededNumber).when(mockCursorOne).getString(2);
+        doReturn(false).when(mockCursorOne).moveToNext();
         doReturn(mockCursorOne)
                 .when(mHfpMethodProxy)
                 .contentResolverQuery(any(), eq(uri), any(), any(), any());

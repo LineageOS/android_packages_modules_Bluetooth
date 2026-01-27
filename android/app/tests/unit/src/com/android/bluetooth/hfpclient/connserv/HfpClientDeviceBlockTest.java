@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -76,13 +75,14 @@ public class HfpClientDeviceBlockTest {
         // HfpClientConnectionService.createAccount is static and can't be mocked, so the
         // application context and resources must be mocked to avoid NPE when creating an
         // HfpClientDeviceBlock for testing.
-        when(mResources.getBoolean(
+        doReturn(true)
+                .when(mResources)
+                .getBoolean(
                         com.android.bluetooth.R.bool
-                                .hfp_client_connection_service_support_emergency_call))
-                .thenReturn(true);
-        when(mApplicationContext.getResources()).thenReturn(mResources);
-        when(mConnServ.getApplicationContext()).thenReturn(mApplicationContext);
-        when(mConnServ.getPackageName()).thenReturn(TEST_PACKAGE);
+                                .hfp_client_connection_service_support_emergency_call);
+        doReturn(mResources).when(mApplicationContext).getResources();
+        doReturn(mApplicationContext).when(mConnServ).getApplicationContext();
+        doReturn(TEST_PACKAGE).when(mConnServ).getPackageName();
 
         mockGetSystemService(mConnServ, TelecomManager.class);
 
@@ -163,11 +163,11 @@ public class HfpClientDeviceBlockTest {
     }
 
     private void setUpCall(HfpClientCall call) {
-        when(mMockServiceInterface.dial(mDevice, TEST_NUMBER)).thenReturn(call);
+        doReturn(call).when(mMockServiceInterface).dial(mDevice, TEST_NUMBER);
     }
 
     private HfpClientConnection createOutgoingConnectionWithScoState(int scoState) {
-        when(mHeadsetClientService.getAudioState(mDevice)).thenReturn(scoState);
+        doReturn(scoState).when(mHeadsetClientService).getAudioState(mDevice);
         doCallRealMethod().when(mConnServ).createAccount(any());
         mHfpClientDeviceBlock = new HfpClientDeviceBlock(mDevice, mConnServ, mMockServiceInterface);
         return mHfpClientDeviceBlock.onCreateOutgoingConnection(
