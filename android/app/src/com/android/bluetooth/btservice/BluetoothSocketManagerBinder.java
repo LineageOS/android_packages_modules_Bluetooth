@@ -33,6 +33,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.metrics.MetricsLogger;
 
 class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     private static final String TAG = BluetoothSocketManagerBinder.class.getSimpleName();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.metrics;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 
@@ -66,6 +66,8 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.BtRestrictedStatsLog;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.le_audio.LeAudioConstants;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -228,7 +230,7 @@ public class MetricsLogger {
         mMedicalDeviceBloomFilter = bloomfilter;
     }
 
-    void init(AdapterService adapterService, RemoteDevices remoteDevices) {
+    public void init(AdapterService adapterService, RemoteDevices remoteDevices) {
         if (mInitialized) {
             return;
         }
@@ -359,7 +361,7 @@ public class MetricsLogger {
         }
     }
 
-    void close() {
+    public void close() {
         if (!mInitialized) {
             return;
         }
@@ -487,7 +489,7 @@ public class MetricsLogger {
         return Integer.parseInt(device.getAddress().replace(":", "").substring(0, 6), 16);
     }
 
-    protected List<String> getWordBreakdownList(String deviceName) {
+    public List<String> getWordBreakdownList(String deviceName) {
         if (deviceName == null) {
             return Collections.emptyList();
         }
@@ -519,7 +521,7 @@ public class MetricsLogger {
         return Collections.unmodifiableList(wordBreakdownList);
     }
 
-    protected void uploadRestrictedBluetoothDeviceName(List<String> wordBreakdownList) {
+    public void uploadRestrictedBluetoothDeviceName(List<String> wordBreakdownList) {
         for (String word : wordBreakdownList) {
             BtRestrictedStatsLog.write(RESTRICTED_BLUETOOTH_DEVICE_NAME_REPORTED, word);
         }

@@ -48,8 +48,8 @@ import androidx.annotation.VisibleForTesting;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.profile.ConnectableProfile;
 
 import java.util.Collections;

@@ -57,8 +57,8 @@ import android.widget.Toast;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.File;

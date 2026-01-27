@@ -16,6 +16,3 @@ wescande@google.com
 
 # Reviewers for Channel Sounding related files
 per-file src/com/android/bluetooth/gatt/DistanceMeasurement*.java=file:/OWNERS_channel_sounding
-
-# Reviewers for Bluetooth Metrics
-per-file src/com/android/bluetooth/btservice/MetricsLogger.java=file:/OWNERS_metrics
