@@ -32,7 +32,6 @@ import static com.android.bluetooth.le_scan.ScanUtil.isBatchClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isDowngradedScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isExemptFromAutoBatchScanUpdate;
 import static com.android.bluetooth.le_scan.ScanUtil.isExemptFromScanTimeout;
-import static com.android.bluetooth.le_scan.ScanUtil.isForceDowngradedScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.minScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.priorityForScanMode;
@@ -987,10 +986,7 @@ public class ScanManager {
             client.ifAppScanStatsPresent(stats -> stats.setAppImportance(importance));
             final var scanSettings = client.getSettings();
             if (isForeground) {
-                final int scanMode = client.getScanModeApp();
-                final int maxScanMode =
-                        isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
-                if (client.updateScanMode(minScanMode(scanMode, maxScanMode))) {
+                if (mScanThrottler.throttleScanModeForegroundUid(client, uid, mScreenOn)) {
                     updatedScanParams = true;
                 }
             } else {
