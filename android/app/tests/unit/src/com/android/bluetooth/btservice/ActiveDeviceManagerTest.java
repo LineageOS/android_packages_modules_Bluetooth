@@ -47,6 +47,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.media.AudioManager;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -2173,6 +2174,70 @@ public class ActiveDeviceManagerTest {
         // Verify that we tried to set LE Audio active but it failed.
         verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
         assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
+     * Verifies setActiveDevice for scenario:
+     *
+     * <pre>
+     *  1. Connect A2DP+HFP device and assure it's active
+     *  2. Connect HA device and assure it's active
+     *  3. Set A2DP+HFP as active device (simulating manual set active device from BT settings)
+     *  4. Make sure A2DP+HFP is active and HA is deactivated
+     *  </pre>
+     */
+    @Test
+    @DisableFlags(Flags.FLAG_ADM_USE_SET_ACTIVE_DEVICE_HELPERS)
+    public void setActiveDevice_hearingAidToA2dpHfp() {
+        // 1. Connect A2DP+HFP device
+        a2dpConnected(mA2dpHeadsetDevice, true);
+        headsetConnected(mA2dpHeadsetDevice, true);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService, times(2)).setActiveDevice(mA2dpHeadsetDevice);
+        verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
+
+        // Assure A2DP+HFP is active
+        a2dpActiveDeviceChanged(mA2dpHeadsetDevice);
+        headsetActiveDeviceChanged(mA2dpHeadsetDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).isEmpty();
+
+        // 2. Connect HA device
+        hearingAidConnected(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+        verify(mA2dpService).removeActiveDevice(false);
+        verify(mHeadsetService).setActiveDevice(null);
+
+        // Assure HA is active
+        hearingAidActiveDeviceChanged(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).contains(mHearingAidDevice);
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isNull();
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNull();
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+
+        Mockito.clearInvocations(mA2dpService, mHeadsetService, mHearingAidService);
+
+        // 3. Set A2DP+HFP as active device (simulating manual set active device from BT settings)
+        mActiveDeviceManager.setActiveDevice(
+                mA2dpHeadsetDevice, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mA2dpHeadsetDevice);
+        mActiveDeviceManager.setActiveDevice(
+                mA2dpHeadsetDevice, BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL);
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
+
+        // 4. Make sure A2DP+HFP is active and HA is deactivated
+        a2dpActiveDeviceChanged(mA2dpHeadsetDevice);
+        headsetActiveDeviceChanged(mA2dpHeadsetDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).isEmpty();
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
     }
 
     /** Helper to indicate A2dp connected for a device. */
