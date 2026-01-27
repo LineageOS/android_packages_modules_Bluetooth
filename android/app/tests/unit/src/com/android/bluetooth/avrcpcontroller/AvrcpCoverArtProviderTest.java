@@ -22,7 +22,8 @@ import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -66,8 +67,8 @@ public class AvrcpCoverArtProviderTest {
 
     @Test
     public void openFile_whenFileNotFoundExceptionIsCaught() {
-        when(mUri.getQueryParameter("device")).thenReturn("00:01:02:03:04:05");
-        when(mUri.getQueryParameter("uuid")).thenReturn("1111");
+        doReturn("00:01:02:03:04:05").when(mUri).getQueryParameter("device");
+        doReturn("1111").when(mUri).getQueryParameter("uuid");
         assertThat(mArtProvider.onCreate()).isTrue();
 
         assertThrows(FileNotFoundException.class, () -> mArtProvider.openFile(mUri, TEST_MODE));
@@ -75,7 +76,7 @@ public class AvrcpCoverArtProviderTest {
 
     @Test
     public void openFile_whenNullPointerExceptionIsCaught() {
-        when(mUri.getQueryParameter("device")).thenThrow(NullPointerException.class);
+        doThrow(NullPointerException.class).when(mUri).getQueryParameter("device");
 
         assertThrows(FileNotFoundException.class, () -> mArtProvider.openFile(mUri, TEST_MODE));
     }
@@ -83,8 +84,8 @@ public class AvrcpCoverArtProviderTest {
     @Test
     public void openFile_whenIllegalArgumentExceptionIsCaught() {
         // This causes device address to be null, invoking an IllegalArgumentException
-        when(mUri.getQueryParameter("device")).thenReturn(null);
-        when(mUri.getQueryParameter("uuid")).thenReturn("1111");
+        doReturn(null).when(mUri).getQueryParameter("device");
+        doReturn("1111").when(mUri).getQueryParameter("uuid");
         assertThat(mArtProvider.onCreate()).isTrue();
 
         assertThrows(FileNotFoundException.class, () -> mArtProvider.openFile(mUri, TEST_MODE));

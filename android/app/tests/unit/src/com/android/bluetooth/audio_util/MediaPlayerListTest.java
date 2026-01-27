@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -101,10 +100,10 @@ public class MediaPlayerListTest {
         mockGetSystemService(mMockContext, MediaSessionManager.class, mMediaSessionManager);
         mockGetSystemService(mMockContext, AudioManager.class);
 
-        when(mMockContext.registerReceiver(any(), any())).thenReturn(null);
-        when(mMockContext.getApplicationContext()).thenReturn(mMockContext);
-        when(mMockContext.getPackageManager()).thenReturn(mockPackageManager);
-        when(mockPackageManager.queryIntentServices(any(), anyInt())).thenReturn(null);
+        doReturn(null).when(mMockContext).registerReceiver(any(), any());
+        doReturn(mMockContext).when(mMockContext).getApplicationContext();
+        doReturn(mockPackageManager).when(mMockContext).getPackageManager();
+        doReturn(null).when(mockPackageManager).queryIntentServices(any(), anyInt());
 
         MediaControllerFactory.inject(mMockController);
         MediaPlayerWrapperFactory.inject(mMockPlayerWrapper);

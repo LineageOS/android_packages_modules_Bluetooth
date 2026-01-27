@@ -34,7 +34,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
@@ -129,7 +128,7 @@ public final class DatabaseManagerTest {
         // Create a memory database for DatabaseManager instead of use a real database.
         mDatabase = Room.inMemoryDatabaseBuilder(mContext, MetadataDatabase.class).build();
 
-        when(mAdapterService.getPackageManager()).thenReturn(mContext.getPackageManager());
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
 
         mDatabaseManager = new DatabaseManager(mAdapterService);
 

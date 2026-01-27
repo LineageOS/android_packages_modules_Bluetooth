@@ -18,7 +18,7 @@ package com.android.bluetooth.audio_util;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -105,7 +105,7 @@ public class MetadataTest {
                     }
                 });
 
-        when(mMockContext.getContentResolver()).thenReturn(mTestContentResolver);
+        doReturn(mTestContentResolver).when(mMockContext).getContentResolver();
         Util.UriImagesSupport.sValue = true;
 
         mSongImage = new Image(mMockContext, mTestBitmap);
