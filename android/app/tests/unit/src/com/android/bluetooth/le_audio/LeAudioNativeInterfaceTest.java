@@ -22,8 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeAudioCodecConfig;
@@ -59,7 +59,7 @@ public class LeAudioNativeInterfaceTest {
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
-        when(mMockService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mMockService).isAvailable();
         mNativeInterface = new LeAudioNativeInterface(mAdapterService, mMockService);
     }
 

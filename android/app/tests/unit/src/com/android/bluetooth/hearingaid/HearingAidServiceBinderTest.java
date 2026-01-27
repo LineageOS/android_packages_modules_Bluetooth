@@ -23,8 +23,8 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid;
@@ -59,7 +59,7 @@ public class HearingAidServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mService).isAvailable();
         mBinder = new HearingAidServiceBinder(mService);
     }
 
@@ -79,7 +79,7 @@ public class HearingAidServiceBinderTest {
     public void getConnectedDevices() {
         List<BluetoothDevice> connectedDevices = new ArrayList<>();
         connectedDevices.add(mDevice);
-        when(mService.getConnectedDevices()).thenReturn(connectedDevices);
+        doReturn(connectedDevices).when(mService).getConnectedDevices();
 
         mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
@@ -90,7 +90,7 @@ public class HearingAidServiceBinderTest {
         int[] states = new int[] {STATE_CONNECTED, STATE_DISCONNECTED};
         List<BluetoothDevice> devices = new ArrayList<>();
         devices.add(mDevice);
-        when(mService.getDevicesMatchingConnectionStates(states)).thenReturn(devices);
+        doReturn(devices).when(mService).getDevicesMatchingConnectionStates(states);
 
         mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
@@ -98,7 +98,7 @@ public class HearingAidServiceBinderTest {
 
     @Test
     public void getConnectionState() {
-        when(mService.getConnectionState(mDevice)).thenReturn(STATE_CONNECTED);
+        doReturn(STATE_CONNECTED).when(mService).getConnectionState(mDevice);
 
         mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(mDevice);
@@ -120,7 +120,7 @@ public class HearingAidServiceBinderTest {
     public void getActiveDevices() {
         List<BluetoothDevice> activeDevices = new ArrayList<>();
         activeDevices.add(mDevice);
-        when(mService.getActiveDevices()).thenReturn(activeDevices);
+        doReturn(activeDevices).when(mService).getActiveDevices();
 
         mBinder.getActiveDevices(mSource);
         verify(mService).getActiveDevices();
@@ -134,7 +134,7 @@ public class HearingAidServiceBinderTest {
 
     @Test
     public void getConnectionPolicy() {
-        when(mService.getConnectionPolicy(mDevice)).thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_FORBIDDEN).when(mService).getConnectionPolicy(mDevice);
 
         mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mService).getConnectionPolicy(mDevice);
@@ -151,7 +151,7 @@ public class HearingAidServiceBinderTest {
     @Test
     public void getHiSyncId() {
         long hiSyncId = 1234567890L;
-        when(mService.getHiSyncId(mDevice)).thenReturn(hiSyncId);
+        doReturn(hiSyncId).when(mService).getHiSyncId(mDevice);
 
         mBinder.getHiSyncId(mDevice, mSource);
         verify(mService).getHiSyncId(mDevice);
@@ -160,7 +160,7 @@ public class HearingAidServiceBinderTest {
     @Test
     public void getDeviceSide() {
         int side = BluetoothHearingAid.SIDE_LEFT;
-        when(mService.getCapabilities(mDevice)).thenReturn(side);
+        doReturn(side).when(mService).getCapabilities(mDevice);
 
         mBinder.getDeviceSide(mDevice, mSource);
         verify(mService).getCapabilities(mDevice);
@@ -169,7 +169,7 @@ public class HearingAidServiceBinderTest {
     @Test
     public void getDeviceMode() {
         int mode = BluetoothHearingAid.MODE_BINAURAL;
-        when(mService.getCapabilities(mDevice)).thenReturn(mode << 1);
+        doReturn(mode << 1).when(mService).getCapabilities(mDevice);
 
         mBinder.getDeviceMode(mDevice, mSource);
         verify(mService).getCapabilities(mDevice);
@@ -179,7 +179,7 @@ public class HearingAidServiceBinderTest {
     public void getAdvertisementServiceData() {
         BluetoothHearingAid.AdvertisementServiceData data =
                 new BluetoothHearingAid.AdvertisementServiceData(0, 0);
-        when(mService.getAdvertisementServiceData(mDevice)).thenReturn(data);
+        doReturn(data).when(mService).getAdvertisementServiceData(mDevice);
 
         mBinder.getAdvertisementServiceData(mDevice, mSource);
         verify(mService).getAdvertisementServiceData(mDevice);

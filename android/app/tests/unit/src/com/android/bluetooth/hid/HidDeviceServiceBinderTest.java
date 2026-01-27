@@ -21,9 +21,9 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidDeviceAppQosSettings;
@@ -58,7 +58,7 @@ public class HidDeviceServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mService).isAvailable();
         mBinder = new HidDeviceServiceBinder(mService);
     }
 
