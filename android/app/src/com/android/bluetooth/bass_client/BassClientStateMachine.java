@@ -59,6 +59,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_audio.LeAudioConstants;
 import com.android.bluetooth.le_audio.LeAudioUtils;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.profile.ProfileService;
@@ -356,6 +357,16 @@ class BassClientStateMachine extends StateMachine {
     Boolean hasPendingSwitchingSourceOperation(int broadcastId) {
         return mPendingSourceToSwitch != null
                 && mPendingSourceToSwitch.getBroadcastId() == broadcastId;
+    }
+
+    int getPendingOperationBroadcastId() {
+        if (mPendingSourceToSwitch != null) {
+            return mPendingSourceToSwitch.getBroadcastId();
+        }
+        if (mPendingMetadata != null) {
+            return mPendingMetadata.getBroadcastId();
+        }
+        return LeAudioConstants.INVALID_BROADCAST_ID;
     }
 
     private void setCurrentBroadcastMetadata(
