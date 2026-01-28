@@ -189,7 +189,7 @@ public class BluetoothMapbMessageMimeTest {
 
         assertThat(mimeToCreateByParsing.getSubject()).isEqualTo(TEST_SUBJECT);
         assertThat(mimeToCreateByParsing.getMessageId()).isEqualTo(TEST_MESSAGE_ID);
-        assertThat(mimeToCreateByParsing.getContentType()).isEqualTo("multipart/mixed");
+        assertThat(mimeToCreateByParsing.getContentType()).isEqualTo(TEST_CONTENT_TYPE);
 
         assertThat(mimeToCreateByParsing.getFrom().get(0).getName())
                 .isEqualTo(TEST_FROM.get(0).getName());
