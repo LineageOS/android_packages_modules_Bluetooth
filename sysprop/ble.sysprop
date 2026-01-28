@@ -330,3 +330,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.high_data_throughput_phy.enabled"
 }
+
+prop {
+    api_name: "max_tx_power_dbm"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.max_tx_power_dbm.config"
+}

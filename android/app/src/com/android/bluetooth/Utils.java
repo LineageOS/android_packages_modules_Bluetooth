@@ -77,6 +77,10 @@ public final class Utils {
 
     private static final String ENABLE_DUAL_MODE_AUDIO = "persist.bluetooth.enable_dual_mode_audio";
 
+    private static final String MAX_TX_POWER_DBM_PROPERTY = "bluetooth.ble.max_tx_power_dbm.config";
+    private static final int DEFAULT_MAX_TX_POWER_DBM = 10;
+    private static final int MAX_SUPPORTED_TX_POWER_DBM = 10;
+
     // See https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom
     private static class DualModeAudioSetting {
         private static boolean sEnabled =
@@ -533,4 +537,15 @@ public final class Utils {
         return com.android.bluetooth.flags.Flags.apairing26q2PermissionImprovements()
                 && android.bluetooth.platform.flags.Flags.bluetoothPairingHardening();
     }
+
+    /** Determines the maximum TX power (in dBm) that's allowed for the system. */
+    public static int getMaxTxPowerDbm() {
+        if (!com.android.bluetooth.flags.Flags.allowMoreTxPower()) {
+            return 1;
+        }
+        return Math.min(
+                SystemProperties.getInt(MAX_TX_POWER_DBM_PROPERTY, DEFAULT_MAX_TX_POWER_DBM),
+                MAX_SUPPORTED_TX_POWER_DBM);
+    }
 }
+
