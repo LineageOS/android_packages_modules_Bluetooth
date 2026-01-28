@@ -37,7 +37,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -157,7 +156,7 @@ public class MapClientServiceTest {
     public void disconnect_whenConnected_returnsTrue() {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
-        when(sm.getState()).thenReturn(connectionState);
+        doReturn(connectionState).when(sm).getState();
         mService.getInstanceMap().put(mRemoteDevice, sm);
 
         assertThat(mService.disconnect(mRemoteDevice)).isTrue();
@@ -174,7 +173,7 @@ public class MapClientServiceTest {
     public void getConnectionState_whenConnected() {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
-        when(sm.getState()).thenReturn(connectionState);
+        doReturn(connectionState).when(sm).getState();
         mService.getInstanceMap().put(mRemoteDevice, sm);
 
         assertThat(mService.getConnectionState(mRemoteDevice)).isEqualTo(connectionState);
@@ -185,9 +184,9 @@ public class MapClientServiceTest {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
         BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mRemoteDevice};
-        when(mAdapterService.getBondedDevices()).thenReturn(bondedDevices);
+        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.getState()).thenReturn(connectionState);
+        doReturn(connectionState).when(sm).getState();
 
         assertThat(mService.getConnectedDevices()).contains(mRemoteDevice);
     }
@@ -205,7 +204,7 @@ public class MapClientServiceTest {
         int supportedFeatures = 100;
         MceStateMachine sm = mock(MceStateMachine.class);
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.getSupportedFeatures()).thenReturn(supportedFeatures);
+        doReturn(supportedFeatures).when(sm).getSupportedFeatures();
 
         assertThat(mService.getSupportedFeatures(mRemoteDevice)).isEqualTo(supportedFeatures);
         verify(sm).getSupportedFeatures();
@@ -217,7 +216,7 @@ public class MapClientServiceTest {
         int status = 123;
         MceStateMachine sm = mock(MceStateMachine.class);
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.setMessageStatus(handle, status)).thenReturn(true);
+        doReturn(true).when(sm).setMessageStatus(handle, status);
 
         assertThat(mService.setMessageStatus(mRemoteDevice, handle, status)).isTrue();
         verify(sm).setMessageStatus(handle, status);
@@ -227,7 +226,7 @@ public class MapClientServiceTest {
     public void getUnreadMessages() {
         MceStateMachine sm = mock(MceStateMachine.class);
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.getUnreadMessages()).thenReturn(true);
+        doReturn(true).when(sm).getUnreadMessages();
 
         assertThat(mService.getUnreadMessages(mRemoteDevice)).isTrue();
         verify(sm).getUnreadMessages();
@@ -264,7 +263,7 @@ public class MapClientServiceTest {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.getState()).thenReturn(connectionState);
+        doReturn(connectionState).when(sm).getState();
 
         mService.aclDisconnected(mRemoteDevice, BluetoothDevice.ERROR);
         mTestLooper.dispatchAll();
@@ -277,7 +276,7 @@ public class MapClientServiceTest {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.getState()).thenReturn(connectionState);
+        doReturn(connectionState).when(sm).getState();
 
         mService.aclDisconnected(mRemoteDevice, TRANSPORT_LE);
         mTestLooper.dispatchAll();
@@ -290,7 +289,7 @@ public class MapClientServiceTest {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
         mService.getInstanceMap().put(mRemoteDevice, sm);
-        when(sm.getState()).thenReturn(connectionState);
+        doReturn(connectionState).when(sm).getState();
 
         mService.aclDisconnected(mRemoteDevice, TRANSPORT_BREDR);
         mTestLooper.dispatchAll();

@@ -19,10 +19,10 @@ package com.android.bluetooth.pbap;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
@@ -52,7 +52,7 @@ public class HandlerForStringBufferTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mOperation.openOutputStream()).thenReturn(mOutputStream);
+        doReturn(mOutputStream).when(mOperation).openOutputStream();
     }
 
     @Test

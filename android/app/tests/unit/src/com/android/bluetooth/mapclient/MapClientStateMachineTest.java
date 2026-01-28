@@ -50,7 +50,6 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.app.BroadcastOptions;
@@ -220,11 +219,11 @@ public class MapClientStateMachineTest {
         contentResolver.addProvider("mms", contentProvider);
         contentResolver.addProvider("mms-sms", contentProvider);
 
-        when(mService.getContentResolver()).thenReturn(contentResolver);
+        doReturn(contentResolver).when(mService).getContentResolver();
 
         doReturn(mContext.getResources()).when(mService).getResources();
 
-        when(mMasClient.makeRequest(any(Request.class))).thenReturn(true);
+        doReturn(true).when(mMasClient).makeRequest(any(Request.class));
         mStateMachine =
                 new MceStateMachine(
                         mService,
@@ -236,18 +235,18 @@ public class MapClientStateMachineTest {
         mLooper.dispatchAll();
         verifyStateTransitionAndIntent(STATE_DISCONNECTED, STATE_CONNECTING);
 
-        when(mRequestOwnNumberCompletedWithNumber.isSearchCompleted()).thenReturn(true);
-        when(mRequestOwnNumberCompletedWithNumber.getOwnNumber()).thenReturn(TEST_OWN_PHONE_NUMBER);
-        when(mRequestOwnNumberIncompleteSearch.isSearchCompleted()).thenReturn(false);
-        when(mRequestOwnNumberIncompleteSearch.getOwnNumber()).thenReturn(null);
+        doReturn(true).when(mRequestOwnNumberCompletedWithNumber).isSearchCompleted();
+        doReturn(TEST_OWN_PHONE_NUMBER).when(mRequestOwnNumberCompletedWithNumber).getOwnNumber();
+        doReturn(false).when(mRequestOwnNumberIncompleteSearch).isSearchCompleted();
+        doReturn(null).when(mRequestOwnNumberIncompleteSearch).getOwnNumber();
 
         createTestMessages();
 
-        when(mRequestGetMessage.getMessage()).thenReturn(mTestIncomingSmsBmessage);
-        when(mRequestGetMessage.getHandle()).thenReturn(SMS_HANDLE);
+        doReturn(mTestIncomingSmsBmessage).when(mRequestGetMessage).getMessage();
+        doReturn(SMS_HANDLE).when(mRequestGetMessage).getHandle();
 
-        when(mService.getSystemService(Context.TELEPHONY_SERVICE)).thenReturn(mTelephonyManager);
-        when(mTelephonyManager.isSmsCapable()).thenReturn(false);
+        doReturn(mTelephonyManager).when(mService).getSystemService(Context.TELEPHONY_SERVICE);
+        doReturn(false).when(mTelephonyManager).isSmsCapable();
 
         // Set up receiver for 'Sent' and 'Delivered' PendingIntents
         IntentFilter filter = new IntentFilter();
@@ -381,8 +380,8 @@ public class MapClientStateMachineTest {
     public void testSMSMessageSent() {
         masConnected_whenConnecting_isConnected(); // transition to the connected state
 
-        when(mRequestPushMessage.getMsgHandle()).thenReturn(SMS_HANDLE);
-        when(mRequestPushMessage.getBMsg()).thenReturn(mTestIncomingSmsBmessage);
+        doReturn(SMS_HANDLE).when(mRequestPushMessage).getMsgHandle();
+        doReturn(mTestIncomingSmsBmessage).when(mRequestPushMessage).getBMsg();
         sendAndDispatchMessage(MceStateMachine.MSG_MAS_REQUEST_COMPLETED, mRequestPushMessage);
 
         verify(mDatabase)
@@ -550,8 +549,8 @@ public class MapClientStateMachineTest {
                 createNewEventReport(
                         "NewMessage", dateTime, MMS_HANDLE, "telecom/msg/inbox", null, "MMS");
 
-        when(mRequestGetMessage.getMessage()).thenReturn(mTestIncomingMmsBmessage);
-        when(mRequestGetMessage.getHandle()).thenReturn(MMS_HANDLE);
+        doReturn(mTestIncomingMmsBmessage).when(mRequestGetMessage).getMessage();
+        doReturn(MMS_HANDLE).when(mRequestGetMessage).getHandle();
 
         sendAndDispatchEvent(event);
 
@@ -575,8 +574,8 @@ public class MapClientStateMachineTest {
                         "NewMessage", dateTime, MMS_HANDLE, "telecom/msg/inbox", null, "MMS");
 
         // Prepare to send back message content, but use handle B
-        when(mRequestGetMessage.getHandle()).thenReturn("0003"); // unknown handle
-        when(mRequestGetMessage.getMessage()).thenReturn(mTestIncomingMmsBmessage);
+        doReturn("0003").when(mRequestGetMessage).getHandle(); // unknown handle
+        doReturn(mTestIncomingMmsBmessage).when(mRequestGetMessage).getMessage();
 
         sendAndDispatchEvent(event);
 
@@ -598,7 +597,7 @@ public class MapClientStateMachineTest {
                 createNewMessage("SMS_GSM", SMS_HANDLE);
         ArrayList<com.android.bluetooth.mapclient.Message> messageListSms = new ArrayList<>();
         messageListSms.add(testMessageListingSms);
-        when(mRequestGetMessagesListing.getList()).thenReturn(messageListSms);
+        doReturn(messageListSms).when(mRequestGetMessagesListing).getList();
 
         sendAndDispatchMessage(
                 MceStateMachine.MSG_GET_MESSAGE_LISTING, MceStateMachine.FOLDER_INBOX);
@@ -625,9 +624,9 @@ public class MapClientStateMachineTest {
         ArrayList<com.android.bluetooth.mapclient.Message> messageListMms = new ArrayList<>();
         messageListMms.add(testMessageListingMms);
 
-        when(mRequestGetMessage.getMessage()).thenReturn(mTestIncomingMmsBmessage);
-        when(mRequestGetMessage.getHandle()).thenReturn(MMS_HANDLE);
-        when(mRequestGetMessagesListing.getList()).thenReturn(messageListMms);
+        doReturn(mTestIncomingMmsBmessage).when(mRequestGetMessage).getMessage();
+        doReturn(MMS_HANDLE).when(mRequestGetMessage).getHandle();
+        doReturn(messageListMms).when(mRequestGetMessagesListing).getList();
 
         sendAndDispatchMessage(
                 MceStateMachine.MSG_GET_MESSAGE_LISTING, MceStateMachine.FOLDER_INBOX);
@@ -927,7 +926,7 @@ public class MapClientStateMachineTest {
                 ArgumentCaptor.forClass(RequestPushMessage.class);
         verify(mMasClient, atLeastOnce()).makeRequest(requestCaptor.capture());
         RequestPushMessage spyRequestPushMessage = spy(requestCaptor.getValue());
-        when(spyRequestPushMessage.getMsgHandle()).thenReturn(messageHandle);
+        doReturn(messageHandle).when(spyRequestPushMessage).getMsgHandle();
 
         sendAndDispatchMessage(MceStateMachine.MSG_MAS_REQUEST_COMPLETED, spyRequestPushMessage);
     }
@@ -978,11 +977,11 @@ public class MapClientStateMachineTest {
                 String sortOrder) {
             Cursor cursor = Mockito.mock(Cursor.class);
 
-            when(cursor.moveToFirst()).thenReturn(true);
-            when(cursor.moveToNext()).thenReturn(true).thenReturn(false);
+            doReturn(true).when(cursor).moveToFirst();
+            doReturn(true).doReturn(false).when(cursor).moveToNext();
 
-            when(cursor.getLong(anyInt())).thenReturn((long) mContentValues.size());
-            when(cursor.getString(anyInt())).thenReturn(String.valueOf(mContentValues.size()));
+            doReturn((long) mContentValues.size()).when(cursor).getLong(anyInt());
+            doReturn(String.valueOf(mContentValues.size())).when(cursor).getString(anyInt());
             return cursor;
         }
     }

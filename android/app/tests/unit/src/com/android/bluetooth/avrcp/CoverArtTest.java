@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -33,7 +32,6 @@ import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
 import com.android.bluetooth.avrcpcontroller.BipImageFormat;
 import com.android.bluetooth.avrcpcontroller.BipImageProperties;
 import com.android.bluetooth.avrcpcontroller.BipPixel;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.tests.R;
 
 import org.junit.After;

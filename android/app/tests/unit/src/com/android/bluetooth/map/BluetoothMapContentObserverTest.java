@@ -29,7 +29,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.ContentProviderClient;
@@ -163,8 +162,8 @@ public class BluetoothMapContentObserverTest {
 
             // Return a cursor otherwise for Thread IDs
             Cursor cursor = Mockito.mock(Cursor.class);
-            when(cursor.moveToFirst()).thenReturn(true);
-            when(cursor.getLong(anyInt())).thenReturn(0L);
+            doReturn(true).when(cursor).moveToFirst();
+            doReturn(0L).when(cursor).getLong(anyInt());
             return cursor;
         }
 
@@ -190,16 +189,16 @@ public class BluetoothMapContentObserverTest {
         mCurrentFolder = new BluetoothMapFolderElement("current", null);
 
         // Functions that get called when BluetoothMapContentObserver is created
-        when(mUserService.isUserUnlocked()).thenReturn(true);
-        when(mContext.getContentResolver()).thenReturn(mMockContentResolver);
+        doReturn(true).when(mUserService).isUserUnlocked();
+        doReturn(mMockContentResolver).when(mContext).getContentResolver();
         mockGetSystemService(mContext, TelephonyManager.class, mTelephonyManager);
         mockGetSystemService(mContext, UserManager.class, mUserService);
-        when(mInstance.getMasId()).thenReturn(TEST_ID);
+        doReturn(TEST_ID).when(mInstance).getMasId();
 
         mObserver = new BluetoothMapContentObserver(mContext, mClient, mInstance, null, true);
         mObserver.mProviderClient = mProviderClient;
         mObserver.mAccount = mItem;
-        when(mItem.getType()).thenReturn(TYPE.IM);
+        doReturn(TYPE.IM).when(mItem).getType();
     }
 
     @After
@@ -245,7 +244,7 @@ public class BluetoothMapContentObserverTest {
 
     @Test
     public void testSendEvent_withZeroEventFilter() {
-        when(mClient.isConnected()).thenReturn(true);
+        doReturn(true).when(mClient).isConnected();
         mObserver.setNotificationFilter(0);
 
         String eventType = BluetoothMapContentObserver.EVENT_TYPE_NEW;
@@ -297,7 +296,7 @@ public class BluetoothMapContentObserverTest {
 
     @Test
     public void testEvent_withNonZeroEventFilter() throws Exception {
-        when(mClient.isConnected()).thenReturn(true);
+        doReturn(true).when(mClient).isConnected();
 
         String eventType = BluetoothMapContentObserver.EVENT_TYPE_NEW;
         BluetoothMapContentObserver.Event event =
@@ -338,7 +337,7 @@ public class BluetoothMapContentObserverTest {
 
     @Test
     public void testSetNotificationRegistration_withNullHandler() throws Exception {
-        when(mClient.getMessageHandler()).thenReturn(null);
+        doReturn(null).when(mClient).getMessageHandler();
 
         assertThat(
                         mObserver.setNotificationRegistration(
@@ -352,8 +351,8 @@ public class BluetoothMapContentObserverTest {
             Looper.prepare();
         }
         Handler handler = new Handler();
-        when(mClient.getMessageHandler()).thenReturn(handler);
-        when(mClient.isValidMnsRecord()).thenReturn(false);
+        doReturn(handler).when(mClient).getMessageHandler();
+        doReturn(false).when(mClient).isValidMnsRecord();
 
         assertThat(
                         mObserver.setNotificationRegistration(
@@ -367,8 +366,8 @@ public class BluetoothMapContentObserverTest {
             Looper.prepare();
         }
         Handler handler = new Handler();
-        when(mClient.getMessageHandler()).thenReturn(handler);
-        when(mClient.isValidMnsRecord()).thenReturn(true);
+        doReturn(handler).when(mClient).getMessageHandler();
+        doReturn(true).when(mClient).isValidMnsRecord();
 
         assertThat(
                         mObserver.setNotificationRegistration(
@@ -422,7 +421,7 @@ public class BluetoothMapContentObserverTest {
         map.put(TEST_HANDLE_ONE, msg);
         mObserver.setMsgListMsg(map, true);
         mObserver.mProviderClient = mProviderClient;
-        when(mProviderClient.update(any(), any(), any(), any())).thenReturn(TEST_PLACEHOLDER_INT);
+        doReturn(TEST_PLACEHOLDER_INT).when(mProviderClient).update(any(), any(), any(), any());
 
         assertThat(
                         mObserver.setMessageStatusRead(
@@ -1112,7 +1111,7 @@ public class BluetoothMapContentObserverTest {
                         any(),
                         any(),
                         any());
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
         cursor.moveToFirst();
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         mObserver.setMsgListMsg(map, true);
@@ -1161,7 +1160,7 @@ public class BluetoothMapContentObserverTest {
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mObserver.mContactUri = mock(Uri.class);
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<String, BluetoothMapConvoContactElement> map = new HashMap<>();
         mObserver.setContactList(map, true);
@@ -1204,7 +1203,7 @@ public class BluetoothMapContentObserverTest {
                     TEST_ADDRESS,
                     1
                 });
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving a different handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -1256,7 +1255,7 @@ public class BluetoothMapContentObserverTest {
                     1,
                     "threadName"
                 });
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving a different handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -1289,7 +1288,7 @@ public class BluetoothMapContentObserverTest {
                             BluetoothMapContract.MessageColumns.FLAG_READ
                         });
         cursor.addRow(new Object[] {TEST_HANDLE_ONE, TEST_INBOX_FOLDER_ID, TEST_READ_FLAG_ONE});
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving a different handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -1325,7 +1324,7 @@ public class BluetoothMapContentObserverTest {
                             BluetoothMapContract.MessageColumns.FLAG_READ,
                         });
         cursor.addRow(new Object[] {TEST_HANDLE_ONE, TEST_DELETE_FOLDER_ID, TEST_READ_FLAG_ONE});
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving the same handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -1360,7 +1359,7 @@ public class BluetoothMapContentObserverTest {
                             BluetoothMapContract.MessageColumns.FLAG_READ,
                         });
         cursor.addRow(new Object[] {TEST_HANDLE_ONE, TEST_SENT_FOLDER_ID, TEST_READ_FLAG_ONE});
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving the same handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -1397,7 +1396,7 @@ public class BluetoothMapContentObserverTest {
                             BluetoothMapContract.MessageColumns.FLAG_READ,
                         });
         cursor.addRow(new Object[] {TEST_HANDLE_ONE, TEST_SENT_FOLDER_ID, TEST_READ_FLAG_ONE});
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving the same handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -1437,7 +1436,7 @@ public class BluetoothMapContentObserverTest {
                             BluetoothMapContract.MessageColumns.FLAG_READ,
                         });
         cursor.addRow(new Object[] {TEST_HANDLE_ONE, TEST_INBOX_FOLDER_ID, TEST_READ_FLAG_ONE});
-        when(mProviderClient.query(any(), any(), any(), any(), any())).thenReturn(cursor);
+        doReturn(cursor).when(mProviderClient).query(any(), any(), any(), any(), any());
 
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         // Giving the same handle for msg below and cursor above makes handleMsgListChangesMsg()
@@ -2105,14 +2104,14 @@ public class BluetoothMapContentObserverTest {
 
     @Test
     public void handleMmsSendIntent_withMnsClientNotConnected() {
-        when(mClient.isConnected()).thenReturn(false);
+        doReturn(false).when(mClient).isConnected();
 
         assertThat(mObserver.handleMmsSendIntent(mContext, mIntent)).isFalse();
     }
 
     @Test
     public void handleMmsSendIntent_withInvalidHandle() {
-        when(mClient.isConnected()).thenReturn(true);
+        doReturn(true).when(mClient).isConnected();
         doReturn(-1L)
                 .when(mIntent)
                 .getLongExtra(BluetoothMapContentObserver.EXTRA_MESSAGE_SENT_HANDLE, -1L);
@@ -2122,7 +2121,7 @@ public class BluetoothMapContentObserverTest {
 
     @Test
     public void handleMmsSendIntent_withActivityResultOk() {
-        when(mClient.isConnected()).thenReturn(true);
+        doReturn(true).when(mClient).isConnected();
         doReturn(TEST_HANDLE_ONE)
                 .when(mIntent)
                 .getLongExtra(BluetoothMapContentObserver.EXTRA_MESSAGE_SENT_HANDLE, -1);
@@ -2141,7 +2140,7 @@ public class BluetoothMapContentObserverTest {
 
     @Test
     public void handleMmsSendIntent_withActivityResultFirstUser() {
-        when(mClient.isConnected()).thenReturn(true);
+        doReturn(true).when(mClient).isConnected();
         doReturn(TEST_HANDLE_ONE)
                 .when(mIntent)
                 .getLongExtra(BluetoothMapContentObserver.EXTRA_MESSAGE_SENT_HANDLE, -1);
@@ -2375,7 +2374,7 @@ public class BluetoothMapContentObserverTest {
     public void handleContactListChanges_withNullContactForUci() throws Exception {
         Uri uri = mock(Uri.class);
         mObserver.mAuthority = TEST_AUTHORITY;
-        when(uri.getAuthority()).thenReturn(TEST_AUTHORITY);
+        doReturn(TEST_AUTHORITY).when(uri).getAuthority();
 
         MatrixCursor cursor =
                 new MatrixCursor(
@@ -2433,7 +2432,7 @@ public class BluetoothMapContentObserverTest {
     public void handleContactListChanges_withNonNullContactForUci() throws Exception {
         Uri uri = mock(Uri.class);
         mObserver.mAuthority = TEST_AUTHORITY;
-        when(uri.getAuthority()).thenReturn(TEST_AUTHORITY);
+        doReturn(TEST_AUTHORITY).when(uri).getAuthority();
 
         MatrixCursor cursor =
                 new MatrixCursor(
@@ -2482,7 +2481,7 @@ public class BluetoothMapContentObserverTest {
         map.put(TEST_UCI, contact);
         mObserver.setContactList(map, true);
         mObserver.mMapEventReportVersion = BluetoothMapUtils.MAP_EVENT_REPORT_V12;
-        when(mTelephonyManager.getLine1Number()).thenReturn("");
+        doReturn("").when(mTelephonyManager).getLine1Number();
 
         mObserver.handleContactListChanges(uri);
 
@@ -2504,7 +2503,7 @@ public class BluetoothMapContentObserverTest {
     public void handleContactListChanges_withMapEventReportVersion11() throws Exception {
         Uri uri = mock(Uri.class);
         mObserver.mAuthority = TEST_AUTHORITY;
-        when(uri.getAuthority()).thenReturn(TEST_AUTHORITY);
+        doReturn(TEST_AUTHORITY).when(uri).getAuthority();
         mObserver.mMapEventReportVersion = BluetoothMapUtils.MAP_EVENT_REPORT_V11;
 
         mObserver.handleContactListChanges(uri);

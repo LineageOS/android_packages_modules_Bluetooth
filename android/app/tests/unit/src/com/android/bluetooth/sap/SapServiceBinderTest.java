@@ -19,10 +19,10 @@ package com.android.bluetooth.sap;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
@@ -52,7 +52,7 @@ public class SapServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mService).isAvailable();
         mBinder = new SapServiceBinder(mService);
     }
 
