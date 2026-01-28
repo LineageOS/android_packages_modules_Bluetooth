@@ -32,9 +32,9 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.MetricsLogger
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat

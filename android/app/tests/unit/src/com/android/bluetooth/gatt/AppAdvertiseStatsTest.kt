@@ -26,7 +26,7 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.BluetoothStatsLog
-import com.android.bluetooth.btservice.MetricsLogger
+import com.android.bluetooth.metrics.MetricsLogger
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch

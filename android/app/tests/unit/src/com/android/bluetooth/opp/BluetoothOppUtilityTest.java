@@ -51,7 +51,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.opp.BluetoothOppTestUtils.CursorMockData;
 import com.android.tests.bluetooth.MockitoRule;
 

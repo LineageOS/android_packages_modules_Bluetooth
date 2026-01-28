@@ -27,7 +27,7 @@ import android.bluetooth.le.ScanSettings
 import android.os.BatteryStatsManager
 import android.os.WorkSource
 import com.android.bluetooth.BluetoothStatsLog
-import com.android.bluetooth.btservice.MetricsLogger
+import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.util.WorkSourceUtil
 
 /**
