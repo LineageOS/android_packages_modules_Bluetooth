@@ -398,6 +398,7 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num, uint16
                                               ATTR_ID_SERVICE_CLASS_ID_LIST);
   p_attr_profile_desc_list_id = sdp_db_find_attr_in_rec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST,
                                                         ATTR_ID_BT_PROFILE_DESC_LIST);
+
   if (p_attr_service_id) {
     is_service_avrc_target = sdpu_is_service_id_avrc_target(p_attr_service_id);
   }
@@ -409,6 +410,11 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num, uint16
       if (is_service_avrc_target) {
         sdpu_set_avrc_target_version(p_attr, p_ccb->device_address);
         if (p_attr->id == ATTR_ID_SUPPORTED_FEATURES) {
+          if (p_attr_profile_desc_list_id == nullptr) {
+            log::error("Could not find profile descriptor list id");
+            return;
+          }
+
           avrc_sdp_version = sdpu_is_avrcp_profile_description_list(p_attr_profile_desc_list_id);
           log::error("avrc_sdp_version in SDP records {:x}", avrc_sdp_version);
           sdpu_set_avrc_target_features(p_attr, p_ccb->device_address, avrc_sdp_version);
