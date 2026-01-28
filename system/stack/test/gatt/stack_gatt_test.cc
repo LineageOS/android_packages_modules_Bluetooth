@@ -50,14 +50,13 @@ BT_HDR* attp_build_value_cmd(uint16_t payload_size, uint8_t op_code, uint16_t ha
 class StackGattTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    test::mock::stack_sdp_legacy::api_.handle.SDP_CreateRecord = ::SDP_CreateRecord;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddServiceClassIdList =
-            ::SDP_AddServiceClassIdList;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddAttribute = ::SDP_AddAttribute;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddProtocolList = ::SDP_AddProtocolList;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddUuidSequence = ::SDP_AddUuidSequence;
+    test::mock::stack_sdp_legacy::api_.SDP_CreateRecord = ::SDP_CreateRecord;
+    test::mock::stack_sdp_legacy::api_.SDP_AddServiceClassIdList = ::SDP_AddServiceClassIdList;
+    test::mock::stack_sdp_legacy::api_.SDP_AddAttribute = ::SDP_AddAttribute;
+    test::mock::stack_sdp_legacy::api_.SDP_AddProtocolList = ::SDP_AddProtocolList;
+    test::mock::stack_sdp_legacy::api_.SDP_AddUuidSequence = ::SDP_AddUuidSequence;
   }
-  void TearDown() override { test::mock::stack_sdp_legacy::api_.handle = {}; }
+  void TearDown() override { test::mock::stack_sdp_legacy::api_ = {}; }
 };
 
 namespace {

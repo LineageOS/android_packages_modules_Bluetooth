@@ -78,7 +78,7 @@ void cleanupSdpFuzz() {
   sdp_protolist_elem_vect.clear();
 
   // Delete all records
-  [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(0);
+  [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_DeleteRecord(0);
   sdp_record_handles.clear();
 
   // Delete Databases

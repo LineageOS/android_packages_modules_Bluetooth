@@ -64,18 +64,17 @@ void SetUp() override {
         = [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /* transport */)
             { return (tL2C_LCB*) malloc(sizeof(tL2C_LCB)); };
 
-    test::mock::stack_sdp_legacy::api_.handle.SDP_CreateRecord = ::SDP_CreateRecord;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddServiceClassIdList =
-            ::SDP_AddServiceClassIdList;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddAttribute = ::SDP_AddAttribute;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddProtocolList = ::SDP_AddProtocolList;
-    test::mock::stack_sdp_legacy::api_.handle.SDP_AddUuidSequence = ::SDP_AddUuidSequence;
+    test::mock::stack_sdp_legacy::api_.SDP_CreateRecord = ::SDP_CreateRecord;
+    test::mock::stack_sdp_legacy::api_.SDP_AddServiceClassIdList = ::SDP_AddServiceClassIdList;
+    test::mock::stack_sdp_legacy::api_.SDP_AddAttribute = ::SDP_AddAttribute;
+    test::mock::stack_sdp_legacy::api_.SDP_AddProtocolList = ::SDP_AddProtocolList;
+    test::mock::stack_sdp_legacy::api_.SDP_AddUuidSequence = ::SDP_AddUuidSequence;
     gatt_init();
   }
 
   void TearDown() override {
     bluetooth::hci::testing::mock_controller_.reset();
-    test::mock::stack_sdp_legacy::api_.handle = {};
+    test::mock::stack_sdp_legacy::api_ = {};
     gatt_free();
   }
 

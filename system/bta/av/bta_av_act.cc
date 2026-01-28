@@ -194,7 +194,7 @@ static void bta_av_close_all_rc(tBTA_AV_CB* p_cb) {
  ******************************************************************************/
 static void bta_av_del_sdp_rec(uint32_t* p_sdp_handle) {
   if (*p_sdp_handle != 0) {
-    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(*p_sdp_handle)) {
+    if (!get_legacy_stack_sdp_api()->SDP_DeleteRecord(*p_sdp_handle)) {
       log::warn("Unable to delete SDP record:{}", *p_sdp_handle);
     }
     *p_sdp_handle = 0;
@@ -1763,12 +1763,12 @@ static void bta_av_store_peer_rc_version() {
   tSDP_DISC_REC* p_rec = NULL;
   uint16_t peer_rc_version = 0; /*Assuming Default peer version as 1.3*/
 
-  if ((p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+  if ((p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
                p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL)) != NULL) {
-    if ((get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL) {
+    if ((get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) !=
+        NULL) {
       /* get profile version (if failure, version parameter is not updated) */
-      if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+      if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                   p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version)) {
         log::warn("Unable to find AVRC profile version in record peer:{}", p_rec->remote_bd_addr);
       }
@@ -1781,12 +1781,12 @@ static void bta_av_store_peer_rc_version() {
   }
 
   peer_rc_version = 0;
-  if ((p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+  if ((p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
                p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL)) != NULL) {
-    if ((get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL) {
+    if ((get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) !=
+        NULL) {
       /* get profile version (if failure, version parameter is not updated) */
-      if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+      if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                   p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version)) {
         log::warn("Unable to find SDP profile version in record peer:{}", p_rec->remote_bd_addr);
       }
@@ -1821,29 +1821,28 @@ static tBTA_AV_FEAT bta_av_check_peer_features(uint16_t service_uuid) {
   /* loop through all records we found */
   while (true) {
     /* get next record; if none found, we're done */
-    p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid,
-                                                               p_rec);
+    p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec);
     if (p_rec == NULL) {
       break;
     }
 
-    if ((get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+    if ((get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_SERVICE_CLASS_ID_LIST)) != NULL) {
       /* find peer features */
-      if (get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
-                  p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL)) {
+      if (get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_cb->p_disc_db,
+                                                          UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL)) {
         peer_features |= BTA_AV_FEAT_RCCT;
       }
-      if (get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+      if (get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
                   p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL)) {
         peer_features |= BTA_AV_FEAT_RCTG;
       }
     }
 
-    if ((get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL) {
+    if ((get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) !=
+        NULL) {
       /* get profile version (if failure, version parameter is not updated) */
-      if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+      if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                   p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version)) {
         log::warn("Unable to find AVRC profile version in record peer:{}", p_rec->remote_bd_addr);
       }
@@ -1855,8 +1854,8 @@ static tBTA_AV_FEAT bta_av_check_peer_features(uint16_t service_uuid) {
 
       if (peer_rc_version >= AVRC_REV_1_4) {
         /* get supported categories */
-        p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                p_rec, ATTR_ID_SUPPORTED_FEATURES);
+        p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec,
+                                                                    ATTR_ID_SUPPORTED_FEATURES);
         if (p_attr != NULL && SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
             SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
           categories = p_attr->attr_value.v.u16;
@@ -1892,28 +1891,28 @@ static tBTA_AV_FEAT bta_avk_check_peer_features(uint16_t service_uuid) {
 
   /* loop through all records we found */
   tSDP_DISC_REC* p_rec =
-          get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, NULL);
+          get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, NULL);
   while (p_rec) {
     log::verbose("found Service record for x{:x}", service_uuid);
 
-    if ((get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+    if ((get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_SERVICE_CLASS_ID_LIST)) != NULL) {
       /* find peer features */
-      if (get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
-                  p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL)) {
+      if (get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_cb->p_disc_db,
+                                                          UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL)) {
         peer_features |= BTA_AV_FEAT_RCCT;
       }
-      if (get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+      if (get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
                   p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL)) {
         peer_features |= BTA_AV_FEAT_RCTG;
       }
     }
 
-    if ((get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL) {
+    if ((get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) !=
+        NULL) {
       /* get profile version (if failure, version parameter is not updated) */
       uint16_t peer_rc_version = 0;
-      bool val = get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+      bool val = get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
               p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
       log::verbose("peer_rc_version for TG 0x{:x}, profile_found {}", peer_rc_version, val);
 
@@ -1922,8 +1921,8 @@ static tBTA_AV_FEAT bta_avk_check_peer_features(uint16_t service_uuid) {
       }
 
       /* Get supported features */
-      tSDP_DISC_ATTR* p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-              p_rec, ATTR_ID_SUPPORTED_FEATURES);
+      tSDP_DISC_ATTR* p_attr =
+              get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
       if (p_attr != NULL && SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
           SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
         uint16_t categories = p_attr->attr_value.v.u16;
@@ -1955,8 +1954,7 @@ static tBTA_AV_FEAT bta_avk_check_peer_features(uint16_t service_uuid) {
       }
     }
     /* get next record; if none found, we're done */
-    p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid,
-                                                               p_rec);
+    p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec);
   }
   log::verbose("peer_features:x{:x}", peer_features);
   return peer_features;
@@ -1977,10 +1975,10 @@ static uint16_t bta_avk_get_cover_art_psm() {
   log::verbose("searching for cover art psm");
   /* Cover Art L2CAP PSM is only available on a target device */
   tBTA_AV_CB* p_cb = &bta_av_cb;
-  tSDP_DISC_REC* p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+  tSDP_DISC_REC* p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
           p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL);
   while (p_rec) {
-    tSDP_DISC_ATTR* p_attr = (get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+    tSDP_DISC_ATTR* p_attr = (get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
             p_rec, ATTR_ID_ADDITION_PROTO_DESC_LISTS));
     /*
      * If we have the Additional Protocol Description Lists attribute then we
@@ -2047,7 +2045,7 @@ static uint16_t bta_avk_get_cover_art_psm() {
       }
     }
     /* get next record; if none found, we're done */
-    p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+    p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
             p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, p_rec);
   }
   /* L2CAP PSM range is 0x1000-0xFFFF so 0x0000 is safe default invalid */
@@ -2119,13 +2117,13 @@ static void bta_av_rc_disc_done_all(tBTA_AV_DATA* /* p_data */) {
 
     /* Change our features if the remote AVRCP version is 1.3 or less */
     tSDP_DISC_REC* p_rec = nullptr;
-    p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+    p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
             p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, p_rec);
-    if (p_rec != NULL && get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+    if (p_rec != NULL && get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                                  p_rec, ATTR_ID_BT_PROFILE_DESC_LIST) != NULL) {
       /* get profile version (if failure, version parameter is not updated) */
       uint16_t peer_rc_version = 0xFFFF;  // Don't change the AVRCP version
-      if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+      if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                   p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version)) {
         log::warn("Unable to find SDP in record peer:{}", p_rec->remote_bd_addr);
       }
@@ -2309,13 +2307,13 @@ void bta_av_rc_disc_done(tBTA_AV_DATA* p_data) {
 
     /* Change our features if the remote AVRCP version is 1.3 or less */
     tSDP_DISC_REC* p_rec = nullptr;
-    p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+    p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
             p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, p_rec);
-    if (p_rec != NULL && get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+    if (p_rec != NULL && get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                                  p_rec, ATTR_ID_BT_PROFILE_DESC_LIST) != NULL) {
       /* get profile version (if failure, version parameter is not updated) */
       uint16_t peer_rc_version = 0xFFFF;  // Don't change the AVRCP version
-      if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+      if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                   p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version)) {
         log::warn("Unable to find AVRCP version peer:{}", p_rec->remote_bd_addr);
       }
