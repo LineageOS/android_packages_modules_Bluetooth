@@ -551,7 +551,9 @@ void Device::RegisterVolumeChanged() {
   }
 
   if (label == MAX_TRANSACTION_LABEL) {
-    log::fatal("{}: Abandon all hope, something went catastrophically wrong", address_);
+    log::error("{}: No available transaction labels, dropping volume change registration",
+               address_);
+    return;
   }
 
   send_message_cb_.Run(label, false, std::move(request));
