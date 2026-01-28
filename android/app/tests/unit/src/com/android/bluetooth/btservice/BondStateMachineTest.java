@@ -593,6 +593,29 @@ public class BondStateMachineTest {
     }
 
     @Test
+    public void handleBondStateChanged_fromBondingToNone_resetsKeyMissingCount() {
+        // Set up a device and set its initial state to BONDING
+        mDeviceProperties = mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
+        mDevice = mDeviceProperties.getDevice();
+        mDeviceProperties.mBondState = BOND_BONDING;
+
+        // Trigger the state change from BONDING to NONE
+        mStateMachine.handleBondStateChanged(
+                mDevice,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_NONE,
+                0, // pairingAlgorithm
+                0, // pairingVariant
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP, // pairingInitiator
+                TEST_BOND_REASON);
+
+        // Verify that the key missing count is reset. This is crucial for scenarios like
+        // autonomous repair, where a failed pairing attempt (BONDING -> NONE) should clear
+        // the bond-loss state.
+        verify(mAdapterService).updateKeyMissingCount(eq(mDevice), eq(false));
+    }
+
+    @Test
     public void clearProfilePriority() {
         doReturn(Optional.of(mHidHostService)).when(mAdapterService).getHidHostService();
         doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
