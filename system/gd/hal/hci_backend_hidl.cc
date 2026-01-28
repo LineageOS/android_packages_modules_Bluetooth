@@ -18,8 +18,10 @@
 #include <android/hardware/bluetooth/1.1/IBluetoothHci.h>
 #include <android/hardware/bluetooth/1.1/IBluetoothHciCallbacks.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "common/stop_watch.h"
+#include "common/watchdog.h"
 #include "hal/hci_backend.h"
 #include "os/alarm.h"
 #include "os/system_properties.h"
@@ -48,27 +50,44 @@ public:
   }
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& packet) override {
+    std::unique_ptr<common::Watchdog> wd_ptr;
+    if (com::android::bluetooth::flags::add_watchdog_with_timeout()) {
+      wd_ptr = make_unique<common::Watchdog>(kTimeoutMs);
+    }
     callbacks_->hciEventReceived(packet);
     return Void();
   }
 
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& packet) override {
+    std::unique_ptr<common::Watchdog> wd_ptr;
+    if (com::android::bluetooth::flags::add_watchdog_with_timeout()) {
+      wd_ptr = make_unique<common::Watchdog>(kTimeoutMs);
+    }
     callbacks_->aclDataReceived(packet);
     return Void();
   }
 
   Return<void> scoDataReceived(const hidl_vec<uint8_t>& data) override {
+    std::unique_ptr<common::Watchdog> wd_ptr;
+    if (com::android::bluetooth::flags::add_watchdog_with_timeout()) {
+      wd_ptr = make_unique<common::Watchdog>(kTimeoutMs);
+    }
     callbacks_->scoDataReceived(data);
     return Void();
   }
 
   Return<void> isoDataReceived(const hidl_vec<uint8_t>& data) override {
+    std::unique_ptr<common::Watchdog> wd_ptr;
+    if (com::android::bluetooth::flags::add_watchdog_with_timeout()) {
+      wd_ptr = make_unique<common::Watchdog>(kTimeoutMs);
+    }
     callbacks_->isoDataReceived(data);
     return Void();
   }
 
 private:
   std::shared_ptr<HciBackendCallbacks> callbacks_;
+  static inline const std::chrono::milliseconds kTimeoutMs{4000};
 };
 
 class HidlHci : public HciBackend {
