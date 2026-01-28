@@ -26,16 +26,10 @@
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
-#include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
-#include "btif/include/stack_manager_t.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
-#include "internal_include/stack_config.h"
-#include "main/shim/acl_api.h"
-#include "osi/include/allocator.h"
 #include "osi/include/properties.h"
-#include "stack/arbiter/acl_arbiter.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/connection_manager/connection_manager.h"
@@ -51,7 +45,6 @@
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "stack/include/srvc_api.h"  // tDIS_VALUE
 
 using bluetooth::eatt::EattExtension;
 using namespace bluetooth;
@@ -62,40 +55,6 @@ bluetooth::common::TimestampedCircularBuffer<tTCB_STATE_HISTORY> tcb_state_histo
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr, bool connected,
-                                  uint16_t reason, tBT_TRANSPORT transport);
-static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr, BT_HDR* p_buf);
-static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congest);
-
-static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr, uint16_t l2cap_cid,
-                                         uint16_t psm, uint8_t l2cap_id);
-static void gatt_l2cif_connect_cfm_cback(uint16_t l2cap_cid, tL2CAP_CONN result);
-static void gatt_l2cif_config_ind_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result, tL2CAP_CFG_INFO* p_cfg);
-static void gatt_l2cif_disconnect_ind_cback(uint16_t l2cap_cid, bool ack_needed);
-static void gatt_l2cif_disconnect(uint16_t l2cap_cid);
-static void gatt_l2cif_data_ind_cback(uint16_t l2cap_cid, BT_HDR* p_msg);
-static void gatt_send_conn_cback(tGATT_TCB* p_tcb);
-static void gatt_l2cif_congest_cback(uint16_t cid, bool congested);
-static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result);
-static bool check_cached_model_name(const RawAddress& bd_addr);
-static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value);
-
-static const tL2CAP_APPL_INFO dyn_info = {gatt_l2cif_connect_ind_cback,
-                                          gatt_l2cif_connect_cfm_cback,
-                                          gatt_l2cif_config_ind_cback,
-                                          gatt_l2cif_config_cfm_cback,
-                                          gatt_l2cif_disconnect_ind_cback,
-                                          NULL,
-                                          gatt_l2cif_data_ind_cback,
-                                          gatt_l2cif_congest_cback,
-                                          NULL,
-                                          gatt_on_l2cap_error,
-                                          NULL,
-                                          NULL,
-                                          NULL,
-                                          NULL};
-
 tGATT_CB gatt_cb;
 
 /*******************************************************************************
@@ -109,39 +68,22 @@ tGATT_CB gatt_cb;
  *
  ******************************************************************************/
 void gatt_init(void) {
-  tL2CAP_FIXED_CHNL_REG fixed_reg;
-
   log::verbose("");
 
   gatt_cb = tGATT_CB();
   connection_manager::reset(true);
-  memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
   // To catch a potential OOB, 40>31 is used, any valid value (1 to GATT_IF_MAX) is okay.
   gatt_cb.last_gatt_if = static_cast<tGATT_IF>(40);
 
   gatt_cb.sign_op_queue = fixed_queue_new(SIZE_MAX);
   gatt_cb.srv_chg_clt_q = fixed_queue_new(SIZE_MAX);
-  /* First, register fixed L2CAP channel for ATT over BLE */
-  fixed_reg.pL2CA_FixedConn_Cb = gatt_le_connect_cback;
-  fixed_reg.pL2CA_FixedData_Cb = gatt_le_data_ind;
-  fixed_reg.pL2CA_FixedCong_Cb = gatt_le_cong_cback; /* congestion callback */
 
-  // the GATT timeout is updated after a connection
-  // is established, when we know whether any
-  // clients exist
-  fixed_reg.default_idle_tout = L2CAP_NO_IDLE_TIMEOUT;
-
-  if (!stack::l2cap::get_interface().L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg)) {
-    log::error("Unable to register L2CAP ATT fixed channel");
-  }
+  gatt_init_le();
 
   gatt_cb.over_br_enabled = osi_property_get_bool("bluetooth.gatt.over_bredr.enabled", true);
-  /* Now, register with L2CAP for ATT PSM over BR/EDR */
-  if (gatt_cb.over_br_enabled && !stack::l2cap::get_interface().L2CA_RegisterWithSecurity(
-                                         BT_PSM_ATT, dyn_info, false /* enable_snoop */, nullptr,
-                                         GATT_MAX_MTU_SIZE, 0, BTM_SEC_NONE)) {
-    log::error("ATT Dynamic Registration failed");
+  if (gatt_cb.over_br_enabled) {
+    gatt_init_br();
   }
 
   gatt_cb.hdl_cfg.gatt_start_hdl = GATT_GATT_START_HANDLE;
@@ -224,8 +166,8 @@ void gatt_free(void) {
  * Returns          true if connection is started, otherwise return false.
  *
  ******************************************************************************/
-static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                         tBT_TRANSPORT transport, tGATT_IF gatt_if) {
+bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
+                  tBT_TRANSPORT transport, tGATT_IF gatt_if) {
   if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
     gatt_set_ch_state(p_tcb, GATT_CH_CONN);
   }
@@ -304,12 +246,7 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
   }
 
   if (p_tcb->att_lcid != L2CAP_ATT_CID) {
-    if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG)) {
-      gatt_l2cif_disconnect(p_tcb->att_lcid);
-    } else {
-      log::verbose("gatt_disconnect channel not opened");
-    }
-    return true;
+    return gatt_disconnect_br(p_tcb);
   }
 
   /* att_lcid == L2CAP_ATT_CID */
@@ -515,186 +452,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT
   return gatt_act_connect(p_reg, bd_addr, BLE_ADDR_PUBLIC, transport);
 }
 
-namespace connection_manager {
-void on_connection_timed_out(uint8_t /* app_id */, const RawAddress& address) {
-  gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0x08, BT_TRANSPORT_LE);
-}
-}  // namespace connection_manager
-
-/** This callback function is called by L2CAP to indicate that the ATT fixed
- * channel for LE is connected (conn = true)/disconnected (conn = false).
- */
-static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr, bool connected,
-                                  uint16_t reason, tBT_TRANSPORT transport) {
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
-  bool check_srv_chg = false;
-  tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
-
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    log::warn("Ignoring fixed channel connect/disconnect on br_edr for GATT");
-    return;
-  }
-
-  log::verbose("GATT   ATT protocol channel with BDA: {} is {}", bd_addr,
-               (connected) ? "connected" : "disconnected");
-
-  p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
-  if (p_srv_chg_clt != NULL) {
-    check_srv_chg = true;
-  } else if (get_btm_client_interface().security.BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
-    gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
-    if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection()) {
-      p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
-      check_srv_chg = (p_srv_chg_clt != NULL);
-    }
-  }
-
-  if (!connected) {
-    if (p_tcb != nullptr) {
-      bluetooth::shim::arbiter::GetArbiter().OnLeDisconnect(p_tcb->tcb_idx);
-    }
-    connection_manager::on_connection_complete(bd_addr);
-    gatt_cleanup_upon_disc(bd_addr, static_cast<tGATT_DISCONN_REASON>(reason), transport);
-
-    if (com::android::bluetooth::flags::le_subrate_manager()) {
-      // release when acl disconnected
-      gatt_release_subrate_cb(bd_addr);
-    }
-
-    return;
-  }
-
-  if (!p_tcb) {
-    p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
-    if (!p_tcb) {
-      log::error("Disconnecting address:{} due to out of resources.", bd_addr);
-      // When single FIXED channel cannot be created, there is no reason to
-      // keep the link
-      btm_remove_acl(bd_addr, transport);
-      return;
-    }
-    p_tcb->att_lcid = L2CAP_ATT_CID;
-    p_tcb->ch_state = GATT_CH_CONN;
-  }
-
-  /* Queue MTU exchange before the connection callback
-   * is pushed to application layers so that MTU exchange
-   * is the very first GATT exchange
-   */
-  if (com::android::bluetooth::flags::gatt_conn_settings()) {
-    p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
-    // Set the default based on the APP's preference
-    GATTC_SetDefaultMtu(p_tcb->peer_bda);
-  }
-
-  /* this is incoming connection or background connection callback */
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-    /* send callback */
-    gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-    if (!com::android::bluetooth::flags::gatt_conn_settings()) {
-      p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
-    }
-
-    // Update connection state
-    gatt_send_conn_cback(p_tcb);
-  }
-  if (check_srv_chg) {
-    // If the database hash has been changed, we should send it.
-    if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection() &&
-        !p_srv_chg_clt->srv_changed && !p_tcb->is_robust_cache_change_aware) {
-      p_srv_chg_clt->srv_changed = true;
-      p_srv_chg_clt->start_handle = GATT_GATT_START_HANDLE;
-    }
-    gatt_chk_srv_chg(p_srv_chg_clt);
-  }
-
-  auto advertising_set = bluetooth::shim::ACL_GetAdvertisingSetConnectedTo(bd_addr);
-
-  if (advertising_set.has_value()) {
-    bluetooth::shim::arbiter::GetArbiter().OnLeConnect(p_tcb->tcb_idx, advertising_set.value());
-  }
-
-  bool device_le_audio_capable = is_le_audio_capable_during_service_discovery(bd_addr);
-  if (device_le_audio_capable) {
-    log::info("Read model name for le audio capable device");
-    if (!check_cached_model_name(bd_addr)) {
-      if (!DIS_ReadDISInfo(bd_addr, read_dis_cback, DIS_ATTR_MODEL_NUM_BIT)) {
-        log::warn("Read DIS failed");
-      }
-    }
-  } else if (check_cached_model_name(bd_addr)) {
-    log::info("Get cache model name for device");
-  }
-
-  if (stack_config_get_interface()->get_pts_connect_eatt_before_encryption()) {
-    log::info("Start EATT before encryption");
-    EattExtension::GetInstance()->Connect(bd_addr);
-  }
-
-  /* TODO: This preference should be used to exchange MTU with the peer device before the apps are
-   * notified of the connection. */
-  uint16_t app_mtu_pref = gatt_get_apps_preferred_mtu(bd_addr);
-  gatt_remove_apps_mtu_prefs(bd_addr);
-  p_tcb->app_mtu_pref = app_mtu_pref;
-  if (app_mtu_pref > GATT_DEF_BLE_MTU_SIZE) {
-    log::verbose("Combined app MTU prefs for {}: {}", bd_addr, app_mtu_pref);
-  }
-}
-
-static bool check_cached_model_name(const RawAddress& bd_addr) {
-  bt_property_t prop;
-  bt_bdname_t model_name;
-  BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM, sizeof(model_name), &model_name);
-
-  if (btif_storage_get_remote_device_property(bd_addr, &prop) != BT_STATUS_SUCCESS ||
-      prop.len == 0) {
-    log::info("Device {} no cached model name", bd_addr);
-    return false;
-  }
-
-  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
-  bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
-  btif_storage_get_remote_device_property(bd_addr, &addr_type_prop);
-
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
-                                                                       addr_type, 1, &prop);
-  return true;
-}
-
-static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
-  if (p_dis_value == NULL) {
-    log::error("received unexpected/error DIS callback");
-    return;
-  }
-
-  if (p_dis_value->attr_mask & DIS_ATTR_MODEL_NUM_BIT) {
-    for (int i = 0; i < DIS_MAX_STRING_DATA; i++) {
-      if (p_dis_value->data_string[i] != NULL) {
-        bt_property_t prop;
-        prop.type = BT_PROPERTY_REMOTE_MODEL_NUM;
-        prop.val = p_dis_value->data_string[i];
-        prop.len = strlen((char*)prop.val);
-
-        log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
-
-        btif_storage_set_remote_device_property(bd_addr, &prop);
-
-        tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
-        bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type),
-                                        &addr_type};
-        btif_storage_get_remote_device_property(bd_addr, &addr_type_prop);
-
-        GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-                BT_STATUS_SUCCESS, bd_addr, addr_type, 1, &prop);
-      }
-    }
-  } else {
-    log::error("unknown bit, mask: {}", (int)p_dis_value->attr_mask);
-  }
-}
-
 /** This function is called to process the congestion callback from lcb */
-static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
+void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   tCONN_ID conn_id;
 
   /* if uncongested, check to see if there is any more pending data */
@@ -797,233 +556,8 @@ void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16
   }
 }
 
-/** This function is called when GATT fixed channel is congested or uncongested
- */
-static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congested) {
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, BT_TRANSPORT_LE);
-  if (!p_tcb) {
-    return;
-  }
-
-  /* if uncongested, check to see if there is any more pending data */
-  gatt_channel_congestion(p_tcb, congested);
-}
-
-/*******************************************************************************
- *
- * Function         gatt_le_data_ind
- *
- * Description      This function is called when data is received from L2CAP.
- *                  if we are the originator of the connection, we are the ATT
- *                  client, and the received message is queued up for the
- *                  client.
- *
- *                  If we are the destination of the connection, we are the ATT
- *                  server, so the message is passed to the server processing
- *                  function.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void gatt_le_data_ind(uint16_t /* chan */, const RawAddress& bd_addr, BT_HDR* p_buf) {
-  /* Find CCB based on bd addr */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-  if (p_tcb) {
-    auto decision =
-            bluetooth::shim::arbiter::GetArbiter().InterceptAttPacket(p_tcb->tcb_idx, p_buf);
-
-    if (decision == bluetooth::shim::arbiter::InterceptAction::DROP) {
-      // do nothing, just free it at the end
-    } else if (gatt_get_ch_state(p_tcb) < GATT_CH_OPEN) {
-      log::warn("ATT - Ignored L2CAP data while in state: {}", gatt_get_ch_state(p_tcb));
-    } else {
-      gatt_data_process(*p_tcb, L2CAP_ATT_CID, p_buf);
-    }
-  }
-
-  osi_free(p_buf);
-}
-
-/*******************************************************************************
- *
- * Function         gatt_l2cif_connect_ind
- *
- * Description      This function handles an inbound connection indication
- *                  from L2CAP. This is the case where we are acting as a
- *                  server.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
-                                         uint16_t /* psm */, uint8_t /* id */) {
-  tL2CAP_CONN result = tL2CAP_CONN::L2CAP_CONN_OK;
-  log::info("Connection indication cid = {}", lcid);
-
-  /* new connection ? */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_tcb == NULL) {
-    /* allocate tcb */
-    p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_BR_EDR);
-    if (p_tcb == NULL) {
-      /* no tcb available, reject L2CAP connection */
-      result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
-    } else {
-      p_tcb->att_lcid = lcid;
-    }
-
-  } else /* existing connection , reject it */
-  {
-    result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
-  }
-
-  /* If we reject the connection, send DisconnectReq */
-  if (result != tL2CAP_CONN::L2CAP_CONN_OK) {
-    if (!stack::l2cap::get_interface().L2CA_DisconnectReq(lcid)) {
-      log::warn("Unable to disconnect L2CAP peer:{} cid:{}", bd_addr, lcid);
-    }
-    return;
-  }
-
-  /* transition to configuration state */
-  gatt_set_ch_state(p_tcb, GATT_CH_CFG);
-}
-
-static void gatt_on_l2cap_error(uint16_t lcid, uint16_t /* result */) {
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb == nullptr) {
-    return;
-  }
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-    gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_L2C_FAILURE, BT_TRANSPORT_BR_EDR);
-  } else {
-    gatt_l2cif_disconnect(lcid);
-  }
-}
-
-/** This is the L2CAP connect confirm callback function */
-static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result) {
-  tGATT_TCB* p_tcb;
-
-  /* look up clcb for this channel */
-  p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (!p_tcb) {
-    return;
-  }
-
-  log::verbose("result: {} ch_state: {}, lcid:0x{:x}", result, gatt_get_ch_state(p_tcb),
-               p_tcb->att_lcid);
-
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN && result == tL2CAP_CONN::L2CAP_CONN_OK) {
-    gatt_set_ch_state(p_tcb, GATT_CH_CFG);
-  } else {
-    gatt_on_l2cap_error(lcid, static_cast<uint16_t>(result));
-  }
-}
-
-/** This is the L2CAP config confirm callback function */
-void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t /* initiator */, tL2CAP_CFG_INFO* p_cfg) {
-  gatt_l2cif_config_ind_cback(lcid, p_cfg);
-
-  /* look up clcb for this channel */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (!p_tcb) {
-    return;
-  }
-
-  /* if in incorrect state */
-  if (gatt_get_ch_state(p_tcb) != GATT_CH_CFG) {
-    return;
-  }
-
-  gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-
-  tGATTS_SRV_CHG* p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
-  if (p_srv_chg_clt != NULL) {
-    gatt_chk_srv_chg(p_srv_chg_clt);
-  } else if (get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda, BT_TRANSPORT_AUTO)) {
-    gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-  }
-
-  /* send callback */
-  gatt_send_conn_cback(p_tcb);
-}
-
-/** This is the L2CAP config indication callback function */
-void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
-  /* look up clcb for this channel */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (!p_tcb) {
-    return;
-  }
-
-  /* GATT uses the smaller of our MTU and peer's MTU  */
-  if (p_cfg->mtu_present && p_cfg->mtu < L2CAP_DEFAULT_MTU) {
-    p_tcb->payload_size = p_cfg->mtu;
-  } else {
-    p_tcb->payload_size = L2CAP_DEFAULT_MTU;
-  }
-}
-
-/** This is the L2CAP disconnect indication callback function */
-void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool /* ack_needed */) {
-  /* look up clcb for this channel */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (!p_tcb) {
-    return;
-  }
-
-  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == nullptr &&
-      get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda, BT_TRANSPORT_AUTO)) {
-    gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-  }
-  /* send disconnect callback */
-  gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_PEER_USER, BT_TRANSPORT_BR_EDR);
-}
-
-static void gatt_l2cif_disconnect(uint16_t lcid) {
-  if (!stack::l2cap::get_interface().L2CA_DisconnectReq(lcid)) {
-    log::warn("Unable to disconnect L2CAP cid:{}", lcid);
-  }
-
-  /* look up clcb for this channel */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (!p_tcb) {
-    return;
-  }
-
-  /* If the device is not in the service changed client list, add it... */
-  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == nullptr &&
-      get_btm_client_interface().security.BTM_IsBonded(p_tcb->peer_bda, BT_TRANSPORT_AUTO)) {
-    gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-  }
-
-  gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_LOCAL_HOST, BT_TRANSPORT_BR_EDR);
-}
-
-/** This is the L2CAP data indication callback function */
-static void gatt_l2cif_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
-  /* look up clcb for this channel */
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb && gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
-    /* process the data */
-    gatt_data_process(*p_tcb, lcid, p_buf);
-  }
-
-  osi_free(p_buf);
-}
-
-/** L2CAP congestion callback */
-static void gatt_l2cif_congest_cback(uint16_t lcid, bool congested) {
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
-
-  if (p_tcb != NULL) {
-    gatt_channel_congestion(p_tcb, congested);
-  }
-}
-
 /** Callback used to notify layer above about a connection */
-static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
+void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   tCONN_ID conn_id;
 
   std::set<tGATT_IF> apps = connection_manager::get_apps_connecting_to(p_tcb->peer_bda);
