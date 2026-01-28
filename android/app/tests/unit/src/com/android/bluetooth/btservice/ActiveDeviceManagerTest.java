@@ -181,10 +181,12 @@ public class ActiveDeviceManagerTest {
         mOriginalDualModeAudioState = Utils.isDualModeAudioEnabled();
 
         when(mA2dpService.setActiveDevice(any())).thenReturn(true);
+        when(mA2dpService.removeActiveDevice(anyBoolean())).thenReturn(true);
         when(mHeadsetService.getHfpCallAudioPolicy(any()))
                 .thenReturn(new BluetoothSinkAudioPolicy.Builder().build());
         when(mHeadsetService.setActiveDevice(any())).thenReturn(true);
         when(mHearingAidService.setActiveDevice(any())).thenReturn(true);
+        when(mHearingAidService.removeActiveDevice(anyBoolean())).thenReturn(true);
         when(mLeAudioService.setActiveDevice(any())).thenReturn(true);
         when(mLeAudioService.isGroupAvailableForStream(anyInt())).thenReturn(true);
         when(mLeAudioService.removeActiveDevice(anyBoolean())).thenReturn(true);
