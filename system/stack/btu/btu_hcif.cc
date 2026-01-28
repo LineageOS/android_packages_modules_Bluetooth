@@ -897,7 +897,11 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
     case HCI_BLE_TEST_END:
-      btm_ble_test_command_complete(p);
+      if (evt_len >= 3 || (opcode != HCI_BLE_TEST_END && evt_len >= 1)) {
+        btm_ble_test_command_complete(p);
+      } else {
+        log::error("Invalid event length for command complete event: {}", evt_len);
+      }
       break;
 
     case HCI_BLE_ADD_DEV_RESOLVING_LIST:

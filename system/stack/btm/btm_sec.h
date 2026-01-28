@@ -177,12 +177,11 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
  *                  is attempted.  If already paired tBTM_STATUS::BTM_SUCCESS is returned.
  *
  * Parameters:      bd_addr      - Address of the device to bond
+ *                  addr_type    - Address type of the device to bond
  *                  transport    - doing SSP over BR/EDR or SMP over LE
- *
- *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type);
+                         tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

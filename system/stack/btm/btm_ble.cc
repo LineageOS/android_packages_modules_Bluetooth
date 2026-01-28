@@ -131,10 +131,8 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
     return true;
   }
 
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-  get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
-  return dev_type == BT_DEVICE_TYPE_BLE;
+  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
+  return dev_info.device_type == BT_DEVICE_TYPE_BLE;
 }
 
 static void read_phy_cb(base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb,
@@ -254,59 +252,56 @@ void BTM_BleSetPrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
  *                  of BD address.
  *
  * Parameter        remote_bda: remote device address
- *                  p_dev_type: output parameter to read the device type.
- *                  p_addr_type: output parameter to read the address type.
+ *
+ * Return           DevInfo struct containing the device type and address type
  *
  ******************************************************************************/
-void BTM_ReadDevInfo(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
-                     tBLE_ADDR_TYPE* p_addr_type) {
+DevInfo BTM_ReadDevInfo(const RawAddress& remote_bda) {
+  DevInfo dev_info = {
+          .addr = remote_bda, .addr_type = BLE_ADDR_PUBLIC, .device_type = BT_DEVICE_TYPE_UNKNOWN};
+
   BtmDevice* p_device = btm_get_dev(remote_bda);
   tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(remote_bda);
 
-  *p_addr_type = BLE_ADDR_PUBLIC;
-
-  if (!p_device) {
-    *p_dev_type = BT_DEVICE_TYPE_BREDR;
+  if (p_device == nullptr) {
     /* Check with the BT manager if details about remote device are known */
     if (p_inq_info != NULL) {
-      *p_dev_type = p_inq_info->results.device_type;
-      *p_addr_type = p_inq_info->results.ble_addr_type;
-    } else {
-      /* unknown device, assume BR/EDR */
+      dev_info.device_type = p_inq_info->results.device_type;
+      dev_info.addr_type = p_inq_info->results.ble_addr_type;
+    } else { /* unknown device, assume BR/EDR */
+      dev_info.device_type = BT_DEVICE_TYPE_BREDR;
       log::verbose("unknown device, BR/EDR assumed");
     }
-  } else /* there is a security device record existing */
-  {
+  } else { /* there is a security device record existing */
     /* new inquiry result, merge device type in security device record */
     if (p_inq_info) {
       p_device->device_type |= p_inq_info->results.device_type;
       if (is_ble_addr_type_known(p_inq_info->results.ble_addr_type)) {
         p_device->ble.SetAddressType(p_inq_info->results.ble_addr_type);
       } else {
-        log::warn(
-                "Please do not update device record from anonymous le "
-                "advertisement");
+        log::warn("Please do not update device record from anonymous le advertisement");
       }
     }
 
     if (p_device->bd_addr == remote_bda && p_device->ble.pseudo_addr == remote_bda) {
-      *p_dev_type = p_device->device_type;
-      *p_addr_type = p_device->ble.AddressType();
+      dev_info.device_type = p_device->device_type;
+      dev_info.addr_type = p_device->ble.AddressType();
     } else if (p_device->ble.pseudo_addr == remote_bda) {
-      *p_dev_type = BT_DEVICE_TYPE_BLE;
-      *p_addr_type = p_device->ble.AddressType();
+      dev_info.device_type = BT_DEVICE_TYPE_BLE;
+      dev_info.addr_type = p_device->ble.AddressType();
     } else /* matching static address only */ {
       if (p_device->device_type != BT_DEVICE_TYPE_UNKNOWN) {
-        *p_dev_type = p_device->device_type;
+        dev_info.device_type = p_device->device_type;
       } else {
         log::warn("device_type not set; assuming BR/EDR");
-        *p_dev_type = BT_DEVICE_TYPE_BREDR;
+        dev_info.device_type = BT_DEVICE_TYPE_BREDR;
       }
-      *p_addr_type = BLE_ADDR_PUBLIC;
+      dev_info.addr_type = BLE_ADDR_PUBLIC;
     }
   }
-  log::debug("Determined device_type:{} addr_type:{}", DeviceTypeText(*p_dev_type),
-             AddressTypeText(*p_addr_type));
+  log::debug("{}", dev_info);
+
+  return dev_info;
 }
 
 /*******************************************************************************

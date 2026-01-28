@@ -1619,10 +1619,8 @@ static void btif_hh_transport_select(AclLinkSpec& link_spec) {
   bool le_preferred = false;
   const RawAddress& bd_addr = link_spec.addrt.bda;
 
-  // Find the device type
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-  get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
+  // Find the device info
+  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
 
   // Find which transports are already connected
   bool bredr_acl =
@@ -1659,7 +1657,7 @@ static void btif_hh_transport_select(AclLinkSpec& link_spec) {
     le_preferred = true;
   } else if (bredr_acl) {
     le_preferred = false;
-  } else if (le_acl || dev_type == BT_DEVICE_TYPE_BLE) {
+  } else if (le_acl || dev_info.device_type == BT_DEVICE_TYPE_BLE) {
     le_preferred = true;
   } else {
     le_preferred = false;
@@ -1671,7 +1669,7 @@ static void btif_hh_transport_select(AclLinkSpec& link_spec) {
           "hogp_available:{}, headtracker_available:{}, "
           "dev_type:{}, le_preferred:{}",
           link_spec, bredr_acl, hid_available, le_acl, hogp_available, headtracker_available,
-          dev_type, le_preferred);
+          dev_info.device_type, le_preferred);
 }
 /*******************************************************************************
  *

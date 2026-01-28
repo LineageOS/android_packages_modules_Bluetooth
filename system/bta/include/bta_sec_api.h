@@ -267,8 +267,7 @@ typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr, tBT_TRANSPORT tra
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                tBT_DEVICE_TYPE device_type);
+void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

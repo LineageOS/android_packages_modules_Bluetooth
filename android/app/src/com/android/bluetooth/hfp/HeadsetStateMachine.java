@@ -1481,6 +1481,25 @@ class HeadsetStateMachine extends StateMachine {
                 // ignore, there is no BluetoothHeadset.STATE_AUDIO_DISCONNECTING
                 case HeadsetHalConstants.AUDIO_STATE_DISCONNECTING -> {}
                 case HeadsetHalConstants.AUDIO_STATE_CONNECTED -> {
+                    if (Flags.disconnectScoIfNotAllowed()) {
+                        if (mHeadsetService.isScoAcceptable(mDevice)
+                                != BluetoothStatusCodes.SUCCESS) {
+                            stateLogW("processAudioEvent: reject incoming audio connection");
+                            sendScoConnectionFailureToAudio(
+                                    AudioManager.HFP_AUDIO_DISCONNECT_PRECONDITION_FAILED, mDevice);
+                            if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                                if (!mNativeInterface.disconnectAudio(mDevice)) {
+                                    stateLogE("processAudioEvent: failed to disconnect audio");
+                                }
+                                // Indicate rejection to other components.
+                                broadcastAudioState(
+                                        mDevice,
+                                        BluetoothHeadset.STATE_AUDIO_DISCONNECTED,
+                                        BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
+                            }
+                            break;
+                        }
+                    }
                     stateLogI("processAudioEvent: audio connected");
                     transitionTo(mAudioOn);
                 }

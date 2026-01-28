@@ -560,8 +560,6 @@ void btm_pin_code_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_
  * Parameters:      bd_addr      - Address of the device to bond
  *                  addr_type    - type of the address
  *                  transport    - transport on which to create bond
- *
- *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                                       tBT_TRANSPORT transport) {
@@ -741,12 +739,11 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
  *                  is attempted.  If already paired tBTM_STATUS::BTM_SUCCESS is returned.
  *
  * Parameters:      bd_addr      - Address of the device to bond
+ *                  addr_type    - Address type of the device to bond
  *                  transport    - doing SSP over BR/EDR or SMP over LE
- *
- *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE /* device_type */) {
+                         tBT_TRANSPORT transport) {
   if (transport == BT_TRANSPORT_AUTO) {
     if (addr_type == BLE_ADDR_PUBLIC) {
       transport = get_btm_client_interface().ble.BTM_UseLeLink(bd_addr) ? BT_TRANSPORT_LE
@@ -756,12 +753,11 @@ tBTM_STATUS btm_sec_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
       transport = BT_TRANSPORT_LE;
     }
   }
-  tBT_DEVICE_TYPE dev_type;
 
-  BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
+  auto dev_info = BTM_ReadDevInfo(bd_addr);
   /* LE device, do SMP pairing */
-  if ((transport == BT_TRANSPORT_LE && (dev_type & BT_DEVICE_TYPE_BLE) == 0) ||
-      (transport == BT_TRANSPORT_BR_EDR && (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
+  if ((transport == BT_TRANSPORT_LE && (dev_info.device_type & BT_DEVICE_TYPE_BLE) == 0) ||
+      (transport == BT_TRANSPORT_BR_EDR && (dev_info.device_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     log::warn("Requested transport and supported transport don't match");
     bluetooth::metrics::LogBluetoothEvent(bd_addr, bluetooth::metrics::EventType::TRANSPORT_MATCH,
                                           bluetooth::metrics::State::FAIL);

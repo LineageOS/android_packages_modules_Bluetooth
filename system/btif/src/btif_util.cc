@@ -426,3 +426,64 @@ int map_pairing_algo_to_api(PairingAlgorithm pairing_algo, tBT_TRANSPORT transpo
   return (transport == BT_TRANSPORT_LE) ? API_PAIRING_ALGORITHM_LE_LEGACY
                                         : API_PAIRING_ALGORITHM_BREDR_LEGACY;
 }
+
+/**
+ * Function         compare_pairing_type_for_downgrade
+ *
+ * Description      Return true if a pairing request is a security downgrade, and should be rejected
+ *
+ * Parameters:
+ *    current_pairing_type: The current pairing type of the device (mostly retrieved from persistent
+ *    storage)
+ *    new_pairing_type: The new pairing type of the device from the pairing request.
+ *
+ ******************************************************************************/
+bool compare_pairing_type_for_downgrade(const PairingType& current_pairing_type,
+                                        const PairingType& new_pairing_type) {
+  bluetooth::log::debug(
+          "compare_pairing_type_for_downgrade: current_pairing_type: {}, new_pairing_type: {}",
+          pairing_type_text(current_pairing_type), pairing_type_text(new_pairing_type));
+
+  // Check the pairing algo downgrade.
+  if (current_pairing_type.algorithm < new_pairing_type.algorithm) {
+    return false;
+  }
+  if (current_pairing_type.algorithm > new_pairing_type.algorithm) {
+    return true;
+  }
+
+  // Now check the pairing variant (as both algorithms are the same), if it's a downgrade.
+  switch (current_pairing_type.algorithm) {
+    case PairingAlgorithm::BREDR_LEGACY: {
+      if (current_pairing_type.legacy_variant <= new_pairing_type.legacy_variant) {
+        return false;
+      }
+    } break;
+    case PairingAlgorithm::LE_LEGACY:
+      // PASSKEY_CONFIRMATION is not supported for LE_LEGACY, but below checks are sufficient, no
+      // need for separate handling.
+    case PairingAlgorithm::SSP:
+    case PairingAlgorithm::SC: {
+      PairingVariant curr_pair_var = current_pairing_type.variant;
+      PairingVariant new_pair_var = new_pairing_type.variant;
+      if (new_pair_var == curr_pair_var) {  // base case
+        return false;
+      }
+
+      // Now do all cases comparison
+      if ((curr_pair_var == PairingVariant::PASSKEY_ENTRY ||
+           curr_pair_var == PairingVariant::PASSKEY_NOTIFICATION ||
+           curr_pair_var == PairingVariant::PASSKEY_CONFIRMATION) &&
+          (new_pair_var == PairingVariant::CONSENT)) {
+        return true;  // reject, downgrade
+      }
+
+      return false;
+    } break;
+    default:
+      bluetooth::log::error("Unknown pairing algorithm: {}", current_pairing_type.algorithm);
+      break;
+  }
+
+  return true;  // reject, unhandled case
+}

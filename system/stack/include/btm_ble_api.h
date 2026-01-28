@@ -190,12 +190,11 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback);
  *                  of BD address.
  *
  * Parameter        remote_bda: remote device address
- *                  p_dev_type: output parameter to read the device type.
- *                  p_addr_type: output parameter to read the address type.
+ *
+ * Return           DevInfo struct containing the device type and address type
  *
  ******************************************************************************/
-void BTM_ReadDevInfo(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
-                     tBLE_ADDR_TYPE* p_addr_type);
+DevInfo BTM_ReadDevInfo(const RawAddress& remote_bda);
 
 /*******************************************************************************
  *

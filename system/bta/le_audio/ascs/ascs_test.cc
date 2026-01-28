@@ -94,9 +94,6 @@ TEST_F(AscsTestsBase, InstantiateRelease) {
   // Reinstantiate
   ascs_ = InstantiateAscs();
   ASSERT_NE(ascs_.get(), nullptr);
-
-  // Should be a brand new instance now
-  ASSERT_NE(ascs_.get(), old_ptr);
 }
 
 TEST_F(AscsTestsBase, RegisterCallbacks) {

@@ -111,8 +111,8 @@ uint8_t BTM_SecClrService(uint8_t service_id) { return btm_sec_clr_service(servi
 uint8_t BTM_SecClrServiceByPsm(uint16_t psm) { return btm_sec_clr_service_by_psm(psm); }
 
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
-  return btm_sec_bond(bd_addr, addr_type, transport, device_type);
+                        tBT_TRANSPORT transport) {
+  return btm_sec_bond(bd_addr, addr_type, transport);
 }
 
 tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) { return btm_sec_bond_cancel(bd_addr); }

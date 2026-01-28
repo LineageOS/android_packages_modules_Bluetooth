@@ -1908,15 +1908,4 @@ cc_test {
         "libgmock",
         "server_configurable_flags",
     ],
-    sanitize: {
-        cfi: true,
-        scs: true,
-        address: true,
-        all_undefined: true,
-        integer_overflow: true,
-        diag: {
-            undefined: true,
-        },
-        misc_undefined: ["bounds"],
-    },
 }

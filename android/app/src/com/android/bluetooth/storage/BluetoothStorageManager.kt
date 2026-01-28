@@ -69,6 +69,10 @@ private val PATTERN_DELETE_MUTABLE_POLICIES by lazy {
         .toRegex(RegexOption.DOT_MATCHES_ALL)
 }
 // remove mutable_profile_connection_policies entries in dump
+private val PATTERN_DELETE_MUTABLE_CUSTOM_METADATA by lazy {
+    "\\n    mutable_custom_metadata \\{\\n.*?\\n    \\}".toRegex(RegexOption.DOT_MATCHES_ALL)
+}
+// remove mutable_profile_connection_policies entries in dump
 private val PATTERN_REFORMAT_POLICIES by lazy {
     "\\n    profile_connection_policies \\{\\n.*?key: (\\d+).*?value: ([a-z]+).*?\\n    \\}"
         .toRegex(RegexOption.DOT_MATCHES_ALL)
@@ -163,6 +167,7 @@ constructor(
             currentStorage
                 .toString()
                 .replace(PATTERN_DELETE_MUTABLE, "")
+                .replace(PATTERN_DELETE_MUTABLE_CUSTOM_METADATA, "")
                 .replace(PATTERN_DELETE_MUTABLE_POLICIES, "")
                 .replace(PATTERN_REFORMAT_POLICIES, "\n    Profile policy for $1: $2")
                 .lineSequence()

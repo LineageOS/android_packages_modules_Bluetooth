@@ -353,11 +353,9 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
-  mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
-                                                      tBT_DEVICE_TYPE* p_dev_type,
-                                                      tBLE_ADDR_TYPE* p_addr_type) {
-    *p_dev_type = BT_DEVICE_TYPE_BREDR;
-    *p_addr_type = BLE_ADDR_PUBLIC;
+  mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& remote_bda) -> DevInfo {
+    return DevInfo{
+            .addr = remote_bda, .addr_type = BLE_ADDR_PUBLIC, .device_type = BT_DEVICE_TYPE_BREDR};
   };
 
   ASSERT_EQ(BT_TRANSPORT_BR_EDR,
@@ -365,11 +363,9 @@ TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
-  mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
-                                                      tBT_DEVICE_TYPE* p_dev_type,
-                                                      tBLE_ADDR_TYPE* p_addr_type) {
-    *p_dev_type = BT_DEVICE_TYPE_BLE;
-    *p_addr_type = BLE_ADDR_PUBLIC;
+  mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& remote_bda) -> DevInfo {
+    return DevInfo{
+            .addr = remote_bda, .addr_type = BLE_ADDR_PUBLIC, .device_type = BT_DEVICE_TYPE_BLE};
   };
 
   ASSERT_EQ(BT_TRANSPORT_LE,
@@ -377,11 +373,9 @@ TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__DUMO) {
-  mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
-                                                      tBT_DEVICE_TYPE* p_dev_type,
-                                                      tBLE_ADDR_TYPE* p_addr_type) {
-    *p_dev_type = BT_DEVICE_TYPE_DUMO;
-    *p_addr_type = BLE_ADDR_PUBLIC;
+  mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& remote_bda) -> DevInfo {
+    return DevInfo{
+            .addr = remote_bda, .addr_type = BLE_ADDR_PUBLIC, .device_type = BT_DEVICE_TYPE_DUMO};
   };
 
   ASSERT_EQ(BT_TRANSPORT_BR_EDR,

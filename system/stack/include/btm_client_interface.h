@@ -52,8 +52,7 @@ struct btm_client_interface_t {
     [[nodiscard]] std::pair<RawAddress, RawAddress> (*BTM_GetConnectedTransportAddress)
                                                               (RawAddress bd_addr);
     [[nodiscard]] uint8_t* (*BTM_ReadRemoteFeatures)(const RawAddress&);
-    void (*BTM_ReadDevInfo)(const RawAddress& bd_addr, tBT_DEVICE_TYPE* p_dev_type,
-                            tBLE_ADDR_TYPE* p_addr_type);
+    DevInfo (*BTM_ReadDevInfo)(const RawAddress& bd_addr);
     [[nodiscard]] uint16_t (*BTM_GetMaxPacketSize)(const RawAddress& bd_addr);
     [[nodiscard]] bool (*BTM_ReadRemoteVersion)(const RawAddress& addr, uint8_t* lmp_version,
                                                 uint16_t* manufacturer, uint16_t* lmp_sub_version);

@@ -171,43 +171,41 @@ class AdvertiseHelper {
             }
         }
 
-        if (data.getServiceSolicitationUuids() != null) {
-            ByteArrayOutputStream serviceUuids16 = new ByteArrayOutputStream();
-            ByteArrayOutputStream serviceUuids32 = new ByteArrayOutputStream();
-            ByteArrayOutputStream serviceUuids128 = new ByteArrayOutputStream();
+        ByteArrayOutputStream serviceUuids16 = new ByteArrayOutputStream();
+        ByteArrayOutputStream serviceUuids32 = new ByteArrayOutputStream();
+        ByteArrayOutputStream serviceUuids128 = new ByteArrayOutputStream();
 
-            for (ParcelUuid parcelUuid : data.getServiceSolicitationUuids()) {
-                final byte[] uuid = BluetoothUuid.uuidToBytes(parcelUuid);
+        for (ParcelUuid parcelUuid : data.getServiceSolicitationUuids()) {
+            final byte[] uuid = BluetoothUuid.uuidToBytes(parcelUuid);
 
-                if (uuid.length == BluetoothUuid.UUID_BYTES_16_BIT) {
-                    serviceUuids16.write(uuid, 0, uuid.length);
-                } else if (uuid.length == BluetoothUuid.UUID_BYTES_32_BIT) {
-                    serviceUuids32.write(uuid, 0, uuid.length);
-                } else /*if (uuid.length == BluetoothUuid.UUID_BYTES_128_BIT)*/ {
-                    serviceUuids128.write(uuid, 0, uuid.length);
-                }
+            if (uuid.length == BluetoothUuid.UUID_BYTES_16_BIT) {
+                serviceUuids16.write(uuid, 0, uuid.length);
+            } else if (uuid.length == BluetoothUuid.UUID_BYTES_32_BIT) {
+                serviceUuids32.write(uuid, 0, uuid.length);
+            } else /*if (uuid.length == BluetoothUuid.UUID_BYTES_128_BIT)*/ {
+                serviceUuids128.write(uuid, 0, uuid.length);
             }
+        }
 
-            if (serviceUuids16.size() != 0) {
-                check_length(LIST_16_BIT_SERVICE_SOLICITATION_UUIDS, serviceUuids16.size() + 1);
-                ret.write(serviceUuids16.size() + 1);
-                ret.write(LIST_16_BIT_SERVICE_SOLICITATION_UUIDS);
-                ret.write(serviceUuids16.toByteArray(), 0, serviceUuids16.size());
-            }
+        if (serviceUuids16.size() != 0) {
+            check_length(LIST_16_BIT_SERVICE_SOLICITATION_UUIDS, serviceUuids16.size() + 1);
+            ret.write(serviceUuids16.size() + 1);
+            ret.write(LIST_16_BIT_SERVICE_SOLICITATION_UUIDS);
+            ret.write(serviceUuids16.toByteArray(), 0, serviceUuids16.size());
+        }
 
-            if (serviceUuids32.size() != 0) {
-                check_length(LIST_32_BIT_SERVICE_SOLICITATION_UUIDS, serviceUuids32.size() + 1);
-                ret.write(serviceUuids32.size() + 1);
-                ret.write(LIST_32_BIT_SERVICE_SOLICITATION_UUIDS);
-                ret.write(serviceUuids32.toByteArray(), 0, serviceUuids32.size());
-            }
+        if (serviceUuids32.size() != 0) {
+            check_length(LIST_32_BIT_SERVICE_SOLICITATION_UUIDS, serviceUuids32.size() + 1);
+            ret.write(serviceUuids32.size() + 1);
+            ret.write(LIST_32_BIT_SERVICE_SOLICITATION_UUIDS);
+            ret.write(serviceUuids32.toByteArray(), 0, serviceUuids32.size());
+        }
 
-            if (serviceUuids128.size() != 0) {
-                check_length(LIST_128_BIT_SERVICE_SOLICITATION_UUIDS, serviceUuids128.size() + 1);
-                ret.write(serviceUuids128.size() + 1);
-                ret.write(LIST_128_BIT_SERVICE_SOLICITATION_UUIDS);
-                ret.write(serviceUuids128.toByteArray(), 0, serviceUuids128.size());
-            }
+        if (serviceUuids128.size() != 0) {
+            check_length(LIST_128_BIT_SERVICE_SOLICITATION_UUIDS, serviceUuids128.size() + 1);
+            ret.write(serviceUuids128.size() + 1);
+            ret.write(LIST_128_BIT_SERVICE_SOLICITATION_UUIDS);
+            ret.write(serviceUuids128.toByteArray(), 0, serviceUuids128.size());
         }
 
         for (TransportDiscoveryData transportDiscoveryData : data.getTransportDiscoveryData()) {

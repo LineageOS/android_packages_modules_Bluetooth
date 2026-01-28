@@ -231,3 +231,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "pairing_transport_selection"
+    namespace: "bluetooth"
+    description: "Consider device discovery information while selecting pairing transport"
+    bug: "478355960"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

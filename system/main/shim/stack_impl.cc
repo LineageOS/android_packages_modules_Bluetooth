@@ -338,12 +338,10 @@ void StackImpl::Dump(int fd, std::promise<void> promise) const {
   }
 }
 
-void StackImpl::handle_start_up() {
-  modules_ = std::make_unique<StackImpl::Modules>(stack_handler_);
-}
+void StackImpl::handle_start_up() { modules_.emplace(stack_handler_); }
 
 void StackImpl::handle_start_up_old(std::promise<void> promise) {
-  modules_ = std::make_unique<StackImpl::Modules>(stack_handler_);
+  modules_.emplace(stack_handler_);
   promise.set_value();
 }
 

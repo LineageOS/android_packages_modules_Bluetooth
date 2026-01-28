@@ -28,3 +28,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "allow_more_tx_power"
+    namespace: "bluetooth"
+    description: "Allow more TX power for LE operations"
+    bug: "478945356"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -42,9 +42,8 @@
 using namespace bluetooth;
 
 /** This function initiates a bonding procedure with a peer device */
-void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                tBT_DEVICE_TYPE device_type) {
-  bta_dm_bond(bd_addr, addr_type, transport, device_type);
+void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
+  bta_dm_bond(bd_addr, addr_type, transport);
 }
 
 /** This function cancels the bonding procedure with a peer device

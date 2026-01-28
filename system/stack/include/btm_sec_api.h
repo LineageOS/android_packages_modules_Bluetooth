@@ -313,7 +313,7 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm);
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type);
+                        tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
@@ -659,7 +659,7 @@ typedef struct {
 
   // Pairing related APIs
   tBTM_STATUS (*BTM_SecBond)(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                             tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type);
+                             tBT_TRANSPORT transport);
   tBTM_STATUS (*BTM_SecBondCancel)(const RawAddress& bd_addr);
 
   void (*BTM_RemoteOobDataReply)(tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c,
