@@ -164,7 +164,9 @@ public:
     dual_bidirection_swb_supported_ =
             osi_property_get_bool("bluetooth.leaudio.dual_bidirection_swb.supported", false);
     bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(GetCodecLocation());
-    UpdateOffloadCapability(offloading_preference);
+    if (!com_android_bluetooth_flags_leaudio_codec_id_support()) {
+      UpdateOffloadCapability(offloading_preference);
+    }
 
     if (IsUsingCodecExtensibility()) {
       codec_provider_info_ =
@@ -177,6 +179,10 @@ public:
       } else {
         log::debug("Asymmetric configurations not supported. Not enabling offloader GMAP support.");
       }
+    }
+
+    if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+      UpdateOffloadCapability(offloading_preference);
     }
   }
   ~codec_manager_impl() {
@@ -205,10 +211,16 @@ public:
   }
 
   std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetLocalAudioOutputCodecCapa() {
+    for (auto& a : codec_output_capa) {
+      log::debug("{}\n", a.ToString());
+    }
     return codec_output_capa;
   }
 
   std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetLocalAudioInputCodecCapa() {
+    for (auto& a : codec_input_capa) {
+      log::debug("{}\n", a.ToString());
+    }
     return codec_input_capa;
   }
 
@@ -1239,6 +1251,76 @@ private:
     return bluetooth::le_audio::codec_spec_caps::kLeAudioSamplingFreq8000Hz;
   }
 
+  void storeAdditionalCodecFromProviderInfo(
+          const bluetooth::le_audio::ProviderInfo& provider_info) {
+    log::info("Adding vendor specific codecs from provider info");
+
+    for (auto remote_direction :
+         {le_audio::types::kLeAudioDirectionSink, le_audio::types::kLeAudioDirectionSource}) {
+      std::string direction_str = (remote_direction == types::kLeAudioDirectionSink)
+                                          ? "output (local source)"
+                                          : " input (local sink)";
+      auto& provider_codec_infos = (remote_direction == types::kLeAudioDirectionSink)
+                                           ? provider_info.encoding_codec_configs
+                                           : provider_info.decoding_codec_configs;
+      auto& capa_container = (remote_direction == types::kLeAudioDirectionSink) ? codec_output_capa
+                                                                                : codec_input_capa;
+
+      log::verbose("dir: {}: number of confs {}:", direction_str, provider_codec_infos.size());
+
+      for (auto& codec_info : provider_codec_infos) {
+        log::verbose("-- {} ", codec_info.toString());
+
+        for (auto& config : codec_info.supported_configs) {
+          /* Number of capabitilies generates number of conifguraions. */
+          btle_audio_codec_index_t codec_type;
+          if (codec_info.codec_id.coding_format == types::kLeAudioCodingFormatLC3) {
+            codec_type = btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_LC3;
+          } else if (codec_info.codec_id.vendor_company_id ==
+                             types::kLeAudioVendorCompanyIdGoogle &&
+                     codec_info.codec_id.vendor_codec_id == types::kLeAudioVendorCodecIdOpus) {
+            if (static_cast<uint32_t>(config.sample_freq) <=
+                LeAudioCodecConfiguration::kSampleRate48000) {
+              codec_type = btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS;
+            } else {
+              codec_type = btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES;
+            }
+          } else {
+            codec_type = btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_VENDOR_SPECIFIC;
+          }
+
+          log::verbose(
+                  "---sample_freq: {}, interval {}, channel_cnt: {}, codec_type: {}, sampleFreq: "
+                  "{}, bits {}",
+                  config.sample_freq, config.frame_duration, config.channel_count, codec_type,
+                  config.sample_freq, config.bits_per_sample);
+
+          btle_audio_codec_config_t capa_to_add = {
+                  .codec_type = codec_type,
+                  .sample_rate =
+                          utils::translateToBtLeAudioCodecConfigSampleRate(config.sample_freq),
+                  .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(
+                          config.bits_per_sample),
+                  .channel_count =
+                          utils::translateToBtLeAudioCodecConfigChannelCount(config.channel_count),
+                  .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
+                          config.frame_duration),
+                  .codec_frame_blocks_per_sdu =
+                          (config.frame_duration == 20000 ? static_cast<uint8_t>(2)
+                                                          : static_cast<uint8_t>(1)),
+                  .codec_id = codec_info.codec_id.getCodecIdRaw(),
+          };
+
+          if (std::find(capa_container.begin(), capa_container.end(), capa_to_add) ==
+              capa_container.end()) {
+            capa_container.push_back(capa_to_add);
+          }
+        }
+      }
+    }
+    log::info("Output capa: {}, Input capa: {}", codec_output_capa.size(), codec_input_capa.size());
+  }
+
   void storeLocalCapa(
           const std::vector<::bluetooth::le_audio::types::AudioSetConfiguration>& adsp_capabilities,
           const std::vector<btle_audio_codec_config_t>& offload_preference_set) {
@@ -1307,12 +1389,16 @@ private:
     }
 
     auto adsp_capabilities = ::bluetooth::audio::le_audio::get_offload_capabilities();
-
-    storeLocalCapa(adsp_capabilities.unicast_offload_capabilities, offloading_preference);
+    if (IsUsingCodecExtensibility() && codec_provider_info_.has_value() &&
+        com_android_bluetooth_flags_leaudio_codec_id_support()) {
+      storeAdditionalCodecFromProviderInfo(codec_provider_info_.value());
+    } else {
+      /* Note, this API gives us only LC3 codec.  */
+      storeLocalCapa(adsp_capabilities.unicast_offload_capabilities, offloading_preference);
+    }
 
     for (auto codec : offloading_preference) {
       auto it = btle_audio_codec_type_map_.find(codec.codec_type);
-
       if (it != btle_audio_codec_type_map_.end()) {
         offload_preference_set.insert(it->second);
       }
@@ -1339,6 +1425,7 @@ private:
       }
     }
     UpdateSupportedBroadcastConfig(adsp_capabilities.broadcast_offload_capabilities);
+    log::info("Completed");
   }
 
   CodecLocation codec_location_ = CodecLocation::HOST;

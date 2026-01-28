@@ -153,6 +153,7 @@ constexpr uint8_t kLeAudioSamplingFreq384000Hz = 0x0D;
 /* Frame Durations */
 constexpr uint8_t kLeAudioCodecFrameDur7500us = 0x00;
 constexpr uint8_t kLeAudioCodecFrameDur10000us = 0x01;
+constexpr uint8_t kLeAudioCodecFrameDur20000us = 0x02;
 
 /* Audio Allocations */
 constexpr uint32_t kLeAudioLocationUninitialized = 0xFFFFFFFF;
@@ -1030,6 +1031,56 @@ struct LeAudioCodecId {
 
   friend bool operator!=(const LeAudioCodecId& lhs, const LeAudioCodecId& rhs) {
     return !(lhs == rhs);
+  }
+
+  bool operator<(const LeAudioCodecId& other) const {
+    if (coding_format < other.coding_format) {
+      return true;
+    }
+    if ((coding_format == other.coding_format) && (vendor_company_id < other.vendor_company_id)) {
+      return true;
+    }
+    if ((vendor_company_id == other.vendor_company_id) &&
+        (vendor_codec_id < other.vendor_codec_id)) {
+      return true;
+    }
+    return false;
+  }
+
+  uint64_t getCodecIdRaw() const {
+    uint64_t vendor_raw = (static_cast<uint64_t>(vendor_codec_id) << 24) |
+                          (static_cast<uint64_t>(vendor_company_id) << 8) |
+                          (static_cast<uint64_t>(coding_format));
+
+    return vendor_raw;
+  }
+
+  std::string ToString() const {
+    std::ostringstream _str;
+    switch (coding_format) {
+      case kLeAudioCodingFormatLC3:
+        _str << "LC3";
+        break;
+      case kLeAudioCodingFormatVendorSpecific:
+        if (vendor_company_id == kLeAudioVendorCompanyIdGoogle) {
+          _str << "Google";
+          if (vendor_codec_id == kLeAudioVendorCodecIdHeadtracking) {
+            _str << ", Headtracking";
+          } else if (vendor_codec_id == kLeAudioVendorCodecIdOpus) {
+            _str << ", Opus";
+          } else {
+            _str << ", vid: 0x" << vendor_codec_id;
+          }
+        } else {
+          _str << "Vendor specific: 0x" << vendor_company_id;
+          _str << ", vid: 0x" << vendor_codec_id;
+        }
+        break;
+      default:
+        _str << "Unknown";
+        break;
+    }
+    return _str.str();
   }
 };
 

@@ -16,6 +16,8 @@
 
 #define LOG_TAG "BluetoothLeAudioServiceJni"
 
+#include <com_android_bluetooth_flags.h>
+
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -73,6 +75,20 @@ static jmethodID method_onGroupStreamStatus;
 static struct {
   jclass clazz;
   jmethodID constructor;
+  jmethodID constructor_with_codec_id;
+  jmethodID getCodecType;
+  jmethodID getCodecId;
+  jmethodID getSampleRate;
+  jmethodID getBitsPerSample;
+  jmethodID getChannelCount;
+  jmethodID getFrameDuration;
+  jmethodID getOctetsPerFrame;
+  jmethodID getCodecPriority;
+} android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id;
+
+static struct {
+  jclass clazz;
+  jmethodID constructor;
   jmethodID getCodecType;
   jmethodID getSampleRate;
   jmethodID getBitsPerSample;
@@ -98,20 +114,40 @@ static jobject prepareCodecConfigObj(JNIEnv* env, btle_audio_codec_config_t code
           codecConfig.bits_per_sample, codecConfig.channel_count, codecConfig.frame_duration,
           codecConfig.octets_per_frame);
 
-  jobject codecConfigObj = env->NewObject(
-          android_bluetooth_BluetoothLeAudioCodecConfig.clazz,
-          android_bluetooth_BluetoothLeAudioCodecConfig.constructor, (jint)codecConfig.codec_type,
-          (jint)codecConfig.codec_priority, (jint)codecConfig.sample_rate,
-          (jint)codecConfig.bits_per_sample, (jint)codecConfig.channel_count,
-          (jint)codecConfig.frame_duration, (jint)codecConfig.octets_per_frame, 0, 0);
+  jobject codecConfigObj;
+
+  if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+    codecConfigObj = env->NewObject(
+            android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz,
+            android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.constructor_with_codec_id,
+            (jint)codecConfig.codec_type, (jlong)codecConfig.codec_id,
+            (jint)codecConfig.codec_priority, (jint)codecConfig.sample_rate,
+            (jint)codecConfig.bits_per_sample, (jint)codecConfig.channel_count,
+            (jint)codecConfig.frame_duration, (jint)codecConfig.octets_per_frame, 0, 0);
+  } else {
+    codecConfigObj = env->NewObject(
+            android_bluetooth_BluetoothLeAudioCodecConfig.clazz,
+            android_bluetooth_BluetoothLeAudioCodecConfig.constructor, (jint)codecConfig.codec_type,
+            (jint)codecConfig.codec_priority, (jint)codecConfig.sample_rate,
+            (jint)codecConfig.bits_per_sample, (jint)codecConfig.channel_count,
+            (jint)codecConfig.frame_duration, (jint)codecConfig.octets_per_frame, 0, 0);
+  }
   return codecConfigObj;
 }
 
 static jobjectArray prepareArrayOfCodecConfigs(
         JNIEnv* env, std::vector<btle_audio_codec_config_t> codecConfigs) {
   jsize i = 0;
-  jobjectArray CodecConfigArray = env->NewObjectArray(
-          (jsize)codecConfigs.size(), android_bluetooth_BluetoothLeAudioCodecConfig.clazz, nullptr);
+  jobjectArray CodecConfigArray;
+  if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+    CodecConfigArray = env->NewObjectArray(
+            (jsize)codecConfigs.size(),
+            android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz, nullptr);
+  } else {
+    CodecConfigArray =
+            env->NewObjectArray((jsize)codecConfigs.size(),
+                                android_bluetooth_BluetoothLeAudioCodecConfig.clazz, nullptr);
+  }
 
   for (auto const& cap : codecConfigs) {
     jobject Obj = prepareCodecConfigObj(env, cap);
@@ -342,15 +378,31 @@ static std::vector<btle_audio_codec_config_t> prepareCodecPreferences(
     if (jcodecConfig == nullptr) {
       continue;
     }
-    if (!env->IsInstanceOf(jcodecConfig, android_bluetooth_BluetoothLeAudioCodecConfig.clazz)) {
-      log::error("Invalid BluetoothLeAudioCodecConfig instance");
-      continue;
+    jint codecType = 0;
+    jlong codecId = 0;
+    if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+      if (!env->IsInstanceOf(jcodecConfig,
+                             android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz)) {
+        log::error("Invalid BluetoothLeAudioCodecConfig instance");
+        continue;
+      }
+      codecType = env->CallIntMethod(
+              jcodecConfig,
+              android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecType);
+      codecId = env->CallLongMethod(
+              jcodecConfig, android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecId);
+    } else {
+      if (!env->IsInstanceOf(jcodecConfig, android_bluetooth_BluetoothLeAudioCodecConfig.clazz)) {
+        log::error("Invalid BluetoothLeAudioCodecConfig instance");
+        continue;
+      }
+      codecType = env->CallIntMethod(jcodecConfig,
+                                     android_bluetooth_BluetoothLeAudioCodecConfig.getCodecType);
     }
-    jint codecType = env->CallIntMethod(jcodecConfig,
-                                        android_bluetooth_BluetoothLeAudioCodecConfig.getCodecType);
 
     btle_audio_codec_config_t codec_config = {
-            .codec_type = static_cast<btle_audio_codec_index_t>(codecType)};
+            .codec_type = static_cast<btle_audio_codec_index_t>(codecType),
+            .codec_id = static_cast<uint64_t>(codecId)};
 
     codec_preferences.push_back(codec_config);
   }
@@ -381,11 +433,20 @@ static void initNative(JNIEnv* env, jobject object, jobjectArray codecOffloading
     log::fatal("Failed to allocate Global Ref for LeAudio Callbacks");
   }
 
-  android_bluetooth_BluetoothLeAudioCodecConfig.clazz = (jclass)env->NewGlobalRef(
-          env->FindClass("android/bluetooth/BluetoothLeAudioCodecConfig"));
-  if (android_bluetooth_BluetoothLeAudioCodecConfig.clazz == nullptr) {
-    log::error("Failed to allocate Global Ref for BluetoothLeAudioCodecConfig class");
-    return;
+  if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+    android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz = (jclass)env->NewGlobalRef(
+            env->FindClass("android/bluetooth/BluetoothLeAudioCodecConfig"));
+    if (android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz == nullptr) {
+      log::error("Failed to allocate Global Ref for BluetoothLeAudioCodecConfig class");
+      return;
+    }
+  } else {
+    android_bluetooth_BluetoothLeAudioCodecConfig.clazz = (jclass)env->NewGlobalRef(
+            env->FindClass("android/bluetooth/BluetoothLeAudioCodecConfig"));
+    if (android_bluetooth_BluetoothLeAudioCodecConfig.clazz == nullptr) {
+      log::error("Failed to allocate Global Ref for BluetoothLeAudioCodecConfig class");
+      return;
+    }
   }
 
   sLeAudioClientInterface =
@@ -416,9 +477,13 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
     sLeAudioClientInterface = nullptr;
   }
 
-  env->DeleteGlobalRef(android_bluetooth_BluetoothLeAudioCodecConfig.clazz);
-  android_bluetooth_BluetoothLeAudioCodecConfig.clazz = nullptr;
-
+  if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+    env->DeleteGlobalRef(android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz);
+    android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz = nullptr;
+  } else {
+    env->DeleteGlobalRef(android_bluetooth_BluetoothLeAudioCodecConfig.clazz);
+    android_bluetooth_BluetoothLeAudioCodecConfig.clazz = nullptr;
+  }
   if (mCallbacksObj != nullptr) {
     env->DeleteGlobalRef(mCallbacksObj);
     mCallbacksObj = nullptr;
@@ -500,9 +565,116 @@ static void groupSetActiveNative(JNIEnv* /* env */, jobject /* object */, jint g
   sLeAudioClientInterface->GroupSetActive(group_id);
 }
 
+static void setCodecConfigPreferenceWithCodecIdNative(JNIEnv* env, jint group_id,
+                                                      jobject inputCodecConfig,
+                                                      jobject outputCodecConfig) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+
+  if (!env->IsInstanceOf(inputCodecConfig,
+                         android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz) ||
+      !env->IsInstanceOf(outputCodecConfig,
+                         android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.clazz)) {
+    log::error("Invalid BluetoothLeAudioCodecConfig instance");
+    return;
+  }
+
+  jint inputCodecType = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecType);
+
+  jlong inputCodecId = env->CallLongMethod(
+          inputCodecConfig, android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecId);
+
+  jint inputSampleRate = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getSampleRate);
+
+  jint inputBitsPerSample = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getBitsPerSample);
+
+  jint inputChannelCount = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getChannelCount);
+
+  jint inputFrameDuration = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getFrameDuration);
+
+  jint inputOctetsPerFrame = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getOctetsPerFrame);
+
+  jint inputCodecPriority = env->CallIntMethod(
+          inputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecPriority);
+
+  btle_audio_codec_config_t input_codec_config = {
+          .codec_type = static_cast<btle_audio_codec_index_t>(inputCodecType),
+          .sample_rate = static_cast<btle_audio_sample_rate_index_t>(inputSampleRate),
+          .bits_per_sample = static_cast<btle_audio_bits_per_sample_index_t>(inputBitsPerSample),
+          .channel_count = static_cast<btle_audio_channel_count_index_t>(inputChannelCount),
+          .frame_duration = static_cast<btle_audio_frame_duration_index_t>(inputFrameDuration),
+          .octets_per_frame = static_cast<uint16_t>(inputOctetsPerFrame),
+          .codec_priority = static_cast<int32_t>(inputCodecPriority),
+          .codec_id = static_cast<uint64_t>(inputCodecId),
+  };
+
+  jint outputCodecType = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecType);
+
+  jlong outputCodecId = env->CallLongMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecId);
+
+  jint outputSampleRate = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getSampleRate);
+
+  jint outputBitsPerSample = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getBitsPerSample);
+
+  jint outputChannelCount = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getChannelCount);
+
+  jint outputFrameDuration = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getFrameDuration);
+
+  jint outputOctetsPerFrame = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getOctetsPerFrame);
+
+  jint outputCodecPriority = env->CallIntMethod(
+          outputCodecConfig,
+          android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecPriority);
+
+  btle_audio_codec_config_t output_codec_config = {
+          .codec_type = static_cast<btle_audio_codec_index_t>(outputCodecType),
+          .sample_rate = static_cast<btle_audio_sample_rate_index_t>(outputSampleRate),
+          .bits_per_sample = static_cast<btle_audio_bits_per_sample_index_t>(outputBitsPerSample),
+          .channel_count = static_cast<btle_audio_channel_count_index_t>(outputChannelCount),
+          .frame_duration = static_cast<btle_audio_frame_duration_index_t>(outputFrameDuration),
+          .octets_per_frame = static_cast<uint16_t>(outputOctetsPerFrame),
+          .codec_priority = static_cast<int32_t>(outputCodecPriority),
+          .codec_id = static_cast<uint64_t>(outputCodecId),
+  };
+
+  sLeAudioClientInterface->SetCodecConfigPreference(group_id, input_codec_config,
+                                                    output_codec_config);
+}
+
 static void setCodecConfigPreferenceNative(JNIEnv* env, jobject /* object */, jint group_id,
                                            jobject inputCodecConfig, jobject outputCodecConfig) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+
+  if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+    setCodecConfigPreferenceWithCodecIdNative(env, group_id, inputCodecConfig, outputCodecConfig);
+    return;
+  }
 
   if (!env->IsInstanceOf(inputCodecConfig, android_bluetooth_BluetoothLeAudioCodecConfig.clazz) ||
       !env->IsInstanceOf(outputCodecConfig, android_bluetooth_BluetoothLeAudioCodecConfig.clazz)) {
@@ -539,6 +711,7 @@ static void setCodecConfigPreferenceNative(JNIEnv* env, jobject /* object */, ji
           .frame_duration = static_cast<btle_audio_frame_duration_index_t>(inputFrameDuration),
           .octets_per_frame = static_cast<uint16_t>(inputOctetsPerFrame),
           .codec_priority = static_cast<int32_t>(inputCodecPriority),
+          .codec_id = 0,
   };
 
   jint outputCodecType = env->CallIntMethod(
@@ -570,6 +743,7 @@ static void setCodecConfigPreferenceNative(JNIEnv* env, jobject /* object */, ji
           .frame_duration = static_cast<btle_audio_frame_duration_index_t>(outputFrameDuration),
           .octets_per_frame = static_cast<uint16_t>(outputOctetsPerFrame),
           .codec_priority = static_cast<int32_t>(outputCodecPriority),
+          .codec_id = 0,
   };
 
   sLeAudioClientInterface->SetCodecConfigPreference(group_id, input_codec_config,
@@ -717,22 +891,49 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/le_audio/LeAudioNativeInterface", javaMethods);
 
-  const JNIJavaMethod javaLeAudioCodecMethods[] = {
-          {"<init>", "(IIIIIIIII)V", &android_bluetooth_BluetoothLeAudioCodecConfig.constructor},
-          {"getCodecType", "()I", &android_bluetooth_BluetoothLeAudioCodecConfig.getCodecType},
-          {"getSampleRate", "()I", &android_bluetooth_BluetoothLeAudioCodecConfig.getSampleRate},
-          {"getBitsPerSample", "()I",
-           &android_bluetooth_BluetoothLeAudioCodecConfig.getBitsPerSample},
-          {"getChannelCount", "()I",
-           &android_bluetooth_BluetoothLeAudioCodecConfig.getChannelCount},
-          {"getFrameDuration", "()I",
-           &android_bluetooth_BluetoothLeAudioCodecConfig.getFrameDuration},
-          {"getOctetsPerFrame", "()I",
-           &android_bluetooth_BluetoothLeAudioCodecConfig.getOctetsPerFrame},
-          {"getCodecPriority", "()I",
-           &android_bluetooth_BluetoothLeAudioCodecConfig.getCodecPriority},
-  };
-  GET_JAVA_METHODS(env, "android/bluetooth/BluetoothLeAudioCodecConfig", javaLeAudioCodecMethods);
+  if (com_android_bluetooth_flags_leaudio_codec_id_support()) {
+    const JNIJavaMethod javaLeAudioCodecMethods[] = {
+            {"<init>", "(IIIIIIIII)V",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.constructor},
+            {"<init>", "(IJIIIIIIII)V",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id
+                      .constructor_with_codec_id},
+            {"getCodecType", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecType},
+            {"getCodecId", "()J",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecId},
+            {"getSampleRate", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getSampleRate},
+            {"getBitsPerSample", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getBitsPerSample},
+            {"getChannelCount", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getChannelCount},
+            {"getFrameDuration", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getFrameDuration},
+            {"getOctetsPerFrame", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getOctetsPerFrame},
+            {"getCodecPriority", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig_with_codec_id.getCodecPriority},
+    };
+    GET_JAVA_METHODS(env, "android/bluetooth/BluetoothLeAudioCodecConfig", javaLeAudioCodecMethods);
+  } else {
+    const JNIJavaMethod javaLeAudioCodecMethods[] = {
+            {"<init>", "(IIIIIIIII)V", &android_bluetooth_BluetoothLeAudioCodecConfig.constructor},
+            {"getCodecType", "()I", &android_bluetooth_BluetoothLeAudioCodecConfig.getCodecType},
+            {"getSampleRate", "()I", &android_bluetooth_BluetoothLeAudioCodecConfig.getSampleRate},
+            {"getBitsPerSample", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig.getBitsPerSample},
+            {"getChannelCount", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig.getChannelCount},
+            {"getFrameDuration", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig.getFrameDuration},
+            {"getOctetsPerFrame", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig.getOctetsPerFrame},
+            {"getCodecPriority", "()I",
+             &android_bluetooth_BluetoothLeAudioCodecConfig.getCodecPriority},
+    };
+    GET_JAVA_METHODS(env, "android/bluetooth/BluetoothLeAudioCodecConfig", javaLeAudioCodecMethods);
+  }
 
   return 0;
 }

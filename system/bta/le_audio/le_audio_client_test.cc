@@ -1695,6 +1695,7 @@ protected:
             true);
     com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
+    com::android::bluetooth::flags::provider_->leaudio_codec_id_support(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
@@ -3443,6 +3444,69 @@ protected:
 TEST_F(UnicastTest, Initialize) {
   ASSERT_NE(LeAudioClient::Get(), nullptr);
   ASSERT_TRUE(LeAudioClient::IsLeAudioClientRunning());
+}
+
+TEST_F(UnicastTestNoInit, Initialize_test_local_capabilities) {
+  btle_audio_codec_config_t vendor_codec_preference = {
+          .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_VENDOR_SPECIFIC,
+          .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ,
+          .codec_priority = 1,
+          .codec_id = 0x0001c0deff,
+  };
+
+  btle_audio_codec_config_t opus_codec_preference = {
+          .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_OPUS,
+          .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ,
+          .codec_priority = 1,
+          .codec_id = 0x000100e5ff,
+  };
+  btle_audio_codec_config_t lc3_codec_preference = {
+          .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_OPUS,
+          .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ,
+          .codec_priority = 1,
+          .codec_id = 0x0001c0deff,
+  };
+
+  std::vector<btle_audio_codec_config_t> output_capa = {
+          vendor_codec_preference, opus_codec_preference, lc3_codec_preference};
+  std::vector<btle_audio_codec_config_t> input_capa = {lc3_codec_preference};
+
+  ON_CALL(*mock_codec_manager_, GetLocalAudioOutputCodecCapa()).WillByDefault([&output_capa]() {
+    return output_capa;
+  });
+
+  ON_CALL(*mock_codec_manager_, GetLocalAudioInputCodecCapa()).WillByDefault([&input_capa]() {
+    return input_capa;
+  });
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioLocalCodecCapabilities(input_capa, output_capa));
+
+  // Report False when asked for Audio HAL 2.1 support
+  ON_CALL(mock_hal_2_1_verifier, Call()).WillByDefault([]() -> bool { return true; });
+
+  BtaAppRegisterCallback app_register_callback;
+  ON_CALL(mock_gatt_interface_, AppRegister(_, _, _, _))
+          .WillByDefault(DoAll(SaveArg<1>(&gatt_callback), WithArg<2>([&](auto arg) {
+                                 app_register_callback = std::move(arg);
+                               })));
+
+  std::vector<::bluetooth::le_audio::btle_audio_codec_config_t> framework_encode_preference;
+
+  LeAudioClient::Initialize(
+          &mock_audio_hal_client_callbacks_,
+          base::Bind([](MockFunction<void()>* foo) { foo->Call(); }, &mock_storage_load),
+          base::Bind([](MockFunction<bool()>* foo) { return foo->Call(); }, &mock_hal_2_1_verifier),
+          framework_encode_preference);
+
+  SyncOnMainLoop();
+  if (app_register_callback) {
+    std::move(app_register_callback).Run(gatt_if, GATT_SUCCESS);
+  }
+
+  ASSERT_TRUE(LeAudioClient::IsLeAudioClientRunning());
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
 TEST_F(UnicastTestNoInit, InitializeNoHal_2_1) {
