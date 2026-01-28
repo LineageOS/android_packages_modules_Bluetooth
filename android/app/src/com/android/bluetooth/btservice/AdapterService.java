@@ -3861,6 +3861,11 @@ public class AdapterService extends Service {
             setDeviceDisconnectReason(device, reason);
         }
 
+        if (Util.isTv(this)) {
+            mNativeInterface.disconnectAllAcls(device);
+            return BluetoothStatusCodes.SUCCESS;
+        }
+
         if (!profileServicesRunning()) {
             Log.e(TAG, "disconnectAllEnabledProfiles: Not all profile services bound");
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
