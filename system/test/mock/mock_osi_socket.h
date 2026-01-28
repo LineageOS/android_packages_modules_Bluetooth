@@ -33,29 +33,6 @@ namespace test {
 namespace mock {
 namespace osi_socket {
 
-// Shared state between mocked functions and tests
-// Name: socket_accept
-// Params: const socket_t* socket
-// Return: socket_t*
-struct socket_accept {
-  socket_t* return_value{0};
-  std::function<socket_t*(const socket_t* socket)> body{
-          [this](const socket_t* /* socket */) { return return_value; }};
-  socket_t* operator()(const socket_t* socket) { return body(socket); }
-};
-extern struct socket_accept socket_accept;
-
-// Name: socket_bytes_available
-// Params: const socket_t* socket
-// Return: ssize_t
-struct socket_bytes_available {
-  ssize_t return_value{0};
-  std::function<ssize_t(const socket_t* socket)> body{
-          [this](const socket_t* /* socket */) { return return_value; }};
-  ssize_t operator()(const socket_t* socket) { return body(socket); }
-};
-extern struct socket_bytes_available socket_bytes_available;
-
 // Name: socket_free
 // Params: socket_t* socket
 // Return: void
@@ -64,27 +41,6 @@ struct socket_free {
   void operator()(socket_t* socket) { body(socket); }
 };
 extern struct socket_free socket_free;
-
-// Name: socket_listen
-// Params: const socket_t* socket, port_t port
-// Return: bool
-struct socket_listen {
-  bool return_value{false};
-  std::function<bool(const socket_t* socket, port_t port)> body{
-          [this](const socket_t* /* socket */, port_t /* port */) { return return_value; }};
-  bool operator()(const socket_t* socket, port_t port) { return body(socket, port); }
-};
-extern struct socket_listen socket_listen;
-
-// Name: socket_new
-// Params: void
-// Return: socket_t*
-struct socket_new {
-  socket_t* return_value{0};
-  std::function<socket_t*(void)> body{[this](void) { return return_value; }};
-  socket_t* operator()(void) { return body(); }
-};
-extern struct socket_new socket_new;
 
 // Name: socket_new_from_fd
 // Params: int fd

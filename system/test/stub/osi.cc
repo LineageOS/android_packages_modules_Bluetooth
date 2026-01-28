@@ -489,25 +489,9 @@ void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t c
   fake_osi_alarm_set_on_mloop_.data = data;
 }
 
-bool socket_listen(const socket_t* socket, port_t port) {
-  inc_func_call_count(__func__);
-  return false;
-}
-socket_t* socket_accept(const socket_t* socket) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-socket_t* socket_new(void) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
 socket_t* socket_new_from_fd(int fd) {
   inc_func_call_count(__func__);
   return nullptr;
-}
-ssize_t socket_bytes_available(const socket_t* socket) {
-  inc_func_call_count(__func__);
-  return 0;
 }
 ssize_t socket_read(const socket_t* socket, void* buf, size_t count) {
   inc_func_call_count(__func__);
