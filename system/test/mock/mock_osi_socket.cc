@@ -33,11 +33,7 @@ namespace mock {
 namespace osi_socket {
 
 // Function state capture and return values, if needed
-struct socket_accept socket_accept;
-struct socket_bytes_available socket_bytes_available;
 struct socket_free socket_free;
-struct socket_listen socket_listen;
-struct socket_new socket_new;
 struct socket_new_from_fd socket_new_from_fd;
 struct socket_read socket_read;
 struct socket_register socket_register;
@@ -50,25 +46,9 @@ struct socket_write_and_transfer_fd socket_write_and_transfer_fd;
 }  // namespace test
 
 // Mocked functions, if any
-socket_t* socket_accept(const socket_t* socket) {
-  inc_func_call_count(__func__);
-  return test::mock::osi_socket::socket_accept(socket);
-}
-ssize_t socket_bytes_available(const socket_t* socket) {
-  inc_func_call_count(__func__);
-  return test::mock::osi_socket::socket_bytes_available(socket);
-}
 void socket_free(socket_t* socket) {
   inc_func_call_count(__func__);
   test::mock::osi_socket::socket_free(socket);
-}
-bool socket_listen(const socket_t* socket, port_t port) {
-  inc_func_call_count(__func__);
-  return test::mock::osi_socket::socket_listen(socket, port);
-}
-socket_t* socket_new(void) {
-  inc_func_call_count(__func__);
-  return test::mock::osi_socket::socket_new();
 }
 socket_t* socket_new_from_fd(int fd) {
   inc_func_call_count(__func__);

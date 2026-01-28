@@ -34,9 +34,6 @@
 
 using namespace bluetooth;
 
-// The IPv4 loopback address: 127.0.0.1
-static const in_addr_t LOCALHOST_ = 0x7f000001;
-
 struct socket_t {
   int fd;
   reactor_object_t* reactor_object;
@@ -47,31 +44,6 @@ struct socket_t {
 
 static void internal_read_ready(void* context);
 static void internal_write_ready(void* context);
-
-socket_t* socket_new(void) {
-  socket_t* ret = (socket_t*)osi_calloc(sizeof(socket_t));
-  int enable = 1;
-
-  ret->fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (ret->fd == INVALID_FD) {
-    log::error("unable to create socket: {}", strerror(errno));
-    goto error;
-  }
-
-  if (setsockopt(ret->fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
-    log::error("unable to set SO_REUSEADDR: {}", strerror(errno));
-    goto error;
-  }
-
-  return ret;
-
-error:;
-  if (ret) {
-    close(ret->fd);
-  }
-  osi_free(ret);
-  return NULL;
-}
 
 socket_t* socket_new_from_fd(int fd) {
   log::assert_that(fd != INVALID_FD, "assert failed: fd != INVALID_FD");
@@ -90,42 +62,6 @@ void socket_free(socket_t* socket) {
   socket_unregister(socket);
   close(socket->fd);
   osi_free(socket);
-}
-
-bool socket_listen(const socket_t* socket, port_t port) {
-  log::assert_that(socket != NULL, "assert failed: socket != NULL");
-
-  struct sockaddr_in addr;
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(LOCALHOST_);
-  addr.sin_port = htons(port);
-  if (bind(socket->fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-    log::error("unable to bind socket to port {}: {}", port, strerror(errno));
-    return false;
-  }
-
-  if (listen(socket->fd, 10) == -1) {
-    log::error("unable to listen on port {}: {}", port, strerror(errno));
-    return false;
-  }
-
-  return true;
-}
-
-socket_t* socket_accept(const socket_t* socket) {
-  log::assert_that(socket != NULL, "assert failed: socket != NULL");
-
-  int fd;
-  OSI_NO_INTR(fd = accept(socket->fd, NULL, NULL));
-  if (fd == INVALID_FD) {
-    log::error("unable to accept socket: {}", strerror(errno));
-    return NULL;
-  }
-
-  socket_t* ret = (socket_t*)osi_calloc(sizeof(socket_t));
-
-  ret->fd = fd;
-  return ret;
 }
 
 ssize_t socket_read(const socket_t* socket, void* buf, size_t count) {
@@ -182,16 +118,6 @@ ssize_t socket_write_and_transfer_fd(const socket_t* socket, const void* buf, si
 
   close(fd);
   return ret;
-}
-
-ssize_t socket_bytes_available(const socket_t* socket) {
-  log::assert_that(socket != NULL, "assert failed: socket != NULL");
-
-  int size = 0;
-  if (ioctl(socket->fd, FIONREAD, &size) == -1) {
-    return -1;
-  }
-  return size;
 }
 
 void socket_register(socket_t* socket, reactor_t* reactor, void* context, socket_cb read_cb,
