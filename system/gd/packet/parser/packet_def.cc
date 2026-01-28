@@ -16,6 +16,7 @@
 
 #include "packet_def.h"
 
+#include <format>
 #include <iomanip>
 #include <list>
 #include <set>
@@ -44,24 +45,32 @@ void PacketDef::GenParserDefinition(std::ostream& s, bool generate_fuzzing,
 
   // Specialize function
   if (parent_ != nullptr) {
-    s << "static " << name_ << "View Create(" << parent_->name_ << "View parent)";
-    s << "{ return " << name_ << "View(std::move(parent)); }";
+    // Create
+    s << std::format(R"(
+      static {}View Create({}View parent) {{
+        return {}View(std::move(parent));
+      }})",
+                     name_, parent_->name_, name_);
     // CreateOptional
-    s << "static std::optional<" << name_ << "View> CreateOptional(";
-    s << parent_->name_ << "View parent)";
-    s << "{ auto to_validate = " << name_ << "View::Create(std::move(parent));";
-    s << "if (to_validate.IsValid()) { return to_validate; }";
-    s << "else {return {};}}";
+    s << std::format(R"(
+      static std::optional<{}View> CreateOptional({}View parent) {{
+        auto view = {}View(std::move(parent));
+        return view.IsValid() ? std::optional<{}View>(view) : std::nullopt;
+      }})",
+                     name_, parent_->name_, name_, name_);
   } else {
-    s << "static " << name_ << "View Create(PacketView<";
-    s << (is_little_endian_ ? "" : "!") << "kLittleEndian> packet)";
-    s << "{ return " << name_ << "View(std::move(packet)); }";
+    s << std::format(R"(
+      static {}View Create(PacketView<{}> packet) {{
+        return {}View(std::move(packet));
+      }})",
+                     name_, is_little_endian_ ? "kLittleEndian" : "!kLittleEndian", name_);
     // CreateOptional
-    s << "static std::optional<" << name_ << "View> CreateOptional(PacketView<";
-    s << (is_little_endian_ ? "" : "!") << "kLittleEndian> packet)";
-    s << "{ auto to_validate = " << name_ << "View::Create(std::move(packet));";
-    s << "if (to_validate.IsValid()) { return to_validate; }";
-    s << "else {return {};}}";
+    s << std::format(R"(
+      static std::optional<{}View> CreateOptional(PacketView<{}> packet) {{
+        auto view = {}View(std::move(packet));
+        return view.IsValid() ? std::optional<{}View>(view) : std::nullopt;
+      }})",
+                     name_, is_little_endian_ ? "kLittleEndian" : "!kLittleEndian", name_, name_);
   }
 
   if (generate_fuzzing || generate_tests) {
