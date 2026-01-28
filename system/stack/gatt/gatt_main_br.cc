@@ -97,9 +97,8 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr, uint16_t lci
     } else {
       p_tcb->att_lcid = lcid;
     }
-
-  } else /* existing connection , reject it */
-  {
+  } else {
+    /* existing connection , reject it */
     result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
   }
 
