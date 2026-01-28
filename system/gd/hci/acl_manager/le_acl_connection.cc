@@ -115,7 +115,10 @@ struct LeAclConnection::impl {
     invalidate_callbacks_ = std::move(invalidate_callbacks);
     return &tracker;
   }
-  void ClearEventCallbacks() { invalidate_callbacks_ = nullptr; }
+  void ClearEventCallbacks() {
+    invalidate_callbacks_ = nullptr;
+    tracker.queued_callbacks_.clear();
+  }
   void PutEventCallbacks() {
     if (invalidate_callbacks_) {
       invalidate_callbacks_(tracker.connection_handle_);
