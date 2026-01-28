@@ -24,7 +24,6 @@
 
 #include <cstdint>
 
-#include "stack/include/sdp_callback.h"
 #include "stack/include/sdp_device_id.h"
 #include "stack/include/sdp_discovery_db.h"
 #include "stack/include/sdp_status.h"
@@ -32,6 +31,9 @@
 
 void sdp_init(void);
 void sdp_free(void);
+
+/* Define a callback function for when discovery is complete. */
+typedef void(tSDP_DISC_CMPL_CB)(const RawAddress& bd_addr, tSDP_RESULT result);
 
 namespace bluetooth {
 namespace legacy {
@@ -557,11 +559,6 @@ struct tSdpApi {
 };
 
 const struct tSdpApi* get_legacy_stack_sdp_api();
-
-struct tLegacyStackSdbCallback {
-  void(tSDP_DISC_CMPL_CB)(const RawAddress& bd_addr, tSDP_RESULT result);
-  void(tSDP_DISC_CMPL_CB2)(const RawAddress& bd_addr, tSDP_RESULT result, const void* user_data);
-};
 
 }  // namespace sdp
 }  // namespace stack

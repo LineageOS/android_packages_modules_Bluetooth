@@ -24,7 +24,7 @@
 
 #include <cstdint>
 
-#include "stack/include/sdp_callback.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/sdp_device_id.h"
 #include "stack/include/sdp_discovery_db.h"
 

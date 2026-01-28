@@ -55,7 +55,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sdp_api.h"
-#include "stack/include/sdp_callback.h"
 #include "stack/include/sdp_discovery_db.h"
 #include "stack/include/sdpdefs.h"
 

@@ -49,14 +49,13 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
-#include "sdp_callback.h"
-#include "sdp_status.h"
-#include "sdpdefs.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdp_discovery_db.h"
+#include "stack/include/sdp_status.h"
+#include "stack/include/sdpdefs.h"
 #include "storage/config_keys.h"
 
 using namespace bluetooth::legacy::stack::sdp;
