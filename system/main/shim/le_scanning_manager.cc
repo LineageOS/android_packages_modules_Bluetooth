@@ -149,31 +149,32 @@ void BleScannerInterfaceImpl::Unregister(int scanner_id) {
 void BleScannerInterfaceImpl::Scan(bool start) {
   log::info("in shim layer {}", (start) ? "started" : "stopped");
   bluetooth::shim::GetScanning()->Scan(start);
-  // TODO(b/459944050): Remove BTM scan related code when Scan Multiplexing feature is complete.
-  if (start && !btm_cb.ble_ctr_cb.is_ble_observe_active()) {
-    btm_cb.neighbor.le_scan = {
-            .start_time_ms = timestamper_in_milliseconds.GetTimestamp(),
-            .results = 0,
-    };
-    BTM_LogHistory(kBtmLogTag, RawAddress::kEmpty, "Le scan started");
-    btm_cb.ble_ctr_cb.set_ble_observe_active();
-  } else if (!start && btm_cb.ble_ctr_cb.is_ble_observe_active()) {
-    // stopped
-    const uint64_t duration_timestamp =
-            timestamper_in_milliseconds.GetTimestamp() - btm_cb.neighbor.le_scan.start_time_ms;
-    BTM_LogHistory(
-            kBtmLogTag, RawAddress::kEmpty, "Le scan stopped",
-            std::format("duration_s:{:6.3f} results:{:<3}", (double)duration_timestamp / 1000.0,
-                        btm_cb.neighbor.le_scan.results));
-    btm_cb.ble_ctr_cb.reset_ble_observe();
-    btm_cb.neighbor.le_scan = {};
-  } else {
-    log::warn("Invalid state: start:{}, current scan state: {}", start,
-              btm_cb.ble_ctr_cb.is_ble_observe_active());
-    return;
+  if (!com_android_bluetooth_flags_migrate_btm_scan_to_gd()) {
+    // TODO(b/459944050): Remove BTM scan related code when Scan Multiplexing feature is complete.
+    if (start && !btm_cb.ble_ctr_cb.is_ble_observe_active()) {
+      btm_cb.neighbor.le_scan = {
+              .start_time_ms = timestamper_in_milliseconds.GetTimestamp(),
+              .results = 0,
+      };
+      BTM_LogHistory(kBtmLogTag, RawAddress::kEmpty, "Le scan started");
+      btm_cb.ble_ctr_cb.set_ble_observe_active();
+    } else if (!start && btm_cb.ble_ctr_cb.is_ble_observe_active()) {
+      // stopped
+      const uint64_t duration_timestamp =
+              timestamper_in_milliseconds.GetTimestamp() - btm_cb.neighbor.le_scan.start_time_ms;
+      BTM_LogHistory(
+              kBtmLogTag, RawAddress::kEmpty, "Le scan stopped",
+              std::format("duration_s:{:6.3f} results:{:<3}", (double)duration_timestamp / 1000.0,
+                          btm_cb.neighbor.le_scan.results));
+      btm_cb.ble_ctr_cb.reset_ble_observe();
+      btm_cb.neighbor.le_scan = {};
+    } else {
+      log::warn("Invalid state: start:{}, current scan state: {}", start,
+                btm_cb.ble_ctr_cb.is_ble_observe_active());
+      return;
+    }
   }
 }
-
 /** Setup scan filter params */
 void BleScannerInterfaceImpl::ScanFilterParamSetup(
         uint8_t client_if, uint8_t action, uint8_t filter_index,
