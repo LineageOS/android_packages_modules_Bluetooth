@@ -24,7 +24,6 @@
 #include "bta/sdp/bta_sdp_int.h"
 #include "btif/include/btif_sock_sdp.h"
 #include "stack/include/sdpdefs.h"
-#include "test/mock/mock_stack_sdp_api.h"
 
 namespace {
 const RawAddress bdaddr("11:22:33:44:55:66");
@@ -100,15 +99,6 @@ protected:
 
   void TearDown() override {}
 };
-
-namespace bluetooth {
-namespace testing {
-
-void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_REC* p_rec);
-void bta_sdp_search_cback(Uuid uuid, const RawAddress& bd_addr, tSDP_RESULT result);
-
-}  // namespace testing
-}  // namespace bluetooth
 
 // Test that bta_create_dip_sdp_record can parse sdp record to bluetooth_sdp_record correctly
 TEST_F(BtaDipTest, test_bta_create_dip_sdp_record) {

@@ -33,7 +33,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_types.h"
-#include "stack/sdp/internal/sdp_api.h"
 #include "test/mock/mock_stack_sdp_legacy_api.h"
 
 #define TEST_BT com::android::bluetooth::flags
@@ -50,11 +49,21 @@ BT_HDR* attp_build_value_cmd(uint16_t payload_size, uint8_t op_code, uint16_t ha
 class StackGattTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    test::mock::stack_sdp_legacy::api_.SDP_CreateRecord = ::SDP_CreateRecord;
-    test::mock::stack_sdp_legacy::api_.SDP_AddServiceClassIdList = ::SDP_AddServiceClassIdList;
-    test::mock::stack_sdp_legacy::api_.SDP_AddAttribute = ::SDP_AddAttribute;
-    test::mock::stack_sdp_legacy::api_.SDP_AddProtocolList = ::SDP_AddProtocolList;
-    test::mock::stack_sdp_legacy::api_.SDP_AddUuidSequence = ::SDP_AddUuidSequence;
+    test::mock::stack_sdp_legacy::api_.SDP_CreateRecord = []() { return uint32_t(0x10000); };
+    test::mock::stack_sdp_legacy::api_.SDP_AddServiceClassIdList =
+            [](uint32_t /*handle*/, uint16_t /*num_services*/, uint16_t* /*p_service_uuids*/) {
+              return true;
+            };
+    test::mock::stack_sdp_legacy::api_.SDP_AddAttribute =
+            [](uint32_t /*handle*/, uint16_t /*attr_id*/, uint8_t /*attr_type*/,
+               uint32_t /*attr_len*/, uint8_t* /*p_val*/) { return true; };
+    test::mock::stack_sdp_legacy::api_.SDP_AddProtocolList =
+            [](uint32_t /*handle*/, uint16_t /*num_elem*/, tSDP_PROTOCOL_ELEM* /*p_elem_list*/) {
+              return true;
+            };
+    test::mock::stack_sdp_legacy::api_.SDP_AddUuidSequence =
+            [](uint32_t /*handle*/, uint16_t /*attr_id*/, uint16_t /*num_uuids*/,
+               uint16_t* /*p_uuids*/) { return true; };
   }
   void TearDown() override { test::mock::stack_sdp_legacy::api_ = {}; }
 };
