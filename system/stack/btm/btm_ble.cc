@@ -132,8 +132,35 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   }
 
   auto dev_info = BTM_ReadDevInfo(bd_addr);
+  if (!com_android_bluetooth_flags_pairing_transport_selection()) {
+    return dev_info.device_type == BT_DEVICE_TYPE_BLE;
+  }
 
-  return dev_info.device_type == BT_DEVICE_TYPE_BLE;
+  if (dev_info.device_type == BT_DEVICE_TYPE_BLE) {
+    return true;
+  }
+
+  if (dev_info.device_type == BT_DEVICE_TYPE_BREDR) {
+    return false;
+  }
+
+  // Dual mode device, check the inquiry record for the transport type
+  const tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
+  if (p_inq_info == nullptr) {
+    return false;  // No inquiry record, assume BR/EDR
+  }
+
+  if (p_inq_info->results.inq_result_type == BT_DEVICE_TYPE_BLE) {  // Only seen on LE transport
+    return true;
+  }
+
+  if (p_inq_info->results.inq_result_type ==
+      BT_DEVICE_TYPE_BREDR) {  // Only seen on BR/EDR transport
+    return false;
+  }
+
+  // Seen on both transports, use the most recently seen transport
+  return p_inq_info->results.last_inq_result_transport == BT_TRANSPORT_LE;
 }
 
 static void read_phy_cb(base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb,
