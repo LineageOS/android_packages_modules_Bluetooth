@@ -131,7 +131,8 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
     return true;
   }
 
-  auto dev_info = get_btm_client_interface().peer.BTM_ReadDevInfo(bd_addr);
+  auto dev_info = BTM_ReadDevInfo(bd_addr);
+
   return dev_info.device_type == BT_DEVICE_TYPE_BLE;
 }
 
@@ -265,7 +266,7 @@ DevInfo BTM_ReadDevInfo(const RawAddress& remote_bda) {
 
   if (p_device == nullptr) {
     /* Check with the BT manager if details about remote device are known */
-    if (p_inq_info != NULL) {
+    if (p_inq_info != nullptr) {
       dev_info.device_type = p_inq_info->results.device_type;
       dev_info.addr_type = p_inq_info->results.ble_addr_type;
     } else { /* unknown device, assume BR/EDR */
@@ -273,8 +274,16 @@ DevInfo BTM_ReadDevInfo(const RawAddress& remote_bda) {
       log::verbose("unknown device, BR/EDR assumed");
     }
   } else { /* there is a security device record existing */
-    /* new inquiry result, merge device type in security device record */
-    if (p_inq_info) {
+    /* New inquiry result, merge device type in security device record */
+    if (p_inq_info != nullptr) {
+      // If the device type is unknown, use the device type from the device discovery results
+      if (com_android_bluetooth_flags_pairing_transport_selection() &&
+          p_device->device_type == BT_DEVICE_TYPE_UNKNOWN &&
+          p_inq_info->results.device_type != BT_DEVICE_TYPE_UNKNOWN) {
+        p_device->device_type = p_inq_info->results.device_type;
+        dev_info.device_type = p_inq_info->results.device_type;
+      }
+
       p_device->device_type |= p_inq_info->results.device_type;
       if (is_ble_addr_type_known(p_inq_info->results.ble_addr_type)) {
         p_device->ble.SetAddressType(p_inq_info->results.ble_addr_type);
