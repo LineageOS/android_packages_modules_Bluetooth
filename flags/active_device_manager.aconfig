@@ -50,3 +50,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "adm_clear_active_device_on_disconnect"
+    namespace: "bluetooth"
+    description: "Clear active device when it disconnects"
+    bug: "479649175"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
