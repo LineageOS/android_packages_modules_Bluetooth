@@ -2403,6 +2403,9 @@ public class AdapterService extends Service {
                 () ->
                         mAdapterProperties.updateOnProfileConnectionChanged(
                                 device, profile, state, prevState));
+        if (Flags.adapterSuspendMgmt() && Flags.leHidConnectionPolicySuspend()) {
+            mAdapterSuspend.profileConnectionStateChanged(profile, device, prevState, state);
+        }
     }
 
     /**
@@ -4438,7 +4441,7 @@ public class AdapterService extends Service {
         return false;
     }
 
-    List<BluetoothDevice> getConnectedMediaDevices(int profile) {
+    List<BluetoothDevice> getConnectedDevicesForProfile(int profile) {
         List<BluetoothDevice> connectedDevices = new ArrayList<>();
         switch (profile) {
             case BluetoothProfile.A2DP -> {
@@ -4459,7 +4462,13 @@ public class AdapterService extends Service {
                     connectedDevices = leAudio.get().getConnectedDevices();
                 }
             }
-            default -> Log.e(TAG, "getConnectedMediaDevices: profile value is not valid");
+            case BluetoothProfile.HID_HOST -> {
+                final var hh = getHidHostService();
+                if (hh.isPresent()) {
+                    connectedDevices = hh.get().getConnectedDevices();
+                }
+            }
+            default -> Log.e(TAG, "getConnectedDevicesForProfile: profile value is not valid");
         }
         return connectedDevices;
     }
@@ -4473,6 +4482,9 @@ public class AdapterService extends Service {
      * for a given {@code transport}.
      */
     public void notifyAclDisconnected(BluetoothDevice device, int transport) {
+        if (Flags.leHidConnectionPolicySuspend() && Flags.adapterSuspendMgmt()) {
+            mAdapterSuspend.aclDisconnected(device, transport);
+        }
         getMapService().ifPresent(profile -> profile.aclDisconnected(device));
         getMapClientService().ifPresent(profile -> profile.aclDisconnected(device, transport));
         getSapService().ifPresent(profile -> profile.aclDisconnected(device));
@@ -4503,7 +4515,9 @@ public class AdapterService extends Service {
         mPhonePolicy.ifPresent(
                 policy ->
                         policy.profileConnectionStateChanged(profile, device, fromState, toState));
-        if (Flags.adapterSuspendMgmt()) {
+        if (Flags.adapterSuspendMgmt() && !Flags.leHidConnectionPolicySuspend()) {
+            // When leHidConnectionPolicySuspend is true, the function call below is done by
+            // updateProfileConnectionAdapterProperties, so it can be safely removed.
             mAdapterSuspend.profileConnectionStateChanged(profile, device, fromState, toState);
         }
         boolean mediaConnected = isMediaProfileConnected();

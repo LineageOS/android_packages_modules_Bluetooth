@@ -1107,6 +1107,14 @@ typedef struct {
 
   /**
    *
+   * Set the suspend state. This information can be used to determine a few things,
+   * e.g. the parameter used for scanning.
+   *
+   */
+  int (*set_suspend_state)(bool suspend);
+
+  /**
+   *
    * Is wbs supported by the controller
    *
    */

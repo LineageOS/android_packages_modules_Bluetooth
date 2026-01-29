@@ -1898,6 +1898,17 @@ static jboolean restoreFilterAcceptListNative(JNIEnv* /* env */, jobject /* obj 
   return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
+static jboolean setSuspendStateNative(JNIEnv* /* env */, jobject /* obj */, jboolean suspend) {
+  log::verbose("");
+
+  if (!sBluetoothInterface) {
+    return JNI_FALSE;
+  }
+
+  int ret = sBluetoothInterface->set_suspend_state(suspend);
+  return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+}
+
 static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "(ZZIZLjava/lang/String;Z)Z", reinterpret_cast<void*>(initNative)},
@@ -1964,6 +1975,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"allowWakeByHidNative", "()Z", reinterpret_cast<void*>(allowWakeByHidNative)},
           {"restoreFilterAcceptListNative", "()Z",
            reinterpret_cast<void*>(restoreFilterAcceptListNative)},
+          {"setSuspendStateNative", "(Z)Z", reinterpret_cast<void*>(setSuspendStateNative)},
   };
   const int result = REGISTER_NATIVE_METHODS(
           env, "com/android/bluetooth/btservice/AdapterNativeInterface", methods);

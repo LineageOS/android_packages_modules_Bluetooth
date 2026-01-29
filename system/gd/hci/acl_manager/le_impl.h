@@ -1434,8 +1434,38 @@ public:
     }
   }
 
+  void refresh_connection_parameters() {
+    if (accept_list.empty()) {
+      return;
+    }
+
+    // refreshing the connection parameters is done by disarming and re-arming connectability.
+    switch (connectability_state_) {
+      case ConnectabilityState::ARMED:
+      case ConnectabilityState::ARMING:
+        arm_on_disarm_ = true;
+        disarm_connectability();
+        break;
+      case ConnectabilityState::DISARMING:
+        arm_on_disarm_ = true;
+        break;
+      case ConnectabilityState::DISARMED:
+        arm_connectability();
+        break;
+    }
+  }
+
   void set_system_suspend_state(bool suspended, std::promise<void> promise) {
-    system_suspend_ = suspended;
+    if (!com::android::bluetooth::flags::resolve_collision_conn_discon()) {
+      system_suspend_ = suspended;
+      promise.set_value();
+      return;
+    }
+
+    if (system_suspend_ != suspended) {
+      system_suspend_ = suspended;
+      refresh_connection_parameters();
+    }
     promise.set_value();
   }
 

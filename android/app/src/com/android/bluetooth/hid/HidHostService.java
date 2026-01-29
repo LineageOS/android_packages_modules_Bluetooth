@@ -27,6 +27,11 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
+import static com.android.bluetooth.btservice.AdapterSuspend.AWAKE;
+import static com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP;
+import static com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP;
+
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
@@ -37,6 +42,7 @@ import android.bluetooth.BluetoothUuid;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
@@ -99,6 +105,8 @@ public class HidHostService extends ConnectableProfile {
         }
     }
 
+    private final Looper mLooper;
+    private final HidHostServiceHandler mHandler;
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
@@ -127,13 +135,23 @@ public class HidHostService extends ConnectableProfile {
 
     private static final int BTHH_ERR_TOD_UNSPT = 10; // Remote device not supported
 
+    // LINT.IfChange
+    @VisibleForTesting static final int RECONNECT_ALLOWED = 0;
+    @VisibleForTesting static final int RECONNECT_NOT_ALLOWED_TEMPORARY = 1;
+    @VisibleForTesting static final int RECONNECT_NOT_ALLOWED = 2;
+
+    // LINT.ThenChange(/system/btif/src/btif_hh.cc)
+
     public HidHostService(AdapterService adapterService) {
-        this(adapterService, null);
+        this(adapterService, null, Looper.getMainLooper());
     }
 
     @VisibleForTesting
-    HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
+    HidHostService(
+            AdapterService adapterService, HidHostNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.HID_HOST, adapterService);
+        mLooper = requireNonNull(looper);
+        mHandler = new HidHostServiceHandler(mLooper);
         var nativeCallback = new HidHostNativeCallback(getAdapterService(), this);
         mNativeInterface =
                 requireNonNullElseGet(
@@ -283,16 +301,18 @@ public class HidHostService extends ConnectableProfile {
      *
      * @param device remote device
      * @param transport transport to be used
+     * @param direct true if use direct connect, else do background connect
      * @return true if successfully requested, else false
      */
-    private boolean nativeConnect(BluetoothDevice device, int transport) {
+    private boolean nativeConnect(BluetoothDevice device, int transport, boolean direct) {
         if (!mNativeInterface.connectHid(
-                getByteAddress(device, transport), getAddressType(device), transport)) {
+                getByteAddress(device, transport), getAddressType(device), transport, direct)) {
             Log.w(
                     TAG,
                     "nativeConnect: Connection attempt failed."
                             + (" device=" + device)
-                            + (" transport=" + transport));
+                            + (" transport=" + transport)
+                            + (" direct=" + direct));
             return false;
         }
         return true;
@@ -303,17 +323,15 @@ public class HidHostService extends ConnectableProfile {
      *
      * @param device remote device
      * @param transport transport
-     * @param reconnectAllowed true if remote device is allowed to initiate reconnections, else
-     *     false
+     * @param reconnectPolicy policy to allow reconnect
      * @return true if successfully requested, else false
      */
-    private boolean nativeDisconnect(
-            BluetoothDevice device, int transport, boolean reconnectAllowed) {
+    private boolean nativeDisconnect(BluetoothDevice device, int transport, int reconnectPolicy) {
         if (!mNativeInterface.disconnectHid(
                 getByteAddress(device, transport),
                 getAddressType(device),
                 transport,
-                reconnectAllowed)) {
+                reconnectPolicy)) {
             Log.w(
                     TAG,
                     "nativeDisconnect: Disconnection attempt failed."
@@ -324,37 +342,40 @@ public class HidHostService extends ConnectableProfile {
         return true;
     }
 
-    private final Handler mHandler =
-            new Handler() {
-                @Override
-                public void handleMessage(Message msg) {
-                    Log.v(TAG, "handleMessage(): msg.what=" + msg.what);
+    @VisibleForTesting
+    class HidHostServiceHandler extends Handler {
+        HidHostServiceHandler(Looper looper) {
+            super(looper);
+        }
 
-                    switch (msg.what) {
-                        case MESSAGE_CONNECT -> handleMessageConnect(msg);
-                        case MESSAGE_DISCONNECT -> handleMessageDisconnect(msg);
-                        case MESSAGE_CONNECT_STATE_CHANGED -> handleMessageConnectStateChanged(msg);
-                        case MESSAGE_GET_PROTOCOL_MODE -> handleMessageGetProtocolMode(msg);
-                        case MESSAGE_ON_GET_PROTOCOL_MODE -> handleMessageOnGetProtocolMode(msg);
-                        case MESSAGE_VIRTUAL_UNPLUG -> handleMessageVirtualUnplug(msg);
-                        case MESSAGE_SET_PROTOCOL_MODE -> handleMessageSetProtocolMode(msg);
-                        case MESSAGE_GET_REPORT -> handleMessageGetReport(msg);
-                        case MESSAGE_ON_GET_REPORT -> handleMessageOnGetReport(msg);
-                        case MESSAGE_ON_HANDSHAKE -> handleMessageOnHandshake(msg);
-                        case MESSAGE_SET_REPORT -> handleMessageSetReport(msg);
-                        case MESSAGE_ON_VIRTUAL_UNPLUG -> handleMessageOnVirtualUnplug(msg);
-                        case MESSAGE_GET_IDLE_TIME -> handleMessageGetIdleTime(msg);
-                        case MESSAGE_ON_GET_IDLE_TIME -> handleMessageOnGetIdleTime(msg);
-                        case MESSAGE_SET_IDLE_TIME -> handleMessageSetIdleTime(msg);
-                        case MESSAGE_SET_PREFERRED_TRANSPORT ->
-                                handleMessageSetPreferredTransport(msg);
-                        case MESSAGE_SEND_DATA -> handleMessageSendData(msg);
-                        case MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED ->
-                                handleMessageSetAndroidHeadTrackerEnabled(msg);
-                        default -> {} // Nothing to do
-                    }
-                }
-            };
+        @Override
+        public void handleMessage(Message msg) {
+            Log.v(TAG, "handleMessage(): msg.what=" + msg.what);
+
+            switch (msg.what) {
+                case MESSAGE_CONNECT -> handleMessageConnect(msg);
+                case MESSAGE_DISCONNECT -> handleMessageDisconnect(msg);
+                case MESSAGE_CONNECT_STATE_CHANGED -> handleMessageConnectStateChanged(msg);
+                case MESSAGE_GET_PROTOCOL_MODE -> handleMessageGetProtocolMode(msg);
+                case MESSAGE_ON_GET_PROTOCOL_MODE -> handleMessageOnGetProtocolMode(msg);
+                case MESSAGE_VIRTUAL_UNPLUG -> handleMessageVirtualUnplug(msg);
+                case MESSAGE_SET_PROTOCOL_MODE -> handleMessageSetProtocolMode(msg);
+                case MESSAGE_GET_REPORT -> handleMessageGetReport(msg);
+                case MESSAGE_ON_GET_REPORT -> handleMessageOnGetReport(msg);
+                case MESSAGE_ON_HANDSHAKE -> handleMessageOnHandshake(msg);
+                case MESSAGE_SET_REPORT -> handleMessageSetReport(msg);
+                case MESSAGE_ON_VIRTUAL_UNPLUG -> handleMessageOnVirtualUnplug(msg);
+                case MESSAGE_GET_IDLE_TIME -> handleMessageGetIdleTime(msg);
+                case MESSAGE_ON_GET_IDLE_TIME -> handleMessageOnGetIdleTime(msg);
+                case MESSAGE_SET_IDLE_TIME -> handleMessageSetIdleTime(msg);
+                case MESSAGE_SET_PREFERRED_TRANSPORT -> handleMessageSetPreferredTransport(msg);
+                case MESSAGE_SEND_DATA -> handleMessageSendData(msg);
+                case MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED ->
+                        handleMessageSetAndroidHeadTrackerEnabled(msg);
+                default -> {} // Nothing to do
+            }
+        }
+    }
 
     private void handleMessageSetAndroidHeadTrackerEnabled(Message msg) {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
@@ -386,13 +407,13 @@ public class HidHostService extends ConnectableProfile {
 
             // Request connection if headtracker is enabled but is disconnected
             if (enabled && getState(device, TRANSPORT_LE) == STATE_DISCONNECTED) {
-                nativeConnect(device, TRANSPORT_LE);
+                nativeConnect(device, TRANSPORT_LE, true);
                 return;
             }
 
             // Disable connection if headtracker is disabled
             if (!enabled) {
-                nativeDisconnect(device, TRANSPORT_LE, false);
+                nativeDisconnect(device, TRANSPORT_LE, RECONNECT_NOT_ALLOWED);
             }
         }
     }
@@ -431,14 +452,14 @@ public class HidHostService extends ConnectableProfile {
                                 + (" device=" + device)
                                 + (" transport: prev=" + prevTransport + " -> new=" + transport));
                 // Disconnect the other transport and disallow reconnections
-                nativeDisconnect(device, prevTransport, false);
+                nativeDisconnect(device, prevTransport, RECONNECT_NOT_ALLOWED);
 
                 // Immediately update the connection state to disconnected. From now on,
                 // the connection state will be updated only for the selected transport.
                 updateConnectionState(device, prevTransport, STATE_DISCONNECTED);
 
                 // Request to connect the preferred transport
-                nativeConnect(device, transport);
+                nativeConnect(device, transport, true);
             }
         }
 
@@ -609,7 +630,7 @@ public class HidHostService extends ConnectableProfile {
                         "handleMessageConnectStateChanged: Disconnect and unknown inputDevice"
                                 + (" device=" + device)
                                 + (" state=" + state));
-                nativeDisconnect(device, transport, false);
+                nativeDisconnect(device, transport, RECONNECT_NOT_ALLOWED);
                 return;
             }
         }
@@ -662,11 +683,11 @@ public class HidHostService extends ConnectableProfile {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
         int connectionPolicy = msg.arg1;
 
-        boolean reconnectAllowed = true;
+        int reconnectPolicy = RECONNECT_ALLOWED;
         if (connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            reconnectAllowed = false;
+            reconnectPolicy = RECONNECT_NOT_ALLOWED;
         }
-        nativeDisconnect(device, getTransport(device), reconnectAllowed);
+        nativeDisconnect(device, getTransport(device), reconnectPolicy);
     }
 
     private void handleMessageConnect(Message msg) {
@@ -712,7 +733,7 @@ public class HidHostService extends ConnectableProfile {
             return;
         }
 
-        nativeConnect(device, inputDevice.mSelectedTransport);
+        nativeConnect(device, inputDevice.mSelectedTransport, true);
     }
 
     /**
@@ -750,10 +771,48 @@ public class HidHostService extends ConnectableProfile {
                             + (" device=" + device)
                             + (" connectionPolicy=" + getConnectionPolicy(device)));
 
-            nativeDisconnect(device, transport, false);
+            nativeDisconnect(device, transport, RECONNECT_NOT_ALLOWED);
             return false;
         }
         return true;
+    }
+
+    /**
+     * Handles suspend state
+     *
+     * @param suspendState state of suspend
+     */
+    public void onSuspendStateChange(int suspendState) {
+        Log.i(TAG, "Enter suspend state " + suspendState);
+        for (BluetoothDevice device : mInputDevices.keySet()) {
+            int transport = getTransport(device);
+
+            // Only LE devices.
+            if (transport != TRANSPORT_LE) {
+                continue;
+            }
+            // If not allowed to connect, do nothing.
+            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
+                continue;
+            }
+
+            switch (suspendState) {
+                case AWAKE -> {
+                    if (getConnectionState(device) == STATE_DISCONNECTED) {
+                        nativeConnect(device, transport, false);
+                    }
+                }
+                case SHALLOW_SLEEP -> {
+                    if (getConnectionState(device) == STATE_CONNECTED) {
+                        nativeDisconnect(device, transport, RECONNECT_ALLOWED);
+                    }
+                }
+                case DEEP_SLEEP -> {
+                    nativeDisconnect(device, transport, RECONNECT_NOT_ALLOWED_TEMPORARY);
+                }
+                default -> {}
+            }
+        }
     }
 
     // APIs
@@ -835,6 +894,10 @@ public class HidHostService extends ConnectableProfile {
                 .collect(Collectors.toList());
     }
 
+    public List<BluetoothDevice> getConnectedDevices() {
+        return getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTED});
+    }
+
     /**
      * Set connection policy of the profile and connects it if connectionPolicy is {@link
      * BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is {@link
@@ -902,7 +965,7 @@ public class HidHostService extends ConnectableProfile {
     /**
      * @see BluetoothHidHost#getPreferredTransport
      */
-    int getPreferredTransport(BluetoothDevice device) {
+    public int getPreferredTransport(BluetoothDevice device) {
         Log.d(TAG, "getPreferredTransport: device=" + device);
 
         // TODO: Access to mInputDevices should be protected in binder thread
