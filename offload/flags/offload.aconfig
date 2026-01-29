@@ -7,3 +7,13 @@ flag {
   description: "Flag for enabling peripheral decoding feature in Software Offload Library"
   bug: "475344085"
 }
+
+flag {
+  name: "swoff_streamer_deadlock_protection"
+  namespace: "bluetooth"
+  description: "Flag for adding deadlock protection in the streamer"
+  bug: "479655428"
+  metadata {
+    purpose: PURPOSE_BUGFIX
+  }
+}
