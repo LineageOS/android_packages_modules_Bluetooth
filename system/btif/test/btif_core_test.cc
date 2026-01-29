@@ -66,7 +66,7 @@ void set_hal_cbacks(bt_callbacks_t* callbacks);
 
 namespace bluetooth::legacy::testing {
 void bta_dm_acl_down(const AclLinkSpec& link_spec);
-void bta_dm_acl_up(const AclLinkSpec& acl_link_spec, uint16_t acl_handle);
+void bta_dm_acl_up(const AclLinkSpec& acl_link_spec, uint16_t acl_handle, bool locally_initiated);
 }  // namespace bluetooth::legacy::testing
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
@@ -257,7 +257,8 @@ protected:
     BtifCoreWithControllerTest::SetUp();
     AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
                              .transport = BT_TRANSPORT_AUTO};
-    bluetooth::legacy::testing::bta_dm_acl_up(link_spec, kHciHandle);
+    bool locally_initiated = false;
+    bluetooth::legacy::testing::bta_dm_acl_up(link_spec, kHciHandle, locally_initiated);
   }
 
   void TearDown() override {

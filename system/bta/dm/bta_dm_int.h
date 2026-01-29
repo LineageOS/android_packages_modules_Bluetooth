@@ -342,8 +342,8 @@ tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index);
 namespace bluetooth::legacy::testing {
 
 BtaDmLink* allocate_link_for(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle);
-void bta_dm_acl_down(const AclLinkSpec& link_spec);
+void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated);
+void bta_dm_acl_down(const AclLinkSpec& link_spec, bool locally_initiated);
 void bta_dm_init_cb();
 void bta_dm_deinit_cb();
 

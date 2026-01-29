@@ -168,18 +168,21 @@ typedef enum : uint8_t {
 typedef struct {
   AclLinkSpec link_spec;
   uint16_t acl_handle;
+  bool locally_initiated;
 } tBTA_DM_LINK_UP;
 
 /* Structure associated with BTA_DM_LINK_UP_FAILED_EVT */
 typedef struct {
   AclLinkSpec link_spec;
   tHCI_STATUS status; /* The HCI error code associated with this event */
+  bool locally_initiated;
 } tBTA_DM_LINK_UP_FAILED;
 
 /* Structure associated with BTA_DM_LINK_DOWN_EVT */
 typedef struct {
   AclLinkSpec link_spec;
   tHCI_STATUS status;
+  bool locally_initiated;
 } tBTA_DM_LINK_DOWN;
 
 typedef union {

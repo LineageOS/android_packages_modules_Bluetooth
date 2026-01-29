@@ -24,8 +24,9 @@
 
 #include "stack/include/hci_error_code.h"
 
-void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle);
-void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS hci_status);
+void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated);
+void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS hci_status,
+                          bool locally_initiated);
 void BTA_dm_acl_down(const AclLinkSpec& link_spec);
 void BTA_dm_report_role_change(const RawAddress bd_addr, tHCI_ROLE new_role,
                                tHCI_STATUS hci_status);

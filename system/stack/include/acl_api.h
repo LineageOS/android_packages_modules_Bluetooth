@@ -203,8 +203,6 @@ uint8_t acl_link_role_from_handle(uint16_t handle);
 
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
 
-void acl_set_locally_initiated(bool is_locally_initiated);
-
 bool acl_is_role_switch_allowed();
 
 uint16_t acl_get_supported_packet_types();
@@ -236,9 +234,11 @@ void btm_acl_notif_conn_collision(const RawAddress& bda);
  ******************************************************************************/
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 
-void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role);
+void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role,
+                     bool locally_initiated = false);
 
-void btm_acl_create_failed(const AclLinkSpec& link_spec, tHCI_STATUS reason);
+void btm_acl_create_failed(const AclLinkSpec& link_spec, tHCI_STATUS reason,
+                           bool locally_initiated);
 
 void btm_acl_removed(uint16_t handle);
 
@@ -257,8 +257,6 @@ bool acl_link_is_disconnecting(const RawAddress& remote_bdat, tBT_TRANSPORT tran
 uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
 tHCI_REASON btm_get_acl_disc_reason_code(void);
-
-bool btm_is_acl_locally_initiated(void);
 
 tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 

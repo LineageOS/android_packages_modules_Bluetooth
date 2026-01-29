@@ -70,7 +70,6 @@ struct btm_acl_for_bda btm_acl_for_bda;
 struct BTM_SetLinkSuperTout BTM_SetLinkSuperTout;
 struct btm_remove_acl btm_remove_acl;
 struct btm_get_acl_disc_reason_code btm_get_acl_disc_reason_code;
-struct btm_is_acl_locally_initiated btm_is_acl_locally_initiated;
 struct BTM_GetNumAclLinks BTM_GetNumAclLinks;
 struct acl_get_supported_packet_types acl_get_supported_packet_types;
 struct acl_link_role_from_handle acl_link_role_from_handle;
@@ -212,10 +211,6 @@ tHCI_REASON btm_get_acl_disc_reason_code(void) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::btm_get_acl_disc_reason_code();
 }
-bool btm_is_acl_locally_initiated(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::btm_is_acl_locally_initiated();
-}
 uint16_t BTM_GetNumAclLinks(void) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_GetNumAclLinks();
@@ -277,9 +272,10 @@ void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_set_disconnect_reason(acl_disc_reason);
 }
-void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
+void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role,
+                     bool locally_initiated) {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_created(link_spec, hci_handle, link_role);
+  test::mock::stack_acl::btm_acl_created(link_spec, hci_handle, link_role, locally_initiated);
 }
 void btm_acl_device_down(void) {
   inc_func_call_count(__func__);

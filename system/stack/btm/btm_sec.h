@@ -590,7 +590,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
  *
  ******************************************************************************/
 void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status, uint8_t enc_mode,
-                       tHCI_ROLE assigned_role = HCI_ROLE_PERIPHERAL);
+                       bool locally_initiated, tHCI_ROLE assigned_role = HCI_ROLE_PERIPHERAL);
 
 /*******************************************************************************
  *
