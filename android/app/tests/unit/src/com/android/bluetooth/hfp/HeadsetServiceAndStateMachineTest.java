@@ -97,6 +97,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -115,19 +116,8 @@ import java.util.Set;
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class HeadsetServiceAndStateMachineTest {
-    private static final String TAG = HeadsetServiceAndStateMachineTest.class.getSimpleName();
-
     @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
-
-    @Parameters(name = "{0}")
-    public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf();
-    }
-
-    public HeadsetServiceAndStateMachineTest(FlagsWrapper flags) {
-        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
-    }
 
     @Rule
     public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
@@ -151,8 +141,9 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private AudioDeviceInfo mAudioDeviceInfo;
     @Mock private AudioDeviceInfo mAudioDeviceInfo2;
 
-    ArgumentCaptor<AudioDeviceCallback> mAudioDeviceCallbackArgumentCaptor =
-            ArgumentCaptor.forClass(AudioDeviceCallback.class);
+    @Captor private ArgumentCaptor<AudioDeviceCallback> mAudioDeviceCallbackArgumentCaptor;
+
+    private static final String TAG = HeadsetServiceAndStateMachineTest.class.getSimpleName();
 
     private static final int MAX_HEADSET_CONNECTIONS = 5;
     private static final ParcelUuid[] FAKE_HEADSET_UUID = {BluetoothUuid.HFP};
@@ -166,6 +157,15 @@ public class HeadsetServiceAndStateMachineTest {
     private HeadsetService mHeadsetService;
     private InOrder mInOrder;
     private TestLooper mTestLooper;
+
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf();
+    }
+
+    public HeadsetServiceAndStateMachineTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
 
     @Before
     public void setUp() {
