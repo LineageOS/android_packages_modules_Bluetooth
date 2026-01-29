@@ -1425,4 +1425,38 @@ public class AdapterServiceTest {
         verify(mConnectionCallback).onDeviceDisconnected(deviceCaptor.capture(), eq(reason));
         assertThat(deviceCaptor.getValue().getAddress()).isEqualTo(mDevice1.getAddress());
     }
+
+    /**
+     * Test: Verify that on TV devices, {@link AdapterService#disconnectAllEnabledProfiles} calls
+     * {@link AdapterNativeInterface#disconnectAllAcls} directly.
+     */
+    @Test
+    public void disconnectAllEnabledProfiles_onTv_disconnectsAcl() {
+        initTest();
+        doEnable(false);
+        doReturn(true).when(mMockPackageManager).hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+
+        final int reason = BluetoothStatusCodes.SUCCESS;
+        int result = mAdapter.disconnectAllEnabledProfiles(mDevice1, reason);
+
+        assertThat(result).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        verify(mNativeInterface).disconnectAllAcls(eq(mDevice1));
+    }
+
+    /**
+     * Test: Verify that on non-TV devices, {@link AdapterService#disconnectAllEnabledProfiles} does
+     * not call {@link AdapterNativeInterface#disconnectAllAcls} directly.
+     */
+    @Test
+    public void disconnectAllEnabledProfiles_onNonTv_doesNotDisconnectAcl() {
+        initTest();
+        doEnable(false);
+        doReturn(false).when(mMockPackageManager).hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+
+        final int reason = BluetoothStatusCodes.SUCCESS;
+        int result = mAdapter.disconnectAllEnabledProfiles(mDevice1, reason);
+
+        assertThat(result).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        verify(mNativeInterface, never()).disconnectAllAcls(any(BluetoothDevice.class));
+    }
 }
