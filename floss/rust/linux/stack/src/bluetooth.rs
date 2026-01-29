@@ -2097,7 +2097,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
             link_type,
             BtStatus::Success,
             state.clone(),
-            conn_direction,
+            conn_direction.clone(),
             hci_reason,
         );
 
@@ -2107,6 +2107,11 @@ impl BtifBluetoothCallbacks for Bluetooth {
                 self.connection_callbacks.for_all_callbacks(|callback| {
                     callback.on_device_connected(info.clone());
                 });
+                if conn_direction == BtConnectionDirection::Outgoing
+                    && device.bond_state == BtBondState::Bonded
+                {
+                    device.connect_to_new_profiles = true;
+                }
             }
             BtAclState::Disconnected => {
                 if !device.is_connected() {
