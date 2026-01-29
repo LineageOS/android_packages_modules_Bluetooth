@@ -35,10 +35,10 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
-#include "gatt_api.h"
 #include "hardware/bt_common_types.h"
 #include "include/hardware/bt_gmap.h"
 #include "osi/include/properties.h"
+#include "stack/include/gatt_api.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

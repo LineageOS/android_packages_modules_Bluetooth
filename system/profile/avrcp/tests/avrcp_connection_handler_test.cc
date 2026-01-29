@@ -26,8 +26,8 @@
 #include "avrcp_test_helper.h"
 #include "btif/include/btif_av.h"
 #include "connection_handler.h"
-#include "sdpdefs.h"
 #include "stack/include/sdp_status.h"
+#include "stack/include/sdpdefs.h"
 
 using ::testing::_;
 using ::testing::DoAll;

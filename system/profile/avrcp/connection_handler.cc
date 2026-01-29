@@ -26,7 +26,6 @@
 #include <map>
 #include <mutex>
 
-#include "avrc_defs.h"
 #include "avrcp_message_converter.h"
 #include "bta/include/bta_av_api.h"
 #include "device/include/interop.h"
@@ -34,6 +33,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "packet/avrcp/avrcp_packet.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_status.h"

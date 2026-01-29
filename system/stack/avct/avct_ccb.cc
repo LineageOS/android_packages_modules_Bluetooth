@@ -29,9 +29,9 @@
 
 #include <cstdint>
 
-#include "avct_api.h"
 #include "avct_int.h"
 #include "internal_include/bt_target.h"
+#include "stack/include/avct_api.h"
 
 using namespace bluetooth;
 

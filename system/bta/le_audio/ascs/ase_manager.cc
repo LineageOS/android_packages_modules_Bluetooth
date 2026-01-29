@@ -26,12 +26,12 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta/le_audio/common/le_audio_event_tracker.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "btm_iso_api.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "main/shim/entry.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/include/btm_iso_api.h"
 #include "stack/include/hci_error_code.h"
 
 using namespace std::chrono_literals;

@@ -27,14 +27,12 @@
 
 #include <cstdint>
 
-#include "avct_api.h"
 #include "avct_int.h"
 #include "bta/include/bta_sec_api.h"
 #include "btif/include/btif_av.h"
 #include "device/include/device_iot_conf_defs.h"
 #include "device/include/device_iot_config.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/avct/avct_defs.h"
@@ -43,6 +41,7 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
 
 using namespace bluetooth;
 

@@ -16,7 +16,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_aac_decoder.h"
+#include "stack/include/a2dp_aac_decoder.h"
 
 #include <aacdecoder_lib.h>
 #include <bluetooth/log.h>
@@ -26,9 +26,9 @@
 #include <cstring>
 
 #include "FDK_audio.h"
-#include "a2dp_codec_api.h"
 #include "machine_type.h"
 #include "osi/include/allocator.h"
+#include "stack/include/a2dp_codec_api.h"
 #include "stack/include/bt_hdr.h"
 
 #define DECODE_BUF_LEN (8 * 2 * 1024)

@@ -29,7 +29,6 @@ cc_library_static {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     host_supported: true,
     apex_available: ["com.android.bt"],

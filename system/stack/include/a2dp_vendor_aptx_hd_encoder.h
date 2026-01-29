@@ -21,8 +21,8 @@
 #ifndef A2DP_VENDOR_APTX_HD_ENCODER_H
 #define A2DP_VENDOR_APTX_HD_ENCODER_H
 
-#include "a2dp_codec_api.h"
-#include "a2dp_vendor.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_vendor.h"
 
 // Loads the A2DP aptX-HD encoder.
 // Return loading codec status

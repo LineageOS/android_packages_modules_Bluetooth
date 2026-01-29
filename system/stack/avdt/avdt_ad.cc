@@ -31,15 +31,15 @@
 
 #include <cstdint>
 
-#include "avdt_api.h"
 #include "avdt_int.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
-#include "l2cdefs.h"
 #include "osi/include/allocator.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
+#include "stack/include/l2cdefs.h"
 
 using namespace bluetooth;
 

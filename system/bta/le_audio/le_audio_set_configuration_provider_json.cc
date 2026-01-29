@@ -33,7 +33,6 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "audio_set_configurations_generated.h"
 #include "audio_set_scenarios_generated.h"
-#include "btm_iso_api_types.h"
 #include "flatbuffers/buffer.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
@@ -41,6 +40,7 @@
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "osi/include/properties.h"
+#include "stack/include/btm_iso_api_types.h"
 
 using bluetooth::le_audio::types::AseConfiguration;
 using bluetooth::le_audio::types::AudioSetConfiguration;

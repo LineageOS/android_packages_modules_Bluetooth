@@ -35,13 +35,13 @@
 #include "bta/le_audio/pacs/pacs.h"
 #include "bta_gatt_api.h"
 #include "bta_le_audio_server_api.h"
-#include "btm_iso_api.h"
 #include "hardware/bt_le_audio_server.h"
 #include "hci/controller.h"
 #include "le_audio_server_config_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/le_advertising_manager.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_iso_api.h"
 #include "stack/include/main_thread.h"
 
 using base::WeakPtrFactory;

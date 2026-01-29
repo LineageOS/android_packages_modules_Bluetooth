@@ -21,10 +21,10 @@
 
 #include <queue>
 
-#include "gatt_api.h"
 #include "internal_include/bt_target.h"
-#include "srvc_api.h"
 #include "srvc_eng_int.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/srvc_api.h"
 
 #define DIS_SYSTEM_ID_SIZE 8
 #define DIS_PNP_ID_SIZE 7

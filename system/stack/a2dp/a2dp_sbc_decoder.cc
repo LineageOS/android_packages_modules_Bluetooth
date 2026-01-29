@@ -16,17 +16,17 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_sbc_decoder.h"
+#include "stack/include/a2dp_sbc_decoder.h"
 
 #include <bluetooth/log.h>
 
 #include <cstddef>
 #include <cstdint>
 
-#include "a2dp_codec_api.h"
 #include "embdrv/sbc/decoder/include/oi_codec_sbc.h"
 #include "embdrv/sbc/decoder/include/oi_cpu_dep.h"
 #include "embdrv/sbc/decoder/include/oi_status.h"
+#include "stack/include/a2dp_codec_api.h"
 #include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;

@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-#include "bnep_api.h"
+#include "stack/include/bnep_api.h"
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>

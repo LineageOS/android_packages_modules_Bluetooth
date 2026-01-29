@@ -158,7 +158,6 @@ cc_defaults {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
 }
 
@@ -224,7 +223,6 @@ cc_defaults {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
 }
 
@@ -358,7 +356,6 @@ cc_test {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     host_supported: true,
     // TODO(b/231993739): Reenable isolated:true by deleting the explicit disable below
@@ -403,7 +400,6 @@ cc_test {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     host_supported: true,
     // TODO(b/231993739): Reenable isolated:true by deleting the explicit disable below
@@ -690,7 +686,6 @@ cc_fuzz {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
 }
 

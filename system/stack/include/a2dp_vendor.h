@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 #include "stack/include/bt_hdr.h"
 
 typedef enum {

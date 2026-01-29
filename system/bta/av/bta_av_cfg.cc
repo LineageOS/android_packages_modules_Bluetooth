@@ -26,10 +26,10 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "avrc_defs.h"
 #include "bta/av/bta_av_int.h"
 #include "bta/include/bta_av_api.h"
 #include "stack/include/avrc_api.h"
+#include "stack/include/avrc_defs.h"
 
 #ifndef BTA_AV_RC_COMP_ID
 #define BTA_AV_RC_COMP_ID AVRC_CO_GOOGLE

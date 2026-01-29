@@ -22,8 +22,8 @@
 #include <utility>
 #include <vector>
 
-#include "btm_iso_api.h"
-#include "btm_iso_api_types.h"
+#include "stack/include/btm_iso_api.h"
+#include "stack/include/btm_iso_api_types.h"
 
 namespace {
 MockIsoManager* mock_pimpl_;

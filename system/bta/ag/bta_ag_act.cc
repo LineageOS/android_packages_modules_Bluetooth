@@ -38,10 +38,10 @@
 #include "bta_ag_swb_aptx.h"
 #include "bta_api.h"
 #include "bta_sys.h"
-#include "btm_api_types.h"
 #include "device/include/device_iot_conf_defs.h"
 #include "osi/include/alarm.h"
-#include "sdp_status.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/sdp_status.h"
 
 #ifdef __ANDROID__
 #endif

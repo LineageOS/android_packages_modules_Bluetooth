@@ -31,7 +31,7 @@
 #include <bluetooth/types/bt_octets.h>
 
 #include "base/callback.h"
-#include "hcimsgs.h"
+#include "stack/include/hcimsgs.h"
 
 // Mocked compile conditionals, if any
 

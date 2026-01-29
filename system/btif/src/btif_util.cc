@@ -38,7 +38,6 @@
 
 #include <string>
 
-#include "avrc_defs.h"
 #include "bta/include/bta_sec_api.h"
 #include "bta_ag_api.h"
 #include "bta_api.h"
@@ -46,6 +45,7 @@
 #include "bta_hd_api.h"
 #include "bta_hf_client_api.h"
 #include "include/macros.h"
+#include "stack/include/avrc_defs.h"
 
 /*******************************************************************************
  *  Constants & Macros

@@ -31,11 +31,11 @@
 
 #include <cstdint>
 
-#include "a2dp_constants.h"
 #include "bta/av/bta_av_int.h"
 #include "bta_av_api.h"
 #include "bta_sys.h"
 #include "osi/include/allocator.h"
+#include "stack/include/a2dp_constants.h"
 #include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;

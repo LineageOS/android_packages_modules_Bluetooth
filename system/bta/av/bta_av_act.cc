@@ -33,11 +33,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "avct_api.h"
-#include "avdt_api.h"
-#include "avrc_api.h"
-#include "avrc_defs.h"
-#include "bt_dev_class.h"
 #include "bta/av/bta_av_int.h"
 #include "bta/include/bta_ar_api.h"
 #include "bta/include/utl.h"
@@ -50,21 +45,26 @@
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"
 #include "osi/include/osi.h"  // UINT_TO_PTR PTR_TO_UINT
 #include "osi/include/properties.h"
-#include "sdpdefs.h"
+#include "stack/include/avct_api.h"
+#include "stack/include/avdt_api.h"
+#include "stack/include/avrc_api.h"
+#include "stack/include/avrc_defs.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdp_discovery_db.h"
 #include "stack/include/sdp_status.h"
+#include "stack/include/sdpdefs.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

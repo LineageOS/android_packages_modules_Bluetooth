@@ -36,9 +36,9 @@
 
 #include "bta/hh/bta_hh_int.h"
 #include "bta/sys/bta_sys.h"
-#include "hiddefs.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/hiddefs.h"
 #include "stack/include/main_thread.h"
 
 using namespace bluetooth;

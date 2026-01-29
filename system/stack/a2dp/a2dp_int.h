@@ -24,7 +24,7 @@
 #ifndef A2DP_INT_H
 #define A2DP_INT_H
 
-#include "a2dp_api.h"
+#include "stack/include/a2dp_api.h"
 
 /*****************************************************************************
  *  Constants

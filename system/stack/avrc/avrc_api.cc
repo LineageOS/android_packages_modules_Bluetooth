@@ -21,7 +21,7 @@
  *  Interface to AVRCP mandatory commands
  *
  ******************************************************************************/
-#include "avrc_api.h"
+#include "stack/include/avrc_api.h"
 
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
@@ -31,8 +31,6 @@
 
 #include <cstdint>
 
-#include "avct_api.h"
-#include "avrc_defs.h"
 #include "avrc_int.h"
 #include "avrcp.sysprop.h"
 #include "btif/include/btif_av.h"
@@ -43,6 +41,8 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/properties.h"
 #include "stack/avct/avct_defs.h"
+#include "stack/include/avct_api.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"

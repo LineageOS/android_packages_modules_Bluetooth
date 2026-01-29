@@ -39,7 +39,6 @@
 #include "broadcaster/broadcast_configuration_provider.h"
 #include "broadcaster/broadcaster_types.h"
 #include "bta_le_audio_api.h"
-#include "btm_iso_api_types.h"
 #include "common/strings.h"
 #include "gmap_client.h"
 #include "gmap_server.h"
@@ -52,6 +51,7 @@
 #include "le_audio_vendor_codec.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
+#include "stack/include/btm_iso_api_types.h"
 #include "stack/include/hcimsgs.h"
 
 namespace {

@@ -35,8 +35,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "avdt_api.h"
-#include "avrc_defs.h"
 #include "bta/av/bta_av_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
@@ -44,6 +42,8 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
+#include "stack/include/avdt_api.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 

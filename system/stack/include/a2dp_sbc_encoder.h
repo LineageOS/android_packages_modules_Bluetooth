@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 
 // Initialize the A2DP SBC encoder.
 // |p_peer_params| contains the A2DP peer information

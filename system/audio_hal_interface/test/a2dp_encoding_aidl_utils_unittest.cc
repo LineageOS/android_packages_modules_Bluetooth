@@ -22,11 +22,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "a2dp_constants.h"
-#include "a2dp_vendor_aptx_constants.h"
-#include "a2dp_vendor_aptx_hd_constants.h"
-#include "a2dp_vendor_ldac_constants.h"
-#include "a2dp_vendor_opus_constants.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_vendor_aptx_constants.h"
+#include "stack/include/a2dp_vendor_aptx_hd_constants.h"
+#include "stack/include/a2dp_vendor_ldac_constants.h"
+#include "stack/include/a2dp_vendor_opus_constants.h"
 
 using ::aidl::android::hardware::bluetooth::audio::ChannelMode;
 using ::aidl::android::hardware::bluetooth::audio::CodecId;

@@ -35,18 +35,13 @@
 #include <vector>
 
 #include "bta_gatt_queue.h"
-#include "btm_iso_api.h"
-#include "btm_iso_api_types.h"
 #include "client_parser.h"
 #include "codec_manager.h"
 #include "common/strings.h"
 #include "device_groups.h"
 #include "devices.h"
-#include "gatt_api.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/hci_packets.h"
-#include "hci_error_code.h"
-#include "hcimsgs.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio_health_status.h"
 #include "le_audio_log_history.h"
@@ -55,6 +50,11 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_iso_api.h"
+#include "stack/include/btm_iso_api_types.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/hci_error_code.h"
+#include "stack/include/hcimsgs.h"
 
 #ifdef TARGET_FLOSS
 #include <audio_hal_interface/audio_linux.h>

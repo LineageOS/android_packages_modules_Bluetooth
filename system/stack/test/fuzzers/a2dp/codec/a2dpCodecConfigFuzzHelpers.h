@@ -24,8 +24,8 @@
 
 #include <vector>
 
-#include "a2dp_codec_api.h"
 #include "fuzzers/a2dp/codec/a2dpCodecInfoFuzzHelpers.h"
+#include "stack/include/a2dp_codec_api.h"
 
 // Keep a vector of our initialized codec_config objects
 // It will be up to the caller to free this array at the end of a fuzz loop

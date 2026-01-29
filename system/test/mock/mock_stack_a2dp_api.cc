@@ -21,8 +21,8 @@
 
 #include <bluetooth/types/address.h>
 
-#include "a2dp_api.h"
 #include "stack/a2dp/a2dp_int.h"
+#include "stack/include/a2dp_api.h"
 #include "test/common/mock_functions.h"
 
 bool A2DP_AddRecord(uint16_t /* service_uuid */, char* /* p_service_name */,

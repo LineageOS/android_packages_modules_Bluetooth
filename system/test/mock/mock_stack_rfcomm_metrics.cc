@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "rfc_metrics.h"
+#include "stack/include/rfc_metrics.h"
 #include "stack/rfcomm/port_int.h"
 #include "test/common/mock_functions.h"
 

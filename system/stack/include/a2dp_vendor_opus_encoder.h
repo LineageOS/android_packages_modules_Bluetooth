@@ -21,7 +21,7 @@
 #ifndef A2DP_VENDOR_OPUS_ENCODER_H
 #define A2DP_VENDOR_OPUS_ENCODER_H
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 
 // Initialize the A2DP Opus encoder.
 // |p_peer_params| contains the A2DP peer information

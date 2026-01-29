@@ -33,18 +33,18 @@
 
 #include <cstdint>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "avdt_api.h"
 #include "avdt_defs.h"
 #include "avdt_int.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
 
 using namespace bluetooth;
 

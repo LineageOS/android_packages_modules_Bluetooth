@@ -31,7 +31,6 @@
 #include "bta_gatt_queue.h"
 #include "ccp/ccp_types.h"
 #include "common/strings.h"
-#include "gatt_api.h"
 #include "hardware/bt_le_audio.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"

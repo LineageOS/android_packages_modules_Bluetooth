@@ -32,14 +32,14 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
-#include "btm_ble_api_types.h"
-#include "gatt_api.h"
 #include "gd/hci/controller.h"
 #include "gd/os/rand.h"
 #include "hardware/bt_common_types.h"
 #include "main/shim/entry.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
+#include "stack/include/btm_ble_api_types.h"
+#include "stack/include/gatt_api.h"
 #include "stack/include/main_thread.h"
 
 using namespace bluetooth;

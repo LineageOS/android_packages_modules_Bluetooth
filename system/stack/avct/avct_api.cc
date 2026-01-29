@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-#include "avct_api.h"
+#include "stack/include/avct_api.h"
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
@@ -33,8 +33,6 @@
 
 #include "bta/include/bta_sec_api.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
-#include "l2cdefs.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
@@ -43,6 +41,8 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/l2cap/l2c_int.h"
 
 using namespace bluetooth;
