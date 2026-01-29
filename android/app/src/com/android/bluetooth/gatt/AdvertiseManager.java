@@ -17,6 +17,7 @@
 package com.android.bluetooth.gatt;
 
 import static com.android.bluetooth.Utils.callbackToApp;
+import static com.android.bluetooth.Utils.getMaxTxPowerDbm;
 import static com.android.bluetooth.gatt.AdvertiseHelper.advertiseDataToBytes;
 
 import static java.util.Objects.requireNonNullElseGet;
@@ -358,7 +359,8 @@ public class AdvertiseManager {
     }
 
     private static AdvertisingSetParameters adjustTxPower(AdvertisingSetParameters params) {
-        if (params.getTxPowerLevel() > 1) {
+        int systemMax = getMaxTxPowerDbm();
+        if (params.getTxPowerLevel() > systemMax) {
             AdvertisingSetParameters.Builder builder =
                     new AdvertisingSetParameters.Builder()
                             .setConnectable(params.isConnectable())
@@ -370,7 +372,7 @@ public class AdvertiseManager {
                             .setPrimaryPhy(params.getPrimaryPhy())
                             .setSecondaryPhy(params.getSecondaryPhy())
                             .setInterval(params.getInterval())
-                            .setTxPowerLevel(1)
+                            .setTxPowerLevel(systemMax)
                             .setOwnAddressType(params.getOwnAddressType())
                             .setDirected(params.isDirected())
                             .setHighDutyCycle(params.isHighDutyCycle())

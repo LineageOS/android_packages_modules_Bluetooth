@@ -37,6 +37,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
+import static com.android.bluetooth.hfp.HeadsetStateMachine.FLAG_ABSOLUTE_VOLUME;
 import static com.android.bluetooth.hfp.HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED;
 import static com.android.bluetooth.hfp.HeadsetStateMachine.sConnectTimeoutMs;
 
@@ -1317,7 +1318,8 @@ public class HeadsetStateMachineTest {
         mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_SPK, 2);
 
         assertThat(mStateMachine.mSpeakerVolume).isEqualTo(2);
-        verify(mockAudioManager).setStreamVolume(AudioManager.STREAM_BLUETOOTH_SCO, 2, 0);
+        verify(mockAudioManager)
+                .setStreamVolume(AudioManager.STREAM_BLUETOOTH_SCO, 2, FLAG_ABSOLUTE_VOLUME);
     }
 
     @Test
@@ -1331,7 +1333,8 @@ public class HeadsetStateMachineTest {
         mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_SPK, 2);
 
         assertThat(mStateMachine.mSpeakerVolume).isEqualTo(2);
-        verify(mockAudioManager).setStreamVolume(AudioManager.STREAM_VOICE_CALL, 2, 0);
+        verify(mockAudioManager)
+                .setStreamVolume(AudioManager.STREAM_VOICE_CALL, 2, FLAG_ABSOLUTE_VOLUME);
     }
 
     @Test
@@ -1369,6 +1372,22 @@ public class HeadsetStateMachineTest {
         var flagsCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(mockAudioManager).setStreamVolume(anyInt(), anyInt(), flagsCaptor.capture());
         assertThat(flagsCaptor.getValue() & AudioManager.FLAG_SHOW_UI).isEqualTo(0);
+    }
+
+    @Test
+    public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_SetAbsVolFlag() {
+        setUpAudioOnState();
+
+        doReturn(mDevice).when(mHeadsetService).getActiveDevice();
+        AudioManager mockAudioManager = mock(AudioManager.class);
+        doReturn(1).when(mockAudioManager).getStreamVolume(anyInt());
+        doReturn(mockAudioManager).when(mSystemInterface).getAudioManager();
+
+        mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_SPK, 2);
+
+        var flagsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mockAudioManager).setStreamVolume(anyInt(), anyInt(), flagsCaptor.capture());
+        assertThat(flagsCaptor.getValue() & FLAG_ABSOLUTE_VOLUME).isEqualTo(FLAG_ABSOLUTE_VOLUME);
     }
 
     @Test

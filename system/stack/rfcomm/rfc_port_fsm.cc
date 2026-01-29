@@ -816,7 +816,7 @@ void rfc_process_msc(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
   if (is_command) {
     rfc_send_msc(p_mcb, p_frame->dlci, false, &pars);
 
-    if (p_port->p_mcb->flow != PORT_FC_CREDIT) {
+    if (p_port->p_mcb != nullptr && p_port->p_mcb->flow != PORT_FC_CREDIT) {
       /* Spec 1.1 indicates that only FC bit is used for flow control */
       p_port->peer_ctrl.fc = new_peer_fc = pars.fc;
 

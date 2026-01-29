@@ -33,7 +33,7 @@ import android.bluetooth.IBluetoothHeadset;
 import android.content.AttributionSource;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;

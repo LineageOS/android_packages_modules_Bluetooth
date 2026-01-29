@@ -101,9 +101,10 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_audio.LeAudioConstants;
 import com.android.bluetooth.le_scan.ScanController;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.primitives.Bytes;
@@ -2047,6 +2048,59 @@ public class BassClientStateMachineTest {
         verify(btGatt).writeCharacteristic(any());
     }
 
+    @Test
+    public void getPendingOperationBroadcastId_withPendingSourceToSwitch() {
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        mStateMachine.mPendingSourceToSwitch = metadata;
+        mStateMachine.mPendingMetadata = null;
+
+        assertThat(mStateMachine.getPendingOperationBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
+    }
+
+    @Test
+    public void getPendingOperationBroadcastId_withPendingMetadata() {
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        mStateMachine.mPendingSourceToSwitch = null;
+        mStateMachine.mPendingMetadata = metadata;
+
+        assertThat(mStateMachine.getPendingOperationBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
+    }
+
+    @Test
+    public void getPendingOperationBroadcastId_withPendingSourceToSwitchAndPendingMetadata() {
+        int broadcastId1 = 1;
+        int broadcastId2 = 2;
+        BluetoothLeBroadcastMetadata metadata1 = createBroadcastMetadata(broadcastId1);
+        BluetoothLeBroadcastMetadata metadata2 = createBroadcastMetadata(broadcastId2);
+        mStateMachine.mPendingSourceToSwitch = metadata1;
+        mStateMachine.mPendingMetadata = metadata2;
+
+        // mPendingSourceToSwitch should have priority
+        assertThat(mStateMachine.getPendingOperationBroadcastId()).isEqualTo(broadcastId1);
+    }
+
+    @Test
+    public void getPendingOperationBroadcastId_noPendingOperation() {
+        mStateMachine.mPendingSourceToSwitch = null;
+        mStateMachine.mPendingMetadata = null;
+
+        assertThat(mStateMachine.getPendingOperationBroadcastId())
+                .isEqualTo(LeAudioConstants.INVALID_BROADCAST_ID);
+    }
+
+    @Test
+    public void hasPendingSwitchingSourceOperation() {
+        assertThat(mStateMachine.hasPendingSwitchingSourceOperation()).isFalse();
+
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        mStateMachine.mPendingSourceToSwitch = metadata;
+
+        assertThat(mStateMachine.hasPendingSwitchingSourceOperation()).isTrue();
+        assertThat(mStateMachine.hasPendingSwitchingSourceOperation(TEST_BROADCAST_ID)).isTrue();
+        assertThat(mStateMachine.hasPendingSwitchingSourceOperation(TEST_BROADCAST_ID + 1))
+                .isFalse();
+    }
+
     private void initToDisconnectedState() {
         allowConnection(true);
         allowConnectGatt(true);
@@ -2688,6 +2742,10 @@ public class BassClientStateMachineTest {
     }
 
     private static BluetoothLeBroadcastMetadata createBroadcastMetadata() {
+        return createBroadcastMetadata(TEST_BROADCAST_ID);
+    }
+
+    private static BluetoothLeBroadcastMetadata createBroadcastMetadata(int broadcastId) {
         final String testMacAddress = "00:11:22:33:44:55";
         final int testAdvertiserSid = 1234;
         final int testPaSyncInterval = 100;
@@ -2701,7 +2759,7 @@ public class BassClientStateMachineTest {
                         .setEncrypted(false)
                         .setSourceDevice(testDevice, BluetoothDevice.ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(testAdvertiserSid)
-                        .setBroadcastId(TEST_BROADCAST_ID)
+                        .setBroadcastId(broadcastId)
                         .setBroadcastCode(new byte[] {0x00, 0x01, 0x00, 0x02})
                         .setPaSyncInterval(testPaSyncInterval)
                         .setPresentationDelayMicros(testPresentationDelayMs);

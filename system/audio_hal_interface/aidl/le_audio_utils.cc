@@ -689,39 +689,59 @@ GetStackUnicastConfigurationFromAidlFormat(
 
 static void fillStackProviderInfoDetails(
         IBluetoothAudioProviderFactory::ProviderInfo const& hal_provider_info,
-        bluetooth::le_audio::ProviderInfo& stack_provider_info) {
-  for (auto& codec_info : hal_provider_info.codecInfos) {
-    if (codec_info.transport.getTag() != CodecInfo::Transport::leAudio) {
-      break;
+        bluetooth::le_audio::ProviderInfo& stack_provider_info, bool decoding) {
+  std::map<le_audio::types::LeAudioCodecId, uint16_t> freq;
+  std::map<le_audio::types::LeAudioCodecId, uint8_t> frame_dur;
+  std::map<le_audio::types::LeAudioCodecId, uint8_t> chan_counts;
+
+  /* This function translates AUDIO HAL types to LE AUDIO CAPABILITIES (not conifiguration)*/
+  for (auto& hal_codec_info : hal_provider_info.codecInfos) {
+    if (hal_codec_info.transport.getTag() != CodecInfo::Transport::leAudio) {
+      continue;
     }
 
     // Check if any non-mandatory (other than LC3) codec is supported
-    if (codec_info.id != ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3) {
+    if (hal_codec_info.id != ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3) {
       stack_provider_info.isMulticodecSupported = true;
     }
 
     // Check provider info flags
-    auto flags = codec_info.transport.get<CodecInfo::Transport::leAudio>().flags;
-    if (!flags) {
-      continue;
-    }
+    auto le_codec_info = hal_codec_info.transport.get<CodecInfo::Transport::leAudio>();
 
-    if (flags->bitmask & ConfigurationFlags::ALLOW_ASYMMETRIC_CONFIGURATIONS) {
+    if (le_codec_info.flags->bitmask & ConfigurationFlags::ALLOW_ASYMMETRIC_CONFIGURATIONS) {
       stack_provider_info.allowAsymmetric = true;
     }
 
-    if (flags->bitmask & ConfigurationFlags::LOW_LATENCY) {
+    if (le_codec_info.flags->bitmask & ConfigurationFlags::LOW_LATENCY) {
       stack_provider_info.lowLatency = true;
     }
+
+    auto& codec_info = decoding ? stack_provider_info.decoding_codec_configs
+                                : stack_provider_info.encoding_codec_configs;
+
+    std::vector<bluetooth::le_audio::ProviderInfo::CentralCodecInfo::configuration> configs;
+
+    auto codec_id = GetStackCodecIdFromAidlFormat(hal_codec_info.id);
+    for (auto& freq : le_codec_info.samplingFrequencyHz) {
+      for (auto& dur : le_codec_info.frameDurationUs) {
+        for (auto& channel : le_codec_info.channelMode) {
+          uint8_t chan_count = le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel;
+          if (channel == ::aidl::android::hardware::bluetooth::audio::ChannelMode::STEREO) {
+            chan_count = le_audio::codec_spec_caps::kLeAudioCodecChannelCountTwoChannel;
+          }
+          for (auto& bitdepth : le_codec_info.bitdepth) {
+            configs.push_back({freq, dur, chan_count, bitdepth});
+          }
+        }
+      }
+    }
+    codec_info.push_back({codec_id, configs});
   }
 }
 
 std::optional<bluetooth::le_audio::ProviderInfo> GetStackProviderInfoFromAidl(
         std::optional<IBluetoothAudioProviderFactory::ProviderInfo> const& encoding_provider_info,
         std::optional<IBluetoothAudioProviderFactory::ProviderInfo> const& decoding_provider_info) {
-  (void)encoding_provider_info;
-  (void)decoding_provider_info;
-
   if (!encoding_provider_info.has_value() && !decoding_provider_info.has_value()) {
     log::error("Neither the encoding or decoding provider info are correct.");
     return std::nullopt;
@@ -730,12 +750,12 @@ std::optional<bluetooth::le_audio::ProviderInfo> GetStackProviderInfoFromAidl(
   auto result = bluetooth::le_audio::ProviderInfo();
   if (encoding_provider_info.has_value()) {
     log::debug("Encoding: {}", encoding_provider_info->toString());
-    fillStackProviderInfoDetails(encoding_provider_info.value(), result);
+    fillStackProviderInfoDetails(encoding_provider_info.value(), result, false);
   }
 
   if (decoding_provider_info.has_value()) {
     log::debug("Decoding: {}", decoding_provider_info->toString());
-    fillStackProviderInfoDetails(decoding_provider_info.value(), result);
+    fillStackProviderInfoDetails(decoding_provider_info.value(), result, true);
   }
 
   log::debug("Stack: {}", result.toString());

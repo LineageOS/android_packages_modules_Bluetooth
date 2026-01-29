@@ -232,6 +232,8 @@ bluetooth::le_audio::btle_audio_frame_duration_index_t translateToBtLeAudioCodec
       return bluetooth::le_audio::LE_AUDIO_FRAME_DURATION_INDEX_7500US;
     case 10000:
       return bluetooth::le_audio::LE_AUDIO_FRAME_DURATION_INDEX_10000US;
+    case 20000:
+      return bluetooth::le_audio::LE_AUDIO_FRAME_DURATION_INDEX_20000US;
   }
   return bluetooth::le_audio::LE_AUDIO_FRAME_DURATION_INDEX_NONE;
 }

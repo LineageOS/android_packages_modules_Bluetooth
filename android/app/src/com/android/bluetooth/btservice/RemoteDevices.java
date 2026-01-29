@@ -61,6 +61,7 @@ import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.PrintWriter;
@@ -258,7 +259,7 @@ public class RemoteDevices {
         return deviceProp.getBondState();
     }
 
-    String getName(BluetoothDevice device) {
+    public String getName(BluetoothDevice device) {
         DeviceProperties deviceProp = getDeviceProperties(device);
         if (deviceProp == null) {
             return null;

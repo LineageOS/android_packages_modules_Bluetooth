@@ -164,6 +164,7 @@ import com.android.bluetooth.le_scan.ScanUtil;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.notification.NotificationHelperService;
 import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
@@ -3858,6 +3859,11 @@ public class AdapterService extends Service {
     public int disconnectAllEnabledProfiles(BluetoothDevice device, int reason) {
         if (reason != BluetoothStatusCodes.SUCCESS) {
             setDeviceDisconnectReason(device, reason);
+        }
+
+        if (Util.isTv(this)) {
+            mNativeInterface.disconnectAllAcls(device);
+            return BluetoothStatusCodes.SUCCESS;
         }
 
         if (!profileServicesRunning()) {

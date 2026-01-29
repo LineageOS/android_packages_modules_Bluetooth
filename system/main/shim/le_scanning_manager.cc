@@ -149,6 +149,7 @@ void BleScannerInterfaceImpl::Unregister(int scanner_id) {
 void BleScannerInterfaceImpl::Scan(bool start) {
   log::info("in shim layer {}", (start) ? "started" : "stopped");
   bluetooth::shim::GetScanning()->Scan(start);
+  // TODO(b/459944050): Remove BTM scan related code when Scan Multiplexing feature is complete.
   if (start && !btm_cb.ble_ctr_cb.is_ble_observe_active()) {
     btm_cb.neighbor.le_scan = {
             .start_time_ms = timestamper_in_milliseconds.GetTimestamp(),

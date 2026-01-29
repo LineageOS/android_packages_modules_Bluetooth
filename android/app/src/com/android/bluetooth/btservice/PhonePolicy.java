@@ -50,6 +50,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.VisibleForTesting;
 

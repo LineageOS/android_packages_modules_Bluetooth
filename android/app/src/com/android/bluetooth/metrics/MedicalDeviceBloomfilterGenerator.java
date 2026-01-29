@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.metrics;
 
 import java.io.File;
 import java.io.FileOutputStream;

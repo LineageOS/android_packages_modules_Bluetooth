@@ -22,7 +22,7 @@ import android.bluetooth.BluetoothProtoEnums
 import android.util.Log
 import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.MetricsLogger
+import com.android.bluetooth.metrics.MetricsLogger
 
 private const val TAG = GattUtil.TAG_PREFIX + "GattMetricsReporter"
 

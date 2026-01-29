@@ -95,6 +95,7 @@ import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
+import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.tests.bluetooth.FlagsWrapper;

@@ -54,6 +54,29 @@ struct ProviderInfo {
     _aidl_os << "}";
     return _aidl_os.str();
   }
+
+  // Codec capabilities
+  struct CentralCodecInfo {
+    le_audio::types::LeAudioCodecId codec_id;
+    struct configuration {
+      int sample_freq;
+      int frame_duration;
+      int channel_count;
+      int bits_per_sample;
+    };
+    std::vector<struct configuration> supported_configs;
+
+    inline std::string toString() const {
+      std::ostringstream _aidl_os;
+      _aidl_os << "CodecInfo{";
+      _aidl_os << "codec_id: " << codec_id;
+      _aidl_os << "supported_configs size: " << supported_configs.size();
+      _aidl_os << "}";
+      return _aidl_os.str();
+    }
+  };
+  std::vector<CentralCodecInfo> encoding_codec_configs;
+  std::vector<CentralCodecInfo> decoding_codec_configs;
 };
 
 class CodecManager {
@@ -74,6 +97,9 @@ public:
       uint8_t target_latency = types::kTargetLatencyUndefined;
       uint8_t target_Phy = types::kTargetPhyUndefined;
       types::LeAudioLtvMap params;
+      std::optional<le_audio::types::LeAudioCodecId> codec_id;
+      std::optional<std::vector<uint8_t>> vendor_codec_specific_conf;
+      types::LeAudioLtvMap metadata;
     };
 
     std::optional<std::vector<DeviceDirectionRequirements>> sink_requirements;

@@ -20,7 +20,7 @@ import android.app.ActivityManager
 import android.bluetooth.BluetoothProtoEnums
 import android.util.Log
 import com.android.bluetooth.BluetoothStatsLog
-import com.android.bluetooth.btservice.MetricsLogger
+import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
 

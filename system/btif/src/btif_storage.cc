@@ -1462,10 +1462,12 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& bdstr, int add,
 
     // Fill in the bonded devices
     if (device_added) {
-      if (p_bonded_devices->num_devices < BTM_SEC_MAX_DEVICE_RECORDS) {
-        p_bonded_devices->devices[p_bonded_devices->num_devices++] = {addr_type, addr};
-      } else {
-        log::warn("Exceed the max number of bonded devices");
+      if (p_bonded_devices) {
+        if (p_bonded_devices->num_devices < BTM_SEC_MAX_DEVICE_RECORDS) {
+          p_bonded_devices->devices[p_bonded_devices->num_devices++] = {addr_type, addr};
+        } else {
+          log::warn("Exceed the max number of bonded devices");
+        }
       }
       btif_gatts_add_bonded_dev_from_nv(addr);
     }

@@ -45,7 +45,6 @@ import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.MetricsLogger
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanMetricsReporter.Companion.convertScanMode
 import com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
@@ -61,6 +60,7 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTE
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW
+import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.mockGetSystemService
 import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.WorkSourceUtil

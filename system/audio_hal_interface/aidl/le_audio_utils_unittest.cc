@@ -40,6 +40,7 @@ using ::bluetooth::audio::aidl::GetStackBisConfigFromAidlFormat;
 using ::bluetooth::audio::aidl::GetStackBroadcastConfigurationFromAidlFormat;
 using ::bluetooth::audio::aidl::GetStackCodecIdFromAidlFormat;
 using ::bluetooth::audio::aidl::GetStackLeAudioLtvMapFromAidlFormat;
+using ::bluetooth::audio::aidl::GetStackProviderInfoFromAidl;
 using ::bluetooth::audio::aidl::GetStackSubgroupsFromAidlFormat;
 using ::bluetooth::audio::aidl::GetStackUnicastConfigurationFromAidlFormat;
 
@@ -1498,6 +1499,110 @@ TEST(BluetoothAudioClientInterfaceAidlTest, testAidlConfigurationFlagsTypeTransl
     ASSERT_TRUE(aidl_requirements.flags.has_value());
     ASSERT_EQ(aidl_requirements.flags->bitmask, aidl_flag);
   }
+}
+
+namespace test_utils {
+static auto PrepareProviderInfo(bool is_encoding, bool with_vendor) {
+  ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProviderFactory::ProviderInfo
+          provider_info;
+  if (is_encoding) {
+    provider_info.name = "encoding_provider";
+  } else {
+    provider_info.name = "decoding_provider";
+  }
+
+  ::aidl::android::hardware::bluetooth::audio::CodecInfo codec_info_lc3;
+  codec_info_lc3.id = ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3;
+  auto le_audio_info_lc3 = ::aidl::android::hardware::bluetooth::audio::CodecInfo::LeAudio();
+  le_audio_info_lc3.samplingFrequencyHz = {16000, 48000};
+  le_audio_info_lc3.frameDurationUs = {7500, 10000};
+  le_audio_info_lc3.channelMode = {
+          ::aidl::android::hardware::bluetooth::audio::ChannelMode::MONO,
+          ::aidl::android::hardware::bluetooth::audio::ChannelMode::STEREO};
+  le_audio_info_lc3.bitdepth = {16, 24};
+  le_audio_info_lc3.flags =
+          std::make_optional(::aidl::android::hardware::bluetooth::audio::ConfigurationFlags{
+                  .bitmask = ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                          LOW_LATENCY});
+
+  codec_info_lc3.transport
+          .set<::aidl::android::hardware::bluetooth::audio::CodecInfo::Transport::leAudio>(
+                  le_audio_info_lc3);
+  provider_info.codecInfos.push_back(codec_info_lc3);
+
+  if (with_vendor) {
+    ::aidl::android::hardware::bluetooth::audio::CodecInfo codec_info_vendor;
+    codec_info_vendor.id = kAidlCodecVendor1;
+    auto le_audio_info_vendor = ::aidl::android::hardware::bluetooth::audio::CodecInfo::LeAudio();
+    le_audio_info_vendor.samplingFrequencyHz = {44100};
+    le_audio_info_vendor.frameDurationUs = {10000};
+    le_audio_info_vendor.channelMode = {
+            ::aidl::android::hardware::bluetooth::audio::ChannelMode::STEREO};
+    le_audio_info_vendor.bitdepth = {16};
+    le_audio_info_vendor.flags =
+            std::make_optional(::aidl::android::hardware::bluetooth::audio::ConfigurationFlags{
+                    .bitmask = ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                            ALLOW_ASYMMETRIC_CONFIGURATIONS});
+    codec_info_vendor.transport
+            .set<::aidl::android::hardware::bluetooth::audio::CodecInfo::Transport::leAudio>(
+                    le_audio_info_vendor);
+    provider_info.codecInfos.push_back(codec_info_vendor);
+  }
+
+  return provider_info;
+}
+}  // namespace test_utils
+
+TEST(BluetoothAudioClientInterfaceAidlTest, GetStackProviderInfoFromAidl) {
+  auto encoding_provider_info = test_utils::PrepareProviderInfo(true, false);
+  auto decoding_provider_info = test_utils::PrepareProviderInfo(false, true);
+
+  auto stack_provider_info =
+          GetStackProviderInfoFromAidl(encoding_provider_info, decoding_provider_info);
+
+  ASSERT_TRUE(stack_provider_info.has_value());
+  EXPECT_TRUE(stack_provider_info->isMulticodecSupported);
+  EXPECT_TRUE(stack_provider_info->allowAsymmetric);
+  EXPECT_TRUE(stack_provider_info->lowLatency);
+
+  // Check encoding configs
+  // 1 codec (LC3)
+  ASSERT_EQ(stack_provider_info->encoding_codec_configs.size(), 1u);
+  auto& lc3_encoding_config = stack_provider_info->encoding_codec_configs[0];
+  EXPECT_EQ(lc3_encoding_config.codec_id, kStackCodecLc3);
+  // 2 freqs * 2 durs * 2 channels * 2 bitdepths
+  EXPECT_EQ(lc3_encoding_config.supported_configs.size(), 2 * 2 * 2 * 2u);
+
+  // Check decoding configs
+  // 2 codecs (LC3, Vendor)
+  ASSERT_EQ(stack_provider_info->decoding_codec_configs.size(), 2u);
+  auto& lc3_decoding_config = stack_provider_info->decoding_codec_configs[0];
+  EXPECT_EQ(lc3_decoding_config.codec_id, kStackCodecLc3);
+  EXPECT_EQ(lc3_decoding_config.supported_configs.size(), 2 * 2 * 2 * 2u);
+
+  auto& vendor_decoding_config = stack_provider_info->decoding_codec_configs[1];
+  EXPECT_EQ(vendor_decoding_config.codec_id, kStackCodecVendor1);
+  // 1 freq * 1 dur * 1 channel * 1 bitdepth
+  EXPECT_EQ(vendor_decoding_config.supported_configs.size(), 1u);
+}
+
+TEST(BluetoothAudioClientInterfaceAidlTest, GetStackProviderInfoFromAidlNoInfo) {
+  auto stack_provider_info = GetStackProviderInfoFromAidl(std::nullopt, std::nullopt);
+  ASSERT_FALSE(stack_provider_info.has_value());
+}
+
+TEST(BluetoothAudioClientInterfaceAidlTest, GetStackProviderInfoFromAidlEncodingOnly) {
+  auto encoding_provider_info = test_utils::PrepareProviderInfo(true, true);
+
+  auto stack_provider_info = GetStackProviderInfoFromAidl(encoding_provider_info, std::nullopt);
+
+  ASSERT_TRUE(stack_provider_info.has_value());
+  EXPECT_TRUE(stack_provider_info->isMulticodecSupported);
+  EXPECT_TRUE(stack_provider_info->allowAsymmetric);
+  EXPECT_TRUE(stack_provider_info->lowLatency);
+
+  ASSERT_EQ(stack_provider_info->encoding_codec_configs.size(), 2u);
+  ASSERT_EQ(stack_provider_info->decoding_codec_configs.size(), 0u);
 }
 
 }  // namespace

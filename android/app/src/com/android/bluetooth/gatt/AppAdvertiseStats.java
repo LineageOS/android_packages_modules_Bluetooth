@@ -36,7 +36,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.metrics.MetricsLogger;
 
 import java.time.Duration;
 import java.time.Instant;

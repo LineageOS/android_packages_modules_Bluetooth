@@ -82,6 +82,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_scan.ScanUtil;
+import com.android.bluetooth.metrics.MetricsLogger;
 
 import libcore.util.SneakyThrow;
 
