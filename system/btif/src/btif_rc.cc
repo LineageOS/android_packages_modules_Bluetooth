@@ -410,7 +410,6 @@ static btif_rc_device_cb_t* get_connected_device(int index) {
     return NULL;
   }
   if (btif_rc_cb.rc_multi_cb[index].rc_state != BTRC_CONNECTION_STATE_CONNECTED) {
-    log::error("returning NULL");
     return NULL;
   }
   return &btif_rc_cb.rc_multi_cb[index];
