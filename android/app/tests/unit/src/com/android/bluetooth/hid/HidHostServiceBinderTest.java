@@ -43,7 +43,6 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HidHostServiceBinderTest {
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

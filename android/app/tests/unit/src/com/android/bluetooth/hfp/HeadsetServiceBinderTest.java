@@ -41,7 +41,6 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetServiceBinderTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mSource;

@@ -53,7 +53,6 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HidHostServiceTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;

@@ -48,7 +48,6 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HearingAidServiceBinderTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mSource;

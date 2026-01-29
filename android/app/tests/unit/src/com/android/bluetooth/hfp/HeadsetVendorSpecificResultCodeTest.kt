@@ -27,7 +27,6 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class HeadsetVendorSpecificResultCodeTest {
-
     private val device = getTestDevice(78)
 
     @Test

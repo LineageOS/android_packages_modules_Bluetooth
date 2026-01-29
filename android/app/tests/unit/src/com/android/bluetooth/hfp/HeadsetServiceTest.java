@@ -97,11 +97,9 @@ import java.util.Set;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
-
-    @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
@@ -114,6 +112,8 @@ public class HeadsetServiceTest {
     @Mock private AudioDeviceVolumeManager mAudioDeviceVolumeManager;
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private RemoteDevices mRemoteDevices;
+
+    @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
 
     private static final int MAX_HEADSET_CONNECTIONS = 5;
     private static final ParcelUuid[] FAKE_HEADSET_UUID = {BluetoothUuid.HFP};
