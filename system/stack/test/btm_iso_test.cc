@@ -3818,3 +3818,68 @@ TEST_F(IncomingCisTest, RemoveIncomingCisEventsListenerRejectWhenConnected) {
                                                                   cig_id, cis_id),
                ".*");
 }
+
+TEST_F(IncomingCisTest, RemoveListenerAfterRemoteDisconnect) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  BtmDevice mock_btm_device;
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+
+  // Simulate CIS request to associate a handle
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .Times(1);
+  manager_instance_->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+
+  EXPECT_CALL(hcic_interface_, AcceptCis(cis_conn_handle)).Times(1);
+  manager_instance_->AcceptIncomingCisConnection(cis_conn_handle);
+
+  /* Send CIS establish complete event */
+  std::vector<uint8_t> est_buf(28);
+  p = est_buf.data();
+  UINT8_TO_STREAM(p, HCI_SUCCESS);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT24_TO_STREAM(p, 0);  // CIG_Sync_Delay
+  UINT24_TO_STREAM(p, 0);  // CIS_Sync_Delay
+  UINT24_TO_STREAM(p, 0);  // Transport_Latency_M_To_S
+  UINT24_TO_STREAM(p, 0);  // Transport_Latency_S_To_M
+  UINT8_TO_STREAM(p, 0);   // PHY_M_To_S
+  UINT8_TO_STREAM(p, 0);   // PHY_S_To_M
+  UINT8_TO_STREAM(p, 0);   // NSE
+  UINT8_TO_STREAM(p, 0);   // BN_M_To_S
+  UINT8_TO_STREAM(p, 0);   // BN_S_To_M
+  UINT8_TO_STREAM(p, 0);   // FT_M_To_S
+  UINT8_TO_STREAM(p, 0);   // FT_S_To_M
+  UINT16_TO_STREAM(p, 0);  // Max_PDU_M_To_S
+  UINT16_TO_STREAM(p, 0);  // Max_PDU_S_To_M
+  UINT16_TO_STREAM(p, 0);  // ISO_Interval
+
+  /* We should get a CIG event now */
+  EXPECT_CALL(*cig_callbacks_,
+              OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisEstablishCmpl, _));
+  manager_instance_->HandleHciEvent(HCI_BLE_CIS_EST_EVT, est_buf.data(), est_buf.size());
+
+  // Expect that the callback is NOT called.
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisDisconnected, _))
+          .Times(1);
+  // Remote disconnects
+  uint8_t reason = 0x13;  // remote user terminated connection
+  manager_instance_->HandleDisconnect(cis_conn_handle, reason);
+
+  // Unregister the event listener
+  manager_instance_->RemoveIncomingCisEventsListener(client_handle_, test_address, cig_id, cis_id);
+}
