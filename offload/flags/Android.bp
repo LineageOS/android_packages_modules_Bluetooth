@@ -13,6 +13,8 @@ rust_aconfig_library {
     name: "libbluetooth_swoffload_aconfig_flags_rust",
     crate_name: "bluetooth_swoffload_aconfig_flags_rust",
     aconfig_declarations: "bluetooth_swoffload_aconfig_flags",
+    vendor_available: true,
+    host_supported: true,
     visibility: [
         "//packages/modules/Bluetooth/offload:__subpackages__",
     ],
