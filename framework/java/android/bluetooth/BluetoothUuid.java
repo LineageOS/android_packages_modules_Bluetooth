@@ -221,10 +221,10 @@ public final class BluetoothUuid {
     public static final ParcelUuid TMAP =
             ParcelUuid.fromString("00001855-0000-1000-8000-00805F9B34FB");
 
-    /** UUID corresponding to the Voice Assistant Profile (VAPS). */
+    /** UUID corresponding to the Voice Assistant Profile (VAP). */
     @Hide @NonNull
-    public static final ParcelUuid VAPS =
-            ParcelUuid.fromString("00007F65-0000-1000-8000-00805F9B34FB");
+    public static final ParcelUuid VAP =
+            ParcelUuid.fromString("0000185F-0000-1000-8000-00805F9B34FB");
 
     @Hide @NonNull @SystemApi
     public static final ParcelUuid BASE_UUID =
