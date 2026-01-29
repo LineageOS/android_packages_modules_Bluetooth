@@ -92,11 +92,6 @@ import java.util.List;
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class A2dpServiceTest {
-    private static final int MAX_CONNECTED_AUDIO_DEVICES = 5;
-    private static final Duration TIMEOUT = Duration.ofSeconds(1);
-
-    private final BluetoothDevice mDevice = getTestDevice(5);
-
     @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -108,13 +103,16 @@ public class A2dpServiceTest {
     @Mock private BluetoothStorageManager mStorage;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
 
+    private static final int MAX_CONNECTED_AUDIO_DEVICES = 5;
+    private static final Duration TIMEOUT = Duration.ofSeconds(1);
+
+    private final BluetoothDevice mDevice = getTestDevice(5);
     private final CompanionDeviceManager mCompanionDeviceManager =
             InstrumentationRegistry.getInstrumentation()
                     .getContext()
                     .getSystemService(CompanionDeviceManager.class);
 
-    private InOrder mInOrder = null;
-
+    private InOrder mInOrder;
     private TestLooper mLooper;
     private A2dpService mA2dpService;
 

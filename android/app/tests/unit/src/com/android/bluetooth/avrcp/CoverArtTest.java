@@ -47,19 +47,17 @@ import java.util.Arrays;
 /** Test cases for {@link CoverArt}. */
 @RunWith(AndroidJUnit4.class)
 public class CoverArtTest {
-
-    private final Resources mTestResources = TestUtils.getTestApplicationResources();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     private static final BipPixel PIXEL_THUMBNAIL = BipPixel.createFixed(200, 200);
     private static final String IMAGE_HANDLE_1 = "0000001";
 
-    private Bitmap m200by200Image = null;
-    private Bitmap m200by200ImageBlue = null;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
-    private Image mImage = null;
-    private Image mImage2 = null;
-
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    private Bitmap m200by200Image;
+    private Bitmap m200by200ImageBlue;
+    private Image mImage;
+    private Image mImage2;
 
     @Before
     public void setUp() throws Exception {

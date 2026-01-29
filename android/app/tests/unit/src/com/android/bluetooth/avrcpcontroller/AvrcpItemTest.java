@@ -36,8 +36,6 @@ import org.junit.runner.RunWith;
 /** Test cases for {@link AvrcpItem}. */
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpItemTest {
-
-    private final BluetoothDevice mDevice = getTestDevice(97);
     private static final String UUID = "AVRCP-ITEM-TEST-UUID";
 
     // Attribute ID Values from AVRCP Specification
@@ -49,6 +47,8 @@ public final class AvrcpItemTest {
     private static final int MEDIA_ATTRIBUTE_GENRE = 0x06;
     private static final int MEDIA_ATTRIBUTE_PLAYING_TIME = 0x07;
     private static final int MEDIA_ATTRIBUTE_COVER_ART_HANDLE = 0x08;
+
+    private final BluetoothDevice mDevice = getTestDevice(97);
 
     @Test
     public void buildAvrcpItem() {

@@ -42,7 +42,6 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpSinkServiceBinderTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mSource;

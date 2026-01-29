@@ -42,8 +42,8 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class GPMWrapperTest {
-
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
     private MediaController mMediaController;
 
     @Before

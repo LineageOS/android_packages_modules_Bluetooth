@@ -58,7 +58,6 @@ public class ImageTest {
 
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
-    private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
     private static final Uri TEST_CONTENT_URI =
@@ -79,7 +78,8 @@ public class ImageTest {
                     .appendQueryParameter("handle", IMAGE_HANDLE_SECURITY_ERROR)
                     .build();
 
-    private Bitmap mTestBitmap = null;
+    private MockContentResolver mTestContentResolver;
+    private Bitmap mTestBitmap;
 
     @Before
     public void setUp() throws Exception {
