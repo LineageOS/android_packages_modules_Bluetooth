@@ -1252,6 +1252,26 @@ public class AvrcpControllerStateMachineTest {
     }
 
     /**
+     * If a volume changed event matches the current stream volume, absolute volume devices should
+     * not send a notification.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
+    public void testEvent_isStrategyAbsolute_currentVol_notificationNotSent() {
+        makeStateMachineForAbsVolumeTests(false, false);
+        setUpConnectedState(true, true);
+
+        // Register notification
+        byte label = 42;
+        registerAbsoluteVolumeNotification(label);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
+
+        // Volume changed event that matches the current stream volume
+        sendVolumeChangedEvent(25);
+        verifyNoAbsoluteVolumeChangedNotification();
+    }
+
+    /**
      * If a volume changed event occurs after setting absolute volume, for a different volume than
      * was set, absolute volume devices should send a notification.
      */
