@@ -56,7 +56,6 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
@@ -481,9 +480,10 @@ public class LeAudioServiceTest {
         mInOrder.verify(mNativeInterface).setEnableState(eq(mSingleDevice), eq(true));
 
         // Verify the device is disabled in the service when policy is set to FORBIDDEN
-        when(mAdapterService.setProfileConnectionPolicy(
-                        eq(mSingleDevice), eq(BluetoothProfile.LE_AUDIO), anyInt()))
-                .thenReturn(true);
+        doReturn(true)
+                .when(mAdapterService)
+                .setProfileConnectionPolicy(
+                        eq(mSingleDevice), eq(BluetoothProfile.LE_AUDIO), anyInt());
         mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
         mInOrder.verify(mNativeInterface).setEnableState(eq(mSingleDevice), eq(false));
     }
@@ -1037,10 +1037,10 @@ public class LeAudioServiceTest {
     @Test
     public void testSetConnectionPolicy() {
         doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
-        when(mVolumeControlService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mCsipSetCoordinatorService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        doReturn(true).when(mVolumeControlService).setConnectionPolicy(any(), anyInt());
+        doReturn(true).when(mCsipSetCoordinatorService).setConnectionPolicy(any(), anyInt());
+        doReturn(true).when(mHapClientService).setConnectionPolicy(any(), anyInt());
+        doReturn(true).when(mBassClientService).setConnectionPolicy(any(), anyInt());
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mAdapterService)
                 .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
@@ -1118,10 +1118,10 @@ public class LeAudioServiceTest {
         doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         // Make LE Audio related services setConnectionPolicy() method return true.
         // These should NOT be called if not available
-        when(mVolumeControlService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mCsipSetCoordinatorService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        doReturn(true).when(mVolumeControlService).setConnectionPolicy(any(), anyInt());
+        doReturn(true).when(mCsipSetCoordinatorService).setConnectionPolicy(any(), anyInt());
+        doReturn(true).when(mHapClientService).setConnectionPolicy(any(), anyInt());
+        doReturn(true).when(mBassClientService).setConnectionPolicy(any(), anyInt());
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mAdapterService)
                 .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
@@ -2484,7 +2484,7 @@ public class LeAudioServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
         doReturn(mLeftDevice).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         devices.add(mLeftDevice);
@@ -2609,13 +2609,13 @@ public class LeAudioServiceTest {
         verify(headsetService, never()).getActiveDevice();
 
         mService.mHfpHandoverDevice = headsetDevice;
-        when(headsetService.getActiveDevice()).thenReturn(headsetDevice);
+        doReturn(headsetDevice).when(headsetService).getActiveDevice();
         mService.handleGroupIdleDuringCall();
         verify(headsetService).connectAudio();
         assertThat(mService.mHfpHandoverDevice).isNull();
 
         mService.mHfpHandoverDevice = headsetDevice;
-        when(headsetService.getActiveDevice()).thenReturn(null);
+        doReturn(null).when(headsetService).getActiveDevice();
         mService.handleGroupIdleDuringCall();
         verify(headsetService).setActiveDevice(headsetDevice);
         assertThat(mService.mHfpHandoverDevice).isNull();
@@ -2805,7 +2805,7 @@ public class LeAudioServiceTest {
      */
     @Test
     public void testSendPreferredAudioProfileChangeToAudioFramework() {
-        when(mAdapterService.isAllSupportedClassicAudioProfilesActive(any())).thenReturn(true);
+        doReturn(true).when(mAdapterService).isAllSupportedClassicAudioProfilesActive(any());
 
         // TEST 1: Verify no requests are sent to the audio framework if there is no active device
         assertThat(mService.removeActiveDevice(false)).isTrue();
@@ -3737,7 +3737,7 @@ public class LeAudioServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
         doReturn(mSingleDevice).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         // Not connected device
@@ -3861,7 +3861,7 @@ public class LeAudioServiceTest {
         String gamePackageName = "com.example.game";
 
         // Mock package manager to identify the app as a game
-        when(mPackageManager.getPackagesForUid(testUid)).thenReturn(new String[] {gamePackageName});
+        doReturn(new String[] {gamePackageName}).when(mPackageManager).getPackagesForUid(testUid);
         ApplicationInfo gameAppInfo = new ApplicationInfo();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             gameAppInfo.category = ApplicationInfo.CATEGORY_GAME;
@@ -3869,8 +3869,9 @@ public class LeAudioServiceTest {
             gameAppInfo.flags = ApplicationInfo.FLAG_IS_GAME;
         }
 
-        when(mPackageManager.getApplicationInfo(eq(gamePackageName), anyInt()))
-                .thenReturn(gameAppInfo);
+        doReturn(gameAppInfo)
+                .when(mPackageManager)
+                .getApplicationInfo(eq(gamePackageName), anyInt());
 
         ArgumentCaptor<ActivityManager.OnUidImportanceListener> listenerCaptor =
                 ArgumentCaptor.forClass(ActivityManager.OnUidImportanceListener.class);
@@ -3927,20 +3928,20 @@ public class LeAudioServiceTest {
         String gamePackageName2 = "com.example.game2";
 
         // Mock package manager for two game apps
-        when(mPackageManager.getPackagesForUid(testUid1))
-                .thenReturn(new String[] {gamePackageName1});
-        when(mPackageManager.getPackagesForUid(testUid2))
-                .thenReturn(new String[] {gamePackageName2});
+        doReturn(new String[] {gamePackageName1}).when(mPackageManager).getPackagesForUid(testUid1);
+        doReturn(new String[] {gamePackageName2}).when(mPackageManager).getPackagesForUid(testUid2);
         ApplicationInfo gameAppInfo = new ApplicationInfo();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             gameAppInfo.category = ApplicationInfo.CATEGORY_GAME;
         } else {
             gameAppInfo.flags = ApplicationInfo.FLAG_IS_GAME;
         }
-        when(mPackageManager.getApplicationInfo(eq(gamePackageName1), anyInt()))
-                .thenReturn(gameAppInfo);
-        when(mPackageManager.getApplicationInfo(eq(gamePackageName2), anyInt()))
-                .thenReturn(gameAppInfo);
+        doReturn(gameAppInfo)
+                .when(mPackageManager)
+                .getApplicationInfo(eq(gamePackageName1), anyInt());
+        doReturn(gameAppInfo)
+                .when(mPackageManager)
+                .getApplicationInfo(eq(gamePackageName2), anyInt());
 
         ArgumentCaptor<ActivityManager.OnUidImportanceListener> listenerCaptor =
                 ArgumentCaptor.forClass(ActivityManager.OnUidImportanceListener.class);

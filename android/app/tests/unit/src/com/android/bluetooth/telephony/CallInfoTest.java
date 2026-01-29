@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -92,7 +91,7 @@ public class CallInfoTest {
     @Test
     public void getActiveCall() {
         BluetoothCall activeCall = getMockCall();
-        when(activeCall.getState()).thenReturn(Call.STATE_ACTIVE);
+        doReturn(Call.STATE_ACTIVE).when(activeCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(activeCall);
 
@@ -104,7 +103,7 @@ public class CallInfoTest {
     @Test
     public void getHeldCall() {
         BluetoothCall heldCall = getMockCall();
-        when(heldCall.getState()).thenReturn(Call.STATE_HOLDING);
+        doReturn(Call.STATE_HOLDING).when(heldCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(heldCall);
 
@@ -117,7 +116,7 @@ public class CallInfoTest {
     @Test
     public void getOutgoingCall() {
         BluetoothCall outgoingCall = getMockCall();
-        when(outgoingCall.getState()).thenReturn(Call.STATE_PULLING_CALL);
+        doReturn(Call.STATE_PULLING_CALL).when(outgoingCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(outgoingCall);
 
@@ -129,7 +128,7 @@ public class CallInfoTest {
     @Test
     public void getRingingOrSimulatedRingingCall() {
         BluetoothCall ringingCall = getMockCall();
-        when(ringingCall.getState()).thenReturn(Call.STATE_SIMULATED_RINGING);
+        doReturn(Call.STATE_SIMULATED_RINGING).when(ringingCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(ringingCall);
 
@@ -148,7 +147,7 @@ public class CallInfoTest {
     @Test
     public void hasOnlyDisconnectedCalls_withConnectedCall() {
         BluetoothCall activeCall = getMockCall();
-        when(activeCall.getState()).thenReturn(Call.STATE_ACTIVE);
+        doReturn(Call.STATE_ACTIVE).when(activeCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(activeCall);
 
@@ -160,7 +159,7 @@ public class CallInfoTest {
     @Test
     public void hasOnlyDisconnectedCalls_withDisconnectedCallOnly() {
         BluetoothCall disconnectedCall = getMockCall();
-        when(disconnectedCall.getState()).thenReturn(Call.STATE_DISCONNECTED);
+        doReturn(Call.STATE_DISCONNECTED).when(disconnectedCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(disconnectedCall);
 
@@ -172,7 +171,7 @@ public class CallInfoTest {
     @Test
     public void getForegroundCall_withConnectingCall() {
         BluetoothCall connectingCall = getMockCall();
-        when(connectingCall.getState()).thenReturn(Call.STATE_CONNECTING);
+        doReturn(Call.STATE_CONNECTING).when(connectingCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(connectingCall);
 
@@ -184,7 +183,7 @@ public class CallInfoTest {
     @Test
     public void getForegroundCall_withPullingCall() {
         BluetoothCall pullingCall = getMockCall();
-        when(pullingCall.getState()).thenReturn(Call.STATE_PULLING_CALL);
+        doReturn(Call.STATE_PULLING_CALL).when(pullingCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(pullingCall);
 
@@ -196,7 +195,7 @@ public class CallInfoTest {
     @Test
     public void getForegroundCall_withRingingCall() {
         BluetoothCall ringingCall = getMockCall();
-        when(ringingCall.getState()).thenReturn(Call.STATE_CONNECTING);
+        doReturn(Call.STATE_CONNECTING).when(ringingCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(ringingCall);
 
@@ -208,7 +207,7 @@ public class CallInfoTest {
     @Test
     public void getForegroundCall_withNoMatchingCall() {
         BluetoothCall disconnectedCall = getMockCall();
-        when(disconnectedCall.getState()).thenReturn(Call.STATE_DISCONNECTED);
+        doReturn(Call.STATE_DISCONNECTED).when(disconnectedCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(disconnectedCall);
 
@@ -220,7 +219,7 @@ public class CallInfoTest {
     @Test
     public void getCallByState_withNoMatchingCall() {
         BluetoothCall activeCall = getMockCall();
-        when(activeCall.getState()).thenReturn(Call.STATE_ACTIVE);
+        doReturn(Call.STATE_ACTIVE).when(activeCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(activeCall);
 
@@ -234,7 +233,7 @@ public class CallInfoTest {
         LinkedHashSet<Integer> states = new LinkedHashSet<>();
         states.add(Call.STATE_CONNECTING);
         BluetoothCall activeCall = getMockCall();
-        when(activeCall.getState()).thenReturn(Call.STATE_ACTIVE);
+        doReturn(Call.STATE_ACTIVE).when(activeCall).getState();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(activeCall);
 
@@ -247,7 +246,7 @@ public class CallInfoTest {
     public void getCallByCallId() {
         BluetoothCall call = getMockCall();
         UUID uuid = UUID.randomUUID();
-        when(call.getTbsCallId()).thenReturn(uuid);
+        doReturn(uuid).when(call).getTbsCallId();
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(call);
 
@@ -267,8 +266,8 @@ public class CallInfoTest {
     @Test
     public void getBestPhoneAccount() {
         BluetoothCall foregroundCall = getMockCall();
-        when(foregroundCall.getState()).thenReturn(Call.STATE_DIALING);
-        when(foregroundCall.getAccountHandle()).thenReturn(null);
+        doReturn(Call.STATE_DIALING).when(foregroundCall).getState();
+        doReturn(null).when(foregroundCall).getAccountHandle();
 
         ArrayList<BluetoothCall> calls = new ArrayList<>();
         calls.add(foregroundCall);
@@ -278,11 +277,12 @@ public class CallInfoTest {
         List<PhoneAccountHandle> handles = new ArrayList<>();
         PhoneAccountHandle testHandle = makeQuickAccountHandle(testId);
         handles.add(testHandle);
-        when(mTelecomManager.getPhoneAccountsSupportingScheme(PhoneAccount.SCHEME_TEL))
-                .thenReturn(handles);
+        doReturn(handles)
+                .when(mTelecomManager)
+                .getPhoneAccountsSupportingScheme(PhoneAccount.SCHEME_TEL);
 
         PhoneAccount fakePhoneAccount = makeQuickAccount(testId, TEST_ACCOUNT_INDEX);
-        when(mTelecomManager.getPhoneAccount(testHandle)).thenReturn(fakePhoneAccount);
+        doReturn(fakePhoneAccount).when(mTelecomManager).getPhoneAccount(testHandle);
 
         assertThat(mMockCallInfo.getBestPhoneAccount()).isEqualTo(fakePhoneAccount);
     }

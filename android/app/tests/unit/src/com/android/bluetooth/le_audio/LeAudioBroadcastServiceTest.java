@@ -48,7 +48,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
@@ -259,8 +258,9 @@ public class LeAudioBroadcastServiceTest {
                 .getVolumeControlService();
 
         // Set up the State Changed receiver
-        when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF")))
-                .thenReturn(mBroadcastDevice);
+        doReturn(mBroadcastDevice)
+                .when(mAdapterService)
+                .getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
     }
 
     @After
@@ -519,7 +519,7 @@ public class LeAudioBroadcastServiceTest {
                 new BluetoothLeAudioContentMetadata.Builder().build();
         BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
 
-        when(mBassClientService.getConnectedDevices()).thenReturn(List.of(mDevice1));
+        doReturn(List.of(mDevice1)).when(mBassClientService).getConnectedDevices();
         // update input selectable configs to be STANDARD quality
         // keep output selectable configs as HIGH quality
         injectGroupSelectableCodecConfigChanged(
@@ -561,7 +561,7 @@ public class LeAudioBroadcastServiceTest {
                 new BluetoothLeAudioContentMetadata.Builder().build();
         BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
 
-        when(mBassClientService.getConnectedDevices()).thenReturn(List.of(mDevice1));
+        doReturn(List.of(mDevice1)).when(mBassClientService).getConnectedDevices();
         // update output selectable configs to be STANDARD quality
         injectGroupSelectableCodecConfigChanged(
                 groupId, INPUT_SELECTABLE_CONFIG_HIGH, OUTPUT_SELECTABLE_CONFIG_STANDARD);
@@ -786,8 +786,9 @@ public class LeAudioBroadcastServiceTest {
         /* Prepare active group to cause pending broadcast */
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any(BluetoothDevice.class));
         doReturn(true).when(mLeAudioNativeInterface).connectLeAudio(any(BluetoothDevice.class));
-        when(mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO);
         doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
@@ -1208,7 +1209,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
 
         devices.add(mDevice1);
         prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
@@ -1411,7 +1412,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
 
         synchronized (mService.mLeAudioCallbacks) {
             mService.mLeAudioCallbacks.register(mLeAudioCallbacks);
@@ -1459,7 +1460,7 @@ public class LeAudioBroadcastServiceTest {
                         .build();
 
         startBroadcastAndVerify(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
-        when(mBassClientService.getSyncedBroadcastSinks(broadcastId)).thenReturn(List.of(mDevice1));
+        doReturn(List.of(mDevice1)).when(mBassClientService).getSyncedBroadcastSinks(broadcastId);
         assertThat(mService.getLocalBroadcastReceivers().size()).isEqualTo(1);
         assertThat(mService.getLocalBroadcastReceivers()).containsExactly(mDevice1);
 
@@ -1476,7 +1477,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
 
         initializeNative();
         devices.add(mDevice1);
@@ -1544,7 +1545,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
 
         /* If no connected devices - no fallback device */
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
@@ -1792,7 +1793,7 @@ public class LeAudioBroadcastServiceTest {
 
         List<BluetoothDevice> devices = new ArrayList<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
         devices.add(mDevice1);
 
         InOrder inOrderNative = inOrder(mLeAudioNativeInterface);
@@ -1874,7 +1875,7 @@ public class LeAudioBroadcastServiceTest {
         byte[] code = {0x00, 0x01, 0x00, 0x02};
         List<BluetoothDevice> devices = new ArrayList<>();
 
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
         devices.add(mDevice1);
 
         initializeNative();
@@ -1982,7 +1983,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
 
         // 1. Perepare Unicast and start Broadcast
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
         devices.add(mDevice1);
 
         InOrder inOrderNative = inOrder(mLeAudioNativeInterface);
@@ -2016,7 +2017,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
 
         // 1. Perepare Unicast and start Broadcast
-        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(devices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
         devices.add(mDevice1);
 
         InOrder inOrderNative = inOrder(mLeAudioNativeInterface);

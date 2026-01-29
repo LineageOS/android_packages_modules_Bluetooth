@@ -41,7 +41,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid;
@@ -629,9 +628,10 @@ public class HearingAidServiceTest {
 
     @Test
     public void serviceBinder_setConnectionPolicy() {
-        when(mAdapterService.setProfileConnectionPolicy(
-                        mSingleDevice, BluetoothProfile.HEARING_AID, CONNECTION_POLICY_UNKNOWN))
-                .thenReturn(true);
+        doReturn(true)
+                .when(mAdapterService)
+                .setProfileConnectionPolicy(
+                        mSingleDevice, BluetoothProfile.HEARING_AID, CONNECTION_POLICY_UNKNOWN);
 
         assertThat(mBinder.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_UNKNOWN, null))
                 .isTrue();

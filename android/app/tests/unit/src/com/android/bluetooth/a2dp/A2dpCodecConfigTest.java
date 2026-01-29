@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothCodecConfig;
 import android.bluetooth.BluetoothCodecStatus;
@@ -219,19 +218,25 @@ public class A2dpCodecConfigTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mContext.getResources()).thenReturn(mResources);
-        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_sbc))
-                .thenReturn(SBC_PRIORITY_DEFAULT);
-        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aac))
-                .thenReturn(AAC_PRIORITY_DEFAULT);
-        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aptx))
-                .thenReturn(APTX_PRIORITY_DEFAULT);
-        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aptx_hd))
-                .thenReturn(APTX_HD_PRIORITY_DEFAULT);
-        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_ldac))
-                .thenReturn(LDAC_PRIORITY_DEFAULT);
-        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_opus))
-                .thenReturn(OPUS_PRIORITY_DEFAULT);
+        doReturn(mResources).when(mContext).getResources();
+        doReturn(SBC_PRIORITY_DEFAULT)
+                .when(mResources)
+                .getInteger(R.integer.a2dp_source_codec_priority_sbc);
+        doReturn(AAC_PRIORITY_DEFAULT)
+                .when(mResources)
+                .getInteger(R.integer.a2dp_source_codec_priority_aac);
+        doReturn(APTX_PRIORITY_DEFAULT)
+                .when(mResources)
+                .getInteger(R.integer.a2dp_source_codec_priority_aptx);
+        doReturn(APTX_HD_PRIORITY_DEFAULT)
+                .when(mResources)
+                .getInteger(R.integer.a2dp_source_codec_priority_aptx_hd);
+        doReturn(LDAC_PRIORITY_DEFAULT)
+                .when(mResources)
+                .getInteger(R.integer.a2dp_source_codec_priority_ldac);
+        doReturn(OPUS_PRIORITY_DEFAULT)
+                .when(mResources)
+                .getInteger(R.integer.a2dp_source_codec_priority_opus);
 
         mA2dpCodecConfig = new A2dpCodecConfig(mContext, mA2dpNativeInterface, mAudioManager);
 
