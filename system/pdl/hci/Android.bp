@@ -1,4 +1,17 @@
 genrule {
+    name: "bluetooth_hci_rust_packets",
+    defaults: ["pdl_rust_generator_defaults"],
+    srcs: ["hci_packets.pdl"],
+    out: ["hci_packets.rs"],
+    cmd: "$(location :pdlc) --output-format rust " +
+        "--include-declaration ErrorCode --include-declaration DataStatus " +
+        "$(in) > $(out)",
+    visibility: [
+        "//packages/modules/Bluetooth/system/rust:__subpackages__",
+    ],
+}
+
+genrule {
     name: "BluetoothGeneratedPacketsHci_h",
     defaults: ["BluetoothGeneratedPackets_default"],
     srcs: ["hci_packets.pdl"],
