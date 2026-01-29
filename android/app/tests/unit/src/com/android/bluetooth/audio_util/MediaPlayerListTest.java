@@ -72,8 +72,8 @@ public class MediaPlayerListTest {
     @Mock private MediaPlayerWrapper mMockPlayerWrapper;
     @Mock private MediaPlayerList.MediaPlayerSettingsEventListener mMockPlayerSettingsListener;
 
-    private @Captor ArgumentCaptor<MediaPlayerWrapper.Callback> mPlayerWrapperCb;
-    private @Captor ArgumentCaptor<MediaData> mMediaUpdateData;
+    @Captor private ArgumentCaptor<MediaPlayerWrapper.Callback> mPlayerWrapperCb;
+    @Captor private ArgumentCaptor<MediaData> mMediaUpdateData;
 
     private MediaPlayerList mMediaPlayerList;
     private MediaPlayerWrapper.Callback mActivePlayerCallback;

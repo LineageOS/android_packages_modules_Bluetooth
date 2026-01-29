@@ -38,7 +38,6 @@ import java.io.InputStream;
 /** Test cases for {@link AvrcpCoverArtStorage}. */
 @RunWith(AndroidJUnit4.class)
 public class AvrcpCoverArtStorageTest {
-
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
     private AvrcpCoverArtStorage mAvrcpCoverArtStorage;

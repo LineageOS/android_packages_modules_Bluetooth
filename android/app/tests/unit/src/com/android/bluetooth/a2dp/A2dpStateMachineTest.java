@@ -79,9 +79,8 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpStateMachineTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private A2dpService mService;
     @Mock private A2dpNativeInterface mNativeInterface;
@@ -124,9 +123,9 @@ public class A2dpStateMachineTest {
                     .setCodecSpecific4(0)
                     .build();
 
-    private A2dpStateMachine mStateMachine;
     private InOrder mInOrder;
     private TestLooper mLooper;
+    private A2dpStateMachine mStateMachine;
 
     @Before
     public void setUp() throws Exception {

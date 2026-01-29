@@ -55,7 +55,7 @@ import org.mockito.Mock;
 @RunWith(AndroidJUnit4.class)
 public class AvrcpVolumeManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public TestName testName = new TestName();
+    @Rule public final TestName testName = new TestName();
 
     @Mock private Resources mResources;
     @Mock private BluetoothStorageManager mStorage;
@@ -67,7 +67,7 @@ public class AvrcpVolumeManagerTest {
 
     private final BluetoothDevice mDevice = getTestDevice(40);
 
-    AvrcpVolumeManager mAvrcpVolumeManager;
+    private AvrcpVolumeManager mAvrcpVolumeManager;
 
     @Before
     public void setUp() {

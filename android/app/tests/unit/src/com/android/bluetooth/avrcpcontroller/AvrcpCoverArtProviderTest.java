@@ -51,6 +51,7 @@ public class AvrcpCoverArtProviderTest {
     @Mock private Context mContext;
 
     private static final String TEST_MODE = "test_mode";
+
     private final BluetoothDevice mDevice = getTestDevice(48);
 
     private AvrcpCoverArtProvider mArtProvider;

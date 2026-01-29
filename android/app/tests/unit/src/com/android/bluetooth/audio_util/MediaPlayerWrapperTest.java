@@ -64,6 +64,15 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MediaPlayerWrapperTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private MediaController mMockController;
+    @Mock private MediaPlayerWrapper.Callback mTestCbs;
+    @Mock private Context mMockContext;
+
+    @Captor private ArgumentCaptor<MediaController.Callback> mControllerCbs;
+    @Captor private ArgumentCaptor<MediaData> mMediaUpdateData;
+
     private static final int MSG_TIMEOUT = 0;
 
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
@@ -73,14 +82,6 @@ public class MediaPlayerWrapperTest {
     private ArrayList<MediaDescription.Builder> mTestQueue;
     private PlaybackState.Builder mTestState;
     private Bitmap mTestBitmap;
-
-    @Captor ArgumentCaptor<MediaController.Callback> mControllerCbs;
-    @Captor ArgumentCaptor<MediaData> mMediaUpdateData;
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock MediaController mMockController;
-    @Mock MediaPlayerWrapper.Callback mTestCbs;
-    @Mock Context mMockContext;
 
     List<MediaSession.QueueItem> getQueueFromDescriptions(
             List<MediaDescription.Builder> descriptions) {

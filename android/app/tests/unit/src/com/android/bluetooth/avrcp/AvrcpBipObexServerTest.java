@@ -103,15 +103,13 @@ public class AvrcpBipObexServerTest {
     private static final String IMAGE_HANDLE_INVALID = "abc1234"; // no non-numeric characters
 
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
+
     private CoverArt mCoverArt;
-
-    private AvrcpCoverArtService mAvrcpCoverArtService = null;
-    private AvrcpBipObexServer.Callback mCallback = null;
-
-    private HeaderSet mRequest = null;
-    private HeaderSet mReply = null;
-    private ByteArrayOutputStream mOutputStream = null;
-
+    private AvrcpCoverArtService mAvrcpCoverArtService;
+    private AvrcpBipObexServer.Callback mCallback;
+    private HeaderSet mRequest;
+    private HeaderSet mReply;
+    private ByteArrayOutputStream mOutputStream;
     private AvrcpBipObexServer mAvrcpBipObexServer;
 
     @Before

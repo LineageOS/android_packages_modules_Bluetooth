@@ -100,7 +100,6 @@ public class AvrcpControllerStateMachineTest {
     @Mock private PlayerApplicationSettings mPlayerApplicationSettings;
     @Mock private AudioManager mAudioManager;
     @Mock private PackageManager mPackageManager;
-    private BroadcastReceiver mBroadcastReceiver;
 
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 100;
     private static final int KEY_DOWN = 0;
@@ -111,8 +110,9 @@ public class AvrcpControllerStateMachineTest {
     private final BluetoothDevice mDevice = getTestDevice(43);
     private final byte[] mTestAddress = getBytesFromAddress(mDevice.getAddress());
 
-    private AvrcpControllerStateMachine mAvrcpStateMachine;
     private BrowseTree mBrowseTree;
+    private BroadcastReceiver mBroadcastReceiver;
+    private AvrcpControllerStateMachine mAvrcpStateMachine;
 
     @Before
     public void setUp() throws Exception {
