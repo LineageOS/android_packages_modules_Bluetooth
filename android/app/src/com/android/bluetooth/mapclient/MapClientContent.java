@@ -374,7 +374,6 @@ class MapClientContent {
             values.put(Mms.MMS_VERSION, PduHeaders.CURRENT_MMS_VERSION);
             values.put(Mms.PRIORITY, PduHeaders.PRIORITY_NORMAL);
             values.put(Mms.READ_REPORT, PduHeaders.VALUE_NO);
-            values.put(Mms.TRANSACTION_ID, "T" + Long.toHexString(System.currentTimeMillis()));
             values.put(Mms.DELIVERY_REPORT, PduHeaders.VALUE_NO);
             values.put(Mms.LOCKED, 0);
             values.put(Mms.CONTENT_TYPE, "application/vnd.wap.multipart.related");
