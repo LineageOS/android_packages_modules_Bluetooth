@@ -179,9 +179,9 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockBtaVaps",
+    name: "TestMockBtaVap",
     srcs: [
-        "mock/mock_bta_vaps_*.cc",
+        "mock/mock_bta_vap_*.cc",
     ],
 }
 
@@ -217,7 +217,7 @@ filegroup {
         ":TestMockBtaRfcMetrics",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
-        ":TestMockBtaVaps",
+        ":TestMockBtaVap",
         ":TestMockBtaVcp",
     ],
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,24 +21,24 @@
  #include <string>
 
  #include "bluetooth/log.h"
- #include "bta/vaps/vaps_server_types.h"
+ #include "bta/vap/vap_server_types.h"
  #include "bluetooth/types/uuid.h"
 
  using namespace bluetooth;
- using namespace ::vaps;
- using namespace ::vaps::uuid;
+ using namespace ::vap;
+ using namespace ::vap::uuid;
 
- namespace vaps {
+ namespace vap {
  std::string uuid::getUuidName(const bluetooth::Uuid& uuid) {
    switch (uuid.As16Bit()) {
-     case kVaeNameCharacteristic16bit:
-       return "VAE Name";
-     case kVaeUuidCharacteristic16bit:
-       return "VAE UUID";
-     case kVaeControlPointCharacteristic16bit:
-       return "VAE Control Point";
-     case kVaeCcidCharacteristic16bit:
-       return "VAE CCID";
+     case kVaNameCharacteristic16bit:
+       return "VA Name";
+     case kVaUuidCharacteristic16bit:
+       return "VA UUID";
+     case kVasControlPointCharacteristic16bit:
+       return "VAS Control Point";
+     case kVaCcidCharacteristic16bit:
+       return "VA CCID";
      case kVaSessionStateCharacteristic16bit:
        return "VA Session State";
      case kClientCharacteristicConfiguration16bit:
@@ -150,15 +150,15 @@
    }
  }
 
- bool IsVapsServiceCharacteristic(const bluetooth::Uuid& uuid) {
+ bool IsVapServiceCharacteristic(const bluetooth::Uuid& uuid) {
    if (!uuid.Is16Bit()) {
      return false;
    }
    switch (uuid.As16Bit()) {
-     case kVaeNameCharacteristic16bit:
-     case kVaeUuidCharacteristic16bit:
-     case kVaeControlPointCharacteristic16bit:
-     case kVaeCcidCharacteristic16bit:
+     case kVaNameCharacteristic16bit:
+     case kVaUuidCharacteristic16bit:
+     case kVasControlPointCharacteristic16bit:
+     case kVaCcidCharacteristic16bit:
      case kVaSessionStateCharacteristic16bit:
        return true;
      default:
@@ -166,4 +166,4 @@
    }
  }
 
- }  // namespace vaps
+ }  // namespace vap

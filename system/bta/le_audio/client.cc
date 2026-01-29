@@ -50,7 +50,7 @@
 #include "audio_hal_interface/le_audio_software.h"
 #include "bt_types.h"
 #include "bta/csis/csis_types.h"
-#include "bta/include/bta_vaps_server_api.h"
+#include "bta/include/bta_vap_server_api.h"
 #include "bta_csis_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
@@ -6660,7 +6660,7 @@ public:
           if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" audio sender: NotifyVaSessionStarted");
             if (group) {
-              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+              bluetooth::vap::GetVapServer()->NotifyVaSessionStarted(
                       GetGroupDevices(group->group_id_), true);
             }
           }
@@ -6681,7 +6681,7 @@ public:
           if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" audio receiver: NotifyVaSessionStarted");
             if (group) {
-              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+              bluetooth::vap::GetVapServer()->NotifyVaSessionStarted(
                       GetGroupDevices(group->group_id_), true);
             }
           }
@@ -6826,7 +6826,7 @@ public:
         if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
           log::info(" Status Idle: NotifyVaSessionStopped");
           if (group) {
-            bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+            bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
                     GetGroupDevices(group->group_id_), true);
           }
         } else {
@@ -6834,7 +6834,7 @@ public:
           if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" Status Idle: NotifyVaSessionStopped");
             if (group) {
-              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+              bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
                       GetGroupDevices(group->group_id_), true);
             }
           }

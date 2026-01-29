@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "bta/vaps/vaps_server_types.h"
+#include "bta/vap/vap_server_types.h"
 #include "bluetooth/types/uuid.h"
 
-namespace vaps {
+namespace vap {
 namespace uuid {
 std::string getUuidName(const bluetooth::Uuid& uuid);
 }  // namespace uuid
@@ -30,20 +30,20 @@ ControlPointResponse ValidateControlPointOperation(ControlPointCommand* command,
 std::string GetCtpOpcodeText(CtpOpcode ctp_opcode);
 std::string GetResponseCodeValueText(ResponseCodeValue response_code_value);
 std::string GetVaSessionStateText(VaSessionState va_session_state);
-bool IsVapsServiceCharacteristic(const bluetooth::Uuid& uuid);
-}  // namespace vaps
+bool IsVapServiceCharacteristic(const bluetooth::Uuid& uuid);
+}  // namespace vap
 
 using namespace ::testing;
-using namespace ::vaps;
-using namespace ::vaps::uuid;
+using namespace ::vap;
+using namespace ::vap::uuid;
 
-// --- Tests for vaps_server_utils.cc ---
+// --- Tests for vap_server_utils.cc ---
 
-TEST(VapsServerUtilsTest, GetUuidName) {
-  EXPECT_EQ(::vaps::uuid::getUuidName(bluetooth::Uuid::From16Bit(0x0000)), "Unknown UUID");
+TEST(VapServerUtilsTest, GetUuidName) {
+  EXPECT_EQ(::vap::uuid::getUuidName(bluetooth::Uuid::From16Bit(0x0000)), "Unknown UUID");
 }
 
-TEST(VapsServerUtilsTest, ValidateControlPointOperation_Valid) {
+TEST(VapServerUtilsTest, ValidateControlPointOperation_Valid) {
   ControlPointCommand command;
 
   uint8_t init_value[] = {(uint8_t)CtpOpcode::INITIALIZE_VA_SESSION};
@@ -53,7 +53,7 @@ TEST(VapsServerUtilsTest, ValidateControlPointOperation_Valid) {
   EXPECT_EQ(response.code_value_, ResponseCodeValue::SUCCESS);
 }
 
-TEST(VapsServerUtilsTest, ValidateControlPointOperation_InvalidState) {
+TEST(VapServerUtilsTest, ValidateControlPointOperation_InvalidState) {
   ControlPointCommand command;
   uint8_t start_value[] = {(uint8_t)CtpOpcode::START_VA_SESSION};
   auto response = ValidateControlPointOperation(&command, start_value, 1,
@@ -74,7 +74,7 @@ TEST(VapsServerUtilsTest, ValidateControlPointOperation_InvalidState) {
   EXPECT_EQ(response.code_value_, ResponseCodeValue::INVALID_SESSION_STATE);
 }
 
-TEST(VapsServerUtilsTest, ValidateControlPointOperation_InvalidOpcode) {
+TEST(VapServerUtilsTest, ValidateControlPointOperation_InvalidOpcode) {
   ControlPointCommand command;
   uint8_t invalid_value[] = {0xFF};  // Invalid opcode
   auto response = ValidateControlPointOperation(&command, invalid_value, 1,
@@ -83,7 +83,7 @@ TEST(VapsServerUtilsTest, ValidateControlPointOperation_InvalidOpcode) {
   EXPECT_EQ(response.code_value_, ResponseCodeValue::OP_CODE_NOT_SUPPORTED);
 }
 
-TEST(VapsServerUtilsTest, ValidateControlPointOperation_InvalidLength) {
+TEST(VapServerUtilsTest, ValidateControlPointOperation_InvalidLength) {
   ControlPointCommand command;
   uint8_t value[] = {(uint8_t)CtpOpcode::START_VA_SESSION, 0x00};
   auto response =
@@ -92,7 +92,7 @@ TEST(VapsServerUtilsTest, ValidateControlPointOperation_InvalidLength) {
   EXPECT_EQ(response.code_value_, ResponseCodeValue::OP_CODE_NOT_SUPPORTED);
 }
 
-TEST(VapsServerUtilsTest, GetEnumText) {
+TEST(VapServerUtilsTest, GetEnumText) {
   EXPECT_EQ(GetCtpOpcodeText(CtpOpcode::START_VA_SESSION), "START_VA_SESSION");
   EXPECT_EQ(GetCtpOpcodeText((CtpOpcode)0xFF), "Unknown CtpOpcode");
 
@@ -103,13 +103,13 @@ TEST(VapsServerUtilsTest, GetEnumText) {
   EXPECT_EQ(GetVaSessionStateText((VaSessionState)0xFF), "Unknown VA Session");
 }
 
-TEST(VapsServerUtilsTest, IsVapsServiceCharacteristic) {
-  EXPECT_TRUE(IsVapsServiceCharacteristic(kVaeNameCharacteristic));
-  EXPECT_TRUE(IsVapsServiceCharacteristic(kVaeUuidCharacteristic));
-  EXPECT_TRUE(IsVapsServiceCharacteristic(kVaeControlPointCharacteristic));
-  EXPECT_TRUE(IsVapsServiceCharacteristic(kVaeCcidCharacteristic));
-  EXPECT_TRUE(IsVapsServiceCharacteristic(kVaSessionStateCharacteristic));
-  EXPECT_FALSE(IsVapsServiceCharacteristic(kClientCharacteristicConfiguration));
-  EXPECT_FALSE(IsVapsServiceCharacteristic(bluetooth::Uuid::From16Bit(0x1234)));
-  EXPECT_FALSE(IsVapsServiceCharacteristic(bluetooth::Uuid::From128BitBE({0x01})));
+TEST(VapServerUtilsTest, IsVapServiceCharacteristic) {
+  EXPECT_TRUE(IsVapServiceCharacteristic(kVaNameCharacteristic));
+  EXPECT_TRUE(IsVapServiceCharacteristic(kVaUuidCharacteristic));
+  EXPECT_TRUE(IsVapServiceCharacteristic(kVasControlPointCharacteristic));
+  EXPECT_TRUE(IsVapServiceCharacteristic(kVaCcidCharacteristic));
+  EXPECT_TRUE(IsVapServiceCharacteristic(kVaSessionStateCharacteristic));
+  EXPECT_FALSE(IsVapServiceCharacteristic(kClientCharacteristicConfiguration));
+  EXPECT_FALSE(IsVapServiceCharacteristic(bluetooth::Uuid::From16Bit(0x1234)));
+  EXPECT_FALSE(IsVapServiceCharacteristic(bluetooth::Uuid::From128BitBE({0x01})));
 }

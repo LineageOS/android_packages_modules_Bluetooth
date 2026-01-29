@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,40 +22,40 @@
 #include <atomic>
 #include <thread>
 
-#include "bta/include/bta_vaps_server_api.h"
+#include "bta/include/bta_vap_server_api.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
 #include "bta/test/common/mock_csis_client.h"
-#include "bta/vaps/vaps_server_types.h"
+#include "bta/vap/vap_server_types.h"
 #include "bta_csis_api.h"
 #include "btm_api_mock.h"
 #include "common/message_loop_thread.h"
-#include "hardware/bt_vaps_server.h"
+#include "hardware/bt_vap_server.h"
 #include "stack/include/bt_types.h"
 
 using namespace ::testing;
-using namespace bluetooth::vaps;
+using namespace bluetooth::vap;
 
 extern std::atomic<int> num_async_tasks;
 extern bluetooth::common::MessageLoopThread message_loop_thread;
 void init_message_loop_thread();
 void cleanup_message_loop_thread();
 
-namespace bluetooth::vaps {
+namespace bluetooth::vap {
 
 static uint16_t GetCharacteristicHandle(const bluetooth::Uuid& uuid) {
-  if (uuid == ::vaps::uuid::kVaeNameCharacteristic) {
+  if (uuid == ::vap::uuid::kVaNameCharacteristic) {
     return 0x0001;
   }
-  if (uuid == ::vaps::uuid::kVaeUuidCharacteristic) {
+  if (uuid == ::vap::uuid::kVaUuidCharacteristic) {
     return 0x0003;
   }
-  if (uuid == ::vaps::uuid::kVaeControlPointCharacteristic) {
+  if (uuid == ::vap::uuid::kVasControlPointCharacteristic) {
     return 0x0005;
   }
-  if (uuid == ::vaps::uuid::kVaeCcidCharacteristic) {
+  if (uuid == ::vap::uuid::kVaCcidCharacteristic) {
     return 0x0007;
   }
-  if (uuid == ::vaps::uuid::kVaSessionStateCharacteristic) {
+  if (uuid == ::vap::uuid::kVaSessionStateCharacteristic) {
     return 0x0009;
   }
   return 0xFFFF;
@@ -72,21 +72,21 @@ static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>& service) {
       element.attribute_handle = GetCharacteristicHandle(element.uuid);
       last_char_uuid = element.uuid;
     } else if (element.type == BTGATT_DB_DESCRIPTOR) {
-      if (element.uuid == ::vaps::uuid::kClientCharacteristicConfiguration) {
+      if (element.uuid == ::vap::uuid::kClientCharacteristicConfiguration) {
         element.attribute_handle = GetDescriptorHandle(last_char_uuid);
       }
     }
   }
 }
 
-class MockVapsServerCallbacks : public VapsServerCallbacks {
+class MockVapServerCallbacks : public VapServerCallbacks {
 public:
   MOCK_METHOD(void, OnInitialized, (), (override));
   MOCK_METHOD(void, OnStartVaSession, (const RawAddress& addr), (override));
   MOCK_METHOD(void, OnStopVaSession, (const RawAddress& addr), (override));
 };
 
-class VapsServerTest : public Test {
+class VapServerTest : public Test {
 protected:
   void SetUp() override {
     init_message_loop_thread();
@@ -95,10 +95,10 @@ protected:
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_);
     test_address_ = RawAddress::FromString("11:22:33:44:55:66").value();
 
-    // GetVapsServer() will create an instance if it's null
+    // GetVapServer() will create an instance if it's null
     EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
             .WillOnce(SaveArg<1>(&captured_gatt_callback_));
-    GetVapsServer()->Initialize(&mock_callbacks_);
+    GetVapServer()->Initialize(&mock_callbacks_);
     SyncOnMainLoop();
     ASSERT_NE(captured_gatt_callback_, nullptr);
 
@@ -132,7 +132,7 @@ protected:
     p_data_conn.conn = {.remote_bda = test_address_, .conn_id = 1, .transport = BT_TRANSPORT_LE};
     captured_gatt_callback_(BTA_GATTS_DISCONNECT_EVT, &p_data_conn);
     EXPECT_CALL(mock_gatt_server_interface_, AppDeregister(1));
-    GetVapsServer()->Cleanup();
+    GetVapServer()->Cleanup();
     SyncOnMainLoop();
     gatt::SetMockBtaGattServerInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
@@ -154,20 +154,20 @@ protected:
   gatt::MockBtaGattServerInterface mock_gatt_server_interface_;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface_;
   NiceMock<MockCsisClient> mock_csis_client_;
-  MockVapsServerCallbacks mock_callbacks_;
+  MockVapServerCallbacks mock_callbacks_;
 };
 
-TEST_F(VapsServerTest, init) {
-  GetVapsServer()->SetVaeName("TestVae");
+TEST_F(VapServerTest, init) {
+  GetVapServer()->SetVaName("TestVa");
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, init_start_stop_va_session) {
-  GetVapsServer()->SetVaeName("MyVae");
+TEST_F(VapServerTest, init_start_stop_va_session) {
+  GetVapServer()->SetVaName("MyVa");
   SyncOnMainLoop();
 
   // Enable notifications for Control Point to allow for multiple commands
-  uint16_t cp_ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaeControlPointCharacteristic);
+  uint16_t cp_ccc_handle = GetDescriptorHandle(::vap::uuid::kVasControlPointCharacteristic);
   uint8_t ccc_notification_value[] = {0x01, 0x00};  // Notification enabled
   auto* p_data_write_cp_ccc_req_data = new tGATTS_DATA{
           .write_req = {
@@ -186,7 +186,7 @@ TEST_F(VapsServerTest, init_start_stop_va_session) {
   captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write_cp_ccc);
   SyncOnMainLoop();
 
-  uint16_t cp_handle = GetCharacteristicHandle(::vaps::uuid::kVaeControlPointCharacteristic);
+  uint16_t cp_handle = GetCharacteristicHandle(::vap::uuid::kVasControlPointCharacteristic);
   ASSERT_NE(0, cp_handle);
 
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(1, cp_handle, _, _)).Times(1);
@@ -194,7 +194,7 @@ TEST_F(VapsServerTest, init_start_stop_va_session) {
   auto* p_data_write_init_req_data = new tGATTS_DATA{
           .write_req = {.handle = cp_handle,
                         .len = 1,
-                        .value = {(uint8_t)::vaps::CtpOpcode::INITIALIZE_VA_SESSION},
+                        .value = {(uint8_t)::vap::CtpOpcode::INITIALIZE_VA_SESSION},
                         .need_rsp = false}};
   auto* p_data_write_init = new tBTA_GATTS;
   p_data_write_init->req_data = {.remote_bda = test_address_,
@@ -209,7 +209,7 @@ TEST_F(VapsServerTest, init_start_stop_va_session) {
   auto* p_data_write_req_data = new tGATTS_DATA{
           .write_req = {.handle = cp_handle,
                         .len = 1,
-                        .value = {(uint8_t)::vaps::CtpOpcode::START_VA_SESSION},
+                        .value = {(uint8_t)::vap::CtpOpcode::START_VA_SESSION},
                         .need_rsp = false}};
   auto* p_data_write = new tBTA_GATTS;
   p_data_write->req_data = {.remote_bda = test_address_,
@@ -221,7 +221,7 @@ TEST_F(VapsServerTest, init_start_stop_va_session) {
 
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(1, cp_handle, _, _)).Times(1);
 
-  GetVapsServer()->NotifyVaSessionStarted({test_address_}, true);
+  GetVapServer()->NotifyVaSessionStarted({test_address_}, true);
   SyncOnMainLoop();
 
   EXPECT_CALL(mock_callbacks_, OnStopVaSession(test_address_)).Times(1);
@@ -229,7 +229,7 @@ TEST_F(VapsServerTest, init_start_stop_va_session) {
   auto* p_data_write_stop_req_data = new tGATTS_DATA{
           .write_req = {.handle = cp_handle,
                         .len = 1,
-                        .value = {(uint8_t)::vaps::CtpOpcode::STOP_VA_SESSION},
+                        .value = {(uint8_t)::vap::CtpOpcode::STOP_VA_SESSION},
                         .need_rsp = false}};
   auto* p_data_write_stop = new tBTA_GATTS;
   p_data_write_stop->req_data = {.remote_bda = test_address_,
@@ -240,7 +240,7 @@ TEST_F(VapsServerTest, init_start_stop_va_session) {
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, on_gatt_mtu_changed) {
+TEST_F(VapServerTest, on_gatt_mtu_changed) {
   uint16_t new_mtu = 512;
   auto* p_data_mtu_data = new tGATTS_DATA{.mtu = new_mtu};
   auto* p_data_mtu = new tBTA_GATTS;
@@ -249,12 +249,12 @@ TEST_F(VapsServerTest, on_gatt_mtu_changed) {
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, on_read_characteristic_vae_name) {
-  std::string vae_name = "TestVaeName";
-  GetVapsServer()->SetVaeName(vae_name);
+TEST_F(VapServerTest, on_read_characteristic_va_name) {
+  std::string va_name = "TestVaName";
+  GetVapServer()->SetVaName(va_name);
   SyncOnMainLoop();
 
-  uint16_t handle = GetCharacteristicHandle(::vaps::uuid::kVaeNameCharacteristic);
+  uint16_t handle = GetCharacteristicHandle(::vap::uuid::kVaNameCharacteristic);
   ASSERT_NE(0, handle);
 
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, 1, GATT_SUCCESS, _));
@@ -269,8 +269,8 @@ TEST_F(VapsServerTest, on_read_characteristic_vae_name) {
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, on_read_descriptor_ccc) {
-  uint16_t ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaSessionStateCharacteristic);
+TEST_F(VapServerTest, on_read_descriptor_ccc) {
+  uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, _, _, _));
 
   auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = ccc_handle, .offset = 0}};
@@ -283,12 +283,12 @@ TEST_F(VapsServerTest, on_read_descriptor_ccc) {
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, notify_va_session_stopped_success) {
-  GetVapsServer()->SetVaeName("MyVae");
+TEST_F(VapServerTest, notify_va_session_stopped_success) {
+  GetVapServer()->SetVaName("MyVa");
   SyncOnMainLoop();
 
   // Enable notifications for Session State
-  uint16_t ss_ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaSessionStateCharacteristic);
+  uint16_t ss_ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   uint8_t ccc_notification_value[] = {0x01, 0x00};  // Notification enabled
   auto* p_data_write_ss_ccc_req_data = new tGATTS_DATA{
           .write_req = {.handle = ss_ccc_handle,
@@ -304,35 +304,35 @@ TEST_F(VapsServerTest, notify_va_session_stopped_success) {
   captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write_ss_ccc);
   SyncOnMainLoop();
 
-  std::vector<uint8_t> active_value = {(uint8_t)::vaps::VaSessionState::VA_SESSION_ACTIVE};
+  std::vector<uint8_t> active_value = {(uint8_t)::vap::VaSessionState::VA_SESSION_ACTIVE};
 
-  GetVapsServer()->NotifyVaSessionStarted({test_address_}, true);
+  GetVapServer()->NotifyVaSessionStarted({test_address_}, true);
   SyncOnMainLoop();
 
   // Expect session state notification for stop
-  std::vector<uint8_t> ready_value = {(uint8_t)::vaps::VaSessionState::VA_SESSION_READY};
-  GetVapsServer()->NotifyVaSessionStopped({test_address_}, true);
+  std::vector<uint8_t> ready_value = {(uint8_t)::vap::VaSessionState::VA_SESSION_READY};
+  GetVapServer()->NotifyVaSessionStopped({test_address_}, true);
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, notify_vasession_stopped_session_not_active) {
-  GetVapsServer()->SetVaeName("MyVae");
+TEST_F(VapServerTest, notify_vasession_stopped_session_not_active) {
+  GetVapServer()->SetVaName("MyVa");
   SyncOnMainLoop();
   // Session state is not ACTIVE here.
 
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(_, _, _, _)).Times(0);
-  GetVapsServer()->NotifyVaSessionStopped({test_address_}, true);
+  GetVapServer()->NotifyVaSessionStopped({test_address_}, true);
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, debug_dump) {
+TEST_F(VapServerTest, debug_dump) {
   // The session must be initialized before we can set all debug values
-  uint16_t cp_handle = GetCharacteristicHandle(::vaps::uuid::kVaeControlPointCharacteristic);
+  uint16_t cp_handle = GetCharacteristicHandle(::vap::uuid::kVasControlPointCharacteristic);
   ASSERT_NE(0, cp_handle);
   auto* p_data_write_init_req_data = new tGATTS_DATA{
           .write_req = {.handle = cp_handle,
                         .len = 1,
-                        .value = {(uint8_t)::vaps::CtpOpcode::INITIALIZE_VA_SESSION},
+                        .value = {(uint8_t)::vap::CtpOpcode::INITIALIZE_VA_SESSION},
                         .need_rsp = false}};
   auto* p_data_write_init = new tBTA_GATTS;
   p_data_write_init->req_data = {.remote_bda = test_address_,
@@ -343,8 +343,8 @@ TEST_F(VapsServerTest, debug_dump) {
   SyncOnMainLoop();
 
   // Setup some state
-  GetVapsServer()->SetVaeName("MyVae");
-  GetVapsServer()->SetCcid(12);
+  GetVapServer()->SetVaName("MyVa");
+  GetVapServer()->SetCcid(12);
   SyncOnMainLoop();
 
   // Use a pipe to capture output
@@ -352,7 +352,7 @@ TEST_F(VapsServerTest, debug_dump) {
   ASSERT_EQ(0, pipe(fds));
   fcntl(fds[0], F_SETFL, O_NONBLOCK);
 
-  GetVapsServer()->DebugDump(fds[1]);
+  GetVapServer()->DebugDump(fds[1]);
   SyncOnMainLoop();
   close(fds[1]);
 
@@ -363,15 +363,15 @@ TEST_F(VapsServerTest, debug_dump) {
   buf[len] = '\0';
 
   std::string output(buf);
-  EXPECT_THAT(output, HasSubstr("VAPS Server Manager:"));
-  EXPECT_THAT(output, HasSubstr("VAE Name: MyVae"));
-  EXPECT_THAT(output, HasSubstr("VAPS CCID: 12"));
+  EXPECT_THAT(output, HasSubstr("VAP Server Manager:"));
+  EXPECT_THAT(output, HasSubstr("VA Name: MyVa"));
+  EXPECT_THAT(output, HasSubstr("VAP CCID: 12"));
   EXPECT_THAT(output, HasSubstr("Remote Client: 11:22:33:44:55:66"));
 }
 
-TEST_F(VapsServerTest, on_write_descriptor_unknown_client) {
+TEST_F(VapServerTest, on_write_descriptor_unknown_client) {
   RawAddress unknown_address = RawAddress::FromString("00:11:22:33:44:55").value();
-  uint16_t ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaSessionStateCharacteristic);
+  uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   uint8_t ccc_value[] = {0x01, 0x00};  // Notification enabled
 
   auto* p_data_write_req_data = new tGATTS_DATA{.write_req = {.handle = ccc_handle,
@@ -390,8 +390,8 @@ TEST_F(VapsServerTest, on_write_descriptor_unknown_client) {
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, on_write_descriptor_ccc_success) {
-  uint16_t ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaeCcidCharacteristic);
+TEST_F(VapServerTest, on_write_descriptor_ccc_success) {
+  uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaCcidCharacteristic);
   uint8_t ccc_value[] = {0x01, 0x00};  // Notification enabled
 
   auto* p_data_write_req_data = new tGATTS_DATA{.write_req = {.handle = ccc_handle,
@@ -410,9 +410,9 @@ TEST_F(VapsServerTest, on_write_descriptor_ccc_success) {
   SyncOnMainLoop();
 }
 
-TEST_F(VapsServerTest, on_read_descriptor_ccc_val) {
+TEST_F(VapServerTest, on_read_descriptor_ccc_val) {
   // First, write a value to the CCC descriptor
-  uint16_t ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaSessionStateCharacteristic);
+  uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   uint8_t ccc_notification_value[] = {0x01, 0x00};  // Notification enabled
   auto* p_data_write_ccc_req_data = new tGATTS_DATA{
           .write_req = {.handle = ccc_handle,
@@ -454,9 +454,9 @@ TEST_F(VapsServerTest, on_read_descriptor_ccc_val) {
   delete captured_rsp;
 }
 
-TEST_F(VapsServerTest, on_read_descriptor_unknown_client) {
+TEST_F(VapServerTest, on_read_descriptor_unknown_client) {
   RawAddress unknown_address = RawAddress::FromString("00:11:22:33:44:55").value();
-  uint16_t ccc_handle = GetDescriptorHandle(::vaps::uuid::kVaSessionStateCharacteristic);
+  uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
 
   tGATTS_RSP* captured_rsp = nullptr;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(2, 1, GATT_SUCCESS, _))
@@ -482,4 +482,4 @@ TEST_F(VapsServerTest, on_read_descriptor_unknown_client) {
   delete captured_rsp;
 }
 
-}  // namespace bluetooth::vaps
+}  // namespace bluetooth::vap

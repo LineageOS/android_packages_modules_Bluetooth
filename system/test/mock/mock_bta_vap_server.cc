@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
- #include "bta/include/bta_vaps_server_api.h"
+ #include "bta/include/bta_vap_server_api.h"
 
- using bluetooth::vaps::VapsServerCallbacks;
+ using bluetooth::vap::VapServerCallbacks;
 
- class MockVapsServer : public bluetooth::vaps::VapsServer {
-   void Initialize(VapsServerCallbacks* /*callbacks*/) override {}
+ class MockVapServer : public bluetooth::vap::VapServer {
+   void Initialize(VapServerCallbacks* /*callbacks*/) override {}
    void SetCcid(int /*ccid*/) override {}
-   void SetVaeName(std::string /*vae_name*/) override {}
+   void SetVaName(std::string /*va_name*/) override {}
    void NotifyVaSessionStarted(std::vector<RawAddress> /*devices*/, bool /*is_success*/) override {}
    void NotifyVaSessionStopped(std::vector<RawAddress> /*devices*/, bool /*is_success*/) override {}
    void DebugDump(int /*fd*/) override {}
@@ -29,15 +29,15 @@
  };
 
  namespace bluetooth {
- namespace vaps {
+ namespace vap {
 
- VapsServer* GetVapsServer() {
-   static MockVapsServer* instance = nullptr;
+ VapServer* GetVapServer() {
+   static MockVapServer* instance = nullptr;
    if (instance == nullptr) {
-     instance = new MockVapsServer();
+     instance = new MockVapServer();
    }
    return instance;
  }
 
- }  // namespace vaps
+ }  // namespace vap
  }  // namespace bluetooth
