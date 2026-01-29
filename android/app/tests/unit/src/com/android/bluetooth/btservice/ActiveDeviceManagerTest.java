@@ -80,6 +80,7 @@ import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -120,7 +121,7 @@ public class ActiveDeviceManagerTest {
     private final BluetoothDevice mDualModeAudioDevice = getTestDevice(10);
     private final BluetoothDevice mDualModeHearingAidDevice = getTestDevice(11);
     private final BluetoothDevice mDualModeAudioDevice2 = getTestDevice(12);
-    private ArrayList<BluetoothDevice> mEmptyHearingAidDevices;
+    private final List<BluetoothDevice> mEmptyDevices = Arrays.asList(null, null);
 
     private ArrayList<BluetoothDevice> mDeviceConnectionStack;
     private BluetoothDevice mMostRecentDevice;
@@ -157,16 +158,13 @@ public class ActiveDeviceManagerTest {
                 .when(mStorage)
                 .getMostRecentlyConnectedDevices();
 
-        mEmptyHearingAidDevices = new ArrayList<>();
-        mEmptyHearingAidDevices.add(null);
-        mEmptyHearingAidDevices.add(null);
-
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         when(mAdapterService.getDatabaseManager()).thenReturn(mDatabaseManager);
         doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
         doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
         doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
-        when(mHearingAidService.getActiveDevices()).thenReturn(mEmptyHearingAidDevices);
+        doReturn(mEmptyDevices).when(mHearingAidService).getActiveDevices();
+        doReturn(mEmptyDevices).when(mLeAudioService).getActiveDevices();
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
         doReturn(true)
                 .when(mAdapterService)
