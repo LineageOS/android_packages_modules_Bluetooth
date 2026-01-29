@@ -116,24 +116,24 @@ static bool create_base_record(const uint32_t sdp_handle, const char* name, cons
   uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
 
   const char* stage = "protocol_list";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(sdp_handle, num_proto_elements,
-                                                              proto_list)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddProtocolList(sdp_handle, num_proto_elements,
+                                                       proto_list)) {
     goto error;
   }
 
   // Add the name to the SDP record.
   if (name[0] != '\0') {
     stage = "service_name";
-    if (!get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
-                sdp_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE, (uint32_t)strlen(name),
-                (uint8_t*)name)) {
+    if (!get_legacy_stack_sdp_api()->SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_NAME,
+                                                      TEXT_STR_DESC_TYPE, (uint32_t)strlen(name),
+                                                      (uint8_t*)name)) {
       goto error;
     }
   }
 
   stage = "browseable";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST,
-                                                              1, &list)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1,
+                                                       &list)) {
     goto error;
   }
 
@@ -157,7 +157,7 @@ error:
 static int add_sdp_by_uuid(const char* name, const Uuid& uuid, const uint16_t channel) {
   log::verbose("uuid: {}, scn: {}, service_name: {}", uuid.ToString(), channel, name);
 
-  uint32_t handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
   if (handle == 0) {
     log::error("failed to create sdp record, scn: {}, service_name: {}", channel, name);
     return 0;
@@ -186,9 +186,8 @@ static int add_sdp_by_uuid(const char* name, const Uuid& uuid, const uint16_t ch
   { ARRAY_TO_BE_STREAM(tmp, uuid.To128BitBE().data(), UUID_MAX_LENGTH); }
 
   stage = "service_class_sequence";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddSequence(handle,
-                                                          (uint16_t)ATTR_ID_SERVICE_CLASS_ID_LIST,
-                                                          1, &type, &type_len, &type_buf_ptr)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddSequence(handle, (uint16_t)ATTR_ID_SERVICE_CLASS_ID_LIST,
+                                                   1, &type, &type_len, &type_buf_ptr)) {
     goto error;
   }
 
@@ -203,7 +202,7 @@ static int add_sdp_by_uuid(const char* name, const Uuid& uuid, const uint16_t ch
   return handle;
 
 error:
-  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+  if (get_legacy_stack_sdp_api()->SDP_DeleteRecord(handle)) {
     log::warn("Unable to delete SDP record handle:{}", handle);
   }
   log::error("failed to register service stage: {}, service_name: {}", stage, name);
@@ -215,7 +214,7 @@ error:
 static int add_pbap_sdp(const char* name, const int channel) {
   log::verbose("add_pbap_sdp: scn {}, service_name {}", channel, name);
 
-  uint32_t handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
   if (handle == 0) {
     log::error("add_pbap_sdp: failed to create sdp record, service_name: {}", name);
     return 0;
@@ -231,20 +230,20 @@ static int add_pbap_sdp(const char* name, const int channel) {
 
   // Add service class
   stage = "service_class";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(handle, 1, &service)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddServiceClassIdList(handle, 1, &service)) {
     goto error;
   }
 
   // Add in the phone access descriptor
   stage = "profile_descriptor_list";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-              handle, UUID_SERVCLASS_PHONE_ACCESS, BTA_PBS_DEFAULT_VERSION)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddProfileDescriptorList(handle, UUID_SERVCLASS_PHONE_ACCESS,
+                                                                BTA_PBS_DEFAULT_VERSION)) {
     goto error;
   }
 
   // Set up our supported repositories
   stage = "supported_repositories";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  if (!get_legacy_stack_sdp_api()->SDP_AddAttribute(
               handle, ATTR_ID_SUPPORTED_REPOSITORIES, UINT_DESC_TYPE, 1,
               (uint8_t*)&bta_pbs_cfg.supported_repositories)) {
     goto error;
@@ -260,7 +259,7 @@ static int add_pbap_sdp(const char* name, const int channel) {
   return handle;
 
 error:
-  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+  if (get_legacy_stack_sdp_api()->SDP_DeleteRecord(handle)) {
     log::warn("Unable to delete SDP record handle:{}", handle);
   }
   log::error(
@@ -274,7 +273,7 @@ error:
 static int add_ops_sdp(const char* name, const int channel) {
   log::verbose("add_ops_sdp: scn {}, service_name {}", channel, name);
 
-  uint32_t handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
   if (handle == 0) {
     log::error("add_ops_sdp: failed to create sdp record, service_name: {}", name);
     return 0;
@@ -297,13 +296,13 @@ static int add_ops_sdp(const char* name, const int channel) {
 
   // Add service class.
   stage = "service_class";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(handle, 1, &service)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddServiceClassIdList(handle, 1, &service)) {
     goto error;
   }
 
   // Add the OBEX push profile descriptor.
   stage = "profile_descriptor_list";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+  if (!get_legacy_stack_sdp_api()->SDP_AddProfileDescriptorList(
               handle, UUID_SERVCLASS_OBEX_OBJECT_PUSH, 0x0100)) {
     goto error;
   }
@@ -317,9 +316,8 @@ static int add_ops_sdp(const char* name, const int channel) {
   }
 
   stage = "supported_types";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddSequence(handle,
-                                                          (uint16_t)ATTR_ID_SUPPORTED_FORMATS_LIST,
-                                                          j, desc_type, type_len, type_value)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddSequence(handle, (uint16_t)ATTR_ID_SUPPORTED_FORMATS_LIST,
+                                                   j, desc_type, type_len, type_value)) {
     goto error;
   }
 
@@ -340,7 +338,7 @@ static int add_ops_sdp(const char* name, const int channel) {
   return handle;
 
 error:
-  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+  if (get_legacy_stack_sdp_api()->SDP_DeleteRecord(handle)) {
     log::warn("Unable to delete SDP record handle:{}", handle);
   }
   log::error(
@@ -355,7 +353,7 @@ error:
 static int add_spp_sdp(const char* name, const int channel) {
   log::verbose("add_spp_sdp: scn {}, service_name {}", channel, name);
 
-  int handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  int handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
   if (handle == 0) {
     log::error("add_spp_sdp: failed to create sdp record, service_name: {}", name);
     return 0;
@@ -370,13 +368,13 @@ static int add_spp_sdp(const char* name, const int channel) {
   }
 
   stage = "service_class";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(handle, 1, &service)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddServiceClassIdList(handle, 1, &service)) {
     goto error;
   }
 
   stage = "profile_descriptor_list";
-  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-              handle, UUID_SERVCLASS_SERIAL_PORT, SPP_PROFILE_VERSION)) {
+  if (!get_legacy_stack_sdp_api()->SDP_AddProfileDescriptorList(handle, UUID_SERVCLASS_SERIAL_PORT,
+                                                                SPP_PROFILE_VERSION)) {
     goto error;
   }
 
@@ -388,7 +386,7 @@ static int add_spp_sdp(const char* name, const int channel) {
   return handle;
 
 error:
-  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+  if (get_legacy_stack_sdp_api()->SDP_DeleteRecord(handle)) {
     log::warn("Unable to delete SDP record handle:{}", handle);
   }
   log::error(

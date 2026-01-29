@@ -41,7 +41,7 @@ protected:
 };
 
 TEST_F(StackSdpDbTest, SDP_AddAttribute__create_record) {
-  uint32_t record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t record_handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
 
   ASSERT_NE((uint32_t)0, record_handle);
   ASSERT_EQ((uint16_t)1, sdp_cb.server_db.num_records);
@@ -54,14 +54,14 @@ TEST_F(StackSdpDbTest, SDP_AddAttribute__create_record) {
   ASSERT_EQ(kFirstRecordHandle, record->record_handle);
   ASSERT_EQ(sizeof(uint32_t), record->free_pad_ptr);
 
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(record_handle));
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_DeleteRecord(record_handle));
 }
 
 TEST_F(StackSdpDbTest, SDP_AddAttribute__add_service_name) {
-  uint32_t record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t record_handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
 
   ASSERT_NE((uint32_t)0, record_handle);
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
 
@@ -77,21 +77,21 @@ TEST_F(StackSdpDbTest, SDP_AddAttribute__add_service_name) {
           sdp_db_find_attr_in_rec(record, ATTR_ID_SERVICE_NAME, ATTR_ID_SERVICE_NAME);
   ASSERT_TRUE(attribute != nullptr);
 
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(record_handle));
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_DeleteRecord(record_handle));
 }
 
 TEST_F(StackSdpDbTest, SDP_AddAttribute__three_attributes) {
-  uint32_t record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t record_handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
 
   ASSERT_NE((uint32_t)0, record_handle);
 
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_SERVICE_DESCRIPTION, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_PROVIDER_NAME, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
 
@@ -110,37 +110,37 @@ TEST_F(StackSdpDbTest, SDP_AddAttribute__three_attributes) {
   ASSERT_TRUE(sdp_db_find_attr_in_rec(record, ATTR_ID_PROVIDER_NAME, ATTR_ID_PROVIDER_NAME) !=
               nullptr);
 
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(record_handle));
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_DeleteRecord(record_handle));
 }
 
 TEST_F(StackSdpDbTest, SDP_AddAttribute__too_many_attributes) {
-  uint32_t record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t record_handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
   ASSERT_NE((uint32_t)0, record_handle);
 
   uint8_t boolean = 1;
   for (size_t i = 0; i < SDP_MAX_REC_ATTR; i++) {
-    ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
-            record_handle, (uint16_t)i, BOOLEAN_DESC_TYPE, boolean, &boolean));
+    ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(record_handle, (uint16_t)i,
+                                                             BOOLEAN_DESC_TYPE, boolean, &boolean));
   }
 
-  ASSERT_FALSE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
-          record_handle, SDP_MAX_REC_ATTR + 1, BOOLEAN_DESC_TYPE, boolean, &boolean));
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(record_handle));
+  ASSERT_FALSE(get_legacy_stack_sdp_api()->SDP_AddAttribute(record_handle, SDP_MAX_REC_ATTR + 1,
+                                                            BOOLEAN_DESC_TYPE, boolean, &boolean));
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_DeleteRecord(record_handle));
 }
 
 TEST_F(StackSdpDbTest, SDP_AddAttribute__three_attributes_replace_middle) {
-  uint32_t record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  uint32_t record_handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
 
   ASSERT_NE((uint32_t)0, record_handle);
 
   // Add 3 attributes to this record handle
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_SERVICE_DESCRIPTION, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_PROVIDER_NAME, TEXT_STR_DESC_TYPE,
           (uint32_t)(strlen(service_name) + 1), (uint8_t*)service_name));
 
@@ -160,7 +160,7 @@ TEST_F(StackSdpDbTest, SDP_AddAttribute__three_attributes_replace_middle) {
               nullptr);
 
   // Attempt to replace the middle attribute with an invalid attribute
-  ASSERT_FALSE(get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+  ASSERT_FALSE(get_legacy_stack_sdp_api()->SDP_AddAttribute(
           record_handle, ATTR_ID_SERVICE_DESCRIPTION, TEXT_STR_DESC_TYPE, (uint32_t)0,
           (uint8_t*)nullptr));
 
@@ -176,5 +176,5 @@ TEST_F(StackSdpDbTest, SDP_AddAttribute__three_attributes_replace_middle) {
   ASSERT_TRUE(sdp_db_find_attr_in_rec(record, ATTR_ID_PROVIDER_NAME, ATTR_ID_PROVIDER_NAME) !=
               nullptr);
 
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(record_handle));
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_DeleteRecord(record_handle));
 }

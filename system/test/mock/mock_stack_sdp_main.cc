@@ -24,3 +24,4 @@
 
 void sdp_free(void) { inc_func_call_count(__func__); }
 void sdp_init(void) { inc_func_call_count(__func__); }
+void SDP_Dumpsys(int) { inc_func_call_count(__func__); }

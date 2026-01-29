@@ -102,11 +102,11 @@ TEST_F(StackSdpParserInitTest, SDP_InitDiscoveryDb) {
           }));
 
   bluetooth::Uuid uuid;
-  const bool success = get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-          p_db_, kBtDefaultBufferSize, 1, &uuid, 0, nullptr);
+  const bool success = get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(p_db_, kBtDefaultBufferSize,
+                                                                       1, &uuid, 0, nullptr);
   ASSERT_TRUE(success);
 
-  ASSERT_TRUE(get_legacy_stack_sdp_api()->service.SDP_ServiceSearchRequest(
+  ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_ServiceSearchRequest(
           kRawAddress, p_db_, [](const RawAddress& /* bd_addr */, tSDP_RESULT /* result */) {}));
 }
 
@@ -120,9 +120,9 @@ protected:
               return L2CA_ConnectReqWithSecurity_cid;
             }));
 
-    ASSERT_TRUE(get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(p_db_, kSdpDbSize, 1,
-                                                                        p_uuid_list, 0, nullptr));
-    ASSERT_TRUE(get_legacy_stack_sdp_api()->service.SDP_ServiceSearchRequest(
+    ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(p_db_, kSdpDbSize, 1, p_uuid_list,
+                                                                0, nullptr));
+    ASSERT_TRUE(get_legacy_stack_sdp_api()->SDP_ServiceSearchRequest(
             kRawAddress, p_db_, [](const RawAddress& /* bd_addr */, tSDP_RESULT /* result */) {}));
 
     // Fast forward to to accept SDP responses as originator
@@ -183,51 +183,49 @@ TEST_F_WITH_FLAGS(StackSdpAsClientParseTest, sdp_disc_server_rsp_packets00,
   ASSERT_EQ(6U, sdp_get_num_attributes(*p_sdp_rec));
 
   // Service Record Handle
-  ASSERT_EQ(0x00010009U,
-            get_legacy_stack_sdp_api()
-                    ->record.SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_RECORD_HDL)
-                    ->attr_value.v.u32);
+  ASSERT_EQ(0x00010009U, get_legacy_stack_sdp_api()
+                                 ->SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_RECORD_HDL)
+                                 ->attr_value.v.u32);
 
   // Service Class ID List
   p_sdp_rec = p_db_->p_first_rec;
-  p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb_128bit(p_db_, p_sdp_rec);
+  p_sdp_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb_128bit(p_db_, p_sdp_rec);
   //  ASSERT_NE(nullptr, p_sdp_rec);
   auto uuid_list = std::vector<bluetooth::Uuid>(1);
   p_sdp_rec = p_db_->p_first_rec;
-  ASSERT_EQ(true, get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec_128bit(
-                          p_sdp_rec, &uuid_list[0]));
+  ASSERT_EQ(true,
+            get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInRec_128bit(p_sdp_rec, &uuid_list[0]));
   ASSERT_EQ(1U, uuid_list.size());
   ASSERT_STREQ("4de17a00-52cb-11e6-bdf4-0800200c9a66", uuid_list.front().ToString().c_str());
 
   // Service Record State
-  ASSERT_EQ(0x008f5162U,
-            get_legacy_stack_sdp_api()
-                    ->record.SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_RECORD_STATE)
-                    ->attr_value.v.u32);
+  ASSERT_EQ(0x008f5162U, get_legacy_stack_sdp_api()
+                                 ->SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_RECORD_STATE)
+                                 ->attr_value.v.u32);
 
   // Protocol Descriptor List
   tSDP_PROTOCOL_ELEM pe;
-  ASSERT_EQ(true, get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
+  ASSERT_EQ(true, get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(
                           p_sdp_rec, UUID_PROTOCOL_L2CAP, &pe));
   ASSERT_EQ(UUID_PROTOCOL_L2CAP, pe.protocol_uuid);
   ASSERT_EQ(0U, pe.num_params);
 
-  ASSERT_EQ(true, get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
+  ASSERT_EQ(true, get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(
                           p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe));
   ASSERT_EQ(UUID_PROTOCOL_RFCOMM, pe.protocol_uuid);
   ASSERT_EQ(1U, pe.num_params);
   ASSERT_EQ(UUID_PROTOCOL_RFCOMM, pe.params[0]);
 
   // Browse Group List
-  ASSERT_NE(nullptr, get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                             p_sdp_rec, ATTR_ID_BROWSE_GROUP_LIST));
+  ASSERT_NE(nullptr, get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_sdp_rec,
+                                                                        ATTR_ID_BROWSE_GROUP_LIST));
 
   // Bluetooth Profile List
-  ASSERT_NE(nullptr, get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  ASSERT_NE(nullptr, get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                              p_sdp_rec, ATTR_ID_BT_PROFILE_DESC_LIST));
 
   // Service Name
-  ASSERT_EQ(nullptr, (const char*)get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  ASSERT_EQ(nullptr, (const char*)get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                              p_sdp_rec, ATTR_ID_SERVICE_NAME));
 }
 

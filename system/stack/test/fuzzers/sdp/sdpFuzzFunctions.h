@@ -57,7 +57,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           std::shared_ptr<tSDP_DISCOVERY_DB> p_db(
                   reinterpret_cast<tSDP_DISCOVERY_DB*>(malloc(db_size)), free);
           if (p_db) {
-            bool success = get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+            bool success = get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(
                     p_db.get(), db_size, uuid_list.size(), uuid_list.data(), attr_list.size(),
                     reinterpret_cast<uint16_t*>(attr_list.data()));
             if (success) {
@@ -68,7 +68,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
 
         // ::SDP_CancelServiceSearch
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_CancelServiceSearch(
                   getArbitraryVectorElement(fdp, sdp_db_vect, true).get());
         },
 
@@ -77,7 +77,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           const RawAddress bd_addr = generateRawAddress(fdp);
           tSDP_DISCOVERY_DB* db = getArbitraryVectorElement(fdp, sdp_db_vect, false).get();
           if (db) {
-            [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->service.SDP_ServiceSearchRequest(
+            [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_ServiceSearchRequest(
                     bd_addr, db, &sdp_disc_cmpl_cb);
           }
         },
@@ -88,7 +88,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           tSDP_DISCOVERY_DB* db = getArbitraryVectorElement(fdp, sdp_db_vect, false).get();
           if (db) {
             [[maybe_unused]] bool rc =
-                    get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest(
+                    get_legacy_stack_sdp_api()->SDP_ServiceSearchAttributeRequest(
                             bd_addr, db, &sdp_disc_cmpl_cb);
           }
         },
@@ -102,7 +102,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
 
           if (db) {
             [[maybe_unused]] bool rc =
-                    get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
+                    get_legacy_stack_sdp_api()->SDP_ServiceSearchAttributeRequest2(
                             bd_addr, db, base::BindRepeating(&sdp_disc_cmpl_cb2, user_data));
           }
         },
@@ -110,13 +110,13 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
         // ::SDP_FindAttributeInRec
         [](FuzzedDataProvider* fdp) -> void {
           tSDP_DISC_REC* p_rec = generateArbitrarySdpDiscRecord(fdp, false).get();
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                   p_rec, fdp->ConsumeIntegral<uint16_t>());
         },
 
         // ::SDP_FindServiceInDb
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
                   getArbitraryVectorElement(fdp, sdp_db_vect, true).get(),
                   fdp->ConsumeIntegral<uint16_t>(),
                   generateArbitrarySdpDiscRecord(fdp, true).get());
@@ -125,7 +125,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
         // ::SDP_FindServiceUUIDInDb
         [](FuzzedDataProvider* fdp) -> void {
           const bluetooth::Uuid uuid = generateArbitraryUuid(fdp);
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->db.SDP_FindServiceUUIDInDb(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInDb(
                   getArbitraryVectorElement(fdp, sdp_db_vect, true).get(), uuid,
                   generateArbitrarySdpDiscRecord(fdp, true).get());
         },
@@ -135,12 +135,12 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           bluetooth::Uuid uuid = generateArbitraryUuid(fdp);
           tSDP_DISC_REC* p_rec = generateArbitrarySdpDiscRecord(fdp, false).get();
           [[maybe_unused]] bool rc =
-                  get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec_128bit(p_rec, &uuid);
+                  get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInRec_128bit(p_rec, &uuid);
         },
 
         // ::SDP_FindServiceInDb_128bit
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb_128bit(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_FindServiceInDb_128bit(
                   getArbitraryVectorElement(fdp, sdp_db_vect, true).get(),
                   generateArbitrarySdpDiscRecord(fdp, true).get());
         },
@@ -149,9 +149,8 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
         [](FuzzedDataProvider* fdp) -> void {
           tSDP_PROTOCOL_ELEM elem = generateArbitrarySdpProtocolElements(fdp);
           tSDP_DISC_REC* p_rec = generateArbitrarySdpDiscRecord(fdp, false).get();
-          [[maybe_unused]] bool rc =
-                  get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
-                          p_rec, fdp->ConsumeIntegral<uint16_t>(), &elem);
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(
+                  p_rec, fdp->ConsumeIntegral<uint16_t>(), &elem);
         },
 
         // ::SDP_FindProfileVersionInRec
@@ -159,13 +158,13 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           uint16_t p_version;
           tSDP_DISC_REC* p_rec = generateArbitrarySdpDiscRecord(fdp, false).get();
 
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                   p_rec, fdp->ConsumeIntegral<uint16_t>(), &p_version);
         },
 
         // ::SDP_CreateRecord
         [](FuzzedDataProvider* /*fdp*/) -> void {
-          uint32_t handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+          uint32_t handle = get_legacy_stack_sdp_api()->SDP_CreateRecord();
           if (handle) {
             sdp_record_handles.push_back(handle);
           }
@@ -173,7 +172,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
 
         // ::SDP_DeleteRecord
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_DeleteRecord(
                   getArbitraryVectorElement(fdp, sdp_record_handles, true));
         },
 
@@ -182,7 +181,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           std::vector<uint8_t> val =
                   fdp->ConsumeBytes<uint8_t>(fdp->ConsumeIntegralInRange<size_t>(1, 1024));
           if (val.size() > 0) {
-            [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+            [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddAttribute(
                     getArbitraryVectorElement(fdp, sdp_record_handles, true),
                     fdp->ConsumeIntegral<uint16_t>(), fdp->ConsumeIntegral<uint8_t>(), val.size(),
                     val.data());
@@ -193,7 +192,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
         [](FuzzedDataProvider* fdp) -> void {
           SDP_Sequence_Helper seq = generateArbitrarySdpElemSequence(fdp);
 
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_AddSequence(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddSequence(
                   getArbitraryVectorElement(fdp, sdp_record_handles, true),
                   fdp->ConsumeIntegral<uint16_t>(), seq.num_elem, seq.type.get(), seq.len.get(),
                   seq.p_val.get());
@@ -207,7 +206,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
             uuids[i] = fdp->ConsumeIntegral<uint16_t>();
           }
 
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddUuidSequence(
                   getArbitraryVectorElement(fdp, sdp_record_handles, true),
                   fdp->ConsumeIntegral<uint16_t>(), num_uuids, uuids);
           delete[] uuids;
@@ -218,7 +217,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           std::shared_ptr<tSDP_PROTO_LIST_ELEM> p_proto_list =
                   generateArbitrarySdpProtocolElementList(fdp);
           if (p_proto_list) {
-            [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(
+            [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddProtocolList(
                     getArbitraryVectorElement(fdp, sdp_record_handles, true),
                     p_proto_list.get()->num_elems, p_proto_list.get()->list_elem);
           }
@@ -231,10 +230,9 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
                   generateArbitrarySdpProtocolElementListArray(fdp, &arr_size);
           if (p_proto_list) {
             if (p_proto_list[0]) {
-              [[maybe_unused]] bool rc =
-                      get_legacy_stack_sdp_api()->handle.SDP_AddAdditionProtoLists(
-                              getArbitraryVectorElement(fdp, sdp_record_handles, true), arr_size,
-                              p_proto_list[0]);
+              [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddAdditionProtoLists(
+                      getArbitraryVectorElement(fdp, sdp_record_handles, true), arr_size,
+                      p_proto_list[0]);
               for (uint16_t i = 0; i < arr_size; i++) {
                 delete p_proto_list[i];
               }
@@ -245,19 +243,17 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
 
         // ::SDP_AddProfileDescriptorList
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc =
-                  get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-                          getArbitraryVectorElement(fdp, sdp_record_handles, true),
-                          fdp->ConsumeIntegral<uint16_t>(), fdp->ConsumeIntegral<uint16_t>());
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddProfileDescriptorList(
+                  getArbitraryVectorElement(fdp, sdp_record_handles, true),
+                  fdp->ConsumeIntegral<uint16_t>(), fdp->ConsumeIntegral<uint16_t>());
         },
 
         // ::SDP_AddLanguageBaseAttrIDList
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc =
-                  get_legacy_stack_sdp_api()->handle.SDP_AddLanguageBaseAttrIDList(
-                          getArbitraryVectorElement(fdp, sdp_record_handles, true),
-                          fdp->ConsumeIntegral<uint16_t>(), fdp->ConsumeIntegral<uint16_t>(),
-                          fdp->ConsumeIntegral<uint16_t>());
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddLanguageBaseAttrIDList(
+                  getArbitraryVectorElement(fdp, sdp_record_handles, true),
+                  fdp->ConsumeIntegral<uint16_t>(), fdp->ConsumeIntegral<uint16_t>(),
+                  fdp->ConsumeIntegral<uint16_t>());
         },
 
         // ::SDP_AddServiceClassIdList
@@ -268,7 +264,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
             service_uuids[i] = fdp->ConsumeIntegral<uint16_t>();
           }
 
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_AddServiceClassIdList(
                   getArbitraryVectorElement(fdp, sdp_record_handles, true), num_services,
                   service_uuids);
 
@@ -280,7 +276,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           uint32_t handle;  // Output var
           tSDP_DI_RECORD device_info = generateArbitrarySdpDiRecord(fdp);
           [[maybe_unused]] tSDP_STATUS rc =
-                  get_legacy_stack_sdp_api()->device_id.SDP_SetLocalDiRecord(&device_info, &handle);
+                  get_legacy_stack_sdp_api()->SDP_SetLocalDiRecord(&device_info, &handle);
         },
 
         // ::SDP_DiDiscover
@@ -292,21 +288,21 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           std::shared_ptr<tSDP_DISCOVERY_DB> p_db(
                   reinterpret_cast<tSDP_DISCOVERY_DB*>(malloc(db_size)), free);
           if (p_db) {
-            [[maybe_unused]] tSDP_STATUS rc = get_legacy_stack_sdp_api()->device_id.SDP_DiDiscover(
+            [[maybe_unused]] tSDP_STATUS rc = get_legacy_stack_sdp_api()->SDP_DiDiscover(
                     remote_device, p_db.get(), db_size, &sdp_disc_cmpl_cb);
           }
         },
 
         // ::SDP_GetNumDiRecords
         [](FuzzedDataProvider* fdp) -> void {
-          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->device_id.SDP_GetNumDiRecords(
+          [[maybe_unused]] bool rc = get_legacy_stack_sdp_api()->SDP_GetNumDiRecords(
                   getArbitraryVectorElement(fdp, sdp_db_vect, true).get());
         },
 
         // ::SDP_GetDiRecord
         [](FuzzedDataProvider* fdp) -> void {
           tSDP_DI_GET_RECORD device_info;  // Output var
-          [[maybe_unused]] tSDP_STATUS rc = get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(
+          [[maybe_unused]] tSDP_STATUS rc = get_legacy_stack_sdp_api()->SDP_GetDiRecord(
                   fdp->ConsumeIntegral<uint8_t>(), &device_info,
                   getArbitraryVectorElement(fdp, sdp_db_vect, true).get());
         },
@@ -316,7 +312,7 @@ static const std::vector<std::function<void(FuzzedDataProvider*)>> sdp_operation
           tSDP_DISC_REC* p_rec = generateArbitrarySdpDiscRecord(fdp, false).get();
           bluetooth::Uuid uuid;  // Output var
           [[maybe_unused]] bool rc =
-                  get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec(p_rec, &uuid);
+                  get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInRec(p_rec, &uuid);
         }};
 
 #endif  // FUZZER_SDP_FUNCTIONS_H_
