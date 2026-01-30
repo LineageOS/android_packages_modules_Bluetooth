@@ -23,7 +23,6 @@ import android.content.IntentFilter
 import android.util.Log
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
-import java.util.ArrayDeque
 import org.hamcrest.Matcher
 import org.hamcrest.core.AllOf
 import org.mockito.InOrder
@@ -140,7 +139,7 @@ class IntentReceiver private constructor(builder: Builder) {
      */
     fun verifyReceivedOrdered(vararg matchers: Matcher<Intent>) {
         inOrder
-            .verify(receiver, timeout(dqBuilder.peekFirst().intentTimeout.toMillis()))
+            .verify(receiver, timeout(dqBuilder.first().intentTimeout.toMillis()))
             .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
@@ -151,7 +150,7 @@ class IntentReceiver private constructor(builder: Builder) {
      * @param matchers Matchers
      */
     fun verifyReceived(num: Int, vararg matchers: Matcher<Intent>) {
-        verify(receiver, timeout(dqBuilder.peekFirst().intentTimeout.toMillis()).times(num))
+        verify(receiver, timeout(dqBuilder.first().intentTimeout.toMillis()).times(num))
             .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
@@ -189,7 +188,7 @@ class IntentReceiver private constructor(builder: Builder) {
         doAnswer { inv ->
                 Log.d(TAG, "onReceive(): intent=${inv.arguments.contentToString()}")
 
-                val listener = dqBuilder.peekFirst()?.intentListener ?: return@doAnswer null
+                val listener = dqBuilder.firstOrNull()?.intentListener ?: return@doAnswer null
                 val intent = inv.getArgument<Intent>(1)
 
                 /* Custom `onReceive` will be provided by the caller */
@@ -208,7 +207,7 @@ class IntentReceiver private constructor(builder: Builder) {
         /* ArrayDeque should not be empty at all while registering a receiver */
         assertThat(dqBuilder.isEmpty()).isFalse()
 
-        val intentFilter = dqBuilder.peekFirst().intentFilter
+        val intentFilter = dqBuilder.first().intentFilter
         Log.d(
             TAG,
             "registerReceiver(): Registering for intents: ${actionsFromIntentFilter(intentFilter)}",
