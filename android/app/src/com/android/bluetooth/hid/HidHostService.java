@@ -878,7 +878,6 @@ public class HidHostService extends ConnectableProfile {
      */
     @Override
     public int getConnectionState(BluetoothDevice device) {
-        Log.d(TAG, "getConnectionState: device=" + device);
         InputDevice inputDevice = mInputDevices.get(device);
         if (inputDevice != null) {
             return inputDevice.getState();

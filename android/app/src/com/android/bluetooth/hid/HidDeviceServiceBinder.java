@@ -163,8 +163,6 @@ class HidDeviceServiceBinder extends IBluetoothHidDevice.Stub implements IProfil
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-        Log.d(TAG, "getConnectionState(): device=" + device);
-
         HidDeviceService service = getService(source);
         if (service == null) {
             return BluetoothHidDevice.STATE_DISCONNECTED;

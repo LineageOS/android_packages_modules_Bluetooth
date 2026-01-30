@@ -172,7 +172,6 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getConnectionState(BluetoothDevice device) {
-        if (VDBG) log("getConnectionState(" + device + ")");
         final IBluetoothA2dpSink service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");

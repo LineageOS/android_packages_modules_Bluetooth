@@ -227,7 +227,6 @@ public final class BluetoothLeAudioPeripheral implements BluetoothProfile, AutoC
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @BtProfileState int getConnectionState(@Nullable BluetoothDevice device) {
-        Log.d(TAG, "getConnectionState(" + device + ")");
         int defaultValue = STATE_DISCONNECTED;
 
         return callServiceIfEnabled(

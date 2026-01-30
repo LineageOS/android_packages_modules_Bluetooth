@@ -164,13 +164,8 @@ public class BluetoothPbap implements BluetoothProfile {
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(
-            allOf = {
-                BLUETOOTH_CONNECT,
-                BLUETOOTH_PRIVILEGED,
-            })
+    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @BtProfileState int getConnectionState(@NonNull BluetoothDevice device) {
-        log("getConnectionState: device=" + device);
         try {
             final IBluetoothPbap service = getService();
             if (service != null && isEnabled() && isValidDevice(device)) {
