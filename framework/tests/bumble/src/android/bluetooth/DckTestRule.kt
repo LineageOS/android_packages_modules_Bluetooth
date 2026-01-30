@@ -266,13 +266,13 @@ class DckTestRule(
             withTimeout(TIMEOUT_MS * 2) { // Combined timeout for enabling and disabling BT
                 if (adapter.isEnabled()) {
                     // Disable Bluetooth
-                    adapter.disable()
+                    @Suppress("DEPRECATION") adapter.disable()
                     // Wait for the BT state change to STATE_OFF
                     bluetoothStateFlow.first { it == BluetoothAdapter.STATE_OFF }
                 }
 
                 // Enable Bluetooth
-                adapter.enable()
+                @Suppress("DEPRECATION") adapter.enable()
                 // Wait for the BT state change to STATE_ON
                 bluetoothStateFlow.first { it == BluetoothAdapter.STATE_ON }
             }

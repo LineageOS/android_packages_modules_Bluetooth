@@ -39,9 +39,9 @@ import org.junit.runner.RunWith
 /** DCK LE Scan Tests */
 @RunWith(TestParameterInjector::class)
 class DckScanTest(
-    @TestParameter private val isBluetoothToggled: Boolean,
-    @TestParameter private val isRemoteAdvertisingWithUuid: Boolean,
-    @TestParameter private val isGattConnected: Boolean,
+    @param:TestParameter private val isBluetoothToggled: Boolean,
+    @param:TestParameter private val isRemoteAdvertisingWithUuid: Boolean,
+    @param:TestParameter private val isGattConnected: Boolean,
 ) {
     // TODO(315852141): Include variations for LE only vs. Dual mode Bumble when supported
     // TODO(315852141): Include variations for two advertisements at the same time
