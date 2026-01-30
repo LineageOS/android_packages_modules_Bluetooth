@@ -32,6 +32,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_fix_reporting_csis_members"
+    namespace: "bluetooth"
+    description: "Fix reporting available set members to Application"
+    bug: "480026651"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_fix_clear_cises_in_the_cig"
     namespace: "bluetooth"
     description: "Improve operations around CIG, especially on the occasion of the controller issue."
