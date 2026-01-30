@@ -488,6 +488,23 @@ void on_connection_complete(const RawAddress& address) {
   remove_all_clients_with_pending_connections(address);
 }
 
+void on_connection_maybe(const RawAddress& address) {
+  /* We received signal that connection is established, so stop the direct connect timer.
+   *
+   * Later we would check connection establishment success/failure by either configuring it or
+   * receiving data through it, before sending callbacks that it's ready */
+
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
+  auto it = bgconn_dev.find(address);
+  if (it == bgconn_dev.end()) {
+    return;
+  }
+
+  for (auto& [key, value] : it->second.doing_direct_conn) {
+    value.reset();
+  }
+}
+
 void on_connection_timed_out_from_shim(const RawAddress& address) {
   log::info("Connection failed {}", address);
   on_connection_timed_out(0x00, address);

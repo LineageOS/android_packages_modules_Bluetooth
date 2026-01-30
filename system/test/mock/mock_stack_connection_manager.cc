@@ -72,6 +72,9 @@ void connection_manager::dump(int /* fd */) { inc_func_call_count(__func__); }
 void connection_manager::on_app_deregistered(uint8_t /* app_id */) {
   inc_func_call_count(__func__);
 }
+void connection_manager::on_connection_maybe(const RawAddress& /* address */) {
+  inc_func_call_count(__func__);
+}
 void connection_manager::on_connection_complete(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }

@@ -56,6 +56,8 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
     return false;
   }
 
+  connection_manager::on_connection_maybe(address_with_type.bda);
+
   AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
 
   /* Tell BTM Acl management about the link */
