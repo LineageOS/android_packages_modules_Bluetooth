@@ -585,7 +585,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         } else if (is_coded_phy_configured()) {
           configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
                          window_ms_coded_, interval_ms_coded_, LeScanningFilterPolicy::ACCEPT_ALL,
-                         phy_);
+                         phy_ | k1mPhyMask);
           // If CSIS scan or discovery exists, and Java scan has no coded phy scan request, no need
           // to configure a new scan
         } else {
@@ -613,6 +613,18 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       case ScanCallerType::JAVA:
         // Mark Java scan as inactive
         reset_le_java_scan();
+        // If we only had Java scan ongoing, simply stop scan
+        if (!is_le_scan_active()) {
+          should_stop_scan = true;
+          // If we had CSIS scan or discovery ongoing with coded Java scan, configure and start a 1m
+          // low latency scan without coded Java scan parameters
+        } else if (is_coded_phy_configured()) {
+          configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE, 0,
+                         0, LeScanningFilterPolicy::ACCEPT_ALL, k1mPhyMask);
+          start_scan();
+        }
+        // If we had CSIS scan or discovery ongoing without coded Java scan, simply leave the 1m low
+        // latency scan as it is
         break;
     }
     return should_stop_scan;
