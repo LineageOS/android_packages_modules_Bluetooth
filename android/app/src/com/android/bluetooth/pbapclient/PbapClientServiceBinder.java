@@ -116,7 +116,6 @@ class PbapClientServiceBinder extends IBluetoothPbapClient.Stub implements IProf
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-        Log.d(TAG, "getConnectionState(device=" + device + ")");
         PbapClientService service = getService(source);
         if (service == null) {
             return STATE_DISCONNECTED;

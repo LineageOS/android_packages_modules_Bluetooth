@@ -388,7 +388,6 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getConnectionState(BluetoothDevice device) {
-        log("getConnectionState(" + device + ")");
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "BT not enabled. Cannot get connection state");

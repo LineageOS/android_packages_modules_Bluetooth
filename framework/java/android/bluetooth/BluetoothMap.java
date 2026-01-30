@@ -390,7 +390,6 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getConnectionState(BluetoothDevice device) {
-        log("getConnectionState(" + device + ")");
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "BT not enabled. Cannot get connection state");

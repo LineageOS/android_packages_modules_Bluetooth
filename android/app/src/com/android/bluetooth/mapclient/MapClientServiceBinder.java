@@ -137,8 +137,6 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-        Log.v(TAG, "getConnectionState()");
-
         MapClientService service = getServiceAndEnforcePrivileged(source);
         if (service == null) {
             return STATE_DISCONNECTED;
