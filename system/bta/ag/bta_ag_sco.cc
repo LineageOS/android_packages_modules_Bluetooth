@@ -361,6 +361,18 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p
       /* If no other SCO active, allow this one */
       if (!bta_ag_cb.sco.p_curr_scb) {
         log::verbose("Accept Conn Request (sco_inx 0x{:04x})", sco_inx);
+        if (bta_ag_is_sco_managed_by_audio()) {
+          log::verbose("Sco managed by audio, ask audio to initiate SCO");
+          p_scb->sendAcceptConnectionRsp = true;
+          p_scb->conn_data = p_data->conn_evt;
+          tBTA_AG_VAL val = {};
+          val.hdr.handle = bta_ag_scb_to_idx(p_scb);
+          val.hdr.app_id = p_scb->app_id;
+          val.hdr.status = BTA_AG_SUCCESS;
+          val.bd_addr = p_scb->peer_addr;
+          (*bta_ag_cb.p_cback)(BTA_AG_AT_BCC_EVT, (tBTA_AG*)&val);
+          return;
+        }
         bta_ag_sco_conn_rsp(p_scb, &p_data->conn_evt);
 
         bta_ag_cb.sco.state = BTA_AG_SCO_OPENING_ST;
@@ -369,6 +381,18 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p
       } else {
         /* Begin a transfer: Close current SCO before responding */
         log::verbose("bta_ag_esco_connreq_cback: Begin XFER");
+        if (bta_ag_is_sco_managed_by_audio()) {
+          log::verbose("Sco managed by audio, ask audio to initiate SCO");
+          p_scb->sendAcceptConnectionRsp = true;
+          p_scb->conn_data = p_data->conn_evt;
+          tBTA_AG_VAL val = {};
+          val.hdr.handle = bta_ag_scb_to_idx(p_scb);
+          val.hdr.app_id = p_scb->app_id;
+          val.hdr.status = BTA_AG_SUCCESS;
+          val.bd_addr = p_scb->peer_addr;
+          (*bta_ag_cb.p_cback)(BTA_AG_AT_BCC_EVT, (tBTA_AG*)&val);
+          return;
+        }
         bta_ag_cb.sco.p_xfer_scb = p_scb;
         bta_ag_cb.sco.conn_data = p_data->conn_evt;
         bta_ag_cb.sco.state = BTA_AG_SCO_OPEN_XFER_ST;
@@ -1339,10 +1363,22 @@ void bta_ag_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   /* if another scb using sco, this is a transfer */
   if (bta_ag_cb.sco.p_curr_scb && bta_ag_cb.sco.p_curr_scb != p_scb) {
     log::info("transfer {} -> {}", bta_ag_cb.sco.p_curr_scb->peer_addr, p_scb->peer_addr);
+    if (bta_ag_is_sco_managed_by_audio() && p_scb->sendAcceptConnectionRsp) {
+      bta_ag_sco_conn_rsp(p_scb, &p_scb->conn_data);
+      p_scb->sendAcceptConnectionRsp = false;
+      bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
+      return;
+    }
     bta_ag_sco_event(p_scb, BTA_AG_SCO_XFER_E);
   } else {
     /* else it is an open */
     log::info("open {}", p_scb->peer_addr);
+    if (bta_ag_is_sco_managed_by_audio() && p_scb->sendAcceptConnectionRsp) {
+      bta_ag_sco_conn_rsp(p_scb, &p_scb->conn_data);
+      p_scb->sendAcceptConnectionRsp = false;
+      bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
+      return;
+    }
     bta_ag_sco_event(p_scb, BTA_AG_SCO_OPEN_E);
   }
 }

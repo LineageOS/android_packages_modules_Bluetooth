@@ -346,6 +346,8 @@ struct tBTA_AG_SCB {
                                                                HF indicators */
   tBTA_AG_HF_IND local_hf_indicators[BTA_AG_MAX_NUM_LOCAL_HF_IND]; /* Local supported
                                                                HF indicators */
+  bool sendAcceptConnectionRsp = false;  /* whether to defer sending the accept rsp */
+  tBTM_ESCO_CONN_REQ_EVT_DATA conn_data; /* SCO data for pending conn request */
 
   std::string ToString() const {
     return std::format(
