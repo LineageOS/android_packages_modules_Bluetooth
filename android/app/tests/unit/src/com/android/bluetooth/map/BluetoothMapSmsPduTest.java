@@ -24,7 +24,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -109,7 +109,7 @@ public class BluetoothMapSmsPduTest {
 
     @Test
     public void getSubmitPdus_withTypeGSM_whenMsgCountIsMoreThanOne() throws Exception {
-        when(mTelephonyManager.getCurrentPhoneType()).thenReturn(TelephonyManager.PHONE_TYPE_GSM);
+        doReturn(TelephonyManager.PHONE_TYPE_GSM).when(mTelephonyManager).getCurrentPhoneType();
 
         List<SmsPdu> pdus =
                 BluetoothMapSmsPdu.getSubmitPdus(mContext, TEST_TEXT_WITH_TWO_SMS_PARTS, null);
@@ -136,7 +136,7 @@ public class BluetoothMapSmsPduTest {
 
     @Test
     public void getSubmitPdus_withTypeCDMA() throws Exception {
-        when(mTelephonyManager.getCurrentPhoneType()).thenReturn(TelephonyManager.PHONE_TYPE_CDMA);
+        doReturn(TelephonyManager.PHONE_TYPE_CDMA).when(mTelephonyManager).getCurrentPhoneType();
 
         List<SmsPdu> pdus = BluetoothMapSmsPdu.getSubmitPdus(mContext, TEST_TEXT, null);
 
@@ -160,7 +160,7 @@ public class BluetoothMapSmsPduTest {
 
     @Test
     public void getDeliverPdus_withTypeGSM() throws Exception {
-        when(mTelephonyManager.getCurrentPhoneType()).thenReturn(TelephonyManager.PHONE_TYPE_GSM);
+        doReturn(TelephonyManager.PHONE_TYPE_GSM).when(mTelephonyManager).getCurrentPhoneType();
 
         List<SmsPdu> pdus =
                 BluetoothMapSmsPdu.getDeliverPdus(
@@ -187,7 +187,7 @@ public class BluetoothMapSmsPduTest {
 
     @Test
     public void getDeliverPdus_withTypeCDMA() throws Exception {
-        when(mTelephonyManager.getCurrentPhoneType()).thenReturn(TelephonyManager.PHONE_TYPE_CDMA);
+        doReturn(TelephonyManager.PHONE_TYPE_CDMA).when(mTelephonyManager).getCurrentPhoneType();
 
         List<SmsPdu> pdus =
                 BluetoothMapSmsPdu.getDeliverPdus(

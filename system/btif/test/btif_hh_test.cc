@@ -275,7 +275,7 @@ TEST_F(BtifHHVirtualUnplugTest, test_btif_hh_virtual_unplug_device_not_open) {
   auto future = g_bthh_connection_state_promise.get_future();
 
   /* Make device in connecting state */
-  ASSERT_EQ(btif_hh_connect(kDeviceConnecting), BtifStatus());
+  ASSERT_EQ(btif_hh_connect(kDeviceConnecting, true), BtifStatus());
 
   ASSERT_EQ(std::future_status::ready, future.wait_for(2s));
 

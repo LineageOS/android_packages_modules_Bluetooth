@@ -52,9 +52,7 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpServiceBinderTest {
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mSource;

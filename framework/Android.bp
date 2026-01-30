@@ -75,9 +75,9 @@ java_sdk_library {
 
     impl_library_visibility: [
         "//packages/modules/Bluetooth/android/app:__subpackages__",
-        "//packages/modules/Bluetooth/android/pandora/server",
         "//packages/modules/Bluetooth/framework/tests/bumble",
         "//packages/modules/Bluetooth/service",
+        "//packages/modules/Bluetooth/tests/pandora/server",
         "//packages/services/Car/car-builtin-lib",
         // TODO(b/431798751)
         "//packages/services/Car/tests/CarBuiltinLibUnitTest",

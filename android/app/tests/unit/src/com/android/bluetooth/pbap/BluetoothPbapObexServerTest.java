@@ -49,7 +49,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.os.Handler;
 import android.os.Message;
@@ -369,7 +368,7 @@ public class BluetoothPbapObexServerTest {
             throws Exception {
         Operation operation = mock(Operation.class);
         HeaderSet headerSet = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(headerSet);
+        doReturn(headerSet).when(operation).getReceivedHeader();
 
         doThrow(IOException.class)
                 .when(mPbapMethodProxy)
@@ -382,7 +381,7 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenTypeIsNull() throws Exception {
         Operation operation = mock(Operation.class);
         HeaderSet headerSet = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(headerSet);
+        doReturn(headerSet).when(operation).getReceivedHeader();
 
         headerSet.setHeader(HeaderSet.TYPE, null);
 
@@ -394,11 +393,11 @@ public class BluetoothPbapObexServerTest {
         Operation operation = mock(Operation.class);
         HeaderSet headerSet = new HeaderSet();
         headerSet.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_VCARD);
-        when(operation.getReceivedHeader()).thenReturn(headerSet);
+        doReturn(headerSet).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
 
-        when(userManager.isUserUnlocked()).thenReturn(false);
+        doReturn(false).when(userManager).isUserUnlocked();
 
         assertThat(mServer.onGet(operation)).isEqualTo(ResponseCodes.OBEX_HTTP_UNAVAILABLE);
     }
@@ -408,10 +407,10 @@ public class BluetoothPbapObexServerTest {
             throws Exception {
         Operation operation = mock(Operation.class);
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
 
         mServer.setCurrentPath(BluetoothPbapObexServer.TELECOM_PATH);
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
@@ -424,10 +423,10 @@ public class BluetoothPbapObexServerTest {
         Operation operation = mock(Operation.class);
         HeaderSet request = new HeaderSet();
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
 
         mServer.setCurrentPath(ILLEGAL_PATH);
 
@@ -439,10 +438,10 @@ public class BluetoothPbapObexServerTest {
         Operation operation = mock(Operation.class);
         HeaderSet request = new HeaderSet();
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
 
         mServer.setCurrentPath(BluetoothPbapObexServer.PB_PATH);
         byte[] badApplicationParameter = new byte[] {0x00, 0x01, 0x02};
@@ -455,10 +454,10 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenTypeIsInvalid() throws Exception {
         Operation operation = mock(Operation.class);
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
 
         mServer.setCurrentPath(BluetoothPbapObexServer.PB_PATH);
         request.setHeader(HeaderSet.TYPE, "someType");
@@ -470,12 +469,12 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenNameIsNotSet_andTypeIsListing_success() throws Exception {
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
-        when(operation.openOutputStream()).thenReturn(outputStream);
+        doReturn(outputStream).when(operation).openOutputStream();
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
         mServer.setConnAppParamValue(new AppParamValue());
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
 
@@ -502,12 +501,12 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenNameIsNotSet_andTypeIsPb_success() throws Exception {
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
-        when(operation.openOutputStream()).thenReturn(outputStream);
+        doReturn(outputStream).when(operation).openOutputStream();
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
         mServer.setConnAppParamValue(new AppParamValue());
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_PB);
 
@@ -537,10 +536,10 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenSimPhoneBook() throws Exception {
         Operation operation = mock(Operation.class);
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
 
         request.setHeader(HeaderSet.NAME, BluetoothPbapObexServer.PB);
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
@@ -554,10 +553,10 @@ public class BluetoothPbapObexServerTest {
         Operation operation = mock(Operation.class);
         HeaderSet request = new HeaderSet();
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
 
         request.setHeader(HeaderSet.NAME, "someName");
 
@@ -568,12 +567,12 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenNameIsSet_andTypeIsListing_success() throws Exception {
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
-        when(operation.openOutputStream()).thenReturn(outputStream);
+        doReturn(outputStream).when(operation).openOutputStream();
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
         mServer.setConnAppParamValue(new AppParamValue());
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_LISTING);
 
@@ -600,12 +599,12 @@ public class BluetoothPbapObexServerTest {
     public void testOnGet_whenNameIsSet_andTypeIsPb_success() throws Exception {
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
-        when(operation.openOutputStream()).thenReturn(outputStream);
+        doReturn(outputStream).when(operation).openOutputStream();
         HeaderSet request = new HeaderSet();
-        when(operation.getReceivedHeader()).thenReturn(request);
+        doReturn(request).when(operation).getReceivedHeader();
         UserManager userManager = mock(UserManager.class);
         doReturn(userManager).when(mPbapMethodProxy).getSystemService(any(), eq(UserManager.class));
-        when(userManager.isUserUnlocked()).thenReturn(true);
+        doReturn(true).when(userManager).isUserUnlocked();
         mServer.setConnAppParamValue(new AppParamValue());
         request.setHeader(HeaderSet.TYPE, BluetoothPbapObexServer.TYPE_PB);
 
@@ -756,7 +755,7 @@ public class BluetoothPbapObexServerTest {
     public void pushHeader_returnsObexHttpOk() throws Exception {
         Operation op = mock(Operation.class);
         OutputStream os = mock(OutputStream.class);
-        when(op.openOutputStream()).thenReturn(os);
+        doReturn(os).when(op).openOutputStream();
         HeaderSet reply = new HeaderSet();
 
         assertThat(BluetoothPbapObexServer.pushHeader(op, reply))
@@ -768,7 +767,7 @@ public class BluetoothPbapObexServerTest {
             throws Exception {
         HeaderSet reply = new HeaderSet();
         Operation op = mock(Operation.class);
-        when(op.openOutputStream()).thenThrow(new IOException());
+        doThrow(new IOException()).when(op).openOutputStream();
 
         assertThat(BluetoothPbapObexServer.pushHeader(op, reply))
                 .isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
@@ -780,7 +779,7 @@ public class BluetoothPbapObexServerTest {
         HeaderSet reply = new HeaderSet();
         Operation op = mock(Operation.class);
         OutputStream os = mock(OutputStream.class);
-        when(op.openOutputStream()).thenReturn(os);
+        doReturn(os).when(op).openOutputStream();
         doThrow(new IOException()).when(os).close();
 
         assertThat(BluetoothPbapObexServer.pushHeader(op, reply))

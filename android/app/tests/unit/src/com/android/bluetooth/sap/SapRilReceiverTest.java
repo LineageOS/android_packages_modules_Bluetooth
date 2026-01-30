@@ -47,10 +47,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.hardware.radio.sap.ISap;
 import android.os.Handler;
@@ -118,7 +118,7 @@ public class SapRilReceiverTest {
     @Test
     public void resetSapProxy() throws Exception {
         IBinder mockSapProxyBinder = mock(IBinder.class);
-        when(mReceiver.mSapProxy.asBinder()).thenReturn(mockSapProxyBinder);
+        doReturn(mockSapProxyBinder).when(mReceiver.mSapProxy).asBinder();
         mReceiver.resetSapProxy();
 
         assertThat(mReceiver.mSapProxy).isNull();
@@ -128,7 +128,7 @@ public class SapRilReceiverTest {
     @Test
     public void notifyShutdown() throws Exception {
         IBinder mockSapProxyBinder = mock(IBinder.class);
-        when(mReceiver.mSapProxy.asBinder()).thenReturn(mockSapProxyBinder);
+        doReturn(mockSapProxyBinder).when(mReceiver.mSapProxy).asBinder();
         mReceiver.notifyShutdown();
 
         verify(mCallback, timeout(TIMEOUT_MS)).receiveMessage(eq(SAP_RIL_SOCK_CLOSED), any());

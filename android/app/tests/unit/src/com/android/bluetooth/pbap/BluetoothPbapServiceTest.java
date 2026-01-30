@@ -32,7 +32,6 @@ import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
@@ -135,7 +134,7 @@ public class BluetoothPbapServiceTest {
     public void getDevicesMatchingConnectionStates() {
         PbapStateMachine sm = mock(PbapStateMachine.class);
         mService.mPbapStateMachineMap.put(mRemoteDevice, sm);
-        when(sm.getConnectionState()).thenReturn(STATE_CONNECTED);
+        doReturn(STATE_CONNECTED).when(sm).getConnectionState();
 
         int[] states = new int[] {STATE_CONNECTED};
         assertThat(mService.getDevicesMatchingConnectionStates(states)).contains(mRemoteDevice);

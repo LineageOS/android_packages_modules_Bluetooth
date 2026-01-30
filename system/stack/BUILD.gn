@@ -130,6 +130,8 @@ source_set("stack") {
     "gatt/gatt_cl.cc",
     "gatt/gatt_db.cc",
     "gatt/gatt_main.cc",
+    "gatt/gatt_main_br.cc",
+    "gatt/gatt_main_le.cc",
     "gatt/gatt_offload.cc",
     "gatt/gatt_sr.cc",
     "gatt/gatt_sr_hash.cc",

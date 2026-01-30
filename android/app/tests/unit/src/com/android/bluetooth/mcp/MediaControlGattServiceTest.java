@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -1043,7 +1042,7 @@ public class MediaControlGattServiceTest {
 
     @Test
     public void testMediaControlPointeRequest_OpcodePlayCallDuringBroadcast() {
-        when(mLeAudioService.isBroadcastActive()).thenReturn(true);
+        doReturn(true).when(mLeAudioService).isBroadcastActive();
         initAllFeaturesGattService();
         prepareConnectedDevice();
         mMediaControlGattService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
@@ -1055,7 +1054,7 @@ public class MediaControlGattServiceTest {
 
     @Test
     public void testMediaControlPointeRequest_OpcodePlayCallLeAudioServiceSetActiveDevice() {
-        when(mLeAudioService.isBroadcastActive()).thenReturn(false);
+        doReturn(false).when(mLeAudioService).isBroadcastActive();
         initAllFeaturesGattService();
         prepareConnectedDevice();
         mMediaControlGattService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);

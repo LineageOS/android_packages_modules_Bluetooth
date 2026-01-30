@@ -196,7 +196,7 @@ public class BluetoothPbapVcardManagerTest {
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         final int expectedSize = 10;
-        when(cursor.getCount()).thenReturn(expectedSize);
+        doReturn(expectedSize).when(cursor).getCount();
         BluetoothPbapSimVcardManager simVcardManager = mock(BluetoothPbapSimVcardManager.class);
         doCallRealMethod().when(simVcardManager).getSIMContactsSize();
 
@@ -211,7 +211,7 @@ public class BluetoothPbapVcardManagerTest {
     public void testGetPhonebookSize_whenTypeIsHistory() {
         final int historySize = 10;
         Cursor cursor = mock(Cursor.class);
-        when(cursor.getCount()).thenReturn(historySize);
+        doReturn(historySize).when(cursor).getCount();
         doReturn(cursor)
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
@@ -332,8 +332,8 @@ public class BluetoothPbapVcardManagerTest {
 
         final int contactIdColumn = 0;
         final int nameColumn = 1;
-        when(cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID)).thenReturn(contactIdColumn);
-        when(cursor.getColumnIndex(ContactsContract.Data.DISPLAY_NAME)).thenReturn(nameColumn);
+        doReturn(contactIdColumn).when(cursor).getColumnIndex(ContactsContract.Data.CONTACT_ID);
+        doReturn(nameColumn).when(cursor).getColumnIndex(ContactsContract.Data.DISPLAY_NAME);
 
         when(cursor.getLong(contactIdColumn))
                 .then(
@@ -390,8 +390,8 @@ public class BluetoothPbapVcardManagerTest {
 
         final int contactIdColumn = 0;
         final int nameColumn = 1;
-        when(cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID)).thenReturn(contactIdColumn);
-        when(cursor.getColumnIndex(ContactsContract.Data.DISPLAY_NAME)).thenReturn(nameColumn);
+        doReturn(contactIdColumn).when(cursor).getColumnIndex(ContactsContract.Data.CONTACT_ID);
+        doReturn(nameColumn).when(cursor).getColumnIndex(ContactsContract.Data.DISPLAY_NAME);
 
         when(cursor.getLong(contactIdColumn))
                 .then(

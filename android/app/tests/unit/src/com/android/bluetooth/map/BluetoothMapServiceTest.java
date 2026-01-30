@@ -24,7 +24,6 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import android.app.AlarmManager;
 import android.bluetooth.BluetoothDevice;
@@ -80,7 +79,7 @@ public class BluetoothMapServiceTest {
 
     @Test
     public void getDevicesMatchingConnectionStates_whenNoDeviceIsConnected_returnsEmptyList() {
-        when(mAdapterService.getBondedDevices()).thenReturn(new BluetoothDevice[] {mDevice});
+        doReturn(new BluetoothDevice[] {mDevice}).when(mAdapterService).getBondedDevices();
 
         assertThat(mService.getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTED}))
                 .isEmpty();

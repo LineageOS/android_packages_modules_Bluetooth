@@ -19,9 +19,9 @@ package com.android.bluetooth.mapclient;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
@@ -99,7 +99,7 @@ public class MnsObexServerTest {
         HeaderSet headerSet = new HeaderSet();
         headerSet.setHeader(HeaderSet.TYPE, "some_invalid_type");
         Operation op = mock(Operation.class);
-        when(op.getReceivedHeader()).thenReturn(headerSet);
+        doReturn(headerSet).when(op).getReceivedHeader();
 
         assertThat(mServer.onPut(op)).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
     }
@@ -129,8 +129,8 @@ public class MnsObexServerTest {
         headerSet.setHeader(HeaderSet.APPLICATION_PARAMETER, applicationParameter);
 
         Operation op = mock(Operation.class);
-        when(op.getReceivedHeader()).thenReturn(headerSet);
-        when(op.openDataInputStream()).thenReturn(stream);
+        doReturn(headerSet).when(op).getReceivedHeader();
+        doReturn(stream).when(op).openDataInputStream();
 
         assertThat(mServer.onPut(op)).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
 

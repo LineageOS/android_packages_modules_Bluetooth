@@ -54,12 +54,11 @@ static bool check_cached_model_name(const RawAddress& bd_addr);
 static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value);
 
 void gatt_init_le(void) {
-  tL2CAP_FIXED_CHNL_REG fixed_reg;
-  memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
-  fixed_reg.pL2CA_FixedConn_Cb = gatt_le_connect_cback;
-  fixed_reg.pL2CA_FixedData_Cb = gatt_le_data_ind;
-  fixed_reg.pL2CA_FixedCong_Cb = gatt_le_cong_cback; /* congestion callback */
-  fixed_reg.default_idle_tout = L2CAP_NO_IDLE_TIMEOUT;
+  tL2CAP_FIXED_CHNL_REG fixed_reg = {
+          .pL2CA_FixedConn_Cb = gatt_le_connect_cback,
+          .pL2CA_FixedData_Cb = gatt_le_data_ind,
+          .pL2CA_FixedCong_Cb = gatt_le_cong_cback, /* congestion callback */
+          .default_idle_tout = L2CAP_NO_IDLE_TIMEOUT};
 
   if (!stack::l2cap::get_interface().L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg)) {
     log::error("Unable to register L2CAP ATT fixed channel");

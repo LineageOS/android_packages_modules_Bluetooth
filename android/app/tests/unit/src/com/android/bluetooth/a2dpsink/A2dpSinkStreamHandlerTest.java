@@ -61,7 +61,6 @@ import java.util.Optional;
 @RunWith(AndroidJUnit4.class)
 public class A2dpSinkStreamHandlerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
 
@@ -74,9 +73,8 @@ public class A2dpSinkStreamHandlerTest {
 
     private static final int DUCK_PERCENT = 75;
 
-    private A2dpSinkStreamHandler mStreamHandler;
-
     private HandlerThread mHandlerThread;
+    private A2dpSinkStreamHandler mStreamHandler;
 
     @Before
     public void setUp() throws Exception {

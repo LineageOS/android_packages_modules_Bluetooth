@@ -104,7 +104,7 @@ public class BluetoothPbapSimVcardManagerTest {
     @Test
     public void testInit_whenCursorHasNoEntry() {
         Cursor cursor = mock(Cursor.class);
-        when(cursor.getCount()).thenReturn(0);
+        doReturn(0).when(cursor).getCount();
         doReturn(cursor)
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
@@ -118,8 +118,8 @@ public class BluetoothPbapSimVcardManagerTest {
     @Test
     public void testInit_success() {
         Cursor cursor = mock(Cursor.class);
-        when(cursor.getCount()).thenReturn(1);
-        when(cursor.moveToFirst()).thenReturn(true);
+        doReturn(1).when(cursor).getCount();
+        doReturn(true).when(cursor).moveToFirst();
         doReturn(cursor)
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
@@ -161,7 +161,7 @@ public class BluetoothPbapSimVcardManagerTest {
     public void testGetCount_success() {
         final int count = 5;
         Cursor cursor = initManager();
-        when(cursor.getCount()).thenReturn(count);
+        doReturn(count).when(cursor).getCount();
 
         assertThat(mManager.getCount()).isEqualTo(count);
     }
@@ -175,7 +175,7 @@ public class BluetoothPbapSimVcardManagerTest {
     public void testIsAfterLast_success() {
         final boolean isAfterLast = true;
         Cursor cursor = initManager();
-        when(cursor.isAfterLast()).thenReturn(isAfterLast);
+        doReturn(isAfterLast).when(cursor).isAfterLast();
 
         assertThat(mManager.isAfterLast()).isEqualTo(isAfterLast);
     }
@@ -245,7 +245,7 @@ public class BluetoothPbapSimVcardManagerTest {
     public void testGetSIMContactsSize() {
         final int count = 10;
         Cursor cursor = initManager();
-        when(cursor.getCount()).thenReturn(count);
+        doReturn(count).when(cursor).getCount();
 
         assertThat(mManager.getSIMContactsSize()).isEqualTo(count);
         verify(cursor).close();
@@ -462,15 +462,15 @@ public class BluetoothPbapSimVcardManagerTest {
     @Test
     public void testComposeAndSendSIMPhonebookVcards_success() throws Exception {
         Cursor cursor = mock(Cursor.class);
-        when(cursor.getCount()).thenReturn(10);
-        when(cursor.moveToFirst()).thenReturn(true);
-        when(cursor.isAfterLast()).thenReturn(false);
+        doReturn(10).when(cursor).getCount();
+        doReturn(true).when(cursor).moveToFirst();
+        doReturn(false).when(cursor).isAfterLast();
         doReturn(cursor)
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
-        when(operation.openOutputStream()).thenReturn(outputStream);
+        doReturn(outputStream).when(operation).openOutputStream();
         final int startPoint = 1;
         final int endPoint = 1;
         final String testOwnerVcard = "owner_v_card";
@@ -505,15 +505,15 @@ public class BluetoothPbapSimVcardManagerTest {
     @Test
     public void testComposeAndSendSIMPhonebookOneVcard_success() throws Exception {
         Cursor cursor = mock(Cursor.class);
-        when(cursor.getCount()).thenReturn(10);
-        when(cursor.moveToFirst()).thenReturn(true);
-        when(cursor.isAfterLast()).thenReturn(false);
+        doReturn(10).when(cursor).getCount();
+        doReturn(true).when(cursor).moveToFirst();
+        doReturn(false).when(cursor).isAfterLast();
         doReturn(cursor)
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
-        when(operation.openOutputStream()).thenReturn(outputStream);
+        doReturn(outputStream).when(operation).openOutputStream();
         final int offset = 1;
         final String testOwnerVcard = "owner_v_card";
 
@@ -530,9 +530,9 @@ public class BluetoothPbapSimVcardManagerTest {
 
     private Cursor initManager() {
         Cursor cursor = mock(Cursor.class);
-        when(cursor.getCount()).thenReturn(10);
-        when(cursor.moveToFirst()).thenReturn(true);
-        when(cursor.isAfterLast()).thenReturn(false);
+        doReturn(10).when(cursor).getCount();
+        doReturn(true).when(cursor).moveToFirst();
+        doReturn(false).when(cursor).isAfterLast();
         doReturn(cursor)
                 .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());

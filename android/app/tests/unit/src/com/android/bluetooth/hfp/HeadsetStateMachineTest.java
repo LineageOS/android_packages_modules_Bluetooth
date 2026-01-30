@@ -31,6 +31,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.BluetoothStatusCodes.SUCCESS;
+import static android.platform.test.flag.junit.DeviceFlagsValueProvider.createCheckFlagsRule;
 
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
@@ -75,7 +76,6 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
@@ -121,10 +121,8 @@ import java.util.List;
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class HeadsetStateMachineTest {
+    @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
     @Rule public final SetFlagsRule mSetFlagsRule;
-
-    @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Rule
     public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
@@ -150,9 +148,9 @@ public class HeadsetStateMachineTest {
     private final BluetoothDevice mDevice = getTestDevice(87);
 
     private MockContentResolver mMockContentResolver;
-    private HeadsetStateMachine mStateMachine;
     private InOrder mInOrder;
     private TestLooper mLooper;
+    private HeadsetStateMachine mStateMachine;
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {

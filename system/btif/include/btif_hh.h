@@ -149,7 +149,7 @@ btif_hh_device_t* btif_hh_find_dev_by_handle(uint8_t handle);
 btif_hh_device_t* btif_hh_find_empty_dev(void);
 BtStatus btif_hh_virtual_unplug(const AclLinkSpec& link_spec);
 BtStatus btif_hh_virtual_unplug_from_main(const AclLinkSpec& link_spec);
-BtStatus btif_hh_connect(const AclLinkSpec& link_spec);
+BtStatus btif_hh_connect(const AclLinkSpec& link_spec, bool direct);
 void btif_hh_remove_device(const AclLinkSpec& link_spec);
 void btif_hh_setreport(btif_hh_uhid_t* p_uhid, bthh_report_type_t r_type, uint16_t size,
                        uint8_t* report);

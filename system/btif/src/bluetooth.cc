@@ -833,7 +833,10 @@ static int restore_filter_accept_list() {
   // This should be the list of bonded devices and potentially any GATT
   // connections that have `is_direct=False`. Currently, we only restore LE hid
   // devices.
-  auto le_hid_addrs = btif_storage_get_le_hid_devices();
+  std::vector<std::pair<RawAddress, uint8_t>> le_hid_addrs;
+  if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+    le_hid_addrs = btif_storage_get_le_hid_devices();
+  }
   do_in_main_thread(base::BindOnce(btif_dm_restore_filter_accept_list, std::move(le_hid_addrs)));
   return BT_STATUS_SUCCESS;
 }
@@ -842,7 +845,10 @@ static int allow_wake_by_hid() {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
-  auto le_hid_addrs = btif_storage_get_le_hid_devices();
+  std::vector<std::pair<RawAddress, uint8_t>> le_hid_addrs;
+  if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+    le_hid_addrs = btif_storage_get_le_hid_devices();
+  }
   auto classic_hid_addrs = btif_storage_get_wake_capable_classic_hid_devices();
   do_in_main_thread(base::BindOnce(btif_dm_allow_wake_by_hid, std::move(classic_hid_addrs),
                                    std::move(le_hid_addrs)));
@@ -854,6 +860,14 @@ static int set_event_filter_connection_setup_all_devices() {
     return BT_STATUS_NOT_READY;
   }
   do_in_main_thread(base::BindOnce(btif_dm_set_event_filter_connection_setup_all_devices));
+  return BT_STATUS_SUCCESS;
+}
+
+static int set_suspend_state(bool suspend) {
+  if (!interface_ready()) {
+    return BT_STATUS_NOT_READY;
+  }
+  do_in_main_thread(base::BindOnce(btif_dm_set_suspend_state, suspend));
   return BT_STATUS_SUCCESS;
 }
 
@@ -1212,6 +1226,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .allow_wake_by_hid = allow_wake_by_hid,
         .set_event_filter_connection_setup_all_devices =
                 set_event_filter_connection_setup_all_devices,
+        .set_suspend_state = set_suspend_state,
         .get_wbs_supported = get_wbs_supported,
         .get_swb_supported = get_swb_supported,
         .is_coding_format_supported = is_coding_format_supported,

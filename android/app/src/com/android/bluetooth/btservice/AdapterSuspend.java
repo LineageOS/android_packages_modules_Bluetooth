@@ -24,6 +24,7 @@ import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_
 import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_SLATE;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toCollection;
 
 import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
@@ -47,9 +48,12 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,9 +72,15 @@ public class AdapterSuspend {
     private static final int DEVICE_STATE_LID_OPEN = 3;
     private static final int DEVICE_STATE_TABLET = 4;
 
+    // Constants for suspend state sent to other services
+    public static final int AWAKE = 0;
+    public static final int SHALLOW_SLEEP = 1;
+    public static final int DEEP_SLEEP = 2;
+
     enum SuspendTasks {
         PROFILE_DISCONNECTION,
         ADVERTISEMENT,
+        ACL_DISCONNECTION,
     }
 
     @VisibleForTesting
@@ -95,8 +105,6 @@ public class AdapterSuspend {
         BluetoothProfile.LE_AUDIO
     };
 
-    private static final int[] DISCONNECT_PROFILES = {BluetoothProfile.HEARING_AID};
-
     private final AdapterService mAdapterService;
     private final AdapterNativeInterface mAdapterNativeInterface;
     private final DeviceStateManager mDeviceStateManager;
@@ -113,7 +121,7 @@ public class AdapterSuspend {
     private int mScanModeOnLastSuspend;
     private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
 
-    private final Set<BluetoothDevice> mDisconnectProfileDevices = new HashSet<>();
+    private final Map<Integer, Set<BluetoothDevice>> mDisconnectProfileDevices = new HashMap<>();
     private boolean mAllowWakeByHid;
     private EnumSet<SuspendTasks> mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
 
@@ -231,23 +239,43 @@ public class AdapterSuspend {
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
     }
 
+    void aclDisconnected(BluetoothDevice device, int transport) {
+        if (!mDelayedSuspendTasks.contains(SuspendTasks.ACL_DISCONNECTION)) {
+            return;
+        }
+
+        Log.d(TAG, "Device ACL disconnected=" + device);
+        Set<RemoteDevices.AclLinkSpec> connectedDevices =
+                mAdapterService.getRemoteDevices().getConnectedDevices();
+        if (connectedDevices.isEmpty()) {
+            onSuspendTaskCompleted(SuspendTasks.ACL_DISCONNECTION);
+        } else {
+            Log.d(TAG, "Remaining device ACLs to disconnect=" + connectedDevices);
+        }
+    }
+
     void profileConnectionStateChanged(
             int profile, BluetoothDevice device, int fromState, int toState) {
-        // The profile in this function matches with profiles in DISCONNECT_PROFILES.
-        // Currently, only the ASHA hearing aid device needs to be disconnected by profile.
-        // The other devices are disconnected by disconnecting ACLs. There is no need to
-        // track profile connection state.
-        if (profile == BluetoothProfile.HEARING_AID
-                && toState == BluetoothProfile.STATE_DISCONNECTED
-                && mDisconnectProfileDevices.contains(device)) {
-            Log.d(TAG, "Device disconnected=" + device);
-            mDisconnectProfileDevices.remove(device);
+        if (!mDisconnectProfileDevices.containsKey(profile)
+                || toState != BluetoothProfile.STATE_DISCONNECTED) {
+            return;
+        }
+
+        Set<BluetoothDevice> devices = mDisconnectProfileDevices.get(profile);
+        if (!devices.contains(device)) {
+            return;
+        }
+
+        Log.d(TAG, "Device disconnected=" + device + ", profile=" + getProfileName(profile));
+        devices.remove(device);
+        if (devices.isEmpty()) {
+            mDisconnectProfileDevices.remove(profile);
             if (mDisconnectProfileDevices.isEmpty()) {
                 disconnectAllAcls();
                 onSuspendTaskCompleted(SuspendTasks.PROFILE_DISCONNECTION);
-            } else {
-                Log.d(TAG, "Remaining devices to disconnect=" + mDisconnectProfileDevices);
             }
+        } else {
+            Log.d(TAG, "Remaining devices to disconnect=" + devices);
         }
     }
 
@@ -283,17 +311,22 @@ public class AdapterSuspend {
             mAdapterService
                     .getLeAudioService()
                     .ifPresent(leAudio -> leAudio.setSystemSuspended(true));
-            mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+            if (!Flags.leHidConnectionPolicySuspend()) {
+                mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+                mAdapterNativeInterface.clearFilterAcceptList();
+            } else {
+                mAdapterNativeInterface.setSuspendState(true);
+            }
             mAdapterNativeInterface.clearEventFilter();
-            mAdapterNativeInterface.clearFilterAcceptList();
             storeActiveAudioDevices();
-            getDisconnectProfileDevices();
+            storeDisconnectProfileDevices();
 
             if (!mDisconnectProfileDevices.isEmpty()) {
                 Log.d(TAG, "Disconnect profiles for=" + mDisconnectProfileDevices);
                 mDelayedSuspendTasks.add(SuspendTasks.PROFILE_DISCONNECTION);
                 disconnectProfiles();
             } else {
+                manageHidHostConnection(true);
                 disconnectAllAcls();
             }
         }
@@ -317,13 +350,17 @@ public class AdapterSuspend {
         long mask = 0;
         long leMask = 0;
         if (mDisconnectAclOnSuspend) {
+            if (!Flags.leHidConnectionPolicySuspend()) {
+                mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+                mAdapterNativeInterface.restoreFilterAcceptList();
+                mAdapterNativeInterface.clearEventFilter();
+            } else {
+                mAdapterNativeInterface.setSuspendState(false);
+                manageHidHostConnection(false);
+            }
             mAdapterService
                     .getLeAudioService()
                     .ifPresent(leAudio -> leAudio.setSystemSuspended(false));
-            mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
-            mAdapterNativeInterface.clearEventFilter();
-            mAdapterNativeInterface.restoreFilterAcceptList();
-
             for (BluetoothDevice device : mLastActiveAudioDevices) {
                 Log.i(TAG, "Reconnect to=" + device);
                 mAdapterService.connectAllEnabledProfiles(device);
@@ -358,7 +395,7 @@ public class AdapterSuspend {
         }
     }
 
-    void storeActiveAudioDevices() {
+    private void storeActiveAudioDevices() {
         // handleSuspend can be called more than once in some condition. If so, we shouldn't store
         // the devices the second time to handle the possibility where they have been disconnected.
         if (!mLastActiveAudioDevices.isEmpty()) {
@@ -379,16 +416,39 @@ public class AdapterSuspend {
         }
     }
 
-    void getDisconnectProfileDevices() {
+    private boolean isLeTransport(BluetoothDevice dev) {
+        return mAdapterService
+                .getHidHostService()
+                .map(s -> s.getPreferredTransport(dev) == BluetoothDevice.TRANSPORT_LE)
+                .orElse(false);
+    }
+
+    private void storeDisconnectProfileDevice(int profile) {
+        Log.i(TAG, "Disconnect devices for profile=" + getProfileName(profile));
+        Set<BluetoothDevice> devices =
+                mAdapterService.getConnectedDevicesForProfile(profile).stream()
+                        .filter(Objects::nonNull)
+                        .collect(toCollection(HashSet::new));
+
+        // For HID, we only care about LE devices
+        if (profile == BluetoothProfile.HID_HOST) {
+            devices.removeIf(device -> !isLeTransport(device));
+        }
+
+        if (!devices.isEmpty()) {
+            mDisconnectProfileDevices.put(profile, devices);
+        }
+    }
+
+    private void storeDisconnectProfileDevices() {
         if (!mDisconnectProfileDevices.isEmpty()) {
-            Log.w(TAG, "Disconnect devices have been collected=" + mDisconnectProfileDevices);
+            Log.w(TAG, "Disconnect devices have been stored=" + mDisconnectProfileDevices);
             return;
         }
-        for (int profile : DISCONNECT_PROFILES) {
-            Log.i(TAG, "Disconnect devices for profile=" + getProfileName(profile));
-            mAdapterService.getConnectedMediaDevices(profile).stream()
-                    .filter(Objects::nonNull)
-                    .forEach(mDisconnectProfileDevices::add);
+
+        storeDisconnectProfileDevice(BluetoothProfile.HEARING_AID);
+        if (Flags.leHidConnectionPolicySuspend()) {
+            storeDisconnectProfileDevice(BluetoothProfile.HID_HOST);
         }
     }
 
@@ -405,7 +465,16 @@ public class AdapterSuspend {
     }
 
     private void disconnectProfiles() {
-        for (BluetoothDevice device : mDisconnectProfileDevices) {
+        disconnectAsha();
+        manageHidHostConnection(true);
+    }
+
+    private void disconnectAsha() {
+        Set<BluetoothDevice> devices =
+                mDisconnectProfileDevices.getOrDefault(
+                        BluetoothProfile.HEARING_AID, Collections.emptySet());
+        Log.d(TAG, "Disconnect ASHA for=" + devices);
+        for (BluetoothDevice device : devices) {
             if (Flags.addNewLocalDisconnectReason()) {
                 mAdapterService.disconnectAllEnabledProfiles(
                         device, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND);
@@ -420,6 +489,10 @@ public class AdapterSuspend {
             Log.w(TAG, "Task " + task + " is completed after wakelock was released");
             return;
         }
+        if (!mDelayedSuspendTasks.contains(task)) {
+            Log.w(TAG, "Task " + task + " is not scheduled");
+            return;
+        }
 
         mDelayedSuspendTasks.remove(task);
         Log.v(TAG, "Suspend remaining tasks=" + mDelayedSuspendTasks);
@@ -430,9 +503,48 @@ public class AdapterSuspend {
     }
 
     private void disconnectAllAcls() {
-        mAdapterNativeInterface.disconnectAllAcls();
-        if (mAllowWakeByHid) {
-            mAdapterNativeInterface.allowWakeByHid();
+        if (!Flags.leHidConnectionPolicySuspend()) {
+            mAdapterNativeInterface.disconnectAllAcls();
+            if (mAllowWakeByHid) {
+                mAdapterNativeInterface.allowWakeByHid();
+            }
+            return;
+        }
+
+        Set<RemoteDevices.AclLinkSpec> connectedDevices =
+                mAdapterService.getRemoteDevices().getConnectedDevices();
+        if (!connectedDevices.isEmpty()) {
+            Log.i(TAG, "disconnect acls for devices: " + connectedDevices);
+            mDelayedSuspendTasks.add(SuspendTasks.ACL_DISCONNECTION);
+            mAdapterNativeInterface.disconnectAllAcls();
+        }
+    }
+
+    private void manageHidHostConnection(boolean suspending) {
+        if (!Flags.leHidConnectionPolicySuspend()) {
+            return;
+        }
+
+        if (suspending) {
+            Log.i(TAG, "Configure allow wake by HID " + mAllowWakeByHid);
+            int suspendState = mAllowWakeByHid ? SHALLOW_SLEEP : DEEP_SLEEP;
+            mAdapterService
+                    .getHidHostService()
+                    .ifPresent(
+                            profile -> {
+                                profile.onSuspendStateChange(suspendState);
+                            });
+            if (mAllowWakeByHid) {
+                mAdapterNativeInterface.allowWakeByHid();
+            }
+        } else {
+            mAdapterService
+                    .getHidHostService()
+                    .ifPresent(
+                            profile -> {
+                                profile.onSuspendStateChange(AWAKE);
+                            });
+            mAdapterNativeInterface.clearEventFilter();
         }
     }
 

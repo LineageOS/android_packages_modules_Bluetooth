@@ -70,11 +70,10 @@ import java.util.Optional;
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
-
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private A2dpSinkService mA2dpSinkService;
     @Mock private AdapterService mAdapterService;

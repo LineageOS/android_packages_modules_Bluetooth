@@ -62,8 +62,8 @@ public class A2dpSinkStateMachineTest {
 
     private final BluetoothDevice mDevice = getTestDevice(11);
 
-    private A2dpSinkStateMachine mStateMachine;
     private TestLooper mLooper;
+    private A2dpSinkStateMachine mStateMachine;
 
     @Before
     public void setUp() throws Exception {

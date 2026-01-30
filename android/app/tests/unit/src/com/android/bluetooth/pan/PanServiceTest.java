@@ -36,7 +36,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -103,13 +102,13 @@ public class PanServiceTest {
 
     @Test
     public void connect_whenGuestUser_returnsFalse() {
-        when(mUserManager.isGuestUser()).thenReturn(true);
+        doReturn(true).when(mUserManager).isGuestUser();
         assertThat(mService.connect(mRemoteDevice)).isFalse();
     }
 
     @Test
     public void connect_inConnectedState_returnsFalse() {
-        when(mUserManager.isGuestUser()).thenReturn(false);
+        doReturn(false).when(mUserManager).isGuestUser();
         mService.mPanDevices.put(
                 mRemoteDevice,
                 new BluetoothPanDevice(STATE_CONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
@@ -119,7 +118,7 @@ public class PanServiceTest {
 
     @Test
     public void connect() {
-        when(mUserManager.isGuestUser()).thenReturn(false);
+        doReturn(false).when(mUserManager).isGuestUser();
         mService.mPanDevices.put(
                 mRemoteDevice,
                 new BluetoothPanDevice(STATE_DISCONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));

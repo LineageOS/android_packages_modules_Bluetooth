@@ -47,16 +47,16 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpBipClientTest {
-    private static final int TEST_PSM = 1;
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     @Mock private AdapterService mAdapterService;
     @Mock private AvrcpControllerService mService;
     @Mock private AvrcpCoverArtManager.Callback mCallback;
+
+    private static final int TEST_PSM = 1;
 
     private final BluetoothDevice mDevice = getTestDevice(68);
 
