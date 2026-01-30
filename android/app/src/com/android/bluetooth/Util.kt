@@ -742,6 +742,12 @@ object Util {
         } catch (e: RemoteException) {
             BluetoothUtils.logRemoteException(TAG, e)
         }
+
+    /** Checks if the value is present in the array (null-safe). Convenient usage from Java. */
+    @JvmStatic
+    fun <T> Array<T>?.arrayContains(value: T): Boolean {
+        return this?.contains(value) ?: false
+    }
 }
 
 class ActionOnDeathRecipient(

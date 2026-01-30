@@ -32,7 +32,7 @@ import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.GuardedBy;
@@ -103,7 +103,7 @@ public class BatteryService extends ConnectableProfile {
             return false;
         }
         final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-        if (!Utils.arrayContains(featureUuids, BluetoothUuid.BATTERY)) {
+        if (!Util.arrayContains(featureUuids, BluetoothUuid.BATTERY)) {
             Log.e(TAG, "Cannot connect to " + device + " : Remote does not have Battery UUID");
             return false;
         }
@@ -127,7 +127,7 @@ public class BatteryService extends ConnectableProfile {
     public boolean connectIfPossible(BluetoothDevice device) {
         if (device == null
                 || getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN
-                || !Utils.arrayContains(
+                || !Util.arrayContains(
                         getAdapterService().getRemoteUuids(device), BluetoothUuid.BATTERY)) {
             return false;
         }

@@ -65,7 +65,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.BluetoothEventLogger;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioConstants;
@@ -2254,7 +2254,7 @@ public class BassClientService extends ConnectableProfile {
         }
 
         final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-        if (!Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
+        if (!Util.arrayContains(featureUuids, BluetoothUuid.BASS)) {
             Log.e(
                     TAG,
                     "connect: Cannot connect to " + device + " : Remote does not have BASS UUID");
@@ -2331,7 +2331,7 @@ public class BassClientService extends ConnectableProfile {
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-                if (!Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
+                if (!Util.arrayContains(featureUuids, BluetoothUuid.BASS)) {
                     continue;
                 }
                 int connectionState = STATE_DISCONNECTED;
