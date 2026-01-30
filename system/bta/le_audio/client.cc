@@ -2783,9 +2783,22 @@ public:
       /* Clear current connection request and let it be set again if needed */
       BTA_GATTC_CancelOpen(gatt_if_, address, false);
 
+      auto conn_state = leAudioDevice->GetConnectionState();
+
+      /* When connection was not triggered by AUTOCONNECT mechanism, we need to inform upper layer
+       * about DISCONNECTED state */
+      if (conn_state != DeviceConnectState::CONNECTING_AUTOCONNECT) {
+        /* Notify java about connection failure */
+        log::error("Failed to connect to LeAudio leAudioDevice, status: 0x{:02x}", status);
+        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
+                leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
+                bluetooth::le_audio::to_atom_gatt_status(status));
+      }
+
       /* autoconnect connection failed, that's ok */
       if (status != GATT_ILLEGAL_PARAMETER &&
-          (leAudioDevice->GetConnectionState() == DeviceConnectState::CONNECTING_AUTOCONNECT ||
+          (conn_state == DeviceConnectState::CONNECTING_AUTOCONNECT ||
            leAudioDevice->autoconnect_flag_)) {
         log::info("Device not available now, do background connect.");
         leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTED);
@@ -2794,12 +2807,6 @@ public:
       }
 
       leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTED);
-
-      log::error("Failed to connect to LeAudio leAudioDevice, status: 0x{:02x}", status);
-      callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
-      bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
-              leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-              bluetooth::le_audio::to_atom_gatt_status(status));
       return;
     }
 
