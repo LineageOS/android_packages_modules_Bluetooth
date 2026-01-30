@@ -27,7 +27,7 @@ public:
   Impl(const types::LeAudioCodecId& /*codec_id*/) { output_channel_data_.resize(1); }
   ~Impl() = default;
 
-  std::vector<int16_t>& GetDecodedSamples() { return output_channel_data_; }
+  std::vector<int16_t>& GetOutputBuffer() { return output_channel_data_; }
   std::vector<int16_t> output_channel_data_;
 };
 
@@ -52,7 +52,7 @@ CodecInterface::Status CodecInterface::InitDecoder(const LeAudioCodecConfigurati
                                                    const LeAudioCodecConfiguration& pcm_config) {
   return impl->InitDecoder(codec_config, pcm_config);
 }
-std::vector<int16_t>& CodecInterface::GetDecodedSamples() { return impl->GetDecodedSamples(); }
+std::vector<int16_t>& CodecInterface::GetOutputBuffer() { return impl->GetOutputBuffer(); }
 CodecInterface::Status CodecInterface::Decode(uint8_t* data, uint16_t size) {
   return impl->Decode(data, size);
 }

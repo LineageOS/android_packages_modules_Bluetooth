@@ -47,5 +47,5 @@ public:
   MOCK_METHOD((bool), IsReady, ());
   MOCK_METHOD((uint16_t), GetNumOfSamplesPerChannel, ());
   MOCK_METHOD((uint8_t), GetNumOfBytesPerSample, ());
-  MOCK_METHOD((std::vector<int16_t>&), GetDecodedSamples, ());
+  MOCK_METHOD((std::vector<int16_t>&), GetOutputBuffer, ());
 };
