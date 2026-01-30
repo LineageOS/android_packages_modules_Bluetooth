@@ -2546,9 +2546,8 @@ void LeAudioDeviceGroup::Disable(int gatt_if) {
     log::info("Group {} in state {}. Removing {} from background connect", group_id_,
               bluetooth::common::ToString(GetState()), address);
 
-    BTA_GATTC_CancelOpen(gatt_if, address, false);
-
     if (connection_state == DeviceConnectState::CONNECTING_AUTOCONNECT) {
+      BTA_GATTC_CancelOpen(gatt_if, address, false);
       device_iter.lock()->SetConnectionState(DeviceConnectState::DISCONNECTED);
     }
   }
