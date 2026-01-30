@@ -753,6 +753,9 @@ public class BluetoothManagerService {
         if (mUser == null) {
             return false;
         }
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
+            return false;
+        }
         if (AirplaneModeListener.isOn() && !mEnable) {
             return false;
         }
