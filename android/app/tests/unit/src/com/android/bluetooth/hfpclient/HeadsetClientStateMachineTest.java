@@ -143,6 +143,7 @@ public class HeadsetClientStateMachineTest {
         mTestLooper = new TestLooper();
         mHeadsetClientStateMachine =
                 new TestHeadsetClientStateMachine(
+                        mDevice,
                         mAdapterService,
                         mHeadsetClientService,
                         Optional.of(mHeadsetService),
@@ -158,13 +159,6 @@ public class HeadsetClientStateMachineTest {
         mHeadsetClientStateMachine.doQuit();
         mTestLooper.dispatchAll();
         verifyNoMoreInteractions(mHeadsetService);
-    }
-
-    /** Test that default state is disconnected */
-    @Test
-    public void testDefaultDisconnectedState() {
-        assertThat(mHeadsetClientStateMachine.getConnectionState(null))
-                .isEqualTo(STATE_DISCONNECTED);
     }
 
     /** Test that an incoming connection with low priority is rejected */
@@ -244,7 +238,7 @@ public class HeadsetClientStateMachineTest {
     }
 
     private boolean processAndroidSlcCommand(String command) {
-        return mHeadsetClientStateMachine.processAndroidSlcCommand(command, mDevice);
+        return mHeadsetClientStateMachine.processAndroidSlcCommand(command);
     }
 
     @Test
@@ -267,12 +261,6 @@ public class HeadsetClientStateMachineTest {
         assertThat(processAndroidSlcCommand("+ANDROID= (SINKAUDIOPOLICY)")).isFalse();
         assertThat(processAndroidSlcCommand("RANDOM ^%$# STRING")).isFalse();
         assertThat(processAndroidSlcCommand("")).isFalse();
-
-        // False on incorrect BluetoothDevice
-        assertThat(
-                        mHeadsetClientStateMachine.processAndroidSlcCommand(
-                                "+ANDROID: (SINKAUDIOPOLICY)", getTestDevice(123)))
-                .isFalse();
     }
 
     @Test
@@ -723,7 +711,7 @@ public class HeadsetClientStateMachineTest {
         mHeadsetClientStateMachine.mCalls.put(0, call);
         doReturn(true)
                 .when(mNativeInterface)
-                .handleCallAction(null, HeadsetClientHalConstants.CALL_ACTION_CHLD_2X, 0);
+                .handleCallAction(mDevice, HeadsetClientHalConstants.CALL_ACTION_CHLD_2X, 0);
 
         mHeadsetClientStateMachine.enterPrivateMode(0);
 
@@ -743,7 +731,7 @@ public class HeadsetClientStateMachineTest {
         mHeadsetClientStateMachine.mCalls.put(1, callTwo);
         doReturn(true)
                 .when(mNativeInterface)
-                .handleCallAction(null, HeadsetClientHalConstants.CALL_ACTION_CHLD_4, -1);
+                .handleCallAction(mDevice, HeadsetClientHalConstants.CALL_ACTION_CHLD_4, -1);
 
         mHeadsetClientStateMachine.explicitCallTransfer();
 
@@ -759,7 +747,6 @@ public class HeadsetClientStateMachineTest {
 
         // Case 1: if remote is not supported
         // Expect: Should not send +ANDROID to remote
-        mHeadsetClientStateMachine.mCurrentDevice = mDevice;
         mHeadsetClientStateMachine.setAudioPolicyRemoteSupported(false);
         verify(mNativeInterface, never()).sendAndroidAt(mDevice, "+ANDROID=SINKAUDIOPOLICY,1,0,0");
 
@@ -781,20 +768,10 @@ public class HeadsetClientStateMachineTest {
     }
 
     @Test
-    public void testGetAudioState_withCurrentDeviceNull() {
-        assertThat(mHeadsetClientStateMachine.mCurrentDevice).isNull();
-
-        assertThat(mHeadsetClientStateMachine.getAudioState(mDevice))
-                .isEqualTo(BluetoothHeadsetClient.STATE_AUDIO_DISCONNECTED);
-    }
-
-    @Test
     public void testGetAudioState_withCurrentDeviceNotNull() {
         int audioState = 1;
         mHeadsetClientStateMachine.mAudioState = audioState;
-        mHeadsetClientStateMachine.mCurrentDevice = mDevice;
-
-        assertThat(mHeadsetClientStateMachine.getAudioState(mDevice)).isEqualTo(audioState);
+        assertThat(mHeadsetClientStateMachine.getAudioState()).isEqualTo(audioState);
     }
 
     @Test
@@ -822,16 +799,8 @@ public class HeadsetClientStateMachineTest {
     }
 
     @Test
-    public void testGetConnectionState_withNullDevice() {
-        assertThat(mHeadsetClientStateMachine.getConnectionState(null))
-                .isEqualTo(STATE_DISCONNECTED);
-    }
-
-    @Test
     public void testGetConnectionState_withNonNullDevice() {
-        mHeadsetClientStateMachine.mCurrentDevice = mDevice;
-
-        assertThat(mHeadsetClientStateMachine.getConnectionState(mDevice))
+        assertThat(mHeadsetClientStateMachine.getConnectionState())
                 .isEqualTo(STATE_DISCONNECTED);
     }
 
@@ -1068,7 +1037,7 @@ public class HeadsetClientStateMachineTest {
     @Test
     public void testProcessDisconnectMessage_onDisconnectedState() {
         sendMessage(HeadsetClientStateMachine.DISCONNECT);
-        assertThat(mHeadsetClientStateMachine.getConnectionState(mDevice))
+        assertThat(mHeadsetClientStateMachine.getConnectionState())
                 .isEqualTo(STATE_DISCONNECTED);
     }
 
@@ -1077,7 +1046,7 @@ public class HeadsetClientStateMachineTest {
         doReturn(true).when(mNativeInterface).connect(any(BluetoothDevice.class));
         sendMessageAndVerifyTransition(
                 mHeadsetClientStateMachine.obtainMessage(
-                        HeadsetClientStateMachine.CONNECT, mDevice),
+                        HeadsetClientStateMachine.CONNECT),
                 HeadsetClientStateMachine.Connecting.class);
     }
 
@@ -1223,7 +1192,7 @@ public class HeadsetClientStateMachineTest {
     @Test
     public void testProcessDisconnectMessage_onConnectedState() {
         initToConnectedState();
-        sendMessage(HeadsetClientStateMachine.DISCONNECT, mDevice);
+        sendMessage(HeadsetClientStateMachine.DISCONNECT);
         verify(mNativeInterface).disconnect(any(BluetoothDevice.class));
     }
 
@@ -1276,7 +1245,7 @@ public class HeadsetClientStateMachineTest {
                         mHeadsetClientStateMachine.doesSuperHaveDeferredMessages(
                                 HeadsetClientStateMachine.DISCONNECT))
                 .isFalse();
-        sendMessage(HeadsetClientStateMachine.DISCONNECT, mDevice);
+        sendMessage(HeadsetClientStateMachine.DISCONNECT);
         assertThat(
                         mHeadsetClientStateMachine.doesSuperHaveDeferredMessages(
                                 HeadsetClientStateMachine.DISCONNECT))
@@ -1460,7 +1429,7 @@ public class HeadsetClientStateMachineTest {
                         mHeadsetClientStateMachine.doesSuperHaveDeferredMessages(
                                 HeadsetClientStateMachine.DISCONNECT))
                 .isFalse();
-        sendMessage(HeadsetClientStateMachine.DISCONNECT, mDevice);
+        sendMessage(HeadsetClientStateMachine.DISCONNECT);
         assertThat(
                         mHeadsetClientStateMachine.doesSuperHaveDeferredMessages(
                                 HeadsetClientStateMachine.DISCONNECT))
@@ -1495,8 +1464,7 @@ public class HeadsetClientStateMachineTest {
     private void initToConnectingState() {
         doReturn(true).when(mNativeInterface).connect(any(BluetoothDevice.class));
         sendMessageAndVerifyTransition(
-                mHeadsetClientStateMachine.obtainMessage(
-                        HeadsetClientStateMachine.CONNECT, mDevice),
+                mHeadsetClientStateMachine.obtainMessage(HeadsetClientStateMachine.CONNECT),
                 HeadsetClientStateMachine.Connecting.class);
     }
 
@@ -1527,7 +1495,7 @@ public class HeadsetClientStateMachineTest {
         initToConnectedState();
         sendMessageAndVerifyTransition(
                 mHeadsetClientStateMachine.obtainMessage(
-                        HeadsetClientStateMachine.DISCONNECT, mDevice),
+                        HeadsetClientStateMachine.DISCONNECT),
                 HeadsetClientStateMachine.Disconnecting.class);
     }
 
@@ -1569,11 +1537,11 @@ public class HeadsetClientStateMachineTest {
     }
 
     private <T> void sendMessageAndVerifyTransition(Message msg, Class<T> type) {
-        int previousState = mHeadsetClientStateMachine.getConnectionState(mDevice);
+        int previousState = mHeadsetClientStateMachine.getConnectionState();
 
         sendMessage(msg);
 
-        int newState = mHeadsetClientStateMachine.getConnectionState(mDevice);
+        int newState = mHeadsetClientStateMachine.getConnectionState();
         verifySendBroadcastMultiplePermissions(
                 hasExtra(EXTRA_PREVIOUS_STATE, previousState), hasExtra(EXTRA_STATE, newState));
 
@@ -1586,12 +1554,13 @@ public class HeadsetClientStateMachineTest {
         boolean mForceSetAudioPolicyProperty = false;
 
         TestHeadsetClientStateMachine(
+                BluetoothDevice device,
                 AdapterService adapterService,
                 HeadsetClientService context,
                 Optional<HeadsetService> headset,
                 Looper looper,
                 HeadsetClientNativeInterface nativeInterface) {
-            super(adapterService, context, headset, looper, nativeInterface);
+            super(device, adapterService, context, headset, looper, nativeInterface);
         }
 
         public boolean doesSuperHaveDeferredMessages(int what) {

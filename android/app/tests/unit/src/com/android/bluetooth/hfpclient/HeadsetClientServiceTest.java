@@ -260,7 +260,7 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice device = getTestDevice(0);
         HeadsetClientStateMachine sm = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm).getConnectionState(device);
+        doReturn(STATE_CONNECTED).when(sm).getConnectionState();
         mService.getStateMachineMap().put(device, sm);
 
         List<BluetoothDevice> devices = mService.getConnectedDevices();
@@ -276,7 +276,7 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice device = getTestDevice(0);
         HeadsetClientStateMachine sm = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_DISCONNECTED).when(sm).getConnectionState(device);
+        doReturn(STATE_DISCONNECTED).when(sm).getConnectionState();
         mService.getStateMachineMap().put(device, sm);
 
         List<BluetoothDevice> devices = mService.getConnectedDevices();
@@ -292,22 +292,22 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice connectedDevice1 = getTestDevice(0);
         HeadsetClientStateMachine sm1 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm1).getConnectionState(connectedDevice1);
+        doReturn(STATE_CONNECTED).when(sm1).getConnectionState();
         mService.getStateMachineMap().put(connectedDevice1, sm1);
 
         BluetoothDevice connectingDevice = getTestDevice(1);
         HeadsetClientStateMachine sm2 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTING).when(sm2).getConnectionState(connectingDevice);
+        doReturn(STATE_CONNECTING).when(sm2).getConnectionState();
         mService.getStateMachineMap().put(connectingDevice, sm2);
 
         BluetoothDevice disconnectedDevice = getTestDevice(2);
         HeadsetClientStateMachine sm3 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_DISCONNECTED).when(sm3).getConnectionState(disconnectedDevice);
+        doReturn(STATE_DISCONNECTED).when(sm3).getConnectionState();
         mService.getStateMachineMap().put(disconnectedDevice, sm3);
 
         BluetoothDevice connectedDevice2 = getTestDevice(3);
         HeadsetClientStateMachine sm4 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm4).getConnectionState(connectedDevice2);
+        doReturn(STATE_CONNECTED).when(sm4).getConnectionState();
         mService.getStateMachineMap().put(connectedDevice2, sm4);
 
         List<BluetoothDevice> devices = mService.getConnectedDevices();
@@ -334,7 +334,7 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice device = getTestDevice(0);
         HeadsetClientStateMachine sm = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm).getConnectionState(device);
+        doReturn(STATE_CONNECTED).when(sm).getConnectionState();
         mService.getStateMachineMap().put(device, sm);
 
         int[] states = {};
@@ -350,12 +350,12 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice connectedDevice = getTestDevice(0);
         HeadsetClientStateMachine sm1 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm1).getConnectionState(connectedDevice);
+        doReturn(STATE_CONNECTED).when(sm1).getConnectionState();
         mService.getStateMachineMap().put(connectedDevice, sm1);
 
         BluetoothDevice connectingDevice = getTestDevice(1);
         HeadsetClientStateMachine sm2 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTING).when(sm2).getConnectionState(connectingDevice);
+        doReturn(STATE_CONNECTING).when(sm2).getConnectionState();
         mService.getStateMachineMap().put(connectingDevice, sm2);
 
         int[] states = {STATE_CONNECTED};
@@ -372,17 +372,17 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice connectedDevice = getTestDevice(0);
         HeadsetClientStateMachine sm1 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm1).getConnectionState(connectedDevice);
+        doReturn(STATE_CONNECTED).when(sm1).getConnectionState();
         mService.getStateMachineMap().put(connectedDevice, sm1);
 
         BluetoothDevice connectingDevice = getTestDevice(1);
         HeadsetClientStateMachine sm2 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTING).when(sm2).getConnectionState(connectingDevice);
+        doReturn(STATE_CONNECTING).when(sm2).getConnectionState();
         mService.getStateMachineMap().put(connectingDevice, sm2);
 
         BluetoothDevice disconnectedDevice = getTestDevice(2);
         HeadsetClientStateMachine sm3 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_DISCONNECTED).when(sm3).getConnectionState(disconnectedDevice);
+        doReturn(STATE_DISCONNECTED).when(sm3).getConnectionState();
         mService.getStateMachineMap().put(disconnectedDevice, sm3);
 
         int[] states = {STATE_CONNECTED, STATE_CONNECTING};
@@ -399,12 +399,12 @@ public class HeadsetClientServiceTest {
         startService();
         BluetoothDevice connectedDevice = getTestDevice(0);
         HeadsetClientStateMachine sm1 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTED).when(sm1).getConnectionState(connectedDevice);
+        doReturn(STATE_CONNECTED).when(sm1).getConnectionState();
         mService.getStateMachineMap().put(connectedDevice, sm1);
 
         BluetoothDevice connectingDevice = getTestDevice(1);
         HeadsetClientStateMachine sm2 = Mockito.mock(HeadsetClientStateMachine.class);
-        doReturn(STATE_CONNECTING).when(sm2).getConnectionState(connectingDevice);
+        doReturn(STATE_CONNECTING).when(sm2).getConnectionState();
         mService.getStateMachineMap().put(connectingDevice, sm2);
 
         int[] states = {STATE_DISCONNECTED, STATE_DISCONNECTING};
