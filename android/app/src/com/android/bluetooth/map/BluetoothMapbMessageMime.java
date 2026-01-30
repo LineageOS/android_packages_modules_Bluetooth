@@ -464,9 +464,11 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 sb.append("Message-Id: ").append(mMessageId).append("\r\n");
             }
             if (mContentType != null) {
-                sb.append("Content-Type: multipart/mixed; boundary=\"")
+                sb.append("Content-Type: ")
+                        .append(mContentType)
+                        .append("; boundary=")
                         .append(getBoundary())
-                        .append("\"\r\n");
+                        .append("\r\n");
             }
         }
         // If no headers exists, we still need two CRLF, hence keep it out of the if above.
