@@ -82,9 +82,9 @@ constructor(
     private inner class AssistantSettingObserver : ContentObserver(mHandler) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
             super.onChange(selfChange, uri)
-            val vaeName = currentVaeName
+            val vaName = currentVaName
             Log.d(TAG, " Voice Assistant changed")
-            mNativeInterface.setVaeName(vaeName)
+            mNativeInterface.setVaName(vaName)
         }
     }
 
@@ -109,7 +109,7 @@ constructor(
         val ccid =
             ContentControlIdKeeper.acquireCcid(
                 adapterService,
-                BluetoothUuid.VAPS,
+                BluetoothUuid.VAP,
                 BluetoothLeAudio.CONTEXT_TYPE_VOICE_ASSISTANTS,
             )
         if (ccid == ContentControlIdKeeper.CCID_INVALID) {
@@ -120,12 +120,12 @@ constructor(
         mNativeInterface.setCcid(ccid)
     }
 
-    fun setVaeName() {
-        val vaeName = currentVaeName
-        mNativeInterface.setVaeName(vaeName)
+    fun setVaName() {
+        val vaName = currentVaName
+        mNativeInterface.setVaName(vaName)
     }
 
-    val currentVaeName: String?
+    val currentVaName: String?
         get() {
             // Get Default Digital Assistant from Settings
             val assistantName =
@@ -133,14 +133,14 @@ constructor(
             if (TextUtils.isEmpty(assistantName)) {
                 return null
             }
-            var vaeName = assistantName
+            var vaName = assistantName
             val parts =
                 assistantName.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             if (parts.size == 2) {
-                vaeName = parts[0]
+                vaName = parts[0]
             }
-            Log.d(TAG, " vae Name:$vaeName")
-            return vaeName
+            Log.d(TAG, " va Name:$vaName")
+            return vaName
         }
 
     fun activateVoiceRecognition(device: BluetoothDevice): Boolean {
@@ -171,8 +171,8 @@ constructor(
     fun onInitialized() {
         Log.d(TAG, "onInitialized")
         setCcid()
-        Log.d(TAG, "Calling setVaeName after initialization")
-        setVaeName()
+        Log.d(TAG, "Calling setVaName after initialization")
+        setVaName()
     }
 
     /**

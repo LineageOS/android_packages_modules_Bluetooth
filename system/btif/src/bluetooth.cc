@@ -59,7 +59,7 @@
 #include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/include/bta_mcp_client_api.h"
-#include "bta/include/bta_vaps_server_api.h"
+#include "bta/include/bta_vap_server_api.h"
 #include "bta/include/bta_vcp_controller_api.h"
 #include "bta/include/bta_vcp_renderer_api.h"
 #include "btif/avrcp/avrcp_service.h"
@@ -905,7 +905,7 @@ static void dump(int fd, const char** /*arguments*/) {
   ::bluetooth::mcp::McpClient::DebugDump(fd);
   VolumeController::DebugDump(fd);
   ::bluetooth::vcp::VolumeRenderer::DebugDump(fd);
-  bluetooth::vaps::GetVapsServer()->DebugDump(fd);
+  bluetooth::vap::GetVapServer()->DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
   AVCT_Dumpsys(fd);
@@ -1014,8 +1014,8 @@ static const void* get_profile_interface(const char* profile_id) {
     return btif_csis_client_get_interface();
   }
 
-  if (is_profile(profile_id, BT_PROFILE_VAPS_SERVER_ID)) {
-    return btif_vaps_server_get_interface();
+  if (is_profile(profile_id, BT_PROFILE_VAP_SERVER_ID)) {
+    return btif_vap_server_get_interface();
   }
 
   if (is_profile(profile_id, BT_PROFILE_VCP_RENDERER_ID)) {

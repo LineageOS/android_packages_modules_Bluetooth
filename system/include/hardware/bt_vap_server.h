@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@
  #include <vector>
 
  namespace bluetooth {
- namespace vaps {
+ namespace vap {
 
- class VapsServerCallbacks {
+ class VapServerCallbacks {
  public:
-   virtual ~VapsServerCallbacks() = default;
+   virtual ~VapServerCallbacks() = default;
 
-   /** Callback for VAPS Server profile initialization */
+   /** Callback for VAP Server profile initialization */
    virtual void OnInitialized(void) = 0;
 
    /** Callback for start VA session from remote headset */
@@ -38,22 +38,22 @@
    virtual void OnStopVaSession(const RawAddress& addr) = 0;
 };
 
- class VapsServerInterface {
+ class VapServerInterface {
  public:
-   virtual ~VapsServerInterface() = default;
+   virtual ~VapServerInterface() = default;
 
-   /** Register the VAPS Server profile callbacks */
-   virtual void Init(VapsServerCallbacks* callbacks) = 0;
+   /** Register the VAP Server profile callbacks */
+   virtual void Init(VapServerCallbacks* callbacks) = 0;
 
-   /** Set the CCID for the VAPS Server profile */
+   /** Set the CCID for the VAP Server profile */
    virtual void SetCcid(int ccid) = 0;
 
-   /** Set VAE name */
-   virtual void SetVaeName(std::string vae_name) = 0;
+   /** Set VA name */
+   virtual void SetVaName(std::string va_name) = 0;
 
    /** Closes the interface */
    virtual void Cleanup(void) = 0;
  };
 
- }  // namespace vaps
+ }  // namespace vap
  }  // namespace bluetooth

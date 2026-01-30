@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- #define LOG_TAG "BluetoothVapsServerJni"
+ #define LOG_TAG "BluetoothVapServerJni"
 
  #include <bluetooth/log.h>
  #include <jni.h>
@@ -32,27 +32,27 @@
 
  #include "com_android_bluetooth.h"
  #include "hardware/bluetooth.h"
- #include "hardware/bt_vaps_server.h"
+ #include "hardware/bt_vap_server.h"
  #include "bluetooth/types/address.h"
 
- using bluetooth::vaps::VapsServerCallbacks;
- using bluetooth::vaps::VapsServerInterface;
+ using bluetooth::vap::VapServerCallbacks;
+ using bluetooth::vap::VapServerInterface;
 
  namespace android {
  static jmethodID method_onInitialized;
  static jmethodID method_onStartVaSession;
  static jmethodID method_onStopVaSession;
 
- static VapsServerInterface* sVapsServerInterface = nullptr;
+ static VapServerInterface* sVapServerInterface = nullptr;
  static std::shared_timed_mutex interface_mutex;
 
  static jobject mCallbacksObj = nullptr;
  static std::shared_timed_mutex callbacks_mutex;
  static jfieldID sCallbacksField;
 
- class VapsServerCallbacksImpl : public VapsServerCallbacks {
+ class VapServerCallbacksImpl : public VapServerCallbacks {
  public:
-   ~VapsServerCallbacksImpl() = default;
+   ~VapServerCallbacksImpl() = default;
 
    void OnInitialized(void) override {
      log::info("");
@@ -91,7 +91,7 @@
   }
  };
 
- static VapsServerCallbacksImpl sVapsServerCallbacks;
+ static VapServerCallbacksImpl sVapServerCallbacks;
 
  static void initNative(JNIEnv* env, jobject obj) {
    std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
@@ -103,42 +103,42 @@
      return;
    }
 
-   if (sVapsServerInterface != nullptr) {
-     log::info("Cleaning up VapsServer Interface before initializing...");
-     sVapsServerInterface->Cleanup();
-     sVapsServerInterface = nullptr;
+   if (sVapServerInterface != nullptr) {
+     log::info("Cleaning up VapServer Interface before initializing...");
+     sVapServerInterface->Cleanup();
+     sVapServerInterface = nullptr;
    }
 
    if (mCallbacksObj != nullptr) {
-     log::info("Cleaning up VAPS Server callback object");
+     log::info("Cleaning up VAP Server callback object");
      env->DeleteGlobalRef(mCallbacksObj);
      mCallbacksObj = nullptr;
    }
 
    if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(obj, sCallbacksField))) == nullptr) {
-     log::fatal("Failed to allocate Global Ref for VAPS Server Callbacks");
+     log::fatal("Failed to allocate Global Ref for VAP Server Callbacks");
    }
 
-   sVapsServerInterface =
-       const_cast<VapsServerInterface*>(reinterpret_cast<const VapsServerInterface*>(
-           btInf->get_profile_interface(BT_PROFILE_VAPS_SERVER_ID)));
-   if (sVapsServerInterface == nullptr) {
-     log::error("Failed to get Bluetooth VAPS Server Interface");
+   sVapServerInterface =
+       const_cast<VapServerInterface*>(reinterpret_cast<const VapServerInterface*>(
+           btInf->get_profile_interface(BT_PROFILE_VAP_SERVER_ID)));
+   if (sVapServerInterface == nullptr) {
+     log::error("Failed to get Bluetooth VAP Server Interface");
      return;
    }
 
-   sVapsServerInterface->Init(&sVapsServerCallbacks);
+   sVapServerInterface->Init(&sVapServerCallbacks);
  }
 
  static void setCcidNative(JNIEnv* /*env*/, jobject /* object */, jint ccid) {
    std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
 
-   if (!sVapsServerInterface) {
-     log::error("Failed to get Bluetooth VAPS Server Interface");
+   if (!sVapServerInterface) {
+     log::error("Failed to get Bluetooth VAP Server Interface");
      return;
    }
 
-   sVapsServerInterface->SetCcid(ccid);
+   sVapServerInterface->SetCcid(ccid);
  }
 
  static void cleanupNative(JNIEnv* env, jobject /* object */) {
@@ -151,9 +151,9 @@
      return;
    }
 
-   if (sVapsServerInterface != nullptr) {
-     sVapsServerInterface->Cleanup();
-     sVapsServerInterface = nullptr;
+   if (sVapServerInterface != nullptr) {
+     sVapServerInterface->Cleanup();
+     sVapServerInterface = nullptr;
    }
 
    if (mCallbacksObj != nullptr) {
@@ -162,32 +162,32 @@
    }
  }
 
- static void setVaeNameNative(JNIEnv* env, jobject /* object */, jstring vaeName) {
+ static void setVaNameNative(JNIEnv* env, jobject /* object */, jstring vaName) {
    std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
 
-   if (!sVapsServerInterface) {
-     log::error("Failed to get Bluetooth VAPS Server Interface");
+   if (!sVapServerInterface) {
+     log::error("Failed to get Bluetooth VAP Server Interface");
      return;
    }
 
-   const char* vae_name = nullptr;
-   if (vaeName) {
-     vae_name = env->GetStringUTFChars(vaeName, nullptr);
+   const char* va_name = nullptr;
+   if (vaName) {
+     va_name = env->GetStringUTFChars(vaName, nullptr);
    }
 
-   // Assign a default value "None" if vae_name is null (No VA engine selected)
-   sVapsServerInterface->SetVaeName(vae_name ? vae_name : "None");
+   // Assign a default value "None" if va_name is null (No VA engine selected)
+   sVapServerInterface->SetVaName(va_name ? va_name : "None");
 
-   if (vae_name) {
-     env->ReleaseStringUTFChars(vaeName, vae_name);
+   if (va_name) {
+     env->ReleaseStringUTFChars(vaName, va_name);
    }
  }
 
- int register_com_android_bluetooth_vaps_server(JNIEnv* env) {
+ int register_com_android_bluetooth_vap_server(JNIEnv* env) {
    const JNINativeMethod methods[] = {
            {"initNative", "()V", reinterpret_cast<void*>(initNative)},
            {"setCcidNative", "(I)V", reinterpret_cast<void*>(setCcidNative)},
-           {"setVaeNameNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(setVaeNameNative)},
+           {"setVaNameNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(setVaNameNative)},
            {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
    };
    const char* jniNativeInterfaceClass = "com/android/bluetooth/vap/VapServerNativeInterface";
