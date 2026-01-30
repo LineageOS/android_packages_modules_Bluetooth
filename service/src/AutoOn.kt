@@ -68,6 +68,10 @@ class AutoOn(
             Log.d(TAG, "Not Enabled for $user")
             return
         }
+        if (!BluetoothRestriction.isBluetoothAllowed) {
+            Log.d(TAG, "Bluetooth is disallowed, no need for timer")
+            return
+        }
         if (state.oneOf(State.ON)) {
             Log.d(TAG, "Bluetooth already ON, no need for timer")
             return
@@ -127,7 +131,7 @@ class AutoOn(
         }
     }
 
-    fun isSupported() = Settings.Secure.getInt(contentResolver, USER_SETTINGS_KEY, -1) != -1
+    fun isSupported() = Settings.Secure.getInt(contentResolver, AUTO_ON_KEY, -1) != -1
 
     fun isEnabled(): Boolean {
         check(isSupported()) { "AutoOn not supported for $user" }
@@ -146,7 +150,7 @@ class AutoOn(
     }
 
     fun factoryReset() {
-        Settings.Secure.putInt(contentResolver, USER_SETTINGS_KEY, 0)
+        Settings.Secure.putInt(contentResolver, AUTO_ON_KEY, 0)
         timer?.cancel()
         timer = null
     }
@@ -219,11 +223,10 @@ class AutoOn(
             "Timer: scheduled at $now. expire at $target. (sleep for $timeToSleep)."
     }
 
-    private fun isEnabledUnchecked() =
-        Settings.Secure.getInt(contentResolver, USER_SETTINGS_KEY, 0) == 1
+    private fun isEnabledUnchecked() = Settings.Secure.getInt(contentResolver, AUTO_ON_KEY, 0) == 1
 
     private fun setEnabledUnchecked(status: Boolean) {
-        Settings.Secure.putInt(contentResolver, USER_SETTINGS_KEY, if (status) 1 else 0)
+        Settings.Secure.putInt(contentResolver, AUTO_ON_KEY, if (status) 1 else 0)
         context.sendBroadcast(
             Intent(ACTION_AUTO_ON_STATE_CHANGED)
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
@@ -242,7 +245,7 @@ class AutoOn(
     }
 
     companion object {
-        @VisibleForTesting internal const val USER_SETTINGS_KEY = "bluetooth_automatic_turn_on"
+        @VisibleForTesting internal const val AUTO_ON_KEY = "bluetooth_automatic_turn_on"
         @VisibleForTesting
         internal const val STORAGE_KEY = "bluetooth_internal_automatic_turn_on_timer"
 

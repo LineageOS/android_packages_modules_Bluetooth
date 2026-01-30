@@ -18,13 +18,13 @@ package com.android.server.bluetooth.test
 
 import android.app.ActivityManager
 import android.app.AlarmManager
-import android.app.Application
 import android.bluetooth.IBluetoothManager.ACTION_AUTO_ON_STATE_CHANGED
 import android.bluetooth.IBluetoothManager.AUTO_ON_STATE_DISABLED
 import android.bluetooth.IBluetoothManager.AUTO_ON_STATE_ENABLED
 import android.bluetooth.IBluetoothManager.EXTRA_AUTO_ON_STATE
 import android.bluetooth.State
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Looper
 import android.os.UserHandle
@@ -32,8 +32,8 @@ import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.truth.content.IntentSubject.assertThat
 import com.android.server.bluetooth.AutoOn
+import com.android.server.bluetooth.AutoOn.Companion.AUTO_ON_KEY
 import com.android.server.bluetooth.AutoOn.Companion.STORAGE_KEY
-import com.android.server.bluetooth.AutoOn.Companion.USER_SETTINGS_KEY
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_USER_TOGGLED_BLUETOOTH
@@ -82,7 +82,9 @@ class AutoOnTest {
 
     @Before
     fun setUp() {
+
         Log.i("AutoOnTest", "\t--> setUp(${testName.methodName})")
+        BluetoothRestrictionTest.setup()
 
         callback_count = 0
         AirplaneModeListener.setupAirplaneModeToOff(context.contentResolver, looper)
@@ -108,17 +110,17 @@ class AutoOnTest {
     }
 
     private fun enableSetting() {
-        Settings.Secure.putInt(userResolver, USER_SETTINGS_KEY, 1)
+        Settings.Secure.putInt(userResolver, AUTO_ON_KEY, 1)
         shadowOf(looper).idle()
     }
 
     private fun disableSettings() {
-        Settings.Secure.putInt(userResolver, USER_SETTINGS_KEY, 0)
+        Settings.Secure.putInt(userResolver, AUTO_ON_KEY, 0)
         shadowOf(looper).idle()
     }
 
     private fun restoreSettings() {
-        Settings.Secure.putString(userResolver, USER_SETTINGS_KEY, null)
+        Settings.Secure.putString(userResolver, AUTO_ON_KEY, null)
         shadowOf(looper).idle()
     }
 
@@ -151,6 +153,14 @@ class AutoOnTest {
 
         expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun setupTimer_whenUserDisallowed_isNotScheduled() {
+        BluetoothRestrictionTest.disallowBluetooth()
+        setupTimer()
+
+        expect.that(autoOn.timer).isNull()
     }
 
     @Test
@@ -308,7 +318,7 @@ class AutoOnTest {
     fun apiSetEnableToFalse_whenEnabled_broadcastIntent() {
         setEnabled(false)
 
-        assertThat(shadowOf(context as Application).getBroadcastIntents().get(0)).run {
+        assertThat(shadowOf(context as ContextWrapper).getBroadcastIntents().get(0)).run {
             hasAction(ACTION_AUTO_ON_STATE_CHANGED)
             hasFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
             extras().integer(EXTRA_AUTO_ON_STATE).isEqualTo(AUTO_ON_STATE_DISABLED)
@@ -320,7 +330,7 @@ class AutoOnTest {
         disableSettings()
         setEnabled(true)
 
-        assertThat(shadowOf(context as Application).getBroadcastIntents().get(0)).run {
+        assertThat(shadowOf(context as ContextWrapper).getBroadcastIntents().get(0)).run {
             hasAction(ACTION_AUTO_ON_STATE_CHANGED)
             hasFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
             extras().integer(EXTRA_AUTO_ON_STATE).isEqualTo(AUTO_ON_STATE_ENABLED)
@@ -331,7 +341,7 @@ class AutoOnTest {
     fun apiSetEnableToTrue_whenAlreadyEnabled_doNothing() {
         setEnabled(true)
 
-        assertThat(shadowOf(context as Application).getBroadcastIntents().size).isEqualTo(0)
+        assertThat(shadowOf(context as ContextWrapper).getBroadcastIntents().size).isEqualTo(0)
     }
 
     @Test
