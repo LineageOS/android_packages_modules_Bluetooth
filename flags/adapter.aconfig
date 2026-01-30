@@ -115,3 +115,13 @@ flag {
         purpose: PURPOSE_BUGFIX
   }
 }
+
+flag {
+    name : "send_class_change_intent_for_bonded_devices_only"
+    namespace: "bluetooth"
+    description: "Send the ACTION_CLASS_CHANGED intent only for bonded devices only"
+    bug: "479480553"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
