@@ -19,8 +19,8 @@ package com.android.bluetooth.hfpclient;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -49,7 +49,7 @@ public class HeadsetClientNativeInterfaceTest {
 
     @Before
     public void setUp() {
-        when(mService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mService).isAvailable();
         mNativeInterface = new HeadsetClientNativeInterface(mAdapterService, mService);
     }
 
