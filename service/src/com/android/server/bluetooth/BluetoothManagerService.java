@@ -629,20 +629,24 @@ public class BluetoothManagerService {
                 BluetoothServerProxy.getInstance()
                         .settingsSecureGetString(
                                 mContentResolver, Settings.Secure.BLUETOOTH_ADDRESS);
-        Log.d(
-                TAG,
-                ("Local adapter: Name=" + mName)
-                        + (", Address=" + Log.address(mAddress))
-                        + (" HciInstanceName=" + mHciInstanceName));
 
-        if (isBluetoothPersistedStateOn()) {
-            Log.i(TAG, "Startup: Bluetooth persisted state is ON.");
-            mEnableExternal = true;
-        }
+        int persistedState = getBluetoothPersistedState();
+
+        mEnableExternal = persistedState != BLUETOOTH_OFF;
 
         mConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
-        Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
+
+        Log.i(
+                TAG,
+                "BluetoothManagerService Start with:"
+                        + (" Name=" + mName)
+                        + (" Address=" + Log.address(mAddress))
+                        + (" HciInstance=" + mHciInstanceName)
+                        + (" BluetoothAllowed=" + BluetoothRestriction.isBluetoothAllowed())
+                        + (" PersistentState=" + persistedState)
+                        + (" EnableExternal=" + mEnableExternal)
+                        + (" AutoOnEnabled=" + mConfigAllowAutoOn));
     }
 
     Unit onBluetoothDisallowed() {
@@ -697,28 +701,27 @@ public class BluetoothManagerService {
 
     /** Returns true if the Bluetooth saved state is "on" */
     private boolean isBluetoothPersistedStateOn() {
-        final int state =
-                BluetoothServerProxy.getInstance()
-                        .getBluetoothPersistedState(mContentResolver, BLUETOOTH_ON_BLUETOOTH);
-        Log.d(TAG, "isBluetoothPersistedStateOn: " + state);
+        final int state = getBluetoothPersistedState();
+        Log.v(TAG, "isBluetoothPersistedStateOn: " + state);
         return state != BLUETOOTH_OFF;
     }
 
     private boolean isBluetoothPersistedStateOnAirplane() {
-        final int state =
-                BluetoothServerProxy.getInstance()
-                        .getBluetoothPersistedState(mContentResolver, BLUETOOTH_ON_BLUETOOTH);
-        Log.d(TAG, "isBluetoothPersistedStateOnAirplane: " + state);
+        final int state = getBluetoothPersistedState();
+        Log.v(TAG, "isBluetoothPersistedStateOnAirplane: " + state);
         return state == BLUETOOTH_ON_AIRPLANE;
     }
 
     /** Returns true if the Bluetooth saved state is BLUETOOTH_ON_BLUETOOTH */
     private boolean isBluetoothPersistedStateOnBluetooth() {
-        final int state =
-                BluetoothServerProxy.getInstance()
-                        .getBluetoothPersistedState(mContentResolver, BLUETOOTH_ON_BLUETOOTH);
-        Log.d(TAG, "isBluetoothPersistedStateOnBluetooth: " + state);
+        final int state = getBluetoothPersistedState();
+        Log.v(TAG, "isBluetoothPersistedStateOnBluetooth: " + state);
         return state == BLUETOOTH_ON_BLUETOOTH;
+    }
+
+    private int getBluetoothPersistedState() {
+        return BluetoothServerProxy.getInstance()
+                .getBluetoothPersistedState(mContentResolver, BLUETOOTH_ON_BLUETOOTH);
     }
 
     private void setBluetoothPersistedState(int state) {
