@@ -148,3 +148,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "flush_a2dp_fmq_on_stop"
+    namespace: "bluetooth"
+    description: "Add logic to flush the FMQ when the A2dp stream is stopped"
+    bug: "479794467"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
