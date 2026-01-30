@@ -10,8 +10,8 @@ use bt_topshim::btif::{
 use bt_topshim::profiles::gatt::GattStatus;
 use bt_topshim::profiles::hfp::EscoCodingFormat;
 use bt_topshim::profiles::hid_host::{
-    BthhConnectionState, BthhHidInfo, BthhProtocolMode, BthhReportType, BthhStatus, HHCallbacks,
-    HHCallbacksDispatcher, HidHost,
+    BthhConnectionState, BthhHidInfo, BthhProtocolMode, BthhReconnectPolicy, BthhReportType,
+    BthhStatus, HHCallbacks, HHCallbacksDispatcher, HidHost,
 };
 use bt_topshim::profiles::sdp::{BtSdpRecord, Sdp, SdpCallbacks, SdpCallbacksDispatcher};
 use bt_topshim::profiles::ProfileConnectionState;
@@ -1395,6 +1395,7 @@ impl Bluetooth {
                                 addr,
                                 BtAddrType::Public,
                                 BtTransport::Auto,
+                                /*direct=*/ true,
                             );
                             metrics::profile_connection_state_changed(
                                 addr,
@@ -2775,7 +2776,7 @@ impl IBluetooth for Bluetooth {
                                 addr,
                                 BtAddrType::Public,
                                 BtTransport::Auto,
-                                /*reconnect_allowed=*/ true,
+                                BthhReconnectPolicy::Allowed,
                             );
                         }
 
@@ -3017,7 +3018,7 @@ impl BtifHHCallbacks for Bluetooth {
                 address,
                 address_type,
                 transport,
-                /*reconnect_allowed=*/ true,
+                BthhReconnectPolicy::Allowed,
             );
         }
     }

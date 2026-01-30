@@ -140,7 +140,7 @@ public class HidHostService extends ConnectableProfile {
     @VisibleForTesting static final int RECONNECT_NOT_ALLOWED_TEMPORARY = 1;
     @VisibleForTesting static final int RECONNECT_NOT_ALLOWED = 2;
 
-    // LINT.ThenChange(/system/btif/src/btif_hh.cc)
+    // LINT.ThenChange(/system/include/hardware/bt_hh.h)
 
     public HidHostService(AdapterService adapterService) {
         this(adapterService, null, Looper.getMainLooper());

@@ -97,14 +97,6 @@ typedef enum {
   BTIF_HH_BG_CONNECT_REQ_EVT,
 } btif_hh_req_evt_t;
 
-// LINT.IfChange
-typedef enum {
-  RECONNECT_ALLOWED = 0,            // Reconnection allowed
-  RECONNECT_NOT_ALLOWED_TEMPORARY,  // Reconnection is not allowed till next BT restart
-  RECONNECT_NOT_ALLOWED,            // Reconnection is not allowed
-} reconnect_policy_t;
-// LINT.ThenChange(/android/app/src/com/android/bluetooth/hid/HidHostService.java)
-
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -1747,7 +1739,7 @@ static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSP
  *
  ******************************************************************************/
 static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                           int reconnect_policy) {
+                           bthh_reconnect_policy_t reconnect_policy) {
   CHECK_BTHH_INIT();
   AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
