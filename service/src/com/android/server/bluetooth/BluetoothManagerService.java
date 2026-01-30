@@ -496,18 +496,23 @@ public class BluetoothManagerService {
     private void handleSatelliteModeChanged(boolean isSatelliteModeOn) {
         final int currentState = mState.get();
 
-        if (shouldBluetoothBeOn(isSatelliteModeOn) && currentState != State.ON) {
+        boolean shouldBeOn = shouldBluetoothBeOn(isSatelliteModeOn);
+
+        if (shouldBeOn && currentState != State.ON) {
             sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_SATELLITE_MODE);
-        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && currentState != State.OFF) {
+        } else if (!shouldBeOn && currentState != State.OFF) {
             forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_SATELLITE_MODE);
-        } else if (!isSatelliteModeOn
-                && !shouldBluetoothBeOn(isSatelliteModeOn)
-                && currentState != State.ON) {
+        } else if (!isSatelliteModeOn && !shouldBeOn && currentState != State.ON) {
             autoOnSetupTimer();
         }
     }
 
     private boolean shouldBluetoothBeOn(boolean isSatelliteModeOn) {
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
+            Log.d(TAG, "shouldBluetoothBeOn: Bluetooth is not allowed");
+            return false;
+        }
+
         if (!isBluetoothPersistedStateOn()) {
             Log.d(TAG, "shouldBluetoothBeOn: User want BT off.");
             return false;
