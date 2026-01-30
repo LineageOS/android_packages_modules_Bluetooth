@@ -629,20 +629,24 @@ public class BluetoothManagerService {
                 BluetoothServerProxy.getInstance()
                         .settingsSecureGetString(
                                 mContentResolver, Settings.Secure.BLUETOOTH_ADDRESS);
-        Log.d(
-                TAG,
-                ("Local adapter: Name=" + mName)
-                        + (", Address=" + Log.address(mAddress))
-                        + (" HciInstanceName=" + mHciInstanceName));
 
-        if (isBluetoothPersistedStateOn()) {
-            Log.i(TAG, "Startup: Bluetooth persisted state is ON.");
-            mEnableExternal = true;
-        }
+        int persistedState = getBluetoothPersistedState();
+
+        mEnableExternal = persistedState != BLUETOOTH_OFF;
 
         mConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
-        Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
+
+        Log.i(
+                TAG,
+                "BluetoothManagerService Start with:"
+                        + (" Name=" + mName)
+                        + (" Address=" + Log.address(mAddress))
+                        + (" HciInstance=" + mHciInstanceName)
+                        + (" BluetoothAllowed=" + BluetoothRestriction.isBluetoothAllowed())
+                        + (" PersistentState=" + persistedState)
+                        + (" EnableExternal=" + mEnableExternal)
+                        + (" AutoOnEnabled=" + mConfigAllowAutoOn));
     }
 
     Unit onBluetoothDisallowed() {
