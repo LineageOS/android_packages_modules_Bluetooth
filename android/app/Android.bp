@@ -228,6 +228,14 @@ android_library {
     sdk_version: "module_current",
 }
 
+// See go/preinstall-allowlists:
+// From Android 17, all preinstalled apps must specify which user types they are
+// to be preinstalled on in a preinstall allowlist.
+filegroup {
+    name: "preinstalled-packages-com.android.bluetooth.xml",
+    srcs: ["preinstalled-packages-com.android.bluetooth.xml"],
+}
+
 // Bluetooth APK
 android_app {
     name: "Bluetooth",
@@ -243,6 +251,7 @@ android_app {
     sdk_version: "module_current",
     updatable: true,
     jarjar_rules: ":bluetooth-jarjar-rules",
+    preinstall_allowlist: ":preinstalled-packages-com.android.bluetooth.xml",
     privapp_allowlist: ":privapp_allowlist_com.android.bluetooth.xml",
 
     jni_uses_platform_apis: true,
