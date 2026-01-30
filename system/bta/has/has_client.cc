@@ -199,7 +199,9 @@ public:
     auto is_connecting_actively = device->is_connecting_actively;
 
     DoDisconnectCleanUp(*device);
-    devices_.erase(device);
+    if (!com_android_bluetooth_flags_hap_keep_bonded_dev_in_ram()) {
+      devices_.erase(device);
+    }
 
     if (conn_id != GATT_INVALID_CONN_ID) {
       BTA_GATTC_Close(conn_id);
@@ -214,6 +216,21 @@ public:
         BTA_GATTC_CancelOpen(gatt_if_, address, false);
       }
     }
+  }
+
+  void RemoveDevice(const RawAddress& address) override {
+    log::debug("{}", address);
+    if (!com_android_bluetooth_flags_hap_keep_bonded_dev_in_ram()) {
+      return;
+    }
+    auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
+    if (device == devices_.end()) {
+      log::warn("Device not connected to profile{}", address);
+      return;
+    }
+
+    Disconnect(address);
+    devices_.erase(device);
   }
 
   void UpdateJournalOpEntryStatus(HasDevice& device, HasGattOpContext context,
