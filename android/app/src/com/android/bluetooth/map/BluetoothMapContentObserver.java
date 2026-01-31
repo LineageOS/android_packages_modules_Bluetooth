@@ -31,6 +31,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -55,6 +56,7 @@ import android.util.Xml;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapContract.MessageColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
@@ -3643,16 +3645,29 @@ public class BluetoothMapContentObserver {
 
             Log.d(TAG, "sendMessage to " + msgInfo.phone);
 
+            // TODO(b/480794923): replace SKD_INT check with SkdLevel.isAtLeastC() once available
+            boolean isMessageUpgradeAvailable =
+                    Flags.messageUpgrade() && Build.VERSION.SDK_INT >= 37;
             if (parts.size() == 1) {
-                smsMng.sendTextMessageWithoutPersisting(
-                        msgInfo.phone,
-                        null,
-                        parts.get(0),
-                        sentIntents.get(0),
-                        deliveryIntents.get(0));
+                if (isMessageUpgradeAvailable) {
+                    smsMng.sendStoredTextMessage(
+                            msgInfo.uri, sentIntents.getFirst(), deliveryIntents.getFirst());
+                } else {
+                    smsMng.sendTextMessageWithoutPersisting(
+                            msgInfo.phone,
+                            null,
+                            parts.get(0),
+                            sentIntents.get(0),
+                            deliveryIntents.get(0));
+                }
             } else {
-                smsMng.sendMultipartTextMessageWithoutPersisting(
-                        msgInfo.phone, null, parts, sentIntents, deliveryIntents);
+                if (isMessageUpgradeAvailable) {
+                    smsMng.sendStoredMultipartTextMessage(
+                            msgInfo.uri, sentIntents, deliveryIntents);
+                } else {
+                    smsMng.sendMultipartTextMessageWithoutPersisting(
+                            msgInfo.phone, null, parts, sentIntents, deliveryIntents);
+                }
             }
         }
     }
