@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,31 +18,31 @@
 
  #include "bluetooth/types/uuid.h"
 
- namespace vaps {
+ namespace vap {
  static const uint16_t kCccValueSize = 0x02;
  static const uint16_t kVaSessionStateSize = 0x01;
- static const uint16_t kVaeUuidSize = 16;
+ static const uint16_t kVaUuidSize = 16;
 
  namespace uuid {
- static const uint16_t kVapsService16Bit = 0x7F65;
- static const uint16_t kVaeNameCharacteristic16bit = 0x7F63;
- static const uint16_t kVaeUuidCharacteristic16bit = 0x7F62;
- static const uint16_t kVaeControlPointCharacteristic16bit = 0x7F61;
- static const uint16_t kVaeCcidCharacteristic16bit = 0x2BBA;
- static const uint16_t kVaSessionStateCharacteristic16bit = 0x7F5F;
- static const uint16_t kVaSupportedFeaturesCharacteristic16bit = 0x7F5C;
+ static const uint16_t kGenericVasService16Bit = 0x185F;
+ static const uint16_t kVaNameCharacteristic16bit = 0x2C31;
+ static const uint16_t kVaUuidCharacteristic16bit = 0x2C32;
+ static const uint16_t kVasControlPointCharacteristic16bit = 0x2C33;
+ static const uint16_t kVaCcidCharacteristic16bit = 0x2BBA;
+ static const uint16_t kVaSessionStateCharacteristic16bit = 0x2C35;
+ static const uint16_t kVaSupportedFeaturesCharacteristic16bit = 0x2C38;
  static const uint16_t kClientCharacteristicConfiguration16bit = 0x2902;
  static const uint16_t kDefaultGattMtu = 23;
 
- static const bluetooth::Uuid kVapsService = bluetooth::Uuid::From16Bit(kVapsService16Bit);
- static const bluetooth::Uuid kVaeNameCharacteristic =
-         bluetooth::Uuid::From16Bit(kVaeNameCharacteristic16bit);
- static const bluetooth::Uuid kVaeUuidCharacteristic =
-         bluetooth::Uuid::From16Bit(kVaeUuidCharacteristic16bit);
- static const bluetooth::Uuid kVaeControlPointCharacteristic =
-         bluetooth::Uuid::From16Bit(kVaeControlPointCharacteristic16bit);
- static const bluetooth::Uuid kVaeCcidCharacteristic =
-         bluetooth::Uuid::From16Bit(kVaeCcidCharacteristic16bit);
+ static const bluetooth::Uuid kGenericVasService = bluetooth::Uuid::From16Bit(kGenericVasService16Bit);
+ static const bluetooth::Uuid kVaNameCharacteristic =
+         bluetooth::Uuid::From16Bit(kVaNameCharacteristic16bit);
+ static const bluetooth::Uuid kVaUuidCharacteristic =
+         bluetooth::Uuid::From16Bit(kVaUuidCharacteristic16bit);
+ static const bluetooth::Uuid kVasControlPointCharacteristic =
+         bluetooth::Uuid::From16Bit(kVasControlPointCharacteristic16bit);
+ static const bluetooth::Uuid kVaCcidCharacteristic =
+         bluetooth::Uuid::From16Bit(kVaCcidCharacteristic16bit);
  static const bluetooth::Uuid kVaSessionStateCharacteristic =
          bluetooth::Uuid::From16Bit(kVaSessionStateCharacteristic16bit);
  static const bluetooth::Uuid kVaSupportedFeaturesCharacteristic =
@@ -101,6 +101,6 @@
                                                     uint16_t len,
                                                     VaSessionState va_session_state);
 
- bool IsVapsServiceCharacteristic(const bluetooth::Uuid& uuid);
+ bool IsVapServiceCharacteristic(const bluetooth::Uuid& uuid);
 
- }  // namespace vaps
+ }  // namespace vap

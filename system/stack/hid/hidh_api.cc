@@ -76,13 +76,11 @@ tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr, tSDP_DISCOVERY_DB* p_db
 
   hh_cb.p_sdp_db = p_db;
   Uuid uuid_list = Uuid::From16Bit(UUID_SERVCLASS_HUMAN_INTERFACE);
-  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(p_db, db_len, 1, &uuid_list, 0,
-                                                               NULL)) {
+  if (!get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(p_db, db_len, 1, &uuid_list, 0, NULL)) {
     log::warn("Unable to initialize SDP service discovery db peer:{}", addr);
   };
 
-  if (get_legacy_stack_sdp_api()->service.SDP_ServiceSearchRequest(addr, p_db,
-                                                                   hidh_search_callback)) {
+  if (get_legacy_stack_sdp_api()->SDP_ServiceSearchRequest(addr, p_db, hidh_search_callback)) {
     hh_cb.sdp_cback = sdp_cback;
     hh_cb.sdp_busy = true;
     return HID_SUCCESS;
@@ -97,7 +95,7 @@ static void hidh_get_str_attr(tSDP_DISC_REC* p_rec, uint16_t attr_id, uint16_t m
   tSDP_DISC_ATTR* p_attr;
   uint16_t name_len;
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, attr_id);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, attr_id);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       name_len = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -132,7 +130,7 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
   }
 
   Uuid hid_uuid = Uuid::From16Bit(UUID_SERVCLASS_HUMAN_INTERFACE);
-  p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceUUIDInDb(p_db, hid_uuid, NULL);
+  p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInDb(p_db, hid_uuid, NULL);
   if (p_rec == NULL) {
     hh_cb.sdp_cback(bd_addr, tSDP_STATUS::HID_SDP_NO_SERV_UUID, 0, NULL);
     return;
@@ -141,7 +139,7 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
   memset(&hh_cb.sdp_rec, 0, sizeof(tHID_DEV_SDP_INFO));
 
   /* First, verify the mandatory fields we care about */
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_DESCRIPTOR_LIST)) == NULL) ||
       (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) != DATA_ELE_SEQ_DESC_TYPE) ||
       ((p_subattr1 = p_attr->attr_value.v.p_sub_attr) == NULL) ||
@@ -158,21 +156,21 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
     p_nvi->dscp_info.dsc_list = (uint8_t*)&p_repdesc->attr_value;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_VIRTUAL_CABLE)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1 && (p_attr->attr_value.v.u8)) {
     attr_mask |= HID_VIRTUAL_CABLE;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_RECONNECT_INITIATE)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1 && (p_attr->attr_value.v.u8)) {
     attr_mask |= HID_RECONN_INIT;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_NORMALLY_CONNECTABLE)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1 && (p_attr->attr_value.v.u8)) {
@@ -180,21 +178,21 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
   }
 
   // this attribute is deprecated, should we still keep it?
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_SDP_DISABLE)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1 && (p_attr->attr_value.v.u8)) {
     attr_mask |= HID_SDP_DISABLE;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_BATTERY_POWER)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1 && (p_attr->attr_value.v.u8)) {
     attr_mask |= HID_BATTERY_POWER;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_REMOTE_WAKE)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1 && (p_attr->attr_value.v.u8)) {
@@ -205,35 +203,35 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
   hidh_get_str_attr(p_rec, ATTR_ID_SERVICE_DESCRIPTION, HID_MAX_SVC_DESCR_LEN, p_nvi->svc_descr);
   hidh_get_str_attr(p_rec, ATTR_ID_PROVIDER_NAME, HID_MAX_PROV_NAME_LEN, p_nvi->prov_name);
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_DEVICE_RELNUM)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
     p_nvi->rel_num = p_attr->attr_value.v.u16;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_COUNTRY_CODE)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1) {
     p_nvi->ctry_code = p_attr->attr_value.v.u8;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_DEVICE_SUBCLASS)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1) {
     p_nvi->sub_class = p_attr->attr_value.v.u8;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_PARSER_VERSION)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
     p_nvi->hpars_ver = p_attr->attr_value.v.u16;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_LINK_SUPERVISION_TO)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -241,7 +239,7 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
     p_nvi->sup_timeout = p_attr->attr_value.v.u16;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_SSR_HOST_MAX_LAT)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -251,7 +249,7 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
     p_nvi->ssr_max_latency = HID_SSR_PARAM_INVALID;
   }
 
-  if (((p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
+  if (((p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(
                 p_rec, ATTR_ID_HID_SSR_HOST_MIN_TOUT)) != NULL) &&
       SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
       SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {

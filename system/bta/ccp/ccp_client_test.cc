@@ -217,7 +217,21 @@ protected:
   NiceMock<MockSecurityClientInterface> mock_btm_security_;
 };
 
-TEST_F(CcpClientTest, life_cycle_initialize_and_cleanup) { ASSERT_NE(ccp_client_, nullptr); }
+TEST_F(CcpClientTest, life_cycle_initialize_and_cleanup) {
+  // Verifies the singleton can be initialized, cleaned up, and re-initialized.
+
+  // The CcpClient is initialized in the initial SetUp call.
+  ASSERT_NE(ccp_client_, nullptr);
+  ASSERT_NE(CcpClient::Get(), nullptr);
+
+  // TearDown cleans up the instance.
+  TearDown();
+  EXPECT_EQ(CcpClient::Get(), nullptr);
+
+  // SetUp re-initializes it.
+  SetUp();
+  EXPECT_NE(ccp_client_, nullptr);
+}
 
 TEST_F(CcpClientTest, connection_connect_and_discover) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))

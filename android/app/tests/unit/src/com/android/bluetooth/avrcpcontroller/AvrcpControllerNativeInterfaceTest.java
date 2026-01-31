@@ -101,6 +101,7 @@ public class AvrcpControllerNativeInterfaceTest {
         assertThat(item.getType()).isEqualTo(type);
         assertThat(item.getUid()).isEqualTo(uid);
         assertThat(item.getUuid()).isNotNull(); // Random uuid
+        assertThat(item.getTitle()).isEqualTo(folderName);
         assertThat(item.getDisplayableName()).isEqualTo(folderName);
         assertThat(item.isPlayable()).isTrue();
     }

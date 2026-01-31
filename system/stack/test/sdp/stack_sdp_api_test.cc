@@ -96,10 +96,8 @@ TEST_F(StackSdpApiTest, SDP_ServiceSearchRequest) {
     ASSERT_NE(nullptr, sdp_conn_originate(bd_addr));
   }
   tSDP_DISCOVERY_DB db;
-  ASSERT_FALSE(bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()
-                       ->service.SDP_ServiceSearchRequest(
-                               kRawAddress, &db,
-                               [](const RawAddress& /* bd_addr */, tSDP_RESULT /* result */) {}));
+  ASSERT_FALSE(bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->SDP_ServiceSearchRequest(
+          kRawAddress, &db, [](const RawAddress& /* bd_addr */, tSDP_RESULT /* result */) {}));
 }
 
 TEST_F(StackSdpApiTest, SDP_ServiceSearchAttributeRequest) {
@@ -114,7 +112,7 @@ TEST_F(StackSdpApiTest, SDP_ServiceSearchAttributeRequest) {
   }
   tSDP_DISCOVERY_DB db;
   ASSERT_FALSE(bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()
-                       ->service.SDP_ServiceSearchAttributeRequest(
+                       ->SDP_ServiceSearchAttributeRequest(
                                kRawAddress, &db,
                                [](const RawAddress& /* bd_addr */, tSDP_RESULT /* result */) {}));
 }
@@ -131,7 +129,7 @@ TEST_F(StackSdpApiTest, SDP_ServiceSearchAttributeRequest2) {
   }
   tSDP_DISCOVERY_DB db;
   ASSERT_FALSE(bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()
-                       ->service.SDP_ServiceSearchAttributeRequest2(
+                       ->SDP_ServiceSearchAttributeRequest2(
                                kRawAddress, &db,
                                base::BindRepeating([](const RawAddress& /* bd_addr */,
                                                       tSDP_RESULT /* result */) {})));

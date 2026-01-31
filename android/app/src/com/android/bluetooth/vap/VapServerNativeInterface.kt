@@ -36,8 +36,8 @@ class VapServerNativeInterface(nativeCallback: VapServerNativeCallback) :
         cleanupNative()
     }
 
-    fun setVaeName(vaeName: String?) {
-        setVaeNameNative(vaeName)
+    fun setVaName(vaName: String?) {
+        setVaNameNative(vaName)
     }
 
     // Native methods that call into the JNI interface
@@ -47,7 +47,7 @@ class VapServerNativeInterface(nativeCallback: VapServerNativeCallback) :
 
     private external fun cleanupNative()
 
-    private external fun setVaeNameNative(vaeName: String?)
+    private external fun setVaNameNative(vaName: String?)
 
     companion object {
         private val TAG = VapServerNativeInterface::class.java.simpleName

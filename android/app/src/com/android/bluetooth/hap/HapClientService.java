@@ -49,6 +49,7 @@ import android.os.RemoteCallbackList;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
@@ -307,7 +308,7 @@ public class HapClientService extends ConnectableProfile {
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-                if (!Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
+                if (!Util.arrayContains(featureUuids, BluetoothUuid.HAS)) {
                     continue;
                 }
                 int connectionState = STATE_DISCONNECTED;
@@ -436,7 +437,7 @@ public class HapClientService extends ConnectableProfile {
         }
 
         final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-        if (!Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
+        if (!Util.arrayContains(featureUuids, BluetoothUuid.HAS)) {
             Log.e(
                     TAG,
                     "Cannot connect to "

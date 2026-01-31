@@ -444,7 +444,7 @@ void GATTS_StopService(uint16_t service_handle) {
   }
 
   if (it->sdp_handle) {
-    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(it->sdp_handle)) {
+    if (!get_legacy_stack_sdp_api()->SDP_DeleteRecord(it->sdp_handle)) {
       log::warn("Unable to delete record handle:{}", it->sdp_handle);
     }
   }

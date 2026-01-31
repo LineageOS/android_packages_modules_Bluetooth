@@ -50,7 +50,7 @@
 #include "audio_hal_interface/le_audio_software.h"
 #include "bt_types.h"
 #include "bta/csis/csis_types.h"
-#include "bta/include/bta_vaps_server_api.h"
+#include "bta/include/bta_vap_server_api.h"
 #include "bta_csis_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
@@ -2783,9 +2783,22 @@ public:
       /* Clear current connection request and let it be set again if needed */
       BTA_GATTC_CancelOpen(gatt_if_, address, false);
 
+      auto conn_state = leAudioDevice->GetConnectionState();
+
+      /* When connection was not triggered by AUTOCONNECT mechanism, we need to inform upper layer
+       * about DISCONNECTED state */
+      if (conn_state != DeviceConnectState::CONNECTING_AUTOCONNECT) {
+        /* Notify java about connection failure */
+        log::error("Failed to connect to LeAudio leAudioDevice, status: 0x{:02x}", status);
+        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
+                leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
+                bluetooth::le_audio::to_atom_gatt_status(status));
+      }
+
       /* autoconnect connection failed, that's ok */
       if (status != GATT_ILLEGAL_PARAMETER &&
-          (leAudioDevice->GetConnectionState() == DeviceConnectState::CONNECTING_AUTOCONNECT ||
+          (conn_state == DeviceConnectState::CONNECTING_AUTOCONNECT ||
            leAudioDevice->autoconnect_flag_)) {
         log::info("Device not available now, do background connect.");
         leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTED);
@@ -2794,12 +2807,6 @@ public:
       }
 
       leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTED);
-
-      log::error("Failed to connect to LeAudio leAudioDevice, status: 0x{:02x}", status);
-      callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
-      bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
-              leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-              bluetooth::le_audio::to_atom_gatt_status(status));
       return;
     }
 
@@ -4190,13 +4197,12 @@ public:
     /* Send data to the controller */
     if (left_cis_handle) {
       IsoManager::GetInstance()->SendIsoData(
-              left_cis_handle, (const uint8_t*)sw_enc_left->GetDecodedSamples().data(), byte_count);
+              left_cis_handle, (const uint8_t*)sw_enc_left->GetOutputBuffer().data(), byte_count);
     }
 
     if (right_cis_handle) {
       IsoManager::GetInstance()->SendIsoData(
-              right_cis_handle, (const uint8_t*)sw_enc_right->GetDecodedSamples().data(),
-              byte_count);
+              right_cis_handle, (const uint8_t*)sw_enc_right->GetOutputBuffer().data(), byte_count);
     }
   }
 
@@ -4231,11 +4237,11 @@ public:
       sw_enc_left->Encode((const uint8_t*)data.data(), 2, byte_count);
       // Output to the left channel buffer with `byte_count` offset
       sw_enc_right->Encode((const uint8_t*)data.data() + 2, 2, byte_count,
-                           &sw_enc_left->GetDecodedSamples(), byte_count);
+                           &sw_enc_left->GetOutputBuffer(), byte_count);
     }
 
     IsoManager::GetInstance()->SendIsoData(cis_handle,
-                                           (const uint8_t*)sw_enc_left->GetDecodedSamples().data(),
+                                           (const uint8_t*)sw_enc_left->GetOutputBuffer().data(),
                                            byte_count * num_channels);
   }
 
@@ -4331,12 +4337,12 @@ public:
     if (!left_cis_handle || !right_cis_handle) {
       /* mono or just one device connected */
       decoder->Decode(data, size);
-      SendAudioDataToAF(&decoder->GetDecodedSamples());
+      SendAudioDataToAF(&decoder->GetOutputBuffer());
       return;
     }
     /* both devices are connected */
 
-    if (cached_channel_ == nullptr || cached_channel_->GetDecodedSamples().empty()) {
+    if (cached_channel_ == nullptr || cached_channel_->GetOutputBuffer().empty()) {
       /* First packet received, cache it. We need both channel data to send it
        * to AF. */
       decoder->Decode(data, size);
@@ -4352,7 +4358,7 @@ public:
       if (timestamp == cached_channel_timestamp_) {
         /* Ready to mix data and send out to AF */
         decoder->Decode(data, size);
-        SendAudioDataToAF(&sw_dec_left->GetDecodedSamples(), &sw_dec_right->GetDecodedSamples());
+        SendAudioDataToAF(&sw_dec_left->GetOutputBuffer(), &sw_dec_right->GetOutputBuffer());
 
         CleanCachedMicrophoneData();
         return;
@@ -4361,7 +4367,7 @@ public:
       /* 2nd Channel is in the future compared to the cached data.
        Send the cached data to AF, and keep the new channel data in cache.
        This should happen only during stream setup */
-      SendAudioDataToAF(&decoder->GetDecodedSamples());
+      SendAudioDataToAF(&decoder->GetOutputBuffer());
 
       decoder->Decode(data, size);
       cached_channel_timestamp_ = timestamp;
@@ -4373,7 +4379,7 @@ public:
      * data */
 
     /* Send the cached data out */
-    SendAudioDataToAF(&decoder->GetDecodedSamples());
+    SendAudioDataToAF(&decoder->GetOutputBuffer());
 
     /* Cache the data in case 2nd channel connects */
     decoder->Decode(data, size);
@@ -4990,7 +4996,7 @@ public:
   }
 
   void LogStreamStarted(LeAudioDeviceGroup* group, int active_group_id,
-                                     LeAudioContextType context_type) {
+                        LeAudioContextType context_type) {
     if (!group) {
       return;
     }
@@ -6660,7 +6666,7 @@ public:
           if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" audio sender: NotifyVaSessionStarted");
             if (group) {
-              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+              bluetooth::vap::GetVapServer()->NotifyVaSessionStarted(
                       GetGroupDevices(group->group_id_), true);
             }
           }
@@ -6681,7 +6687,7 @@ public:
           if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" audio receiver: NotifyVaSessionStarted");
             if (group) {
-              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+              bluetooth::vap::GetVapServer()->NotifyVaSessionStarted(
                       GetGroupDevices(group->group_id_), true);
             }
           }
@@ -6826,7 +6832,7 @@ public:
         if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
           log::info(" Status Idle: NotifyVaSessionStopped");
           if (group) {
-            bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+            bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
                     GetGroupDevices(group->group_id_), true);
           }
         } else {
@@ -6834,7 +6840,7 @@ public:
           if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
             log::info(" Status Idle: NotifyVaSessionStopped");
             if (group) {
-              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+              bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
                       GetGroupDevices(group->group_id_), true);
             }
           }

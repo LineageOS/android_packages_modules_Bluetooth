@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,23 +22,23 @@
  #include "bluetooth/types/uuid.h"
  #include "bluetooth/types/address.h"
 
- #include "hardware/bt_vaps_server.h"
+ #include "hardware/bt_vap_server.h"
 
  namespace bluetooth {
- namespace vaps {
+ namespace vap {
 
- class VapsServer {
+ class VapServer {
  public:
-   virtual ~VapsServer() = default;
-   virtual void Initialize(VapsServerCallbacks* callbacks) = 0;
+   virtual ~VapServer() = default;
+   virtual void Initialize(VapServerCallbacks* callbacks) = 0;
    virtual void SetCcid(int ccid) = 0;
-   virtual void SetVaeName(std::string vae_name) = 0;
+   virtual void SetVaName(std::string va_name) = 0;
    virtual void NotifyVaSessionStarted(std::vector<RawAddress> devices, bool is_success) = 0;
    virtual void NotifyVaSessionStopped(std::vector<RawAddress> devices, bool is_success) = 0;
    virtual void DebugDump(int fd) = 0;
    virtual void Cleanup() = 0;
  };
 
- VapsServer* GetVapsServer();
- }  // namespace vaps
+ VapServer* GetVapServer();
+ }  // namespace vap
  }  // namespace bluetooth

@@ -284,7 +284,7 @@ static void bta_hf_client_cb_init(tBTA_HF_CLIENT_CB* client_cb, uint16_t handle)
   client_cb->peer_hf_indicators.clear();
 
   if (client_cb->p_disc_db) {
-    if (!get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(client_cb->p_disc_db)) {
+    if (!get_legacy_stack_sdp_api()->SDP_CancelServiceSearch(client_cb->p_disc_db)) {
       log::warn("Unable to cancel SDP service discovery peer:{}", client_cb->peer_addr);
     }
     osi_free_and_reset((void**)&client_cb->p_disc_db);
@@ -369,7 +369,7 @@ void bta_hf_client_collision_cback(tBTA_SYS_CONN_STATUS /* status */, tBTA_SYS_I
 
     /* Cancel SDP if it had been started. */
     if (client_cb->p_disc_db) {
-      if (!get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(client_cb->p_disc_db)) {
+      if (!get_legacy_stack_sdp_api()->SDP_CancelServiceSearch(client_cb->p_disc_db)) {
         log::warn("Unable to cancel SDP service discovery peer:{}", peer_addr);
       }
       osi_free_and_reset((void**)&client_cb->p_disc_db);

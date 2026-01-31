@@ -140,7 +140,7 @@ public class HidHostService extends ConnectableProfile {
     @VisibleForTesting static final int RECONNECT_NOT_ALLOWED_TEMPORARY = 1;
     @VisibleForTesting static final int RECONNECT_NOT_ALLOWED = 2;
 
-    // LINT.ThenChange(/system/btif/src/btif_hh.cc)
+    // LINT.ThenChange(/system/include/hardware/bt_hh.h)
 
     public HidHostService(AdapterService adapterService) {
         this(adapterService, null, Looper.getMainLooper());
@@ -191,7 +191,7 @@ public class HidHostService extends ConnectableProfile {
         }
 
         final ParcelUuid[] uuids = getAdapterService().getRemoteUuids(device);
-        if (!Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID)) {
+        if (!Util.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID)) {
             Log.v(
                     TAG,
                     "setAndroidHeadTrackerEnabled: "
@@ -216,7 +216,7 @@ public class HidHostService extends ConnectableProfile {
             // Use BR/EDR address if HID is to be used
             return getAdapterService().getByteBrEdrAddress(device);
         } else { // TRANSPORT_AUTO
-            boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
+            boolean hidSupported = Util.arrayContains(uuids, BluetoothUuid.HID);
             // Prefer HID over HOGP
             if (hidSupported) {
                 // Use BR/EDR address if HID is available
@@ -699,9 +699,9 @@ public class HidHostService extends ConnectableProfile {
         if (Flags.hidDefaultPreferredTransport()
                 && inputDevice.mSelectedTransport == TRANSPORT_AUTO) {
             final ParcelUuid[] uuids = getAdapterService().getRemoteUuids(device);
-            boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
+            boolean hidSupported = Util.arrayContains(uuids, BluetoothUuid.HID);
             boolean headtrackerSupported =
-                    Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
+                    Util.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
 
             if (hidSupported
                     && headtrackerSupported
@@ -726,7 +726,7 @@ public class HidHostService extends ConnectableProfile {
         if (Flags.headtrackerConnectionPolicy()
                 && inputDevice.mSelectedTransport == TRANSPORT_LE
                 && !inputDevice.mAndroidHeadTrackerEnabled
-                && Utils.arrayContains(
+                && Util.arrayContains(
                         getAdapterService().getRemoteUuids(device),
                         HidHostService.ANDROID_HEADTRACKER_UUID)) {
             Log.w(TAG, "handleMessageConnect: " + device + " Android Headtracker is disabled");
@@ -943,10 +943,10 @@ public class HidHostService extends ConnectableProfile {
         }
 
         final ParcelUuid[] uuids = getAdapterService().getRemoteUuids(device);
-        boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
-        boolean hogpSupported = Utils.arrayContains(uuids, BluetoothUuid.HOGP);
+        boolean hidSupported = Util.arrayContains(uuids, BluetoothUuid.HID);
+        boolean hogpSupported = Util.arrayContains(uuids, BluetoothUuid.HOGP);
         boolean headtrackerSupported =
-                Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
+                Util.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
         if (transport == TRANSPORT_BREDR && !hidSupported) {
             Log.w(TAG, "device " + device + " does not support HID");
             return false;

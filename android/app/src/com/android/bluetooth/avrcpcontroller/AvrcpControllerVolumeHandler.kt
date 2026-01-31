@@ -73,14 +73,14 @@ class AvrcpControllerVolumeHandler(
     // For sending volume changed events back to the object owner
     private val mReceiver = VolumeHandlerBroadcastReceiver()
 
-    // To serialize the processing of volume events with mLastSetStreamVal
+    // To serialize the processing of volume events involving mCachedStreamVolume
     // Only used with STRATEGY_ABSOLUTE
     private val mHandler: Handler = Handler(mLooper)
 
     // For distinguishing external volume changed events from setAbsoluteVolume calls
     // This volume is a local index, not absolute volume
     // Only used with STRATEGY_ABSOLUTE
-    private var mLastSetStreamVal: Int = -1
+    private var mCachedStreamVolume = VOLUME_VALUE_MISSING
 
     /** The volume strategy in use by our device. */
     val mVolumeStrategy: Int =
@@ -93,7 +93,10 @@ class AvrcpControllerVolumeHandler(
     private val isAbsolute: Boolean
         get() = mVolumeStrategy == STRATEGY_ABSOLUTE
 
-    /** Registers the [VolumeHandlerBroadcastReceiver]. */
+    /**
+     * Registers the [VolumeHandlerBroadcastReceiver]. Initializes [mCachedStreamVolume] to the
+     * current stream volume.
+     */
     fun start() {
         synchronized(mLock) {
             if (mStarted) {
@@ -107,11 +110,15 @@ class AvrcpControllerVolumeHandler(
                 filter.addAction(AudioManager.ACTION_VOLUME_CHANGED)
                 mContext.registerReceiver(mReceiver, filter)
             }
+            mCachedStreamVolume = getStreamVolume()
             mStarted = true
         }
     }
 
-    /** Unregisters the [VolumeHandlerBroadcastReceiver]. Clears the handler's message queue. */
+    /**
+     * Unregisters the [VolumeHandlerBroadcastReceiver]. Clears the handler's message queue. Resets
+     * [mCachedStreamVolume].
+     */
     fun stop() {
         synchronized(mLock) {
             if (!mStarted) {
@@ -123,6 +130,7 @@ class AvrcpControllerVolumeHandler(
                 mContext.unregisterReceiver(mReceiver)
                 mHandler.removeCallbacksAndMessages(null)
             }
+            mCachedStreamVolume = VOLUME_VALUE_MISSING
             mStarted = false
         }
     }
@@ -137,7 +145,12 @@ class AvrcpControllerVolumeHandler(
             if (isLoud) {
                 return ABS_VOL_MAX
             }
-            val localVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            val localVolume: Int =
+                if (Flags.avrcpControllerAbsVolChangedNotification()) {
+                    mCachedStreamVolume
+                } else {
+                    getStreamVolume()
+                }
             return localToAbsoluteVolume(localVolume)
         }
 
@@ -179,7 +192,12 @@ class AvrcpControllerVolumeHandler(
         }
 
         val reqLocalVolume = absoluteToLocalVolume(absVol)
-        val curLocalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val curLocalVolume: Int =
+            if (Flags.avrcpControllerAbsVolChangedNotification()) {
+                mCachedStreamVolume
+            } else {
+                getStreamVolume()
+            }
         debug(
             "setAbsoluteVolumeInternal: absVol=" +
                 absVol +
@@ -206,15 +224,16 @@ class AvrcpControllerVolumeHandler(
          * change in index values which are in range of 0-15. For such cases
          * no action is required
          */
-        if (reqLocalVolume != curLocalVolume) {
-            debug("Changing local stream volume from $curLocalVolume to $reqLocalVolume")
-            mAudioManager.setStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                reqLocalVolume,
-                AudioManager.FLAG_SHOW_UI,
-            )
-            mLastSetStreamVal = reqLocalVolume
+        if (reqLocalVolume == curLocalVolume) {
+            return
         }
+        debug("Changing local stream volume from $curLocalVolume to $reqLocalVolume")
+        mAudioManager.setStreamVolume(
+            AudioManager.STREAM_MUSIC,
+            reqLocalVolume,
+            AudioManager.FLAG_SHOW_UI,
+        )
+        mCachedStreamVolume = reqLocalVolume
     }
 
     /**
@@ -225,29 +244,33 @@ class AvrcpControllerVolumeHandler(
         mHandler.post { setStreamVolume(reqLocalVolume, curLocalVolume) }
     }
 
+    /** Handle volume changed events by triggering the [Callback]. */
+    private fun volumeChanged(newLocalVolume: Int) {
+        if (mCachedStreamVolume == newLocalVolume) {
+            // Volume is unchanged since the last set absolute volume command or volume changed
+            // event
+            return
+        }
+
+        val newAbsoluteVolume = localToAbsoluteVolume(newLocalVolume)
+        debug("Stream volume changed to $newLocalVolume (local), $newAbsoluteVolume (absolute)")
+        mCachedStreamVolume = newLocalVolume
+
+        if (!isAbsolute) {
+            debug(
+                "Dropping volume changed event because we are using " +
+                    "${strategyToString(mVolumeStrategy)}, not " +
+                    "${strategyToString(STRATEGY_ABSOLUTE)}."
+            )
+            return
+        }
+
+        mCallback.onAbsoluteVolumeChanged(newAbsoluteVolume)
+    }
+
     /** Posts a runnable to [mHandler] to handle volume changed events. */
     private fun postVolumeChanged(newLocalVolume: Int) {
-        mHandler.post {
-            if (mLastSetStreamVal != newLocalVolume) {
-                val newAbsoluteVolume = localToAbsoluteVolume(newLocalVolume)
-                debug(
-                    "Stream volume changed to $newLocalVolume (local), " +
-                        "$newAbsoluteVolume (absolute)"
-                )
-                mLastSetStreamVal = newLocalVolume
-
-                if (!isAbsolute) {
-                    debug(
-                        "Dropping volume changed event because we are using " +
-                            "${strategyToString(mVolumeStrategy)}, not " +
-                            "${strategyToString(STRATEGY_ABSOLUTE)}."
-                    )
-                    return@post
-                }
-
-                mCallback.onAbsoluteVolumeChanged(newAbsoluteVolume)
-            }
-        }
+        mHandler.post { volumeChanged(newLocalVolume) }
     }
 
     /**
@@ -276,11 +299,27 @@ class AvrcpControllerVolumeHandler(
             if (streamType != AudioManager.STREAM_MUSIC) {
                 return
             }
+            if (mCachedStreamVolume == VOLUME_VALUE_MISSING) {
+                // We ignore volume changed events before our initial caching in start()
+                return
+            }
 
             // This volume is a local index, not absolute volume
-            val newLocalVolume = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0)
+            val newLocalVolume =
+                intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, VOLUME_VALUE_MISSING)
+            if (newLocalVolume == VOLUME_VALUE_MISSING) {
+                return
+            }
             postVolumeChanged(newLocalVolume)
         }
+    }
+
+    private fun getStreamVolume(): Int {
+        return mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+    }
+
+    private fun getStreamMaxVolume(): Int {
+        return mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     }
 
     /**
@@ -290,7 +329,7 @@ class AvrcpControllerVolumeHandler(
      * @return An absolute volume level based on a domain of [0, ABS_VOL_MAX]
      */
     private fun localToAbsoluteVolume(localVolume: Int): Int {
-        val maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val maxLocalVolume = getStreamMaxVolume()
         return (ABS_VOL_MAX * localVolume) / maxLocalVolume
     }
 
@@ -301,7 +340,7 @@ class AvrcpControllerVolumeHandler(
      * @return A local volume level based on the device's audio manager
      */
     private fun absoluteToLocalVolume(absoluteVolume: Int): Int {
-        val maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val maxLocalVolume = getStreamMaxVolume()
         return (maxLocalVolume * absoluteVolume) / ABS_VOL_MAX
     }
 
@@ -313,7 +352,7 @@ class AvrcpControllerVolumeHandler(
     override fun toString(): String {
         return "Device: $mDevice" +
             ", Volume Strategy: ${strategyToString(mVolumeStrategy)}" +
-            ", lastSetStreamVal: $mLastSetStreamVal"
+            ", Cached Stream Volume: $mCachedStreamVolume"
     }
 
     private fun debug(message: String) {
@@ -336,6 +375,8 @@ class AvrcpControllerVolumeHandler(
         // Absolute Volume domain is [0, 127], with 0 -> 0% and 127 -> 100%. See Bluetooth AVRCP
         // specification, section 6.13.1, "Absolute Volume"
         private const val ABS_VOL_MAX = 127
+
+        private const val VOLUME_VALUE_MISSING = -1
 
         private fun strategyToString(strategy: Int): String {
             return when (strategy) {

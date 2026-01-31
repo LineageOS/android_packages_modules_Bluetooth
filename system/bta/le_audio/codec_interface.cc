@@ -112,7 +112,7 @@ struct CodecInterface::Impl {
     return Status::STATUS_ERR_INVALID_CODEC_ID;
   }
 
-  std::vector<int16_t>& GetDecodedSamples() { return output_channel_data_; }
+  std::vector<int16_t>& GetOutputBuffer() { return output_channel_data_; }
   CodecInterface::Status Decode(uint8_t* data, uint16_t size) {
     if (!IsReady()) {
       log::error("decoder not ready");
@@ -285,7 +285,7 @@ CodecInterface::Status CodecInterface::InitDecoder(const LeAudioCodecConfigurati
                                                    const LeAudioCodecConfiguration& pcm_config) {
   return impl->InitDecoder(codec_config, pcm_config);
 }
-std::vector<int16_t>& CodecInterface::GetDecodedSamples() { return impl->GetDecodedSamples(); }
+std::vector<int16_t>& CodecInterface::GetOutputBuffer() { return impl->GetOutputBuffer(); }
 CodecInterface::Status CodecInterface::Decode(uint8_t* data, uint16_t size) {
   return impl->Decode(data, size);
 }

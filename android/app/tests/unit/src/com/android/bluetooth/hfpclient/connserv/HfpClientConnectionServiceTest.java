@@ -32,7 +32,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
@@ -155,7 +154,7 @@ public class HfpClientConnectionServiceTest {
 
     @Test
     public void startServiceWithAlreadyConnectedDevice_blockIsCreated() throws Exception {
-        when(mHeadsetClientService.getConnectedDevices()).thenReturn(List.of(mDevice));
+        doReturn(List.of(mDevice)).when(mHeadsetClientService).getConnectedDevices();
         createService();
         HfpClientDeviceBlock block = mHfpClientConnectionService.findBlockForDevice(mDevice);
         assertThat(block).isNotNull();
@@ -421,8 +420,8 @@ public class HfpClientConnectionServiceTest {
         // Create two mock connections for the same device that is not connected.
         HfpClientConnection connection1 = mock(HfpClientConnection.class);
         HfpClientConnection connection2 = mock(HfpClientConnection.class);
-        when(connection1.getDevice()).thenReturn(mDevice);
-        when(connection2.getDevice()).thenReturn(mDevice);
+        doReturn(mDevice).when(connection1).getDevice();
+        doReturn(mDevice).when(connection2).getDevice();
 
         // Trigger the conference call. This should not crash, even without a device block.
         mHfpClientConnectionService.onConference(connection1, connection2);

@@ -197,6 +197,46 @@ impl From<BthhReportType> for CxxBthhReportType {
     }
 }
 
+#[derive(Debug, PartialEq, PartialOrd)]
+pub enum BthhReconnectPolicy {
+    Allowed,
+    NotAllowedTemporary,
+    NotAllowed,
+}
+
+#[gen_cxx_extern_trivial_tuple]
+struct CxxBthhReconnectPolicy(pub bindings::bthh_reconnect_policy_t);
+
+impl From<CxxBthhReconnectPolicy> for BthhReconnectPolicy {
+    fn from(item: CxxBthhReconnectPolicy) -> Self {
+        match item.0 {
+            bindings::bthh_reconnect_policy_t_RECONNECT_ALLOWED => BthhReconnectPolicy::Allowed,
+            bindings::bthh_reconnect_policy_t_RECONNECT_NOT_ALLOWED_TEMPORARY => {
+                BthhReconnectPolicy::NotAllowedTemporary
+            }
+            bindings::bthh_reconnect_policy_t_RECONNECT_NOT_ALLOWED => {
+                BthhReconnectPolicy::NotAllowed
+            }
+            _ => panic!("Unsupported bthh_reconnect_policy_t {}", item.0),
+        }
+    }
+}
+
+impl From<BthhReconnectPolicy> for CxxBthhReconnectPolicy {
+    fn from(item: BthhReconnectPolicy) -> Self {
+        let i = match item {
+            BthhReconnectPolicy::Allowed => bindings::bthh_reconnect_policy_t_RECONNECT_ALLOWED,
+            BthhReconnectPolicy::NotAllowedTemporary => {
+                bindings::bthh_reconnect_policy_t_RECONNECT_NOT_ALLOWED_TEMPORARY
+            }
+            BthhReconnectPolicy::NotAllowed => {
+                bindings::bthh_reconnect_policy_t_RECONNECT_NOT_ALLOWED
+            }
+        };
+        CxxBthhReconnectPolicy(i)
+    }
+}
+
 fn convert_report(count: i32, raw: *mut u8) -> Vec<u8> {
     let mut v: Vec<u8> = Vec::new();
     for i in 0..isize::from_i32(count).unwrap() {
@@ -281,6 +321,10 @@ mod ffi {
         type BthhReportType = super::CxxBthhReportType;
 
         #[namespace = ""]
+        #[cxx_name = "bthh_reconnect_policy_t"]
+        type BthhReconnectPolicy = super::CxxBthhReconnectPolicy;
+
+        #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
 
         type BtIntf = crate::btif::ffi::BtIntf;
@@ -295,13 +339,14 @@ mod ffi {
             addr: RawAddress,
             addr_type: BtAddrType,
             transport: BtTransport,
+            direct: bool,
         ) -> u32;
         fn disconnect(
             self: &HhIntf,
             addr: RawAddress,
             addr_type: BtAddrType,
             transport: BtTransport,
-            reconnect_allowed: bool,
+            reconnect_policy: BthhReconnectPolicy,
         ) -> u32;
         fn virtual_unplug(
             self: &HhIntf,
@@ -507,8 +552,9 @@ impl HidHost {
         addr: RawAddress,
         address_type: BtAddrType,
         transport: BtTransport,
+        direct: bool,
     ) -> BtStatus {
-        BtStatus::from(self.internal.connect(addr, address_type.into(), transport.into()))
+        BtStatus::from(self.internal.connect(addr, address_type.into(), transport.into(), direct))
     }
 
     #[log_args]
@@ -518,13 +564,13 @@ impl HidHost {
         addr: RawAddress,
         address_type: BtAddrType,
         transport: BtTransport,
-        reconnect_allowed: bool,
+        reconnect_policy: BthhReconnectPolicy,
     ) -> BtStatus {
         BtStatus::from(self.internal.disconnect(
             addr,
             address_type.into(),
             transport.into(),
-            reconnect_allowed,
+            reconnect_policy.into(),
         ))
     }
 

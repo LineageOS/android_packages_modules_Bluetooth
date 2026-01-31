@@ -260,8 +260,9 @@ static jboolean disconnectHidNative(JNIEnv* env, jobject /* object */, jbyteArra
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  BtStatus status = sBluetoothHidInterface->disconnect(bd_addr, (tBLE_ADDR_TYPE)address_type,
-                                                       (tBT_TRANSPORT)transport, reconnect_policy);
+  BtStatus status = sBluetoothHidInterface->disconnect(
+          bd_addr, (tBLE_ADDR_TYPE)address_type, (tBT_TRANSPORT)transport,
+          static_cast<bthh_reconnect_policy_t>(reconnect_policy));
   if (!status) {
     log::error("Failed disconnect hid channel, status: {}", status);
     ret = JNI_FALSE;

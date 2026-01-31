@@ -42,7 +42,7 @@ uint16_t AvrcSdpRecordHelper::AddRecord(const AvrcpSdpRecord& sdp_record_referen
     log::debug("Adding a new record for {} with uuid 0x{:x} and categories as 0x{:x}",
                merged_sdp_records.service_name, merged_sdp_records.service_uuid,
                merged_sdp_records.categories);
-    sdp_record_handle_ = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+    sdp_record_handle_ = get_legacy_stack_sdp_api()->SDP_CreateRecord();
     if (add_sys_uid) {
       bta_sys_add_uuid(merged_sdp_records.service_uuid);
     }
@@ -65,9 +65,9 @@ uint16_t AvrcSdpRecordHelper::UpdateRecord(const uint16_t new_categories) {
   uint8_t temp[sizeof(uint16_t)], *p;
   p = temp;
   UINT16_TO_BE_STREAM(p, new_categories);
-  return get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
-                 sdp_record_handle_, ATTR_ID_SUPPORTED_FEATURES, UINT_DESC_TYPE, sizeof(temp),
-                 (uint8_t*)temp)
+  return get_legacy_stack_sdp_api()->SDP_AddAttribute(sdp_record_handle_,
+                                                      ATTR_ID_SUPPORTED_FEATURES, UINT_DESC_TYPE,
+                                                      sizeof(temp), (uint8_t*)temp)
                  ? AVRC_SUCCESS
                  : AVRC_FAIL;
 }
@@ -90,7 +90,7 @@ uint16_t AvrcSdpRecordHelper::RemoveRecord(const uint16_t request_id) {
       uint8_t temp[sizeof(uint16_t)], *p;
       p = temp;
       UINT16_TO_BE_STREAM(p, categories);
-      return get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+      return get_legacy_stack_sdp_api()->SDP_AddAttribute(
                      sdp_record_handle_, ATTR_ID_SUPPORTED_FEATURES, UINT_DESC_TYPE, sizeof(temp),
                      (uint8_t*)temp)
                      ? AVRC_SUCCESS
@@ -169,10 +169,10 @@ uint16_t ControlAvrcSdpRecordHelper::UpdateRecord(const uint16_t new_categories)
         class_list[1] = UUID_SERVCLASS_AV_REM_CTRL_CONTROL;
         count = 2;
       }
-      result &= get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_record_handle_,
-                                                                             count, class_list);
+      result &= get_legacy_stack_sdp_api()->SDP_AddServiceClassIdList(sdp_record_handle_, count,
+                                                                      class_list);
     }
-    result &= get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+    result &= get_legacy_stack_sdp_api()->SDP_AddProfileDescriptorList(
             sdp_record_handle_, merged_sdp_records.service_uuid,
             merged_sdp_records.profile_version);
   }

@@ -370,8 +370,8 @@ public class AvrcpControllerStateMachineTest {
         TestUtils.waitForLooperToBeIdle(mAvrcpStateMachine.getHandler().getLooper());
     }
 
-    /** Verify that an absolute volume interim notification was sent to the native interface. */
-    private void verifyAbsoluteVolumeInterimNotification(byte label, int absVolRsp) {
+    /** Verify that an absolute volume interim response was sent to the native interface. */
+    private void verifyAbsoluteVolumeInterimResponse(byte label, int absVolRsp) {
         verify(mNativeInterface)
                 .sendRegisterAbsVolRsp(any(), eq((byte) 0x00), eq(absVolRsp), eq((int) label));
     }
@@ -1134,69 +1134,45 @@ public class AvrcpControllerStateMachineTest {
                         eq(KEY_UP));
     }
 
-    /** Test that Absolute Volume Registration is working: fixed volume, not automotive = Loud */
+    /** Test that Absolute Volume Registration is working: Strategy Loud */
     @Test
-    public void testRegisterAbsVolumeNotification_volumeIsFixed_getsAbsVolumeMax() {
-        setUpConnectedState(true, true);
-
-        byte label = 42;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 127);
-    }
-
-    /** Test that Absolute Volume Registration is working: not fixed volume, automotive = Loud */
-    @Test
-    public void testRegisterAbsVolumeNotification_isAutomotive_getsAbsVolumeMax() {
+    public void testRegisterAbsVolumeNotification_isStrategyLoud_respondsAbsVolumeMax() {
         makeStateMachineForAbsVolumeTests(false, true);
         setUpConnectedState(true, true);
 
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 127);
+        verifyAbsoluteVolumeInterimResponse(label, 127);
     }
 
-    /**
-     * Test that Absolute Volume Registration is working: not fixed volume, not automotive =
-     * Absolute
-     */
+    /** Test that Absolute Volume Registration is working: Strategy Absolute */
     @Test
-    public void testRegisterAbsVolumeNotification_isAbsolute_doesNotGetAbsVolumeMax() {
+    public void testRegisterAbsVolumeNotification_isStrategyAbsolute_doesNotRespondAbsVolumeMax() {
         makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
 
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
     }
 
-    /** Test that set absolute volume is working: fixed volume, not automotive = Loud */
+    /** Test that set absolute volume is working: Strategy Loud */
     @Test
-    public void testSetAbsoluteVolume_volumeIsFixed_setsAbsVolumeMax() {
-        setUpConnectedState(true, true);
-
-        byte setLabel = 52;
-        setAbsoluteVolume(setLabel, 20);
-        verifySetAbsoluteVolumeResponse(setLabel, 127);
-        verifyNoSetStreamVolume();
-        verifyNoAbsoluteVolumeChangedNotification();
-    }
-
-    /** Test that set absolute volume is working: not fixed volume, automotive = Loud */
-    @Test
-    public void testSetAbsoluteVolume_isAutomotive_setsAbsVolumeMax() {
+    public void testSetAbsoluteVolume_isStrategyLoud_respondsAbsVolumeMax() {
         makeStateMachineForAbsVolumeTests(false, true);
         setUpConnectedState(true, true);
 
         byte setLabel = 52;
         setAbsoluteVolume(setLabel, 20);
         verifySetAbsoluteVolumeResponse(setLabel, 127);
+        // Loud devices should never set stream volume
         verifyNoSetStreamVolume();
         verifyNoAbsoluteVolumeChangedNotification();
     }
 
-    /** Test that set absolute volume is working: not fixed volume, not automotive = Absolute */
+    /** Test that set absolute volume is working: Strategy Absolute */
     @Test
-    public void testSetAbsoluteVolume_twice_sameVol_isAbsolute_doesNotSetAbsVolumeMax() {
+    public void testSetAbsoluteVolume_isStrategyAbsolute_doesNotRespondAbsVolumeMax() {
         makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
 
@@ -1205,207 +1181,211 @@ public class AvrcpControllerStateMachineTest {
         verifySetAbsoluteVolumeResponse(setLabel, 20);
         verifySetStreamVolume(15);
         verifyNoAbsoluteVolumeChangedNotification();
+    }
 
-        clearInvocations(mAudioManager);
+    /** Test that set absolute volume is working: Strategy Absolute */
+    @Test
+    public void testSetAbsoluteVolume_isStrategyAbsolute_currentVol_doesNotSetStreamVolume() {
+        makeStateMachineForAbsVolumeTests(false, false);
+        setUpConnectedState(true, true);
 
-        // Setting absolute volume again with the same volume shouldn't change the stream volume
-        setLabel++;
-        setAbsoluteVolume(setLabel, 20);
-        verifySetAbsoluteVolumeResponse(setLabel, 20);
+        // Absolute volume 32 -> Local volume 25
+        byte setLabel = 52;
+        setAbsoluteVolume(setLabel, 32);
+        verifySetAbsoluteVolumeResponse(setLabel, 32);
+        // Setting absolute volume to match the current stream volume shouldn't change the stream
+        // volume
         verifyNoSetStreamVolume();
         verifyNoAbsoluteVolumeChangedNotification();
     }
 
-    /** Loud devices should not notify native when events are received */
+    /** Loud devices should not send a notification after a volume changed event */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_isAutomotive_nativeNotNotified() {
+    public void testEvent_isStrategyLoud_notificationNotSent() {
         makeStateMachineForAbsVolumeTests(false, true);
         setUpConnectedState(true, true);
 
         // Register notification
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 127);
+        verifyAbsoluteVolumeInterimResponse(label, 127);
 
-        // Receive event
+        // Volume changed event
         sendVolumeChangedEvent(39);
         verifyNoAbsoluteVolumeChangedNotification();
     }
 
     /**
-     * Absolute volume devices should notify native after volume changed events are received, but
-     * only for the events registered for.
+     * If the remote device has registered for a Volume Changed Notification, absolute volume
+     * devices should send a notification after a volume changed event.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_isAbsolute_nativeNotifiedOnlyOnRegistration() {
-        makeStateMachineForAbsVolumeTests(false, false);
-        setUpConnectedState(true, true);
-
-        // Receive event without registering
-        sendVolumeChangedEvent(15);
-        verifyNoAbsoluteVolumeChangedNotification();
-
-        // Register notification
-        byte label = 42;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 19);
-
-        // Receive event
-        sendVolumeChangedEvent(39);
-        verifyAbsoluteVolumeChangedNotification(label, 49);
-
-        // Register notification
-        label++;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 49);
-
-        // Receive event
-        sendVolumeChangedEvent(59);
-        verifyAbsoluteVolumeChangedNotification(label, 74);
-
-        clearInvocations(mNativeInterface);
-
-        // Receive event without registering
-        sendVolumeChangedEvent(31);
-        verifyNoAbsoluteVolumeChangedNotification();
-    }
-
-    /**
-     * When setting absolute volume, and then receiving two volume changed events for the same
-     * volume that was set, absolute volume devices should not notify native.
-     */
-    @Test
-    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_afterSetAbsVol_twoEvents_sameVol_isAbsolute_nativeNotNotified() {
+    public void testEvent_isStrategyAbsolute_notificationSent() {
         makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
 
         // Register notification
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
 
-        // Set absolute volume
-        byte setLabel = 52;
-        setAbsoluteVolume(setLabel, 20);
-        verifySetAbsoluteVolumeResponse(setLabel, 20);
-        verifySetStreamVolume(15);
-        verifyNoAbsoluteVolumeChangedNotification();
-
-        // Receive event for the same volume that was set
+        // Volume changed event
         sendVolumeChangedEvent(15);
-        verifyNoAbsoluteVolumeChangedNotification();
+        verifyAbsoluteVolumeChangedNotification(label, 19);
+    }
 
-        // Receive event for the same volume that was set, again
+    /**
+     * If the remote device has not registered for a Volume Changed Notification, absolute volume
+     * devices should not send a notification after a volume changed event.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
+    public void testEvent_isStrategyAbsolute_noRegistration_notificationNotSent() {
+        makeStateMachineForAbsVolumeTests(false, false);
+        setUpConnectedState(true, true);
+
+        // Volume changed event when not registered
         sendVolumeChangedEvent(15);
         verifyNoAbsoluteVolumeChangedNotification();
     }
 
     /**
-     * When setting absolute volume, and then receiving two volume changed events, with the second
-     * one having a different volume, absolute volume devices should notify native on the second
-     * event.
+     * If a volume changed event matches the current stream volume, absolute volume devices should
+     * not send a notification.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_afterSetAbsVol_twoEvents_secondDifferentVol_isAbsolute_nativeNotified() {
+    public void testEvent_isStrategyAbsolute_currentVol_notificationNotSent() {
         makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
 
         // Register notification
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
 
-        // Set absolute volume
-        byte setLabel = 52;
-        setAbsoluteVolume(setLabel, 20);
-        verifySetAbsoluteVolumeResponse(setLabel, 20);
-        verifySetStreamVolume(15);
+        // Volume changed event that matches the current stream volume
+        sendVolumeChangedEvent(25);
         verifyNoAbsoluteVolumeChangedNotification();
-
-        // Receive event for the same volume that was set
-        sendVolumeChangedEvent(15);
-        verifyNoAbsoluteVolumeChangedNotification();
-
-        // Receive event for a different volume
-        sendVolumeChangedEvent(39);
-        verifyAbsoluteVolumeChangedNotification(label, 49);
     }
 
     /**
-     * For the following sequence of events, absolute volume devices should notify native after both
-     * volume changed events:
-     *
-     * <ul>
-     *   <li>Set absolute volume x
-     *   <li>Receive volume changed event y
-     *   <li>Receive volume changed event back to x
-     * </ul>
+     * If a volume changed event occurs after setting absolute volume, for a different volume than
+     * was set, absolute volume devices should send a notification.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_afterSetAbsVol_twoEvents_backToOriginal_isAbsolute_nativeNotified() {
+    public void testEvent_isStrategyAbsolute_afterSetAbsVol_differentVol_notificationSent() {
         makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
 
         // Register for first notification
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
 
-        // Set absolute volume x
+        // Set absolute volume
         byte setLabel = 52;
         setAbsoluteVolume(setLabel, 20);
         verifySetAbsoluteVolumeResponse(setLabel, 20);
         verifySetStreamVolume(15);
         verifyNoAbsoluteVolumeChangedNotification();
 
-        // Receive event y
+        // Volume changed event for a different volume than was set
         sendVolumeChangedEvent(39);
         verifyAbsoluteVolumeChangedNotification(label, 49);
-
-        // Register for second notification
-        label++;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 49);
-
-        // Receive event x
-        sendVolumeChangedEvent(15);
-        // 19 instead of 20 because the inherent flooring of integer division makes the conversions
-        // of local and absolute volume not inverses of each other
-        verifyAbsoluteVolumeChangedNotification(label, 19);
     }
 
     /**
-     * When receiving a volume changed event, and then setting absolute volume for the same volume,
-     * absolute volume devices should not notify native.
+     * If a volume changed event occurs after setting absolute volume, for the same volume that was
+     * set, absolute volume devices should not send a notification.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_beforeSetAbsVol_sameVol_isAbsolute_nativeNotNotified() {
+    public void testEvent_isStrategyAbsolute_afterSetAbsVol_sameVol_notificationNotSent() {
         makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
 
         // Register notification
         byte label = 42;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
 
-        // Receive event
+        // Set absolute volume
+        byte setLabel = 52;
+        setAbsoluteVolume(setLabel, 20);
+        verifySetAbsoluteVolumeResponse(setLabel, 20);
+        verifySetStreamVolume(15);
+        verifyNoAbsoluteVolumeChangedNotification();
+
+        // Volume changed event for the same volume that was set
+        sendVolumeChangedEvent(15);
+        verifyNoAbsoluteVolumeChangedNotification();
+    }
+
+    /**
+     * When setting absolute volume after a volume changed event occurs, to a different volume than
+     * the event, absolute volume devices should not send a notification.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
+    public void testEvent_isStrategyAbsolute_beforeSetAbsVol_differentVol_setsStreamVolume() {
+        makeStateMachineForAbsVolumeTests(false, false);
+        setUpConnectedState(true, true);
+
+        // Register notification
+        byte label = 42;
+        registerAbsoluteVolumeNotification(label);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
+
+        // Volume changed event
+        sendVolumeChangedEvent(39);
+        verifyAbsoluteVolumeChangedNotification(label, 49);
+
+        // Register notification
+        label++;
+        registerAbsoluteVolumeNotification(label);
+        verifyAbsoluteVolumeInterimResponse(label, 49);
+
+        clearInvocations(mNativeInterface);
+
+        // Set absolute volume to a different volume than the event
+        byte setLabel = 52;
+        setAbsoluteVolume(setLabel, 20);
+        verifySetAbsoluteVolumeResponse(setLabel, 20);
+        verifySetStreamVolume(15);
+        verifyNoAbsoluteVolumeChangedNotification();
+    }
+
+    /**
+     * When setting absolute volume after a volume changed event occurs, to the same volume as the
+     * event, absolute volume devices should not send a notification.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
+    public void testEvent_beforeSetAbsVol_sameVol_isStrategyAbsolute_doesNotSetStreamVolume() {
+        makeStateMachineForAbsVolumeTests(false, false);
+        setUpConnectedState(true, true);
+
+        // Register notification
+        byte label = 42;
+        registerAbsoluteVolumeNotification(label);
+        verifyAbsoluteVolumeInterimResponse(label, 31);
+
+        // Volume changed event
         sendVolumeChangedEvent(15);
         verifyAbsoluteVolumeChangedNotification(label, 19);
 
         // Register notification
         label++;
         registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 19);
+        verifyAbsoluteVolumeInterimResponse(label, 19);
 
         clearInvocations(mNativeInterface);
 
-        // Set absolute volume for the same volume
+        // Set absolute volume to the same volume as the event
         byte setLabel = 52;
         setAbsoluteVolume(setLabel, 20);
         verifySetAbsoluteVolumeResponse(setLabel, 20);
@@ -1413,106 +1393,6 @@ public class AvrcpControllerStateMachineTest {
         // stream volume
         verifyNoSetStreamVolume();
         verifyNoAbsoluteVolumeChangedNotification();
-    }
-
-    /**
-     * When receiving a volume changed event, and then setting absolute volume for a different
-     * volume, absolute volume devices should not notify native.
-     */
-    @Test
-    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_beforeSetAbsVol_differentVol_isAbsolute_nativeNotNotified() {
-        makeStateMachineForAbsVolumeTests(false, false);
-        setUpConnectedState(true, true);
-
-        // Register notification
-        byte label = 42;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
-
-        // Receive event
-        sendVolumeChangedEvent(39);
-        verifyAbsoluteVolumeChangedNotification(label, 49);
-
-        // Register notification
-        label++;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 49);
-
-        clearInvocations(mNativeInterface);
-
-        // Set absolute volume for a different volume
-        byte setLabel = 52;
-        setAbsoluteVolume(setLabel, 20);
-        verifySetAbsoluteVolumeResponse(setLabel, 20);
-        verifySetStreamVolume(15);
-        verifyNoAbsoluteVolumeChangedNotification();
-    }
-
-    /**
-     * For the following sequence of events, absolute volume devices should notify native after all
-     * volume changed events:
-     *
-     * <ul>
-     *   <li>Receive volume changed event x
-     *   <li>Set absolute volume y
-     *   <li>Set absolute volume z
-     *   <li>Receive volume changed event y
-     *   <li>Receive volume changed event z
-     * </ul>
-     */
-    @Test
-    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    public void testEvent_interleaved_isAbsolute_nativeNotified() {
-        makeStateMachineForAbsVolumeTests(false, false);
-        setUpConnectedState(true, true);
-
-        // Register for first notification
-        byte label = 42;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 31);
-
-        // Receive event x
-        sendVolumeChangedEvent(39);
-        verifyAbsoluteVolumeChangedNotification(label, 49);
-
-        // Register for second notification
-        label++;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 49);
-
-        clearInvocations(mNativeInterface);
-
-        // Set absolute volume y
-        byte setLabel = 52;
-        setAbsoluteVolume(setLabel, 20);
-        verifySetAbsoluteVolumeResponse(setLabel, 20);
-        verifySetStreamVolume(15);
-        verifyNoAbsoluteVolumeChangedNotification();
-
-        // Set absolute volume z
-        setLabel++;
-        setAbsoluteVolume(setLabel, 75);
-        verifySetAbsoluteVolumeResponse(setLabel, 75);
-        verifySetStreamVolume(59);
-        verifyNoAbsoluteVolumeChangedNotification();
-
-        // Receive event y
-        sendVolumeChangedEvent(15);
-        // 19 instead of 20 because the inherent flooring of integer division makes the conversions
-        // of local and absolute volume not inverses of each other
-        verifyAbsoluteVolumeChangedNotification(label, 19);
-
-        // Register for third notification
-        label++;
-        registerAbsoluteVolumeNotification(label);
-        verifyAbsoluteVolumeInterimNotification(label, 19);
-
-        // Receive event z
-        sendVolumeChangedEvent(59);
-        // 74 instead of 75 because the inherent flooring of integer division makes the conversions
-        // of local and absolute volume not inverses of each other
-        verifyAbsoluteVolumeChangedNotification(label, 74);
     }
 
     /** Test playback does not request focus when another app is playing music. */

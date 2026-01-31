@@ -133,7 +133,7 @@ bool BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info) {
 
   if (bta_dm_di_cb.di_num < BTA_DI_NUM_MAX) {
     uint32_t handle = 0;
-    if (get_legacy_stack_sdp_api()->device_id.SDP_SetLocalDiRecord(p_device_info, &handle) ==
+    if (get_legacy_stack_sdp_api()->SDP_SetLocalDiRecord(p_device_info, &handle) ==
         tSDP_STATUS::SDP_SUCCESS) {
       if (!p_device_info->primary_record) {
         bta_dm_di_cb.di_handle[bta_dm_di_cb.di_num] = handle;

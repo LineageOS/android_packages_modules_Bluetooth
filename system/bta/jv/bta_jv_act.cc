@@ -888,11 +888,11 @@ static void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id, const RawAddre
                 sdp_result_text(result));
       tSDP_PROTOCOL_ELEM pe;
       tSDP_DISC_REC* p_sdp_rec = nullptr;
-      p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceUUIDInDb(
+      p_sdp_rec = get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInDb(
               p_bta_jv_cfg->p_sdp_db, bta_jv_cb.sdp_cb.uuid, p_sdp_rec);
       log::verbose("bta_jv_cb.uuid={} p_sdp_rec={}", bta_jv_cb.sdp_cb.uuid,
                    std::format_ptr(p_sdp_rec));
-      if (p_sdp_rec && get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
+      if (p_sdp_rec && get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(
                                p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
         bta_jv = {
                 .disc_comp =
@@ -940,7 +940,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
   }
 
   // init the database/set up the filter
-  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+  if (!get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(
               p_bta_jv_cfg->p_sdp_db, p_bta_jv_cfg->sdp_db_size, num_uuid, uuid_list, 0, nullptr)) {
     log::warn("Unable to initialize service discovery db bd_addr:{} num_uuid:{} slot_id:{}",
               bd_addr, num_uuid, rfcomm_slot_id);
@@ -957,7 +957,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
           .uuid = uuid_list[0],
   };
 
-  if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
+  if (!get_legacy_stack_sdp_api()->SDP_ServiceSearchAttributeRequest2(
               bd_addr, p_bta_jv_cfg->p_sdp_db,
               base::BindRepeating(&bta_jv_start_discovery_cback, rfcomm_slot_id))) {
     bta_jv_cb.sdp_cb = {};
@@ -990,7 +990,7 @@ void bta_jv_cancel_discovery(uint32_t rfcomm_slot_id) {
     log::error("Canceling discovery but discovery is not active");
     return;
   }
-  if (!get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(p_bta_jv_cfg->p_sdp_db)) {
+  if (!get_legacy_stack_sdp_api()->SDP_CancelServiceSearch(p_bta_jv_cfg->p_sdp_db)) {
     log::error("Failed to cancel discovery, clean up the control block anyway");
     bta_jv_cb.sdp_cb = {};
     // Send complete event right away as we might not receive callback from stack
@@ -1035,7 +1035,7 @@ void bta_jv_create_record(uint32_t rfcomm_slot_id) {
 void bta_jv_delete_record(uint32_t handle) {
   if (handle) {
     // this is a record created by btif layer
-    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+    if (!get_legacy_stack_sdp_api()->SDP_DeleteRecord(handle)) {
       log::warn("Unable to delete SDP record handle:{}", handle);
     }
   }

@@ -175,7 +175,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, std::string p_user_name, std::string p_nap
     p_desc = PAN_NAP_DEFAULT_DESCRIPTION;
 
     if (pan_cb.pan_nap_sdp_handle != 0) {
-      if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(pan_cb.pan_nap_sdp_handle)) {
+      if (!get_legacy_stack_sdp_api()->SDP_DeleteRecord(pan_cb.pan_nap_sdp_handle)) {
         log::warn("Unable to delete SDP record handle:{}", pan_cb.pan_nap_sdp_handle);
       }
     }
@@ -187,7 +187,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, std::string p_user_name, std::string p_nap
   } else if (pan_cb.role & PAN_ROLE_NAP_SERVER) {
     /* If the NAP role is already active and now being cleared delete the record */
     if (pan_cb.pan_nap_sdp_handle != 0) {
-      if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(pan_cb.pan_nap_sdp_handle)) {
+      if (!get_legacy_stack_sdp_api()->SDP_DeleteRecord(pan_cb.pan_nap_sdp_handle)) {
         log::warn("Unable to delete SDP record handle:{}", pan_cb.pan_nap_sdp_handle);
       }
       pan_cb.pan_nap_sdp_handle = 0;
@@ -205,7 +205,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, std::string p_user_name, std::string p_nap
     /* Registering for PANU service with SDP */
     p_desc = PAN_PANU_DEFAULT_DESCRIPTION;
     if (pan_cb.pan_user_sdp_handle != 0) {
-      if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(pan_cb.pan_user_sdp_handle)) {
+      if (!get_legacy_stack_sdp_api()->SDP_DeleteRecord(pan_cb.pan_user_sdp_handle)) {
         log::warn("Unable to delete SDP record handle:{}", pan_cb.pan_user_sdp_handle);
       }
     }
@@ -217,7 +217,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, std::string p_user_name, std::string p_nap
   } else if (pan_cb.role & PAN_ROLE_CLIENT) {
     /* If the PANU role is already active and now being cleared delete the record */
     if (pan_cb.pan_user_sdp_handle != 0) {
-      if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(pan_cb.pan_user_sdp_handle)) {
+      if (get_legacy_stack_sdp_api()->SDP_DeleteRecord(pan_cb.pan_user_sdp_handle)) {
         log::warn("Unable to delete SDP record handle:{}", pan_cb.pan_user_sdp_handle);
       }
       pan_cb.pan_user_sdp_handle = 0;

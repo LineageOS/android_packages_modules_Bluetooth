@@ -1047,7 +1047,7 @@ public class LeAudioService extends ConnectableProfile {
             return false;
         }
         final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-        if (!Utils.arrayContains(featureUuids, BluetoothUuid.LE_AUDIO)) {
+        if (!Util.arrayContains(featureUuids, BluetoothUuid.LE_AUDIO)) {
             Log.e(TAG, "Cannot connect to " + device + " : Remote does not have LE_AUDIO UUID");
             return false;
         }
@@ -1148,7 +1148,7 @@ public class LeAudioService extends ConnectableProfile {
         try {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
-                if (!Utils.arrayContains(featureUuids, BluetoothUuid.LE_AUDIO)) {
+                if (!Util.arrayContains(featureUuids, BluetoothUuid.LE_AUDIO)) {
                     continue;
                 }
                 int connectionState = STATE_DISCONNECTED;
@@ -3028,18 +3028,18 @@ public class LeAudioService extends ConnectableProfile {
             setConnectionPolicy(activeGroupDevice, CONNECTION_POLICY_FORBIDDEN);
             if (headset.isPresent()
                     && !isDualMode
-                    && Utils.arrayContains(uuids, BluetoothUuid.HFP)) {
+                    && Util.arrayContains(uuids, BluetoothUuid.HFP)) {
                 Log.d(TAG, "Enable HFP for the device: " + activeGroupDevice);
                 headset.get().setConnectionPolicy(activeGroupDevice, CONNECTION_POLICY_ALLOWED);
             }
             if (a2dp.isPresent()
                     && !isDualMode
-                    && (Utils.arrayContains(uuids, BluetoothUuid.A2DP_SINK)
-                            || Utils.arrayContains(uuids, BluetoothUuid.ADV_AUDIO_DIST))) {
+                    && (Util.arrayContains(uuids, BluetoothUuid.A2DP_SINK)
+                            || Util.arrayContains(uuids, BluetoothUuid.ADV_AUDIO_DIST))) {
                 Log.d(TAG, "Enable A2DP for the device: " + activeGroupDevice);
                 a2dp.get().setConnectionPolicy(activeGroupDevice, CONNECTION_POLICY_ALLOWED);
             }
-            if (hearingAid.isPresent() && Utils.arrayContains(uuids, BluetoothUuid.HEARING_AID)) {
+            if (hearingAid.isPresent() && Util.arrayContains(uuids, BluetoothUuid.HEARING_AID)) {
                 Log.d(TAG, "Enable ASHA for the device: " + activeGroupDevice);
                 hearingAid.get().setConnectionPolicy(activeGroupDevice, CONNECTION_POLICY_ALLOWED);
             }
@@ -4823,12 +4823,12 @@ public class LeAudioService extends ConnectableProfile {
         final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
 
         final var vcs = getAdapterService().getVolumeControlService();
-        if (vcs.isPresent() && Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
+        if (vcs.isPresent() && Util.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
             vcs.get().setConnectionPolicy(device, connectionPolicy);
         }
 
         final var hapClient = getAdapterService().getHapClientService();
-        if (hapClient.isPresent() && Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
+        if (hapClient.isPresent() && Util.arrayContains(featureUuids, BluetoothUuid.HAS)) {
             if (Flags.hapOnMainLooper()) {
                 hapClient.get().post(h -> h.setConnectionPolicy(device, connectionPolicy));
             } else {
@@ -4839,14 +4839,14 @@ public class LeAudioService extends ConnectableProfile {
         final var csipSetCoordinator = getAdapterService().getCsipSetCoordinatorService();
         // Disallow setting CSIP to forbidden until characteristic reads are complete
         if (csipSetCoordinator.isPresent()
-                && Utils.arrayContains(featureUuids, BluetoothUuid.COORDINATED_SET)) {
+                && Util.arrayContains(featureUuids, BluetoothUuid.COORDINATED_SET)) {
             csipSetCoordinator.get().setConnectionPolicy(device, connectionPolicy);
         }
 
         final var bassClient = getAdapterService().getBassClientService();
         if (bassClient.isPresent()
                 && bassClient.get().isEnabled()
-                && Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
+                && Util.arrayContains(featureUuids, BluetoothUuid.BASS)) {
             bassClient.get().setConnectionPolicy(device, connectionPolicy);
         }
     }
@@ -5006,7 +5006,7 @@ public class LeAudioService extends ConnectableProfile {
         /* for the moment we care only for GMCS, GTBS and VAP */
         if (!BluetoothUuid.GENERIC_MEDIA_CONTROL.equals(userUuid)
                 && !TbsGatt.UUID_GTBS.equals(userUuid.getUuid())
-                && !BluetoothUuid.VAPS.equals(userUuid)) {
+                && !BluetoothUuid.VAP.equals(userUuid)) {
             return;
         }
         if (!mLeAudioNativeIsInitialized) {

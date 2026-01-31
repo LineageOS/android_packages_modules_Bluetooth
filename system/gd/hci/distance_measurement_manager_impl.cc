@@ -1833,15 +1833,11 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       procedure_data->contains_complete_subevent_ = true;
     }
 
-    if (procedure_abort_reason != ProcedureAbortReason::NO_ABORT ||
-        subevent_abort_reason != SubeventAbortReason::NO_ABORT) {
-      // Even the procedure is aborted, we should keep following process and
-      // handle it when all corresponding remote data received.
-      procedure_data->ras_subevent_header_.ranging_abort_reason_ =
-              static_cast<RangingAbortReason>(procedure_abort_reason);
-      procedure_data->ras_subevent_header_.subevent_abort_reason_ =
-              static_cast<bluetooth::ras::SubeventAbortReason>(subevent_abort_reason);
-    }
+    procedure_data->ras_subevent_header_.ranging_abort_reason_ =
+            static_cast<RangingAbortReason>(procedure_abort_reason);
+    procedure_data->ras_subevent_header_.subevent_abort_reason_ =
+            static_cast<bluetooth::ras::SubeventAbortReason>(subevent_abort_reason);
+
     parse_cs_result_data(result_data_structures, *procedure_data, live_tracker->role);
 
     if (live_tracker->local_start) {

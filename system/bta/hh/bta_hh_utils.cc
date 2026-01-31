@@ -183,7 +183,7 @@ static void bta_hh_reset_cb(tBTA_HH_DEV_CB* p_cb) {
 
   // Cancel SDP if it had been started
   if (p_cb->p_disc_db != nullptr) {
-    (void)get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(p_cb->p_disc_db);
+    (void)get_legacy_stack_sdp_api()->SDP_CancelServiceSearch(p_cb->p_disc_db);
     osi_free_and_reset((void**)&p_cb->p_disc_db);
   }
   *p_cb = {};

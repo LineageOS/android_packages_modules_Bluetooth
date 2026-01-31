@@ -98,8 +98,8 @@ static bool is_sdp_pbap_pce_disabled(RawAddress remote_address) {
 }
 
 static void store_avrcp_profile_feature(tSDP_DISC_REC* sdp_rec) {
-  tSDP_DISC_ATTR* p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-          sdp_rec, ATTR_ID_SUPPORTED_FEATURES);
+  tSDP_DISC_ATTR* p_attr =
+          get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(sdp_rec, ATTR_ID_SUPPORTED_FEATURES);
   if (p_attr == NULL) {
     return;
   }
@@ -137,20 +137,20 @@ static void bta_dm_store_audio_profiles_version(tSDP_DISCOVERY_DB* p_sdp_db) {
   }};
 
   for (const auto& audio_profile : audio_profiles) {
-    tSDP_DISC_REC* sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+    tSDP_DISC_REC* sdp_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(
             p_sdp_db, audio_profile.servclass_uuid, NULL);
     if (sdp_rec == NULL) {
       continue;
     }
 
-    if (get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-                sdp_rec, ATTR_ID_BT_PROFILE_DESC_LIST) == NULL) {
+    if (get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(sdp_rec, ATTR_ID_BT_PROFILE_DESC_LIST) ==
+        NULL) {
       continue;
     }
 
     uint16_t profile_version = 0;
     /* get profile version (if failure, version parameter is not updated) */
-    if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+    if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                 sdp_rec, audio_profile.btprofile_uuid, &profile_version)) {
       log::warn("Unable to find SDP profile version in record peer:{}", sdp_rec->remote_bd_addr);
     }
@@ -173,11 +173,10 @@ static std::pair<std::vector<Uuid>, std::vector<Uuid>> bta_dm_sdp_extract_servic
     if (sdp_state->service_index == BTA_MAX_SERVICE_ID) {
       tSDP_DISC_REC* p_sdp_rec = nullptr;
       do {
-        p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_sdp_db, 0, p_sdp_rec);
+        p_sdp_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_sdp_db, 0, p_sdp_rec);
         if (p_sdp_rec) {
           Uuid service_uuid;
-          if (get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec(p_sdp_rec,
-                                                                          &service_uuid)) {
+          if (get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInRec(p_sdp_rec, &service_uuid)) {
             gatt_uuids.push_back(service_uuid);
           }
         }
@@ -189,7 +188,7 @@ static std::pair<std::vector<Uuid>, std::vector<Uuid>> bta_dm_sdp_extract_servic
     } else {
       uint16_t service = bta_service_id_to_uuid_lkup_tbl[sdp_state->service_index - 1];
       tSDP_DISC_REC* p_sdp_rec =
-              get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_sdp_db, service, nullptr);
+              get_legacy_stack_sdp_api()->SDP_FindServiceInDb(p_sdp_db, service, nullptr);
       if (p_sdp_rec != nullptr && service != UUID_SERVCLASS_PNP_INFORMATION) {
         sdp_state->services_found |=
                 (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(sdp_state->service_index - 1));
@@ -210,11 +209,10 @@ static std::vector<Uuid> bta_dm_sdp_extract_128bit_services(const tSDP_DISCOVERY
   std::vector<Uuid> uuid_list;
   tSDP_DISC_REC* p_sdp_rec = nullptr;
   do {
-    p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb_128bit(p_sdp_db, p_sdp_rec);
+    p_sdp_rec = get_legacy_stack_sdp_api()->SDP_FindServiceInDb_128bit(p_sdp_db, p_sdp_rec);
     if (p_sdp_rec != nullptr) {
       Uuid temp_uuid;
-      if (get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec_128bit(p_sdp_rec,
-                                                                             &temp_uuid)) {
+      if (get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInRec_128bit(p_sdp_rec, &temp_uuid)) {
         uuid_list.push_back(temp_uuid);
       }
     }
@@ -250,7 +248,7 @@ void bta_dm_sdp_result(tSDP_STATUS sdp_result, tBTA_DM_SDP_STATE* sdp_state) {
 
 #if TARGET_FLOSS
   tSDP_DI_GET_RECORD di_record;
-  if (get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(1, &di_record, p_sdp_db) ==
+  if (get_legacy_stack_sdp_api()->SDP_GetDiRecord(1, &di_record, p_sdp_db) ==
       tSDP_STATUS::SDP_SUCCESS) {
     bta_dm_sdp_received_di(sdp_state->bd_addr, di_record);
   }
@@ -323,8 +321,8 @@ void bta_dm_sdp_find_services(tBTA_DM_SDP_STATE* sdp_state) {
   tSDP_DISCOVERY_DB* p_sdp_db = (tSDP_DISCOVERY_DB*)sdp_state->sdp_db_buffer;
 
   log::info("search UUID = {}", uuid.ToString());
-  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(p_sdp_db, BTA_DM_SDP_DB_SIZE, 1,
-                                                               &uuid, 0, NULL)) {
+  if (!get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0,
+                                                       NULL)) {
     log::warn("Unable to initialize SDP service discovery db peer:{}", sdp_state->bd_addr);
   }
 
@@ -333,8 +331,8 @@ void bta_dm_sdp_find_services(tBTA_DM_SDP_STATE* sdp_state) {
 
   p_sdp_db->raw_size = MAX_DISC_RAW_DATA_BUF;
 
-  if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest(
-              sdp_state->bd_addr, p_sdp_db, &bta_dm_sdp_callback)) {
+  if (!get_legacy_stack_sdp_api()->SDP_ServiceSearchAttributeRequest(sdp_state->bd_addr, p_sdp_db,
+                                                                     &bta_dm_sdp_callback)) {
     /*
      * If discovery is not successful with this device, then
      * proceed with the next one.

@@ -650,6 +650,8 @@ public class BluetoothManagerService {
             mSharingRestriction.updateRestriction();
         }
 
+        autoOnSetupTimer();
+
         if (mState.oneOf(State.OFF)) {
             return Unit.INSTANCE;
         }

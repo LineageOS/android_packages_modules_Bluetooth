@@ -88,29 +88,58 @@ class AvrcpControllerVolumeHandlerTest {
     // * Tests
     // *********************************************************************************************
 
-    // getAbsoluteVolume
+    // getVolumeStrategy
 
-    /** Test #getAbsoluteVolume: fixed volume, not automotive = Loud */
+    /** Test #getVolumeStrategy: fixed volume, automotive = Loud */
     @Test
-    fun testGetAbsoluteVolume_volumeIsFixed_getsAbsVolumeMax() {
-        makeVolumeHandler(isVolumeFixed = true, isAutomotive = false)
+    fun testGetVolumeStrategy_isVolumeFixed_isAutomotive_getsStrategyLoud() {
+        makeVolumeHandler(isVolumeFixed = true, isAutomotive = true)
 
-        val absVol = mVolumeHandler.absoluteVolume
-        assertThat(absVol).isEqualTo(127)
+        val strategy = mVolumeHandler.mVolumeStrategy
+        assertThat(strategy).isEqualTo(AvrcpControllerVolumeHandler.STRATEGY_LOUD)
     }
 
-    /** Test #getAbsoluteVolume: not fixed volume, automotive = Loud */
+    /** Test #getVolumeStrategy: fixed volume, not automotive = Loud */
     @Test
-    fun testGetAbsoluteVolume_isAutomotive_getsAbsVolumeMax() {
+    fun testGetVolumeStrategy_isVolumeFixed_getsStrategyLoud() {
+        makeVolumeHandler(isVolumeFixed = true, isAutomotive = false)
+
+        val strategy = mVolumeHandler.mVolumeStrategy
+        assertThat(strategy).isEqualTo(AvrcpControllerVolumeHandler.STRATEGY_LOUD)
+    }
+
+    /** Test #getVolumeStrategy: not fixed volume, automotive = Loud */
+    @Test
+    fun testGetVolumeStrategy_isAutomotive_getsStrategyLoud() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = true)
+
+        val strategy = mVolumeHandler.mVolumeStrategy
+        assertThat(strategy).isEqualTo(AvrcpControllerVolumeHandler.STRATEGY_LOUD)
+    }
+
+    /** Test #getVolumeStrategy: not fixed volume, not automotive = Absolute */
+    @Test
+    fun testGetVolumeStrategy_notVolumeFixed_notAutomotive_getsStrategyAbsolute() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
+
+        val strategy = mVolumeHandler.mVolumeStrategy
+        assertThat(strategy).isEqualTo(AvrcpControllerVolumeHandler.STRATEGY_ABSOLUTE)
+    }
+
+    // getAbsoluteVolume
+
+    /** Test #getAbsoluteVolume: Strategy Loud */
+    @Test
+    fun testGetAbsoluteVolume_isStrategyLoud_getsAbsVolumeMax() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = true)
 
         val absVol = mVolumeHandler.absoluteVolume
         assertThat(absVol).isEqualTo(127)
     }
 
-    /** Test #getAbsoluteVolume: not fixed volume, not automotive = Absolute */
+    /** Test #getAbsoluteVolume: Strategy Absolute */
     @Test
-    fun testGetAbsoluteVolume_isAbsolute_doesNotGetAbsVolumeMax() {
+    fun testGetAbsoluteVolume_isStrategyAbsolute_doesNotGetAbsVolumeMax() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         val absVol = mVolumeHandler.absoluteVolume
@@ -119,84 +148,91 @@ class AvrcpControllerVolumeHandlerTest {
 
     // setAbsoluteVolume
 
-    /** Test #setAbsoluteVolume: fixed volume, not automotive = Loud */
+    /** Test #setAbsoluteVolume: Strategy Loud */
     @Test
-    fun testSetAbsoluteVolume_volumeIsFixed_setsAbsVolumeMax() {
-        makeVolumeHandler(isVolumeFixed = true, isAutomotive = false)
-
-        val setLabel: Byte = 52
-        val absVol = setAbsoluteVolume(setLabel, 20)
-        assertThat(absVol).isEqualTo(127)
-        verifyNoSetStreamVolume()
-        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-    }
-
-    /** Test #setAbsoluteVolume: not fixed volume, automotive = Loud */
-    @Test
-    fun testSetAbsoluteVolume_isAutomotive_setsAbsVolumeMax() {
+    fun testSetAbsoluteVolume_isStrategyLoud_returnsAbsVolumeMax() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = true)
 
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(127)
+        // Loud devices should never set stream volume
         verifyNoSetStreamVolume()
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
 
-    /** Test #setAbsoluteVolume: not fixed volume, not automotive = Absolute */
+    /** Test #setAbsoluteVolume: Strategy Absolute */
     @Test
-    fun testSetAbsoluteVolume_twice_sameVol_isAbsolute_doesNotSetAbsVolumeMax() {
+    fun testSetAbsoluteVolume_isStrategyAbsolute_doesNotReturnAbsVolumeMax() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
-        var setLabel: Byte = 52
-        var absVol = setAbsoluteVolume(setLabel, 20)
+        val setLabel: Byte = 52
+        val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
         verifySetStreamVolume(15)
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
+    }
 
-        clearInvocations(mAudioManager)
+    /** Test #setAbsoluteVolume: Strategy Absolute */
+    @Test
+    fun testSetAbsoluteVolume_isStrategyAbsolute_currentVol_doesNotSetStreamVolume() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
-        // Setting absolute volume again with the same volume shouldn't change the stream volume
-        setLabel++
-        absVol = setAbsoluteVolume(setLabel, 20)
-        assertThat(absVol).isEqualTo(20)
+        // Absolute volume 32 -> Local volume 25
+        val setLabel: Byte = 52
+        val absVol = setAbsoluteVolume(setLabel, 32)
+        assertThat(absVol).isEqualTo(32)
+        // Setting absolute volume to match the current stream volume shouldn't change the stream
+        // volume
         verifyNoSetStreamVolume()
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
 
     // Volume changed events
 
-    /** Loud devices should not trigger the callback when events are received */
+    /** Loud devices should not trigger the callback after a volume changed event */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_isAutomotive_verifiesNoCallback() {
+    fun testEvent_isStrategyLoud_verifiesNoCallback() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = true)
 
-        // Receive event
+        // Volume changed event
         sendVolumeChangedEvent(39)
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
 
-    /**
-     * Absolute volume devices should trigger the callback after volume changed events are received.
-     */
+    /** Absolute volume devices should trigger the callback after a volume changed event */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_isAbsolute_verifiesCallback() {
+    fun testEvent_isStrategyAbsolute_verifiesCallback() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
-        // Receive event
+        // Volume changed event
         sendVolumeChangedEvent(39)
         verify(mCallback).onAbsoluteVolumeChanged(49)
     }
 
     /**
-     * When calling #setAbsoluteVolume, and then receiving two volume changed events for the same
-     * volume that was set, absolute volume devices should not trigger the callback.
+     * If a volume changed event matches the current stream volume, absolute volume devices should
+     * not trigger the callback.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_afterSetAbsVol_twoEvents_sameVol_isAbsolute_verifiesNoCallback() {
+    fun testEvent_isStrategyAbsolute_currentVol_verifiesNoCallback() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
+
+        // Volume changed event that matches the current stream volume
+        sendVolumeChangedEvent(25)
+        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
+    }
+
+    /**
+     * If a volume changed event occurs after setting absolute volume, for a different volume than
+     * was set, absolute volume devices should trigger the callback.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
+    fun testEvent_isStrategyAbsolute_afterSetAbsVol_differentVol_verifiesCallback() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         // Set absolute volume
@@ -206,22 +242,18 @@ class AvrcpControllerVolumeHandlerTest {
         verifySetStreamVolume(15)
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
 
-        // Receive event for the same volume that was set
-        sendVolumeChangedEvent(15)
-        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-
-        // Receive event for the same volume that was set, again
-        sendVolumeChangedEvent(15)
-        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
+        // Volume changed event for a different volume than was set
+        sendVolumeChangedEvent(39)
+        verify(mCallback).onAbsoluteVolumeChanged(49)
     }
 
     /**
-     * When calling #setAbsoluteVolume, and then receiving two volume changed events, with the
-     * second one having a different volume, absolute volume devices should trigger the callback.
+     * If a volume changed event occurs after setting absolute volume, for the same volume that was
+     * set, absolute volume devices should not trigger the callback.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_afterSetAbsVol_twoEvents_secondDifferentVol_isAbsolute_verifiesCallback() {
+    fun testEvent_isStrategyAbsolute_afterSetAbsVol_sameVol_verifiesNoCallback() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         // Set absolute volume
@@ -231,61 +263,50 @@ class AvrcpControllerVolumeHandlerTest {
         verifySetStreamVolume(15)
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
 
-        // Receive event for the same volume that was set
+        // Volume changed event for the same volume that was set
         sendVolumeChangedEvent(15)
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-
-        // Receive event for a different volume
-        sendVolumeChangedEvent(39)
-        verify(mCallback).onAbsoluteVolumeChanged(49)
     }
 
     /**
-     * For the following sequence of events, absolute volume devices should trigger the callback
-     * after both volume changed events:
-     * * Call #setAbsoluteVolume x
-     * * Receive volume changed event y
-     * * Receive volume changed event back to x
+     * When setting absolute volume after a volume changed event occurs, to a different volume than
+     * the event, absolute volume devices should not change the stream volume.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_afterSetAbsVol_twoEvents_backToOriginal_isAbsolute_verifiesCallback() {
+    fun testEvent_isStrategyAbsolute_beforeSetAbsVol_differentVol_setsStreamVolume() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
-        // Set absolute volume x
+        // Volume changed event
+        sendVolumeChangedEvent(39)
+        verify(mCallback).onAbsoluteVolumeChanged(49)
+
+        clearInvocations(mCallback)
+
+        // Set absolute volume to a different volume than the event
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
         verifySetStreamVolume(15)
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-
-        // Receive event y
-        sendVolumeChangedEvent(39)
-        verify(mCallback).onAbsoluteVolumeChanged(49)
-
-        // Receive event x
-        sendVolumeChangedEvent(15)
-        // 19 instead of 20 because the inherent flooring of integer division makes the conversions
-        // of local and absolute volume not inverses of each other
-        verify(mCallback).onAbsoluteVolumeChanged(19)
     }
 
     /**
-     * When receiving a volume changed event, and then calling #setAbsoluteVolume for the same
-     * volume, absolute volume devices should not trigger the callback.
+     * When setting absolute volume after a volume changed event occurs, to the same volume as the
+     * event, absolute volume devices should not change the stream volume.
      */
     @Test
     @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_beforeSetAbsVol_sameVol_isAbsolute_verifiesNoCallback() {
+    fun testEvent_isStrategyAbsolute_beforeSetAbsVol_sameVol_doesNotSetStreamVolume() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
-        // Receive event
+        // Volume changed event
         sendVolumeChangedEvent(15)
         verify(mCallback).onAbsoluteVolumeChanged(19)
 
         clearInvocations(mCallback)
 
-        // Set absolute volume for the same volume
+        // Set absolute volume to the same volume as the event
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
@@ -293,76 +314,6 @@ class AvrcpControllerVolumeHandlerTest {
         // stream volume
         verifyNoSetStreamVolume()
         verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-    }
-
-    /**
-     * When receiving a volume changed event, and then calling #setAbsoluteVolume for a different
-     * volume, absolute volume devices should not trigger the callback.
-     */
-    @Test
-    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_beforeSetAbsVol_differentVol_isAbsolute_verifiesNoCallback() {
-        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
-
-        // Receive event
-        sendVolumeChangedEvent(39)
-        verify(mCallback).onAbsoluteVolumeChanged(49)
-
-        clearInvocations(mCallback)
-
-        // Set absolute volume for a different volume
-        val setLabel: Byte = 52
-        val absVol = setAbsoluteVolume(setLabel, 20)
-        assertThat(absVol).isEqualTo(20)
-        verifySetStreamVolume(15)
-        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-    }
-
-    /**
-     * For the following sequence of events, absolute volume devices should trigger the callback
-     * after all volume changed events:
-     * * Receive volume changed event x
-     * * Call #setAbsoluteVolume y
-     * * Call #setAbsoluteVolume z
-     * * Receive volume changed event y
-     * * Receive volume changed event z
-     */
-    @Test
-    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
-    fun testEvent_interleaved_isAbsolute_verifiesCallback() {
-        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
-
-        // Receive event x
-        sendVolumeChangedEvent(39)
-        verify(mCallback).onAbsoluteVolumeChanged(49)
-
-        clearInvocations(mCallback)
-
-        // Set absolute volume y
-        var setLabel: Byte = 52
-        var absVol = setAbsoluteVolume(setLabel, 20)
-        assertThat(absVol).isEqualTo(20)
-        verifySetStreamVolume(15)
-        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-
-        // Set absolute volume z
-        setLabel++
-        absVol = setAbsoluteVolume(setLabel, 75)
-        assertThat(absVol).isEqualTo(75)
-        verifySetStreamVolume(59)
-        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
-
-        // Receive event y
-        sendVolumeChangedEvent(15)
-        // 19 instead of 20 because the inherent flooring of integer division makes the conversions
-        // of local and absolute volume not inverses of each other
-        verify(mCallback).onAbsoluteVolumeChanged(19)
-
-        // Receive event z
-        sendVolumeChangedEvent(59)
-        // 74 instead of 75 because the inherent flooring of integer division makes the conversions
-        // of local and absolute volume not inverses of each other
-        verify(mCallback).onAbsoluteVolumeChanged(74)
     }
 
     // *********************************************************************************************

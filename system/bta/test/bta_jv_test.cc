@@ -50,58 +50,43 @@ class FakeSdp {
 public:
   FakeSdp() {
     test::mock::stack_sdp_legacy::api_ = {
-            .service = {
-                    .SDP_InitDiscoveryDb = [](tSDP_DISCOVERY_DB*, uint32_t, uint16_t,
-                                              const bluetooth::Uuid*, uint16_t,
-                                              const uint16_t*) -> bool { return true; },
-                    .SDP_CancelServiceSearch = nullptr,
-                    .SDP_ServiceSearchRequest = nullptr,
-                    .SDP_ServiceSearchAttributeRequest = nullptr,
-                    .SDP_ServiceSearchAttributeRequest2 =
-                            [](const RawAddress& /* p_bd_addr */, tSDP_DISCOVERY_DB* /* p_db */,
-                               base::RepeatingCallback<tSDP_DISC_CMPL_CB> /* complete_callback */) {
-                              return true;
-                            },
-            },
-            .db =
-                    {
-                            .SDP_FindServiceInDb = nullptr,
-                            .SDP_FindServiceUUIDInDb = [](const tSDP_DISCOVERY_DB* /* p_db */,
-                                                          const bluetooth::Uuid& /* uuid */,
-                                                          tSDP_DISC_REC* /* p_start_rec */)
-                                    -> tSDP_DISC_REC* { return nullptr; },
-                            .SDP_FindServiceInDb_128bit = nullptr,
+            .SDP_InitDiscoveryDb = [](tSDP_DISCOVERY_DB*, uint32_t, uint16_t,
+                                      const bluetooth::Uuid*, uint16_t,
+                                      const uint16_t*) -> bool { return true; },
+            .SDP_CancelServiceSearch = nullptr,
+            .SDP_ServiceSearchRequest = nullptr,
+            .SDP_ServiceSearchAttributeRequest = nullptr,
+            .SDP_ServiceSearchAttributeRequest2 =
+                    [](const RawAddress& /* p_bd_addr */, tSDP_DISCOVERY_DB* /* p_db */,
+                       base::RepeatingCallback<tSDP_DISC_CMPL_CB> /* complete_callback */) {
+                      return true;
                     },
-            .record =
-                    {
-                            .SDP_FindAttributeInRec = nullptr,
-                            .SDP_FindServiceUUIDInRec_128bit = nullptr,
-                            .SDP_FindProtocolListElemInRec =
-                                    [](const tSDP_DISC_REC* /* p_rec */, uint16_t /* layer_uuid */,
-                                       tSDP_PROTOCOL_ELEM* /* p_elem */) -> bool { return false; },
-                            .SDP_FindProfileVersionInRec = nullptr,
-                            .SDP_FindServiceUUIDInRec = nullptr,
-                    },
-            .handle =
-                    {
-                            .SDP_CreateRecord = nullptr,
-                            .SDP_DeleteRecord = nullptr,
-                            .SDP_AddAttribute = nullptr,
-                            .SDP_AddSequence = nullptr,
-                            .SDP_AddUuidSequence = nullptr,
-                            .SDP_AddProtocolList = nullptr,
-                            .SDP_AddAdditionProtoLists = nullptr,
-                            .SDP_AddProfileDescriptorList = nullptr,
-                            .SDP_AddLanguageBaseAttrIDList = nullptr,
-                            .SDP_AddServiceClassIdList = nullptr,
-                    },
-            .device_id =
-                    {
-                            .SDP_SetLocalDiRecord = nullptr,
-                            .SDP_DiDiscover = nullptr,
-                            .SDP_GetNumDiRecords = nullptr,
-                            .SDP_GetDiRecord = nullptr,
-                    },
+            .SDP_FindServiceInDb = nullptr,
+            .SDP_FindServiceUUIDInDb =
+                    [](const tSDP_DISCOVERY_DB* /* p_db */, const bluetooth::Uuid& /* uuid */,
+                       tSDP_DISC_REC* /* p_start_rec */) -> tSDP_DISC_REC* { return nullptr; },
+            .SDP_FindServiceInDb_128bit = nullptr,
+            .SDP_FindAttributeInRec = nullptr,
+            .SDP_FindServiceUUIDInRec_128bit = nullptr,
+            .SDP_FindProtocolListElemInRec =
+                    [](const tSDP_DISC_REC* /* p_rec */, uint16_t /* layer_uuid */,
+                       tSDP_PROTOCOL_ELEM* /* p_elem */) -> bool { return false; },
+            .SDP_FindProfileVersionInRec = nullptr,
+            .SDP_FindServiceUUIDInRec = nullptr,
+            .SDP_CreateRecord = nullptr,
+            .SDP_DeleteRecord = nullptr,
+            .SDP_AddAttribute = nullptr,
+            .SDP_AddSequence = nullptr,
+            .SDP_AddUuidSequence = nullptr,
+            .SDP_AddProtocolList = nullptr,
+            .SDP_AddAdditionProtoLists = nullptr,
+            .SDP_AddProfileDescriptorList = nullptr,
+            .SDP_AddLanguageBaseAttrIDList = nullptr,
+            .SDP_AddServiceClassIdList = nullptr,
+            .SDP_SetLocalDiRecord = nullptr,
+            .SDP_DiDiscover = nullptr,
+            .SDP_GetNumDiRecords = nullptr,
+            .SDP_GetDiRecord = nullptr,
     };
   }
 
@@ -176,11 +161,11 @@ TEST_F(BtaJvTest, bta_jv_start_discovery_cback__with_callback_success_with_recor
           .remote_bd_addr = RawAddress::kAny,
   };
 
-  test::mock::stack_sdp_legacy::api_.db.SDP_FindServiceUUIDInDb =
+  test::mock::stack_sdp_legacy::api_.SDP_FindServiceUUIDInDb =
           [](const tSDP_DISCOVERY_DB* /* p_db */, const bluetooth::Uuid& /* uuid */,
              tSDP_DISC_REC* /* p_start_rec */) -> tSDP_DISC_REC* { return &sdp_disc_rec; };
 
-  test::mock::stack_sdp_legacy::api_.record.SDP_FindProtocolListElemInRec =
+  test::mock::stack_sdp_legacy::api_.SDP_FindProtocolListElemInRec =
           [](const tSDP_DISC_REC* /* p_rec */, uint16_t /* layer_uuid */,
              tSDP_PROTOCOL_ELEM* p_elem) -> bool {
     p_elem->params[0] = (uint16_t)kScn;
@@ -261,7 +246,7 @@ TEST_F(BtaJvTest, bta_jv_start_discovery__idle_failed_to_start) {
   };
   uint16_t num_uuid = (uint16_t)(sizeof(uuid_list) / sizeof(uuid_list[0]));
 
-  test::mock::stack_sdp_legacy::api_.service.SDP_ServiceSearchAttributeRequest2 =
+  test::mock::stack_sdp_legacy::api_.SDP_ServiceSearchAttributeRequest2 =
           [](const RawAddress& /* p_bd_addr */, tSDP_DISCOVERY_DB* /* p_db */,
              base::RepeatingCallback<tSDP_DISC_CMPL_CB> /* complete_callback */) { return false; };
 

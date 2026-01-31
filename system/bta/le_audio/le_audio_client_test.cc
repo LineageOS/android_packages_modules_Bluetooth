@@ -3254,6 +3254,8 @@ protected:
     LeAudioClient::Get()->SetCcidInformation(gtbs_ccid,
                                              static_cast<int>(LeAudioContextType::CONVERSATIONAL));
     LeAudioClient::Get()->GroupSetActive(group_id);
+    SyncOnMainLoop();
+    Mock::VerifyAndClearExpectations(&mock_btif_storage_);
   }
 
   void TestSetCodecPreference(
@@ -3531,6 +3533,65 @@ TEST_F(UnicastTestNoInit, InitializeNoHal_2_1) {
                   framework_encode_preference),
           "LE Audio Client requires Bluetooth Audio HAL V2.1 at least. Either "
           "disable LE Audio Profile, or update your HAL");
+}
+
+TEST_F(UnicastTest, FailedToConnectWhenUserInitiateConnection) {
+  const RawAddress test_address0 = GetTestAddress(0);
+
+  ON_CALL(mock_gatt_interface_, Open(_, _, BTM_BLE_DIRECT_CONNECTION, _)).WillByDefault(Return());
+  ON_CALL(mock_btm_interface_, IsDeviceBonded(test_address0, _)).WillByDefault(DoAll(Return(true)));
+
+  EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address0, BTM_BLE_DIRECT_CONNECTION, _))
+          .Times(1);
+
+  do_in_main_thread(base::BindOnce(&LeAudioClient::Connect, base::Unretained(LeAudioClient::Get()),
+                                   test_address0));
+
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address0))
+          .Times(1);
+  InjectConnectedEvent(test_address0, 1, GATT_ERROR);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F(UnicastTest, DisconnectBeforeProfileConnected_WhenUserInitiateConnection) {
+  const RawAddress test_address0 = GetTestAddress(0);
+
+  SetSampleDatabaseEarbudsValid(1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+                                default_src_channel_cnt, 0x0004,
+                                /* source sample freq 16khz */ true, /*add_csis*/
+                                true,                                /*add_cas*/
+                                true,                                /*add_pacs*/
+                                default_ase_cnt /*add_ascs*/);
+
+  ON_CALL(mock_btm_interface_, IsDeviceBonded(test_address0, _)).WillByDefault(DoAll(Return(true)));
+
+  /* Keep device in Getting Ready state */
+  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+          .WillByDefault(DoAll(Return(false)));
+  ON_CALL(mock_btm_interface_, SetEncryption(test_address0, _, _, _, _))
+          .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
+
+  do_in_main_thread(base::BindOnce(&LeAudioClient::Connect, base::Unretained(LeAudioClient::Get()),
+                                   test_address0));
+
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address0))
+          .Times(1);
+
+  InjectDisconnectedEvent(1, GATT_CONN_TERMINATE_PEER_USER);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
 TEST_F(UnicastTest, CleanupWhenUserConnecting) {
@@ -4446,6 +4507,13 @@ TEST_F(UnicastTestNoInit, ConnectFailedDueToInvalidParameters) {
 
   EXPECT_CALL(mock_gatt_interface_,
               Open(gatt_if, test_address1, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, _))
+          .Times(0);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address0))
+          .Times(0);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address1))
           .Times(0);
 
   // Devices not found
@@ -18431,6 +18499,62 @@ TEST_F(UnicastTest, testGameSonificationHandling) {
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
+TEST_F(UnicastTest, testSetEnableStateFalseDuringStreaming) {
+  /* Scenario
+   * 1. Enter streaming
+   * 2. Disable LeAudio
+   * 3. Make sure GATT Client is not called
+   */
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+
+  auto scenario = types::LeAudioContextType::MEDIA;
+  types::BidirectionalPair<types::AudioContexts> metadata_contexts = {
+          .sink = AudioContexts(types::LeAudioContextType::MEDIA), .source = AudioContexts()};
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  const RawAddress test_address0 = GetTestAddress(0);
+
+  EXPECT_CALL(mock_gatt_interface_, CancelOpen(_, _, _)).Times(0);
+  LeAudioClient::Get()->SetEnableState(test_address0, false);
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
+}
+
+TEST_F(UnicastTest, testSetEnableStateFalseDuringAutoConnect) {
+  /* Scenario
+   * 1. Enter streaming
+   * 2. Disable LeAudio
+   * 3. Make sure GATT Client is not called
+   */
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+
+  /* Remove default action on the direct connect */
+  ON_CALL(mock_gatt_interface_, Open(_, _, _, _)).WillByDefault(Return());
+
+  /* Initiate disconnection with timeout reason, the possible reason why GATT
+   * read attribute operation may be not handled
+   */
+  InjectDisconnectedEvent(1, GATT_CONN_TIMEOUT);
+  InjectDisconnectedEvent(2, GATT_CONN_TIMEOUT);
+  SyncOnMainLoop();
+
+  const RawAddress test_address0 = GetTestAddress(0);
+  const RawAddress test_address1 = GetTestAddress(1);
+
+  EXPECT_CALL(mock_gatt_interface_, CancelOpen(_, test_address0, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, CancelOpen(_, test_address1, _)).Times(1);
+  LeAudioClient::Get()->SetEnableState(test_address0, false);
+  LeAudioClient::Get()->SetEnableState(test_address1, false);
+
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
 }
 
 class UnicastDsaTest : public UnicastTest,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-/*
- * Generated mock file from original source file
- *   Functions generated:5
- */
+#pragma once
 
-#include "stack/include/sdp_api.h"
-#include "test/common/mock_functions.h"
+namespace bluetooth::le_audio {
 
-void sdp_free(void) { inc_func_call_count(__func__); }
-void sdp_init(void) { inc_func_call_count(__func__); }
-void SDP_Dumpsys(int) { inc_func_call_count(__func__); }
+struct LeAudioServerCodecId {
+  uint8_t coding_format = 0x00;
+  uint16_t vendor_company_id = 0x0000;
+  uint16_t vendor_codec_id = 0x0000;
+
+  bool operator==(const LeAudioServerCodecId&) const = default;
+};
+
+struct AseEnableRequest {
+  uint8_t ase_id = 0;
+  uint8_t direction = 0;
+  uint32_t audio_context_type = 0;
+  LeAudioServerCodecId codec_id;
+  uint32_t sample_rate_hz = 0;
+};
+
+} /* namespace bluetooth::le_audio */

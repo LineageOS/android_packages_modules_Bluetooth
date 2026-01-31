@@ -127,12 +127,13 @@ DeviceGroupsCallbacks* device_group_callbacks;
  */
 
 class CsisClientImpl : public CsisClient {
-  static constexpr uint8_t CSIS_STORAGE_CURRENT_LAYOUT_MAGIC = 0x10;
+  static constexpr uint8_t CSIS_STORAGE_CURRENT_LAYOUT_MAGIC_V10 = 0x10;
+  static constexpr uint8_t CSIS_STORAGE_CURRENT_LAYOUT_MAGIC = 0x11;
   static constexpr size_t CSIS_STORAGE_HEADER_SZ =
           sizeof(CSIS_STORAGE_CURRENT_LAYOUT_MAGIC) + sizeof(uint8_t); /* num_of_sets */
-  static constexpr size_t CSIS_STORAGE_ENTRY_SZ = sizeof(uint8_t) /* set_id */ +
-                                                  sizeof(uint8_t) /* desired_size */ +
-                                                  sizeof(uint8_t) /* rank */ + Octet16().size();
+  static constexpr size_t CSIS_STORAGE_ENTRY_SZ =
+          sizeof(uint8_t) /* set_id */ + sizeof(uint8_t) /* desired_size */ +
+          sizeof(uint8_t) /* rank */ + Octet16().size() + sizeof(uint8_t) /* is_unsafe */;
 
 public:
   CsisClientImpl(bluetooth::csis::CsisClientCallbacks* callbacks, OnceClosure initCb)
@@ -294,6 +295,24 @@ public:
     }
   }
 
+  bool isCsisServerSafe(std::shared_ptr<CsisDevice>& csis_device) {
+    if (!com_android_bluetooth_flags_leaudio_csis_handle_misconfigured_sets()) {
+      return true;
+    }
+
+    log::debug("{}", csis_device->addr);
+    for (const auto& csis_group : csis_groups_) {
+      if (!csis_group->IsDeviceInTheGroup(csis_device)) {
+        continue;
+      }
+
+      if (csis_group->IsUnsafe()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
@@ -308,6 +327,11 @@ public:
       }
       devices_.emplace_back(std::make_shared<CsisDevice>(address, true));
     } else {
+      if (!isCsisServerSafe(device)) {
+        log::info("CSIS server is unsafe on device: {}, skip connecting", address);
+        callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
+        return;
+      }
       /* When this is already known device, we should use opportunistic connect for this profile.
        * Non opportunistic one is needed only after bonding to make sure the device is not
        * disconnected in case leAudio is not enabled by default.
@@ -377,7 +401,15 @@ public:
      * reasons for device being not connected, we consider it as Valid CSIS device and in case of
      * error it will not be connected. */
 
-    return !device->sirk_all_zeros_size_one;
+    if (device->sirk_all_zeros_size_one) {
+      return false;
+    }
+
+    if (!com_android_bluetooth_flags_leaudio_csis_handle_misconfigured_sets()) {
+      return true;
+    }
+
+    return isCsisServerSafe(device);
   }
 
   int GetGroupId(const RawAddress& addr, Uuid uuid) override {
@@ -682,6 +714,7 @@ public:
       Octet16 sirk = csis_group->GetSirk();
       memcpy(ptr, sirk.data(), sirk.size());
       ptr += sirk.size();
+      UINT8_TO_STREAM(ptr, csis_group->IsUnsafe());
     });
 
     return true;
@@ -699,7 +732,8 @@ public:
     uint8_t magic;
     STREAM_TO_UINT8(magic, ptr);
 
-    if (magic == CSIS_STORAGE_CURRENT_LAYOUT_MAGIC) {
+    if (magic == CSIS_STORAGE_CURRENT_LAYOUT_MAGIC ||
+        magic == CSIS_STORAGE_CURRENT_LAYOUT_MAGIC_V10) {
       uint8_t num_sets;
       STREAM_TO_UINT8(num_sets, ptr);
 
@@ -714,11 +748,15 @@ public:
         Octet16 sirk;
         uint8_t size;
         uint8_t rank;
+        bool is_unsafe = false;
 
         STREAM_TO_UINT8(gid, ptr);
         STREAM_TO_UINT8(size, ptr);
         STREAM_TO_UINT8(rank, ptr);
         STREAM_TO_ARRAY(sirk.data(), ptr, (int)sirk.size());
+        if (magic == CSIS_STORAGE_CURRENT_LAYOUT_MAGIC) {
+          STREAM_TO_UINT8(is_unsafe, ptr);
+        }
 
         // Set grouping and SIRK
         auto csis_group = AssignCsisGroup(addr, gid, true, Uuid::kEmpty);
@@ -728,6 +766,9 @@ public:
 
         csis_group->SetDesiredSize(size);
         csis_group->SetSirk(sirk);
+        if (is_unsafe) {
+          csis_group->SetUnsafe();
+        }
 
         // TODO: Save it for later, so we won't have to read it using GATT
         group_rank_map[gid] = rank;
@@ -756,6 +797,7 @@ public:
       devices_.push_back(device);
     }
 
+    bool is_unsafe = false;
     for (const auto& csis_group : csis_groups_) {
       if (!csis_group->IsDeviceInTheGroup(device)) {
         continue;
@@ -770,7 +812,19 @@ public:
 
         callbacks_->OnDeviceAvailable(device->addr, group_id, csis_group->GetDesiredSize(), rank,
                                       csis_group->GetUuid());
+
+        /* If at least one group for the device is unsafe, the CSIS is not connected as behavior is
+         * undefined
+         */
+        if (!is_unsafe) {
+          is_unsafe = csis_group->IsUnsafe();
+        }
       }
+    }
+
+    if (com_android_bluetooth_flags_leaudio_csis_handle_misconfigured_sets() && is_unsafe) {
+      log::info("CSIS Server not safe on device: {}, skip connecting", addr);
+      return;
     }
 
     /* For bonded devices, CSIP can be always opportunistic service */
@@ -830,7 +884,8 @@ public:
         }
 
         if (!device->IsConnected()) {
-          stream << "        Not connected\n";
+          stream << "        Not connected"
+                 << (g->IsUnsafe() ? " due to group being unsafe.\n" : "\n");
         } else {
           stream << "        Connected conn_id = " << std::to_string(device->conn_id) << "\n";
         }
@@ -944,6 +999,15 @@ private:
     }
   }
 
+  void DisableUnsafeGroups(void) {
+    for (const auto& csis_group : csis_groups_) {
+      if (csis_group->IsUnsafe()) {
+        log::warn("Disconnecting unsafe group {}", csis_group->GetGroupId());
+        DisconnectGroupDevices(csis_group->GetGroupId());
+      }
+    }
+  }
+
   void NotifyCsisDeviceValidAndStoreIfNeeded(std::shared_ptr<CsisDevice>& device) {
     /* Notify that we are ready to go. Notice that multiple callback calls
      * for a single device address can be called if device is in more than one
@@ -951,6 +1015,12 @@ private:
      */
     bool notify_connected = false;
     int group_id_to_discover = bluetooth::groups::kGroupUnknown;
+
+    if (!isCsisServerSafe(device)) {
+      DisableUnsafeGroups();
+      return;
+    }
+
     for (const auto& csis_group : csis_groups_) {
       if (!csis_group->IsDeviceInTheGroup(device)) {
         continue;
@@ -1616,6 +1686,46 @@ private:
     });
   }
 
+  void DisconnectGroupDevices(int group_id) {
+    if (!com_android_bluetooth_flags_leaudio_csis_handle_misconfigured_sets()) {
+      return;
+    }
+    const auto addr_device_list = GetDeviceList(group_id);
+    for (const auto& addr : addr_device_list) {
+      log::verbose("{}", addr);
+      auto dev = FindDeviceByAddress(addr);
+      if (dev == nullptr) {
+        continue;
+      }
+      log::verbose("{} is connected: {}", dev->addr, dev->IsConnected());
+
+      if (dev->IsConnected()) {
+        log::info("Disconnecting {} due to group being disabled", dev->addr);
+        BTA_GATTC_Close(dev->conn_id);
+      } else {
+        log::info("Removing {} from opportunistic connect due to group being disabled", dev->addr);
+        BTA_GATTC_CancelOpen(gatt_if_, dev->addr, true);
+      }
+
+      DoDisconnectCleanUp(dev);
+      callbacks_->OnConnectionState(dev->addr, ConnectionState::DISCONNECTED);
+    }
+  }
+
+  void SetUnsafeGroupsWithSirk(Octet16& sirk) {
+    if (!com_android_bluetooth_flags_leaudio_csis_handle_misconfigured_sets()) {
+      return;
+    }
+
+    log::info("");
+    for (auto& g : csis_groups_) {
+      if (g->IsSirkBelongsToGroup(sirk)) {
+        log::info("Disabling group_id: {:#x}", g->GetGroupId());
+        g->SetUnsafe();
+      }
+    }
+  }
+
   void OnCsisSirkValueUpdate(tCONN_ID conn_id, tGATT_STATUS status, uint16_t handle, uint16_t len,
                              const uint8_t* value, bool notify_valid_services = true) {
     auto device = FindDeviceByConnId(conn_id);
@@ -1686,6 +1796,8 @@ private:
 
     /* SIRK is ready. Add device to the group */
 
+    bool duplicated_sirk = false;
+
     std::shared_ptr<CsisGroup> csis_group;
     int group_id = csis_instance->GetGroupId();
     if (group_id != bluetooth::groups::kGroupUnknown) {
@@ -1698,6 +1810,14 @@ private:
        */
       for (auto& g : csis_groups_) {
         if (g->IsSirkBelongsToGroup(received_sirk)) {
+          if (g->GetCurrentSize() == g->GetDesiredSize()) {
+            log::warn(
+                    "Device {} is using SIRK which matches to group_id: {} but this group is "
+                    "already full: current_size == desired size ({} == {})",
+                    device->addr, g->GetGroupId(), g->GetCurrentSize(), g->GetDesiredSize());
+            duplicated_sirk = true;
+            continue;
+          }
           group_id = g->GetGroupId();
           break;
         }
@@ -1751,6 +1871,10 @@ private:
           ++iter;
         }
       }
+    }
+    if (duplicated_sirk) {
+      /* Just mark all the groups which use same SIRK as unsafe. */
+      SetUnsafeGroupsWithSirk(received_sirk);
     }
   }
 

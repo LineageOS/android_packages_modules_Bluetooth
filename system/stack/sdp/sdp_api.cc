@@ -1063,48 +1063,33 @@ tSDP_STATUS SDP_SetLocalDiRecord(const tSDP_DI_RECORD* p_device_info, uint32_t* 
 
 namespace {
 bluetooth::legacy::stack::sdp::tSdpApi api_ = {
-        .service =
-                {
-                        .SDP_InitDiscoveryDb = ::SDP_InitDiscoveryDb,
-                        .SDP_CancelServiceSearch = ::SDP_CancelServiceSearch,
-                        .SDP_ServiceSearchRequest = ::SDP_ServiceSearchRequest,
-                        .SDP_ServiceSearchAttributeRequest = ::SDP_ServiceSearchAttributeRequest,
-                        .SDP_ServiceSearchAttributeRequest2 = ::SDP_ServiceSearchAttributeRequest2,
-                },
-        .db =
-                {
-                        .SDP_FindServiceInDb = ::SDP_FindServiceInDb,
-                        .SDP_FindServiceUUIDInDb = ::SDP_FindServiceUUIDInDb,
-                        .SDP_FindServiceInDb_128bit = ::SDP_FindServiceInDb_128bit,
-                },
-        .record =
-                {
-                        .SDP_FindAttributeInRec = ::SDP_FindAttributeInRec,
-                        .SDP_FindServiceUUIDInRec_128bit = ::SDP_FindServiceUUIDInRec_128bit,
-                        .SDP_FindProtocolListElemInRec = ::SDP_FindProtocolListElemInRec,
-                        .SDP_FindProfileVersionInRec = ::SDP_FindProfileVersionInRec,
-                        .SDP_FindServiceUUIDInRec = ::SDP_FindServiceUUIDInRec,
-                },
-        .handle =
-                {
-                        .SDP_CreateRecord = ::SDP_CreateRecord,
-                        .SDP_DeleteRecord = ::SDP_DeleteRecord,
-                        .SDP_AddAttribute = ::SDP_AddAttribute,
-                        .SDP_AddSequence = ::SDP_AddSequence,
-                        .SDP_AddUuidSequence = ::SDP_AddUuidSequence,
-                        .SDP_AddProtocolList = ::SDP_AddProtocolList,
-                        .SDP_AddAdditionProtoLists = ::SDP_AddAdditionProtoLists,
-                        .SDP_AddProfileDescriptorList = ::SDP_AddProfileDescriptorList,
-                        .SDP_AddLanguageBaseAttrIDList = ::SDP_AddLanguageBaseAttrIDList,
-                        .SDP_AddServiceClassIdList = ::SDP_AddServiceClassIdList,
-                },
-        .device_id =
-                {
-                        .SDP_SetLocalDiRecord = ::SDP_SetLocalDiRecord,
-                        .SDP_DiDiscover = ::SDP_DiDiscover,
-                        .SDP_GetNumDiRecords = ::SDP_GetNumDiRecords,
-                        .SDP_GetDiRecord = ::SDP_GetDiRecord,
-                },
+        .SDP_InitDiscoveryDb = ::SDP_InitDiscoveryDb,
+        .SDP_CancelServiceSearch = ::SDP_CancelServiceSearch,
+        .SDP_ServiceSearchRequest = ::SDP_ServiceSearchRequest,
+        .SDP_ServiceSearchAttributeRequest = ::SDP_ServiceSearchAttributeRequest,
+        .SDP_ServiceSearchAttributeRequest2 = ::SDP_ServiceSearchAttributeRequest2,
+        .SDP_FindServiceInDb = ::SDP_FindServiceInDb,
+        .SDP_FindServiceUUIDInDb = ::SDP_FindServiceUUIDInDb,
+        .SDP_FindServiceInDb_128bit = ::SDP_FindServiceInDb_128bit,
+        .SDP_FindAttributeInRec = ::SDP_FindAttributeInRec,
+        .SDP_FindServiceUUIDInRec_128bit = ::SDP_FindServiceUUIDInRec_128bit,
+        .SDP_FindProtocolListElemInRec = ::SDP_FindProtocolListElemInRec,
+        .SDP_FindProfileVersionInRec = ::SDP_FindProfileVersionInRec,
+        .SDP_FindServiceUUIDInRec = ::SDP_FindServiceUUIDInRec,
+        .SDP_CreateRecord = ::SDP_CreateRecord,
+        .SDP_DeleteRecord = ::SDP_DeleteRecord,
+        .SDP_AddAttribute = ::SDP_AddAttribute,
+        .SDP_AddSequence = ::SDP_AddSequence,
+        .SDP_AddUuidSequence = ::SDP_AddUuidSequence,
+        .SDP_AddProtocolList = ::SDP_AddProtocolList,
+        .SDP_AddAdditionProtoLists = ::SDP_AddAdditionProtoLists,
+        .SDP_AddProfileDescriptorList = ::SDP_AddProfileDescriptorList,
+        .SDP_AddLanguageBaseAttrIDList = ::SDP_AddLanguageBaseAttrIDList,
+        .SDP_AddServiceClassIdList = ::SDP_AddServiceClassIdList,
+        .SDP_SetLocalDiRecord = ::SDP_SetLocalDiRecord,
+        .SDP_DiDiscover = ::SDP_DiDiscover,
+        .SDP_GetNumDiRecords = ::SDP_GetNumDiRecords,
+        .SDP_GetDiRecord = ::SDP_GetDiRecord,
 };
 }  // namespace
 

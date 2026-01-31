@@ -54,8 +54,8 @@ static void bta_create_mns_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->mns.hdr.profile_version = 0;
   record->mns.supported_features = 0x0000001F;  // default value if not found
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-          p_rec, ATTR_ID_MAP_SUPPORTED_FEATURES);
+  p_attr =
+          get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_MAP_SUPPORTED_FEATURES);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 4) {
@@ -67,7 +67,7 @@ static void bta_create_mns_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_MAP_SUPPORTED_FEATURES attr not found!!");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       record->mns.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -79,17 +79,16 @@ static void bta_create_mns_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SERVICE_NAME attr not found!!");
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-              p_rec, UUID_SERVCLASS_MAP_PROFILE, &pversion)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_MAP_PROFILE,
+                                                              &pversion)) {
     record->mns.hdr.profile_version = pversion;
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM,
-                                                                       &pe)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
     record->mns.hdr.rfcomm_channel_number = pe.params[0];
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -117,8 +116,7 @@ static void bta_create_mas_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->mas.supported_features = 0x0000001F;
   record->mas.supported_message_types = 0;
 
-  p_attr =
-          get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_MAS_INSTANCE_ID);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_MAS_INSTANCE_ID);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1) {
@@ -130,8 +128,7 @@ static void bta_create_mas_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_MAS_INSTANCE_ID attr not found!!");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec,
-                                                                     ATTR_ID_SUPPORTED_MSG_TYPE);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_MSG_TYPE);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1) {
@@ -143,8 +140,8 @@ static void bta_create_mas_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SUPPORTED_MSG_TYPE attr not found!!");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-          p_rec, ATTR_ID_MAP_SUPPORTED_FEATURES);
+  p_attr =
+          get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_MAP_SUPPORTED_FEATURES);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 4) {
@@ -156,7 +153,7 @@ static void bta_create_mas_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_MAP_SUPPORTED_FEATURES attr not found!!");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       record->mas.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -168,17 +165,16 @@ static void bta_create_mas_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SERVICE_NAME attr not found!!");
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-              p_rec, UUID_SERVCLASS_MAP_PROFILE, &pversion)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_MAP_PROFILE,
+                                                              &pversion)) {
     record->mas.hdr.profile_version = pversion;
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM,
-                                                                       &pe)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
     record->mas.hdr.rfcomm_channel_number = pe.params[0];
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -205,8 +201,8 @@ static void bta_create_pse_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->pse.supported_features = 0x00000003;
   record->pse.supported_repositories = 0;
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-          p_rec, ATTR_ID_SUPPORTED_REPOSITORIES);
+  p_attr =
+          get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_REPOSITORIES);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1) {
@@ -217,8 +213,8 @@ static void bta_create_pse_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   } else {
     log::error("ATTR_ID_SUPPORTED_REPOSITORIES attr not found!!");
   }
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-          p_rec, ATTR_ID_PBAP_SUPPORTED_FEATURES);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec,
+                                                              ATTR_ID_PBAP_SUPPORTED_FEATURES);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 4) {
@@ -230,7 +226,7 @@ static void bta_create_pse_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_PBAP_SUPPORTED_FEATURES attr not found!!");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       record->pse.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -243,17 +239,16 @@ static void bta_create_pse_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SERVICE_NAME attr not found!!");
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-              p_rec, UUID_SERVCLASS_PHONE_ACCESS, &pversion)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_PHONE_ACCESS,
+                                                              &pversion)) {
     record->pse.hdr.profile_version = pversion;
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM,
-                                                                       &pe)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
     record->pse.hdr.rfcomm_channel_number = pe.params[0];
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -279,7 +274,7 @@ static void bta_create_ops_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->ops.hdr.profile_version = 0;
   record->ops.supported_formats_list_len = 0;
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       record->ops.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -291,17 +286,16 @@ static void bta_create_ops_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SERVICE_NAME attr not found!!");
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+  if (get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
               p_rec, UUID_SERVCLASS_OBEX_OBJECT_PUSH, &pversion)) {
     record->ops.hdr.profile_version = pversion;
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM,
-                                                                       &pe)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
     record->ops.hdr.rfcomm_channel_number = pe.params[0];
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -313,8 +307,8 @@ static void bta_create_ops_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_GOEP_L2CAP_PSM attr not found!!");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
-          p_rec, ATTR_ID_SUPPORTED_FORMATS_LIST);
+  p_attr =
+          get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FORMATS_LIST);
   if (p_attr != NULL) {
     /* Safety check - each entry should itself be a sequence */
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) != DATA_ELE_SEQ_DESC_TYPE) {
@@ -371,7 +365,7 @@ static void bta_create_sap_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->sap.hdr.l2cap_psm = -1;
   record->sap.hdr.profile_version = 0;
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       record->sap.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -383,13 +377,12 @@ static void bta_create_sap_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SERVICE_NAME attr not found!!");
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_SAP,
-                                                                     &pversion)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_SAP,
+                                                              &pversion)) {
     record->sap.hdr.profile_version = pversion;
   }
 
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM,
-                                                                       &pe)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
     record->sap.hdr.rfcomm_channel_number = pe.params[0];
   }
 }
@@ -407,8 +400,7 @@ static void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->dip.hdr.l2cap_psm = -1;
   record->dip.hdr.profile_version = 0;
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec,
-                                                                     ATTR_ID_SPECIFICATION_ID);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SPECIFICATION_ID);
   if (p_attr != nullptr) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -420,7 +412,7 @@ static void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_SPECIFICATION_ID not found");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_VENDOR_ID);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_VENDOR_ID);
   if (p_attr != nullptr) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -432,8 +424,7 @@ static void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_VENDOR_ID not found");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec,
-                                                                     ATTR_ID_VENDOR_ID_SOURCE);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_VENDOR_ID_SOURCE);
   if (p_attr != nullptr) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -445,7 +436,7 @@ static void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_VENDOR_ID_SOURCE not found");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_PRODUCT_ID);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_PRODUCT_ID);
   if (p_attr != nullptr) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -457,8 +448,7 @@ static void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_PRODUCT_ID not found");
   }
 
-  p_attr =
-          get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_PRODUCT_VERSION);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_PRODUCT_VERSION);
   if (p_attr != nullptr) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UINT_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
@@ -470,7 +460,7 @@ static void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
     log::error("ATTR_ID_PRODUCT_VERSION not found");
   }
 
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_PRIMARY_RECORD);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_PRIMARY_RECORD);
   if (p_attr != nullptr) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == BOOLEAN_DESC_TYPE &&
         SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 1) {
@@ -495,7 +485,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   record->hdr.profile_version = -1;
 
   /* Try to extract a service name */
-  p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
+  p_attr = get_legacy_stack_sdp_api()->SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME);
   if (p_attr != NULL) {
     if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
       record->pse.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
@@ -508,8 +498,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_RE
   }
 
   /* Try to extract an RFCOMM channel */
-  if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM,
-                                                                       &pe)) {
+  if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
     record->pse.hdr.rfcomm_channel_number = pe.params[0];
   }
   record->hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_size;
@@ -536,8 +525,8 @@ static void bta_sdp_search_cback(Uuid uuid, const RawAddress& /* bd_addr */, tSD
   if (result == tSDP_STATUS::SDP_SUCCESS || result == tSDP_STATUS::SDP_DB_FULL) {
     tSDP_DISC_REC* p_rec = NULL;
     do {
-      p_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceUUIDInDb(p_bta_sdp_cfg->p_sdp_db, uuid,
-                                                                     p_rec);
+      p_rec = get_legacy_stack_sdp_api()->SDP_FindServiceUUIDInDb(p_bta_sdp_cfg->p_sdp_db, uuid,
+                                                                  p_rec);
       /* generate the matching record data pointer */
       if (!p_rec) {
         log::verbose("UUID not found");
@@ -565,7 +554,7 @@ static void bta_sdp_search_cback(Uuid uuid, const RawAddress& /* bd_addr */, tSD
         if (p_rec != NULL) {
           uint16_t peer_pce_version = 0;
 
-          if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+          if (!get_legacy_stack_sdp_api()->SDP_FindProfileVersionInRec(
                       p_rec, UUID_SERVCLASS_PHONE_ACCESS, &peer_pce_version)) {
             log::warn("Unable to find PBAP profile version in SDP record");
           }
@@ -655,12 +644,12 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
 
   /* initialize the search for the uuid */
   log::verbose("init discovery with UUID: {}", uuid.ToString());
-  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+  if (!get_legacy_stack_sdp_api()->SDP_InitDiscoveryDb(
               p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1, &uuid, 0, NULL)) {
     log::warn("Unable to initialize SDP service search db peer:{}", bd_addr);
   }
 
-  if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
+  if (!get_legacy_stack_sdp_api()->SDP_ServiceSearchAttributeRequest2(
               bd_addr, p_bta_sdp_cfg->p_sdp_db, base::BindRepeating(bta_sdp_search_cback, uuid))) {
     log::warn("Unable to start SDP service search attribute request peer:{}", bd_addr);
     bta_sdp_cb.sdp_active = false;
