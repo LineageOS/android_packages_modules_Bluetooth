@@ -37,7 +37,7 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
-#include "stack/include/sdp_callback.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/sdp_discovery_db.h"
 
 /* Continuation length - we use a 2-byte offset */

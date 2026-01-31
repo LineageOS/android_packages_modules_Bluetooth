@@ -137,8 +137,6 @@ class SapServiceBinder extends IBluetoothSap.Stub implements IProfileServiceBind
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-        Log.v(TAG, "getConnectionState()");
-
         SapService service = getService(source);
         if (service == null) {
             return STATE_DISCONNECTED;

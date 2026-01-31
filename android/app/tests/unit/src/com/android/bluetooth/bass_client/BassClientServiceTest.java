@@ -51,7 +51,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
@@ -540,7 +539,7 @@ public class BassClientServiceTest {
                     .registerScannerInternal(mBassScanCallbackCaptor.capture(), any(), any());
         }
 
-        when(mCallback.asBinder()).thenReturn(mBinder);
+        doReturn(mBinder).when(mCallback).asBinder();
         mBassClientService.registerCallback(mCallback);
 
         assertThat(mBassClientService.mEncryptionStateReceiver).isNotNull();
@@ -567,9 +566,10 @@ public class BassClientServiceTest {
     @Test
     public void testGetPolicyAfterStopped() {
         mBassClientService.cleanup();
-        when(mAdapterService.getProfileConnectionPolicy(
-                        mCurrentDevice, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(
+                        mCurrentDevice, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
         assertThat(mBassClientService.getConnectionPolicy(mCurrentDevice))
                 .isEqualTo(CONNECTION_POLICY_UNKNOWN);
     }
@@ -580,10 +580,11 @@ public class BassClientServiceTest {
      */
     @Test
     public void testConnect() {
-        when(mAdapterService.getProfileConnectionPolicy(
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
-                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT));
 
         assertThat(mBassClientService.connect(mCurrentDevice)).isTrue();
         verify(mObjectsFactory)
@@ -608,10 +609,11 @@ public class BassClientServiceTest {
     @Test
     public void testConnect_isQuietMode() {
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
-        when(mAdapterService.getProfileConnectionPolicy(
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
-                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT));
 
         doReturn(true).when(mAdapterService).isQuietModeEnabled();
         assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
@@ -622,10 +624,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testConnect_notBonded_bonding_bonded() {
-        when(mAdapterService.getProfileConnectionPolicy(
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
-                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT));
 
         doReturn(BluetoothDevice.BOND_NONE).when(mAdapterService).getBondState(any());
         assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
@@ -643,10 +646,11 @@ public class BassClientServiceTest {
      */
     @Test
     public void testConnect_whenConnectionPolicyIsForbidden() {
-        when(mAdapterService.getProfileConnectionPolicy(
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
-                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT));
         assertThat(mCurrentDevice).isNotNull();
 
         assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
@@ -696,10 +700,11 @@ public class BassClientServiceTest {
     }
 
     private void prepareConnectedDeviceGroup() {
-        when(mAdapterService.getProfileConnectionPolicy(
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
-                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT));
 
         // Mock the CSIP group
         List<BluetoothDevice> groupDevices = new ArrayList<>();
@@ -848,7 +853,7 @@ public class BassClientServiceTest {
         mBassClientService =
                 new BassClientService(mAdapterService, mScanController, mLooper.getLooper());
         mBassClientService.setAvailable(true);
-        when(mCallback.asBinder()).thenReturn(mBinder);
+        doReturn(mBinder).when(mCallback).asBinder();
         mBassClientService.registerCallback(mCallback);
 
         // Start searching again
@@ -9155,7 +9160,7 @@ public class BassClientServiceTest {
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
     public void testNotifyReceiveStateChanged_addClientForBigChannelMap() {
         // Mock that the broadcast is local
-        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9176,7 +9181,7 @@ public class BassClientServiceTest {
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
     public void testNotifyReceiveStateChanged_deleteClientForBigChannelMap() {
         // Mock that the broadcast is local
-        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9213,7 +9218,7 @@ public class BassClientServiceTest {
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
     public void testNotifyReceiveStateChanged_notLocalBroadcast_doNothing() {
         // Mock that the broadcast is not local
-        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(null);
+        doReturn(null).when(mLeAudioService).getBroadcastMetadata(anyInt());
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9230,7 +9235,7 @@ public class BassClientServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
     public void testNotifyReceiveStateChanged_noTargetPaSyncStateChange_doNothing() {
-        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(

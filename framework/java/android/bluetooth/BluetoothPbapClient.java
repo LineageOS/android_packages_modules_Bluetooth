@@ -267,9 +267,6 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @BtProfileState int getConnectionState(@NonNull BluetoothDevice device) {
-        if (DBG) {
-            log("getConnectionState(" + device + ")");
-        }
         final IBluetoothPbapClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");

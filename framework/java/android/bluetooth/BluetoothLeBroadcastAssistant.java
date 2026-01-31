@@ -570,7 +570,6 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     @Override
     public @BluetoothProfile.BtProfileState int getConnectionState(@NonNull BluetoothDevice sink) {
-        log("getConnectionState(" + sink + ")");
         requireNonNull(sink);
         final IBluetoothLeBroadcastAssistant service = getService();
         final int defaultValue = STATE_DISCONNECTED;

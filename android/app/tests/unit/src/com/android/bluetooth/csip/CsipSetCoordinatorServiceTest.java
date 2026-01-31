@@ -57,6 +57,7 @@ import android.bluetooth.IBluetoothCsipSetCoordinatorLockCallback;
 import android.content.Intent;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -65,6 +66,7 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -320,12 +322,12 @@ public class CsipSetCoordinatorServiceTest {
         assertThat(mService.connect(mDevice1)).isTrue();
         mLooper.dispatchAll();
 
-        verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTING, STATE_DISCONNECTED);
 
         mLooper.moveTimeForward(CsipSetCoordinatorStateMachine.sConnectTimeoutMs);
         mLooper.dispatchAll();
 
-        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
+        verifyConnectionStateIntent(mDevice1, STATE_DISCONNECTED, STATE_CONNECTING);
     }
 
     @Test
@@ -423,6 +425,266 @@ public class CsipSetCoordinatorServiceTest {
                 hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id));
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FIX_REPORTING_CSIS_MEMBERS)
+    public void testTrackingAvailableSetMembersForDevicesUsingMultipleRpaAdvertisingInstances() {
+        int group_id = 0x01;
+        int group_size = 0x02;
+        long uuidLsb = BluetoothUuid.CAP.getUuid().getLeastSignificantBits();
+        long uuidMsb = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
+
+        /* Scenario:
+         * 1. Set contains 2 devices but Device 2 is using mulltple advertising instances.which results in Device 3 being visible.
+         * 2. Bond Device 1 and connect to it
+         * 3. Simulate CSIS founds 2 more set members even this is single device (multiple RPA advertising instances)
+         * 4. Bond and connect to Device 2
+         * 5. Make sure mFoundSetMemberToGroupId does not contain any more members to bond.
+         **/
+
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mLeAudioService).getConnectionPolicy(any());
+
+        // Bond and connect Device 1.
+        mService.bondStateChanged(mDevice1, BluetoothDevice.BOND_BONDED);
+        mService.connect(mDevice1);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidLsb, uuidMsb);
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTED, STATE_CONNECTING);
+
+        /* Remote device has 2 advertising instances for the second set member */
+        mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice2), group_id);
+        verifyOrderedIntentSent(
+                hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_SET_MEMBER_AVAILABLE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice2),
+                hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id));
+
+        mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice3), group_id);
+        verifyOrderedIntentSent(
+                hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_SET_MEMBER_AVAILABLE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice3),
+                hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id));
+
+        // Bond and connect Device 2.
+        mService.bondStateChanged(mDevice2, BluetoothDevice.BOND_BONDED);
+        mService.connect(mDevice2);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice2, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice2), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice2, STATE_CONNECTING, STATE_CONNECTED);
+
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(mDevice2, STATE_CONNECTED, STATE_CONNECTING);
+
+        mInOrder.verify(mAdapterService, never()).sendOrderedBroadcast(any(), any());
+        assertThat(mService.mFoundSetMemberToGroupId.isEmpty()).isTrue();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FIX_REPORTING_CSIS_MEMBERS)
+    public void testTrackingAvailableSetMembersForDevicesUsingMultipleCsisGoups() {
+        // Common size
+        int group_size = 0x02;
+        // Group 1 with UUID 1
+        int group_id = 0x01;
+        long uuidLsb_1 = BluetoothUuid.CAP.getUuid().getLeastSignificantBits();
+        long uuidMsb_1 = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
+        // Group 2 with UUID 2
+        int group_id_2 = 0x02;
+        long uuidLsb_2 = 0x01;
+        long uuidMsb_2 = 0x02;
+
+        /* Scenario
+         * 1. Device 1 and Device 2 are a set members for UUID 1
+         * 2. Device 2 and Device 3 are a set members for UUID 2
+         * 3. Bond and Connect device 1
+         * 4. Symulate Device 2 is found
+         * 5. Bond and Connect with Device 2
+         * 6. Make sure device 3 is Broadcasted as available set member.
+         * 7. Bond and connect Device 3.
+         * 8. Verify state of mFoundSetMemberToGroupId and mGroupIdToConnectedDevices
+         */
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mLeAudioService).getConnectionPolicy(any());
+
+        // Bond and connect Device 1
+        mService.bondStateChanged(mDevice1, BluetoothDevice.BOND_BONDED);
+
+        mService.connect(mDevice1);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        // Device 1 supports UUID 1
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidLsb_1, uuidMsb_1);
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+
+        /* Remote device has 2 advertising instances for the second set member */
+        mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice2), group_id);
+        mInOrder.verify(mAdapterService, never()).sendOrderedBroadcast(any(), any());
+
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTED, STATE_CONNECTING);
+
+        // Expect all the available set members are notified
+        verifyOrderedIntentSent(
+                hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_SET_MEMBER_AVAILABLE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice2),
+                hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id));
+
+        // Bond and connect Device 2
+        mService.bondStateChanged(mDevice2, BluetoothDevice.BOND_BONDED);
+        mService.connect(mDevice2);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice2, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        // Device 2 is part of two groups.
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidLsb_1, uuidMsb_1);
+        mLooper.dispatchAll();
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice2), group_id_2, group_size, 0x01, uuidLsb_2, uuidMsb_2);
+        mLooper.dispatchAll();
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+
+        // Device 3 found as a member of group 2
+        mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice3), group_id_2);
+        mInOrder.verify(mAdapterService, never()).sendOrderedBroadcast(any(), any());
+
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice2), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice2, STATE_CONNECTING, STATE_CONNECTED);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(mDevice2, STATE_CONNECTED, STATE_CONNECTING);
+
+        verifyOrderedIntentSent(
+                hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_SET_MEMBER_AVAILABLE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice3),
+                hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id_2));
+
+        // Bond and connect Device 3
+        mService.bondStateChanged(mDevice3, BluetoothDevice.BOND_BONDED);
+        mService.connect(mDevice3);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice3, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice3), group_id_2, group_size, 0x02, uuidLsb_2, uuidMsb_2);
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice3), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice3, STATE_CONNECTING, STATE_CONNECTED);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(mDevice3, STATE_CONNECTED, STATE_CONNECTING);
+
+        mInOrder.verify(mAdapterService, never()).sendOrderedBroadcast(any(), any());
+
+        assertThat(mService.mFoundSetMemberToGroupId.isEmpty()).isTrue();
+        assertThat(mService.mGroupIdToConnectedDevices.get(group_id_2).size())
+                .isEqualTo(group_size);
+        assertThat(mService.mGroupIdToConnectedDevices.get(group_id).size()).isEqualTo(group_size);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FIX_REPORTING_CSIS_MEMBERS)
+    public void testTrackingAvailableSetMembersAfterBondRemoval() {
+        int group_id = 0x01;
+        int group_size = 0x02;
+        long uuidLsb = BluetoothUuid.CAP.getUuid().getLeastSignificantBits();
+        long uuidMsb = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
+
+        /* Scenario:
+         * 1. Set contains 2 devices but Device 2 is using mulltple advertising instances.which results in Device 3 being visible.
+         * 2. Bond Device 1 and connect to it
+         * 3. Bond and connect to Device 2
+         * 4. Disconnect and remove Device 1
+         * 5. Simulate Native CSIS reporting device 1 as a set member available to pair (note: native shall not do it anymore)
+         * 6. Disconnect and remove Device 2.
+         * 7. Make sure that mFoundSetMemberToGroupId does not contain any more members to bond i.e. Device 1.
+         **/
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mLeAudioService).getConnectionPolicy(any());
+
+        // Bond and Connect device 1
+        mService.bondStateChanged(mDevice1, BluetoothDevice.BOND_BONDED);
+
+        mService.connect(mDevice1);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidLsb, uuidMsb);
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice1, STATE_CONNECTED, STATE_CONNECTING);
+
+        // Bond and Connect device 2
+        mService.bondStateChanged(mDevice2, BluetoothDevice.BOND_BONDED);
+        mService.connect(mDevice2);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(mDevice2, STATE_CONNECTING, STATE_DISCONNECTED);
+
+        mNativeCallback.onDeviceAvailable(
+                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+        verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice2), STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice2, STATE_CONNECTING, STATE_CONNECTED);
+
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(mDevice2, STATE_CONNECTED, STATE_CONNECTING);
+
+        // Forget device set
+        // Removing device 1
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_DISCONNECTED);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(mDevice1, STATE_DISCONNECTED, STATE_CONNECTED);
+        mService.bondStateChanged(mDevice1, BluetoothDevice.BOND_NONE);
+
+        // Inject incorrect SET MEMBER AVAILABLE event for device 1
+        mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice1), group_id);
+        verifyOrderedIntentSent(
+                hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_SET_MEMBER_AVAILABLE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice1),
+                hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id));
+
+        // Removing device 2
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice2), STATE_DISCONNECTED);
+        mService.connectionStateChanged(mDevice2, STATE_CONNECTED, STATE_DISCONNECTED);
+
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(mDevice2, STATE_DISCONNECTED, STATE_CONNECTED);
+        mService.bondStateChanged(mDevice2, BluetoothDevice.BOND_NONE);
+
+        mInOrder.verify(mAdapterService, never()).sendOrderedBroadcast(any(), any());
+        assertThat(mService.mFoundSetMemberToGroupId.isEmpty()).isTrue();
+    }
+
     /**
      * Test that we make CSIP FORBIDDEN after all set members are paired if the LE Audio connection
      * policy is FORBIDDEN.
@@ -480,13 +742,13 @@ public class CsipSetCoordinatorServiceTest {
         mService.dump(new StringBuilder());
     }
 
-    private void verifyConnectionStateIntent(int newState, int prevState) {
+    private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
         verifyIntentSent(
                 hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice1),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
                 hasExtra(EXTRA_STATE, newState),
                 hasExtra(EXTRA_PREVIOUS_STATE, prevState));
-        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(newState);
+        assertThat(mService.getConnectionState(device)).isEqualTo(newState);
     }
 
     /** Helper function to get byte array for a device address */

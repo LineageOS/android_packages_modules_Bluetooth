@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -142,7 +141,7 @@ public class MediaPlayerWrapperTest {
                         .setIconBitmap(mTestBitmap)
                         .setMediaId("102"));
 
-        when(mMockController.getPackageName()).thenReturn("mMockController");
+        doReturn("mMockController").when(mMockController).getPackageName();
         // NOTE: We use doReturn below because using the normal stubbing method
         // doesn't immediately update the stub with the new return value and this
         // can cause the old stub to be used.
@@ -783,7 +782,7 @@ public class MediaPlayerWrapperTest {
     public void pauseCurrent() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -796,7 +795,7 @@ public class MediaPlayerWrapperTest {
     public void playCurrent() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -809,8 +808,8 @@ public class MediaPlayerWrapperTest {
     public void playItemFromQueue() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
-        when(mMockController.getQueue()).thenReturn(new ArrayList<>());
+        doReturn(transportControls).when(mMockController).getTransportControls();
+        doReturn(new ArrayList<>()).when(mMockController).getQueue();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -824,7 +823,7 @@ public class MediaPlayerWrapperTest {
     public void rewind() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -837,7 +836,7 @@ public class MediaPlayerWrapperTest {
     public void seekTo() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -851,7 +850,7 @@ public class MediaPlayerWrapperTest {
     public void setPlaybackSpeed() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -865,7 +864,7 @@ public class MediaPlayerWrapperTest {
     public void skipToNext() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -878,7 +877,7 @@ public class MediaPlayerWrapperTest {
     public void skipToPrevious() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 
@@ -891,7 +890,7 @@ public class MediaPlayerWrapperTest {
     public void stopCurrent() {
         MediaController.TransportControls transportControls =
                 mock(MediaController.TransportControls.class);
-        when(mMockController.getTransportControls()).thenReturn(transportControls);
+        doReturn(transportControls).when(mMockController).getTransportControls();
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
 

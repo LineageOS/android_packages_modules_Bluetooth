@@ -165,6 +165,27 @@ protected:
                      "assert failed: thread_->GetReactor()->WaitForIdle(2s)");
   }
 
+  void verify_subrate_request_and_respond(ErrorCode status_code) {
+    connection_->LeSubrateRequest(kIntervalMin, kIntervalMax, kLatency, kContinuationNumber,
+                                  kTimeout);
+
+    auto command = CreateAclCommandView<LeSubrateRequestView>(
+            le_acl_connection_interface_.DequeueCommandBytes());
+    ASSERT_TRUE(command.IsValid());
+    ASSERT_EQ(kIntervalMin, command.GetSubrateMin());
+    ASSERT_EQ(kIntervalMax, command.GetSubrateMax());
+    ASSERT_EQ(kLatency, command.GetMaxLatency());
+    ASSERT_EQ(kContinuationNumber, command.GetContinuationNumber());
+    ASSERT_EQ(kTimeout, command.GetSupervisionTimeout());
+
+    auto status_builder = LeSubrateRequestStatusBuilder::Create(status_code, 0x01);
+    hci::EventView event = hci::EventView::Create(GetPacketView(std::move(status_builder)));
+    hci::CommandStatusView command_status = hci::CommandStatusView::Create(event);
+    auto on_status = le_acl_connection_interface_.DequeueStatusCallback();
+    on_status(std::move(command_status));
+    sync_handler();
+  }
+
   AddressWithType address_1 = AddressWithType(Address{{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}},
                                               AddressType::RANDOM_DEVICE_ADDRESS);
   AddressWithType address_2 = AddressWithType(Address{{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}},
@@ -183,49 +204,22 @@ TEST_F(LeAclConnectionTest, simple) {
 }
 
 TEST_F(LeAclConnectionTest, LeSubrateRequest_success) {
-  connection_->LeSubrateRequest(kIntervalMin, kIntervalMax, kLatency, kContinuationNumber,
-                                kTimeout);
-
-  auto command = CreateAclCommandView<LeSubrateRequestView>(
-          le_acl_connection_interface_.DequeueCommandBytes());
-  ASSERT_TRUE(command.IsValid());
-  ASSERT_EQ(kIntervalMin, command.GetSubrateMin());
-  ASSERT_EQ(kIntervalMax, command.GetSubrateMax());
-  ASSERT_EQ(kLatency, command.GetMaxLatency());
-  ASSERT_EQ(kContinuationNumber, command.GetContinuationNumber());
-  ASSERT_EQ(kTimeout, command.GetSupervisionTimeout());
-
   EXPECT_CALL(callbacks_, OnLeSubrateChange).Times(0);
-
-  auto status_builder = LeSubrateRequestStatusBuilder::Create(ErrorCode::SUCCESS, 0x01);
-  hci::EventView event = hci::EventView::Create(GetPacketView(std::move(status_builder)));
-  hci::CommandStatusView command_status = hci::CommandStatusView::Create(event);
-  auto on_status = le_acl_connection_interface_.DequeueStatusCallback();
-  on_status(command_status);
-  sync_handler();
+  verify_subrate_request_and_respond(ErrorCode::SUCCESS);
 }
 
 TEST_F(LeAclConnectionTest, LeSubrateRequest_error) {
   EXPECT_CALL(callbacks_, OnLeSubrateChange(ErrorCode::UNKNOWN_HCI_COMMAND, 0, 0, 0, 0));
+  verify_subrate_request_and_respond(ErrorCode::UNKNOWN_HCI_COMMAND);
+}
 
-  connection_->LeSubrateRequest(kIntervalMin, kIntervalMax, kLatency, kContinuationNumber,
-                                kTimeout);
+TEST_F(LeAclConnectionTest, LeSubrateRequest_unknownConnectionError) {
+  // Arrange
+  // Expect OnLeSubrateChange to NOT be called when the error is UNKNOWN_CONNECTION.
+  EXPECT_CALL(callbacks_, OnLeSubrateChange).Times(0);
 
-  auto command = CreateAclCommandView<LeSubrateRequestView>(
-          le_acl_connection_interface_.DequeueCommandBytes());
-  ASSERT_TRUE(command.IsValid());
-  ASSERT_EQ(kIntervalMin, command.GetSubrateMin());
-  ASSERT_EQ(kIntervalMax, command.GetSubrateMax());
-  ASSERT_EQ(kLatency, command.GetMaxLatency());
-  ASSERT_EQ(kContinuationNumber, command.GetContinuationNumber());
-  ASSERT_EQ(kTimeout, command.GetSupervisionTimeout());
-
-  auto status_builder = LeSubrateRequestStatusBuilder::Create(ErrorCode::UNKNOWN_HCI_COMMAND, 0x01);
-  hci::EventView event = hci::EventView::Create(GetPacketView(std::move(status_builder)));
-  hci::CommandStatusView command_status = hci::CommandStatusView::Create(event);
-  auto on_status = le_acl_connection_interface_.DequeueStatusCallback();
-  on_status(std::move(command_status));
-  sync_handler();
+  // Act & Assert
+  verify_subrate_request_and_respond(ErrorCode::UNKNOWN_CONNECTION);
 }
 
 }  // namespace

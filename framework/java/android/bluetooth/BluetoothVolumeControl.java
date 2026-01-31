@@ -365,7 +365,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getConnectionState(BluetoothDevice device) {
-        Log.d(TAG, "getConnectionState(" + device + ")");
         int defaultValue = STATE_DISCONNECTED;
 
         if (!isValidDevice(device)) {

@@ -86,7 +86,6 @@ class BluetoothPbapServiceBinder extends IBluetoothPbap.Stub implements IProfile
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-        Log.d(TAG, "getConnectionState: " + device);
         BluetoothPbapService service = getService(source);
         if (service == null) {
             return BluetoothAdapter.STATE_DISCONNECTED;

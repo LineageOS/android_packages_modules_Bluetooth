@@ -137,7 +137,6 @@ class BluetoothMapServiceBinder extends IBluetoothMap.Stub implements IProfileSe
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-        Log.v(TAG, "getConnectionState()");
         BluetoothMapService service = getService(source);
         if (service == null) {
             return STATE_DISCONNECTED;

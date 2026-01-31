@@ -18,8 +18,8 @@ package com.android.bluetooth.audio_util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.media.MediaDescription;
@@ -53,7 +53,7 @@ public class GPMWrapperTest {
 
     @Test
     public void isMetadataSynced_whenQueueIsNull_returnsFalse() {
-        when(mMediaController.getQueue()).thenReturn(null);
+        doReturn(null).when(mMediaController).getQueue();
 
         GPMWrapper wrapper = new GPMWrapper(mContext, mMediaController, null);
 
@@ -65,7 +65,7 @@ public class GPMWrapperTest {
         long activeQueueItemId = 3;
         PlaybackState state =
                 new PlaybackState.Builder().setActiveQueueItemId(activeQueueItemId).build();
-        when(mMediaController.getPlaybackState()).thenReturn(state);
+        doReturn(state).when(mMediaController).getPlaybackState();
 
         List<MediaSession.QueueItem> queue = new ArrayList<>();
         MediaDescription description =
@@ -73,7 +73,7 @@ public class GPMWrapperTest {
         MediaSession.QueueItem queueItem =
                 new MediaSession.QueueItem(description, activeQueueItemId);
         queue.add(queueItem);
-        when(mMediaController.getQueue()).thenReturn(queue);
+        doReturn(queue).when(mMediaController).getQueue();
 
         MediaMetadata metadata =
                 new MediaMetadata.Builder()
@@ -81,7 +81,7 @@ public class GPMWrapperTest {
                                 MediaMetadata.METADATA_KEY_TITLE,
                                 "Different Title from MediaMetadata")
                         .build();
-        when(mMediaController.getMetadata()).thenReturn(metadata);
+        doReturn(metadata).when(mMediaController).getMetadata();
 
         GPMWrapper wrapper = new GPMWrapper(mContext, mMediaController, null);
 
@@ -95,20 +95,20 @@ public class GPMWrapperTest {
         long activeQueueItemId = 3;
         PlaybackState state =
                 new PlaybackState.Builder().setActiveQueueItemId(activeQueueItemId).build();
-        when(mMediaController.getPlaybackState()).thenReturn(state);
+        doReturn(state).when(mMediaController).getPlaybackState();
 
         List<MediaSession.QueueItem> queue = new ArrayList<>();
         MediaDescription description = new MediaDescription.Builder().setTitle(title).build();
         MediaSession.QueueItem queueItem =
                 new MediaSession.QueueItem(description, activeQueueItemId);
         queue.add(queueItem);
-        when(mMediaController.getQueue()).thenReturn(queue);
+        doReturn(queue).when(mMediaController).getQueue();
 
         MediaMetadata metadata =
                 new MediaMetadata.Builder()
                         .putString(MediaMetadata.METADATA_KEY_TITLE, title)
                         .build();
-        when(mMediaController.getMetadata()).thenReturn(metadata);
+        doReturn(metadata).when(mMediaController).getMetadata();
 
         GPMWrapper wrapper = new GPMWrapper(mContext, mMediaController, null);
 

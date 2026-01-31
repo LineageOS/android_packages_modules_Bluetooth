@@ -35,7 +35,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -87,15 +86,15 @@ public class AdapterServiceBinderTest {
 
     @Before
     public void setUp() {
-        when(mService.getAdapterProperties()).thenReturn(mAdapterProperties);
-        when(mService.getRemoteDevices()).thenReturn(mRemoteDevices);
-        when(mService.getBluetoothHciVendorSpecificDispatcher()).thenReturn(mDispatcher);
+        doReturn(mAdapterProperties).when(mService).getAdapterProperties();
+        doReturn(mRemoteDevices).when(mService).getRemoteDevices();
+        doReturn(mDispatcher).when(mService).getBluetoothHciVendorSpecificDispatcher();
         doReturn(true).when(mService).isAvailable();
         // Default for other permission checks if any
         doNothing().when(mService).enforceCallingOrSelfPermission(any(), any());
 
         // Setup mock UserManager to be returned by mService
-        when(mService.getSystemService(Context.USER_SERVICE)).thenReturn(mUserManager);
+        doReturn(mUserManager).when(mService).getSystemService(Context.USER_SERVICE);
         mockGetSystemService(mService, UserManager.class, mUserManager);
         // Default: Simulate caller is system/active
         mockCallerIsSystemOrActive(true);
@@ -105,7 +104,7 @@ public class AdapterServiceBinderTest {
 
     private void mockCallerIsSystemOrActive(boolean isSystemOrActive) {
         // This is an approximation. The real static method is more complex.
-        when(mUserManager.isSystemUser()).thenReturn(isSystemOrActive);
+        doReturn(isSystemOrActive).when(mUserManager).isSystemUser();
     }
 
     @Test
@@ -226,7 +225,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void setPreferredAudioProfiles_deviceNotBonded_returnsError() {
-        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
+        doReturn(BluetoothDevice.BOND_NONE).when(mService).getBondState(mDevice);
 
         int result = mBinder.setPreferredAudioProfiles(mDevice, new Bundle(), mSource);
 
@@ -236,7 +235,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void setPreferredAudioProfiles_deviceBonded_callsService() {
-        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
+        doReturn(BluetoothDevice.BOND_BONDED).when(mService).getBondState(mDevice);
         Bundle bundle = new Bundle();
 
         mBinder.setPreferredAudioProfiles(mDevice, bundle, mSource);
@@ -246,7 +245,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void getPreferredAudioProfiles_deviceNotBonded_returnsEmptyBundle() {
-        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
+        doReturn(BluetoothDevice.BOND_NONE).when(mService).getBondState(mDevice);
 
         Bundle result = mBinder.getPreferredAudioProfiles(mDevice, mSource);
 
@@ -257,7 +256,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void getPreferredAudioProfiles_deviceBonded_callsService() {
-        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
+        doReturn(BluetoothDevice.BOND_BONDED).when(mService).getBondState(mDevice);
 
         mBinder.getPreferredAudioProfiles(mDevice, mSource);
 
@@ -266,7 +265,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void notifyActiveDeviceChangeApplied_deviceNotBonded_returnsError() {
-        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
+        doReturn(BluetoothDevice.BOND_NONE).when(mService).getBondState(mDevice);
 
         int result = mBinder.notifyActiveDeviceChangeApplied(mDevice, mSource);
 
@@ -276,7 +275,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void notifyActiveDeviceChangeApplied_deviceBonded_callsService() {
-        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
+        doReturn(BluetoothDevice.BOND_BONDED).when(mService).getBondState(mDevice);
 
         mBinder.notifyActiveDeviceChangeApplied(mDevice, mSource);
 
@@ -297,7 +296,7 @@ public class AdapterServiceBinderTest {
     @Test
     public void connectAllEnabledProfiles_whenServiceNotEnabled_returnsError() {
         // The service is available but not enabled
-        when(mService.isEnabled()).thenReturn(false);
+        doReturn(false).when(mService).isEnabled();
 
         // Call the method and verify that it returns an error and doesn't proceed
         int result = mBinder.connectAllEnabledProfiles(mDevice, mSource);
@@ -308,7 +307,7 @@ public class AdapterServiceBinderTest {
     @Test
     public void connectAllEnabledProfiles_whenServiceEnabled_callsService() {
         // The service is available and enabled
-        when(mService.isEnabled()).thenReturn(true);
+        doReturn(true).when(mService).isEnabled();
 
         // Call the method and verify that the underlying service method is called
         mBinder.connectAllEnabledProfiles(mDevice, mSource);

@@ -562,7 +562,6 @@ public final class BluetoothHeadset implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getConnectionState(BluetoothDevice device) {
-        if (VDBG) log("getConnectionState(" + device + ")");
         final IBluetoothHeadset service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
