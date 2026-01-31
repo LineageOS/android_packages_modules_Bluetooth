@@ -58,7 +58,7 @@ import kotlinx.coroutines.runBlocking
 private const val TAG = "BluetoothStorageManager"
 private const val COMPACTION_THRESHOLD = 100_000
 
-private val PATTERN_TO_OBFUSCATE = "(?:(?:[0-9A-F]{2}:){4})([0-9A-F]{2}:[0-9A-F]{2})".toRegex()
+private val PATTERN_TO_OBFUSCATE = "(?:[0-9A-F]{2}:){4}([0-9A-F]{2}:[0-9A-F]{2})".toRegex()
 private val PATTERN_DELETE_VALUE_FIELD = "^.*_value: \\d+$".toRegex()
 
 private fun String.cleanProtoDump(): String {
