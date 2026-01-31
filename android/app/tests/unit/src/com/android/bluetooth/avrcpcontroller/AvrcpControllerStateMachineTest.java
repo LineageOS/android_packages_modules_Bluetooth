@@ -37,7 +37,6 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -197,7 +196,7 @@ public class AvrcpControllerStateMachineTest {
 
     /** Send an audio focus changed event to the state machine under test */
     private void sendAudioFocusUpdate(int state) {
-        when(mA2dpSinkService.getFocusState()).thenReturn(state);
+        doReturn(state).when(mA2dpSinkService).getFocusState();
         mAvrcpStateMachine.sendMessage(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE, state);
     }
 
@@ -533,7 +532,7 @@ public class AvrcpControllerStateMachineTest {
     /** Test that dumpsys will generate information when cover art is connected */
     @Test
     public void testDump_coverArtConnected() {
-        when(mCoverArtManager.getState(mDevice)).thenReturn(STATE_CONNECTED);
+        doReturn(STATE_CONNECTED).when(mCoverArtManager).getState(mDevice);
         StringBuilder sb = new StringBuilder();
         mAvrcpStateMachine.dump(sb);
         assertThat(sb.toString()).contains("Cover Art: true");
@@ -543,7 +542,7 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testDump_coverArtManagerNull() {
         // Override the setup to return a null cover art manager
-        when(mAvrcpControllerService.getCoverArtManager()).thenReturn(null);
+        doReturn(null).when(mAvrcpControllerService).getCoverArtManager();
         // Create a new state machine with this setup
         AvrcpControllerStateMachine smWithNullManager = makeStateMachine(mDevice);
 
@@ -1398,9 +1397,10 @@ public class AvrcpControllerStateMachineTest {
     /** Test playback does not request focus when another app is playing music. */
     @Test
     public void testPlaybackWhileMusicPlaying() {
-        when(mMockResources.getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus))
-                .thenReturn(false);
-        when(mA2dpSinkService.getFocusState()).thenReturn(AudioManager.AUDIOFOCUS_NONE);
+        doReturn(false)
+                .when(mMockResources)
+                .getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus);
+        doReturn(AudioManager.AUDIOFOCUS_NONE).when(mA2dpSinkService).getFocusState();
         doReturn(true).when(mAudioManager).isMusicActive();
         setUpConnectedState(true, true);
         mAvrcpStateMachine.sendMessage(
@@ -1418,7 +1418,7 @@ public class AvrcpControllerStateMachineTest {
     /** Test playback requests focus while nothing is playing music. */
     @Test
     public void testPlaybackWhileIdle() {
-        when(mA2dpSinkService.getFocusState()).thenReturn(AudioManager.AUDIOFOCUS_NONE);
+        doReturn(AudioManager.AUDIOFOCUS_NONE).when(mA2dpSinkService).getFocusState();
         doReturn(false).when(mAudioManager).isMusicActive();
         setUpConnectedState(true, true);
         mAvrcpStateMachine.sendMessage(
@@ -1436,7 +1436,7 @@ public class AvrcpControllerStateMachineTest {
      */
     @Test
     public void testPlaybackWhileErrorState() {
-        when(mA2dpSinkService.getFocusState()).thenReturn(AudioManager.ERROR);
+        doReturn(AudioManager.ERROR).when(mA2dpSinkService).getFocusState();
         setUpConnectedState(true, true);
         mAvrcpStateMachine.sendMessage(
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_PLAY_STATUS_CHANGED,
@@ -1457,7 +1457,7 @@ public class AvrcpControllerStateMachineTest {
      */
     @Test
     public void testPlaybackWhilePlayingState() {
-        when(mA2dpSinkService.getFocusState()).thenReturn(AudioManager.AUDIOFOCUS_GAIN);
+        doReturn(AudioManager.AUDIOFOCUS_GAIN).when(mA2dpSinkService).getFocusState();
         setUpConnectedState(true, true);
         assertThat(mAvrcpStateMachine.isActive()).isTrue();
         mAvrcpStateMachine.sendMessage(
@@ -1759,8 +1759,9 @@ public class AvrcpControllerStateMachineTest {
      */
     @Test
     public void testOnAudioFocusTransientLossWhilePlaying_pauseSent() {
-        when(mMockResources.getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus))
-                .thenReturn(false);
+        doReturn(false)
+                .when(mMockResources)
+                .getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus);
         setUpConnectedState(true, true);
         sendAudioFocusUpdate(AudioManager.AUDIOFOCUS_GAIN);
         setPlaybackState(PlaybackStateCompat.STATE_PLAYING);

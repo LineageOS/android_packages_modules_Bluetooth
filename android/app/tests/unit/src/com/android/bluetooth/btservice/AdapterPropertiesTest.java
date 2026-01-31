@@ -27,7 +27,6 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -97,12 +96,13 @@ public class AdapterPropertiesTest {
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(BluetoothDevice.class));
         doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(String.class));
-        when(mAdapterService.getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES)))
-                .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));
-        when(mAdapterService.getIdentityAddress(
-                        Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2)))
-                .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));
-        when(mNativeInterface.removeBond(any(byte[].class))).thenReturn(true);
+        doReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES))
+                .when(mAdapterService)
+                .getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));
+        doReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES))
+                .when(mAdapterService)
+                .getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2));
+        doReturn(true).when(mNativeInterface).removeBond(any(byte[].class));
 
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         verify(mAdapterService).getSystemService(BluetoothManager.class);
@@ -110,9 +110,9 @@ public class AdapterPropertiesTest {
         mRemoteDevices.reset();
 
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
-        when(mAdapterService.getResources())
-                .thenReturn(
-                        InstrumentationRegistry.getInstrumentation().getContext().getResources());
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getResources())
+                .when(mAdapterService)
+                .getResources();
 
         // Must be called to initialize services
         mAdapterProperties =

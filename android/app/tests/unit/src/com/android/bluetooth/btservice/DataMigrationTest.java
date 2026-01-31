@@ -25,7 +25,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
@@ -86,10 +86,10 @@ public class DataMigrationTest {
         mPrefs.edit().clear().apply();
 
         mMockContentResolver = new MockContentResolver(mContext);
-        when(mMockContext.getContentResolver()).thenReturn(mMockContentResolver);
-        when(mMockContext.getCacheDir()).thenReturn(mContext.getCacheDir());
+        doReturn(mMockContentResolver).when(mMockContext).getContentResolver();
+        doReturn(mContext.getCacheDir()).when(mMockContext).getCacheDir();
 
-        when(mMockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mPrefs);
+        doReturn(mPrefs).when(mMockContext).getSharedPreferences(anyString(), anyInt());
     }
 
     @After
@@ -267,10 +267,12 @@ public class DataMigrationTest {
     /** Test: execute migration of BLUETOOTH_DATABASE and OPP_DATABASE without correct data */
     @Test
     public void testIncompleteDbMigration() {
-        when(mMockContext.getDatabasePath("btopp.db"))
-                .thenReturn(mContext.getDatabasePath("TestOppDb"));
-        when(mMockContext.getDatabasePath("bluetooth_db"))
-                .thenReturn(mContext.getDatabasePath("TestBluetoothDb"));
+        doReturn(mContext.getDatabasePath("TestOppDb"))
+                .when(mMockContext)
+                .getDatabasePath("btopp.db");
+        doReturn(mContext.getDatabasePath("TestBluetoothDb"))
+                .when(mMockContext)
+                .getDatabasePath("bluetooth_db");
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);
@@ -289,8 +291,9 @@ public class DataMigrationTest {
     /** Test: execute migration of BLUETOOTH_DATABASE */
     @Test
     public void testBluetoothDbMigration() {
-        when(mMockContext.getDatabasePath("bluetooth_db"))
-                .thenReturn(mContext.getDatabasePath("TestBluetoothDb"));
+        doReturn(mContext.getDatabasePath("TestBluetoothDb"))
+                .when(mMockContext)
+                .getDatabasePath("bluetooth_db");
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);
@@ -377,8 +380,9 @@ public class DataMigrationTest {
     /** Test: execute migration of OPP_DATABASE */
     @Test
     public void testOppDbMigration() {
-        when(mMockContext.getDatabasePath("btopp.db"))
-                .thenReturn(mContext.getDatabasePath("TestOppDb"));
+        doReturn(mContext.getDatabasePath("TestOppDb"))
+                .when(mMockContext)
+                .getDatabasePath("btopp.db");
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);

@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.net.Uri;
@@ -104,10 +103,12 @@ public class AvrcpPlayerTest {
 
     @Test
     public void setSupportedPlayerApplicationSettings() {
-        when(mPlayerApplicationSettings.supportsSetting(PlayerApplicationSettings.REPEAT_STATUS))
-                .thenReturn(true);
-        when(mPlayerApplicationSettings.supportsSetting(PlayerApplicationSettings.SHUFFLE_STATUS))
-                .thenReturn(true);
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
+                .supportsSetting(PlayerApplicationSettings.REPEAT_STATUS);
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
+                .supportsSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
         AvrcpPlayer avrcpPlayer = new AvrcpPlayer.Builder().build();
         long expectedActions =
                 PlaybackStateCompat.ACTION_PREPARE
@@ -123,8 +124,7 @@ public class AvrcpPlayerTest {
     public void supportsSetting() {
         int settingType = 1;
         int settingValue = 1;
-        when(mPlayerApplicationSettings.supportsSetting(settingType, settingValue))
-                .thenReturn(true);
+        doReturn(true).when(mPlayerApplicationSettings).supportsSetting(settingType, settingValue);
         AvrcpPlayer avrcpPlayer = new AvrcpPlayer.Builder().build();
 
         avrcpPlayer.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);

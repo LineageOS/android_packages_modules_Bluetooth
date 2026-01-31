@@ -52,7 +52,6 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
@@ -153,7 +152,7 @@ public class RemoteDevicesTest {
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(UNCATEGORIZED).when(mAdapterService).getRemoteClass(mDevice);
 
-        when(mAdapterService.getNative()).thenReturn(mNativeInterface);
+        doReturn(mNativeInterface).when(mAdapterService).getNative();
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         verify(mAdapterService).getSystemService(BluetoothManager.class);
         verify(mAdapterService, times(2)).getPackageManager();
@@ -307,7 +306,7 @@ public class RemoteDevicesTest {
 
         // Verify that when device is completely disconnected, RemoteDevices reset battery level to
         // BluetoothDevice.BATTERY_LEVEL_UNKNOWN
-        when(mAdapterService.getState()).thenReturn(State.ON);
+        doReturn(State.ON).when(mAdapterService).getState();
         mRemoteDevices.aclStateChangeCallback(
                 0,
                 Utils.getByteAddress(mDevice),
@@ -343,7 +342,7 @@ public class RemoteDevicesTest {
 
         // Verify that when device is completely disconnected, RemoteDevices reset battery level to
         // BluetoothDevice.BATTERY_LEVEL_UNKNOWN
-        when(mAdapterService.getState()).thenReturn(State.ON);
+        doReturn(State.ON).when(mAdapterService).getState();
         mRemoteDevices.aclStateChangeCallback(
                 0,
                 Utils.getByteAddress(mDevice),
@@ -906,7 +905,7 @@ public class RemoteDevicesTest {
     @EnableFlags(Flags.FLAG_FIX_INTENT_SELECTION_FOR_ACL)
     public void aclStateChangeCallback_bleOnWithFixIntentFlag_sendsAclIntent() {
         final int transport = TRANSPORT_BREDR;
-        when(mAdapterService.getState()).thenReturn(State.BLE_ON);
+        doReturn(State.BLE_ON).when(mAdapterService).getState();
 
         // Test ACL Connected
         mRemoteDevices.aclStateChangeCallback(
@@ -939,7 +938,7 @@ public class RemoteDevicesTest {
     @DisableFlags(Flags.FLAG_FIX_INTENT_SELECTION_FOR_ACL)
     public void aclStateChangeCallback_bleOnWithoutFixIntentFlag_sendsBleAclIntent() {
         final int transport = TRANSPORT_BREDR;
-        when(mAdapterService.getState()).thenReturn(State.BLE_ON);
+        doReturn(State.BLE_ON).when(mAdapterService).getState();
 
         // Test ACL Connected
         mRemoteDevices.aclStateChangeCallback(
@@ -1041,7 +1040,7 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).getBondingInitiator())
                 .isEqualTo(0); // BONDING_INITIATOR_NONE
 
-        when(mAdapterService.getState()).thenReturn(State.ON);
+        doReturn(State.ON).when(mAdapterService).getState();
 
         // Simulate ACL disconnection for this device.
         mRemoteDevices.aclStateChangeCallback(
@@ -1068,7 +1067,7 @@ public class RemoteDevicesTest {
         deviceProp.setBondingInitiatedLocally(true); // Signifies a bonding attempt was made
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
 
-        when(mAdapterService.getState()).thenReturn(State.ON);
+        doReturn(State.ON).when(mAdapterService).getState();
 
         // Simulate ACL disconnection for this device.
         mRemoteDevices.aclStateChangeCallback(
@@ -1092,7 +1091,7 @@ public class RemoteDevicesTest {
         deviceProp.setBondState(BluetoothDevice.BOND_BONDING);
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
 
-        when(mAdapterService.getState()).thenReturn(State.ON);
+        doReturn(State.ON).when(mAdapterService).getState();
         // Mock for sendPairingCancelIntent to get the pairing UI package
         ExtendedMockito.doReturn("some.package.name")
                 .when(() -> SystemProperties.get(anyString(), anyString()));
@@ -1234,7 +1233,7 @@ public class RemoteDevicesTest {
 
     private void makeBatteryServiceAvailable(BluetoothDevice device) {
         BatteryService batteryService = mock(BatteryService.class);
-        when(batteryService.getConnectionState(device)).thenReturn(STATE_CONNECTED);
+        doReturn(STATE_CONNECTED).when(batteryService).getConnectionState(device);
         doReturn(Optional.of(batteryService)).when(mAdapterService).getBatteryService();
     }
 

@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -77,13 +76,13 @@ public class CompanionManagerTest {
         // Mock the looper
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
         // Mock SharedPreferences
-        when(mSharedPreferences.edit()).thenReturn(mEditor);
+        doReturn(mEditor).when(mSharedPreferences).edit();
         doReturn(mSharedPreferences)
                 .when(mAdapterService)
                 .getSharedPreferences(
                         eq(CompanionManager.COMPANION_INFO), eq(Context.MODE_PRIVATE));
         // Use the resources in the instrumentation instead of the mocked AdapterService
-        when(mAdapterService.getResources()).thenReturn(mContext.getResources());
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
         mockGetBluetoothManager(mAdapterService);
 
         // Must be called to initialize services
