@@ -2327,8 +2327,8 @@ public class ActiveDeviceManagerTest {
         verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
         verify(mLeAudioService).removeActiveDevice(true);
 
-        when(mA2dpService.getFallbackDevice()).thenReturn(mA2dpHeadsetDevice);
-        when(mHeadsetService.getFallbackDevice()).thenReturn(mA2dpHeadsetDevice);
+        doReturn(mA2dpHeadsetDevice).when(mA2dpService).getFallbackDevice();
+        doReturn(mA2dpHeadsetDevice).when(mHeadsetService).getFallbackDevice();
 
         leAudioActiveDeviceChanged(null);
         mTestLooper.dispatchAll();
