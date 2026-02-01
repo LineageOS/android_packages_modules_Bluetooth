@@ -338,6 +338,8 @@ size_t read(uint8_t* p_buf, uint32_t len) {
   return bytes_read;
 }
 
+void flush_source() {}
+
 // Check if OPUS codec is supported
 bool is_opus_supported() { return true; }
 
