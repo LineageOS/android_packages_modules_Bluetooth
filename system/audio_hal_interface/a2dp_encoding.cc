@@ -163,6 +163,14 @@ size_t read(uint8_t* p_buf, uint32_t len) {
   return aidl::a2dp::read(p_buf, len);
 }
 
+// Clear the audio FMQ.
+void flush_source() {
+  if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
+    return hidl::a2dp::flush_source();
+  }
+  return aidl::a2dp::flush_source();
+}
+
 // Update A2DP delay report to BluetoothAudio HAL
 void set_remote_delay(uint16_t delay_report) {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {

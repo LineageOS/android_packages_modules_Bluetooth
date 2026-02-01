@@ -129,11 +129,12 @@ public:
 
   bool SetAllowedLatencyModes(std::vector<LatencyMode> latency_modes);
 
-  /***
-   * Read data from audio HAL through fmq
-   ***/
+  /** Read PCM data from audio FMQ. */
   size_t ReadAudioData(uint8_t* p_buf, size_t len);
   size_t ReadAudioDataExact(uint8_t* p_buf, size_t len);
+
+  /** Flush all the PCM data present in the audio FMQ. */
+  void FlushAudioData();
 
   static constexpr PcmConfiguration kInvalidPcmConfiguration = {};
 
