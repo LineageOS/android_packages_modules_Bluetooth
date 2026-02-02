@@ -63,6 +63,11 @@ void on_removed_from_accept_list(const RawAddress& address);
 void reset(bool after_reset);
 
 void on_app_deregistered(tAPP_ID app_id);
+
+/* earliest signal that conection is established */
+void on_connection_maybe(const RawAddress& address);
+
+/* connection is configured and notified to everybody */
 void on_connection_complete(const RawAddress& address);
 
 std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& remote_bda);
