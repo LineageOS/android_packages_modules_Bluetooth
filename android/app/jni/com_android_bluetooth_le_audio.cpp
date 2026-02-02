@@ -771,6 +771,18 @@ static void setInCallNative(JNIEnv* /* env */, jobject /* object */, jboolean in
   sLeAudioClientInterface->SetInCall(inCall);
 }
 
+static void setAllowlistFlagNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                   jboolean allowed) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sLeAudioClientInterface) {
+    log::error("Failed to get the Bluetooth LeAudio Interface");
+    return;
+  }
+
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sLeAudioClientInterface->SetAllowlistFlag(bd_addr, allowed);
+}
+
 static void setUnicastMonitorModeNative(JNIEnv* /* env */, jobject /* object */,
                                         jint local_directions, jboolean enable) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
@@ -850,6 +862,7 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
            (void*)setCodecConfigPreferenceNative},
           {"setCcidInformationNative", "(II)V", (void*)setCcidInformationNative},
           {"setInCallNative", "(Z)V", (void*)setInCallNative},
+          {"setAllowlistFlagNative", "([BZ)V", (void*)setAllowlistFlagNative},
           {"setUnicastMonitorModeNative", "(IZ)V", (void*)setUnicastMonitorModeNative},
           {"sendAudioProfilePreferencesNative", "(IZZ)V", (void*)sendAudioProfilePreferencesNative},
           {"setGroupAllowedContextMaskNative", "(III)V", (void*)setGroupAllowedContextMaskNative},

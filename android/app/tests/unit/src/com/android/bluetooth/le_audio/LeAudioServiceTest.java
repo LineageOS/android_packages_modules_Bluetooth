@@ -4051,6 +4051,26 @@ public class LeAudioServiceTest {
                 .sendBroadcastWithMultiplePermissions(any(), any());
     }
 
+    @Test
+    public void testSetAllowlistFlag() {
+        BluetoothDevice device = getTestDevice(10);
+        mService.setAllowlistFlag(device, true);
+        verify(mNativeInterface).setAllowlistFlag(device, true);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_ALLOWLIST_REFACTOR)
+    public void testDeviceConnected_callsSetAllowlistFlag() {
+        BluetoothDevice device = getTestDevice(11);
+        mService.createDeviceDescriptor(device, true);
+
+        doReturn(true).when(mAdapterService).isLeAudioAllowed(device);
+
+        mService.deviceConnected(device);
+
+        verify(mNativeInterface).setAllowlistFlag(device, true);
+    }
+
     private void verifyIntentSentMultiplePermissions(Matcher<Intent>... matchers) {
         mInOrder.verify(mAdapterService)
                 .sendBroadcastWithMultiplePermissions(

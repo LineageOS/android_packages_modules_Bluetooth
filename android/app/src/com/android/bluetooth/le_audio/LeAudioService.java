@@ -4553,6 +4553,10 @@ public class LeAudioService extends ConnectableProfile {
         if (mBroadcastToUnicastFallbackGroup == LE_AUDIO_GROUP_ID_INVALID) {
             setDefaultBroadcastToUnicastFallbackGroup();
         }
+
+        if (Flags.leaudioAllowlistRefactor()) {
+            setAllowlistFlag(device, getAdapterService().isLeAudioAllowed(device));
+        }
     }
 
     /** Process a change for disconnection of a device. */
@@ -4698,6 +4702,20 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         mNativeInterface.setInCall(inCall);
+    }
+
+    /**
+     * Set allowlist flag
+     *
+     * @param device the remote device to check
+     */
+    public void setAllowlistFlag(BluetoothDevice device, boolean allowed) {
+        if (!mLeAudioNativeIsInitialized) {
+            Log.e(TAG, "Le Audio not initialized properly.");
+            return;
+        }
+
+        mNativeInterface.setAllowlistFlag(device, allowed);
     }
 
     /**

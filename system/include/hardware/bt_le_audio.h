@@ -476,6 +476,9 @@ public:
   /* Set In call flag */
   virtual void SetInCall(bool in_call) = 0;
 
+  /* Set allowlist flag for the LeAudio device */
+  virtual void SetAllowlistFlag(const RawAddress& address, bool allowed) = 0;
+
   /* Set Sink listening mode flag */
   virtual void SetUnicastMonitorMode(uint8_t local_directions, bool enable) = 0;
 

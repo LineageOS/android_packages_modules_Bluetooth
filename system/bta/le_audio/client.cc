@@ -1465,6 +1465,17 @@ public:
     }
   }
 
+  void SetAllowlistFlag(const RawAddress& address, bool allowed) override {
+    log::info("{}: {}", address, allowed ? "allowed" : "not allowed");
+    auto leAudioDevice = leAudioDevices_.FindByAddress(address);
+    if (leAudioDevice == nullptr) {
+      log::warn("{} is null", address);
+      return;
+    }
+
+    leAudioDevice->allowlist_flag_ = allowed;
+  }
+
   bool IsInCall() override { return audioContextTypeManager_->IsInCall(); }
 
   void SetInVoipCall(bool in_call) override {
@@ -2860,8 +2871,10 @@ public:
 
     lockConnParamsForStreaming(leAudioDevice);
 
-    /* Check if the device is in allow list and update the flag */
-    leAudioDevice->UpdateDeviceAllowlistFlag();
+    if (!com_android_bluetooth_flags_leaudio_allowlist_refactor()) {
+      /* Check if the device is in allow list and update the flag */
+      leAudioDevice->UpdateDeviceAllowlistFlag();
+    }
     if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(address)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT) */

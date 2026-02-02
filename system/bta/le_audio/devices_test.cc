@@ -212,6 +212,7 @@ TEST_F(LeAudioDevicesTest, test_find_by_conn_id_failed) {
   ASSERT_EQ(nullptr, devices_->FindByConnId(0x0006));
 }
 
+// TODO: will remove when Flags.leaudioAllowlistRefactor() publish
 TEST_F(LeAudioDevicesTest, test_get_device_model_name_success) {
   RawAddress test_address_0 = GetTestAddress(0);
   devices_->Add(test_address_0, DeviceConnectState::CONNECTING_BY_USER);
@@ -224,6 +225,7 @@ TEST_F(LeAudioDevicesTest, test_get_device_model_name_success) {
   ASSERT_EQ("", device->model_name_);
 }
 
+// TODO: will remove when Flags.leaudioAllowlistRefactor() publish
 TEST_F(LeAudioDevicesTest, test_get_device_model_name_failed) {
   RawAddress test_address_0 = GetTestAddress(0);
   devices_->Add(test_address_0, DeviceConnectState::CONNECTING_BY_USER);
