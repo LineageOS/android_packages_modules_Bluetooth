@@ -1168,12 +1168,6 @@ public class HeadsetService extends ConnectableProfile {
                                 + " as active, device is not connected");
                 return false;
             }
-            if (mSystemInterface.isScoManagedByAudioEnabled()
-                    && mActiveDevice != null
-                    && !mActiveDevice.equals(mExposedActiveDevice)) {
-                Log.e(TAG, "Already processing an active device change");
-                return false;
-            }
             if (!mNativeInterface.setActiveDevice(device)) {
                 Log.e(TAG, "setActiveDevice: Cannot set " + device + " as active in native layer");
                 return false;
