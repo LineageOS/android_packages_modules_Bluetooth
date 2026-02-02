@@ -163,17 +163,13 @@ void AclManagerLeImpl::dump(OutputT&& out) const {
   auto& accept_list = le_impl_.accept_list;
   const auto le_connectability_state_text =
           connectability_state_machine_text(le_impl_.connectability_state_);
-  const auto le_create_connection_timeout_alarms_count =
-          le_impl_.create_connection_timeout_alarms_.size();
 
   std::format_to(out, "\nACL Manager Dumpsys:\n");
   std::format_to(out,
                  "    le_connectability_state: \"{}\"\n"
-                 "    le_create_connection_timeout_alarms_count: {}\n"
                  "    le_filter_accept_list_count: {}\n"
                  "    le_filter_accept_list: [",
-                 le_connectability_state_text, le_create_connection_timeout_alarms_count,
-                 accept_list.size());
+                 le_connectability_state_text, accept_list.size());
   for (const auto& it : accept_list) {
     std::format_to(out, "\n        \"{}\",", it.ToString());
   }
