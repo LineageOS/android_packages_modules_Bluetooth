@@ -5,6 +5,7 @@ use crate::bluetooth::{
 };
 use crate::bluetooth_media::BluetoothMedia;
 use crate::callbacks::Callbacks;
+use crate::uuid::Profile;
 use crate::{BluetoothGatt, Message, RPCProxy};
 use bt_topshim::btif::{BluetoothInterface, BtStatus, RawAddress};
 use bt_topshim::metrics;
@@ -103,6 +104,7 @@ pub enum SuspendActions {
     SuspendReady(i32),
     ResumeReady(i32),
     AudioReconnectOnResumeComplete,
+    ProfileDisconnected(RawAddress, Profile),
     DeviceDisconnected(RawAddress),
 }
 
@@ -119,8 +121,10 @@ struct SuspendState {
     suspend_id: Option<i32>,
     wake_allowed: bool,
 
-    disconnect_expected: HashSet<RawAddress>,
-    disconnect_timeout_timer: Option<JoinHandle<()>>,
+    disconnect_profile_expected: HashSet<(RawAddress, Profile)>,
+    disconnect_profile_timer: Option<JoinHandle<()>>,
+    disconnect_acl_expected: HashSet<RawAddress>,
+    disconnect_acl_timer: Option<JoinHandle<()>>,
 
     delay_timer: Option<JoinHandle<()>>,
 }
@@ -131,15 +135,19 @@ impl SuspendState {
             suspend_expected: false,
             suspend_id: None,
             wake_allowed: false,
-            disconnect_expected: HashSet::default(),
-            disconnect_timeout_timer: None,
+            disconnect_profile_expected: HashSet::default(),
+            disconnect_profile_timer: None,
+            disconnect_acl_expected: HashSet::default(),
+            disconnect_acl_timer: None,
             delay_timer: None,
         }
     }
 
     // The tasks should remove their timer when they are done, so if all are None then we're ready.
     fn ready_to_suspend(&self) -> bool {
-        self.delay_timer.is_none() && self.disconnect_timeout_timer.is_none()
+        self.delay_timer.is_none()
+            && self.disconnect_profile_timer.is_none()
+            && self.disconnect_acl_timer.is_none()
     }
 }
 
@@ -205,6 +213,9 @@ impl Suspend {
             SuspendActions::AudioReconnectOnResumeComplete => {
                 self.audio_reconnect_complete();
             }
+            SuspendActions::ProfileDisconnected(addr, profile) => {
+                self.profile_disconnected(addr, profile);
+            }
             SuspendActions::DeviceDisconnected(addr) => {
                 self.device_disconnected(addr);
             }
@@ -252,16 +263,80 @@ impl Suspend {
         self.audio_reconnect_joinhandle = None;
     }
 
+    fn profile_disconnected(&mut self, addr: RawAddress, profile: Profile) {
+        let mut suspend_state = self.suspend_state.lock().unwrap();
+        if !suspend_state.disconnect_profile_expected.remove(&(addr, profile)) {
+            // Not interested device/profile, or we are not suspending.
+            return;
+        }
+        if !suspend_state.disconnect_profile_expected.is_empty() {
+            return;
+        }
+        if let Some(h) = suspend_state.disconnect_profile_timer.take() {
+            h.abort();
+        }
+
+        Self::all_profiles_disconnected(
+            self.tx.clone(),
+            &mut suspend_state,
+            self.suspend_state.clone(),
+            self.intf.clone(),
+            self.bt.clone(),
+        );
+    }
+
+    fn all_profiles_disconnected(
+        tx: Sender<Message>,
+        suspend_state: &mut MutexGuard<SuspendState>,
+        suspend_state_cloned: Arc<Mutex<SuspendState>>,
+        intf: Arc<Mutex<BluetoothInterface>>,
+        bt: Arc<Mutex<Box<Bluetooth>>>,
+    ) {
+        // Disconnect all ACLs and wait until all devices have disconnected.
+        if let Some(h) = suspend_state.disconnect_acl_timer.take() {
+            log::warn!("Suspend: Found a leftover timer for disconnect");
+            h.abort();
+        }
+        suspend_state.disconnect_acl_expected = HashSet::from_iter(
+            bt.lock().unwrap().get_connected_devices().iter().map(|d| d.address),
+        );
+
+        if suspend_state.disconnect_acl_expected.is_empty() {
+            // No need to set a timeout timer as no disconnection is expected.
+            Self::all_acls_disconnected(tx, suspend_state, suspend_state_cloned, intf);
+        } else {
+            intf.lock().unwrap().disconnect_all_acls();
+            suspend_state.disconnect_acl_timer = Some(tokio::spawn(async move {
+                time::sleep(Duration::from_millis(2000)).await;
+                log::error!("Suspend disconnect did not complete in 2s, continuing anyway.");
+                let mut suspend_state = suspend_state_cloned.lock().unwrap();
+                // Cleanup disconnect_acl_expected so |device_disconnected| won't be triggered.
+                suspend_state.disconnect_acl_expected = HashSet::default();
+                // Continue the suspend. There might be some disconnection events later and if the
+                // device is not in the lid-closed state, the device might be awaken. This shall be
+                // a really rare case and it's hard to handle as setting a event mask could break
+                // the state machine in LibBluetooth.
+                // We could consider increase the timeout in the future if this happens too often.
+                Self::all_acls_disconnected(
+                    tx,
+                    &mut suspend_state,
+                    suspend_state_cloned.clone(),
+                    intf,
+                );
+            }));
+        }
+    }
+
     fn device_disconnected(&mut self, addr: RawAddress) {
         let mut suspend_state = self.suspend_state.lock().unwrap();
-        if !suspend_state.disconnect_expected.remove(&addr) {
+        if !suspend_state.disconnect_acl_expected.remove(&addr) {
             // Not interested device, or we are not suspending.
             return;
         }
-        if !suspend_state.disconnect_expected.is_empty() {
+        if !suspend_state.disconnect_acl_expected.is_empty() {
             return;
         }
-        if let Some(h) = suspend_state.disconnect_timeout_timer.take() {
+        if let Some(h) = suspend_state.disconnect_acl_timer.take() {
             h.abort();
         }
         Self::all_acls_disconnected(
@@ -288,15 +363,15 @@ impl Suspend {
     ) {
         let suspend_id = suspend_state
             .suspend_id
-            .expect("life cycle of suspend_id must be longer than disconnect_timeout_timer");
+            .expect("life cycle of suspend_id must be longer than disconnect_acl_timer");
         let wake_allowed = suspend_state.wake_allowed;
-        suspend_state.disconnect_timeout_timer = Some(tokio::spawn(async move {
+        suspend_state.disconnect_acl_timer = Some(tokio::spawn(async move {
             if wake_allowed {
                 intf.lock().unwrap().allow_wake_by_hid();
                 // Allow wake is async. Wait for a little while.
                 time::sleep(Duration::from_millis(SUSPEND_READY_DELAY_MS)).await;
             }
-            suspend_state_cloned.lock().unwrap().disconnect_timeout_timer = None;
+            suspend_state_cloned.lock().unwrap().disconnect_acl_timer = None;
             let _result =
                 tx.send(Message::SuspendActions(SuspendActions::SuspendReady(suspend_id))).await;
         }));
@@ -334,9 +409,9 @@ impl ISuspend for Suspend {
         suspend_state.wake_allowed =
             matches!(suspend_type, SuspendType::AllowWakeFromHid | SuspendType::Other);
 
+        self.intf.lock().unwrap().set_suspend_state(true);
         self.bt.lock().unwrap().scan_mode_enter_suspend();
         self.intf.lock().unwrap().clear_event_filter();
-        self.intf.lock().unwrap().clear_filter_accept_list();
 
         self.bt.lock().unwrap().discovery_enter_suspend();
         self.gatt.lock().unwrap().advertising_enter_suspend();
@@ -375,38 +450,51 @@ impl ISuspend for Suspend {
                 tx.send(Message::SuspendActions(SuspendActions::SuspendReady(suspend_id))).await;
         }));
 
-        // Disconnect all ACLs and wait until all devices have disconnected.
-        if let Some(h) = suspend_state.disconnect_timeout_timer.take() {
-            log::warn!("Suspend: Found a leftover timer for disconnect");
+        // Disconnect relevant profiles and wait until all of them are disconnected.
+        if let Some(h) = suspend_state.disconnect_profile_timer.take() {
+            log::warn!("Suspend: Found a leftover profile timer for disconnect");
             h.abort();
         }
-        suspend_state.disconnect_expected = HashSet::from_iter(
-            self.bt.lock().unwrap().get_connected_devices().iter().map(|d| d.address),
-        );
+
+        suspend_state.disconnect_profile_expected.clear();
+
+        let hogp_devices = self.bt.lock().unwrap().get_all_hogp_devices();
+        for (address, connected) in hogp_devices {
+            if connected {
+                suspend_state.disconnect_profile_expected.insert((address, Profile::Hogp));
+            }
+        }
+
+        self.bt.lock().unwrap().hogp_enter_suspend(suspend_state.wake_allowed);
+
         let tx = self.tx.clone();
         let suspend_state_cloned = self.suspend_state.clone();
         let intf_cloned = self.intf.clone();
-        if suspend_state.disconnect_expected.is_empty() {
+        let bt_cloned = self.bt.clone();
+        if suspend_state.disconnect_profile_expected.is_empty() {
             // No need to set a timeout timer as no disconnection is expected.
-            Self::all_acls_disconnected(tx, &mut suspend_state, suspend_state_cloned, intf_cloned);
+            Self::all_profiles_disconnected(
+                tx,
+                &mut suspend_state,
+                suspend_state_cloned,
+                intf_cloned,
+                bt_cloned,
+            );
         } else {
-            self.intf.lock().unwrap().disconnect_all_acls();
-            suspend_state.disconnect_timeout_timer = Some(tokio::spawn(async move {
+            suspend_state.disconnect_profile_timer = Some(tokio::spawn(async move {
                 time::sleep(Duration::from_millis(2000)).await;
-                log::error!("Suspend disconnect did not complete in 2s, continuing anyway.");
+                log::error!(
+                    "Suspend disconnect profile did not complete in 2s, continuing anyway."
+                );
                 let mut suspend_state = suspend_state_cloned.lock().unwrap();
-                // Cleanup disconnect_expected so |device_disconnected| won't be triggered.
-                suspend_state.disconnect_expected = HashSet::default();
-                // Continue the suspend. There might be some disconnection events later and if the
-                // device is not in the lid-closed state, the device might be awaken. This shall be
-                // a really rare case and it's hard to handle as setting a event mask could break
-                // the state machine in LibBluetooth.
-                // We could consider increase the timeout in the future if this happens too often.
-                Self::all_acls_disconnected(
+                // Cleanup disconnect_profile_expected so |device_disconnected| won't be triggered.
+                suspend_state.disconnect_profile_expected = HashSet::default();
+                Self::all_profiles_disconnected(
                     tx,
                     &mut suspend_state,
                     suspend_state_cloned.clone(),
                     intf_cloned,
+                    bt_cloned,
                 );
             }));
         }
@@ -439,12 +527,11 @@ impl ISuspend for Suspend {
         let hci_index = self.bt.lock().unwrap().get_hci_index();
         notify_suspend_state(hci_index, false);
 
-        self.intf.lock().unwrap().set_default_event_mask_except(0u64, 0u64);
-
-        // Restore event filter and accept list to normal.
+        self.intf.lock().unwrap().set_suspend_state(false);
         self.intf.lock().unwrap().clear_event_filter();
-        self.intf.lock().unwrap().restore_filter_accept_list();
         self.bt.lock().unwrap().scan_mode_exit_suspend();
+
+        self.bt.lock().unwrap().hogp_exit_suspend();
 
         if !self.audio_reconnect_list.is_empty() {
             let reconnect_list = self.audio_reconnect_list.clone();

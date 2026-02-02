@@ -75,6 +75,7 @@ public:
   int restore_filter_accept_list() const;
   int allow_wake_by_hid() const;
   int set_event_filter_connection_setup_all_devices() const;
+  int set_suspend_state(bool suspend) const;
   bool get_wbs_supported() const;
   bool get_swb_supported() const;
   bool is_coding_format_supported(uint8_t coding_format) const;
