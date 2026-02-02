@@ -42,7 +42,6 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.GET_PERMISSIONS
-import android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES
 import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
@@ -285,11 +284,14 @@ object Util {
 
         // Check the last attribution in the chain for a neverForLocation disavowal.
         val packageName = currentAttrib.packageName
-        val pm = context.packageManager
+
+        // Previous check must have enforced isSameProfileGroup(currentAttrib.uid, myUserHandle)
+        val pm =
+            context
+                .createContextAsUser(UserHandle.getUserHandleForUid(currentAttrib.uid), 0)
+                .packageManager
         try {
-            // TODO(b/183478032): Cache PackageInfo for use here.
-            val pkgInfo =
-                pm.getPackageInfo(packageName!!, GET_PERMISSIONS or MATCH_UNINSTALLED_PACKAGES)
+            val pkgInfo = pm.getPackageInfo(packageName!!, GET_PERMISSIONS)
             for (i in pkgInfo.requestedPermissions!!.indices) {
                 if (pkgInfo.requestedPermissions!![i] == BLUETOOTH_SCAN) {
                     return (pkgInfo.requestedPermissionsFlags!![i] and
