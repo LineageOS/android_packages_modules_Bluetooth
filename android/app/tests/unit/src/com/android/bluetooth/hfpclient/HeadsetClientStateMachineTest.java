@@ -74,9 +74,9 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
-import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
+import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
@@ -804,8 +804,7 @@ public class HeadsetClientStateMachineTest {
 
     @Test
     public void testGetConnectionState_withNonNullDevice() {
-        assertThat(mHeadsetClientStateMachine.getConnectionState())
-                .isEqualTo(STATE_DISCONNECTED);
+        assertThat(mHeadsetClientStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
     }
 
     @Test
@@ -1041,16 +1040,14 @@ public class HeadsetClientStateMachineTest {
     @Test
     public void testProcessDisconnectMessage_onDisconnectedState() {
         sendMessage(HeadsetClientStateMachine.DISCONNECT);
-        assertThat(mHeadsetClientStateMachine.getConnectionState())
-                .isEqualTo(STATE_DISCONNECTED);
+        assertThat(mHeadsetClientStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
     }
 
     @Test
     public void testProcessConnectMessage_onDisconnectedState() {
         doReturn(true).when(mNativeInterface).connect(any(BluetoothDevice.class));
         sendMessageAndVerifyTransition(
-                mHeadsetClientStateMachine.obtainMessage(
-                        HeadsetClientStateMachine.CONNECT),
+                mHeadsetClientStateMachine.obtainMessage(HeadsetClientStateMachine.CONNECT),
                 HeadsetClientStateMachine.Connecting.class);
     }
 
@@ -1498,8 +1495,7 @@ public class HeadsetClientStateMachineTest {
     private void initToDisconnectingState() {
         initToConnectedState();
         sendMessageAndVerifyTransition(
-                mHeadsetClientStateMachine.obtainMessage(
-                        HeadsetClientStateMachine.DISCONNECT),
+                mHeadsetClientStateMachine.obtainMessage(HeadsetClientStateMachine.DISCONNECT),
                 HeadsetClientStateMachine.Disconnecting.class);
     }
 

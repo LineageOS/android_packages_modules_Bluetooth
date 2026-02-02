@@ -22,7 +22,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
@@ -359,8 +358,9 @@ public class HfpClientConnectionService extends ConnectionService {
                         new ComponentName(this, HfpClientConnectionService.class),
                         device.getAddress());
 
-        int capabilities = PhoneAccount.CAPABILITY_CALL_PROVIDER
-                | PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS;
+        int capabilities =
+                PhoneAccount.CAPABILITY_CALL_PROVIDER
+                        | PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS;
 
         PhoneAccount account =
                 new PhoneAccount.Builder(handle, "HFP " + device.toString())

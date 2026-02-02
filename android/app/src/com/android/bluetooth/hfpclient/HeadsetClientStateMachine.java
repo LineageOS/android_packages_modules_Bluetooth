@@ -555,8 +555,7 @@ public class HeadsetClientStateMachine extends StateMachine {
         debug("queryCallsUpdate: " + id);
         mCallsUpdate.put(
                 id,
-                new HfpClientCall(
-                        mDevice, id, state, number, multiParty, outgoing, mInBandRing));
+                new HfpClientCall(mDevice, id, state, number, multiParty, outgoing, mInBandRing));
     }
 
     private void acceptCall(int flag) {
