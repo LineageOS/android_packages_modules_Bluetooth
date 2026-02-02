@@ -106,5 +106,11 @@ public final class AbstractionLayer {
     static final int BT_PAIRING_INITIATOR_CTKD = 3;
     static final int BT_PAIRING_INITIATOR_REPAIRING = 4;
 
+    static final int BT_PAIRING_ALGORITHM_NONE = 0;
+    static final int BT_PAIRING_ALGORITHM_LE_LEGACY = 1;
+    static final int BT_PAIRING_ALGORITHM_BREDR_LEGACY = 2;
+    static final int BT_PAIRING_ALGORITHM_SSP = 3;
+    static final int BT_PAIRING_ALGORITHM_SC = 4;
+
     private AbstractionLayer() {}
 }

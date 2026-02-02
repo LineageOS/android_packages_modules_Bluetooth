@@ -1148,8 +1148,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
       uint8_t bredr_pairing_type_value[2];
       auto bredr_pairing_type = btif_storage_get_bredr_pairing_type(remote_addr);
       if (bredr_pairing_type.has_value()) {
-        bredr_pairing_type_value[0] = static_cast<uint8_t>(
-                map_pairing_algo_to_api(bredr_pairing_type.value().algorithm, BT_TRANSPORT_BR_EDR));
+        bredr_pairing_type_value[0] = static_cast<uint8_t>(bredr_pairing_type.value().algorithm);
         bredr_pairing_type_value[1] = static_cast<uint8_t>(bredr_pairing_type.value().variant);
         remote_properties[num_props].type = BT_PROPERTY_BREDR_PAIRING_TYPE;
         remote_properties[num_props].len = sizeof(bredr_pairing_type_value);
@@ -1160,8 +1159,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
       uint8_t le_pairing_type_value[2];
       auto le_pairing_type = btif_storage_get_ble_pairing_type(remote_addr);
       if (le_pairing_type.has_value()) {
-        le_pairing_type_value[0] = static_cast<uint8_t>(
-                map_pairing_algo_to_api(le_pairing_type.value().algorithm, BT_TRANSPORT_LE));
+        le_pairing_type_value[0] = static_cast<uint8_t>(le_pairing_type.value().algorithm);
         le_pairing_type_value[1] = static_cast<uint8_t>(le_pairing_type.value().variant);
         remote_properties[num_props].type = BT_PROPERTY_LE_PAIRING_TYPE;
         remote_properties[num_props].len = sizeof(le_pairing_type_value);
