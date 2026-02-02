@@ -1071,6 +1071,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
   // doesn't store variant, and have nothing for BLE only devices.
   std::optional<PairingType> existing_pairing_type = btif_storage_get_bredr_pairing_type(bd_addr);
   if (is_autonomous_repairing_supported() && existing_pairing_type.has_value() &&
+      btm_is_bond_lost(bd_addr) &&
       compare_pairing_type_for_downgrade(existing_pairing_type.value(), pairing_cb.pairing_type)) {
     // Reject the re-pairing.
     btif_dm_pin_reply(bd_addr, /*accept=*/0, 0, bt_pin_code_t{});
@@ -1157,6 +1158,7 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   // doesn't store variant, and have nothing for BLE only devices.
   std::optional<PairingType> existing_pairing_type = btif_storage_get_bredr_pairing_type(bd_addr);
   if (is_autonomous_repairing_supported() && existing_pairing_type.has_value() &&
+      btm_is_bond_lost(bd_addr) &&
       compare_pairing_type_for_downgrade(existing_pairing_type.value(), pairing_cb.pairing_type)) {
     // Reject the re-pairing.
     btif_dm_ssp_reply(bd_addr, PairingVariant::PASSKEY_CONFIRMATION, /*accept=*/0);
@@ -3746,6 +3748,7 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
   // doesn't store variant, and have nothing for BLE only devices.
   std::optional<PairingType> existing_pairing_type = btif_storage_get_ble_pairing_type(bd_addr);
   if (is_autonomous_repairing_supported() && existing_pairing_type.has_value() &&
+      btm_is_bond_lost(bd_addr) &&
       compare_pairing_type_for_downgrade(existing_pairing_type.value(), pairing_cb.pairing_type)) {
     // Reject the re-pairing.
     btif_dm_ssp_reply(bd_addr, PairingVariant::PASSKEY_CONFIRMATION, /*accept=*/0);
@@ -4081,6 +4084,7 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
     // doesn't store variant, and have nothing for BLE only devices.
     std::optional<PairingType> existing_pairing_type = btif_storage_get_ble_pairing_type(bd_addr);
     if (is_autonomous_repairing_supported() && existing_pairing_type.has_value() &&
+        btm_is_bond_lost(bd_addr) &&
         compare_pairing_type_for_downgrade(existing_pairing_type.value(),
                                            pairing_cb.pairing_type)) {
       // Reject the re-pairing.
@@ -4134,6 +4138,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_passkey_req) {
   // doesn't store variant, and have nothing for BLE only devices.
   std::optional<PairingType> existing_pairing_type = btif_storage_get_ble_pairing_type(bd_addr);
   if (is_autonomous_repairing_supported() && existing_pairing_type.has_value() &&
+      btm_is_bond_lost(bd_addr) &&
       compare_pairing_type_for_downgrade(existing_pairing_type.value(), pairing_cb.pairing_type)) {
     // Reject the re-pairing.
     btif_dm_pin_reply(bd_addr, /*accept=*/0, 0, bt_pin_code_t{});
@@ -4171,6 +4176,7 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   // doesn't store variant, and have nothing for BLE only devices.
   std::optional<PairingType> existing_pairing_type = btif_storage_get_ble_pairing_type(bd_addr);
   if (is_autonomous_repairing_supported() && existing_pairing_type.has_value() &&
+      btm_is_bond_lost(bd_addr) &&
       compare_pairing_type_for_downgrade(existing_pairing_type.value(), pairing_cb.pairing_type)) {
     // Reject the re-pairing.
     btif_dm_ssp_reply(bd_addr, PairingVariant::PASSKEY_CONFIRMATION, /*accept=*/0);
