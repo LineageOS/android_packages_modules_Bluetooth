@@ -60,10 +60,13 @@ class Property(enum.StrEnum):
     HAP_CLIENT_ENABLED = "bluetooth.profile.hap.client.enabled"
     HFP_AG_ENABLED = "bluetooth.profile.hfp.ag.enabled"
     HFP_HF_ENABLED = "bluetooth.profile.hfp.hf.enabled"
-    VAPS_SERVER_ENABLED = "bluetooth.profile.vap.server.enabled"
+    VAP_SERVER_ENABLED = "bluetooth.profile.vap.server.enabled"
     # LE Audio.
     LEAUDIO_BYPASS_ALLOW_LIST = "persist.bluetooth.leaudio.bypass_allow_list"
     LEAUDIO_ALLOW_LIST = "persist.bluetooth.leaudio.allow_list"
+    # HFP.
+    SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio"
+    SW_PATH_ENABLED = "bluetooth.hfp.software_datapath.enabled"
 
 
 class Transport(enum.IntEnum):
@@ -940,3 +943,20 @@ class AudioDeviceRole(enum.IntEnum):
 
     INPUT = 1
     OUTPUT = 2
+
+
+class MediaPlaybackState(enum.IntEnum):
+    """androidx.media3.session.legacy.PlaybackStateCompat.STATE_*."""
+
+    NONE = 0
+    STOPPED = 1
+    PAUSED = 2
+    PLAYING = 3
+    FAST_FORWARDING = 4
+    REWINDING = 5
+    BUFFERING = 6
+    ERROR = 7
+    CONNECTING = 8
+    SKIPPING_TO_PREVIOUS = 9
+    SKIPPING_TO_NEXT = 10
+    SKIPPING_TO_QUEUE_ITEM = 11

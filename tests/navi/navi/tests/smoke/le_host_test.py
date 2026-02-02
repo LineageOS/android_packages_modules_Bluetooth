@@ -663,7 +663,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             self.skipTest("DUT does not support LE subrating.")
 
         ref_connection.once(
-            ref_connection.EVENT_LE_SUBRATE_CHANGE,
+            ref_connection.EVENT_CONNECTION_PARAMETERS_UPDATE,
             lambda: ref_subrate_changed.set_result(None),
         )
         self.logger.info("[DUT] Request subrate mode.")

@@ -86,6 +86,36 @@ try:
     SUPPORT_AUDIO_PROCESSING = True
 except ImportError:
     _logger.warning('Audio processing libraries are not available.')
+    import math
+    import struct
+
+    def generate_sine_tone(
+        frequency: float,
+        duration: float = 1.0,
+        sample_rate: int = 48000,
+        data_type: str = 'int16',
+    ) -> bytes:
+        """Generates a sine tone PCM buffer.
+
+    Args:
+      frequency: The frequency of the sine tone.
+      duration: The duration of the sine tone in seconds.
+      sample_rate: The sample rate of the sine tone.
+      data_type: The data type of the sine tone.
+
+    Returns:
+      The sine tone PCM buffer.
+    """
+        if data_type != 'int16':
+            raise NotImplementedError(f'Only int16 is supported without numpy, but got {data_type}')
+        num_samples = int(sample_rate * duration)
+        max_amplitude = 32767
+        return b''.join(
+            struct.pack(
+                '<h',
+                int(max_amplitude * math.sin(2 * math.pi * frequency * i / sample_rate)),
+            ) for i in range(num_samples))
+
     SUPPORT_AUDIO_PROCESSING = False
 
 _T = TypeVar('_T')

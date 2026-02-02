@@ -429,6 +429,9 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def audioSetRepeat(self, repeatMode: int, player_id: str | None = None) -> None:
         ...
 
+    def setShuffleMode(self, enabled: bool, player_id: str | None = None) -> None:
+        ...
+
     def audioResume(self, player_id: str | None = None) -> None:
         ...
 
@@ -461,7 +464,10 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def getCommunicationDevice(self) -> dict[str, Any] | None:
         ...
 
-    def addMediaItem(self, fileUri: str, player_id: str | None = None) -> None:
+    def addMediaItem(self, media_item: dict[str, Any], player_id: str | None = None) -> None:
+        ...
+
+    def playMediaItem(self, media_item: dict[str, Any], player_id: str | None = None) -> None:
         ...
 
     def setAudioPlaybackOffload(self, enabled: bool, player_id: str | None = None) -> None:
@@ -534,6 +540,13 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     def getHeadtrackerEnabled(self, role: int, device_type: int, address: str) -> bool:
+        ...
+
+    def getSupportedAudioDeviceTypes(self,
+                                     direction: android_constants.AudioDeviceRole) -> list[int]:
+        ...
+
+    def isVolumeFixed(self) -> bool:
         ...
 
     # Telecom
@@ -859,4 +872,49 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
 
     # ASHA
     def setAshaVolume(self, volume: int) -> None:
+        ...
+
+    # Media Browser Service
+    def registerMediaLibrarySession(
+            self, media_tree: dict[str, Any]) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def unregisterMediaLibrarySession(self, callback_id: str) -> None:
+        ...
+
+    # Media Browser
+    def connectMediaBrowser(self, package_name: str, service_class_name: str) -> str:
+        ...
+
+    def disconnectMediaBrowser(self, cookie: str) -> None:
+        ...
+
+    def getMediaBrowserRootId(self, cookie: str) -> str:
+        ...
+
+    def getMediaBrowserChildren(self, cookie: str, media_id: str) -> list[dict[str, Any]]:
+        ...
+
+    def playMediaController(self, cookie: str) -> None:
+        ...
+
+    def pauseMediaController(self, cookie: str) -> None:
+        ...
+
+    def stopMediaController(self, cookie: str) -> None:
+        ...
+
+    def skipToNextMediaController(self, cookie: str) -> None:
+        ...
+
+    def skipToPreviousMediaController(self, cookie: str) -> None:
+        ...
+
+    def fastForwardMediaController(self, cookie: str) -> None:
+        ...
+
+    def rewindMediaController(self, cookie: str) -> None:
+        ...
+
+    def registerMediaControllerCallback(self, cookie: str) -> callback_handler_v2.CallbackHandlerV2:
         ...

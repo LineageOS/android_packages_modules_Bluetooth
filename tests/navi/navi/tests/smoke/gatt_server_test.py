@@ -173,7 +173,11 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
             )
             self.assertEqual(await read_task, expected_data)
 
-    async def test_handle_characteristic_write_request(self) -> None:
+    @navi_test_base.named_parameterized(
+        with_response=True,
+        without_response=False,
+    )
+    async def test_handle_characteristic_write_request(self, with_response: bool) -> None:
         """Tests handling a characteristic write request.
 
     Test steps:
@@ -183,7 +187,12 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
       3. Write characteristic from REF.
       4. Handle the write request and send response from DUT.
       5. Check write result from REF.
+
+    Args:
+      with_response: Whether to test write with response or without response. If
+        True, test write with response; otherwise, test write without response.
     """
+
         # UUID must be random here, otherwise there might be interference when
         # multiple tests run in the same box.
         service_uuid = str(uuid.uuid4())
@@ -196,7 +205,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
                 characteristics=[
                     bl4a_api.GattCharacteristic(
                         uuid=characteristic_uuid,
-                        properties=_Property.WRITE,
+                        properties=_Property.WRITE | _Property.WRITE_NO_RESPONSE,
                         permissions=_Permission.WRITE,
                     )
                 ],
@@ -212,13 +221,14 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Write characteristic.")
             expected_data = secrets.token_bytes(16)
             write_task = asyncio.create_task(
-                characteristic.write_value(expected_data, with_response=True))
+                characteristic.write_value(expected_data, with_response=with_response))
 
             write_request = await self.dut_gatt_server.wait_for_event(
                 event=bl4a_api.GattCharacteristicWriteRequest,
                 predicate=lambda request: (request.characteristic_uuid == characteristic_uuid),
             )
             self.assertEqual(write_request.value, expected_data)
+            self.assertEqual(write_request.response_needed, with_response)
 
             self.dut_gatt_server.send_response(
                 address=write_request.address,
@@ -228,8 +238,12 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
             )
             await write_task
 
-    async def test_notify(self) -> None:
-        """Tests sending GATT notification.
+    @navi_test_base.named_parameterized(
+        notify=True,
+        indicate=False,
+    )
+    async def test_handle_subscription(self, is_notify: bool) -> None:
+        """Tests sending GATT notification / indication to REF.
 
     Test steps:
       1. Add a GATT service including a characteristic to the server instance.
@@ -237,7 +251,12 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
       3. Handle the subscribe request (CCCD write) from DUT.
       4. Send notification from DUT.
       5. Check notification from REF.
+
+    Args:
+      is_notify: Whether to test notification or indication. If True, send
+        notification; otherwise, send indication.
     """
+
         # UUID must be random here, otherwise there might be interference when
         # multiple tests run in the same box.
         service_uuid = str(uuid.uuid4())
@@ -250,7 +269,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
                 characteristics=[
                     bl4a_api.GattCharacteristic(
                         uuid=characteristic_uuid,
-                        properties=_Property.READ | _Property.NOTIFY,
+                        properties=(_Property.READ | _Property.NOTIFY | _Property.INDICATE),
                         permissions=_Permission.READ,
                         descriptors=[
                             bl4a_api.GattDescriptor(
@@ -277,7 +296,8 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
             notification_queue = asyncio.Queue[bytes]()
             expected_data = secrets.token_bytes(16)
             subscribe_task = asyncio.create_task(
-                ref_characteristic.subscribe(notification_queue.put_nowait))
+                ref_characteristic.subscribe(notification_queue.put_nowait,
+                                             prefer_notify=is_notify))
 
             self.logger.info("[DUT] Wait for CCCD write.")
             subscribe_request = await self.dut_gatt_server.wait_for_event(
@@ -302,7 +322,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
             self.dut_gatt_server.send_notification(
                 address=self.ref.random_address,
                 characteristic_handle=dut_characteristic.handle,
-                confirm=False,
+                confirm=not is_notify,
                 value=expected_data,
             )
 

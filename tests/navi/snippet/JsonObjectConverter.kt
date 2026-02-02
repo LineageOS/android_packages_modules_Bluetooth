@@ -36,6 +36,9 @@ import android.telecom.Call
 import android.util.Base64
 import androidx.core.util.forEach
 import androidx.media3.common.AudioAttributes
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.session.legacy.MediaBrowserCompat
 import com.google.android.bluetooth.snippet.Utils.getOrNull
 import com.google.android.bluetooth.snippet.Utils.toList
 import com.google.android.bluetooth.snippet.Utils.toMap
@@ -475,6 +478,38 @@ class JsonObjectConverter : SnippetObjectConverter {
         return BluetoothHidDeviceAppSdpSettings(name, description, provider, subclass, descriptors)
     }
 
+    private fun JSONObject.toMediaItem(): MediaItem =
+        MediaItem.Builder()
+            .apply {
+                getOrNull<String>(SnippetConstants.URI)?.let { setUri(it) }
+                getOrNull<String>(SnippetConstants.FIELD_ID)?.let { setMediaId(it) }
+                setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .apply {
+                            getOrNull<String>(SnippetConstants.TITLE)?.let { setTitle(it) }
+                            getOrNull<String>(SnippetConstants.ARTIST)?.let { setArtist(it) }
+                            getOrNull<String>(SnippetConstants.ALBUM)?.let { setAlbumTitle(it) }
+                            getOrNull<Boolean>(SnippetConstants.FIELD_BROWSABLE)?.let {
+                                setIsBrowsable(it)
+                            }
+                            getOrNull<Boolean>(SnippetConstants.FIELD_PLAYABLE)?.let {
+                                setIsPlayable(it)
+                            }
+                        }
+                        .build()
+                )
+            }
+            .build()
+
+    private fun JSONObject.toMediaNode(): Utils.MediaNode {
+        val item = toMediaItem()
+        val children =
+            optJSONArray(SnippetConstants.FIELD_CHILDREN)?.toList<JSONObject>()?.map {
+                it.toMediaNode()
+            } ?: listOf()
+        return Utils.MediaNode(item, children)
+    }
+
     /**
      * Serializes JVM object [parameter] to a [JSONObject], or returns null if there is no viable
      * conversion.
@@ -496,6 +531,12 @@ class JsonObjectConverter : SnippetObjectConverter {
             return parameter.toJson()
         }
         if (parameter is OobData) {
+            return parameter.toJson()
+        }
+        if (parameter is MediaItem) {
+            return parameter.toJson()
+        }
+        if (parameter is MediaBrowserCompat.MediaItem) {
             return parameter.toJson()
         }
         return null
@@ -537,6 +578,33 @@ class JsonObjectConverter : SnippetObjectConverter {
         if (type === BluetoothHidDeviceAppSdpSettings::class.java) {
             return jsonObject?.toSDPSettings()
         }
+        if (type === MediaItem::class.java) {
+            return jsonObject?.toMediaItem()
+        }
+        if (type === Utils.MediaNode::class.java) {
+            return jsonObject?.toMediaNode()
+        }
         return null
+    }
+
+    companion object {
+        // Used by AudioSnippet to convert MediaItem in SnippetEvent.
+        internal fun MediaItem.toJson(): Utils.ParcelableJsonObject =
+            Utils.ParcelableJsonObject().apply {
+                put(SnippetConstants.FIELD_ID, this@toJson.mediaId)
+                put(SnippetConstants.TITLE, this@toJson.mediaMetadata.title)
+                put(SnippetConstants.ARTIST, this@toJson.mediaMetadata.artist)
+                put(SnippetConstants.URI, this@toJson.localConfiguration?.uri.toString())
+                put(SnippetConstants.FIELD_BROWSABLE, this@toJson.mediaMetadata.isBrowsable)
+                put(SnippetConstants.FIELD_PLAYABLE, this@toJson.mediaMetadata.isPlayable)
+            }
+
+        private fun MediaBrowserCompat.MediaItem.toJson(): JSONObject =
+            JSONObject().apply {
+                put(SnippetConstants.FIELD_ID, this@toJson.mediaId)
+                put(SnippetConstants.TITLE, this@toJson.description.title)
+                put(SnippetConstants.FIELD_BROWSABLE, this@toJson.isBrowsable)
+                put(SnippetConstants.FIELD_PLAYABLE, this@toJson.isPlayable)
+            }
     }
 }

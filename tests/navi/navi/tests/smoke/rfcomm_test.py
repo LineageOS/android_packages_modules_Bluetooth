@@ -28,6 +28,7 @@ from mobly import records
 from typing_extensions import override
 
 from navi.tests import navi_test_base
+from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import errors
 
@@ -275,6 +276,64 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
             ref_rfcomm = await rfcomm.Client(ref_dut_acl).start()
             with self.assertRaises(core.ConnectionError):
                 await ref_rfcomm.open_dlc(unregistered_channel)
+
+    # TODO: Remove this skip when the flag is removed.
+    @navi_test_base.TwoDevicesTestBase.require_flag(
+        "com.android.bluetooth.flags.fix_no_acl_disconnected_intent")
+    async def test_rfcomm_disconnect_trigger_acl_disconnected(self) -> None:
+        """Tests if BluetoothDevice.disconnect() triggers ACL_DISCONNECTED.
+
+    Test Steps:
+      1. DUT and REF pair and connect.
+      2. REF listens for RFCOMM connection.
+      3. DUT connects to REF via RFCOMM.
+      4. DUT triggers BluetoothDevice.disconnect().
+      5. Verify DUT receives ACTION_ACL_DISCONNECTED intent.
+    """
+        self.logger.info("[DUT] Pair and connect with REF.")
+        await self.classic_connect_and_pair()
+
+        # Step 2: REF listens for RFCOMM connection.
+        self.logger.info("[REF] Listen for RFCOMM connection.")
+        ref_accept_future = asyncio.get_running_loop().create_future()
+        channel = rfcomm.Server(self.ref.device).listen(acceptor=ref_accept_future.set_result)
+        self.ref.device.sdp_service_records[_RFCOMM_SERVICE_RECORD_HANDLE] = (
+            rfcomm.make_service_sdp_records(
+                service_record_handle=_RFCOMM_SERVICE_RECORD_HANDLE,
+                channel=channel,
+                uuid=core.UUID(_RFCOMM_UUID),
+            ))
+
+        # Step 3: DUT connects to REF via RFCOMM.
+        self.logger.info("[DUT] Connect RFCOMM to REF.")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            _, dut_ref_dlc = await asyncio.gather(
+                ref_accept_future,
+                self.dut.bl4a.create_rfcomm_channel(
+                    address=self.ref.address,
+                    secure=True,
+                    uuid=_RFCOMM_UUID,
+                ),
+            )
+
+        # Step 4: Register callback for ACL_DISCONNECTED and trigger disconnect.
+        with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
+            self.logger.info("[DUT] Trigger BluetoothDevice.disconnect().")
+            # This calls BluetoothDevice.disconnect() via the snippet.
+            self.dut.bt.disconnect(self.ref.address)
+
+            # Step 5: Verify DUT receives ACTION_ACL_DISCONNECTED intent.
+            self.logger.info("[DUT] Wait for ACL_DISCONNECTED event.")
+            await dut_cb.wait_for_event(
+                bl4a_api.AclDisconnected(
+                    address=self.ref.address,
+                    transport=android_constants.Transport.CLASSIC,
+                ),
+                timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+            )
+
+        # Cleanup: close RFCOMM if still open (it should be closed by disconnect).
+        await dut_ref_dlc.close()
 
 
 if __name__ == "__main__":
