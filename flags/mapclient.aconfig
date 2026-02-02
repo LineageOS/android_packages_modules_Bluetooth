@@ -37,4 +37,7 @@ flag {
   namespace: "bluetooth"
   description: "Use new platform APIs for sending text messages via the default messaging app"
   bug: "480317524"
+  metadata {
+      purpose: PURPOSE_BUGFIX
+  }
 }
