@@ -38,6 +38,7 @@ import android.bluetooth.toAddressBytes
 import android.bluetooth.toAddressString
 import android.content.Context
 import android.os.ParcelUuid
+import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -267,6 +268,49 @@ class PairingTest {
             hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
             hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
             hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
+
+        intentReceiver.close()
+    }
+
+    /**
+     * Test to verify the remove bond while pairing
+     * 1. Initiate BR/EDR pairing.
+     * 2. Do not approve/reject pairing from DUT/REF, and keep it idle.
+     *
+     * Expectation:
+     *
+     * Pairing should be cancelled. BOND_NONE should be received on DUT, indicating pairing failure.
+     */
+    @Test
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.cancel_pairing_while_remove_bond")
+    fun testBrEdrPairing_removeBondWhilePairing() {
+        val intentReceiver =
+            IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                )
+                .build()
+
+        assertThat(bumbleDevice.createBond()).isTrue()
+        intentReceiver.verifyReceivedOrdered(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
+
+        intentReceiver.verifyReceivedOrdered(
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
+
+        assertThat(bumbleDevice.removeBond()).isTrue()
+        intentReceiver.verifyReceivedOrdered(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE),
         )
 
         intentReceiver.close()
