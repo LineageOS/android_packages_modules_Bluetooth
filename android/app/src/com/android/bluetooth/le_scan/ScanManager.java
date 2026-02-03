@@ -447,6 +447,10 @@ public class ScanManager {
     }
 
     private void configureTimeout(ScanClient client) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            // Skip scan time out when allowance based throttling is enabled
+            return;
+        }
         if (isExemptFromScanTimeout(client)) {
             return;
         }
@@ -487,9 +491,11 @@ public class ScanManager {
         if (mSuspendedScanClients.contains(client)) {
             mSuspendedScanClients.remove(client);
         }
-        Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
-        if (timeoutRunnable != null) {
-            mHandler.removeCallbacks(timeoutRunnable);
+        if (!mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
+            if (timeoutRunnable != null) {
+                mHandler.removeCallbacks(timeoutRunnable);
+            }
         }
         Runnable revertRunnable = mRevertScanModeUpgradeRunnables.remove(client);
         if (revertRunnable != null) {
@@ -1121,7 +1127,10 @@ public class ScanManager {
     }
 
     private void handleRegularScanTimeout(ScanClient client) {
-        // TODO(b/478349128): skip scan timeout when allowance based throttling is enabled
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            // skip scan timeout when allowance based throttling is enabled
+            return;
+        }
         var header = "handleRegularScanTimeout(" + client + "): ";
         var appScanStats = client.getAppScanStats();
         var isScanningTooLong = appScanStats == null || appScanStats.isScanningTooLong();

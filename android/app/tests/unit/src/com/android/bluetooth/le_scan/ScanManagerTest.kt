@@ -30,6 +30,7 @@ import android.os.Bundle
 import android.os.ParcelUuid
 import android.os.SystemProperties
 import android.os.WorkSource
+import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
@@ -67,9 +68,10 @@ import com.android.bluetooth.mockGetSystemService
 import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.tests.bluetooth.FakeTimeProvider
-import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.staticMockitoRule
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.Duration
 import java.util.UUID
 import kotlin.time.ExperimentalTime
@@ -90,18 +92,16 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import platform.test.runner.parameterized.ParameterizedAndroidJunit4
-import platform.test.runner.parameterized.Parameters
 
 private const val TAG = "ScanManagerTest"
 
 /** Test cases for [ScanManager]. */
 @OptIn(ExperimentalTime::class)
 @SmallTest
-@RunWith(ParameterizedAndroidJunit4::class)
-class ScanManagerTest(flags: FlagsWrapper) {
+@RunWith(TestParameterInjector::class)
+class ScanManagerTest() {
     @get:Rule val mockitoRule = staticMockitoRule<SystemProperties>()
-    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val setFlagsRule = SetFlagsRule()
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var displayListener: DisplayListener
@@ -401,6 +401,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
     fun testUnfilteredScanTimeout() {
         // Set filtered scan flag
         val isFiltered = false
@@ -438,6 +439,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
     fun testFilteredScanTimeout() {
         // Set filtered scan flag
         val isFiltered = true
@@ -478,6 +480,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
     fun testScanTimeoutResetForNewScan() {
         // Set filtered scan flag
         val isFiltered = false
@@ -513,12 +516,9 @@ class ScanManagerTest(flags: FlagsWrapper) {
         assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
     }
 
-    // TODO(b/478349128): add test for unfiltered scan when scan timeout is disabled
     @Test
     @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
-    fun testFilteredScanOutOfAllowance() {
-        // Set filtered scan flag
-        val isFiltered = true
+    fun testFilteredScanOutOfAllowance(@TestParameter isFiltered: Boolean) {
         val scanModeMap =
             mapOf(
                 ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_BALANCED,
@@ -2335,7 +2335,5 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
                 ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
             )
-
-        @JvmStatic @Parameters(name = "{0}") fun getParams() = FlagsWrapper.progressionOf()
     }
 }
