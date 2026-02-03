@@ -463,12 +463,13 @@ extern struct btm_sec_conn_req btm_sec_conn_req;
 // enc_mode, tHCI_ROLE assigned_role Return: void
 struct btm_sec_connected {
   std::function<void(const RawAddress& bda, uint16_t handle, tHCI_STATUS status, uint8_t enc_mode,
-                     tHCI_ROLE assigned_role)>
+                     bool locally_initiated, tHCI_ROLE assigned_role)>
           body{[](const RawAddress& /* bda */, uint16_t /* handle */, tHCI_STATUS /* status */,
-                  uint8_t /* enc_mode */, tHCI_ROLE /* assigned_role */) {}};
+                  uint8_t /* enc_mode */, bool /* locally_initiated */,
+                  tHCI_ROLE /* assigned_role */) {}};
   void operator()(const RawAddress& bda, uint16_t handle, tHCI_STATUS status, uint8_t enc_mode,
-                  tHCI_ROLE assigned_role) {
-    body(bda, handle, status, enc_mode, assigned_role);
+                  bool locally_initiated, tHCI_ROLE assigned_role) {
+    body(bda, handle, status, enc_mode, locally_initiated, assigned_role);
   }
 };
 extern struct btm_sec_connected btm_sec_connected;

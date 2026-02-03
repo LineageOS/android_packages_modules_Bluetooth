@@ -2711,8 +2711,8 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
 
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
               BT_STATUS_SUCCESS, link_spec, BT_ACL_STATE_CONNECTED, HCI_SUCCESS,
-              btm_is_acl_locally_initiated() ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
-                                             : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
+              p_data->link_up.locally_initiated ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
+                                                : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
               p_data->link_up.acl_handle);
 
       if (link_spec.transport == BT_TRANSPORT_LE && pairing_cb.bd_addr == link_spec.addrt.bda &&
@@ -2727,8 +2727,9 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
               hci_error_to_bt_status(p_data->link_up_failed.status),
               p_data->link_up_failed.link_spec, BT_ACL_STATE_DISCONNECTED,
               p_data->link_up_failed.status,
-              btm_is_acl_locally_initiated() ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
-                                             : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
+              p_data->link_up_failed.locally_initiated
+                      ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
+                      : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
               INVALID_ACL_HANDLE);
       break;
 

@@ -63,10 +63,11 @@ extern struct BTA_dm_acl_down BTA_dm_acl_down;
 // Params: const AclLinkSpec& link_spec, uint16_t acl_handle
 // Return: void
 struct BTA_dm_acl_up {
-  std::function<void(const AclLinkSpec& link_spec, uint16_t acl_handle)> body{
-          [](const AclLinkSpec& /* link_spec */, uint16_t /* acl_handle */) {}};
-  void operator()(const AclLinkSpec& link_spec, uint16_t acl_handle) {
-    body(link_spec, acl_handle);
+  std::function<void(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated)>
+          body{[](const AclLinkSpec& /* link_spec */, uint16_t /* acl_handle */,
+                  bool /* locally_initiated */) {}};
+  void operator()(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated) {
+    body(link_spec, acl_handle, locally_initiated);
   }
 };
 extern struct BTA_dm_acl_up BTA_dm_acl_up;
@@ -75,10 +76,11 @@ extern struct BTA_dm_acl_up BTA_dm_acl_up;
 // Params: const AclLinkSpec& link_spec, tHCI_STATUS
 // hci_status Return: void
 struct BTA_dm_acl_up_failed {
-  std::function<void(const AclLinkSpec& link_spec, tHCI_STATUS hci_status)> body{
-          [](const AclLinkSpec& /* link_spec */, tHCI_STATUS /* hci_status */) {}};
-  void operator()(const AclLinkSpec& link_spec, tHCI_STATUS hci_status) {
-    body(link_spec, hci_status);
+  std::function<void(const AclLinkSpec& link_spec, tHCI_STATUS hci_status, bool locally_initiated)>
+          body{[](const AclLinkSpec& /* link_spec */, tHCI_STATUS /* hci_status */,
+                  bool /* locally_initiated */) {}};
+  void operator()(const AclLinkSpec& link_spec, tHCI_STATUS hci_status, bool locally_initiated) {
+    body(link_spec, hci_status, locally_initiated);
   }
 };
 extern struct BTA_dm_acl_up_failed BTA_dm_acl_up_failed;

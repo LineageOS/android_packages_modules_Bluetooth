@@ -3639,7 +3639,7 @@ static void btm_sec_connect_after_reject_timeout(void* /* data */) {
  *
  ******************************************************************************/
 void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status, uint8_t enc_mode,
-                       tHCI_ROLE assigned_role) {
+                       bool locally_initiated, tHCI_ROLE assigned_role) {
   uint8_t bit_shift = 0;
 
   if (status == HCI_ERR_CONNECTION_EXISTS) {
@@ -3873,7 +3873,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
   p_device->hci_handle = handle;
   AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
                            .transport = BT_TRANSPORT_BR_EDR};
-  btm_acl_created(link_spec, handle, assigned_role);
+  btm_acl_created(link_spec, handle, assigned_role, locally_initiated);
 
   /* role may not be correct here, it will be updated by l2cap, but we need to
    */

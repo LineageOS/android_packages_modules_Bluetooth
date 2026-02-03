@@ -93,13 +93,14 @@ void BTA_dm_acl_down(const AclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::BTA_dm_acl_down(link_spec);
 }
-void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
+void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::BTA_dm_acl_up(link_spec, acl_handle);
+  test::mock::bta_dm_act::BTA_dm_acl_up(link_spec, acl_handle, locally_initiated);
 }
-void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS hci_status) {
+void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS hci_status,
+                          bool locally_initiated) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::BTA_dm_acl_up_failed(link_spec, hci_status);
+  test::mock::bta_dm_act::BTA_dm_acl_up_failed(link_spec, hci_status, locally_initiated);
 }
 void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr) {
   inc_func_call_count(__func__);
