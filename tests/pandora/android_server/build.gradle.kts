@@ -49,8 +49,8 @@ dependencies {
     // Framework Bluetooth
     implementation(files("$out/packages/modules/Bluetooth/framework/framework-bluetooth-pre-jarjar/android_common/turbine-combined/framework-bluetooth-pre-jarjar.jar"))
     // Pandora APIs
-    implementation(files("$out/packages/modules/Bluetooth/pandora/interfaces/pandora-grpc-java/android_common/combined/pandora-grpc-java.jar"))
-    implementation(files("$out/packages/modules/Bluetooth/pandora/interfaces/pandora-proto-java/android_common/combined/pandora-proto-java.jar"))
+    implementation(files("$out/packages/modules/Bluetooth/tests/pandora/interfaces/pandora-grpc-java/android_common/combined/pandora-grpc-java.jar"))
+    implementation(files("$out/packages/modules/Bluetooth/tests/pandora/interfaces/pandora-proto-java/android_common/combined/pandora-proto-java.jar"))
     // Androidx Test Core
     implementation(files("$out/prebuilts/misc/common/androidx-test/androidx.test.core/android_common/combined/androidx.test.core.jar"))
     // Protobuf

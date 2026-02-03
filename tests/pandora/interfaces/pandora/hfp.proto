@@ -59,11 +59,14 @@ service HFP {
   // Send DTMF code from the handsfree
   rpc SendDtmfFromHandsfree(SendDtmfFromHandsfreeRequest) returns (SendDtmfFromHandsfreeResponse);
   // Release the active call and accept the waiting call (as a handsfree)
-  rpc ReleaseActiveAcceptOtherAsHandsfree(ReleaseActiveAcceptOtherAsHandsfreeRequest) returns (ReleaseActiveAcceptOtherAsHandsfreeResponse);
+  rpc ReleaseActiveAcceptOtherAsHandsfree(ReleaseActiveAcceptOtherAsHandsfreeRequest)
+      returns (ReleaseActiveAcceptOtherAsHandsfreeResponse);
   // Hold the active call and retrieve the waiting call (as a handsfree)
-  rpc SwapActiveCallAsHandsfree(SwapActiveCallAsHandsfreeRequest) returns (SwapActiveCallAsHandsfreeResponse);
+  rpc SwapActiveCallAsHandsfree(SwapActiveCallAsHandsfreeRequest)
+      returns (SwapActiveCallAsHandsfreeResponse);
   // Hold all active calls except the one specified by the index (as a handsfree)
-  rpc ConsultCallByIndexAsHandsfree(ConsultCallByIndexAsHandsfreeRequest) returns (ConsultCallByIndexAsHandsfreeResponse);
+  rpc ConsultCallByIndexAsHandsfree(ConsultCallByIndexAsHandsfreeRequest)
+      returns (ConsultCallByIndexAsHandsfreeResponse);
 }
 
 // Request of the `EnableSlc` method.

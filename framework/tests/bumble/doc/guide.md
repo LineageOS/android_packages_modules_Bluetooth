@@ -223,7 +223,7 @@ implementation and the full code, refer to our [source code][bumble-bluetooth-te
 [bumble-bluetooth-tests-code]: https://cs.android.com/android/platform/superproject/+/main:packages/modules/Bluetooth/framework/tests/bumble/
 [bumble-github-pandora-server]: https://github.com/google/bumble/tree/main/bumble/pandora
 [grpc-java-doc]: https://grpc.io/docs/languages/java/
-[pandora-experimental-apis]: https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Bluetooth/pandora/interfaces/pandora_experimental/
-[pandora-server-code]: https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Bluetooth/tests/pandora/server/
+[pandora-experimental-apis]: https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Bluetooth/tests/pandora/interfaces/pandora_experimental/
+[pandora-server-code]: https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Bluetooth/tests/pandora/android_server/
 [pandora-stable-apis]: https://cs.android.com/android/platform/superproject/main/+/main:external/pandora/bt-test-interfaces/
 [rootcanal-code]: https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Bluetooth/tools/rootcanal
