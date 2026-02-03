@@ -241,3 +241,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bugfix_autonomous_repairing"
+    namespace: "bluetooth"
+    description: "Add generic bugfixes for autonomous repairing feature."
+    bug: "481170402"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
