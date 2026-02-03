@@ -82,6 +82,8 @@ public:
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   void CreateLeConnection(AddressWithType address_with_type, bool is_direct,
                           bool prefer_relax_mode) override;
+  void CancelLeConnect(AddressWithType address_with_type) override;
+  void CancelDirectConnect(AddressWithType address_with_type) override;
 
   void SetPrivacyPolicyForInitiatorAddress(
           LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
@@ -95,8 +97,6 @@ public:
           std::chrono::milliseconds maximum_rotation_time) override;
 
   void RemoveFromBackgroundList(AddressWithType address_with_type) override;
-
-  void CancelLeConnect(AddressWithType address_with_type) override;
 
   void ClearFilterAcceptList() override;
 
