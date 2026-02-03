@@ -41,3 +41,13 @@ flag {
       purpose: PURPOSE_BUGFIX
   }
 }
+
+flag {
+  name: "map_use_new_message_api"
+  namespace: "bluetooth"
+  description: "Use new platform APIs for sending text messages via the default messaging app"
+  bug: "481155163"
+  metadata {
+      purpose: PURPOSE_BUGFIX
+  }
+}
