@@ -454,11 +454,12 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
         app_callbacks_->OnDecodingIsoChannelParametersUpdated(
                 sm->GetPeer(), BTM_Sec_GetAddressWithType(sm->GetPeer()), sm->GetAseId(),
                 evt->cis_conn_hdl, true, sm->codec_configuration, sm->qos_configuration,
-                sm->metadata);
+                sm->target_latency.value_or(0), sm->metadata);
       } else {
         app_callbacks_->OnEncodingIsoChannelParametersUpdated(
                 evt->cis_conn_hdl, sm->GetPeer(), BTM_Sec_GetAddressWithType(sm->GetPeer()),
-                sm->codec_configuration, sm->qos_configuration, sm->metadata);
+                sm->codec_configuration, sm->qos_configuration, sm->target_latency.value_or(0),
+                sm->metadata);
       }
     }
 
@@ -502,11 +503,12 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
       if (sm->IsSinkAse()) {
         app_callbacks_->OnDecodingIsoChannelParametersUpdated(
                 sm->GetPeer(), address_with_type, sm->GetAseId(), evt->cis_conn_hdl, false,
-                sm->codec_configuration, sm->qos_configuration, sm->metadata);
+                sm->codec_configuration, sm->qos_configuration, sm->target_latency.value_or(0),
+                sm->metadata);
       } else {
         app_callbacks_->OnEncodingIsoChannelParametersUpdated(
                 evt->cis_conn_hdl, sm->GetPeer(), address_with_type, sm->codec_configuration,
-                sm->qos_configuration, sm->metadata);
+                sm->qos_configuration, sm->target_latency.value_or(0), sm->metadata);
       }
     }
   }
@@ -710,6 +712,11 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
       }
 
       auto& ase_config = std::get<ascs::AseStateCodecConfiguration>(ase_config_result);
+      auto request = std::find_if(params.begin(), params.end(),
+                                  [&ase_id](auto const& param) { return param.ase_id == ase_id; });
+      // Cache the target latency for the higher layer
+      sm->target_latency = request != params.end() ? request->codec_configuration.target_latency
+                                                   : le_audio::types::kTargetLatencyUndefined;
       if (!sm->ProcessEvent(AscsAseStateMachine::Events::CONFIG_CODEC, (void*)&ase_config)) {
         log::warn("Invalid state transition for {} configuring ASE: {}", address, ase_id);
         response.entries.emplace_back(
