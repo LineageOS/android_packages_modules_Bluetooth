@@ -963,6 +963,8 @@ public class BluetoothManagerService {
                 TAG,
                 ("disable(" + packageName + ", " + persist + "):")
                         + (" mAdapter=" + mAdapter)
+                        + (" mEnable=" + mEnable)
+                        + (" mBleAppManager=" + mBleAppManager)
                         + (" isBinding=" + isBinding())
                         + (" mState=" + mState));
 
@@ -1757,35 +1759,23 @@ public class BluetoothManagerService {
         mActiveLogs.add(reason, false, packageName, false);
         mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
 
-        if (mState.oneOf(State.OFF)) {
-            Log.d(TAG, "Disable while already OFF. Nothing to do");
+        mEnable = false;
+
+        if (mState.oneOf(State.ON)) {
+            Log.d(TAG, "Disable - Initiate shutdown");
+            onToBleOn();
         } else if (isBinding()) {
-            Log.d(TAG, "Disable while binding");
-            mEnable = false;
+            Log.d(TAG, "Disable - Cancel binding");
             mContext.unbindService(mConnection);
             mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
             bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
             mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
         } else if (mState.oneOf(State.BLE_TURNING_ON)) {
-            Log.d(TAG, "Disable while BLE_TURNING_ON");
-            mEnable = false;
+            Log.d(TAG, "Disable - Cancel BLE_TURNING_ON");
             bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
         } else {
-            if (mState.oneOf(State.ON)) {
-                Log.d(TAG, "Disable while ON");
-                onToBleOn();
-            } else if (mState.oneOf(State.TURNING_ON)) {
-                Log.d(TAG, "Disable while TURNING_ON, set mEnable for later");
-            } else if (mState.oneOf(State.BLE_ON)) {
-                Log.d(TAG, "Disable while BLE_ON");
-            } else if (mEnable) {
-                Log.w(TAG, "Disable during unexpected state " + mState + ". mEnable is true !");
-            } else {
-                Log.d(TAG, "Disable during state " + mState + ". mEnable is false. Nothing to do");
-            }
+            Log.d(TAG, "Disable - Nothing to do. `mEnable` set to false. mState=" + mState);
         }
-
-        mEnable = false;
     }
 
     private void sendEnableMsg(boolean quietMode, int reason) {
