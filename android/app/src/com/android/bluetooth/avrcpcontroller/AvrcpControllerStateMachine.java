@@ -110,7 +110,7 @@ class AvrcpControllerStateMachine extends StateMachine {
     private final GetFolderList mGetFolderList;
     private final SparseArray<AvrcpPlayer> mAvailablePlayerList;
 
-    private final AvrcpControllerVolumeHandler mVolumeHandler;
+    private AvrcpControllerVolumeHandler mVolumeHandler;
 
     @VisibleForTesting final BrowseTree mBrowseTree;
 
@@ -182,21 +182,6 @@ class AvrcpControllerStateMachine extends StateMachine {
 
         mGetFolderList = new GetFolderList();
         addState(mGetFolderList, mConnected);
-
-        AvrcpControllerVolumeHandler.Callback callback =
-                new AvrcpControllerVolumeHandler.Callback() {
-                    @Override
-                    public void onAbsoluteVolumeChanged(int absVol) {
-                        if (!Flags.avrcpControllerAbsVolChangedNotification()) {
-                            return;
-                        }
-                        debug("onAbsoluteVolumeChanged: absVol=" + absVol);
-                        sendMessage(MESSAGE_PROCESS_VOLUME_CHANGED_NOTIFICATION, absVol);
-                    }
-                };
-        mVolumeHandler =
-                new AvrcpControllerVolumeHandler(
-                        mAdapterService, mDevice, callback, getHandler().getLooper());
 
         setInitialState(mDisconnected);
 
@@ -477,7 +462,12 @@ class AvrcpControllerStateMachine extends StateMachine {
                 BluetoothMediaBrowserService.onBrowseNodeChanged(
                         mService.getBrowseTree().mRootNode);
                 connectCoverArt(); // only works if we have a valid PSM
-                mVolumeHandler.start();
+                mVolumeHandler =
+                        new AvrcpControllerVolumeHandler(
+                                mAdapterService,
+                                mDevice,
+                                mVolumeCallback,
+                                getHandler().getLooper());
             } else {
                 debug("Connected: Re-entering Connected ");
             }
@@ -1168,6 +1158,7 @@ class AvrcpControllerStateMachine extends StateMachine {
             mService.getBrowseTree().mRootNode.removeChild(mBrowseTree.mRootNode);
             BluetoothMediaBrowserService.onBrowseNodeChanged(mService.getBrowseTree().mRootNode);
             mVolumeHandler.stop();
+            mVolumeHandler = null;
             broadcastConnectionStateChanged(STATE_DISCONNECTING);
             transitionTo(mDisconnected);
         }
@@ -1362,6 +1353,18 @@ class AvrcpControllerStateMachine extends StateMachine {
                 public void onSetShuffleMode(int shuffleMode) {
                     debug("onSetShuffleMode(shuffleMode=" + shuffleMode + ")");
                     sendMessage(MSG_AVRCP_SET_SHUFFLE, shuffleMode);
+                }
+            };
+
+    AvrcpControllerVolumeHandler.Callback mVolumeCallback =
+            new AvrcpControllerVolumeHandler.Callback() {
+                @Override
+                public void onAbsoluteVolumeChanged(int absVol) {
+                    if (!Flags.avrcpControllerAbsVolChangedNotification()) {
+                        return;
+                    }
+                    debug("onAbsoluteVolumeChanged: absVol=" + absVol);
+                    sendMessage(MESSAGE_PROCESS_VOLUME_CHANGED_NOTIFICATION, absVol);
                 }
             };
 

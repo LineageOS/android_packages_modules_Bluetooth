@@ -27,7 +27,6 @@ import android.os.Looper
 import android.util.Log
 import com.android.bluetooth.Util
 import com.android.bluetooth.flags.Flags
-import com.android.internal.annotations.GuardedBy
 
 /**
  * Handler for [AvrcpControllerStateMachine] volume operations, which are handled differently
@@ -64,10 +63,6 @@ class AvrcpControllerVolumeHandler(
     private val callback: Callback,
     looper: Looper,
 ) {
-    /** For synchronizing [start] and [stop]. */
-    private val lock = Any()
-    @GuardedBy("lock") private var started = false
-
     private val audioManager: AudioManager = context.getSystemService(AudioManager::class.java)
 
     // For sending volume changed events back to the object owner
@@ -83,9 +78,7 @@ class AvrcpControllerVolumeHandler(
     private var cachedStreamVolume = VOLUME_VALUE_MISSING
 
     /** The volume strategy in use by our device. */
-    val volumeStrategy: Int =
-        if (audioManager.isVolumeFixed() || Util.isAutomotive(context)) STRATEGY_LOUD
-        else STRATEGY_ABSOLUTE
+    val volumeStrategy: Int = getDesiredVolumeStrategy(context)
 
     private val isLoud: Boolean
         get() = volumeStrategy == STRATEGY_LOUD
@@ -97,42 +90,31 @@ class AvrcpControllerVolumeHandler(
      * Registers the [VolumeHandlerBroadcastReceiver]. Initializes [cachedStreamVolume] to the
      * current stream volume.
      */
-    fun start() {
-        synchronized(lock) {
-            if (started) {
-                error("Calling start() when already started")
-                return
-            }
-            debug("Starting volume handler")
-            if (Flags.avrcpControllerAbsVolChangedNotification()) {
-                val filter = IntentFilter()
-                filter.priority = IntentFilter.SYSTEM_HIGH_PRIORITY
-                filter.addAction(AudioManager.ACTION_VOLUME_CHANGED)
-                context.registerReceiver(receiver, filter)
-            }
-            cachedStreamVolume = getStreamVolume()
-            started = true
+    init {
+        debug("Initializing volume handler")
+        if (Flags.avrcpControllerAbsVolChangedNotification()) {
+            val filter = IntentFilter()
+            filter.priority = IntentFilter.SYSTEM_HIGH_PRIORITY
+            filter.addAction(AudioManager.ACTION_VOLUME_CHANGED)
+            context.registerReceiver(receiver, filter)
         }
+        cachedStreamVolume = getStreamVolume()
     }
 
     /**
      * Unregisters the [VolumeHandlerBroadcastReceiver]. Clears the handler's message queue. Resets
      * [cachedStreamVolume].
+     *
+     * This object should no longer be used. Further invocations may result in undefined behavior,
+     * including exceptions.
      */
     fun stop() {
-        synchronized(lock) {
-            if (!started) {
-                error("Calling stop() when already stopped")
-                return
-            }
-            debug("Stopping volume handler")
-            if (Flags.avrcpControllerAbsVolChangedNotification()) {
-                context.unregisterReceiver(receiver)
-                handler.removeCallbacksAndMessages(null)
-            }
-            cachedStreamVolume = VOLUME_VALUE_MISSING
-            started = false
+        debug("Stopping volume handler")
+        if (Flags.avrcpControllerAbsVolChangedNotification()) {
+            context.unregisterReceiver(receiver)
+            handler.removeCallbacksAndMessages(null)
         }
+        cachedStreamVolume = VOLUME_VALUE_MISSING
     }
 
     val absoluteVolume: Int
@@ -295,7 +277,7 @@ class AvrcpControllerVolumeHandler(
                 return
             }
             if (cachedStreamVolume == VOLUME_VALUE_MISSING) {
-                // We ignore volume changed events before our initial caching in start()
+                // We ignore volume changed events before our initial caching at instantiation
                 return
             }
 
@@ -373,7 +355,8 @@ class AvrcpControllerVolumeHandler(
 
         private const val VOLUME_VALUE_MISSING = -1
 
-        private fun strategyToString(strategy: Int): String {
+        @JvmStatic
+        fun strategyToString(strategy: Int): String {
             return when (strategy) {
                 STRATEGY_NONE -> "STRATEGY_NONE"
                 STRATEGY_RELATIVE -> "STRATEGY_RELATIVE"
@@ -381,6 +364,13 @@ class AvrcpControllerVolumeHandler(
                 STRATEGY_LOUD -> "STRATEGY_LOUD"
                 else -> "UNKNOWN_STRATEGY_ID_$strategy"
             }
+        }
+
+        @JvmStatic
+        fun getDesiredVolumeStrategy(context: Context): Int {
+            val audioManager = context.getSystemService(AudioManager::class.java)
+            return if (audioManager.isVolumeFixed() || Util.isAutomotive(context)) STRATEGY_LOUD
+            else STRATEGY_ABSOLUTE
         }
     }
 }

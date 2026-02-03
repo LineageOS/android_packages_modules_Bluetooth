@@ -331,7 +331,6 @@ class AvrcpControllerVolumeHandlerTest {
 
         volumeHandler =
             AvrcpControllerVolumeHandler(adapterService, device, callback, looper.looper)
-        volumeHandler.start()
 
         // Capture broadcast receiver
         val receiverCaptor = ArgumentCaptor.forClass(BroadcastReceiver::class.java)
