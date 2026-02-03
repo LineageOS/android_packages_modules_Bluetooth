@@ -20,7 +20,6 @@ import android.bluetooth.BluetoothAdapter.BluetoothHciVendorSpecificCallback
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -28,7 +27,6 @@ import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import org.junit.After
 import org.junit.Assume
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

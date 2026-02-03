@@ -427,16 +427,18 @@ class BassClientStateMachine extends StateMachine {
     }
 
     private static boolean isPaSynced(BluetoothLeBroadcastReceiveState recvState) {
-        return recvState.getPaSyncState() ==
-                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED;
+        return recvState.getPaSyncState()
+                == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED;
     }
 
     private static boolean isBisSynced(BluetoothLeBroadcastReceiveState recvState) {
         return recvState.getBisSyncState().stream()
-                .anyMatch(state ->
-                    state != BassConstants.BCAST_RCVR_STATE_BIS_SYNC_FAILED_SYNC_TO_BIG &&
-                    state != BassConstants.BCAST_RCVR_STATE_BIS_SYNC_NOT_SYNC_TO_BIS
-                );
+                .anyMatch(
+                        state ->
+                                state != BassConstants.BCAST_RCVR_STATE_BIS_SYNC_FAILED_SYNC_TO_BIG
+                                        && state
+                                                != BassConstants
+                                                        .BCAST_RCVR_STATE_BIS_SYNC_NOT_SYNC_TO_BIS);
     }
 
     private void resetBluetoothGatt() {
