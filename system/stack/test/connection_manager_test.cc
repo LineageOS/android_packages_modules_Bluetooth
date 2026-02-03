@@ -321,11 +321,21 @@ TEST_F(BleConnectionManager, test_direct_and_background_connect__direct_timeouts
 
   Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
-  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+  if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+  }
   EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT1, address1)).Times(1);
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
-  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false, false)).Times(1);
 
+  if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false, false)).Times(1);
+  } else {
+    /* it's a timeout - background connect should stay, we should NOT cancel it or have to
+     * send it again to lower layers */
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+    EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false, false)).Times(0);
+    EXPECT_CALL(*test::mock_acl_manager_, CancelDirectConnect(address1_hci)).Times(1);
+  }
   // simulate timeout on direct connect
   alarm_callback(alarm_data);
 
@@ -414,8 +424,13 @@ TEST_F(BleConnectionManager, test_re_add_to_allow_list_after_timeout_with_multip
   // simulate timeout seconds passed, alarm executing
   EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT2, address1)).Times(1);
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
-  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false, false)).Times(1);
+  if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    EXPECT_CALL(*test::mock_acl_manager_, CancelDirectConnect(address1_hci)).Times(1);
+  } else {
+    EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false, false)).Times(1);
+  }
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
+
   alarm_callback(alarm_data);
 
   Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
