@@ -1132,7 +1132,7 @@ LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
   } else {
     aidl::SessionType session_type =
             is_broadcasting_session_type
-                    ? aidl::SessionType::UNKNOWN
+                    ? aidl::SessionType::LE_AUDIO_BROADCAST_SOFTWARE_DECODING_DATAPATH
                     : aidl::SessionType::LE_AUDIO_SOFTWARE_DECODING_DATAPATH;
     if (CodecManager::GetInstance()->GetCodecLocation() != CodecLocation::HOST) {
       session_type =
@@ -1141,13 +1141,8 @@ LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
                       : aidl::SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH;
     }
 
-    if (session_type == aidl::SessionType::UNKNOWN) {
-      log::warn("Software decoding datapath is not supported for broadcast");
-      delete source;
-      source = nullptr;
-      return nullptr;
-    } else if (session_type == aidl::SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
-               session_type == aidl::SessionType::LE_AUDIO_SOFTWARE_DECODING_DATAPATH) {
+    if (session_type == aidl::SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
+        session_type == aidl::SessionType::LE_AUDIO_SOFTWARE_DECODING_DATAPATH) {
       aidl::le_audio::LeAudioSourceTransport::instance_unicast_ =
               new aidl::le_audio::LeAudioSourceTransport(session_type, std::move(stream_cb));
       aidl::le_audio::LeAudioSourceTransport::interface_unicast_ =
