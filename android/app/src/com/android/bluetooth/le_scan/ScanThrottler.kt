@@ -17,14 +17,20 @@
 package com.android.bluetooth.le_scan
 
 import android.bluetooth.le.ScanSettings
+import android.os.Handler
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.le_scan.ScanUtil.convertAllowanceToRemainingTime
 import com.android.bluetooth.le_scan.ScanUtil.isDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isForceDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient
 import com.android.bluetooth.le_scan.ScanUtil.minScanMode
 import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
-import java.time.Duration
+import com.android.internal.annotations.VisibleForTesting
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanThrottler"
 
@@ -35,9 +41,30 @@ private const val TAG = ScanUtil.TAG_PREFIX + "ScanThrottler"
 class ScanThrottler(
     private val scanManager: ScanManager,
     private val adapterService: AdapterService,
+    private val handler: Handler,
 ) {
 
+    // When scan mode is throttled using scan allowance, a delayed record usage job will
+    // be scheduled which records any scan allowance usage during the job run and lower all
+    // scan clients scan mode when out of allowance. Record usage
+    // job also schedules the refill job, which refills the scan allowance during the job run
+    // and lift all scan clients scan mode when new allowance is available.
+    // The refill job is per uid, so we can enforce hourly scan allowance for the app.
+    // The recording job is per scan client, the earliest recording job will schedule the
+    // refill job and cancel any pending recording jobs.
+    @VisibleForTesting val recordUsageRunnables = HashMap<ScanClient, Runnable>()
+    val refillRunnables = HashMap<Int, Runnable>()
+
+    class ScanAllowanceLedger {
+        var spentScanAllowance = Duration.ZERO
+    }
+
+    fun isScanAllowanceThrottlingEnabled(): Boolean {
+        return Flags.scanAllowanceThrottlingEnabled()
+    }
+
     fun throttleScanMode(client: ScanClient, targetMode: Int, isScreenOn: Boolean): Boolean {
+
         var targetScanMode = targetMode
         if (isOpportunisticScanClient(client)) {
             return false
@@ -65,10 +92,16 @@ class ScanThrottler(
                     else -> return false
                 }
         }
-        return client.updateScanMode(targetScanMode)
+
+        if (isScanAllowanceThrottlingEnabled()) {
+            return applyAllowanceThrottling(client, targetScanMode)
+        } else {
+            return client.updateScanMode(targetScanMode)
+        }
     }
 
     fun throttleScanModeScreenOff(client: ScanClient): Boolean {
+        // TODO(b/478349128): Implement Event Debouncing for Screen Off
         val targetScanMode = client.scanModeApp
         if (throttleScanMode(client, targetScanMode, isScreenOn = false)) {
             Log.d(
@@ -99,7 +132,13 @@ class ScanThrottler(
         if (isForceDowngradedScanClient(client)) {
             targetScanMode = minScanMode(ScanSettings.SCAN_MODE_LOW_POWER, targetScanMode)
         }
-        if (client.updateScanMode(targetScanMode)) {
+        val isUpdated =
+            if (isScanAllowanceThrottlingEnabled()) {
+                applyAllowanceThrottling(client, targetScanMode)
+            } else {
+                client.updateScanMode(targetScanMode)
+            }
+        if (isUpdated) {
             Log.d(
                 TAG,
                 "throttleScanModeForegroundUid(): for $client uid=$uid " +
@@ -112,14 +151,21 @@ class ScanThrottler(
     }
 
     fun throttleScanModeBackgroundUid(client: ScanClient, uid: Int, isScreenOn: Boolean): Boolean {
+        // TODO(b/478349128): Implement Event Debouncing for background uid
         var scanMode = client.settings.scanMode
-        val throttledScanMode =
+        val targetScanMode =
             if (isScreenOn) {
                 minScanMode(ScanSettings.SCAN_MODE_LOW_POWER, scanMode)
             } else {
                 minScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF, scanMode)
             }
-        if (client.updateScanMode(throttledScanMode)) {
+        val isUpdated =
+            if (isScanAllowanceThrottlingEnabled()) {
+                applyAllowanceThrottling(client, targetScanMode)
+            } else {
+                client.updateScanMode(targetScanMode)
+            }
+        if (isUpdated) {
             Log.d(
                 TAG,
                 "throttleScanModeBackgroundUid(): for $client uid=$uid " +
@@ -132,7 +178,10 @@ class ScanThrottler(
     }
 
     fun downgradeScanModeFromMaxDuty(client: ScanClient): Boolean {
-        if (client.appScanStats == null || adapterService.scanDowngradeDuration == Duration.ZERO) {
+        if (
+            client.appScanStats == null ||
+                adapterService.scanDowngradeDuration == java.time.Duration.ZERO
+        ) {
             return false
         }
 
@@ -161,5 +210,100 @@ class ScanThrottler(
         } else {
             throttleScanModeScreenOff(client)
         }
+    }
+
+    private fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
+        val ledger = client.appScanStats?.scanAllowanceLedger
+        // TODO(b/478349128): support isExemptFromScanAllowanceThrottling
+        if (ledger == null) {
+            return client.updateScanMode(targetScanMode)
+        }
+        if (
+            targetScanMode != ScanSettings.SCAN_MODE_SCREEN_OFF &&
+                ledger.spentScanAllowance < SCAN_ALLOWANCE
+        ) {
+            val remainingAllowance = SCAN_ALLOWANCE - ledger.spentScanAllowance
+            Log.d(
+                TAG,
+                "Apply scan mode $targetScanMode with available scan allowance $remainingAllowance",
+            )
+            return applyModeAndScheduleNextJob(client, targetScanMode, ledger, remainingAllowance)
+        }
+        recordUsageRunnables[client]?.let { handler.removeCallbacks(it) }
+        recordUsageRunnables.remove(client)
+        return client.updateScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF)
+    }
+
+    private fun scheduleAllowanceRefill(
+        client: ScanClient,
+        ledger: ScanAllowanceLedger,
+        delay: Duration,
+    ) {
+        if (refillRunnables.containsKey(client.appUid)) {
+            return // skip if the next refill job is pending
+        }
+        if (ledger.spentScanAllowance == Duration.ZERO) {
+            return // skip if allowance is full
+        }
+        // Schedule the refill
+        val refillTask = Runnable {
+            refillAllowance(client, ledger)
+            refillRunnables.remove(client.appUid)
+            scanManager.onScanAllowanceChanged()
+        }
+        refillRunnables[client.appUid] = refillTask
+        handler.postDelayed(refillTask, delay.inWholeMilliseconds)
+        Log.d(
+            TAG,
+            "Scheduled allowance refill in $delay for app ${client.appUid} scanner ${client.scannerId}",
+        )
+    }
+
+    private fun applyModeAndScheduleNextJob(
+        client: ScanClient,
+        targetScanMode: Int,
+        ledger: ScanAllowanceLedger,
+        allowance: Duration,
+    ): Boolean {
+        val remainingTime = convertAllowanceToRemainingTime(allowance, targetScanMode)
+        val recordUsageTask = Runnable {
+            recordUsage(client, ledger, allowance) // Lock in the time spent
+            recordUsageRunnables.remove(client)
+            scanManager.onScanAllowanceChanged()
+            scheduleAllowanceRefill(
+                client,
+                ledger,
+                maxOf(ALLOWANCE_REFILL_WINDOW - remainingTime, Duration.ZERO),
+            )
+        }
+
+        // Replace it if the next record usage job is pending
+        recordUsageRunnables[client]?.let { handler.removeCallbacks(it) }
+        recordUsageRunnables[client] = recordUsageTask
+        handler.postDelayed(recordUsageTask, remainingTime.inWholeMilliseconds)
+        Log.d(
+            TAG,
+            "Scheduled the next allowance check in $remainingTime for app ${client.appUid} scanner ${client.scannerId}",
+        )
+        return client.updateScanMode(targetScanMode)
+    }
+
+    private fun recordUsage(client: ScanClient, ledger: ScanAllowanceLedger, allowance: Duration) {
+        ledger.spentScanAllowance += allowance
+        Log.d(
+            TAG,
+            "Record Allowance Spent $allowance for app ${client.appUid} scanner ${client.scannerId}, " +
+                "total spent: ${ledger.spentScanAllowance}",
+        )
+    }
+
+    private fun refillAllowance(client: ScanClient, ledger: ScanAllowanceLedger) {
+        ledger.spentScanAllowance = Duration.ZERO
+        Log.d(TAG, "Scan Allowance Refilled for app ${client.appUid} scanner ${client.scannerId}")
+    }
+
+    companion object {
+        @VisibleForTesting val SCAN_ALLOWANCE = 6.minutes
+        @VisibleForTesting val ALLOWANCE_REFILL_WINDOW = 1.hours
     }
 }

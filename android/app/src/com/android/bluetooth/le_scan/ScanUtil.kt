@@ -34,6 +34,7 @@ import android.util.Log
 import com.android.bluetooth.Util.blockedByLocationOff
 import com.android.bluetooth.Utils.millsToUnit
 import com.android.bluetooth.btservice.AdapterService
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -485,6 +486,10 @@ object ScanUtil {
 
         return ScanResult(null, 0, 0, 0, 0, 0, rssi, 0, record, 0)
     }
+
+    @JvmStatic
+    fun convertAllowanceToRemainingTime(allowance: Duration, scanMode: Int) =
+        allowance * WEIGHT_LOW_LATENCY / weightForScanMode(scanMode)
 
     private fun ByteArray.startsWith(prefix: ByteArray): Boolean {
         if (this.size < prefix.size) {
