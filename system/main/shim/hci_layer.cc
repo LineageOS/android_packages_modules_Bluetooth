@@ -109,6 +109,13 @@ static bool register_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
   }
 }
 
+static bool register_development_subevent_code(
+        bluetooth::hci::DevelopmentSubeventCode /*subevent_code*/) {
+  // This function is reserved for internal and IOP testing of under-development SIG featuress.
+  // Insert development subevent code and return true here. Please do not submit any code here.
+  return false;
+}
+
 }  // namespace
 
 namespace cpp {
@@ -153,6 +160,14 @@ static void subevent_callback(bluetooth::hci::LeMetaEventView le_meta_event_view
   send_data_upwards.Run(WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &le_meta_event_view));
 }
 
+static void development_subevent_callback(
+        bluetooth::hci::DevelopmentEventView development_event_view) {
+  if (!send_data_upwards) {
+    return;
+  }
+  send_data_upwards.Run(WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &development_event_view));
+}
+
 static void event_callback_with_hop(bluetooth::hci::EventView event_packet_view) {
   // Adding a hop to the GD thread before sending the event to the main thread.
   log::verbose("Adding a hop to the GD thread for event_callback, event_code: {}",
@@ -169,6 +184,16 @@ static void subevent_callback_with_hop(bluetooth::hci::LeMetaEventView le_meta_e
 
   auto handler = bluetooth::shim::GetGdShimHandler();
   handler->Call(subevent_callback, le_meta_event_view);
+}
+
+static void development_event_callback_with_hop(
+        bluetooth::hci::DevelopmentEventView development_event_view) {
+  // Adding a hop to the GD thread before sending the subevent to the main thread.
+  log::verbose("Adding a hop to the GD thread for subevent_callback, subevent_code: {}",
+               development_event_view.GetSubeventCode());
+
+  auto handler = bluetooth::shim::GetGdShimHandler();
+  handler->Call(development_subevent_callback, development_event_view);
 }
 
 static void OnTransmitPacketCommandComplete(command_complete_cb complete_callback, void* context,
@@ -257,6 +282,14 @@ static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {
   // GD thread.
   bluetooth::shim::GetHciLayer()->RegisterLeEventHandler(subevent_code,
                                                          handler->Bind(subevent_callback_with_hop));
+}
+
+static void register_development_event(bluetooth::hci::DevelopmentSubeventCode subevent_code) {
+  auto handler = bluetooth::shim::GetGdShimHandler();
+  // Register the event handler, but do not send it directly to main, instead do another hop on the
+  // GD thread.
+  bluetooth::shim::GetHciLayer()->RegisterDevelopmentEventHandler(
+          subevent_code, handler->Bind(development_event_callback_with_hop));
 }
 
 static void iso_data_callback() {
@@ -362,24 +395,27 @@ const hci_t* bluetooth::shim::hci_layer_get_interface() {
   return &interface;
 }
 
+template <typename T, typename RegCheck, typename RegAction>
+void register_event_range(RegCheck check, RegAction action) {
+  for (uint16_t i = 0; i < 0x100; i++) {
+    auto code = static_cast<T>(i);
+    if (check(code)) {
+      action(code);
+    }
+  }
+}
+
 void bluetooth::shim::hci_on_reset_complete() {
   log::assert_that(!send_data_upwards.is_null(), "assert failed: !send_data_upwards.is_null()");
 
-  for (uint16_t event_code_raw = 0; event_code_raw < 0x100; event_code_raw++) {
-    auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
-    if (!register_event_code(event_code)) {
-      continue;
-    }
-    cpp::register_event(event_code);
-  }
+  register_event_range<bluetooth::hci::EventCode>(register_event_code,
+                                                  [](auto c) { cpp::register_event(c); });
 
-  for (uint16_t subevent_code_raw = 0; subevent_code_raw < 0x100; subevent_code_raw++) {
-    auto subevent_code = static_cast<bluetooth::hci::SubeventCode>(subevent_code_raw);
-    if (!register_subevent_code(subevent_code)) {
-      continue;
-    }
-    cpp::register_le_event(subevent_code);
-  }
+  register_event_range<bluetooth::hci::SubeventCode>(register_subevent_code,
+                                                     [](auto c) { cpp::register_le_event(c); });
+
+  register_event_range<bluetooth::hci::DevelopmentSubeventCode>(
+          register_development_subevent_code, [](auto c) { cpp::register_development_event(c); });
 
   cpp::register_for_iso();
 }
