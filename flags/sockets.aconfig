@@ -97,3 +97,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "close_conn_socket_on_failure"
+    namespace: "bluetooth"
+    description: "Close the connection socket on failure from OBEX server session"
+    bug: "481154811"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
