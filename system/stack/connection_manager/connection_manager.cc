@@ -37,6 +37,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"
+#include "os/system_properties.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/advertise_data_parser.h"
@@ -46,7 +47,8 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
 
-#define DIRECT_CONNECT_TIMEOUT (30 * 1000) /* 30 seconds */
+constexpr uint32_t kCreateConnectionTimeoutMs = 30 * 1000;
+static const std::string kPropertyDirectConnTimeout = "bluetooth.core.le.direct_connection_timeout";
 
 using namespace bluetooth;
 
@@ -609,8 +611,10 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
   }
 
   // Setup a timer
-  alarm_t* timeout = alarm_new("wl_conn_params_30s");
-  alarm_set_closure(timeout, DIRECT_CONNECT_TIMEOUT,
+  uint32_t connection_timeout =
+          os::GetSystemPropertyUint32(kPropertyDirectConnTimeout, kCreateConnectionTimeoutMs);
+  alarm_t* timeout = alarm_new("direct_connect_tout_30s");
+  alarm_set_closure(timeout, connection_timeout,
                     base::BindOnce(&wl_direct_connect_timeout_cb, app_id, address));
 
   bgconn_dev[address].doing_direct_conn.emplace(app_id, unique_alarm_ptr(timeout, &alarm_free));
