@@ -3647,7 +3647,7 @@ public class BluetoothMapContentObserver {
 
             // TODO(b/480794923): replace SKD_INT check with SkdLevel.isAtLeastC() once available
             boolean isMessageUpgradeAvailable =
-                    Flags.messageUpgrade() && Build.VERSION.SDK_INT >= 37;
+                    Flags.mapUseNewMessageApi() && Build.VERSION.SDK_INT >= 37;
             if (parts.size() == 1) {
                 if (isMessageUpgradeAvailable) {
                     smsMng.sendStoredTextMessage(
