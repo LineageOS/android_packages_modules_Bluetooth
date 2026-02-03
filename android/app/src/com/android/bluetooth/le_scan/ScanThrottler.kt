@@ -53,7 +53,7 @@ class ScanThrottler(
     // The recording job is per scan client, the earliest recording job will schedule the
     // refill job and cancel any pending recording jobs.
     @VisibleForTesting val recordUsageRunnables = HashMap<ScanClient, Runnable>()
-    val refillRunnables = HashMap<Int, Runnable>()
+    @VisibleForTesting val refillRunnables = HashMap<Int, Runnable>()
 
     class ScanAllowanceLedger {
         var spentScanAllowance = Duration.ZERO
