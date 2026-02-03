@@ -372,7 +372,7 @@ public class AvrcpControllerStateMachineTest {
     /** Verify that an absolute volume interim response was sent to the native interface. */
     private void verifyAbsoluteVolumeInterimResponse(byte label, int absVolRsp) {
         verify(mNativeInterface)
-                .sendRegisterAbsVolRsp(any(), eq((byte) 0x00), eq(absVolRsp), eq((int) label));
+                .sendRegisterAbsVolInterimRsp(any(), eq(absVolRsp), eq((int) label));
     }
 
     /** Send a set absolute volume command to the state machine and drive its looper. */
@@ -384,7 +384,7 @@ public class AvrcpControllerStateMachineTest {
 
     /** Verify that a set absolute volume response was sent to the native interface. */
     private void verifySetAbsoluteVolumeResponse(byte setLabel, int absVolRsp) {
-        verify(mNativeInterface).sendAbsVolRsp(any(), eq(absVolRsp), eq((int) setLabel));
+        verify(mNativeInterface).sendSetAbsVolRsp(any(), eq(absVolRsp), eq((int) setLabel));
     }
 
     /** Verify that {@code AudioManager.setStreamVolume} is called with the expected value. */
@@ -419,14 +419,12 @@ public class AvrcpControllerStateMachineTest {
 
     /** Verify that an absolute volume changed notification was sent to the native interface. */
     private void verifyAbsoluteVolumeChangedNotification(byte label, int absVol) {
-        verify(mNativeInterface)
-                .sendRegisterAbsVolRsp(any(), eq((byte) 0x01), eq(absVol), eq((int) label));
+        verify(mNativeInterface).sendRegisterAbsVolChangedRsp(any(), eq(absVol), eq((int) label));
     }
 
     /** Verify that an absolute volume changed notification was not sent to the native interface. */
     private void verifyNoAbsoluteVolumeChangedNotification() {
-        verify(mNativeInterface, never())
-                .sendRegisterAbsVolRsp(any(), eq((byte) 0x01), anyInt(), anyInt());
+        verify(mNativeInterface, never()).sendRegisterAbsVolChangedRsp(any(), anyInt(), anyInt());
     }
 
     /**

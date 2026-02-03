@@ -59,47 +59,47 @@ import com.android.internal.annotations.GuardedBy
  *   locally and independently. No volume changed events are sent back to the Target.
  */
 class AvrcpControllerVolumeHandler(
-    private val mContext: Context,
-    private val mDevice: BluetoothDevice,
-    private val mCallback: Callback,
-    mLooper: Looper,
+    private val context: Context,
+    private val device: BluetoothDevice,
+    private val callback: Callback,
+    looper: Looper,
 ) {
     /** For synchronizing [start] and [stop]. */
-    private val mLock = Any()
-    @GuardedBy("mLock") private var mStarted = false
+    private val lock = Any()
+    @GuardedBy("lock") private var started = false
 
-    private val mAudioManager: AudioManager = mContext.getSystemService(AudioManager::class.java)
+    private val audioManager: AudioManager = context.getSystemService(AudioManager::class.java)
 
     // For sending volume changed events back to the object owner
-    private val mReceiver = VolumeHandlerBroadcastReceiver()
+    private val receiver = VolumeHandlerBroadcastReceiver()
 
-    // To serialize the processing of volume events involving mCachedStreamVolume
+    // To serialize the processing of volume events involving cachedStreamVolume
     // Only used with STRATEGY_ABSOLUTE
-    private val mHandler: Handler = Handler(mLooper)
+    private val handler: Handler = Handler(looper)
 
     // For distinguishing external volume changed events from setAbsoluteVolume calls
     // This volume is a local index, not absolute volume
     // Only used with STRATEGY_ABSOLUTE
-    private var mCachedStreamVolume = VOLUME_VALUE_MISSING
+    private var cachedStreamVolume = VOLUME_VALUE_MISSING
 
     /** The volume strategy in use by our device. */
-    val mVolumeStrategy: Int =
-        if (mAudioManager.isVolumeFixed() || Util.isAutomotive(mContext)) STRATEGY_LOUD
+    val volumeStrategy: Int =
+        if (audioManager.isVolumeFixed() || Util.isAutomotive(context)) STRATEGY_LOUD
         else STRATEGY_ABSOLUTE
 
     private val isLoud: Boolean
-        get() = mVolumeStrategy == STRATEGY_LOUD
+        get() = volumeStrategy == STRATEGY_LOUD
 
     private val isAbsolute: Boolean
-        get() = mVolumeStrategy == STRATEGY_ABSOLUTE
+        get() = volumeStrategy == STRATEGY_ABSOLUTE
 
     /**
-     * Registers the [VolumeHandlerBroadcastReceiver]. Initializes [mCachedStreamVolume] to the
+     * Registers the [VolumeHandlerBroadcastReceiver]. Initializes [cachedStreamVolume] to the
      * current stream volume.
      */
     fun start() {
-        synchronized(mLock) {
-            if (mStarted) {
+        synchronized(lock) {
+            if (started) {
                 error("Calling start() when already started")
                 return
             }
@@ -108,30 +108,30 @@ class AvrcpControllerVolumeHandler(
                 val filter = IntentFilter()
                 filter.priority = IntentFilter.SYSTEM_HIGH_PRIORITY
                 filter.addAction(AudioManager.ACTION_VOLUME_CHANGED)
-                mContext.registerReceiver(mReceiver, filter)
+                context.registerReceiver(receiver, filter)
             }
-            mCachedStreamVolume = getStreamVolume()
-            mStarted = true
+            cachedStreamVolume = getStreamVolume()
+            started = true
         }
     }
 
     /**
      * Unregisters the [VolumeHandlerBroadcastReceiver]. Clears the handler's message queue. Resets
-     * [mCachedStreamVolume].
+     * [cachedStreamVolume].
      */
     fun stop() {
-        synchronized(mLock) {
-            if (!mStarted) {
+        synchronized(lock) {
+            if (!started) {
                 error("Calling stop() when already stopped")
                 return
             }
             debug("Stopping volume handler")
             if (Flags.avrcpControllerAbsVolChangedNotification()) {
-                mContext.unregisterReceiver(mReceiver)
-                mHandler.removeCallbacksAndMessages(null)
+                context.unregisterReceiver(receiver)
+                handler.removeCallbacksAndMessages(null)
             }
-            mCachedStreamVolume = VOLUME_VALUE_MISSING
-            mStarted = false
+            cachedStreamVolume = VOLUME_VALUE_MISSING
+            started = false
         }
     }
 
@@ -147,7 +147,7 @@ class AvrcpControllerVolumeHandler(
             }
             val localVolume: Int =
                 if (Flags.avrcpControllerAbsVolChangedNotification()) {
-                    mCachedStreamVolume
+                    cachedStreamVolume
                 } else {
                     getStreamVolume()
                 }
@@ -165,19 +165,16 @@ class AvrcpControllerVolumeHandler(
      *   Does not have to be the same as the input.
      */
     fun setAbsoluteVolume(absVol: Int, label: Int): Int {
-        var absVolToSet = absVol
-        debug("setAbsoluteVolume: absVol=$absVolToSet, label=$label")
+        debug("setAbsoluteVolume: absVol=$absVol, label=$label")
         if (isLoud) {
             debug(
-                ("Volume strategy is " +
-                    strategyToString(STRATEGY_LOUD) +
-                    ", responding with max volume")
+                "Volume strategy is ${strategyToString(STRATEGY_LOUD)}, responding with max volume"
             )
-            absVolToSet = ABS_VOL_MAX
+            return ABS_VOL_MAX
         } else {
-            setAbsoluteVolumeInternal(absVolToSet)
+            setAbsoluteVolumeInternal(absVol)
+            return absVol
         }
-        return absVolToSet
     }
 
     /**
@@ -187,24 +184,23 @@ class AvrcpControllerVolumeHandler(
      */
     private fun setAbsoluteVolumeInternal(absVol: Int) {
         if (!isAbsolute) {
-            error("setAbsoluteVolumeInternal: Unsupported volume strategy: $mVolumeStrategy")
+            error(
+                "setAbsoluteVolumeInternal: Unsupported volume strategy: ${strategyToString(volumeStrategy)}"
+            )
             return
         }
 
         val reqLocalVolume = absoluteToLocalVolume(absVol)
         val curLocalVolume: Int =
             if (Flags.avrcpControllerAbsVolChangedNotification()) {
-                mCachedStreamVolume
+                cachedStreamVolume
             } else {
                 getStreamVolume()
             }
         debug(
-            "setAbsoluteVolumeInternal: absVol=" +
-                absVol +
-                ", reqLocal=" +
-                reqLocalVolume +
-                ", curLocal=" +
-                curLocalVolume
+            "setAbsoluteVolumeInternal: absVol=$absVol, " +
+                "reqLocal=$reqLocalVolume, " +
+                "curLocal=$curLocalVolume"
         )
 
         if (Flags.avrcpControllerAbsVolChangedNotification()) {
@@ -219,34 +215,33 @@ class AvrcpControllerVolumeHandler(
      * [Flags.avrcpControllerAbsVolChangedNotification].
      */
     private fun setStreamVolume(reqLocalVolume: Int, curLocalVolume: Int) {
-        /*
-         * In some cases change in percentage is not sufficient enough to warrant
-         * change in index values which are in range of 0-15. For such cases
-         * no action is required
-         */
         if (reqLocalVolume == curLocalVolume) {
+            /*
+             * In some cases a change in percentage is not sufficient to warrant a change in index
+             * value, which is in the range of 0-15. For such cases no action is required.
+             */
             return
         }
         debug("Changing local stream volume from $curLocalVolume to $reqLocalVolume")
-        mAudioManager.setStreamVolume(
+        audioManager.setStreamVolume(
             AudioManager.STREAM_MUSIC,
             reqLocalVolume,
             AudioManager.FLAG_SHOW_UI,
         )
-        mCachedStreamVolume = reqLocalVolume
+        cachedStreamVolume = reqLocalVolume
     }
 
     /**
-     * Posts a runnable to [mHandler] to change the stream volume. Only used with
+     * Posts a runnable to [handler] to change the stream volume. Only used with
      * [STRATEGY_ABSOLUTE].
      */
     private fun postSetStreamVolume(reqLocalVolume: Int, curLocalVolume: Int) {
-        mHandler.post { setStreamVolume(reqLocalVolume, curLocalVolume) }
+        handler.post { setStreamVolume(reqLocalVolume, curLocalVolume) }
     }
 
-    /** Handle volume changed events by triggering the [Callback]. */
+    /** Handle volume changed events by triggering the [callback]. */
     private fun volumeChanged(newLocalVolume: Int) {
-        if (mCachedStreamVolume == newLocalVolume) {
+        if (cachedStreamVolume == newLocalVolume) {
             // Volume is unchanged since the last set absolute volume command or volume changed
             // event
             return
@@ -254,23 +249,23 @@ class AvrcpControllerVolumeHandler(
 
         val newAbsoluteVolume = localToAbsoluteVolume(newLocalVolume)
         debug("Stream volume changed to $newLocalVolume (local), $newAbsoluteVolume (absolute)")
-        mCachedStreamVolume = newLocalVolume
+        cachedStreamVolume = newLocalVolume
 
         if (!isAbsolute) {
             debug(
                 "Dropping volume changed event because we are using " +
-                    "${strategyToString(mVolumeStrategy)}, not " +
+                    "${strategyToString(volumeStrategy)}, not " +
                     "${strategyToString(STRATEGY_ABSOLUTE)}."
             )
             return
         }
 
-        mCallback.onAbsoluteVolumeChanged(newAbsoluteVolume)
+        callback.onAbsoluteVolumeChanged(newAbsoluteVolume)
     }
 
-    /** Posts a runnable to [mHandler] to handle volume changed events. */
+    /** Posts a runnable to [handler] to handle volume changed events. */
     private fun postVolumeChanged(newLocalVolume: Int) {
-        mHandler.post { volumeChanged(newLocalVolume) }
+        handler.post { volumeChanged(newLocalVolume) }
     }
 
     /**
@@ -288,7 +283,7 @@ class AvrcpControllerVolumeHandler(
 
     /**
      * If using absolute volume, listens for [AudioManager.ACTION_VOLUME_CHANGED] events to trigger
-     * the [Callback].
+     * the [callback].
      */
     private inner class VolumeHandlerBroadcastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -299,7 +294,7 @@ class AvrcpControllerVolumeHandler(
             if (streamType != AudioManager.STREAM_MUSIC) {
                 return
             }
-            if (mCachedStreamVolume == VOLUME_VALUE_MISSING) {
+            if (cachedStreamVolume == VOLUME_VALUE_MISSING) {
                 // We ignore volume changed events before our initial caching in start()
                 return
             }
@@ -315,11 +310,11 @@ class AvrcpControllerVolumeHandler(
     }
 
     private fun getStreamVolume(): Int {
-        return mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     }
 
     private fun getStreamMaxVolume(): Int {
-        return mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        return audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     }
 
     /**
@@ -350,17 +345,17 @@ class AvrcpControllerVolumeHandler(
      * @return The output string
      */
     override fun toString(): String {
-        return "Device: $mDevice" +
-            ", Volume Strategy: ${strategyToString(mVolumeStrategy)}" +
-            ", Cached Stream Volume: $mCachedStreamVolume"
+        return "Device: $device" +
+            ", Volume Strategy: ${strategyToString(volumeStrategy)}" +
+            ", Cached Stream Volume: $cachedStreamVolume"
     }
 
     private fun debug(message: String) {
-        Log.d(TAG, "[$mDevice]: $message")
+        Log.d(TAG, "[$device]: $message")
     }
 
     private fun error(message: String) {
-        Log.e(TAG, "[$mDevice]: $message")
+        Log.e(TAG, "[$device]: $message")
     }
 
     companion object {

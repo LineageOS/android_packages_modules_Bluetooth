@@ -759,8 +759,8 @@ static void setPlayerApplicationSettingValuesNative(JNIEnv* env, jobject /* obje
   env->ReleaseByteArrayElements(attrib_val, attr_val, 0);
 }
 
-static void sendAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyteArray address, jint abs_vol,
-                                jint label) {
+static void sendSetAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                   jint abs_vol, jint label) {
   log::info("");
 
   if (!sBluetoothAvrcpInterface) {
@@ -771,7 +771,7 @@ static void sendAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyteArray ad
   BtStatus status =
           sBluetoothAvrcpInterface->set_volume_rsp(bd_addr, (uint8_t)abs_vol, (uint8_t)label);
   if (!status) {
-    log::error("Failed sending sendAbsVolRspNative command, status: {}", status);
+    log::error("Failed sending sendSetAbsVolRspNative command, status: {}", status);
   }
 }
 
@@ -933,7 +933,7 @@ int register_com_android_bluetooth_avrcp_controller(JNIEnv* env) {
           {"sendGroupNavigationCommandNative", "([BII)Z", (void*)sendGroupNavigationCommandNative},
           {"setPlayerApplicationSettingValuesNative", "([BB[B[B)V",
            (void*)setPlayerApplicationSettingValuesNative},
-          {"sendAbsVolRspNative", "([BII)V", (void*)sendAbsVolRspNative},
+          {"sendSetAbsVolRspNative", "([BII)V", (void*)sendSetAbsVolRspNative},
           {"sendRegisterAbsVolRspNative", "([BBII)V", (void*)sendRegisterAbsVolRspNative},
           {"getCurrentMetadataNative", "([B)V", (void*)getCurrentMetadataNative},
           {"getPlaybackStateNative", "([B)V", (void*)getPlaybackStateNative},

@@ -375,7 +375,7 @@ typedef struct {
   /** send rsp to set_abs_vol received from target */
   BtStatus (*set_volume_rsp)(const RawAddress& bd_addr, uint8_t abs_vol, uint8_t label);
 
-  /** send notificaiton rsp for abs vol to target */
+  /** send notification rsp for abs vol to target */
   BtStatus (*register_abs_vol_rsp)(const RawAddress& bd_addr, btrc_notification_type_t rsp_type,
                                    uint8_t abs_vol, uint8_t label);
 
