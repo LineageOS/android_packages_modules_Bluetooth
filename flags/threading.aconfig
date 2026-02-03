@@ -21,3 +21,12 @@ flag {
     }
 }
 
+flag {
+    name: "clean_up_posting_on_main_thread"
+    namespace: "bluetooth"
+    description: "Clean up posting to main thread when already on main thread."
+    bug: "480224148"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -1077,6 +1077,7 @@ cb_variant!(BaseCb, pin_request_cb -> BaseCallbacks::PinRequest,
 );
 cb_variant!(BaseCb, ssp_request_cb -> BaseCallbacks::SspRequest,
     RawAddress,
+    i32 -> _,
     CxxPairingVariant -> PairingVariant,
     u32,
     i32 -> _
@@ -1272,6 +1273,7 @@ pub(crate) mod ffi {
         );
         fn ssp_request_cb(
             remote_addr: RawAddress,
+            transport: i32,
             variant: PairingVariant,
             passkey: u32,
             pairing_alg: i32,

@@ -289,6 +289,18 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
             BindOnce(&LeAudioClient::SetInCall, Unretained(LeAudioClient::Get()), in_call));
   }
 
+  void SetAllowlistFlag(const RawAddress& address, bool allowed) override {
+    if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
+      log::verbose(
+              "call ignored, due to already started cleanup procedure or service "
+              "being not read");
+      return;
+    }
+
+    do_in_main_thread(BindOnce(&LeAudioClient::SetAllowlistFlag, Unretained(LeAudioClient::Get()),
+                               address, allowed));
+  }
+
   void SetUnicastMonitorMode(uint8_t local_directions, bool enable) {
     log::verbose("enable: {}", enable);
     if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {

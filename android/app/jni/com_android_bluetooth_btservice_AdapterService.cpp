@@ -441,7 +441,7 @@ static void pin_request_callback(RawAddress bd_addr, bt_bdname_t* bdname, uint32
                                devname.get(), cod, min_16_digits, pairing_algorithm);
 }
 
-static void ssp_request_callback(RawAddress bd_addr, PairingVariant pairing_variant,
+static void ssp_request_callback(RawAddress bd_addr, int transport, PairingVariant pairing_variant,
                                  uint32_t pass_key, int pairing_algorithm) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
@@ -456,7 +456,7 @@ static void ssp_request_callback(RawAddress bd_addr, PairingVariant pairing_vari
 
   ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
-  sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback, addr.get(),
+  sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback, addr.get(), transport,
                                (jint)pairing_variant, pass_key, pairing_algorithm);
 }
 
@@ -1998,7 +1998,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"devicePropertyChangedCallback", "([BI[I[[B)V", &method_devicePropertyChangedCallback},
           {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
           {"pinRequestCallback", "([B[BIZI)V", &method_pinRequestCallback},
-          {"sspRequestCallback", "([BIII)V", &method_sspRequestCallback},
+          {"sspRequestCallback", "([BIIII)V", &method_sspRequestCallback},
           {"bondStateChangeCallback", "(I[BIIIIII)V", &method_bondStateChangeCallback},
           {"addressConsolidateCallback", "([B[B)V", &method_addressConsolidateCallback},
           {"leAddressAssociateCallback", "([B[BI)V", &method_leAddressAssociateCallback},

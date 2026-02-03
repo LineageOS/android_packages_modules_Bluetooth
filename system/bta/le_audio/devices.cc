@@ -1405,6 +1405,7 @@ bool LeAudioDevice::IsMetadataChanged(const BidirectionalPair<AudioContexts>& co
   return false;
 }
 
+// TODO: will remove when Flags.leaudioAllowlistRefactor() publish
 void LeAudioDevice::GetDeviceModelName(void) {
   bt_property_t prop_name;
   bt_bdname_t prop_value = {0};
@@ -1416,6 +1417,7 @@ void LeAudioDevice::GetDeviceModelName(void) {
   }
 }
 
+// TODO: will remove when Flags.leaudioAllowlistRefactor() publish
 void LeAudioDevice::UpdateDeviceAllowlistFlag(void) {
   char allow_list[PROPERTY_VALUE_MAX] = {0};
   GetDeviceModelName();

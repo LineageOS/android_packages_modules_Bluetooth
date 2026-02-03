@@ -66,6 +66,7 @@ public:
   virtual void SetCcidInformation(int ccid, int context_type) = 0;
   virtual void SetInGame(bool in_game) = 0;
   virtual void SetInCall(bool in_call) = 0;
+  virtual void SetAllowlistFlag(const RawAddress& address, bool allowed) = 0;
   virtual bool IsInCall() = 0;
   virtual void SetInVoipCall(bool in_call) = 0;
   virtual void SetUnicastMonitorMode(uint8_t direction, bool enable) = 0;

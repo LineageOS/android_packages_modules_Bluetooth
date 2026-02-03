@@ -54,7 +54,7 @@ static_library("btif") {
     "src/btif_hci_vs.cc",
     "src/btif_hd.cc",
     "src/btif_hearing_aid.cc",
-    "src/btif_vaps_server.cc",
+    "src/btif_vap_server.cc",
     "src/btif_hf.cc",
     "src/btif_hf_client.cc",
     "src/btif_hh.cc",

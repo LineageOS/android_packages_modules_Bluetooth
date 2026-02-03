@@ -116,6 +116,7 @@ import android.os.PowerManager;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.DeviceConfig;
@@ -239,6 +240,8 @@ public class AdapterService extends Service {
     static final String MESSAGE_ACCESS_PERMISSION_PREFERENCE_FILE = "message_access_permission";
     static final String SIM_ACCESS_PERMISSION_PREFERENCE_FILE = "sim_access_permission";
 
+    static final String LE_AUDIO_ALLOW_LIST_EXTEND = "persist.bluetooth.leaudio.allow_list_extend";
+
     // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section 4.3.5).
     static final int BLUETOOTH_NAME_MAX_LENGTH_BYTES = 248;
 
@@ -339,7 +342,7 @@ public class AdapterService extends Service {
     @GuardedBy("mEnergyInfoLock")
     private long mEnergyUsedTotalVoltAmpSecMicro;
 
-    private final HashSet<String> mLeAudioAllowDevices = new HashSet<>();
+    private final Set<String> mLeAudioAllowDevices = ConcurrentHashMap.newKeySet();
 
     /* List of pairs of gatt clients which controls AutoActiveMode on the device.*/
     @VisibleForTesting
@@ -1123,6 +1126,9 @@ public class AdapterService extends Service {
         }
 
         invalidateBluetoothCaches();
+        if (Flags.leaudioAllowlistRefactor()) {
+            cacheLeAudioAllowlistDevicesFromProp();
+        }
 
         // First call to getSharedPreferences will result in a file read into
         // memory cache. Call it here asynchronously to avoid potential ANR
@@ -1208,6 +1214,25 @@ public class AdapterService extends Service {
         BluetoothAdapter.invalidateGetAdapterConnectionStateCache();
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
+    }
+
+    void cacheLeAudioAllowlistDevicesFromProp() {
+        Set<String> newDevices = ConcurrentHashMap.newKeySet();
+
+        List<String> leAudioAllowlistProp = BluetoothProperties.le_audio_allow_list();
+        if (leAudioAllowlistProp != null && !leAudioAllowlistProp.isEmpty()) {
+            newDevices.addAll(leAudioAllowlistProp);
+        }
+
+        String allowlistExtend = SystemProperties.get(LE_AUDIO_ALLOW_LIST_EXTEND, "");
+        if (!allowlistExtend.isEmpty()) {
+            newDevices.addAll(Arrays.asList(allowlistExtend.split(",")));
+        }
+
+        Log.d(TAG, "Le Audio allowlist from sysprop: " + newDevices);
+
+        mLeAudioAllowDevices.clear();
+        mLeAudioAllowDevices.addAll(newDevices);
     }
 
     void bringUpBle() {
@@ -5093,10 +5118,14 @@ public class AdapterService extends Service {
                     BluetoothProperties.le_audio_allow_list(leAudioAllowlistFromDeviceConfig);
                 }
 
-                List<String> leAudioAllowlistProp = BluetoothProperties.le_audio_allow_list();
-                if (leAudioAllowlistProp != null && !leAudioAllowlistProp.isEmpty()) {
-                    mLeAudioAllowDevices.clear();
-                    mLeAudioAllowDevices.addAll(leAudioAllowlistProp);
+                if (Flags.leaudioAllowlistRefactor()) {
+                    cacheLeAudioAllowlistDevicesFromProp();
+                } else {
+                    List<String> leAudioAllowlistProp = BluetoothProperties.le_audio_allow_list();
+                    if (leAudioAllowlistProp != null && !leAudioAllowlistProp.isEmpty()) {
+                        mLeAudioAllowDevices.clear();
+                        mLeAudioAllowDevices.addAll(leAudioAllowlistProp);
+                    }
                 }
             }
         }

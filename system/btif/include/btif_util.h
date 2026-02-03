@@ -34,15 +34,6 @@
   case const:                  \
     return #const;
 
-/**
- * Pairing algorithm constants derived from `@PairingAlgorithm` defined in
- * `packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java`, and should
- * always be in sync.
- */
-#define API_PAIRING_ALGORITHM_LE_LEGACY 0
-#define API_PAIRING_ALGORITHM_BREDR_LEGACY 1
-#define API_PAIRING_ALGORITHM_BREDR_SSP 2
-#define API_PAIRING_ALGORITHM_SC 3
 /*******************************************************************************
  *  Type definitions for callback functions
  ******************************************************************************/
@@ -66,7 +57,6 @@ std::string dump_rc_opcode(uint8_t opcode);
 std::string dump_rc_event(uint8_t event);
 std::string dump_rc_notification_event_id(uint8_t event_id);
 std::string dump_rc_pdu(uint8_t pdu);
-int map_pairing_algo_to_api(PairingAlgorithm pairing_algo, tBT_TRANSPORT transport);
 uint32_t devclass2uint(const DEV_CLASS dev_class);
 DEV_CLASS uint2devclass(uint32_t dev);
 

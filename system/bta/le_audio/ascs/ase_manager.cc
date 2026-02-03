@@ -24,6 +24,7 @@
 #include "ase_state_machine.h"
 #include "bluetooth/types/address.h"
 #include "bta/include/bta_gatt_api.h"
+#include "bta/le_audio/common/le_audio_event_tracker.h"
 #include "bta/le_audio/le_audio_types.h"
 #include "btm_iso_api.h"
 #include "hci/controller.h"
@@ -37,6 +38,7 @@ using namespace std::chrono_literals;
 using namespace std::placeholders;
 
 namespace bluetooth::le_audio {
+static const char* EVT_LOG_ISO_TAG = "ASE Manager";
 
 struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
                                   public Ascs::Callbacks,
@@ -69,6 +71,8 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
     ascs_ = std::move(ascs);
     sm_factory_ = std::move(sm_factory);
     iso_app_ = iso_app_factory.Run(this);
+
+    event_tracker_ = LeAudioEventTracker::GetLeAudioSinkInstance();
   }
 
   ~manager_impl() {
@@ -282,6 +286,9 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
   void OnDecodingSessionReady(const RawAddress& pseudo_address) {
     log::debug("Address: {}", pseudo_address);
 
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::CALLBACK,
+                            "OnDecodingSessionReady peer: {}", pseudo_address);
+
     // Let all the sink ASEs waiting in ENABLING state, know that the audio receiver is ready
     for (auto* sm : GetStateMachinesFiltered(
                  AseManager::AseFilters::PeerDevice(pseudo_address) |
@@ -299,6 +306,8 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
   void OnEncodingSessionReady(const RawAddress& pseudo_address) {
     log::debug("Address: {}", pseudo_address);
 
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::CALLBACK,
+                            "NotifyEncodingSessionReady peer: {}", pseudo_address);
     // Note: Not much to do here, since all the source ASEs waiting in ENABLING state will
     // transition to STREAMING once the remote peer notifies rediness to receive the audio.
   }
@@ -387,10 +396,16 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
       log::error("Rejecting CIS request, cig_id: {}, cis_id: {}, peer: {} - missing state machine",
                  evt->cig_id, evt->cis_id, p_device->ble.pseudo_addr);
 
+      event_tracker_->OnEvent(
+              EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+              "RejectIncomingCisConnection conn_hdl: {}, reason: HCI_ERR_UNSPECIFIED",
+              evt->cis_conn_hdl);
       iso_app_->RejectIncomingCisConnection(evt->cis_conn_hdl, HCI_ERR_UNSPECIFIED);
       return;
     }
 
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+                            "AcceptIncomingCisConnection conn_hdl: {}", evt->cis_conn_hdl);
     iso_app_->AcceptIncomingCisConnection(evt->cis_conn_hdl);
 
     for (auto* sm : enabling_state_machines) {
@@ -420,6 +435,11 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
     for (auto* sm : resuming_ase_state_machines) {
       // Setup iso data path
       log::debug("Prepare ISO data path for SM in state: {}", sm->GetStateId());
+      event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+                              "CIS established: SetupIsoDataPath {}, conn_hdl: {}, peer: {}",
+                              sm->IsSinkAse() ? "Sink" : "Source", evt->cis_conn_hdl,
+                              sm->GetPeer());
+
       auto const data_path_params =
               GetIsoDataPathParams(sm->data_path_configuration.value(), sm->IsSinkAse());
 
@@ -468,7 +488,10 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
          GetStateMachinesFiltered(AseManager::AseFilters::CisConnHandle(evt->cis_conn_hdl))) {
       log::debug("RemoveIncomingCisEventsListener, peer: {}, cig_id: {}, cis_id: {}", sm->GetPeer(),
                  sm->qos_configuration->cig_id, sm->qos_configuration->cis_id);
-
+      event_tracker_->OnEvent(
+              EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+              "CIS Disconnected. RemoveIncomingCisEventsListener, peer: {}, cig_id: {}, cis_id: {}",
+              sm->GetPeer(), sm->qos_configuration->cig_id, sm->qos_configuration->cis_id);
       iso_app_->RemoveIncomingCisEventsListener(sm->GetPeer(), sm->qos_configuration->cig_id,
                                                 sm->qos_configuration->cis_id);
 
@@ -575,6 +598,10 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
             log::debug("RemoveIsoDataPath for {}, conn_hdl: {}",
                        sm->IsSourceAse() ? "Controller Input" : "Controller Output",
                        sm->GetCisConnHandle());
+            event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+                                    "RemoveIsoDataPath for {}, conn_hdl: {}",
+                                    sm->IsSourceAse() ? "Controller Input" : "Controller Output",
+                                    sm->GetCisConnHandle());
 
             auto direction =
                     sm->IsSourceAse()
@@ -586,6 +613,10 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
         break;
 
       case AscsAseStateMachine::StateId::ENABLING:
+        event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+                                "AddIncomingCisEventsListener, peer: {}, cig_id: {}, cis_id: {}",
+                                sm->GetPeer(), sm->qos_configuration->cig_id,
+                                sm->qos_configuration->cis_id);
         iso_app_->AddIncomingCisEventsListener(sm->GetPeer(), sm->qos_configuration->cig_id,
                                                sm->qos_configuration->cis_id);
         break;
@@ -630,6 +661,8 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
                             ? bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionInput
                             : bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
 
+            event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::POINT,
+                                    "RemoveIsoDataPath conn_hdl: {}", sm->GetCisConnHandle());
             iso_app_->RemoveIsoDataPath(sm->GetCisConnHandle(), direction);
           }
         }
@@ -646,6 +679,9 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
   void HandleAseCtpConfigCodec(const RawAddress& address,
                                const std::vector<ascs::AseCodecConfigurationReq>& params,
                                Ascs::AseCtpResponse& response) {
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::SUBEVENT,
+                            "HandleAseCtpConfigCodec: peer: {}, num_ases: {}", address,
+                            params.size());
     log::debug("");
 
     // Before involving the SM, we should verify the requested codec parameters
@@ -690,6 +726,9 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
   void HandleAseCtpConfigQos(const RawAddress& address,
                              const std::vector<ascs::AseQosConfigurationReq>& params,
                              Ascs::AseCtpResponse& response) {
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::SUBEVENT,
+                            "HandleAseCtpConfigQos: peer: {}, num_ases: {}", address,
+                            params.size());
     log::debug("");
 
     std::map<uint8_t, std::tuple<types::LeAudioCodecId, std::vector<uint8_t>,
@@ -758,6 +797,8 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
 
   void HandleAseCtpEnable(const RawAddress& address, const std::vector<ascs::AseEnableReq>& params,
                           Ascs::AseCtpResponse& response) {
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::SUBEVENT,
+                            "HandleAseCtpEnable: peer: {}, num_ases: {}", address, params.size());
     log::debug("");
 
     if (pending_enable_operations_.count(address) > 0) {
@@ -848,6 +889,9 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
   void HandleAseCtpUpdateMetadata(const RawAddress& address,
                                   const std::vector<ascs::AseUpdateMetadataReq>& params,
                                   Ascs::AseCtpResponse& response) {
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::SUBEVENT,
+                            "HandleAseCtpUpdateMetadata: peer: {}, num_ases: {}", address,
+                            params.size());
     log::debug("");
 
     bool all_configs_ok = true;
@@ -916,6 +960,8 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
 
   void HandleAseCtpRelease(const RawAddress& address, const std::vector<uint8_t>& ase_ids,
                            Ascs::AseCtpResponse& response) {
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::SUBEVENT,
+                            "HandleAseCtpRelease: peer: {}, num_ases: {}", address, ase_ids.size());
     log::debug("");
 
     for (auto const& ase_id : ase_ids) {
@@ -956,6 +1002,9 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
                                           const RawAddress& address,
                                           const std::vector<uint8_t>& ase_ids,
                                           Ascs::AseCtpResponse& response) {
+    event_tracker_->OnEvent(EVT_LOG_ISO_TAG, LeAudioEventTracker::EventType::SUBEVENT,
+                            "HandleAseCtpRequestWithAseIdsParam: peer: {}, event: {}, num_ases: {}",
+                            address, event, ase_ids.size());
     log::debug("");
 
     for (auto const& ase_id : ase_ids) {
@@ -1126,6 +1175,7 @@ private:
   std::unique_ptr<IsoAppProxy> iso_app_;
   std::map<hci_data_direction_t, std::pair<uint8_t, std::vector<uint8_t>>> configured_data_path_;
   base::WeakPtrFactory<manager_impl> weak_factory_{this};
+  std::shared_ptr<LeAudioEventTracker> event_tracker_;
 };
 
 AseManager::AseManager(std::shared_ptr<Ascs> ascs, AscsAseStateMachineFactory sm_factory,
