@@ -27,6 +27,7 @@ import android.os.Looper
 import android.util.Log
 import com.android.bluetooth.Util
 import com.android.bluetooth.flags.Flags
+import kotlin.math.roundToInt
 
 /**
  * Handler for [AvrcpControllerStateMachine] volume operations, which are handled differently
@@ -307,7 +308,7 @@ class AvrcpControllerVolumeHandler(
      */
     private fun localToAbsoluteVolume(localVolume: Int): Int {
         val maxLocalVolume = getStreamMaxVolume()
-        return (ABS_VOL_MAX * localVolume) / maxLocalVolume
+        return ((ABS_VOL_MAX * localVolume).toDouble() / maxLocalVolume).roundToInt()
     }
 
     /**
@@ -318,7 +319,7 @@ class AvrcpControllerVolumeHandler(
      */
     private fun absoluteToLocalVolume(absoluteVolume: Int): Int {
         val maxLocalVolume = getStreamMaxVolume()
-        return (maxLocalVolume * absoluteVolume) / ABS_VOL_MAX
+        return ((maxLocalVolume * absoluteVolume).toDouble() / ABS_VOL_MAX).roundToInt()
     }
 
     /**

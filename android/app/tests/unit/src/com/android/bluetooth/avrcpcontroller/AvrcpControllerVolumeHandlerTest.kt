@@ -143,7 +143,7 @@ class AvrcpControllerVolumeHandlerTest {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         val absVol = volumeHandler.absoluteVolume
-        assertThat(absVol).isEqualTo(31)
+        assertThat(absVol).isEqualTo(32)
     }
 
     // setAbsoluteVolume
@@ -169,7 +169,7 @@ class AvrcpControllerVolumeHandlerTest {
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
-        verifySetStreamVolume(15)
+        verifySetStreamVolume(16)
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
 
@@ -178,12 +178,12 @@ class AvrcpControllerVolumeHandlerTest {
     fun testSetAbsoluteVolume_isStrategyAbsolute_currentVol_doesNotSetStreamVolume() {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
-        // Absolute volume 32 -> Local volume 25
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 32)
         assertThat(absVol).isEqualTo(32)
         // Setting absolute volume to match the current stream volume shouldn't change the stream
         // volume
+        // Absolute volume 32 -> Local volume 25 == current stream volume
         verifyNoSetStreamVolume()
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
@@ -208,8 +208,8 @@ class AvrcpControllerVolumeHandlerTest {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         // Volume changed event
-        sendVolumeChangedEvent(39)
-        verify(callback).onAbsoluteVolumeChanged(49)
+        sendVolumeChangedEvent(16)
+        verify(callback).onAbsoluteVolumeChanged(20)
     }
 
     /**
@@ -222,6 +222,7 @@ class AvrcpControllerVolumeHandlerTest {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         // Volume changed event that matches the current stream volume
+        // Current stream volume: 25
         sendVolumeChangedEvent(25)
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
@@ -239,12 +240,12 @@ class AvrcpControllerVolumeHandlerTest {
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
-        verifySetStreamVolume(15)
+        verifySetStreamVolume(16)
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
 
         // Volume changed event for a different volume than was set
         sendVolumeChangedEvent(39)
-        verify(callback).onAbsoluteVolumeChanged(49)
+        verify(callback).onAbsoluteVolumeChanged(50)
     }
 
     /**
@@ -260,11 +261,11 @@ class AvrcpControllerVolumeHandlerTest {
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
-        verifySetStreamVolume(15)
+        verifySetStreamVolume(16)
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
 
         // Volume changed event for the same volume that was set
-        sendVolumeChangedEvent(15)
+        sendVolumeChangedEvent(16)
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
 
@@ -279,7 +280,7 @@ class AvrcpControllerVolumeHandlerTest {
 
         // Volume changed event
         sendVolumeChangedEvent(39)
-        verify(callback).onAbsoluteVolumeChanged(49)
+        verify(callback).onAbsoluteVolumeChanged(50)
 
         clearInvocations(callback)
 
@@ -287,7 +288,7 @@ class AvrcpControllerVolumeHandlerTest {
         val setLabel: Byte = 52
         val absVol = setAbsoluteVolume(setLabel, 20)
         assertThat(absVol).isEqualTo(20)
-        verifySetStreamVolume(15)
+        verifySetStreamVolume(16)
         verify(callback, never()).onAbsoluteVolumeChanged(any<Int>())
     }
 
@@ -301,8 +302,8 @@ class AvrcpControllerVolumeHandlerTest {
         makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         // Volume changed event
-        sendVolumeChangedEvent(15)
-        verify(callback).onAbsoluteVolumeChanged(19)
+        sendVolumeChangedEvent(16)
+        verify(callback).onAbsoluteVolumeChanged(20)
 
         clearInvocations(callback)
 
