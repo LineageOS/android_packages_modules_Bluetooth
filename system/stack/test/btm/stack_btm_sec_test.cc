@@ -499,7 +499,6 @@ TEST_F(StackBtmSecSecurityUpgradeTest, MitmUpgradePossible) {
   p_device_->sec_rec.link_key_type = BTM_LKEY_TYPE_UNAUTH_COMB;
   p_device_->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
   p_device_->sec_rec.rmt_io_caps = BtIoCap::KEYBOARD_ONLY;
-  BtmSecurity::Get().devcb_.loc_io_caps = BtIoCap::DISPLAY_YES_NO;
 
   // Action: Request access for a service that requires MITM.
   btm_sec_service_access_request(kRawAddress, true /* outgoing */, BTM_SEC_OUT_MITM, NULL, NULL);
@@ -517,7 +516,6 @@ TEST_F(StackBtmSecSecurityUpgradeTest, MitmUpgradeNotPossible) {
   p_device_->sec_rec.link_key_type = BTM_LKEY_TYPE_UNAUTH_COMB;
   p_device_->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
   p_device_->sec_rec.rmt_io_caps = BtIoCap::NO_INPUT_NO_OUTPUT;
-  BtmSecurity::Get().devcb_.loc_io_caps = BtIoCap::NO_INPUT_NO_OUTPUT;
   uint16_t initial_sec_flags = p_device_->sec_rec.sec_flags;
   uint8_t initial_sm4 = p_device_->sm4;
 
