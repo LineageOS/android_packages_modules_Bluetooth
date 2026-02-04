@@ -46,6 +46,7 @@ use crate::bluetooth_gatt::{
 use crate::bluetooth_media::{BluetoothMedia, MediaActions, LEA_UNKNOWN_GROUP_ID};
 use crate::callbacks::Callbacks;
 use crate::socket_manager::SocketActions;
+use crate::suspend::SuspendActions;
 use crate::uuid::{Profile, UuidHelper};
 use crate::{make_message_dispatcher, APIMessage, BluetoothAPI, Message, RPCProxy, SuspendMode};
 
@@ -1040,6 +1041,19 @@ impl Bluetooth {
             .collect()
     }
 
+    /// Returns all HoGP devices and the current profile connection status
+    pub fn get_all_hogp_devices(&self) -> HashMap<RawAddress, bool> {
+        let hogp_uuid = UuidHelper::get_profile_uuid(&Profile::Hogp).unwrap();
+        self.remote_devices
+            .values()
+            .filter(|d| match d.properties.get(&BtPropertyType::Uuids) {
+                Some(BluetoothProperty::Uuids(uuids)) => uuids.contains(hogp_uuid),
+                _ => false,
+            })
+            .map(|d| (d.info.address, d.is_initiated_hh_connection))
+            .collect()
+    }
+
     /// Gets the bond state of a single device with its address.
     pub fn get_bond_state_by_addr(&self, addr: &RawAddress) -> BtBondState {
         self.remote_devices.get(addr).map_or(BtBondState::NotBonded, |d| d.bond_state.clone())
@@ -1478,6 +1492,49 @@ impl Bluetooth {
                     .await;
             });
         }
+    }
+
+    /// Manage the connection state of HoGP devices when entering suspend
+    pub fn hogp_enter_suspend(&self, wake_allowed: bool) -> bool {
+        let devices = self.get_all_hogp_devices();
+        for (address, connected) in devices {
+            if wake_allowed {
+                if connected {
+                    self.hh.as_ref().unwrap().disconnect(
+                        address,
+                        BtAddrType::Public,
+                        BtTransport::Le,
+                        BthhReconnectPolicy::Allowed,
+                    );
+                }
+            } else {
+                self.hh.as_ref().unwrap().disconnect(
+                    address,
+                    BtAddrType::Public,
+                    BtTransport::Le,
+                    BthhReconnectPolicy::NotAllowedTemporary,
+                );
+            }
+        }
+
+        true
+    }
+
+    /// Manage the connection state of HoGP devices when waking up
+    pub fn hogp_exit_suspend(&self) -> bool {
+        let devices = self.get_all_hogp_devices();
+        for (address, connected) in devices {
+            if !connected {
+                self.hh.as_ref().unwrap().connect(
+                    address,
+                    BtAddrType::Public,
+                    BtTransport::Le,
+                    /*direct=*/ false,
+                );
+            }
+        }
+
+        true
     }
 }
 
@@ -3008,6 +3065,17 @@ impl BtifHHCallbacks for Bluetooth {
             context.is_initiated_hh_connection =
                 state == BthhConnectionState::Connected || state == BthhConnectionState::Connecting;
         });
+
+        if state == BthhConnectionState::Disconnected {
+            let tx = self.tx.clone();
+            tokio::spawn(async move {
+                let _result = tx
+                    .send(Message::SuspendActions(SuspendActions::ProfileDisconnected(
+                        address, profile,
+                    )))
+                    .await;
+            });
+        }
 
         if BtBondState::Bonded != self.get_bond_state_by_addr(&address)
             && (state != BthhConnectionState::Disconnecting
