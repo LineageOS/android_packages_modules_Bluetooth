@@ -25,6 +25,7 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.android.bluetooth.Util
 import com.android.bluetooth.flags.Flags
 import kotlin.math.roundToInt
@@ -306,7 +307,8 @@ class AvrcpControllerVolumeHandler(
      * @param localVolume A local volume level based on the device's audio manager
      * @return An absolute volume level based on a domain of [0, ABS_VOL_MAX]
      */
-    private fun localToAbsoluteVolume(localVolume: Int): Int {
+    @VisibleForTesting
+    fun localToAbsoluteVolume(localVolume: Int): Int {
         val maxLocalVolume = getStreamMaxVolume()
         return ((ABS_VOL_MAX * localVolume).toDouble() / maxLocalVolume).roundToInt()
     }
@@ -317,7 +319,8 @@ class AvrcpControllerVolumeHandler(
      * @param absoluteVolume An absolute volume level based on a domain of [0, ABS_VOL_MAX]
      * @return A local volume level based on the device's audio manager
      */
-    private fun absoluteToLocalVolume(absoluteVolume: Int): Int {
+    @VisibleForTesting
+    fun absoluteToLocalVolume(absoluteVolume: Int): Int {
         val maxLocalVolume = getStreamMaxVolume()
         return ((maxLocalVolume * absoluteVolume).toDouble() / ABS_VOL_MAX).roundToInt()
     }
