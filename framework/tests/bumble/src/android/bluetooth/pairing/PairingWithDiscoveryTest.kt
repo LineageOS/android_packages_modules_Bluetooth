@@ -850,6 +850,183 @@ class PairingWithDiscoveryTest {
         assertThat(bumbleDevice?.identityAddress).isEqualTo(savedAddr)
     }
 
+    /**
+     * Test LE pairing flow with Auto transport
+     *
+     * Prerequisites:
+     * 1. Bumble and Android are not bonded
+     *
+     * Steps:
+     * 1. Bumble is non discoverable over BR/EDR and discoverable over LE
+     * 2. Bumble LE AD Flags in advertisement support dual mode
+     * 3. Android starts discovery of remote devices
+     * 4. Android initiates pairing with Bumble using Auto transport
+     *
+     * Expectation: Pairing succeeds over LE Transport
+     */
+    @Test
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.pairing_transport_selection")
+    @Throws(Exception::class)
+    fun testBondLe_AutoTransport() {
+        registerIntentActions(
+            BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+            BluetoothDevice.ACTION_ACL_CONNECTED,
+            BluetoothDevice.ACTION_PAIRING_REQUEST,
+        )
+
+        // Make Bumble non-discoverable over BR/EDR
+        bumble
+            .hostBlocking()
+            .setDiscoverabilityMode(
+                SetDiscoverabilityModeRequest.newBuilder()
+                    .apply { setMode(DiscoverabilityMode.NOT_DISCOVERABLE) }
+                    .build()
+            )
+
+        // Make Bumble non-connectable over BR/EDR
+        val request =
+            HostProto.SetConnectabilityModeRequest.newBuilder()
+                .apply { setMode(HostProto.ConnectabilityMode.NOT_CONNECTABLE) }
+                .build()
+        bumble.hostBlocking().setConnectabilityMode(request)
+
+        // Start LE advertisement from Bumble
+        val requestBuilder =
+            AdvertiseRequest.newBuilder().apply {
+                setLegacy(true)
+                setConnectable(true)
+                setOwnAddressType(OwnAddressType.PUBLIC)
+            }
+
+        val dataTypeBuilder =
+            DataTypes.newBuilder().apply {
+                setCompleteLocalName(BUMBLE_DEVICE_NAME)
+                setIncludeCompleteLocalName(true)
+                // Set LE AD Flags to be LE General discoverable, also supports dual mode
+                setLeDiscoverabilityModeValue(DiscoverabilityMode.DISCOVERABLE_GENERAL_VALUE)
+            }
+        requestBuilder.setData(dataTypeBuilder.build())
+
+        val responseObserver = StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse>()
+        bumble.host().advertise(requestBuilder.build(), responseObserver)
+
+        // Start Device Discovery from Android
+        testStepStartDiscovery()
+
+        // Start pairing from Android with Auto transport
+        assertThat(bumbleDevice?.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue()
+
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+        )
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
+
+        // Approve pairing from Android
+        assertThat(bumbleDevice?.setPairingConfirmation(true)).isTrue()
+
+        // Ensure that pairing succeeds
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
+
+        unregisterIntentActions(
+            BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+            BluetoothDevice.ACTION_ACL_CONNECTED,
+            BluetoothDevice.ACTION_PAIRING_REQUEST,
+        )
+    }
+
+    /**
+     * Test BR/EDR pairing flow with Auto transport
+     *
+     * Prerequisites:
+     * 1. Bumble and Android are not bonded
+     *
+     * Steps:
+     * 1. Bumble is discoverable over BR/EDR and non discoverable over LE
+     * 2. Android starts discovery of remote devices
+     * 3. Android initiates pairing with Bumble using Auto transport
+     *
+     * Expectation: Pairing succeeds over BR/EDR Transport
+     */
+    @Test
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.pairing_transport_selection")
+    @Throws(Exception::class)
+    fun testBondBrEdr_AutoTransport() {
+        registerIntentActions(
+            BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+            BluetoothDevice.ACTION_ACL_CONNECTED,
+            BluetoothDevice.ACTION_PAIRING_REQUEST,
+        )
+
+        // Make Bumble discoverable over BR/EDR
+        bumble
+            .hostBlocking()
+            .setDiscoverabilityMode(
+                SetDiscoverabilityModeRequest.newBuilder()
+                    .apply { setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL) }
+                    .build()
+            )
+
+        // Make Bumble connectable over BR/EDR
+        val request =
+            HostProto.SetConnectabilityModeRequest.newBuilder()
+                .apply { setMode(HostProto.ConnectabilityMode.CONNECTABLE) }
+                .build()
+        bumble.hostBlocking().setConnectabilityMode(request)
+
+        // Start Device Discovery from Android
+        testStepStartDiscovery()
+
+        // Start pairing from Android with Auto transport
+        assertThat(bumbleDevice?.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue()
+
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
+
+        // Approve pairing from Android
+        assertThat(bumbleDevice?.setPairingConfirmation(true)).isTrue()
+
+        // Ensure that pairing succeeds
+        verifyIntentReceived(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
+
+        unregisterIntentActions(
+            BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+            BluetoothDevice.ACTION_ACL_CONNECTED,
+            BluetoothDevice.ACTION_PAIRING_REQUEST,
+        )
+    }
+
     // Helper/testStep functions go here
     /**
      * Helper function to start device discovery
