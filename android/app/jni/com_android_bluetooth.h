@@ -176,6 +176,8 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env);
 
 int register_com_android_bluetooth_le_audio_broadcaster(JNIEnv* env);
 
+int register_com_android_bluetooth_le_audio_peripheral(JNIEnv* env);
+
 int register_com_android_bluetooth_mcp_client(JNIEnv* env);
 
 int register_com_android_bluetooth_vc(JNIEnv* env);

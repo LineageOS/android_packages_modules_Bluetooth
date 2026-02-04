@@ -58,15 +58,6 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         return service
     }
 
-    // Post and wait for the action to be completed
-    private fun <T> syncPost(
-        service: LeAudioPeripheralService?,
-        function: (LeAudioPeripheralService) -> T,
-        defaultValue: T,
-    ): T {
-        return service?.syncPost(function, defaultValue) ?: defaultValue
-    }
-
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     private fun <T> withService(
         source: AttributionSource,
@@ -75,7 +66,7 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
     ): T {
         requireNotNull(source)
         val service = getServiceAndEnforcePrivileged(source)
-        return syncPost(service, action, defaultValue)
+        return service?.syncPost(action, defaultValue) ?: defaultValue
     }
 
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])

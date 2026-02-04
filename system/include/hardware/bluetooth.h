@@ -43,6 +43,7 @@
 #define BT_PROFILE_ADVANCED_AUDIO_ID "a2dp"
 #define BT_PROFILE_ADVANCED_AUDIO_SINK_ID "a2dp_sink"
 #define BT_PROFILE_AV_RC_CTRL_ID "avrcp_ctrl"
+#define BT_PROFILE_LE_AUDIO_PERIPHERAL_ID "le_audio_peripheral"
 #define BT_PROFILE_CSIS_CLIENT_ID "csis_client"
 #define BT_PROFILE_GATT_ID "gatt"
 #define BT_PROFILE_HANDSFREE_CLIENT_ID "handsfree_client"
