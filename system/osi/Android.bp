@@ -152,11 +152,20 @@ cc_test {
             shared_libs: [
                 "libstatssocket",
             ],
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
+        },
+        host: {
+            sanitize: {
+                address: true,
+            },
         },
     },
     sanitize: {
-        address: true,
-        cfi: false,
+        // address: See above
+        cfi: true,
+        misc_undefined: ["bounds"],
     },
     header_libs: ["libbluetooth_headers"],
 }

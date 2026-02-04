@@ -21,8 +21,11 @@ cc_defaults {
     target: {
         android: {
             test_config_template: ":BluetoothGTestConfigTemplate",
-            sanitize: {
-                misc_undefined: ["bounds"],
+        },
+        host: {
+            sanitize: { // TODO(b/481480264) - ASAN on Android fails in MTS
+            // address: true, // TODO activate for all host tests
+            // misc_undefined: ["bounds"],
             },
         },
     },

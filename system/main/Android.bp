@@ -144,10 +144,18 @@ cc_test {
                 "libstatssocket",
                 "libutils",
             ],
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
+        },
+        host: {
+            sanitize: {
+                address: true,
+            },
         },
     },
     sanitize: {
-        address: true,
+        // address: See above
         all_undefined: true,
         cfi: true,
         integer_overflow: true,
