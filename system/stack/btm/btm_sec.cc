@@ -133,8 +133,6 @@ static void btm_sec_check_pending_enc_req(BtmDevice* p_device, tBT_TRANSPORT tra
 
 static bool btm_sec_use_smp_br_chnl(BtmDevice* p_device);
 
-static BtIoCap btm_sec_bredr_iocap_from_sysprop();
-
 /* true - authenticated link key is possible */
 static const bool btm_sec_io_map[kBtIoCapClassicMax + 1][kBtIoCapClassicMax + 1] = {
         /*   OUT,    IO,     IN,     NONE */
@@ -146,6 +144,39 @@ static const bool btm_sec_io_map[kBtIoCapClassicMax + 1][kBtIoCapClassicMax + 1]
 /*  BTM_IO_CAP_IO       1   DisplayYesNo */
 /*  BTM_IO_CAP_IN       2   KeyboardOnly */
 /*  BTM_IO_CAP_NONE     3   NoInputNoOutput */
+
+/**
+ * Returns GAP IO capabilities if defined from system property, to be used for BREDR Pairing.
+ *
+ * For backwards compatibility, defaults to BtIoCap::DISPLAY_YES_NO if the system property value
+ * is invalid or undefined.
+ */
+static BtIoCap btm_sec_get_local_iocaps() {
+  if (!com_android_bluetooth_flags_btm_iocaps_sysprop_override()) {
+    return BtIoCap::DISPLAY_YES_NO;
+  }
+
+  std::optional<android::sysprop::bluetooth::Core::gap_io_capabilities_values> sysprop_value =
+          android::sysprop::bluetooth::Core::gap_io_capabilities();
+  if (!sysprop_value.has_value()) {
+    return BtIoCap::DISPLAY_YES_NO;
+  }
+
+  switch (sysprop_value.value()) {
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::NONE:
+      return BtIoCap::NO_INPUT_NO_OUTPUT;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_ONLY:
+      return BtIoCap::DISPLAY_ONLY;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_YESNO:
+      return BtIoCap::DISPLAY_YES_NO;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_ONLY:
+      return BtIoCap::KEYBOARD_ONLY;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_DISPLAY:
+      // BT Classic does not support KEYBOARD_DISPLAY, fall back to default.
+    default:
+      return BtIoCap::DISPLAY_YES_NO;
+  }
+}
 
 static void NotifyBondingChange(BtmDevice& p_device, tHCI_STATUS status) {
   if (BtmSecurity::Get().api_.p_auth_complete_callback != nullptr) {
@@ -1336,9 +1367,10 @@ static bool security_upgrade_possible(const BtmDevice* p_device, bool outgoing) 
   bool mitm_protection_required = sec_rec.security_required & mitm_check;
   bool mitm_protected = sec_rec.link_key_type != BTM_LKEY_TYPE_UNAUTH_COMB &&
                         sec_rec.link_key_type != BTM_LKEY_TYPE_UNAUTH_COMB_P_256;
+  const BtIoCap local_io_caps = btm_sec_get_local_iocaps();
   bool mitm_protection_supported =
           sec_rec.rmt_io_caps <= kBtIoCapClassicMax &&
-          btm_sec_io_map[sec_rec.rmt_io_caps][BtmSecurity::Get().devcb_.loc_io_caps];
+          btm_sec_io_map[sec_rec.rmt_io_caps][static_cast<uint8_t>(local_io_caps)];
 
   if (mitm_protection_required && !mitm_protected && mitm_protection_supported) {
     log::debug("Not MITM protected, upgrade is possible sec_flags: 0x{:x}", sec_rec.sec_flags);
@@ -1993,47 +2025,12 @@ void btm_sec_dev_reset(void) {
   log::assert_that(bluetooth::shim::GetController()->SupportsSimplePairing(),
                    "only controllers with SSP is supported");
 
-  /* set the default IO capabilities */
-  if (com_android_bluetooth_flags_btm_iocaps_sysprop_override()) {
-    BtmSecurity::Get().devcb_.loc_io_caps = btm_sec_bredr_iocap_from_sysprop();
-  } else {
-    BtmSecurity::Get().devcb_.loc_io_caps = BtIoCap::DISPLAY_YES_NO;
-  }
-
   /* add mx service to use no security */
   btm_set_security_level(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
                          BTM_SEC_PROTO_RFCOMM, 0);
   btm_set_security_level(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
                          BTM_SEC_PROTO_RFCOMM, 0);
   log::verbose("btm_sec_dev_reset sec mode: {}", BtmSecurity::Get().security_mode_);
-}
-
-/**
- * Returns GAP IO capabilities if defined from system property, to be used for BREDR Pairing.
- *
- * For backwards compatibility, defaults to BtIoCap::DISPLAY_YES_NO if the system property value
- * is invalid or undefined.
- */
-static BtIoCap btm_sec_bredr_iocap_from_sysprop() {
-  std::optional<android::sysprop::bluetooth::Core::gap_io_capabilities_values> sysprop_value =
-          android::sysprop::bluetooth::Core::gap_io_capabilities();
-  if (!sysprop_value.has_value()) {
-    return BtIoCap::DISPLAY_YES_NO;
-  }
-  switch (sysprop_value.value()) {
-    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::NONE:
-      return BtIoCap::NO_INPUT_NO_OUTPUT;
-    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_ONLY:
-      return BtIoCap::DISPLAY_ONLY;
-    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_YESNO:
-      return BtIoCap::DISPLAY_YES_NO;
-    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_ONLY:
-      return BtIoCap::KEYBOARD_ONLY;
-    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_DISPLAY:
-      // BT Classic does not support KEYBOARD_DISPLAY, fall back to default.
-    default:
-      return BtIoCap::DISPLAY_YES_NO;
-  }
 }
 
 /*******************************************************************************
@@ -2498,10 +2495,6 @@ void btm_io_capabilities_req(RawAddress p) {
   tBTM_SP_IO_REQ evt_data;
   evt_data.bd_addr = p;
 
-  /* setup the default response according to compile options */
-  /* assume that the local IO capability does not change
-   * loc_io_caps is initialized with the default value */
-  evt_data.io_cap = BtmSecurity::Get().devcb_.loc_io_caps;
   // TODO(optedoblivion): Inject OOB_DATA_PRESENT Flag
   evt_data.oob_data = BTM_OOB_NONE;
   evt_data.auth_req = BTM_AUTH_SP_NO;
@@ -2627,13 +2620,13 @@ void btm_io_capabilities_req(RawAddress p) {
   /* send the response right now. Save the current IO capability in the
    * control block */
   BtmSecurity::Get().devcb_.loc_auth_req = evt_data.auth_req;
-  BtmSecurity::Get().devcb_.loc_io_caps = evt_data.io_cap;
+  const BtIoCap local_io_caps = btm_sec_get_local_iocaps();
 
   log::verbose("State: {}  IO_CAP:{} oob_data:{} auth_req:{}",
-               btm_pair_state_descr(BtmSecurity::Get().pairing_state_), evt_data.io_cap,
+               btm_pair_state_descr(BtmSecurity::Get().pairing_state_), local_io_caps,
                evt_data.oob_data, evt_data.auth_req);
 
-  btsnd_hcic_io_cap_req_reply(evt_data.bd_addr, evt_data.io_cap, evt_data.oob_data,
+  btsnd_hcic_io_cap_req_reply(evt_data.bd_addr, local_io_caps, evt_data.oob_data,
                               evt_data.auth_req);
 }
 
@@ -2714,6 +2707,7 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
  ******************************************************************************/
 void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t value) {
   tBTM_STATUS status = tBTM_STATUS::BTM_ERR_PROCESSING;
+  const BtIoCap local_io_caps = btm_sec_get_local_iocaps();
   tBTM_SP_EVT_DATA evt_data;
   RawAddress& p_bda = evt_data.cfm_req.bd_addr;
   const BtmDevice* p_device;
@@ -2742,7 +2736,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
         evt_data.cfm_req.just_works = true;
 
         /* process user confirm req in association with the auth_req param */
-        if (BtmSecurity::Get().devcb_.loc_io_caps == BtIoCap::DISPLAY_YES_NO) {
+        if (local_io_caps == BtIoCap::DISPLAY_YES_NO) {
           if (p_device->sec_rec.rmt_io_caps == BtIoCap::IO_CAP_UNKNOWN) {
             log::error(
                     "did not receive IO cap response prior to BTM_SP_CFM_REQ_EVT, "
@@ -2754,7 +2748,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
 
           if ((p_device->sec_rec.rmt_io_caps == BtIoCap::DISPLAY_YES_NO ||
                p_device->sec_rec.rmt_io_caps == BtIoCap::DISPLAY_ONLY) &&
-              (BtmSecurity::Get().devcb_.loc_io_caps == BtIoCap::DISPLAY_YES_NO) &&
+              (local_io_caps == BtIoCap::DISPLAY_YES_NO) &&
               ((p_device->sec_rec.rmt_auth_req & BTM_AUTH_SP_YES) ||
                (BtmSecurity::Get().devcb_.loc_auth_req & BTM_AUTH_SP_YES))) {
             /* Use Numeric Comparison if
@@ -2766,13 +2760,12 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
         }
 
         log::verbose("just_works:{}, io loc:{}, rmt:{}, auth loc:{}, rmt:{}",
-                     evt_data.cfm_req.just_works, BtmSecurity::Get().devcb_.loc_io_caps,
-                     p_device->sec_rec.rmt_io_caps, BtmSecurity::Get().devcb_.loc_auth_req,
-                     p_device->sec_rec.rmt_auth_req);
+                     evt_data.cfm_req.just_works, local_io_caps, p_device->sec_rec.rmt_io_caps,
+                     BtmSecurity::Get().devcb_.loc_auth_req, p_device->sec_rec.rmt_auth_req);
 
         evt_data.cfm_req.loc_auth_req = BtmSecurity::Get().devcb_.loc_auth_req;
         evt_data.cfm_req.rmt_auth_req = p_device->sec_rec.rmt_auth_req;
-        evt_data.cfm_req.loc_io_caps = BtmSecurity::Get().devcb_.loc_io_caps;
+        evt_data.cfm_req.loc_io_caps = local_io_caps;
         evt_data.cfm_req.rmt_io_caps = p_device->sec_rec.rmt_io_caps;
         evt_data.cfm_req.pairing_algorithm = p_device->sec_rec.pairing_algorithm;
         break;
@@ -2787,7 +2780,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
         break;
 
       case BTM_SP_KEY_REQ_EVT:
-        if (BtmSecurity::Get().devcb_.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
+        if (local_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
           /* HCI_USER_PASSKEY_REQUEST_EVT */
           BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_KEY_ENTRY);
         }
@@ -2812,8 +2805,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
     if (event == BTM_SP_CFM_REQ_EVT) {
       log::verbose("calling btm_confirm_req_reply with status: {}", status);
       btm_confirm_req_reply(status, p_bda);
-    } else if (BtmSecurity::Get().devcb_.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT &&
-               event == BTM_SP_KEY_REQ_EVT) {
+    } else if (local_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT && event == BTM_SP_KEY_REQ_EVT) {
       btm_passkey_req_reply(status, p_bda, 0);
     }
     return;
@@ -2837,7 +2829,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
       btm_sec_disconnect(p_device->hci_handle, HCI_ERR_AUTH_FAILURE,
                          "stack::btm::btm_sec::btm_proc_sp_req_evt Security failure");
     }
-  } else if (BtmSecurity::Get().devcb_.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
+  } else if (local_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
     btsnd_hcic_user_passkey_neg_reply(p_bda);
   }
 }
@@ -4334,6 +4326,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
             btm_pair_state_descr(BtmSecurity::Get().pairing_state_),
             BtmSecurity::Get().pairing_flags_, BtmSecurity::Get().link_spec_);
 
+  const BtIoCap local_io_caps = btm_sec_get_local_iocaps();
   BtmDevice* p_device = btm_get_dev(BtmSecurity::Get().link_spec_.addrt.bda);
 
   switch (BtmSecurity::Get().pairing_state_) {
@@ -4366,7 +4359,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_KEY_ENTRY:
-      if (BtmSecurity::Get().devcb_.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
+      if (local_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
         btsnd_hcic_user_passkey_neg_reply(BtmSecurity::Get().link_spec_.addrt.bda);
       } else {
         BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
@@ -4375,12 +4368,10 @@ static void btm_sec_pairing_timeout(void* /* data */) {
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS: {
       tBTM_AUTH_REQ auth_req =
-              (BtmSecurity::Get().devcb_.loc_io_caps == BtIoCap::NO_INPUT_NO_OUTPUT)
-                      ? BTM_AUTH_AP_NO
-                      : BTM_AUTH_AP_YES;
+              (local_io_caps == BtIoCap::NO_INPUT_NO_OUTPUT) ? BTM_AUTH_AP_NO : BTM_AUTH_AP_YES;
       // TODO(optedoblivion): Inject OOB_DATA_PRESENT Flag
-      btsnd_hcic_io_cap_req_reply(BtmSecurity::Get().link_spec_.addrt.bda,
-                                  BtmSecurity::Get().devcb_.loc_io_caps, BTM_OOB_NONE, auth_req);
+      btsnd_hcic_io_cap_req_reply(BtmSecurity::Get().link_spec_.addrt.bda, local_io_caps,
+                                  BTM_OOB_NONE, auth_req);
       BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
       break;
     }
