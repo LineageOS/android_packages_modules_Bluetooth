@@ -800,15 +800,14 @@ public:
 
   void direct_connect_add(AddressWithType address_with_type, bool prefer_relax_mode) {
     log::debug("{}, {}", address_with_type, prefer_relax_mode);
-    direct_connections_.insert(address_with_type);
     if (prefer_relax_mode) {
       relaxed_direct_connections_.insert(address_with_type);
     }
-    if (create_connection_timeout_alarms_.find(address_with_type) !=
-        create_connection_timeout_alarms_.end()) {
-      log::verbose("Timer already added for {}", address_with_type);
+    if (direct_connections_.find(address_with_type) != direct_connections_.end()) {
+      log::verbose("Direct connect already in progress for {}", address_with_type);
       return;
     }
+    direct_connections_.insert(address_with_type);
 
     auto emplace_result = create_connection_timeout_alarms_.emplace(
             std::piecewise_construct,
