@@ -29,6 +29,7 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_POWER
 import android.bluetooth.le.ScanSettings.SCAN_MODE_OPPORTUNISTIC
 import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF
 import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED
+import android.os.SystemProperties
 import android.provider.Settings
 import android.util.Log
 import com.android.bluetooth.Util.blockedByLocationOff
@@ -95,6 +96,13 @@ object ScanUtil {
 
     const val MIN_OFFLOADED_FILTERS = 10
     const val MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024
+
+    const val SCAN_ALLOWANCE_SECONDS_PROPERTY = "bluetooth.ble.scan.scan_allowance_seconds.config"
+    private val DEFAULT_SCAN_ALLOWANCE_SECONDS = 6.minutes.inWholeSeconds.toInt()
+
+    fun getScanAllowance() =
+        SystemProperties.getInt(SCAN_ALLOWANCE_SECONDS_PROPERTY, DEFAULT_SCAN_ALLOWANCE_SECONDS)
+            .seconds
 
     @JvmStatic
     fun isOffloadedFilteringSupported(adapterService: AdapterService) =

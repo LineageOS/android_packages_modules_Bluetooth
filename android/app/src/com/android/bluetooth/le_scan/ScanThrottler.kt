@@ -22,6 +22,7 @@ import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanUtil.convertAllowanceToRemainingTime
+import com.android.bluetooth.le_scan.ScanUtil.getScanAllowance
 import com.android.bluetooth.le_scan.ScanUtil.isDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isForceDowngradedScanClient
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient
@@ -30,7 +31,6 @@ import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
 import com.android.internal.annotations.VisibleForTesting
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanThrottler"
 
@@ -220,9 +220,9 @@ class ScanThrottler(
         }
         if (
             targetScanMode != ScanSettings.SCAN_MODE_SCREEN_OFF &&
-                ledger.spentScanAllowance < SCAN_ALLOWANCE
+                ledger.spentScanAllowance < getScanAllowance()
         ) {
-            val remainingAllowance = SCAN_ALLOWANCE - ledger.spentScanAllowance
+            val remainingAllowance = getScanAllowance() - ledger.spentScanAllowance
             Log.d(
                 TAG,
                 "Apply scan mode $targetScanMode with available scan allowance $remainingAllowance",
@@ -303,7 +303,6 @@ class ScanThrottler(
     }
 
     companion object {
-        @VisibleForTesting val SCAN_ALLOWANCE = 6.minutes
         @VisibleForTesting val ALLOWANCE_REFILL_WINDOW = 1.hours
     }
 }
