@@ -16,6 +16,7 @@
 
 package com.android.server.bluetooth
 
+import android.app.ActivityManager
 import android.bluetooth.IBluetoothManagerCallback
 import android.bluetooth.State
 import android.content.Context
@@ -32,6 +33,10 @@ class BluetoothSupervisorNew(
     private val looper: Looper,
     private val bluetoothComponent: BluetoothComponent,
 ) : BluetoothSupervisor {
+    private var activeBms: BluetoothManagerServiceNew? = null
+    private var currentUser: UserHandle? = null
+
+    private var pendingUser: UserHandle? = null // Non-null means a switch is in progress.
 
     override val api: BluetoothManagerServiceApi = Api()
 
@@ -48,15 +53,62 @@ class BluetoothSupervisorNew(
     }
 
     override suspend fun onUserStarting(userHandle: UserHandle) {
-        Log.i(TAG, "onUserStarting($userHandle)")
+        if (currentUser != null) {
+            Log.i(TAG, "onUserStarting($userHandle): Already running on $currentUser")
+            return
+        }
+        Log.i(TAG, "onUserStarting($userHandle) -> delegating to onUserSwitching")
+        onUserSwitching(userHandle)
     }
 
     override suspend fun onUserSwitching(userHandle: UserHandle) {
-        Log.i(TAG, "onUserSwitching($userHandle)")
+        val switchInProgress = pendingUser != null
+        pendingUser = userHandle
+
+        if (switchInProgress) {
+            Log.i(TAG, "onUserSwitching($userHandle): Request queued. Switch already in progress")
+            return
+        }
+
+        if (userHandle == currentUser) {
+            Log.i(TAG, "onUserSwitching($userHandle): Already the current user. Nothing to do.")
+            pendingUser = null
+            return
+        }
+
+        if (activeBms != null) {
+            Log.i(TAG, "Shutting down service for $currentUser")
+            activeBms?.shutdown()
+            // Suspension point ! Incoming switch will simply update `pendingUser`
+            activeBms?.awaitShutdown()
+        }
+
+        Log.i(TAG, "Starting service for $pendingUser")
+        activeBms = BluetoothManagerServiceNew(context, looper, pendingUser!!)
+        currentUser = pendingUser
+        pendingUser = null
     }
 
+    // See b/446749636:
+    // Android is meant to always have a foreground user, but in some situation, onUserStopping can
+    // be called before onUserSwitching. This lead to undefined behavior in Bluetooth. To prevent
+    // this, we need to emulate a user switch on the current foreground user using
+    // `ActivityManager.getCurrentUser()`
     override suspend fun onUserStopping(userHandle: UserHandle) {
-        Log.i(TAG, "onUserStopping($userHandle)")
+        if (userHandle != currentUser) {
+            Log.v(TAG, "onUserStopping($userHandle): Nothing to do. currentUser=$currentUser.")
+            return
+        }
+
+        val foregroundUser = UserHandle.of(ActivityManager.getCurrentUser())
+        if (foregroundUser == userHandle) {
+            // TODO Investigate if this is possible during Android shutdown ?
+            throw IllegalStateException("onUserStopping($userHandle): No remaining user")
+        }
+
+        Log.wtf(TAG, "onUserStopping: Called while being the Bluetooth current user !")
+        Log.e(TAG, "onUserStopping: Fallback to onUserSwitching $userHandle => $foregroundUser")
+        onUserSwitching(foregroundUser)
     }
 
     private class Api : BluetoothManagerServiceApi {
