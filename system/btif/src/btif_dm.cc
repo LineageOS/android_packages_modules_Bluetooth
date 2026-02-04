@@ -2023,7 +2023,9 @@ static void btif_on_service_discovery_results(RawAddress bd_addr,
     // success for SDP
     bluetooth::metrics::LogSDPComplete(bd_addr, tBTA_STATUS::BTA_SUCCESS);
     log::info("SDP finished for {}", bd_addr);
-    pairing_cb.sdp_over_classic = btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
+    if (pairing_cb.sdp_over_classic == btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
+      pairing_cb.sdp_over_classic = btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
+    }
   }
 
   std::vector<uint8_t> bredr_property_value;
