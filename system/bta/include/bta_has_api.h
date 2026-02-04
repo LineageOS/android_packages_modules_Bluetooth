@@ -18,6 +18,7 @@
 #pragma once
 
 #include <base/functional/callback.h>
+#include <base/memory/weak_ptr.h>
 
 #include <string>
 
@@ -46,6 +47,7 @@ public:
   virtual void GetAllPresetInfo(const RawAddress& addr) = 0;
   virtual void SetPresetName(std::variant<RawAddress, int> addr_or_group_id, uint8_t preset_index,
                              std::string name) = 0;
+  static base::WeakPtr<HasClient> GetWeakPtr();
 };
 
 }  // namespace has
