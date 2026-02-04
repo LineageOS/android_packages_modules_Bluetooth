@@ -42,6 +42,13 @@ flag {
 }
 
 flag {
+    name: "system_server_migrate_bms_to_kotlin"
+    namespace: "bluetooth"
+    description: "The entire Bluetooth System Server is now in Kotlin, except BluetoothManagerService. Let's finish it"
+    bug: "478056203"
+}
+
+flag {
     name: "system_server_no_longer_provide_process_exemption"
     namespace: "bluetooth"
     description: "Calling in process must have appropriate permissions."

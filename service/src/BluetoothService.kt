@@ -45,7 +45,11 @@ class BluetoothService(context: Context) : SystemService(context) {
         // Run BluetoothManagerService on the correct thread even during constructor
         supervisor =
             runBlocking(serviceDispatcher) {
-                BluetoothSupervisor(context, looper, bluetoothComponent)
+                if (Flags.systemServerMigrateBmsToKotlin()) {
+                    BluetoothSupervisorNew(context, looper, bluetoothComponent)
+                } else {
+                    BluetoothSupervisorLegacy(context, looper, bluetoothComponent)
+                }
             }
 
         launchOnServerThread {
