@@ -47,29 +47,68 @@ dependencies {
     // Android system SDK
     implementation(files("$android_build_top/prebuilts/sdk/33/system-server/android.jar"))
     // Framework Bluetooth
-    implementation(files("$out/packages/modules/Bluetooth/framework/framework-bluetooth-pre-jarjar/android_common/turbine-combined/framework-bluetooth-pre-jarjar.jar"))
+    implementation(
+        files(
+            "$out/packages/modules/Bluetooth/framework/framework-bluetooth-pre-jarjar/android_common/turbine-combined/framework-bluetooth-pre-jarjar.jar"
+        )
+    )
     // Pandora APIs
-    implementation(files("$out/packages/modules/Bluetooth/tests/pandora/interfaces/pandora-grpc-java/android_common/combined/pandora-grpc-java.jar"))
-    implementation(files("$out/packages/modules/Bluetooth/tests/pandora/interfaces/pandora-proto-java/android_common/combined/pandora-proto-java.jar"))
+    implementation(
+        files(
+            "$out/packages/modules/Bluetooth/tests/pandora/interfaces/pandora-grpc-java/android_common/combined/pandora-grpc-java.jar"
+        )
+    )
+    implementation(
+        files(
+            "$out/packages/modules/Bluetooth/tests/pandora/interfaces/pandora-proto-java/android_common/combined/pandora-proto-java.jar"
+        )
+    )
     // Junit
     implementation(files("$out/external/junit/junit/android_common/turbine-combined/junit.jar"))
     // Truth
     implementation(files("$out/external/truth/truth/android_common/turbine-combined/truth.jar"))
     // Androidx Test Core
-    implementation(files("$out/prebuilts/misc/common/androidx-test/androidx.test.core/android_common/combined/androidx.test.core.jar"))
+    implementation(
+        files(
+            "$out/prebuilts/misc/common/androidx-test/androidx.test.core/android_common/combined/androidx.test.core.jar"
+        )
+    )
     // Androidx Test ext
-    implementation(files("$out/prebuilts/misc/common/androidx-test/androidx.test.ext.junit/android_common/combined/androidx.test.ext.junit.jar"))
+    implementation(
+        files(
+            "$out/prebuilts/misc/common/androidx-test/androidx.test.ext.junit/android_common/combined/androidx.test.ext.junit.jar"
+        )
+    )
     // Protobuf
-    implementation(files("$out/external/protobuf/libprotobuf-java-micro/android_common/turbine-combined/libprotobuf-java-micro.jar"))
+    implementation(
+        files(
+            "$out/external/protobuf/libprotobuf-java-micro/android_common/turbine-combined/libprotobuf-java-micro.jar"
+        )
+    )
     // Comptability
-    implementation(files("$out/cts/common/device-side/util-axt/compatibility-device-util-axt/android_common/combined/compatibility-device-util-axt.jar"))
+    implementation(
+        files(
+            "$out/cts/common/device-side/util-axt/compatibility-device-util-axt/android_common/combined/compatibility-device-util-axt.jar"
+        )
+    )
     // Test Parameter Injector
-    implementation(files("$out/external/TestParameterInjector/TestParameterInjector/android_common/combined/TestParameterInjector.jar"))
+    implementation(
+        files(
+            "$out/external/TestParameterInjector/TestParameterInjector/android_common/combined/TestParameterInjector.jar"
+        )
+    )
     // Truth
     implementation(files("$out/external/truth/truth/android_common/combined/truth.jar"))
     // OkHttp
-    implementation(files("$out/external/grpc-grpc-java/grpc-java-okhttp-client-lite/android_common/combined/grpc-java-okhttp-client-lite.jar"))
+    implementation(
+        files(
+            "$out/external/grpc-grpc-java/grpc-java-okhttp-client-lite/android_common/combined/grpc-java-okhttp-client-lite.jar"
+        )
+    )
     // Mockito
-    implementation(files("$out/external/mockito-kotlin/mockito-kotlin2/android_common/combined/mockito-kotlin2.jar"))
+    implementation(
+        files(
+            "$out/external/mockito-kotlin/mockito-kotlin2/android_common/combined/mockito-kotlin2.jar"
+        )
+    )
 }
-
