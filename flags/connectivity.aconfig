@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_no_acl_disconnected_intent"
+    namespace: "bluetooth"
+    description: "Fix ACTION_ACL_DISCONNECTED will not broadcast when calling disconnect() with active RFCOMM/GATT"
+    bug: "465064128"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
