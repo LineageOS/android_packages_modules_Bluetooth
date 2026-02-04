@@ -121,13 +121,13 @@ public:
                uint16_t cis_conn_hdl, bool is_setup,
                const std::optional<ascs::AseStateCodecConfiguration>& codec_configuration,
                const std::optional<ascs::AseStateQosConfiguration>& qos_configuration,
-               const std::optional<std::vector<uint8_t>>& metadata),
+               uint8_t target_latency, const std::optional<std::vector<uint8_t>>& metadata),
               (override));
   MOCK_METHOD((void), OnEncodingIsoChannelParametersUpdated,
               (uint16_t cis_conn_hdl, const RawAddress& pseudo_address, const tBLE_BD_ADDR,
                const std::optional<ascs::AseStateCodecConfiguration>& codec_configuration,
                const std::optional<ascs::AseStateQosConfiguration>& qos_configuration,
-               const std::optional<std::vector<uint8_t>>& metadata),
+               uint8_t target_latency, const std::optional<std::vector<uint8_t>>& metadata),
               (override));
   MOCK_METHOD((void), OnIsoDataReceived,
               (uint8_t ase_id, const hci::iso_manager::cis_data_evt* event,
@@ -518,10 +518,10 @@ public:
     auto is_sink = ase_manager_->IsSinkAse(ase_id);
     if (is_sink) {
       EXPECT_CALL(mock_ase_manager_cb_,
-                  OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _))
+                  OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _, _))
               .Times(1);
     } else {
-      EXPECT_CALL(mock_ase_manager_cb_, OnEncodingIsoChannelParametersUpdated(_, _, _, _, _, _))
+      EXPECT_CALL(mock_ase_manager_cb_, OnEncodingIsoChannelParametersUpdated(_, _, _, _, _, _, _))
               .Times(1);
     }
 
@@ -610,13 +610,14 @@ public:
                     ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST, _, _))
                 .Times(1);
         EXPECT_CALL(mock_ase_manager_cb_,
-                    OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _))
+                    OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _, _))
                 .Times(1);
       } else {
         EXPECT_CALL(legacy_hci_mock_,
                     ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER, _, _))
                 .Times(1);
-        EXPECT_CALL(mock_ase_manager_cb_, OnEncodingIsoChannelParametersUpdated(_, _, _, _, _, _))
+        EXPECT_CALL(mock_ase_manager_cb_,
+                    OnEncodingIsoChannelParametersUpdated(_, _, _, _, _, _, _))
                 .Times(1);
       }
     }
@@ -1545,6 +1546,93 @@ TEST_F(AseManagerTest, ReleaseWithCaching) {
   ASSERT_NE(sm, nullptr);
 
   ASSERT_EQ(sm->GetStateId(), AscsAseStateMachine::StateId::CODEC_CONFIGURED);
+}
+
+TEST_F(AseManagerTest, ConfigureCodecAndVerifyTargetLatency) {
+  TestInitialize();
+
+  uint8_t ase_id = 1;
+  uint8_t target_latency = 3;
+
+  // Simulate device connection and ASE registration
+  ascs_callbacks_->OnDeviceConnected(test_address1_);
+  ascs_callbacks_->OnAscsRegistered({ase_id}, {});
+
+  // Configure codec
+  ascs::AseCodecConfigurationReq codec_req = {
+          .ase_id = ase_id,
+          .codec_configuration = {
+                  .target_latency = target_latency,
+                  .target_phy = 2,
+                  .codec_id = le_audio::types::LeAudioCodecIdLc3,
+                  .codec_spec_conf = {0x02, ase_id, test_address1_.address[5]},
+          }};
+  Ascs::AseCtpRequest codec_config_request = {
+          .opcode = ascs::AseCtpOpcode::CONFIG_CODEC,
+          .request_params = std::vector<ascs::AseCodecConfigurationReq>{codec_req},
+  };
+
+  EXPECT_CALL(mock_ase_manager_cb_, OnCodecConfigRequest(test_address1_, _))
+          .WillOnce(Return(std::map<uint8_t, std::variant<ascs::AseStateCodecConfiguration,
+                                                          std::pair<ascs::AseCtpResponseCode,
+                                                                    ascs::AseCtpResponseReason>>>{
+                  {ase_id, GetAseCodecConfiguredStateFromRequest(codec_req.codec_configuration)}}));
+  EXPECT_CALL(*mock_ascs_, AseCtpRequestResponse(test_address1_, _)).Times(1);
+  ascs_callbacks_->OnAseControlPointRequest(test_address1_, codec_config_request);
+  sync_main_handler();
+  testing::Mock::VerifyAndClearExpectations(mock_ascs_.get());
+  testing::Mock::VerifyAndClearExpectations(&mock_ase_manager_cb_);
+
+  auto& sm = mock_iso_state_machines_by_device_and_ase_id_.at(test_address1_).at(ase_id);
+  ASSERT_EQ(sm->GetStateId(), AscsAseStateMachine::StateId::CODEC_CONFIGURED);
+  ASSERT_TRUE(sm->target_latency.has_value());
+  ASSERT_EQ(sm->target_latency.value(), target_latency);
+
+  // Proceed to QOS_CONFIGURED using
+  uint8_t cig_id = 0x03;
+  uint8_t cis_id = 0x04;
+  TestConfigureQos(ase_id, test_address1_, cig_id, cis_id);
+
+  // Proceed to ENABLING using
+  TestEnable(ase_id, test_address1_);
+
+  // Now establish CIS and verify latency
+  uint16_t cis_conn_hdl = 0x02;
+
+  EXPECT_CALL(*mock_iso_app_proxy_, AcceptIncomingCisConnection(_)).Times(1);
+
+  hci::iso_manager::cis_request_evt cis_request_evt;
+  cis_request_evt.acl_conn_hdl = GetMockedAclHandleForAddress(test_address1_);
+  cis_request_evt.cis_conn_hdl = cis_conn_hdl;
+  cis_request_evt.cig_id = cig_id;
+  cis_request_evt.cis_id = cis_id;
+
+  AclHandleToMockBtmDevice[cis_request_evt.acl_conn_hdl] =
+          BtmDevice{.ble.pseudo_addr = test_address1_};
+
+  cig_callbacks_to_ase_manager_->OnCisEvent(hci::iso_manager::kIsoEventCisRequest,
+                                            &cis_request_evt);
+  testing::Mock::VerifyAndClearExpectations(mock_iso_app_proxy_);
+
+  EXPECT_CALL(legacy_hci_mock_, ConfigureDataPath(_, _, _)).Times(1);
+  EXPECT_CALL(mock_ase_manager_cb_,
+              OnDecodingIsoChannelParametersUpdated(_, _, ase_id, cis_conn_hdl, true, _, _,
+                                                    target_latency, _))
+          .Times(1);
+
+  // Inject CIS established event
+  ON_CALL(*mock_iso_app_proxy_, HasCisConnected(cis_conn_hdl)).WillByDefault(Return(true));
+  hci::iso_manager::cis_establish_cmpl_evt cis_establish_evt;
+  cis_establish_evt.status = 0x00;
+  cis_establish_evt.cis_conn_hdl = cis_conn_hdl;
+  cis_establish_evt.cig_id = cig_id;
+  cig_callbacks_to_ase_manager_->OnCisEvent(hci::iso_manager::kIsoEventCisEstablishCmpl,
+                                            &cis_establish_evt);
+
+  ase_manager_->OnDecodingSessionReady(test_address1_);
+  sync_main_handler();
+
+  ASSERT_EQ(sm->GetStateId(), AscsAseStateMachine::StateId::STREAMING);
 }
 
 }  // namespace bluetooth::le_audio::test

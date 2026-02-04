@@ -75,6 +75,7 @@ void AscsAseStateMachine::StateIdle::OnEnter() {
   sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
                  sm->GetStateId());
   sm->SetEnableConfirmed(false);
+  sm->target_latency = std::nullopt;
 
   if (sm->PreviousStateId() == StateMachine::kStateInvalid) {
     // Ignore the initial state entry at sm->Start()

@@ -61,6 +61,7 @@ import java.util.Optional;
 @RunWith(AndroidJUnit4.class)
 public class A2dpSinkStreamHandlerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
 

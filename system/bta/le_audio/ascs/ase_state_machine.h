@@ -117,6 +117,13 @@ public:
    */
   std::optional<ascs::DataPathConfiguration> data_path_configuration;
 
+  /**
+   * @brief Target latency for the ASE.
+   *
+   * This value is present in all states except IDLE.
+   */
+  std::optional<uint8_t> target_latency;
+
   /** @return The ID of this ASE. */
   inline uint8_t GetAseId() const { return ase_id_; }
   /** @return The address of the peer device. */

@@ -56,6 +56,8 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
     return false;
   }
 
+  connection_manager::on_connection_maybe(address_with_type.bda);
+
   AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
 
   /* Tell BTM Acl management about the link */
@@ -98,7 +100,6 @@ void acl_ble_enhanced_connection_complete_from_shim(
   tBLE_BD_ADDR resolved_address_with_type;
   maybe_resolve_received_address(address_with_type, &resolved_address_with_type);
 
-  acl_set_locally_initiated(role == tHCI_ROLE::HCI_ROLE_CENTRAL);
   acl_ble_enhanced_connection_complete(resolved_address_with_type, handle, role, conn_interval,
                                        conn_latency, conn_timeout, local_rpa, peer_rpa,
                                        peer_addr_type, can_read_discoverable_characteristics);
@@ -111,8 +112,8 @@ void acl_ble_enhanced_connection_complete_from_shim(
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* handle */,
                              bool /* enhanced */, tHCI_STATUS status) {
   AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
-  acl_set_locally_initiated(true);  // LE connection failures are always locally initiated
-  btm_acl_create_failed(link_spec, status);
+  // LE connection failures are always locally initiated
+  btm_acl_create_failed(link_spec, status, true /* locally_initiated */);
 
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
     tBLE_BD_ADDR resolved_address_with_type;

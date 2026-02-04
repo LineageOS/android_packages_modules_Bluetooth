@@ -58,7 +58,6 @@ public class ImageTest {
 
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
-
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
     private static final Uri TEST_CONTENT_URI =
             new Uri.Builder()

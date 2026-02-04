@@ -419,6 +419,24 @@ struct HciLayer::impl {
     le_event_handlers_.erase(it);
   }
 
+  void register_development_event(DevelopmentSubeventCode event,
+                                  ContextualCallback<void(DevelopmentEventView)> handler) {
+    log::assert_that(development_event_handlers_.count(event) == 0,
+                     "Can not register a second handler for {}",
+                     DevelopmentSubeventCodeText(event));
+    development_event_handlers_[event] = handler;
+  }
+
+  void unregister_development_event(DevelopmentSubeventCode event) {
+    auto it = development_event_handlers_.find(event);
+    if (it == development_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}",
+                DevelopmentSubeventCodeText(event));
+      return;
+    }
+    development_event_handlers_.erase(it);
+  }
+
   void register_vs_event(VseSubeventCode event,
                          ContextualCallback<void(VendorSpecificEventView)> handler) {
     log::assert_that(vs_event_handlers_.count(event) == 0,
@@ -521,6 +539,9 @@ struct HciLayer::impl {
       case EventCode::HARDWARE_ERROR:
         on_hardware_error(event);
         break;
+      case EventCode::DEVELOPMENT:
+        on_development_event(event);
+        break;
       case EventCode::VENDOR_SPECIFIC:
         on_vs_event(event);
         break;
@@ -559,6 +580,19 @@ struct HciLayer::impl {
     le_event_handlers_[subevent_code](meta_event_view);
   }
 
+  void on_development_event(EventView event) {
+    DevelopmentEventView development_event_view = DevelopmentEventView::Create(event);
+    log::assert_that(development_event_view.IsValid(),
+                     "assert failed: development_event_view.IsValid()");
+    DevelopmentSubeventCode subevent_code = development_event_view.GetSubeventCode();
+    if (development_event_handlers_.find(subevent_code) == development_event_handlers_.end()) {
+      log::warn("Unhandled development event of type {}",
+                DevelopmentSubeventCodeText(subevent_code));
+      return;
+    }
+    development_event_handlers_[subevent_code](development_event_view);
+  }
+
   void on_vs_event(EventView event) {
     VendorSpecificEventView vs_event_view = VendorSpecificEventView::Create(event);
     log::assert_that(vs_event_view.IsValid(), "assert failed: vs_event_view.IsValid()");
@@ -582,6 +616,8 @@ struct HciLayer::impl {
 
   std::map<EventCode, ContextualCallback<void(EventView)>> event_handlers_;
   std::map<SubeventCode, ContextualCallback<void(LeMetaEventView)>> le_event_handlers_;
+  std::map<DevelopmentSubeventCode, ContextualCallback<void(DevelopmentEventView)>>
+          development_event_handlers_;
   std::map<VseSubeventCode, ContextualCallback<void(VendorSpecificEventView)>> vs_event_handlers_;
   std::optional<ContextualCallback<void(VendorSpecificEventView)>> vs_event_default_handler_;
 
@@ -762,6 +798,23 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
     return;
   }
   impl_->handler_->CallOn(impl_, &impl::unregister_le_event, event);
+}
+
+void HciLayer::RegisterDevelopmentEventHandler(
+        DevelopmentSubeventCode event, ContextualCallback<void(DevelopmentEventView)> handler) {
+  std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
+  if (life_cycle_stopped) {
+    return;
+  }
+  impl_->handler_->CallOn(impl_, &impl::register_development_event, event, handler);
+}
+
+void HciLayer::UnregisterDevelopmentEventHandler(DevelopmentSubeventCode event) {
+  std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
+  if (life_cycle_stopped) {
+    return;
+  }
+  impl_->handler_->CallOn(impl_, &impl::unregister_development_event, event);
 }
 
 void HciLayer::RegisterVendorSpecificEventHandler(

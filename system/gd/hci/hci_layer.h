@@ -82,6 +82,12 @@ public:
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
+  virtual void RegisterDevelopmentEventHandler(
+          DevelopmentSubeventCode subevent_code,
+          common::ContextualCallback<void(DevelopmentEventView)> event_handler);
+
+  virtual void UnregisterDevelopmentEventHandler(DevelopmentSubeventCode subevent_code);
+
   virtual void RegisterVendorSpecificEventHandler(
           VseSubeventCode event, common::ContextualCallback<void(VendorSpecificEventView)> handler);
 

@@ -684,7 +684,8 @@ static tBTA_PREF_ROLES get_preferred_role() {
   return BTA_PERIPHERAL_ROLE_ONLY;
 }
 
-static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
+static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle,
+                          bool locally_initiated) {
   const RawAddress& bd_addr = link_spec.addrt.bda;
   tBT_TRANSPORT transport = link_spec.transport;
 
@@ -731,28 +732,32 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
     tBTA_DM_ACL conn{};
     conn.link_up.link_spec = link_spec;
     conn.link_up.acl_handle = acl_handle;
-
+    conn.link_up.locally_initiated = locally_initiated;
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_UP_EVT, &conn);
     log::debug("Executed security callback for new connection available");
   }
   bta_dm_adjust_roles_delayed();
 }
 
-void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
-  do_in_main_thread(base::BindOnce(bta_dm_acl_up, link_spec, acl_handle));
+void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated) {
+  do_in_main_thread(base::BindOnce(bta_dm_acl_up, link_spec, acl_handle, locally_initiated));
 }
 
-static void bta_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS status) {
+static void bta_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS status,
+                                 bool locally_initiated) {
   if (bta_dm_acl_cb.p_acl_cback) {
     tBTA_DM_ACL conn = {};
     conn.link_up_failed.link_spec = link_spec;
     conn.link_up_failed.status = status;
+    conn.link_up_failed.locally_initiated = locally_initiated;
+
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_UP_FAILED_EVT, &conn);
   }
 }
 
-void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS status) {
-  do_in_main_thread(base::BindOnce(bta_dm_acl_up_failed, link_spec, status));
+void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS status,
+                          bool locally_initiated) {
+  do_in_main_thread(base::BindOnce(bta_dm_acl_up_failed, link_spec, status, locally_initiated));
 }
 
 static void bta_dm_acl_down(const AclLinkSpec& link_spec) {
@@ -1844,8 +1849,8 @@ BtaDmLink* allocate_link_for(const RawAddress& bd_addr, tBT_TRANSPORT transport)
   return ::allocate_link_for(bd_addr, transport);
 }
 
-void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
-  ::bta_dm_acl_up(link_spec, acl_handle);
+void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle, bool locally_initiated) {
+  ::bta_dm_acl_up(link_spec, acl_handle, locally_initiated);
 }
 void bta_dm_acl_down(const AclLinkSpec& link_spec) { ::bta_dm_acl_down(link_spec); }
 void bta_dm_init_cb() { ::bta_dm_init_cb(); }

@@ -99,9 +99,8 @@ class ShellCommand(private val binder: ServerBinder, private val waitForState: (
             ),
         )
 
-    private fun getWaitingState(inCmd: String): Int {
-        val stateStr = inCmd.substringAfter("wait-for-state:")
-        return when (stateStr) {
+    private fun getWaitingState(inCmd: String) =
+        when (val stateStr = inCmd.substringAfter("wait-for-state:")) {
             "STATE_OFF" -> State.OFF
             "STATE_ON" -> State.ON
             else -> {
@@ -113,7 +112,6 @@ class ShellCommand(private val binder: ServerBinder, private val waitForState: (
                 throw IllegalArgumentException(msg)
             }
         }
-    }
 
     @Throws(RemoteException::class)
     override fun onCommand(cmd: String?): Int {

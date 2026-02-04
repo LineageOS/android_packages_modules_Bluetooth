@@ -238,10 +238,12 @@ TEST_F(BleConnectionManager, test_direct_connection_success) {
 
   Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
-  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(address1_hci)).Times(1);
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
   // simulate event from lower layers - connections was established
   // successfully.
+  on_connection_maybe(address1);
+
+  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(address1_hci)).Times(1);
   on_connection_complete(address1);
 
   Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
