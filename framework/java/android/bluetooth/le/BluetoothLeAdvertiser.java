@@ -809,9 +809,9 @@ public final class BluetoothLeAdvertiser {
                         handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
-                            callback.onAdvertisingSetStopped(advertisingSet);
                             mAdvertisingSets.remove(advertiserId);
                             mCallbackWrappers.remove(callback);
+                            callback.onAdvertisingSetStopped(advertisingSet);
                         });
             }
 
