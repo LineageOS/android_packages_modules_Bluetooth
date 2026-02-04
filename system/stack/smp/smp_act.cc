@@ -122,7 +122,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       case SMP_IO_CAP_REQ_EVT:
         cb_data.io_req.auth_req = p_cb->peer_auth_req;
         cb_data.io_req.oob_data = SMP_OOB_NONE;
-        cb_data.io_req.io_cap = BtIoCap::KEYBOARD_DISPLAY;
+        cb_data.io_req.io_cap = kBtIoCapLeMax;  // This will be overridden by BTM
         cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
         cb_data.io_req.init_keys = p_cb->local_i_key;
         cb_data.io_req.resp_keys = p_cb->local_r_key;
