@@ -33,6 +33,7 @@ import static com.android.bluetooth.btservice.AdapterSuspend.AWAKE;
 import static com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP;
 import static com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP;
 import static com.android.bluetooth.hid.HidHostService.RECONNECT_ALLOWED;
+import static com.android.bluetooth.hid.HidHostService.RECONNECT_NOT_ALLOWED;
 import static com.android.bluetooth.hid.HidHostService.RECONNECT_NOT_ALLOWED_TEMPORARY;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -44,6 +45,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothUuid;
@@ -138,9 +140,8 @@ public class HidHostServiceTest {
         mService.dump(new StringBuilder());
     }
 
-    private void setupPeerWithUuid(ParcelUuid uuid) {
+    private void setupPeerWithUuids(ParcelUuid... uuids) {
         String address = "11:22:33:44:55:66";
-        ParcelUuid[] uuids = {uuid};
 
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mAdapterService)
@@ -169,7 +170,8 @@ public class HidHostServiceTest {
     private void disconnectDevice(InOrder order, int transport) {
         mService.disconnect(mBluetoothDevice);
         TestUtils.syncHandler(mLooper, 2);
-        order.verify(mNativeInterface).disconnectHid(any(), anyInt(), anyInt(), anyInt());
+        order.verify(mNativeInterface)
+                .disconnectHid(any(), anyInt(), anyInt(), eq(RECONNECT_ALLOWED));
 
         mService.onConnectStateChanged(
                 Utils.getByteAddress(mBluetoothDevice),
@@ -182,7 +184,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_shallowSleepConnected() {
-        setupPeerWithUuid(BluetoothUuid.HOGP);
+        setupPeerWithUuids(BluetoothUuid.HOGP);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_LE);
@@ -200,7 +202,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_shallowSleepDisconnected() {
-        setupPeerWithUuid(BluetoothUuid.HOGP);
+        setupPeerWithUuids(BluetoothUuid.HOGP);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_LE);
@@ -214,7 +216,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_deepSleepConnected() {
-        setupPeerWithUuid(BluetoothUuid.HOGP);
+        setupPeerWithUuids(BluetoothUuid.HOGP);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_LE);
@@ -232,7 +234,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_deepSleepDisconnected() {
-        setupPeerWithUuid(BluetoothUuid.HOGP);
+        setupPeerWithUuids(BluetoothUuid.HOGP);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_LE);
@@ -251,7 +253,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_awakeConnected() {
-        setupPeerWithUuid(BluetoothUuid.HOGP);
+        setupPeerWithUuids(BluetoothUuid.HOGP);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_LE);
@@ -264,7 +266,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_awakeDisconnected() {
-        setupPeerWithUuid(BluetoothUuid.HOGP);
+        setupPeerWithUuids(BluetoothUuid.HOGP);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_LE);
@@ -283,7 +285,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_connectedBredr() {
-        setupPeerWithUuid(BluetoothUuid.HID);
+        setupPeerWithUuids(BluetoothUuid.HID);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_BREDR);
@@ -297,7 +299,7 @@ public class HidHostServiceTest {
 
     @Test
     public void suspend_disconnectedBredr() {
-        setupPeerWithUuid(BluetoothUuid.HID);
+        setupPeerWithUuids(BluetoothUuid.HID);
         InOrder order = inOrder(mNativeInterface);
 
         connectDevice(order, TRANSPORT_BREDR);
@@ -308,5 +310,103 @@ public class HidHostServiceTest {
         // Don't manage BREDR connection
         order.verify(mNativeInterface, never()).disconnectHid(any(), anyInt(), anyInt(), anyInt());
         order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+    }
+
+    @Test
+    public void disconnect_withConnectionPolicyAllowed_reconnectAllowed() {
+        setupPeerWithUuids(BluetoothUuid.HOGP);
+        InOrder order = inOrder(mNativeInterface);
+        connectDevice(order, TRANSPORT_LE);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mBluetoothDevice, mService.getProfileId());
+
+        mService.disconnect(mBluetoothDevice);
+        TestUtils.syncHandler(mLooper, 2 /* MESSAGE_DISCONNECT */);
+
+        order.verify(mNativeInterface)
+                .disconnectHid(
+                        eq(Utils.getByteAddress(mBluetoothDevice)),
+                        anyInt(),
+                        eq(TRANSPORT_LE),
+                        eq(RECONNECT_ALLOWED));
+    }
+
+    @Test
+    public void disconnect_withConnectionPolicyForbidden_reconnectNotAllowed() {
+        setupPeerWithUuids(BluetoothUuid.HOGP);
+        InOrder order = inOrder(mNativeInterface);
+        connectDevice(order, TRANSPORT_LE);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mBluetoothDevice, mService.getProfileId());
+
+        mService.disconnect(mBluetoothDevice);
+        TestUtils.syncHandler(mLooper, 2 /* MESSAGE_DISCONNECT */);
+
+        order.verify(mNativeInterface)
+                .disconnectHid(
+                        eq(Utils.getByteAddress(mBluetoothDevice)),
+                        anyInt(),
+                        eq(TRANSPORT_LE),
+                        eq(RECONNECT_NOT_ALLOWED));
+    }
+
+    @Test
+    public void setPreferredTransport_switchesTransportAndDisconnectsOldOne() {
+        // Setup device that supports both transports
+        setupPeerWithUuids(BluetoothUuid.HOGP, BluetoothUuid.HID);
+        doReturn(BOND_BONDED).when(mAdapterService).getBondState(mBluetoothDevice);
+
+        // Connect with TRANSPORT_BREDR first
+        mService.setPreferredTransport(mBluetoothDevice, TRANSPORT_BREDR);
+        TestUtils.syncHandler(mLooper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */);
+        verify(mNativeInterface).connectHid(any(), anyInt(), eq(TRANSPORT_BREDR), eq(true));
+        mService.onConnectStateChanged(
+                Utils.getByteAddress(mBluetoothDevice),
+                ADDRESS_TYPE_PUBLIC,
+                TRANSPORT_BREDR,
+                STATE_CONNECTED,
+                0);
+        TestUtils.syncHandler(mLooper, 3 /* MESSAGE_CONNECT_STATE_CHANGED */);
+        assertThat(mService.getConnectionState(mBluetoothDevice)).isEqualTo(STATE_CONNECTED);
+
+        // Now switch to LE
+        mService.setPreferredTransport(mBluetoothDevice, TRANSPORT_LE);
+        TestUtils.syncHandler(mLooper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */);
+
+        // Should disconnect BREDR and connect LE
+        InOrder inOrder = inOrder(mNativeInterface);
+        inOrder.verify(mNativeInterface)
+                .disconnectHid(any(), anyInt(), eq(TRANSPORT_BREDR), eq(RECONNECT_NOT_ALLOWED));
+        inOrder.verify(mNativeInterface).connectHid(any(), anyInt(), eq(TRANSPORT_LE), eq(true));
+    }
+
+    @Test
+    public void onConnectStateChanged_forUnknownDeviceAndNotAccepting_disconnects() {
+        setupPeerWithUuids(BluetoothUuid.HOGP);
+        byte[] byteAddress = Utils.getByteAddress(mBluetoothDevice);
+
+        // Send a connect state changed for a device that the service does not know about
+        mService.onConnectStateChanged(
+                byteAddress, ADDRESS_TYPE_PUBLIC, TRANSPORT_LE, STATE_CONNECTED, 0);
+        TestUtils.syncHandler(mLooper, 3 /* MESSAGE_CONNECT_STATE_CHANGED */);
+
+        // Service should try to disconnect it
+        verify(mNativeInterface)
+                .disconnectHid(
+                        eq(byteAddress), anyInt(), eq(TRANSPORT_LE), eq(RECONNECT_NOT_ALLOWED));
+    }
+
+    @Test
+    public void connect_connectedWithPolicyForbidden_doesNotConnectHid() {
+        setupPeerWithUuids(BluetoothUuid.HOGP);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mBluetoothDevice, mService.getProfileId());
+
+        mService.connect(mBluetoothDevice);
+
+        verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
     }
 }
