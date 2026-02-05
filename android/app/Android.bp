@@ -190,7 +190,7 @@ android_library {
         "androidx.lifecycle_lifecycle-livedata",
         "androidx.media_media",
         "androidx.room_room-runtime",
-        "bluetooth-common-java",
+        "bluetooth-common-kotlinutils",
         "bluetooth-proto-enums-java-gen",
         "bluetooth-protos-lite",
         "bluetooth.change-ids",

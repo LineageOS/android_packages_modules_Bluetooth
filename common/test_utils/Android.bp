@@ -15,7 +15,7 @@
 // When using this library, you also need to include these two jni libs:
 // ["libdexmakerjvmtiagent", "libstaticjvmtiagent"]
 java_library {
-    name: "bluetooth-common-java-tests",
+    name: "bluetooth-common-testutils",
     srcs: [
         "FakeTimeProvider.kt",
         "MockitoRule.kt",
@@ -24,7 +24,7 @@ java_library {
 
     static_libs: [
         "bluetooth-common-flagwrapper-tests",
-        "bluetooth-common-java",
+        "bluetooth-common-kotlinutils",
         "flag-junit",
         "mockito-kotlin2",
         "mockito-target-extended",
