@@ -400,6 +400,15 @@ bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
     BTM_LogHistory(kBtmLogTagTA, address, "Ignore connection from");
   }
 
+  log::debug(
+          "num_of_targeted_announcements_before_remove : {}, num_of_targeted_announcements_users : "
+          "{}",
+          num_of_targeted_announcements_before_remove, num_of_targeted_announcements_users());
+  if ((num_of_targeted_announcements_before_remove > 0) &&
+      num_of_targeted_announcements_users() == 0) {
+    target_announcements_filtering_set(false);
+  }
+
   if (is_anyone_connecting(it)) {
     log::debug("some app is still connecting, app_id={}, address={}", static_cast<int>(app_id),
                address);
@@ -423,11 +432,6 @@ bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
   if (accept_list_enabled) {
     ACL_IgnoreLeConnectionFrom(BTM_Sec_GetAddressWithType(address));
     return true;
-  }
-
-  if ((num_of_targeted_announcements_before_remove > 0) &&
-      num_of_targeted_announcements_users() == 0) {
-    target_announcements_filtering_set(true);
   }
 
   return true;
