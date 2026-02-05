@@ -38,9 +38,23 @@ public:
   virtual void UnregisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
                                      std::promise<void> promise) = 0;
 
+
+  // ***!!!***WARNING***!!!***
+
+  // THIS API IS JUST FOR CONNECTION MANAGER!
+  // NEVER USE THIS METHODS OUTSIDE OF CONNECTION MANAGER!
+  // WANT A CONNECTION ? GO THROUGH CONNECTION MANAGER!
+
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct,
                                   bool prefer_relax_mode) = 0;
+  // Cancell all attempts to connect to device
+  virtual void CancelLeConnect(AddressWithType address_with_type) = 0;
+  // Cancel pending direct connection. If background connection is in progress, it's preserved
+  virtual void CancelDirectConnect(AddressWithType address_with_type) = 0;
+
+  // ***!!!***END OF WARNING***!!!***
+
 
   virtual void SetPrivacyPolicyForInitiatorAddress(
           LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
@@ -54,8 +68,6 @@ public:
           std::chrono::milliseconds maximum_rotation_time) = 0;
 
   virtual void RemoveFromBackgroundList(AddressWithType address_with_type) = 0;
-
-  virtual void CancelLeConnect(AddressWithType address_with_type) = 0;
 
   virtual void ClearFilterAcceptList() = 0;
 

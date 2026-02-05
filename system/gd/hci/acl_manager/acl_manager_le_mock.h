@@ -52,6 +52,8 @@ public:
   MOCK_METHOD(void, CreateLeConnection,
               (AddressWithType address_with_type, bool is_direct, bool prefer_relax_mode),
               (override));
+  MOCK_METHOD(void, CancelLeConnect, (AddressWithType address_with_type), (override));
+  MOCK_METHOD(void, CancelDirectConnect, (AddressWithType address_with_type), (override));
   MOCK_METHOD(void, SetPrivacyPolicyForInitiatorAddress,
               (LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
                std::chrono::milliseconds minimum_rotation_time,
@@ -63,7 +65,6 @@ public:
                std::chrono::milliseconds maximum_rotation_time),
               (override));
   MOCK_METHOD(void, RemoveFromBackgroundList, (AddressWithType address_with_type), (override));
-  MOCK_METHOD(void, CancelLeConnect, (AddressWithType address_with_type), (override));
   MOCK_METHOD(void, ClearFilterAcceptList, (), (override));
   MOCK_METHOD(void, AddDeviceToResolvingList,
               (AddressWithType, (const std::array<uint8_t, 16>&), (const std::array<uint8_t, 16>&)),
