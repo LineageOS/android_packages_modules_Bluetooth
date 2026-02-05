@@ -39,6 +39,22 @@ class BluetoothManagerServiceNew(
         Log.i(TAG, "Shutting down for user $userHandle")
     }
 
+    fun onBluetoothDisallowed() {
+        Log.i(TAG, "onBluetoothDisallowed")
+    }
+
+    fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {
+        Log.i(TAG, "onAirplaneModeChanged($isAirplaneModeOn)")
+    }
+
+    fun onSatelliteModeChanged(isSatelliteModeOn: Boolean) {
+        Log.i(TAG, "onSatelliteModeChanged($isSatelliteModeOn)")
+    }
+
+    fun onBootCompleted() {
+        Log.i(TAG, "onBootCompleted")
+    }
+
     // API Delegate methods
     fun getState(): Int = State.OFF
 

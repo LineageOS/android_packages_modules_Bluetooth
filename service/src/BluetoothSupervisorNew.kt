@@ -23,6 +23,8 @@ import android.content.Context
 import android.os.IBinder
 import android.os.Looper
 import android.os.UserHandle
+import com.android.server.bluetooth.airplane.initialize as initializeAirplaneMode
+import com.android.server.bluetooth.satellite.initialize as initializeSatelliteMode
 import java.io.FileDescriptor
 import java.io.PrintWriter
 
@@ -41,17 +43,23 @@ class BluetoothSupervisorNew(
     override val api: BluetoothManagerServiceApi = Api()
 
     init {
-        Log.i(TAG, "Created BluetoothSupervisorNew")
+        initializeAirplaneMode(looper, context.contentResolver) { isOn ->
+            activeBms?.onAirplaneModeChanged(isOn)
+        }
+        initializeSatelliteMode(looper, context.contentResolver) { isOn ->
+            activeBms?.onSatelliteModeChanged(isOn)
+        }
+        Log.i(TAG, "Instance created, waiting for user")
     }
 
     override fun onBluetoothDisallowed() {
         Log.i(TAG, "onBluetoothDisallowed")
-        // TODO: propagate to BMS
+        activeBms?.onBluetoothDisallowed()
     }
 
     override fun onBootCompleted() {
         Log.i(TAG, "onBootCompleted")
-        // TODO: propagate to BMS
+        activeBms?.onBootCompleted()
     }
 
     override suspend fun onUserStarting(userHandle: UserHandle) {
