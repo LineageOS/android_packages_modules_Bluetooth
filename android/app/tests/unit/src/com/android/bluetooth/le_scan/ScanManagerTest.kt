@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.le_scan
 
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.app.ActivityManager
 import android.app.AlarmManager
 import android.bluetooth.BluetoothDevice
@@ -23,6 +24,10 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProtoEnums
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED
+import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.BatteryStatsManager
 import android.os.Binder
@@ -66,6 +71,7 @@ import com.android.bluetooth.le_scan.ScanUtil.convertAllowanceToRemainingTime
 import com.android.bluetooth.le_scan.ScanUtil.getScanAllowance
 import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.mockGetSystemService
+import com.android.bluetooth.mockPackageManager
 import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.tests.bluetooth.FakeTimeProvider
@@ -86,6 +92,7 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.clearInvocations
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -107,6 +114,7 @@ class ScanManagerTest() {
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var displayListener: DisplayListener
     @Mock private lateinit var locationManager: LocationManager
+    @Mock private lateinit var packageManager: PackageManager
     @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var metricsLogger: MetricsLogger
     @Mock private lateinit var nativeCallback: ScanNativeCallback
@@ -154,6 +162,7 @@ class ScanManagerTest() {
         doReturn(true).whenever(locationManager).isLocationEnabled
         adapterService.mockGetSystemService<BatteryStatsManager>(batteryStatsManager)
         adapterService.mockGetSystemService<AlarmManager>()
+        adapterService.mockPackageManager(packageManager)
 
         val context = InstrumentationRegistry.getInstrumentation().context
         adapterService.mockResources(context.resources)
@@ -762,6 +771,33 @@ class ScanManagerTest() {
             this@ScanManagerTest.looper.dispatchAll()
             assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Allowance is refilled right after record allowance usage
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                        kotlin.time.Duration.ZERO
+                )
+                .isTrue()
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanWithPrivilegedPermission_skipAllowanceCheck(@TestParameter isFiltered: Boolean) {
+        mockPrivilegedPermission()
+        defaultScanMode.forEach { (scanMode, expectedScanMode) ->
+            scannerId += 1
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan
+            startScan(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(0)
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+            // Move time forward to assert there is no scheduled jobs on the handler thread
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             assertThat(
                     client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
                         kotlin.time.Duration.ZERO
@@ -2457,6 +2493,23 @@ class ScanManagerTest() {
         doReturn(filterCount).whenever(adapterService).numOfOffloadedScanFilterSupported
     }
 
+    private fun mockPrivilegedPermission() {
+        doReturn(arrayOf(TEST_PRIVILEGED_PACKAGE_NAME))
+            .whenever(packageManager)
+            .getPackagesForUid(any())
+        val mockUserContext = mock(Context::class.java)
+        doReturn(mockUserContext).whenever(adapterService).createContextAsUser(any(), any())
+        doReturn(packageManager).whenever(mockUserContext).packageManager
+        val privilegedPackageInfo =
+            PackageInfo().apply {
+                requestedPermissions = arrayOf(BLUETOOTH_PRIVILEGED)
+                requestedPermissionsFlags = intArrayOf(REQUESTED_PERMISSION_GRANTED)
+            }
+        doReturn(privilegedPackageInfo)
+            .whenever(packageManager)
+            .getPackageInfo(any<String>(), any<Int>())
+    }
+
     companion object {
         private const val DEFAULT_REGULAR_SCAN_REPORT_DELAY_MS = 0
         private const val DEFAULT_BATCH_SCAN_REPORT_DELAY_MS = 100
@@ -2466,6 +2519,7 @@ class ScanManagerTest() {
         private const val TEST_SCAN_QUOTA_COUNT = 5
         private const val TEST_APP_NAME = "Test"
         private const val TEST_PACKAGE_NAME = "com.test.package"
+        private const val TEST_PRIVILEGED_PACKAGE_NAME = "com.test.privileged.package"
 
         private val defaultScanMode =
             mapOf(

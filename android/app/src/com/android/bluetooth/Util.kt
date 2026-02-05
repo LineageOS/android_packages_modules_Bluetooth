@@ -40,6 +40,7 @@ import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
 import android.content.pm.PackageInfo
+import android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.GET_PERMISSIONS
 import android.location.LocationManager
@@ -473,6 +474,40 @@ object Util {
     @JvmStatic
     fun checkCallerHasPrivilegedPermission(context: Context) =
         context.checkCallerHasPermission(BLUETOOTH_PRIVILEGED)
+
+    /** Returns `true` if the uid / packageName pair holds [BLUETOOTH_PRIVILEGED] */
+    @JvmStatic
+    fun checkPrivilegedPermission(context: Context, packageName: String, uid: Int): Boolean {
+        val app = getPackageInfoAsUser(context, packageName, uid)
+
+        val permissions = app?.requestedPermissions ?: return false
+        val flags = app.requestedPermissionsFlags ?: return false
+
+        for (i in permissions.indices) {
+            if (
+                permissions[i] == BLUETOOTH_PRIVILEGED &&
+                    (flags[i] and REQUESTED_PERMISSION_GRANTED) != 0
+            ) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun getPackageInfoAsUser(
+        context: Context,
+        packageName: String,
+        uid: Int,
+    ): PackageInfo? {
+        return try {
+            val user = UserHandle.getUserHandleForUid(uid)
+            val pm = context.createContextAsUser(user, 0).packageManager
+            pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.e(TAG, "NameNotFoundException $packageName")
+            null
+        }
+    }
 
     /** Returns `true` if the caller holds [WRITE_SMS] */
     @JvmStatic
