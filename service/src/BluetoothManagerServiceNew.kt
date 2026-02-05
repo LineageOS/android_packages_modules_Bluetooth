@@ -36,8 +36,12 @@ class BluetoothManagerServiceNew(
         Log.i(TAG, "Starting for user $userHandle (boot completed=$isBootCompleted)")
     }
 
-    suspend fun shutdown() {
+    fun shutdown() {
         Log.i(TAG, "Shutting down for user $userHandle")
+    }
+
+    suspend fun awaitShutdown() {
+        // TODO wait for completion
     }
 
     fun onBluetoothDisallowed() {
@@ -55,6 +59,14 @@ class BluetoothManagerServiceNew(
     fun onBootCompleted() {
         Log.i(TAG, "onBootCompleted")
         isBootCompleted = true
+    }
+
+    fun onBleScanDisabled() {
+        Log.i(TAG, "onBleScanDisabled")
+    }
+
+    fun onSettingsRestored(enabled: Boolean) {
+        Log.i(TAG, "onSettingsRestored(enabled=$enabled)")
     }
 
     // API Delegate methods

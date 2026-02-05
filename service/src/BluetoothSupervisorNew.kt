@@ -50,14 +50,32 @@ class BluetoothSupervisorNew(
         initializeSatelliteMode(looper, context.contentResolver) { isOn ->
             activeBms?.onSatelliteModeChanged(isOn)
         }
+        BleScanSettingListener.initialize(looper, context.contentResolver) {
+            activeBms?.onBleScanDisabled()
+        }
+        BluetoothSystemBroadcastReceiver(
+            context,
+            looper,
+            onSettingsRestored = { enabled -> activeBms?.onSettingsRestored(enabled) },
+            onShutdown = {
+                Log.i(TAG, "Device shutting down. Stopping service.")
+                pendingUser = null
+                currentUser = null
+                activeBms?.shutdown()
+                activeBms = null
+            },
+        )
+
         Log.i(TAG, "Instance created, waiting for user")
     }
 
     override fun onBluetoothDisallowed() {
+        Log.i(TAG, "onBluetoothDisallowed")
         activeBms?.onBluetoothDisallowed()
     }
 
     override fun onBootCompleted() {
+        Log.i(TAG, "onBootCompleted")
         isBootCompleted = true
         activeBms?.onBootCompleted()
     }

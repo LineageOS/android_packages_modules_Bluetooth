@@ -17,7 +17,7 @@
 package com.android.server.bluetooth.test
 
 import android.app.ActivityManager
-import android.content.Context
+import android.app.Application
 import android.os.Looper
 import android.os.UserHandle
 import androidx.test.core.app.ApplicationProvider
@@ -31,11 +31,12 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 @ExperimentalCoroutinesApi
 class BluetoothSupervisorTest {
-    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val context = ApplicationProvider.getApplicationContext<Application>()
     private val looper = Looper.getMainLooper()
 
     private lateinit var supervisor: BluetoothSupervisorNew
@@ -53,6 +54,26 @@ class BluetoothSupervisorTest {
         val dumpOutput = stringWriter.toString()
 
         assertThat(dumpOutput).contains("BluetoothManagerServiceNew for $user")
+    }
+
+    @Test
+    fun onSystemShutdown_stopsService() = runTest {
+        val user = UserHandle.of(10)
+        supervisor.onUserSwitching(user)
+        verifyActiveUser(user)
+
+        // Trigger shutdown broadcast
+        val intent = android.content.Intent(android.content.Intent.ACTION_SHUTDOWN)
+        context.sendBroadcast(intent)
+        shadowOf(looper).idle()
+
+        // Verify service is gone
+        val stringWriter = StringWriter()
+        val printWriter = PrintWriter(stringWriter)
+        supervisor.api.dump(null, printWriter, null)
+        val dumpOutput = stringWriter.toString()
+
+        assertThat(dumpOutput).contains("No active user")
     }
 
     @Test

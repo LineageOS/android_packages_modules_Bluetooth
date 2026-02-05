@@ -56,6 +56,7 @@ java_library {
         "src/BluetoothSupervisor.kt",
         "src/BluetoothSupervisorLegacy.kt",
         "src/BluetoothSupervisorNew.kt",
+        "src/BluetoothSystemBroadcastReceiver.kt",
         "src/ChangeIds.kt",
         "src/Log.kt",
         "src/PermissionChecker.kt",
@@ -167,6 +168,7 @@ android_robolectric_test {
         "src/BluetoothSupervisor.kt",
         "src/BluetoothSupervisorNew.kt",
         "src/BluetoothSupervisorTest.kt",
+        "src/BluetoothSystemBroadcastReceiver.kt",
         "src/ChangeIds.kt",
         "src/Log.kt",
         "src/LogTest.kt",
@@ -218,6 +220,7 @@ android_robolectric_test {
         "PlatformProperties",
         "app-compat-annotations",
         "framework-annotations-lib",
+        "framework-permission-s.stubs.module_lib",
         "framework-statsd.stubs.module_lib",
     ],
 
