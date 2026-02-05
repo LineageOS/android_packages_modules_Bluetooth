@@ -22,7 +22,12 @@
 #include "bta/le_audio/ascs/ascs_types.h"
 #include "bta/le_audio/le_audio_types.h"
 #include "common/message_loop_thread.h"
-#include "hardware/audio.h"
+
+#ifdef TARGET_FLOSS
+#include <audio_hal_interface/audio_linux.h>
+#else
+#include <hardware/audio.h>
+#endif  // TARGET_FLOSS
 
 namespace bluetooth::audio::le_audio {
 
