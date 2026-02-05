@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,93 +14,86 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pan;
+package com.android.bluetooth.pan
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import android.content.Context
+import android.net.ConnectivityManager
+import android.os.Looper
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mockGetSystemService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.os.Looper;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.util.List;
-
-/** Test cases for {@link BluetoothTetheringNetworkFactory}. */
+/** Test cases for [BluetoothTetheringNetworkFactory]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothTetheringNetworkFactoryTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class BluetoothTetheringNetworkFactoryTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private Context mContext;
-    @Mock private ConnectivityManager mConnectivityManager;
-    @Mock private PanService mPanService;
+    @Mock private lateinit var context: Context
+    @Mock private lateinit var connectivityManager: ConnectivityManager
+    @Mock private lateinit var panService: PanService
 
-    private BluetoothTetheringNetworkFactory mBluetoothTetheringNetworkFactory;
+    private lateinit var bluetoothTetheringNetworkFactory: BluetoothTetheringNetworkFactory
 
     @Before
-    public void setUp() throws Exception {
+    fun setUp() {
         if (Looper.myLooper() == null) {
-            Looper.prepare();
+            Looper.prepare()
         }
 
-        mockGetSystemService(mContext, ConnectivityManager.class, mConnectivityManager);
-        mBluetoothTetheringNetworkFactory =
-                new BluetoothTetheringNetworkFactory(mContext, Looper.myLooper(), mPanService);
+        context.mockGetSystemService<ConnectivityManager>(connectivityManager)
+        bluetoothTetheringNetworkFactory =
+            BluetoothTetheringNetworkFactory(context, Looper.myLooper(), panService)
     }
 
     @Test
-    public void networkStartReverseTether() {
-        String iface = "iface";
-        mBluetoothTetheringNetworkFactory.startReverseTether(iface);
+    fun networkStartReverseTether() {
+        val iface = "iface"
+        bluetoothTetheringNetworkFactory.startReverseTether(iface)
 
-        assertThat(mBluetoothTetheringNetworkFactory.getProvider()).isNotNull();
+        assertThat(bluetoothTetheringNetworkFactory.provider).isNotNull()
     }
 
     @Test
-    public void networkStartReverseTetherStop() {
-        String iface = "iface";
-        mBluetoothTetheringNetworkFactory.startReverseTether(iface);
+    fun networkStartReverseTetherStop() {
+        val iface = "iface"
+        bluetoothTetheringNetworkFactory.startReverseTether(iface)
 
-        assertThat(mBluetoothTetheringNetworkFactory.getProvider()).isNotNull();
+        assertThat(bluetoothTetheringNetworkFactory.provider).isNotNull()
 
-        final var bluetoothDevice = getTestDevice(11);
-        doReturn(List.of(bluetoothDevice)).when(mPanService).getConnectedDevices();
+        val bluetoothDevice = getTestDevice(11)
+        doReturn(listOf(bluetoothDevice)).whenever(panService).getConnectedDevices()
 
-        mBluetoothTetheringNetworkFactory.stopReverseTether();
+        bluetoothTetheringNetworkFactory.stopReverseTether()
 
-        verify(mPanService).getConnectedDevices();
-        verify(mPanService).disconnect(bluetoothDevice);
+        Mockito.verify(panService).getConnectedDevices()
+        Mockito.verify(panService).disconnect(bluetoothDevice)
     }
 
     @Test
-    public void networkStartReverseTetherEmptyIface() {
-        String iface = "";
-        mBluetoothTetheringNetworkFactory.startReverseTether(iface);
+    fun networkStartReverseTetherEmptyIface() {
+        val iface = ""
+        bluetoothTetheringNetworkFactory.startReverseTether(iface)
 
-        assertThat(mBluetoothTetheringNetworkFactory.getProvider()).isNull();
+        assertThat(bluetoothTetheringNetworkFactory.provider).isNull()
     }
 
     @Test
-    public void networkStopEmptyIface() {
-        mBluetoothTetheringNetworkFactory.stopNetwork();
-        mBluetoothTetheringNetworkFactory.stopReverseTether();
+    fun networkStopEmptyIface() {
+        bluetoothTetheringNetworkFactory.stopNetwork()
+        bluetoothTetheringNetworkFactory.stopReverseTether()
 
-        assertThat(mBluetoothTetheringNetworkFactory.getProvider()).isNull();
+        assertThat(bluetoothTetheringNetworkFactory.provider).isNull()
     }
 }
