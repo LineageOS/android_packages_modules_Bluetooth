@@ -1745,7 +1745,10 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
         subevent_result->frequency_compensation_ = cs_event_result.GetFrequencyCompensation();
         subevent_result->reference_power_level_ = cs_event_result.GetReferencePowerLevel();
         subevent_result->num_antenna_paths_ = cs_event_result.GetNumAntennaPaths();
-        subevent_result->timestamp_nanos_ = ::android::elapsedRealtimeNano();
+        subevent_result->timestamp_nanos_ =
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::system_clock::now().time_since_epoch())
+                        .count();
         procedure_data->procedure_data_v2_.local_subevent_data_.emplace_back(subevent_result);
       }
     } else {
