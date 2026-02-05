@@ -126,6 +126,17 @@ uint16_t L2CA_GetBleSupervisionTimeout(const RawAddress& bd_addr) {
   return p_lcb->SupervisionTimeout();
 }
 
+/* We are certainly connected, and we want to move forward with notifying all upper layers that this
+ * LE connection is good
+ *
+ * This function is called when link_state changes to LST_CONNECTED, and must be called only once
+ * for every LE connection.
+ */
+static void l2cble_on_certainly_connected(tL2C_LCB* p_lcb) {
+  /* send callback */
+  l2cu_process_fixed_chnl_resp(p_lcb);
+}
+
 /*******************************************************************************
  *
  * Function l2cble_notify_le_connection
@@ -148,8 +159,8 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
     p_lcb->link_state = LST_CONNECTED;
     // TODO Move this back into acl layer
     btm_establish_continue_from_address(bda, BT_TRANSPORT_LE);
-    /* send callback */
-    l2cu_process_fixed_chnl_resp(p_lcb);
+
+    l2cble_on_certainly_connected(p_lcb);
   }
 
   /* For all channels, send the event through their FSMs */
@@ -249,7 +260,7 @@ bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
   if (role == HCI_ROLE_PERIPHERAL) {
     if (!bluetooth::shim::GetController()->SupportsBlePeripheralInitiatedFeaturesExchange()) {
       p_lcb->link_state = LST_CONNECTED;
-      l2cu_process_fixed_chnl_resp(p_lcb);
+      l2cble_on_certainly_connected(p_lcb);
     }
   }
   return true;
