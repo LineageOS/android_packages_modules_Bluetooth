@@ -16,9 +16,14 @@
 
 package com.android.server.bluetooth
 
+import android.bluetooth.IBluetoothManagerCallback
+import android.bluetooth.State
 import android.content.Context
+import android.os.IBinder
 import android.os.Looper
 import android.os.UserHandle
+import java.io.FileDescriptor
+import java.io.PrintWriter
 
 class BluetoothManagerServiceNew(
     private val context: Context,
@@ -32,6 +37,47 @@ class BluetoothManagerServiceNew(
 
     suspend fun shutdown() {
         Log.i(TAG, "Shutting down for user $userHandle")
+    }
+
+    // API Delegate methods
+    fun getState(): Int = State.OFF
+
+    fun waitForState(state: Int): Boolean = false
+
+    fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? = null
+
+    fun unregisterAdapter(callback: IBluetoothManagerCallback) {}
+
+    fun getAddress(): String? = null
+
+    fun setName(name: String?) {}
+
+    fun getName(): String? = null
+
+    fun isBleScanAvailable(): Boolean = false
+
+    fun isHearingAidProfileSupported(): Boolean = false
+
+    fun enable(reason: Int, packageName: String): Boolean = false
+
+    fun enableBle(packageName: String, token: IBinder): Boolean = false
+
+    fun enableNoAutoConnect(packageName: String): Boolean = false
+
+    fun disable(packageName: String, persist: Boolean): Boolean = false
+
+    fun disableBle(packageName: String, token: IBinder): Boolean = false
+
+    fun factoryReset(): Boolean = false
+
+    fun isAutoOnSupported(): Boolean = false
+
+    fun isAutoOnEnabled(): Boolean = false
+
+    fun setAutoOnEnabled(status: Boolean) {}
+
+    fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<String?>?) {
+        writer?.println("$TAG for $userHandle")
     }
 
     companion object {

@@ -46,10 +46,12 @@ class BluetoothSupervisorNew(
 
     override fun onBluetoothDisallowed() {
         Log.i(TAG, "onBluetoothDisallowed")
+        // TODO: propagate to BMS
     }
 
     override fun onBootCompleted() {
         Log.i(TAG, "onBootCompleted")
+        // TODO: propagate to BMS
     }
 
     override suspend fun onUserStarting(userHandle: UserHandle) {
@@ -111,45 +113,58 @@ class BluetoothSupervisorNew(
         onUserSwitching(foregroundUser)
     }
 
-    private class Api : BluetoothManagerServiceApi {
-        override fun getState(): Int = State.OFF
+    private inner class Api : BluetoothManagerServiceApi {
+        // Helper to safely access the active service or return a default/error
+        private fun <T> withBms(default: T, block: BluetoothManagerServiceNew.() -> T): T {
+            return activeBms?.run(block) ?: default
+        }
 
-        override fun waitForState(state: Int): Boolean = false
+        override fun getState(): Int = withBms(State.OFF) { getState() }
 
-        override fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? = null
+        override fun waitForState(state: Int): Boolean = withBms(false) { waitForState(state) }
 
-        override fun unregisterAdapter(callback: IBluetoothManagerCallback) {}
+        override fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? =
+            withBms(null) { registerAdapter(callback) }
 
-        override fun getAddress(): String? = null
+        override fun unregisterAdapter(callback: IBluetoothManagerCallback) =
+            withBms(Unit) { unregisterAdapter(callback) }
 
-        override fun setName(name: String?) {}
+        override fun getAddress(): String? = withBms(null) { getAddress() }
 
-        override fun getName(): String? = null
+        override fun setName(name: String?) = withBms(Unit) { setName(name) }
 
-        override fun isBleScanAvailable(): Boolean = false
+        override fun getName(): String? = withBms(null) { getName() }
 
-        override fun isHearingAidProfileSupported(): Boolean = false
+        override fun isBleScanAvailable(): Boolean = withBms(false) { isBleScanAvailable() }
 
-        override fun enable(reason: Int, packageName: String): Boolean = false
+        override fun isHearingAidProfileSupported(): Boolean =
+            withBms(false) { isHearingAidProfileSupported() }
 
-        override fun enableBle(packageName: String, token: IBinder): Boolean = false
+        override fun enable(reason: Int, packageName: String): Boolean =
+            withBms(false) { enable(reason, packageName) }
 
-        override fun enableNoAutoConnect(packageName: String): Boolean = false
+        override fun enableBle(packageName: String, token: IBinder): Boolean =
+            withBms(false) { enableBle(packageName, token) }
 
-        override fun disable(packageName: String, persist: Boolean): Boolean = false
+        override fun enableNoAutoConnect(packageName: String): Boolean =
+            withBms(false) { enableNoAutoConnect(packageName) }
 
-        override fun disableBle(packageName: String, token: IBinder): Boolean = false
+        override fun disable(packageName: String, persist: Boolean): Boolean =
+            withBms(false) { disable(packageName, persist) }
 
-        override fun factoryReset(): Boolean = false
+        override fun disableBle(packageName: String, token: IBinder): Boolean =
+            withBms(false) { disableBle(packageName, token) }
 
-        override fun isAutoOnSupported(): Boolean = false
+        override fun factoryReset(): Boolean = withBms(false) { factoryReset() }
 
-        override fun isAutoOnEnabled(): Boolean = false
+        override fun isAutoOnSupported(): Boolean = withBms(false) { isAutoOnSupported() }
 
-        override fun setAutoOnEnabled(status: Boolean) {}
+        override fun isAutoOnEnabled(): Boolean = withBms(false) { isAutoOnEnabled() }
+
+        override fun setAutoOnEnabled(status: Boolean) = withBms(Unit) { setAutoOnEnabled(status) }
 
         override fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<String?>?) {
-            writer?.println("BluetoothSupervisorNew: dump not implemented")
+            activeBms?.dump(fd, writer, args) ?: writer?.println("$TAG: No active user")
         }
     }
 }
