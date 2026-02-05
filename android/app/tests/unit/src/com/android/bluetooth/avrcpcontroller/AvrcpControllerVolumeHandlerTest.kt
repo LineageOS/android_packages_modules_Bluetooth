@@ -88,6 +88,31 @@ class AvrcpControllerVolumeHandlerTest {
     // * Tests
     // *********************************************************************************************
 
+    // Volume conversion
+
+    /**
+     * The volume conversion methods use floating-point math and rounding. This test verifies that
+     * the boundaries of the volume domains do not go out of bounds.
+     *
+     * The volume conversions are non-decreasing functions of their input. Testing solely the
+     * boundaries of the input domains is sufficient; the intermediate volumes need not be checked.
+     */
+    @Test
+    fun testVolumeConversion_convertsDomainExtremaCorrectly() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
+
+        val maxLocalVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val maxAbsoluteVolume = 127
+
+        // Local volume -> Absolute volume
+        assertThat(volumeHandler.localToAbsoluteVolume(0)).isEqualTo(0)
+        assertThat(volumeHandler.localToAbsoluteVolume(maxLocalVolume)).isEqualTo(maxAbsoluteVolume)
+
+        // Absolute volume -> local volume
+        assertThat(volumeHandler.absoluteToLocalVolume(0)).isEqualTo(0)
+        assertThat(volumeHandler.absoluteToLocalVolume(maxAbsoluteVolume)).isEqualTo(maxLocalVolume)
+    }
+
     // getVolumeStrategy
 
     /** Test #getVolumeStrategy: fixed volume, automotive = Loud */
