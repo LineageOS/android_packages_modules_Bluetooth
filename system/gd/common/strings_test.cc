@@ -109,6 +109,9 @@ TEST(StringsTest, split_string_test) {
   ASSERT_THAT(StringSplit("1,,2,,3,,", ",,"), ElementsAre("1", "2", "3", ""));
   ASSERT_THAT(StringSplit("1,,2,,3,,", ",,", 2), ElementsAre("1", "2,,3,,"));
   ASSERT_THAT(StringSplit("1", ",,", 2), ElementsAre("1"));
+}
+
+TEST(StringsDeathTest, split_string_test) {
   ASSERT_DEATH({ StringSplit("1,2,3", ""); }, "delim cannot be empty");
 }
 

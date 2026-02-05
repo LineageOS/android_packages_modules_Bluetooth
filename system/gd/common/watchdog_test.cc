@@ -34,8 +34,9 @@ protected:
   std::mutex mtx;
   bool fired = false;
 };
+class BluetoothWatchdogDeathTest : public BluetoothWatchdogTest {};
 
-TEST_F(BluetoothWatchdogTest, WatchdogShouldFireAndAbortProcess) {
+TEST_F(BluetoothWatchdogDeathTest, WatchdogShouldFireAndAbortProcess) {
   auto watchdog_deleter = [this](bluetooth::common::Watchdog* ptr) {
     std::lock_guard<std::mutex> lock(mtx);
     fired = true;
@@ -65,15 +66,15 @@ TEST_F(BluetoothWatchdogTest, WatchdogShouldNotFireIfDeletedInTime) {
   });
 }
 
-TEST_F(BluetoothWatchdogTest, WatchdogWithZeroAsTimeout) {
+TEST_F(BluetoothWatchdogDeathTest, WatchdogWithZeroAsTimeout) {
   EXPECT_DEATH({ bluetooth::common::Watchdog wd(0ms); }, "");
 }
 
-TEST_F(BluetoothWatchdogTest, WatchdogWithInvalidTimeout) {
+TEST_F(BluetoothWatchdogDeathTest, WatchdogWithInvalidTimeout) {
   EXPECT_DEATH({ bluetooth::common::Watchdog wd(-1ms); }, "");
 }
 
-TEST_F(BluetoothWatchdogTest, WatchdogWithMinimumTimeout) {
+TEST_F(BluetoothWatchdogDeathTest, WatchdogWithMinimumTimeout) {
   ASSERT_NO_FATAL_FAILURE({
     std::unique_ptr<bluetooth::common::Watchdog> wd;
     wd = std::make_unique<bluetooth::common::Watchdog>(
