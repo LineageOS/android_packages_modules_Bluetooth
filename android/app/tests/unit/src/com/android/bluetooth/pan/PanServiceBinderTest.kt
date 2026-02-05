@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,96 +14,87 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pan;
+package com.android.bluetooth.pan
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothProfile
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link PanServiceBinder}. */
+/** Test cases for [PanServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class PanServiceBinderTest {
+@RunWith(AndroidJUnit4::class)
+class PanServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: PanService
 
-    @Mock private AttributionSource mSource;
-    @Mock private PanService mService;
+    private val device = getTestDevice(64)
 
-    private final BluetoothDevice mDevice = getTestDevice(64);
-
-    private PanServiceBinder mBinder;
+    private lateinit var binder: PanServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        mBinder = new PanServiceBinder(mService);
+    fun setUp() {
+        binder = PanServiceBinder(service)
     }
 
     @Test
-    public void connect_callsServiceMethod() {
-        mBinder.connect(mDevice, mSource);
-        verify(mService).connect(mDevice);
+    fun connect_callsServiceMethod() {
+        binder.connect(device, source)
+        verify(service).connect(device)
     }
 
     @Test
-    public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mDevice, mSource);
-        verify(mService).disconnect(mDevice);
+    fun disconnect_callsServiceMethod() {
+        binder.disconnect(device, source)
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices_callsServiceMethod() {
+        binder.getConnectedDevices(source)
+        verify(service).getConnectedDevices()
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates_callsServiceMethod() {
-        int[] states = new int[] {STATE_CONNECTED};
+    fun getDevicesMatchingConnectionStates_callsServiceMethod() {
+        val states = intArrayOf(BluetoothProfile.STATE_CONNECTED)
 
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, mSource);
-        verify(mService).getConnectionState(mDevice);
+    fun getConnectionState_callsServiceMethod() {
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setConnectionPolicy_callsServiceMethod() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
+    fun setConnectionPolicy_callsServiceMethod() {
+        val connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED
 
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
-        verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void isTetheringOn_callsServiceMethod() {
-        mBinder.isTetheringOn(mSource);
-        verify(mService).isTetheringOn();
+    fun isTetheringOn_callsServiceMethod() {
+        binder.isTetheringOn(source)
+        verify(service).isTetheringOn
     }
 
     @Test
-    public void cleanup_doesNotCrash() {
-        mBinder.cleanup();
+    fun cleanup_doesNotCrash() {
+        binder.cleanup()
     }
 }
