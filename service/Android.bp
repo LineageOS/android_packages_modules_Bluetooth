@@ -166,6 +166,7 @@ android_robolectric_test {
         "src/BluetoothRestrictionTest.kt",
         "src/BluetoothSupervisor.kt",
         "src/BluetoothSupervisorNew.kt",
+        "src/BluetoothSupervisorTest.kt",
         "src/ChangeIds.kt",
         "src/Log.kt",
         "src/LogTest.kt",
