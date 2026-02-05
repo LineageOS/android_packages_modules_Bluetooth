@@ -48,10 +48,14 @@ TEST(ConfigCacheTest, simple_set_get_test) {
   ASSERT_EQ(*value, "C");
 }
 
-TEST(ConfigCacheTest, empty_values_test) {
+TEST(ConfigCacheDeathTest, empty_values_test) {
   ConfigCache config(100, Device::kLinkKeyProperties);
   ASSERT_DEATH({ config.SetProperty("", "B", "C"); }, "Empty section name not allowed");
   ASSERT_DEATH({ config.SetProperty("A", "", "C"); }, "Empty property name not allowed");
+}
+
+TEST(ConfigCacheTest, empty_values_test) {
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // empty value is allowed
   config.SetProperty("A", "B", "");
   auto value = config.GetProperty("A", "B");
