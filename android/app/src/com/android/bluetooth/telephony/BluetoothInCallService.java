@@ -1626,7 +1626,8 @@ public class BluetoothInCallService extends InCallService {
         };
     }
 
-    private BluetoothLeCall toLeCall(BluetoothCall call) {
+    @VisibleForTesting
+    BluetoothLeCall toLeCall(BluetoothCall call) {
         Integer state = getTbsCallState(call);
         boolean isConferenceWithNoChildren = isConferenceWithNoChildren(call);
 
@@ -1687,7 +1688,13 @@ public class BluetoothInCallService extends InCallService {
             addressUri = call.getHandle();
         }
 
-        String uri = addressUri == null ? null : addressUri.toString();
+        String uri;
+        if (addressUri == null) {
+            uri = null;
+        } else {
+            uri = addressUri.getScheme() + ":" + addressUri.getSchemeSpecificPart();
+        }
+
         int callFlags = call.isIncoming() ? 0 : BluetoothLeCall.FLAG_OUTGOING_CALL;
 
         String friendlyName = call.getCallerDisplayName();

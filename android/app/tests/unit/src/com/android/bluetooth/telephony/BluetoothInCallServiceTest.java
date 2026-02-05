@@ -41,6 +41,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothLeCall;
 import android.bluetooth.State;
 import android.content.ComponentName;
 import android.content.Context;
@@ -2093,6 +2094,23 @@ public class BluetoothInCallServiceTest {
         mBluetoothInCallService.mLeCallControlClient.onJoinCalls(requestId, uuids);
         verify(mTbsService).requestResult(anyInt(), eq(requestId), eq(Result.SUCCESS));
         verify(firstCall).conference(any(BluetoothCall.class));
+    }
+
+    @Test
+    public void toLeCallDecodesEncodedPlusSign() {
+        UUID callId = UUID.randomUUID();
+        BluetoothCall activeCall = createActiveCall(callId);
+
+        Uri handle = Uri.parse("tel:%2B12345");
+
+        doReturn(handle).when(activeCall).getHandle();
+        doReturn(Call.STATE_ACTIVE).when(activeCall).getState();
+        doReturn(true).when(activeCall).isIncoming();
+        doReturn(null).when(activeCall).getGatewayInfo();
+        doReturn(null).when(activeCall).getParentId();
+
+        BluetoothLeCall leCall = mBluetoothInCallService.toLeCall(activeCall);
+        assertThat(leCall.getUri()).isEqualTo("tel:+12345");
     }
 
     private static void addCallCapability(BluetoothCall call, int capability) {
