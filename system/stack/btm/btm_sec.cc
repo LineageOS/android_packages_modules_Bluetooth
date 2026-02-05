@@ -2961,37 +2961,42 @@ void btm_read_local_oob_complete(const tBTM_SP_LOC_OOB evt_data) {
  *
  ******************************************************************************/
 static void btm_sec_auth_collision(uint16_t handle) {
-  BtmDevice* p_device;
+  auto& security = BtmSecurity::Get();
+  uint64_t now = bluetooth::common::time_get_os_boottime_ms();
 
-  if (!BtmSecurity::Get().collision_start_time_) {
-    BtmSecurity::Get().collision_start_time_ = bluetooth::common::time_get_os_boottime_ms();
+  if (security.collision_start_time_ == 0) {
+    security.collision_start_time_ = now;
+  } else if ((now - security.collision_start_time_) >= BTM_SEC_MAX_COLLISION_DELAY) {
+    return;
   }
 
-  if ((bluetooth::common::time_get_os_boottime_ms() - BtmSecurity::Get().collision_start_time_) <
-      BTM_SEC_MAX_COLLISION_DELAY) {
-    if (handle == HCI_INVALID_HANDLE) {
-      p_device = btm_sec_find_dev_by_sec_state(tSECURITY_STATE::AUTHENTICATING);
-      if (p_device == nullptr) {
-        p_device = btm_sec_find_dev_by_sec_state(tSECURITY_STATE::ENCRYPTING);
-      }
-    } else {
-      p_device = btm_get_dev_by_handle(handle);
+  BtmDevice* p_device = nullptr;
+  if (handle == HCI_INVALID_HANDLE) {
+    p_device = btm_sec_find_dev_by_sec_state(tSECURITY_STATE::AUTHENTICATING);
+    if (p_device == nullptr) {
+      p_device = btm_sec_find_dev_by_sec_state(tSECURITY_STATE::ENCRYPTING);
     }
-
-    if (p_device != NULL) {
-      log::verbose("btm_sec_auth_collision: state {} (retrying in a moment...)",
-                   p_device->sec_rec.classic_link);
-      /* We will restart authentication after timeout */
-      if (p_device->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING ||
-          p_device->sec_rec.is_security_state_bredr_encrypting()) {
-        p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
-      }
-
-      BtmSecurity::Get().p_collided_dev_ = p_device;
-      alarm_set_on_mloop(BtmSecurity::Get().sec_collision_timer_, BT_1SEC_TIMEOUT_MS,
-                         btm_sec_collision_timeout, NULL);
-    }
+  } else {
+    p_device = btm_get_dev_by_handle(handle);
   }
+
+  if (p_device == nullptr) {
+    log::warn("No device found for handle {}", handle);
+    return;
+  }
+
+  log::verbose("btm_sec_auth_collision: state {} (retrying in a moment...)",
+               p_device->sec_rec.classic_link);
+
+  if (p_device->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING ||
+      p_device->sec_rec.classic_link == tSECURITY_STATE::ENCRYPTING) {
+    p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
+  }
+  security.p_collided_dev_ = p_device;
+
+  // Restart procedure after a fixed timeout as central initiated procedure should succeed
+  alarm_set_on_mloop(security.sec_collision_timer_, BT_1SEC_TIMEOUT_MS, btm_sec_collision_timeout,
+                     nullptr);
 }
 
 /******************************************************************************
@@ -3070,10 +3075,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
                  btm_pair_state_descr(BtmSecurity::Get().pairing_state_), handle, status);
   }
 
-  /* For transaction collision we need to wait and repeat.  There is no need */
-  /* for random timeout because only peripheral should receive the result */
-  if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) ||
-      (status == HCI_ERR_DIFF_TRANSACTION_COLLISION)) {
+  if (status == HCI_ERR_LMP_ERR_TRANS_COLLISION || status == HCI_ERR_DIFF_TRANSACTION_COLLISION) {
+    // Only peripheral receives the collision error, central initiated procedure should go through
     btm_sec_auth_collision(handle);
     return;
   } else if (btm_sec_auth_retry(handle, status)) {
@@ -3280,10 +3283,8 @@ static bool btm_sec_perform_ctkd(BtmDevice* p_device) {
  ******************************************************************************/
 void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_enable,
                             uint8_t key_size, bool from_key_refresh = false) {
-  /* For transaction collision we need to wait and repeat.  There is no need */
-  /* for random timeout because only peripheral should receive the result */
-  if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) ||
-      (status == HCI_ERR_DIFF_TRANSACTION_COLLISION)) {
+  if (status == HCI_ERR_LMP_ERR_TRANS_COLLISION || status == HCI_ERR_DIFF_TRANSACTION_COLLISION) {
+    // Only peripheral receives the collision error, central initiated procedure should go through
     log::error("Encryption collision failed status:{}", hci_error_code_text(status));
     btm_sec_auth_collision(handle);
     return;
