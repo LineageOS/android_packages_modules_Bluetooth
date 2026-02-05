@@ -457,6 +457,13 @@ public class ScanManager {
         // Begin scan operations.
         if (isBatchClient(client) || isAutoBatchScanClientEnabled(client)) {
             mBatchClients.add(client);
+            if (mScanThrottler.isScanAllowanceThrottlingEnabled()
+                    && mScanThrottler.applyAllowanceThrottling(client, client.getScanModeApp())) {
+                Log.d(
+                        TAG,
+                        "Throttled batch scan mode for $client "
+                            + "scanMode=${scanModeToString(client.getSettings().getScanMode())}");
+            }
             startBatchScan(client);
         } else {
             updateScanModeBeforeStart(client);
@@ -885,6 +892,11 @@ public class ScanManager {
         }
         if (changed) {
             configureRegularScanParams();
+        }
+        for (ScanClient client : mBatchClients) {
+            if (mScanThrottler.applyAllowanceThrottling(client, client.getScanModeApp())) {
+                resetBatchScan(client);
+            }
         }
     }
 

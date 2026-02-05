@@ -212,7 +212,7 @@ class ScanThrottler(
         }
     }
 
-    private fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
+    fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
         val ledger = client.appScanStats?.scanAllowanceLedger
         if (ledger == null) {
             return client.updateScanMode(targetScanMode)

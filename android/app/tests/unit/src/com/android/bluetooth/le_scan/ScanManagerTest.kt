@@ -1158,6 +1158,107 @@ class ScanManagerTest() {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowance_BatchScan() {
+        val isFiltered = true
+        val isBatch = true
+        val isAutoBatch = false
+        // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
+        val scanModeMap = SparseIntArray()
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_POWER, ScanSettings.SCAN_MODE_LOW_POWER)
+        scanModeMap.put(ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_BALANCED)
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, ScanSettings.SCAN_MODE_LOW_LATENCY)
+        scanModeMap.put(
+            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+            ScanSettings.SCAN_MODE_LOW_LATENCY,
+        )
+
+        for (i in 0..<scanModeMap.size()) {
+            val scanMode = scanModeMap.keyAt(i)
+            val expectedScanMode = scanModeMap.get(scanMode)
+
+            // Turn off screen
+            setScreenOn(false)
+            // Create scan client
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
+            // Start scan
+            startScan(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
+            // Move time forward so scan allowance check message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).contains(client)
+            // Allowance is refilled immediately for SCAN_MODE_LOW_POWER, so scan mode does not
+            // change. For other scan mode,
+            // allowance refill job is scheduled and scan mode is lowered to SCAN_MODE_SCREEN_OFF
+            // due to out of allowance
+            assertThat(scanManager.batchScanParams.scanMode)
+                .isEqualTo(
+                    if (scanMode == ScanSettings.SCAN_MODE_LOW_POWER)
+                        ScanSettings.SCAN_MODE_LOW_POWER
+                    else ScanSettings.SCAN_MODE_SCREEN_OFF
+                )
+            // Move time forward so refill message can be dispatched
+            advanceTime(ALLOWANCE_REFILL_WINDOW)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowance_BatchScanOutOfAllowance() {
+        val isFiltered = true
+        val isBatch = true
+        val isAutoBatch = false
+        val previousScanMode = ScanSettings.SCAN_MODE_LOW_LATENCY
+        val client =
+            createScanClient(
+                isFiltered,
+                previousScanMode,
+                isBatch = isBatch,
+                isAutoBatch = isAutoBatch,
+            )
+        startScan(client)
+        // Move time forward so scan allowance check message can be dispatched
+        advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), previousScanMode))
+        this@ScanManagerTest.looper.dispatchAll()
+        assertThat(
+                client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >= getScanAllowance()
+            )
+            .isTrue()
+
+        // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
+        val scanModeMap = SparseIntArray()
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_POWER, ScanSettings.SCAN_MODE_SCREEN_OFF)
+        scanModeMap.put(ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_SCREEN_OFF)
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, ScanSettings.SCAN_MODE_SCREEN_OFF)
+        scanModeMap.put(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY, ScanSettings.SCAN_MODE_SCREEN_OFF)
+
+        for (i in 0..<scanModeMap.size()) {
+            val scanMode = scanModeMap.keyAt(i)
+            val expectedScanMode = scanModeMap.get(scanMode)
+            // Turn off screen
+            setScreenOn(false)
+            // Create scan client
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
+            // Start scan
+            startScan(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
     fun testUnfilteredAutoBatchScan() {
         // Set filtered and batch scan flag
         val isFiltered = false
