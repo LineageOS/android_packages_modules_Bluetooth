@@ -672,5 +672,11 @@ public class AvrcpControllerService extends ProfileService {
         }
 
         sb.append("\n  ").append(BluetoothMediaBrowserService.dump()).append("\n");
+
+        sb.append("\n  Desired Volume Strategy: ")
+                .append(
+                        AvrcpControllerVolumeHandler.strategyToString(
+                                AvrcpControllerVolumeHandler.getDesiredVolumeStrategy(this)))
+                .append("\n");
     }
 }

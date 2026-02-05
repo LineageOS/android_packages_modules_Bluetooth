@@ -34,6 +34,10 @@ import java.util.UUID;
 public class AvrcpControllerNativeInterface {
     private static final String TAG = AvrcpControllerNativeInterface.class.getSimpleName();
 
+    // Notification types for Avrcp protocol JNI (from bt_rc.h).
+    private static final byte NOTIFICATION_RSP_TYPE_INTERIM = 0x00;
+    private static final byte NOTIFICATION_RSP_TYPE_CHANGED = 0x01;
+
     private final AdapterService mAdapterService;
     private final AvrcpControllerService mAvrcpController;
 
@@ -60,12 +64,16 @@ public class AvrcpControllerNativeInterface {
         setPlayerApplicationSettingValuesNative(address, numAttrib, attribIds, attribVal);
     }
 
-    void sendAbsVolRsp(byte[] address, int absVol, int label) {
-        sendAbsVolRspNative(address, absVol, label);
+    void sendSetAbsVolRsp(byte[] address, int absVol, int label) {
+        sendSetAbsVolRspNative(address, absVol, label);
     }
 
-    void sendRegisterAbsVolRsp(byte[] address, byte rspType, int absVol, int label) {
-        sendRegisterAbsVolRspNative(address, rspType, absVol, label);
+    void sendRegisterAbsVolInterimRsp(byte[] address, int absVol, int label) {
+        sendRegisterAbsVolRspNative(address, NOTIFICATION_RSP_TYPE_INTERIM, absVol, label);
+    }
+
+    void sendRegisterAbsVolChangedRsp(byte[] address, int absVol, int label) {
+        sendRegisterAbsVolRspNative(address, NOTIFICATION_RSP_TYPE_CHANGED, absVol, label);
     }
 
     void getCurrentMetadata(byte[] address) {
@@ -414,7 +422,7 @@ public class AvrcpControllerNativeInterface {
      * @param absVol new volume
      * @param label label
      */
-    private native void sendAbsVolRspNative(byte[] address, int absVol, int label);
+    private native void sendSetAbsVolRspNative(byte[] address, int absVol, int label);
 
     /**
      * Register for any volume level changes

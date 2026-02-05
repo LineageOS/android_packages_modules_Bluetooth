@@ -36,7 +36,7 @@ _PANDORA_PYTHON_PATHS=(
   "${ANDROID_BUILD_TOP}/external/python/pyee/"
   "${ANDROID_BUILD_TOP}/external/python/portpicker/src/"
   "${ANDROID_BUILD_TOP}/out/soong/.intermediates/external/pandora/bt-test-interfaces/python/pandora-python-gen-src/gen/"
-  "${ANDROID_BUILD_TOP}/out/soong/.intermediates/packages/modules/Bluetooth/pandora/interfaces/python/pandora_experimental-python-gen-src/gen/"
+  "${ANDROID_BUILD_TOP}/out/soong/.intermediates/packages/modules/Bluetooth/tests/pandora/interfaces/python/pandora_experimental-python-gen-src/gen/"
 )
 
 if [[ "$1" =~ ^('format'|'lint'|'run')$ ]]; then

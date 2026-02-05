@@ -2316,10 +2316,8 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn client_disconnect(&self, client_id: i32, addr: RawAddress) {
-        let Some(conn_id) = self.context_map.get_conn_id_from_address(client_id, &addr) else {
-            return;
-        };
-
+        // conn_id = 0 means to cancel the background connection
+        let conn_id = self.context_map.get_conn_id_from_address(client_id, &addr).unwrap_or(0);
         self.gatt.lock().unwrap().client.disconnect(client_id, addr, conn_id);
     }
 

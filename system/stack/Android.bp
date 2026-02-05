@@ -1748,6 +1748,7 @@ cc_test {
         "test/btm/sco_hci_test.cc",
         "test/btm/sco_pkt_status_test.cc",
         "test/btm/stack_btm_ble_sec_test.cc",
+        "test/btm/stack_btm_ble_test.cc",
         "test/btm/stack_btm_dev_test.cc",
         "test/btm/stack_btm_power_mode_test.cc",
         "test/btm/stack_btm_regression_tests.cc",

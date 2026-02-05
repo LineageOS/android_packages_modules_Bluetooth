@@ -273,6 +273,8 @@ int BtIntf::set_event_filter_connection_setup_all_devices() const {
   return intf_->set_event_filter_connection_setup_all_devices();
 }
 
+int BtIntf::set_suspend_state(bool suspend) const { return intf_->set_suspend_state(suspend); }
+
 bool BtIntf::get_wbs_supported() const { return intf_->get_wbs_supported(); }
 
 bool BtIntf::get_swb_supported() const { return intf_->get_swb_supported(); }

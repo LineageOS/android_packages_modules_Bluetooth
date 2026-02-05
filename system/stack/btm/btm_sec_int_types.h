@@ -102,8 +102,6 @@ typedef struct {
 typedef struct tBTM_SEC_DEVCB {
   tBTM_BLE_LOCAL_ID_KEYS id_keys;   /* local BLE ID keys */
   Octet16 ble_encryption_key_value; /* BLE encryption key */
-
-  BtIoCap loc_io_caps;        /* IO capability of the local device */
   tBTM_AUTH_REQ loc_auth_req; /* the auth_req flag  */
 } tBTM_SEC_DEVCB;
 

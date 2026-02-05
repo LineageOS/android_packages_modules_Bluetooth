@@ -1869,8 +1869,8 @@ public class RemoteDevices {
 
             if (Flags.addNewLocalDisconnectReason()
                     && hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */) {
-                // When disconnectAllEnabledProfiles() is user-triggered, the disconnect reason
-                // changes from HCI_ERR_CONN_CAUSE_LOCAL_HOST to
+                // When disconnectAllEnabledProfiles() or disconnectAllAcl() is user-triggered,
+                // the disconnect reason changes from HCI_ERR_CONN_CAUSE_LOCAL_HOST to
                 // ERROR_DISCONNECT_REASON_USER_REQUEST or ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND.
                 final int disconnectReason = mAdapterService.popDeviceDisconnectReason(device);
                 Log.d(TAG, "ACTION_ACL_DISCONNECTED: reason=" + disconnectReason);

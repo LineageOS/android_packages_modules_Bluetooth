@@ -263,7 +263,6 @@ inline std::string btm_oob_data_text(const tBTM_OOB_DATA& data) {
 /* data type for BTM_SP_IO_REQ_EVT */
 typedef struct {
   RawAddress bd_addr;     /* peer address */
-  BtIoCap io_cap;         /* local IO capabilities */
   tBTM_OOB_DATA oob_data; /* OOB data present (locally) for the peer device */
   tBTM_AUTH_REQ auth_req; /* Authentication required (for local device) */
   bool is_orig;           /* true, if local device initiated the SP process */

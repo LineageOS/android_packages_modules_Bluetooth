@@ -1225,7 +1225,12 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @Hide @SystemApi public static final int PAIRING_VARIANT_PIN_16_DIGITS = 7;
 
-    /** Indicates that user participation is requested to initiate the pairing process. */
+    /**
+     * Signals a request for user participation to begin the LE Legacy pairing process. Accepting
+     * this allows the Bluetooth stack to proceed toward the formal pairing association model;
+     * rejecting or ignoring it results in immediate pairing failure. Note: This only authorizes the
+     * process to start and does not constitute final pairing approval.
+     */
     @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
     public static final int PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED = 0;
 
@@ -1236,11 +1241,18 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
     public static final int PAIRING_CONTEXT_USER_APPROVAL_REQUESTED = 1;
 
-    /** Indicates that the re-pairing process is initiated. */
+    /**
+     * Signals an autonomous, system-initiated re-pairing process. Acceptance replaces the existing
+     * bond; rejection or ignoring preserves it. Failure results in immediate link disconnection and
+     * an {@code ACTION_KEY_MISSING} intent broadcast.
+     */
     @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
     public static final int PAIRING_CONTEXT_REPAIRING = 2;
 
-    /** Indicates the pairing algorithm used. */
+    /**
+     * Represents a non-exhaustive list of known pairing algorithms. This list is subject to
+     * expansion as future Bluetooth specifications introduce new pairing methods.
+     */
     @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
@@ -1254,21 +1266,31 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
     public @interface PairingAlgorithm {}
 
-    /** Indicates the pairing algorithm used is LE legacy. */
+    /**
+     * Indicates usage of the LE Legacy pairing algorithm. Refer to Bluetooth Core Spec v6.2, Vol 1,
+     * Part A, Section 5 for security requirements and procedure details.
+     */
     @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
     public static final int PAIRING_ALGORITHM_LE_LEGACY = 0;
 
-    /** Indicates the pairing algorithm used is BR/EDR legacy. */
+    /**
+     * Indicates usage of the BR/EDR Legacy pairing algorithm. Refer to Bluetooth Core Spec v6.2,
+     * Vol 1, Part A, Section 5 for security requirements and procedure details.
+     */
     @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
     public static final int PAIRING_ALGORITHM_BREDR_LEGACY = 1;
 
-    /** Indicates the pairing algorithm used is BR/EDR SSP. */
+    /**
+     * Indicates usage of the BR/EDR Secure Simple Pairing (SSP) algorithm. Refer to Bluetooth Core
+     * Spec v6.2, Vol 1, Part A, Section 5 for security requirements and procedure details.
+     */
     @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
     public static final int PAIRING_ALGORITHM_BREDR_SSP = 2;
 
     /**
-     * Indicates the pairing algorithm used is Secure Connections. This is applicable for both
-     * BR/EDR and LE transports.
+     * Indicates usage of the Secure Connections pairing algorithm, applicable to both BR/EDR and LE
+     * transports. Refer to Bluetooth Core Spec v6.2, Vol 1, Part A, Section 5 for security
+     * requirements and procedure details.
      */
     @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
     public static final int PAIRING_ALGORITHM_SC = 3;
@@ -2221,9 +2243,15 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             conditional = true)
     public @ConnectionReturnValues int disconnect() {
         if (DBG) log("disconnect()");
-        return callServiceIfEnabled(
-                s -> s.disconnectAllEnabledProfiles(this, mAttributionSource),
-                BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        if (Flags.fixNoAclDisconnectedIntent()) {
+            return callServiceIfEnabled(
+                    s -> s.disconnectAllAcl(this, mAttributionSource),
+                    BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        } else {
+            return callServiceIfEnabled(
+                    s -> s.disconnectAllEnabledProfiles(this, mAttributionSource),
+                    BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        }
     }
 
     /**

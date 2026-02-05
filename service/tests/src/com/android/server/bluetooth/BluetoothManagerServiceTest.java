@@ -736,11 +736,11 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    public void disable_whenBinding_bluetoothShouldStop_new() throws Exception {
-        mManagerService.enable(0, "disable_whenBinding_bluetoothShouldStop_new");
+    public void disable_whenBinding_bluetoothShouldStop() throws Exception {
+        mManagerService.enable(0, "disable_whenBinding_bluetoothShouldStop");
         verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
         mInOrder.verify(mContext).bindServiceAsUser(any(), any(), anyInt(), any());
-        mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
+        mManagerService.disable("disable_whenBinding_bluetoothShouldStop", true);
         mInOrder.verify(mContext).unbindService(any());
         verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
@@ -750,13 +750,37 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void disable_whenTurningBleOn_bluetoothShouldStop() throws Exception {
-        mManagerService.enable(0, "disable_whenBinding_bluetoothShouldStop_new");
+        mManagerService.enable(0, "disable_whenTurningBleOn_bluetoothShouldStop");
         acceptBluetoothBinding();
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
-        mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
+        mManagerService.disable("disable_whenTurningBleOn_bluetoothShouldStop", true);
         mInOrder.verify(mContext).unbindService(any());
         verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
+    }
+
+    @Test
+    public void disable_whenBindingToBle_bluetoothShouldKeepStarting() throws Exception {
+        mManagerService.enableBle(
+                "disable_whenBindingToBle_bluetoothShouldKeepStarting", mBleBinder);
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
+        mManagerService.disable("disable_whenBindingToBle_bluetoothShouldKeepStarting", true);
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
+        transition_offToBleOn();
+
+        endTest();
+    }
+
+    @Test
+    public void disable_whenTurningBleOnToBle_bluetoothShouldKeepStarting() throws Exception {
+        mManagerService.enableBle(
+                "disable_whenTurningBleOnToBle_bluetoothShouldKeepStarting", mBleBinder);
+        acceptBluetoothBinding();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
+        mManagerService.disable("disable_whenTurningBleOnToBle_bluetoothShouldKeepStarting", true);
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
 
         endTest();
     }

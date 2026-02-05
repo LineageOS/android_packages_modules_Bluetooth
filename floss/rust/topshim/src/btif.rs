@@ -1247,6 +1247,7 @@ pub(crate) mod ffi {
         fn restore_filter_accept_list(self: &BtIntf) -> i32;
         fn allow_wake_by_hid(self: &BtIntf) -> i32;
         fn set_event_filter_connection_setup_all_devices(self: &BtIntf) -> i32;
+        fn set_suspend_state(self: &BtIntf, suspend: bool) -> i32;
         fn get_wbs_supported(self: &BtIntf) -> bool;
         fn get_swb_supported(self: &BtIntf) -> bool;
         fn is_coding_format_supported(self: &BtIntf, coding_format: u8) -> bool;
@@ -1503,6 +1504,10 @@ impl BluetoothInterface {
 
     pub fn set_event_filter_connection_setup_all_devices(&self) -> i32 {
         self.internal.set_event_filter_connection_setup_all_devices()
+    }
+
+    pub fn set_suspend_state(&self, suspend: bool) -> i32 {
+        self.internal.set_suspend_state(suspend)
     }
 
     pub(crate) fn as_btif(&self) -> &ffi::BtIntf {
