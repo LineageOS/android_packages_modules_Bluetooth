@@ -2003,7 +2003,11 @@ public class RemoteDevices {
         // Bond loss detected, add to the count.
         mAdapterService.updateKeyMissingCount(device, true);
 
-        MetricsLogger.getInstance().count(BluetoothProtoEnums.BOND_LOSS_DETECTED, 1);
+        if (Utils.isAutonomousRepairingSupported()) {
+            MetricsLogger.getInstance().count(BluetoothProtoEnums.BOND_LOSS_DETECTED_REPAIRING, 1);
+        } else {
+            MetricsLogger.getInstance().count(BluetoothProtoEnums.BOND_LOSS_DETECTED, 1);
+        }
 
         // Some apps are not able to handle the key missing broadcast, so we need to remove
         // the bond to prevent them from misbehaving.
