@@ -29,10 +29,11 @@ class BluetoothManagerServiceNew(
     private val context: Context,
     private val looper: Looper,
     private val userHandle: UserHandle,
+    private var isBootCompleted: Boolean,
 ) {
 
     init {
-        Log.i(TAG, "Starting for user $userHandle")
+        Log.i(TAG, "Starting for user $userHandle (boot completed=$isBootCompleted)")
     }
 
     suspend fun shutdown() {
@@ -53,6 +54,7 @@ class BluetoothManagerServiceNew(
 
     fun onBootCompleted() {
         Log.i(TAG, "onBootCompleted")
+        isBootCompleted = true
     }
 
     // API Delegate methods

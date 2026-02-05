@@ -37,6 +37,7 @@ class BluetoothSupervisorNew(
 ) : BluetoothSupervisor {
     private var activeBms: BluetoothManagerServiceNew? = null
     private var currentUser: UserHandle? = null
+    private var isBootCompleted = false
 
     private var pendingUser: UserHandle? = null // Non-null means a switch is in progress.
 
@@ -53,12 +54,11 @@ class BluetoothSupervisorNew(
     }
 
     override fun onBluetoothDisallowed() {
-        Log.i(TAG, "onBluetoothDisallowed")
         activeBms?.onBluetoothDisallowed()
     }
 
     override fun onBootCompleted() {
-        Log.i(TAG, "onBootCompleted")
+        isBootCompleted = true
         activeBms?.onBootCompleted()
     }
 
@@ -94,7 +94,7 @@ class BluetoothSupervisorNew(
         }
 
         Log.i(TAG, "Starting service for $pendingUser")
-        activeBms = BluetoothManagerServiceNew(context, looper, pendingUser!!)
+        activeBms = BluetoothManagerServiceNew(context, looper, pendingUser!!, isBootCompleted)
         currentUser = pendingUser
         pendingUser = null
     }
