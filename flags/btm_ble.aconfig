@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gd_conn_mgr_one_timeout"
+    namespace: "bluetooth"
+    description: "Have just one timer for connection manager direct connections"
+    bug: "481287758"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

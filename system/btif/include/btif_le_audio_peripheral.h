@@ -16,8 +16,12 @@
 
 #pragma once
 
+#include "include/hardware/bt_le_audio_server.h"
 #include "include/hardware/bt_mcp_client.h"
 #include "include/hardware/bt_vcp_renderer.h"
+
+bluetooth::le_audio::LeAudioServerInterface* btif_le_audio_server_get_interface();
+void btif_debug_le_audio_server_dump(int fd);
 
 bluetooth::mcp::McpClientInterface* btif_mcp_client_get_interface();
 bluetooth::vcp::VolumeRendererInterface* btif_vcp_renderer_get_interface();

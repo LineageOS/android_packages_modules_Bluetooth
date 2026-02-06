@@ -1419,14 +1419,11 @@ TEST_F(LeImplTest, DISABLED_on_common_le_connection_complete__NoPriorConnection)
 }
 
 TEST_F(LeImplTest, cancel_connect) {
-  le_impl_->create_connection_timeout_alarms_.emplace(
-          std::piecewise_construct,
-          std::forward_as_tuple(remote_public_address_with_type_.GetAddress(),
-                                remote_public_address_with_type_.GetAddressType()),
-          std::forward_as_tuple(&handler_->thread()));
+  le_impl_->direct_connections_.insert({remote_public_address_with_type_.GetAddress(),
+                                        remote_public_address_with_type_.GetAddressType()});
   le_impl_->cancel_connect(remote_public_address_with_type_);
   sync_handler();
-  ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());
+  ASSERT_TRUE(le_impl_->direct_connections_.empty());
 }
 
 enum class ConnectionCompleteType { CONNECTION_COMPLETE, ENHANCED_CONNECTION_COMPLETE };
@@ -1603,7 +1600,7 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
           AclCommandView::Create(raw_bg_create_connection)));
   EXPECT_TRUE(bg_create_connection.IsValid());
   sync_handler();
-  ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());
+  ASSERT_TRUE(le_impl_->direct_connections_.empty());
 
   hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
   sync_handler();
@@ -1665,7 +1662,7 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
           AddressType::PUBLIC_DEVICE_ADDRESS, Address::kEmpty, 0x0000, 0x0000, 0x0000,
           ClockAccuracy::PPM_30));
   sync_handler();
-  ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());
+  ASSERT_TRUE(le_impl_->direct_connections_.empty());
 
   hci_layer_->GetCommand(OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(

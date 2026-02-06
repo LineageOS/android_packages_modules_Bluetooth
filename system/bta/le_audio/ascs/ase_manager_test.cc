@@ -118,7 +118,7 @@ public:
   MOCK_METHOD((bool), IsEncodingSessionReady, (), (const override));
   MOCK_METHOD((void), OnDecodingIsoChannelParametersUpdated,
               (const RawAddress& pseudo_address, const tBLE_BD_ADDR address_with_type, int ase_id,
-               uint16_t cis_conn_hdl, bool is_setup,
+               uint16_t cis_conn_hdl,
                const std::optional<ascs::AseStateCodecConfiguration>& codec_configuration,
                const std::optional<ascs::AseStateQosConfiguration>& qos_configuration,
                uint8_t target_latency, const std::optional<std::vector<uint8_t>>& metadata),
@@ -518,7 +518,7 @@ public:
     auto is_sink = ase_manager_->IsSinkAse(ase_id);
     if (is_sink) {
       EXPECT_CALL(mock_ase_manager_cb_,
-                  OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _, _))
+                  OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _))
               .Times(1);
     } else {
       EXPECT_CALL(mock_ase_manager_cb_, OnEncodingIsoChannelParametersUpdated(_, _, _, _, _, _, _))
@@ -610,7 +610,7 @@ public:
                     ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST, _, _))
                 .Times(1);
         EXPECT_CALL(mock_ase_manager_cb_,
-                    OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _, _))
+                    OnDecodingIsoChannelParametersUpdated(_, _, _, _, _, _, _, _))
                 .Times(1);
       } else {
         EXPECT_CALL(legacy_hci_mock_,
@@ -1615,9 +1615,8 @@ TEST_F(AseManagerTest, ConfigureCodecAndVerifyTargetLatency) {
   testing::Mock::VerifyAndClearExpectations(mock_iso_app_proxy_);
 
   EXPECT_CALL(legacy_hci_mock_, ConfigureDataPath(_, _, _)).Times(1);
-  EXPECT_CALL(mock_ase_manager_cb_,
-              OnDecodingIsoChannelParametersUpdated(_, _, ase_id, cis_conn_hdl, true, _, _,
-                                                    target_latency, _))
+  EXPECT_CALL(mock_ase_manager_cb_, OnDecodingIsoChannelParametersUpdated(
+                                            _, _, ase_id, cis_conn_hdl, _, _, target_latency, _))
           .Times(1);
 
   // Inject CIS established event

@@ -72,6 +72,16 @@ void AclManagerLeImpl::CreateLeConnection(AddressWithType address_with_type, boo
                    prefer_relax_mode);
 }
 
+void AclManagerLeImpl::CancelLeConnect(AddressWithType address_with_type) {
+  handler_->CallOn(&le_impl_, &le_impl::remove_device_from_background_connection_list,
+                   address_with_type);
+  handler_->CallOn(&le_impl_, &le_impl::cancel_connect, address_with_type);
+}
+
+void AclManagerLeImpl::CancelDirectConnect(AddressWithType address_with_type) {
+  handler_->CallOn(&le_impl_, &le_impl::direct_connect_remove, address_with_type);
+}
+
 void AclManagerLeImpl::SetPrivacyPolicyForInitiatorAddress(
         LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
         std::chrono::milliseconds minimum_rotation_time,
@@ -97,12 +107,6 @@ void AclManagerLeImpl::SetPrivacyPolicyForInitiatorAddressForTest(
   handler_->CallOn(&le_impl_, &le_impl::set_privacy_policy_for_initiator_address_for_test,
                    address_policy, fixed_address, rotation_irk, minimum_rotation_time,
                    maximum_rotation_time);
-}
-
-void AclManagerLeImpl::CancelLeConnect(AddressWithType address_with_type) {
-  handler_->CallOn(&le_impl_, &le_impl::remove_device_from_background_connection_list,
-                   address_with_type);
-  handler_->CallOn(&le_impl_, &le_impl::cancel_connect, address_with_type);
 }
 
 void AclManagerLeImpl::RemoveFromBackgroundList(AddressWithType address_with_type) {
@@ -163,17 +167,13 @@ void AclManagerLeImpl::dump(OutputT&& out) const {
   auto& accept_list = le_impl_.accept_list;
   const auto le_connectability_state_text =
           connectability_state_machine_text(le_impl_.connectability_state_);
-  const auto le_create_connection_timeout_alarms_count =
-          le_impl_.create_connection_timeout_alarms_.size();
 
   std::format_to(out, "\nACL Manager Dumpsys:\n");
   std::format_to(out,
                  "    le_connectability_state: \"{}\"\n"
-                 "    le_create_connection_timeout_alarms_count: {}\n"
                  "    le_filter_accept_list_count: {}\n"
                  "    le_filter_accept_list: [",
-                 le_connectability_state_text, le_create_connection_timeout_alarms_count,
-                 accept_list.size());
+                 le_connectability_state_text, accept_list.size());
   for (const auto& it : accept_list) {
     std::format_to(out, "\n        \"{}\",", it.ToString());
   }

@@ -453,7 +453,7 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
       if (sm->IsSinkAse()) {
         app_callbacks_->OnDecodingIsoChannelParametersUpdated(
                 sm->GetPeer(), BTM_Sec_GetAddressWithType(sm->GetPeer()), sm->GetAseId(),
-                evt->cis_conn_hdl, true, sm->codec_configuration, sm->qos_configuration,
+                evt->cis_conn_hdl, sm->codec_configuration, sm->qos_configuration,
                 sm->target_latency.value_or(0), sm->metadata);
       } else {
         app_callbacks_->OnEncodingIsoChannelParametersUpdated(
@@ -502,7 +502,7 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
       auto address_with_type = BTM_Sec_GetAddressWithType(sm->GetPeer());
       if (sm->IsSinkAse()) {
         app_callbacks_->OnDecodingIsoChannelParametersUpdated(
-                sm->GetPeer(), address_with_type, sm->GetAseId(), evt->cis_conn_hdl, false,
+                sm->GetPeer(), address_with_type, sm->GetAseId(), evt->cis_conn_hdl,
                 sm->codec_configuration, sm->qos_configuration, sm->target_latency.value_or(0),
                 sm->metadata);
       } else {

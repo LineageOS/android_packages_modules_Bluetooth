@@ -1325,6 +1325,9 @@ void btm_ble_connection_established(const RawAddress& bda) {
           interop_match_name(INTEROP_DISABLE_READ_LE_APPEARANCE, (const char*)remote_name)) {
         log::warn("Name {} matches IOP database, not reading appearance for {}",
                   (const char*)remote_name, bda);
+      } else if (interop_match_manufacturer(INTEROP_DISABLE_READ_LE_APPEARANCE, p_device->remote_version_info.manufacturer)) {
+        log::warn("Manufacturer {} matches IOP database, not reading appearance for {}",
+                  p_device->remote_version_info.manufacturer, bda);
       } else {
         btm_ble_read_remote_cod(bda);
       }
