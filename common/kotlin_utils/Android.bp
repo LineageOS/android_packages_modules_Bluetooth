@@ -15,6 +15,7 @@
 java_library {
     name: "bluetooth-common-kotlinutils",
     srcs: [
+        "BroadcastReceiver.kt",
         "TableBuilder.kt",
         "Text.kt",
         "TimeProvider.kt",

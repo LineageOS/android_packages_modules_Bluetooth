@@ -16,13 +16,10 @@
 
 package com.android.server.bluetooth
 
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Handler
 import android.os.Looper
 import android.os.UserManager
+import com.android.bluetooth.util.registerReceiver
 import com.android.internal.annotations.VisibleForTesting
 
 private const val TAG = "BluetoothRestriction"
@@ -36,16 +33,9 @@ object BluetoothRestriction {
     fun initialize(context: Context, looper: Looper, onBluetoothDisallowed: () -> Unit) {
         // DISALLOW_BLUETOOTH is a restriction on the system user, so we only need to register for
         // broadcasts to the system user.
-        context.registerReceiver(
-            object : BroadcastReceiver() {
-                override fun onReceive(ctx: Context, intent: Intent) {
-                    handleRestrictionChange(context, onBluetoothDisallowed)
-                }
-            },
-            IntentFilter(UserManager.ACTION_USER_RESTRICTIONS_CHANGED),
-            null,
-            Handler(looper),
-        )
+        context.registerReceiver(looper, UserManager.ACTION_USER_RESTRICTIONS_CHANGED) { _, _ ->
+            handleRestrictionChange(context, onBluetoothDisallowed)
+        }
 
         isBluetoothAllowed = !hasBluetoothRestriction(context)
     }
