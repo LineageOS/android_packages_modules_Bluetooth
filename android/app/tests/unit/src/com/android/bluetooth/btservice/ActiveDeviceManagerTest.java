@@ -1672,6 +1672,70 @@ public class ActiveDeviceManagerTest {
     }
 
     /**
+     * Verifies that the ActiveDeviceManager handles a second connection event for the same Hearing
+     * Aid device correctly.
+     *
+     * <pre>
+     * 1. Hearing Aid device connected.
+     * 2. Verify setActiveDevice is called.
+     * 3. Connect the same Hearing Aid device again.
+     * 4. Verify setActiveDevice is not called again.
+     * </pre>
+     */
+    @Test
+    public void hearingAidDeviceConnectsTwice_setActiveIsCalledOnce() {
+        hearingAidConnected(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+
+        // Connect again
+        hearingAidConnected(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        // setActiveDevice should not be called again
+        verify(mHearingAidService, times(1)).setActiveDevice(mHearingAidDevice);
+    }
+
+    /**
+     * Hearing aid is connected, but active device is HFP. When the active HFP device is
+     * disconnected, the hearing aid should be the active one.
+     *
+     * <pre>
+     * 1. Connect HA device. Verify it is active.
+     * 2. Connect and activate HFP device. Verify HA is removed active and HFP is active.
+     * 3. Disconnect HFP device.
+     * 4. Verify fallback to HA (HA becomes active).
+     * </pre>
+     */
+    @Test
+    public void hfpDeviceDisconnected_fallbackToHearingAid() {
+        doReturn(AudioManager.MODE_NORMAL).when(mAudioManager).getMode();
+        doReturn(true).when(mHearingAidService).removeActiveDevice(anyBoolean());
+
+        // Connect HA device
+        hearingAidConnected(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+
+        Mockito.clearInvocations(mHearingAidService);
+
+        // Connect and activate HFP device, which deactivates HA
+        headsetConnected(mHeadsetDevice, false);
+        headsetActiveDeviceChanged(mHeadsetDevice);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).removeActiveDevice(false);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isEqualTo(mHeadsetDevice);
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).isEmpty();
+
+        // Disconnect HFP device
+        headsetDisconnected(mHeadsetDevice);
+        mTestLooper.dispatchAll();
+
+        // Verify fallback to HA
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).contains(mHearingAidDevice);
+    }
+
+    /**
      * Hearing aid is connected, but active device is different BT. When the active device is
      * disconnected, the hearing aid should be the active one.
      */
