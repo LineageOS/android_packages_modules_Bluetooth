@@ -858,7 +858,7 @@ static void AddEnergyMonitorEventToQueue(uint8_t length, const uint8_t* p_energy
   }
 
   metrics::LogMetricBluetoothEnergyMonitorReported(vendor_cap_supported_version,
-                                                   p_bqr_event->bqr_energy_monitor_event_.base);
+                                                   p_bqr_event->bqr_energy_monitor_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 

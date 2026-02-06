@@ -331,8 +331,8 @@ void LogMetricsChannelSoundingRequesterSessionReported(
   }
 }
 
-void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
-                                             const bqr::BqrEnergyMonitorEvent& event) {
+void LogMetricBluetoothEnergyMonitorReported(
+        uint16_t bqr_version, const bqr::BqrEnergyMonitoringEventV7& event) {
   if (metricsInstance) {
     metricsInstance->LogMetricBluetoothEnergyMonitorReported(bqr_version, event);
   }

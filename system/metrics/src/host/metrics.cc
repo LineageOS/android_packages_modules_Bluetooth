@@ -146,8 +146,8 @@ void LogMetricsChannelSoundingRequesterSessionReported(
         android::bluetooth::ChannelSoundingType /*cs_type*/, int32_t /*min_subevent_len*/,
         int32_t /*min_subevent_len_count*/) {}
 
-void LogMetricBluetoothEnergyMonitorReported(uint16_t /*bqr_version*/,
-                                             const bqr::BqrEnergyMonitorEvent& /*event*/) {}
+void LogMetricBluetoothEnergyMonitorReported(
+        uint16_t /*bqr_version*/, const bqr::BqrEnergyMonitoringEventV7& /*event*/) {}
 
 void LogMetricBluetoothRFStatsReported(uint16_t /*bqr_version*/,
                                        const bqr::BqrRFStatsEvent& /*event*/) {}

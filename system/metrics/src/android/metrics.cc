@@ -567,19 +567,22 @@ void LogMetricsChannelSoundingRequesterSessionReported(
   }
 }
 
-void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
-                                             const bqr::BqrEnergyMonitorEvent& event) {
+void LogMetricBluetoothEnergyMonitorReported(
+        uint16_t bqr_version, const bluetooth::bqr::BqrEnergyMonitoringEventV7& event) {
   int ret = stats_write(
-          BLUETOOTH_ENERGY_MONITOR_REPORTED, bqr_version, event.quality_report_id,
-          event.avg_current_consume, event.idle_total_time, event.idle_state_enter_count,
-          event.active_total_time, event.active_state_enter_count, event.bredr_tx_total_time,
-          event.bredr_tx_state_enter_count, event.bredr_tx_avg_power_lv,
-          event.bredr_rx_total_time, event.bredr_rx_state_enter_count, event.le_tx_total_time,
-          event.le_tx_state_enter_count, event.le_tx_avg_power_lv, event.le_rx_total_time,
-          event.le_rx_state_enter_count, event.tm_period, event.rx_active_one_chain_time,
-          event.rx_active_two_chain_time, event.tx_ipa_active_one_chain_time,
-          event.tx_ipa_active_two_chain_time, event.tx_epa_active_one_chain_time,
-          event.tx_epa_active_two_chain_time);
+          BLUETOOTH_ENERGY_MONITOR_REPORTED, bqr_version, event.base.quality_report_id,
+          event.base.avg_current_consume, event.base.idle_total_time,
+          event.base.idle_state_enter_count, event.base.active_total_time,
+          event.base.active_state_enter_count, event.base.bredr_tx_total_time,
+          event.base.bredr_tx_state_enter_count, event.base.bredr_tx_avg_power_lv,
+          event.base.bredr_rx_total_time, event.base.bredr_rx_state_enter_count,
+          event.base.le_tx_total_time, event.base.le_tx_state_enter_count,
+          event.base.le_tx_avg_power_lv, event.base.le_rx_total_time,
+          event.base.le_rx_state_enter_count, event.base.tm_period,
+          event.base.rx_active_one_chain_time, event.base.rx_active_two_chain_time,
+          event.base.tx_ipa_active_one_chain_time, event.base.tx_ipa_active_two_chain_time,
+          event.base.tx_epa_active_one_chain_time, event.base.tx_epa_active_two_chain_time,
+          event.bredr_rx_active_scan_total_time, event.le_rx_active_scan_total_time);
   if (ret < 0) {
     log::warn("failed to log BQR energy monitor event to statsd, error {}", ret);
   }
