@@ -1905,7 +1905,8 @@ static void btm_sec_bond_cancel_complete(void) {
       (BTM_PAIR_STATE_WAIT_LOCAL_PIN == BtmSecurity::Get().pairing_state_ &&
        BTM_PAIR_FLAGS_WE_STARTED_DD & BtmSecurity::Get().pairing_flags_) ||
       (BtmSecurity::Get().pairing_state_ == BTM_PAIR_STATE_GET_REM_NAME &&
-       BTM_PAIR_FLAGS_WE_CANCEL_DD & BtmSecurity::Get().pairing_flags_)) {
+       BTM_PAIR_FLAGS_WE_CANCEL_DD & BtmSecurity::Get().pairing_flags_) ||
+      (BTM_PAIR_STATE_WAIT_PIN_REQ == BtmSecurity::Get().pairing_state_)) {
     /* for dedicated bonding in legacy mode, authentication happens at "link
      * level"
      * btm_sec_connected is called with failed status.
