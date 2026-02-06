@@ -31,6 +31,7 @@
 #include "hci/le_scanning_interface.h"
 #include "hci/le_scanning_reassembler.h"
 #include "main/shim/helpers.h"
+#include "main/shim/le_scanning_manager.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/ble_hci_link_interface.h"
@@ -52,8 +53,10 @@ constexpr uint16_t kLeScanIntervalMin = 0x0004;
 constexpr uint16_t kLeScanIntervalMax = 0x4000;
 constexpr uint16_t kDefaultLeExtendedScanInterval = 4800;
 constexpr uint16_t kLeExtendedScanIntervalMax = 0xFFFF;
-constexpr uint16_t kLeScanIntervalLowLatency = 160;  // 100ms = 160 * 0.625ms
-constexpr uint16_t kLeScanWindowLowLatency = 160;    // 100ms = 160 * 0.625ms
+constexpr uint16_t kLeScanWindowNone = 0;
+constexpr uint16_t kLeScanIntervalNone = 0;
+constexpr uint16_t kMsPerDiscoveryUnit =
+        1280;  // Each discovery length unit is 1.28 seconds (1280ms) per Bluetooth Core Spec
 
 constexpr uint8_t kScannableBit = 1;
 constexpr uint8_t kDirectedBit = 2;
@@ -65,9 +68,6 @@ constexpr uint8_t kDataStatusBits = 5;
 constexpr uint8_t kLeJavaScanActive = 0x10;   // 0b00010000
 constexpr uint8_t kLeCsisScanActive = 0x20;   // 0b00100000
 constexpr uint8_t kLeDiscoveryActive = 0x40;  // 0b01000000
-
-constexpr uint8_t k1mPhyMask = 1;
-constexpr uint8_t kCodedPhyMask = 1 << 2;
 
 // system properties
 const std::string kLeRxPathLossCompProperty = "bluetooth.hardware.radio.le_rx_path_loss_comp_db";
@@ -220,6 +220,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
     batch_scan_config_.ref_value = kInvalidScannerId;
     le_rx_path_loss_comp_ = get_rx_path_loss_compensation();
+    discovery_timer_ = std::make_unique<os::Alarm>(&handler_->thread(), true);
   }
 
   ~impl() {
@@ -564,11 +565,34 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     }
   }
 
+  bool is_java_scan_1m_low_latency() {
+    return window_ms_1m_ == kLeScanWindowLowLatency &&
+           interval_ms_1m_ == kLeScanIntervalLowLatency && is_1m_phy_configured();
+  }
+
   bool update_start_scan(ScanCallerType callerType) {
     bool should_start_scan = true;
     switch (callerType) {
       case ScanCallerType::DISCOVERY:
       case ScanCallerType::CSIS:
+        if (!is_le_scan_active()) {
+          // If no scan exists, configure 1m low latency scan
+          configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
+                         kLeScanWindowNone, kLeScanIntervalNone, LeScanningFilterPolicy::ACCEPT_ALL,
+                         k1mPhyMask);
+        } else if ((is_le_java_scan_active() && !is_java_scan_1m_low_latency()) &&
+                   !is_le_discovery_active() && !is_le_csis_scan_active()) {
+          // If only Java scan exists and is non 1m low latency, configure 1m low latency while
+          // keeping coded Java scan alive if it exists
+          configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
+                         window_ms_coded_, interval_ms_coded_, LeScanningFilterPolicy::ACCEPT_ALL,
+                         k1mPhyMask | phy_);
+        } else {
+          // If CSIS scan or discovery exists, just keep the 1m low latency scan going
+          should_start_scan = false;
+        }
+
+        // Mark CSIS scan or discovery as active
         if (callerType == ScanCallerType::DISCOVERY) {
           set_le_discovery_active();
         } else {
@@ -576,19 +600,19 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         }
         break;
       case ScanCallerType::JAVA:
-        // If no scan exists or only java scan exists, configure and start Java scan
         if (!is_le_scan_active() || (!is_le_csis_scan_active() && !is_le_discovery_active())) {
+          // If no scan exists or only java scan exists, configure and start Java scan
           configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
                          interval_ms_coded_, filter_policy_, phy_);
+        } else if (is_coded_phy_configured()) {
           // If CSIS scan or discovery exists, and Java scan has coded phy scan request, configure
           // 1m low latency and coded Java scan parameters
-        } else if (is_coded_phy_configured()) {
           configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
                          window_ms_coded_, interval_ms_coded_, LeScanningFilterPolicy::ACCEPT_ALL,
                          phy_ | k1mPhyMask);
+        } else {
           // If CSIS scan or discovery exists, and Java scan has no coded phy scan request, no need
           // to configure a new scan
-        } else {
           should_start_scan = false;
         }
 
@@ -613,12 +637,12 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       case ScanCallerType::JAVA:
         // Mark Java scan as inactive
         reset_le_java_scan();
-        // If we only had Java scan ongoing, simply stop scan
         if (!is_le_scan_active()) {
+          // If we only had Java scan ongoing, simply stop scan
           should_stop_scan = true;
+        } else if (is_coded_phy_configured()) {
           // If we had CSIS scan or discovery ongoing with coded Java scan, configure and start a 1m
           // low latency scan without coded Java scan parameters
-        } else if (is_coded_phy_configured()) {
           configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE, 0,
                          0, LeScanningFilterPolicy::ACCEPT_ALL, k1mPhyMask);
           start_scan();
@@ -628,6 +652,38 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         break;
     }
     return should_stop_scan;
+  }
+
+  void start_discovery(uint8_t duration) {
+    // If discovery is already active, reject it
+    if (is_le_discovery_active()) {
+      log::error("LE discovery is active, can not start discovery");
+      return;
+    }
+
+    // Add an allow-all filter on index 0
+    bluetooth::shim::set_empty_filter(true);
+
+    // Start discovery
+    scan(true, ScanCallerType::DISCOVERY);
+
+    // Set timer for discovery
+    if (duration != 0) {
+      uint64_t duration_ms = duration * kMsPerDiscoveryUnit;
+      discovery_timer_->Schedule(common::BindOnce(&impl::stop_discovery, base::Unretained(this)),
+                                 std::chrono::milliseconds(duration_ms));
+    }
+  }
+
+  void stop_discovery() {
+    // Cancel discovery timer
+    discovery_timer_->Cancel();
+
+    // Cleanup anything remaining on index 0
+    bluetooth::shim::set_empty_filter(false);
+
+    // Stop discovery
+    scan(false, ScanCallerType::DISCOVERY);
   }
 
   void scan(bool start, ScanCallerType callerType) {
@@ -1729,6 +1785,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   bool is_coded_phy_configured() { return phy_ & kCodedPhyMask; }
+  bool is_1m_phy_configured() { return phy_ & k1mPhyMask; }
 
   bool is_le_java_scan_active() { return scan_activity_ & kLeJavaScanActive; }
   bool is_le_csis_scan_active() { return scan_activity_ & kLeCsisScanActive; }
@@ -1766,6 +1823,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   bool is_periodic_advertising_sync_transfer_sender_supported_ = false;
   bool is_transport_discovery_data_filter_supported_ = false;
 
+  std::unique_ptr<os::Alarm> discovery_timer_;
   LeScanType le_scan_type_ = LeScanType::ACTIVE;
   uint32_t interval_ms_1m_{1000};
   uint16_t window_ms_1m_{1000};
@@ -1909,5 +1967,8 @@ bool LeScanningManagerImpl::IsAdTypeFilterSupported() const {
   return pimpl_->is_ad_type_filter_supported();
 }
 
+void LeScanningManagerImpl::StartDiscovery(uint8_t duration) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_discovery, duration);
+}
 }  // namespace hci
 }  // namespace bluetooth

@@ -39,6 +39,10 @@ public:
   static constexpr uint8_t kTxPowerInformationNotPresent = 0x7f;
   static constexpr uint8_t kNotPeriodicAdvertisement = 0x00;
   static constexpr ScannerId kInvalidScannerId = 0xFF;
+  static constexpr uint8_t k1mPhyMask = 1;
+  static constexpr uint8_t kCodedPhyMask = 1 << 2;
+  static constexpr uint16_t kLeScanIntervalLowLatency = 160;  // 100ms = 160 * 0.625ms
+  static constexpr uint16_t kLeScanWindowLowLatency = 160;    // 100ms = 160 * 0.625ms
 
   LeScanningManagerImpl(os::Handler* handler, hci::HciInterface* hci_layer,
                         hci::Controller* controller, hci::LeAddressManager* le_address_manager,
@@ -100,6 +104,8 @@ public:
   void RegisterScanningCallback(ScanningCallback* scanning_callback) override;
 
   bool IsAdTypeFilterSupported() const override;
+
+  void StartDiscovery(uint8_t duration) override;
 
 private:
   struct impl;

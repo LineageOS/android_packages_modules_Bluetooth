@@ -84,6 +84,7 @@ public:
   MOCK_METHOD(void, SyncTxParameters, (const Address&, uint8_t, uint16_t, uint16_t, int),
               (override));
   MOCK_METHOD(bool, IsAdTypeFilterSupported, (), (const override));
+  MOCK_METHOD(void, StartDiscovery, (uint8_t), (override));
 };
 
 }  // namespace testing
