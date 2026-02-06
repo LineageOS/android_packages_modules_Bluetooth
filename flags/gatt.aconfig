@@ -129,3 +129,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "support_multiple_read_rssi"
+    namespace: "bluetooth"
+    description: "Allow multiple clients to read RSSI simultaneously"
+    bug: "481172393"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
