@@ -523,7 +523,9 @@ public class ScanManager {
         if (mSuspendedScanClients.contains(client)) {
             mSuspendedScanClients.remove(client);
         }
-        if (!mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            mScanThrottler.removeRecordUsageRunnable(client);
+        } else {
             Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
             if (timeoutRunnable != null) {
                 mHandler.removeCallbacks(timeoutRunnable);

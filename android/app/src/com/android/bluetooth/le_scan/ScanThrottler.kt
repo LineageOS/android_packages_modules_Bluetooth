@@ -304,6 +304,13 @@ class ScanThrottler(
         Log.d(TAG, "Scan Allowance Refilled for app ${client.appUid} scanner ${client.scannerId}")
     }
 
+    fun removeRecordUsageRunnable(client: ScanClient) {
+        val recordUsageRunnable = recordUsageRunnables.remove(client)
+        if (recordUsageRunnable != null) {
+            handler.removeCallbacks(recordUsageRunnable)
+        }
+    }
+
     companion object {
         @VisibleForTesting val ALLOWANCE_REFILL_WINDOW = 1.hours
     }
