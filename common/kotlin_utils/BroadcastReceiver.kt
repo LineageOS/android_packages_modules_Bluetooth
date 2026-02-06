@@ -36,6 +36,21 @@ inline fun Context.registerReceiver(
     vararg actions: String,
     priority: Int = 0,
     crossinline onReceive: (Context, Intent) -> Unit,
+) = registerReceiver(Handler(looper), *actions, priority = priority, onReceive = onReceive)
+
+/**
+ * Helper for [Context.registerReceiver] to facilitate usage from kotlin code
+ *
+ * @param actions The actions to register the intent for. Will be passed to [IntentFilter]
+ * @param priority optional: will call [IntentFilter.setPriority]
+ * @param handler The Handler the intent should be post on
+ * @param onReceive the lambda to run when action are received
+ */
+inline fun Context.registerReceiver(
+    handler: Handler,
+    vararg actions: String,
+    priority: Int = 0,
+    crossinline onReceive: (Context, Intent) -> Unit,
 ): BroadcastReceiver {
     val receiver =
         object : BroadcastReceiver() {
@@ -48,7 +63,7 @@ inline fun Context.registerReceiver(
             this.priority = priority
         },
         null, // broadcastPermission
-        Handler(looper),
+        handler,
     )
     return receiver
 }
