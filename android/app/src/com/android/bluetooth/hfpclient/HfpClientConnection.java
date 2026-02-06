@@ -27,7 +27,6 @@ import android.telecom.PhoneAccount;
 import android.telecom.TelecomManager;
 import android.util.Log;
 
-import java.util.Objects;
 import java.util.UUID;
 
 class HfpClientConnection extends Connection {
@@ -271,20 +270,6 @@ class HfpClientConnection extends Connection {
             case EVENT_SCO_DISCONNECT -> mServiceInterface.disconnectAudio(mDevice);
             default -> {} // Nothing to do
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof HfpClientConnection h)) {
-            return false;
-        }
-
-        return Objects.equals(h.getAddress(), getAddress());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getAddress());
     }
 
     @Override

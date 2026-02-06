@@ -129,6 +129,42 @@ public class HfpClientConnectionTest {
                                 | Connection.CAPABILITY_DISCONNECT_FROM_CONFERENCE);
     }
 
+    /*
+     * Two connections with the same number should be treated as a different connections.
+     */
+    @Test
+    public void hfpClientConnectionWithSamePhoneNumberAreNotEqual() {
+        HfpClientConnection firstConnection =
+                createHfpClientConnectionWithExistingCall()
+                        .setCall(
+                                new HfpClientCall(
+                                        mDevice,
+                                        /* id= */ 0,
+                                        HfpClientCall.CALL_STATE_ACTIVE,
+                                        TEST_NUMBER,
+                                        /* multiParty= */ false,
+                                        /* outgoing= */ false,
+                                        /* inBandRing= */ true))
+                        .build();
+
+        // Create a second call from the same device with the same number.
+        HfpClientConnection secondConnection =
+                createHfpClientConnectionWithExistingCall()
+                        .setCall(
+                                new HfpClientCall(
+                                        mDevice,
+                                        /* id= */ 0,
+                                        HfpClientCall.CALL_STATE_ACTIVE,
+                                        TEST_NUMBER,
+                                        /* multiParty= */ false,
+                                        /* outgoing= */ false,
+                                        /* inBandRing= */ true))
+                        .build();
+
+        assertThat(firstConnection.getUUID()).isNotEqualTo(secondConnection.getUUID());
+        assertThat(firstConnection).isNotEqualTo(secondConnection);
+    }
+
     @Test
     public void onHfpDisconnected() {
         mHfpClientConnection = createHfpClientConnectionWithExistingCall().build();
