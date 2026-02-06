@@ -33,13 +33,13 @@ object BluetoothRestriction {
         private set
 
     @JvmStatic
-    fun initialize(context: Context, looper: Looper, callback: () -> Unit) {
+    fun initialize(context: Context, looper: Looper, onBluetoothDisallowed: () -> Unit) {
         // DISALLOW_BLUETOOTH is a restriction on the system user, so we only need to register for
         // broadcasts to the system user.
         context.registerReceiver(
             object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context, intent: Intent) {
-                    handleRestrictionChange(context, callback)
+                    handleRestrictionChange(context, onBluetoothDisallowed)
                 }
             },
             IntentFilter(UserManager.ACTION_USER_RESTRICTIONS_CHANGED),
@@ -52,7 +52,7 @@ object BluetoothRestriction {
 
     @JvmStatic // Static for testing too
     @VisibleForTesting
-    fun handleRestrictionChange(context: Context, callback: () -> Unit) {
+    fun handleRestrictionChange(context: Context, onBluetoothDisallowed: () -> Unit) {
         val wasBluetoothAllowed = isBluetoothAllowed
         isBluetoothAllowed = !hasBluetoothRestriction(context)
         Log.v(TAG, "handleRestrictionChange: $wasBluetoothAllowed -> $isBluetoothAllowed")
@@ -60,7 +60,7 @@ object BluetoothRestriction {
         if (!isBluetoothAllowed && wasBluetoothAllowed) {
             // DISALLOW_BLUETOOTH can only be set by DO or PO on the system user.
             Log.i(TAG, "Bluetooth is not allowed")
-            callback()
+            onBluetoothDisallowed()
         }
     }
 
