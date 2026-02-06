@@ -70,7 +70,7 @@ interface IBluetoothGatt {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void endReliableWrite(in IBluetoothGattCallback callback, in BluetoothDevice device, in boolean execute, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void readRemoteRssi(in IBluetoothGattCallback callback, in BluetoothDevice device, in AttributionSource attributionSource);
+    boolean readRemoteRssi(in IBluetoothGattCallback callback, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void configureMTU(in IBluetoothGattCallback callback, in BluetoothDevice device, in int mtu, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
