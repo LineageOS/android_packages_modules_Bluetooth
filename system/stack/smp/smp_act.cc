@@ -1393,11 +1393,17 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           return;
         }
 
-        if (!(p_device->sec_rec.sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
-            (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
-          log::verbose("BR key is higher security than existing LE keys, don't derive LK from LTK");
-        } else {
+        if ((p_device->sec_rec.sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) ||
+            !(p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
           smp_derive_link_key_from_long_term_key(p_cb, NULL);
+        } else if (is_autonomous_repairing_supported() &&
+                   com::android::bluetooth::flags::bugfix_autonomous_repairing() &&
+                   p_device->bond_lost) {
+          // Derive the LK again, if the device is recovering from a bond loss.
+          log::error("Forcing LK derivation from LTK due to bond loss recovery!!");
+          smp_derive_link_key_from_long_term_key(p_cb, NULL);
+        } else {
+          log::verbose("BR key is higher security than existing LE keys, don't derive LK from LTK");
         }
         p_cb->derive_lk = false;
       }
