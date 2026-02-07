@@ -20,12 +20,12 @@ import android.bluetooth.BluetoothClass.Device.WEARABLE_WRIST_WATCH
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.companion.CompanionDeviceManager
-import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.TestUtils.getTestDevice
-import com.android.bluetooth.TestUtils.mockGetSystemService
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mockGetSystemService
+import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
 import org.junit.Before
 import org.junit.Rule
@@ -37,7 +37,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @SmallTest
@@ -46,21 +45,20 @@ class WatchConnectionStateListenerTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var packageManager: PackageManager
 
     private val device = getTestDevice(34)
 
-    private lateinit var listener: WatchConnectionStateListener
-    private lateinit var looper: TestLooper
     private lateinit var inOrder: InOrder
+    private lateinit var looper: TestLooper
+    private lateinit var listener: WatchConnectionStateListener
 
     @Before
     fun setUp() {
+        adapterService.mockGetSystemService<CompanionDeviceManager>()
+        adapterService.mockPackageManager()
         inOrder = inOrder(adapterService)
-        mockGetSystemService(adapterService, CompanionDeviceManager::class.java)
-        doReturn(packageManager).whenever(adapterService).getPackageManager()
         looper = TestLooper()
-        listener = WatchConnectionStateListener(adapterService, looper.getLooper())
+        listener = WatchConnectionStateListener(adapterService, looper.looper)
     }
 
     @Test
