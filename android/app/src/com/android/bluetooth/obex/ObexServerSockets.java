@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.State;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ResponseCodes;
 import com.android.obex.ServerSession;
@@ -346,6 +347,10 @@ public class ObexServerSockets {
                                     new ObexRejectServer(
                                             ResponseCodes.OBEX_HTTP_UNAVAILABLE, connSocket),
                                     null);
+                            // Close the connection socket to prevent resource leaks.
+                            if (Flags.closeConnSocketOnFailure()) {
+                                connSocket.close();
+                            }
                             // now wait for a new connect
                         } else {
                             // now wait for a new connect
