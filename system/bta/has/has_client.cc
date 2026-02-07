@@ -17,6 +17,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <base/memory/weak_ptr.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
@@ -2187,6 +2188,9 @@ private:
   std::list<HasCtpOp> pending_operations_;
 
   std::map<decltype(HasCtpOp::op_id), HasCtpGroupOpCoordinator> pending_group_operation_timeouts_;
+
+public:
+  base::WeakPtrFactory<HasClientImpl> weak_ptr_factory_{this};
 };
 
 }  // namespace
@@ -2247,4 +2251,8 @@ void HasClient::DebugDump(int fd) {
   } else {
     dprintf(fd, "  no instance\n\n");
   }
+}
+
+base::WeakPtr<HasClient> HasClient::GetWeakPtr() {
+  return instance->weak_ptr_factory_.GetWeakPtr();
 }

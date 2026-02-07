@@ -64,6 +64,16 @@ static constexpr uint16_t kScannable = 0x2;
 static constexpr uint16_t kScanResponse = 0x8;
 static constexpr uint16_t kLegacy = 0x10;
 
+// Test variables for scan multiplexing tests.
+static constexpr bluetooth::hci::LeScanType TEST_JAVA_SCAN_TYPE =
+        bluetooth::hci::LeScanType::ACTIVE;
+static constexpr bluetooth::hci::ScannerId TEST_JAVA_SCANNER_ID = 1;
+static constexpr uint16_t TEST_JAVA_SCAN_INTERVAL_1M = 200;
+static constexpr uint16_t TEST_JAVA_SCAN_WINDOW_1M = 250;
+static constexpr uint16_t TEST_JAVA_SCAN_INTERVAL_CODED = 300;
+static constexpr uint16_t TEST_JAVA_SCAN_WINDOW_CODED = 350;
+static constexpr uint8_t TEST_JAVA_SCAN_PHY = 5;
+
 hci::AdvertisingPacketContentFilterCommand make_filter(const hci::ApcfFilterType& filter_type) {
   hci::AdvertisingPacketContentFilterCommand filter{};
   filter.filter_type = filter_type;
@@ -316,6 +326,7 @@ class LeScanningManagerExtendedTest : public LeScanningManagerTest {
 protected:
   void SetUp() override {
     LeScanningManagerTest::SetUp();
+    com::android::bluetooth::flags::provider_->reset_flags();
     test_controller_->AddSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS);
     test_controller_->AddSupported(OpCode::LE_SET_EXTENDED_SCAN_ENABLE);
     test_controller_->SetBleExtendedAdvertisingSupport(true);
@@ -441,6 +452,31 @@ TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
   ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
   ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
+}
+
+// Test for 'update_start_scan' when we only have Java scan start request
+TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_java_scan_only) {
+  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  le_scanning_manager->SetScanParameters(TEST_JAVA_SCAN_TYPE, TEST_JAVA_SCANNER_ID,
+                                         TEST_JAVA_SCAN_INTERVAL_1M, TEST_JAVA_SCAN_WINDOW_1M,
+                                         TEST_JAVA_SCANNER_ID, TEST_JAVA_SCAN_INTERVAL_CODED,
+                                         TEST_JAVA_SCAN_WINDOW_CODED, TEST_JAVA_SCAN_PHY);
+  le_scanning_manager->Scan(true);
+
+  auto command_view = LeSetExtendedScanParametersView::Create(
+          LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(command_view.GetScanningPhys(), TEST_JAVA_SCAN_PHY);
+  auto scan_parameters = command_view.GetParameters();
+  ASSERT_EQ(scan_parameters.size(), static_cast<size_t>(2));
+
+  ASSERT_EQ(scan_parameters[0].le_scan_type_, TEST_JAVA_SCAN_TYPE);
+  ASSERT_EQ(scan_parameters[0].le_scan_interval_, TEST_JAVA_SCAN_INTERVAL_1M);
+  ASSERT_EQ(scan_parameters[0].le_scan_window_, TEST_JAVA_SCAN_WINDOW_1M);
+
+  ASSERT_EQ(scan_parameters[1].le_scan_type_, TEST_JAVA_SCAN_TYPE);
+  ASSERT_EQ(scan_parameters[1].le_scan_interval_, TEST_JAVA_SCAN_INTERVAL_CODED);
+  ASSERT_EQ(scan_parameters[1].le_scan_window_, TEST_JAVA_SCAN_WINDOW_CODED);
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, startup_teardown) {}

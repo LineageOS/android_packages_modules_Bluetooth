@@ -886,7 +886,7 @@ public final class BluetoothSocket implements Closeable {
                 }
             }
             Log.d(TAG, "bindListenWithOffload(): channel=" + channel + ", mPort=" + mPort);
-            if (mPort <= -1) {
+            if (mPort <= -1 || Flags.fixedPsmForOffloadSocket()) {
                 mPort = channel;
             }
             ret = 0;

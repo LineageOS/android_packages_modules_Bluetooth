@@ -111,7 +111,7 @@ public:
                const std::vector<int32_t>&, android::bluetooth::ChannelSoundingStopReason, int32_t,
                int32_t, bool, android::bluetooth::ChannelSoundingType, int32_t, int32_t));
   MOCK_METHOD(void, LogMetricBluetoothEnergyMonitorReported,
-              (uint16_t, const bqr::BqrEnergyMonitorEvent&));
+              (uint16_t, const bqr::BqrEnergyMonitoringEventV7&));
   MOCK_METHOD(void, LogMetricBluetoothRFStatsReported, (uint16_t, const bqr::BqrRFStatsEvent&));
   MOCK_METHOD(void, LogGattOffloadSessionStateChanged,
               (const hci::Address& address, int32_t session_id,

@@ -52,6 +52,8 @@ constexpr uint16_t kLeScanIntervalMin = 0x0004;
 constexpr uint16_t kLeScanIntervalMax = 0x4000;
 constexpr uint16_t kDefaultLeExtendedScanInterval = 4800;
 constexpr uint16_t kLeExtendedScanIntervalMax = 0xFFFF;
+constexpr uint16_t kLeScanIntervalLowLatency = 160;  // 100ms = 160 * 0.625ms
+constexpr uint16_t kLeScanWindowLowLatency = 160;    // 100ms = 160 * 0.625ms
 
 constexpr uint8_t kScannableBit = 1;
 constexpr uint8_t kDirectedBit = 2;
@@ -574,6 +576,22 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         }
         break;
       case ScanCallerType::JAVA:
+        // If no scan exists or only java scan exists, configure and start Java scan
+        if (!is_le_scan_active() || (!is_le_csis_scan_active() && !is_le_discovery_active())) {
+          configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
+                         interval_ms_coded_, filter_policy_, phy_);
+          // If CSIS scan or discovery exists, and Java scan has coded phy scan request, configure
+          // 1m low latency and coded Java scan parameters
+        } else if (is_coded_phy_configured()) {
+          configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
+                         window_ms_coded_, interval_ms_coded_, LeScanningFilterPolicy::ACCEPT_ALL,
+                         phy_);
+          // If CSIS scan or discovery exists, and Java scan has no coded phy scan request, no need
+          // to configure a new scan
+        } else {
+          should_start_scan = false;
+        }
+
         // Mark Java scan as active
         set_le_java_scan_active();
         break;
@@ -1698,6 +1716,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     le_address_manager_->AckResume(this);
   }
 
+  bool is_coded_phy_configured() { return phy_ & kCodedPhyMask; }
+
   bool is_le_java_scan_active() { return scan_activity_ & kLeJavaScanActive; }
   bool is_le_csis_scan_active() { return scan_activity_ & kLeCsisScanActive; }
   bool is_le_discovery_active() { return scan_activity_ & kLeDiscoveryActive; }
@@ -1743,7 +1763,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   OwnAddressType own_address_type_{OwnAddressType::PUBLIC_DEVICE_ADDRESS};
   LeScanningFilterPolicy filter_policy_{LeScanningFilterPolicy::ACCEPT_ALL};
   BatchScanConfig batch_scan_config_;
-  uint8_t scan_activity_;  // LE scan activity mask
+  uint8_t scan_activity_ = 0;  // LE scan activity mask
   std::map<ScannerId, std::vector<uint8_t>> batch_scan_result_cache_;
   std::unordered_map<uint8_t, ScannerId> tracker_id_map_;
   uint16_t total_num_of_advt_tracked_ = 0x00;
