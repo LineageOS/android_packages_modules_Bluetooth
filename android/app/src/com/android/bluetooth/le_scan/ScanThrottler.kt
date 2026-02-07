@@ -187,7 +187,11 @@ class ScanThrottler(
 
         val updatedScanMode = minScanMode(client.settings.scanMode, ScanSettings.SCAN_MODE_BALANCED)
 
-        if (client.updateScanMode(updatedScanMode)) {
+        val isUpdated =
+            if (isScanAllowanceThrottlingEnabled())
+                applyAllowanceThrottling(client, updatedScanMode)
+            else client.updateScanMode(updatedScanMode)
+        if (isUpdated) {
             client.appScanStats!!.setScanDowngrade(client.scannerId, true)
             Log.d(
                 TAG,

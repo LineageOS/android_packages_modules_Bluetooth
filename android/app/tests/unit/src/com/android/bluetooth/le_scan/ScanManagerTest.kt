@@ -1078,6 +1078,57 @@ class ScanManagerTest() {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testDowngradeDuringScanForConcurrencyOutOfAllowance() {
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
+            .whenever(adapterService)
+            .scanDowngradeDuration
+
+        // Set filtered scan flag
+        val isFiltered = true
+
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_BALANCED,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+            )
+        scanModeMap.forEach { (scanMode, expectedScanMode) ->
+            var expectedScanMode = expectedScanMode
+            scannerId += 1
+            expectedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Set as foreground app
+            setAppImportance(true, Binder.getCallingUid())
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan
+            startScan(client)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            // Move time forward so record allowance usage message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >=
+                        getScanAllowance()
+                )
+                .isTrue()
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            // Set connecting state
+            setConnectingState(true)
+            // Wait for downgrade duration
+            advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
     fun testStartUnfilteredBatchScan() {
         // Set filtered and batch scan flag
         val isFiltered = false
