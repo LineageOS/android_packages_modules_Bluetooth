@@ -151,7 +151,7 @@ void HfpClientInterface::Decode::StartSession() {
     log::error("cannot update audio config to HAL");
     return;
   }
-  auto instance = aidl::hfp::HfpEncodingTransport::instance_;
+  auto instance = aidl::hfp::HfpDecodingTransport::instance_;
   instance->ResetPendingCmd();
   get_decode_client_interface()->StartSession();
 }
