@@ -107,6 +107,8 @@ public:
 
   void StartDiscovery(uint8_t duration) override;
 
+  void StopDiscovery() override;
+
 private:
   struct impl;
   std::unique_ptr<impl> pimpl_;

@@ -502,7 +502,9 @@ static void BTM_CancelLeScan() {
 #else
   log::assert_that(get_btm_client_interface().local.BTM_IsDeviceUp(),
                    "assert failed: BTM_IsDeviceUp()");
-  if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_GENERAL_INQUIRY) != 0) {
+  if (com_android_bluetooth_flags_migrate_btm_scan_to_gd()) {
+    bluetooth::shim::GetScanning()->StopDiscovery();
+  } else if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_GENERAL_INQUIRY) != 0) {
     btm_ble_stop_inquiry();
   }
 #endif

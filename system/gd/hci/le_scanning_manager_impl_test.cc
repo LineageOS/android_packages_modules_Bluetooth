@@ -524,6 +524,27 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_java_scan) {
   sync_client_handler();
 }
 
+// Test for 'update_stop_scan' when we hava discovery stop request while only discovery is ongoing
+TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_discovery) {
+  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  // Start discovery
+  le_scanning_manager->StartDiscovery(TEST_DISCOVERY_DURATION);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Stop discovery, should successfully dispatch a command to the controller
+  le_scanning_manager->StopDiscovery();
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+}
+
 TEST_F(LeScanningManagerAndroidHciTest, startup_teardown) {}
 
 TEST_F(LeScanningManagerAndroidHciTest, start_scan_test) {

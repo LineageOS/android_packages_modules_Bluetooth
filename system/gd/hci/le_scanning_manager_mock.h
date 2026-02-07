@@ -85,6 +85,7 @@ public:
               (override));
   MOCK_METHOD(bool, IsAdTypeFilterSupported, (), (const override));
   MOCK_METHOD(void, StartDiscovery, (uint8_t), (override));
+  MOCK_METHOD(void, StopDiscovery, (), (override));
 };
 
 }  // namespace testing

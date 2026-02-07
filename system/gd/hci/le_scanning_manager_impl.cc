@@ -628,11 +628,25 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     switch (callerType) {
       case ScanCallerType::DISCOVERY:
       case ScanCallerType::CSIS:
+        // Mark discovery or CSIS scan as inactive
         if (callerType == ScanCallerType::DISCOVERY) {
           reset_le_discovery();
         } else {
           reset_le_csis_scan();
         }
+        if (!is_le_scan_active()) {
+          // If we only had one of discovery or CSIS scan ongoing, simply stop scan
+          should_stop_scan = true;
+        } else if (is_le_java_scan_active() && !is_le_csis_scan_active() &&
+                   !is_le_discovery_active()) {
+          // If we had ongoing Java scan with one of discovery or CSIS scan, stop and restart with
+          // stored Java scan parameters
+          configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
+                         interval_ms_coded_, filter_policy_, phy_);
+          start_scan();
+        }
+        // If we had both CSIS scan and discovery ongoing, simply leave the 1m low latency scan
+        // as it is (coded Java scan as well if it exists)
         break;
       case ScanCallerType::JAVA:
         // Mark Java scan as inactive
@@ -676,6 +690,11 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   void stop_discovery() {
+    // If discovery is already inactive, reject it
+    if (!is_le_discovery_active()) {
+      log::error("LE discovery is inactive, can not stop discovery");
+      return;
+    }
     // Cancel discovery timer
     discovery_timer_->Cancel();
 
@@ -1970,5 +1989,10 @@ bool LeScanningManagerImpl::IsAdTypeFilterSupported() const {
 void LeScanningManagerImpl::StartDiscovery(uint8_t duration) {
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_discovery, duration);
 }
+
+void LeScanningManagerImpl::StopDiscovery() {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::stop_discovery);
+}
+
 }  // namespace hci
 }  // namespace bluetooth
