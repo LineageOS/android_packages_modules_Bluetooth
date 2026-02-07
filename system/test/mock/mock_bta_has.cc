@@ -40,6 +40,10 @@ HasClient* HasClient::Get() {
   inc_func_call_count(__func__);
   return nullptr;
 }
+base::WeakPtr<HasClient> HasClient::GetWeakPtr() {
+  inc_func_call_count(__func__);
+  return nullptr;
+}
 
 }  // namespace has
 }  // namespace bluetooth::le_audio
