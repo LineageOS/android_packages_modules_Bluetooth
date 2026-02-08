@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <variant>
+
 #include "bluetooth/log.h"
 #include "bta/le_audio/le_audio_types.h"
 
