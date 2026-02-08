@@ -454,9 +454,11 @@ TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
   ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
 }
 
-// Test for 'update_start_scan' when we only have Java scan start request
-TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_java_scan_only) {
+// Test for 'update_start_scan' when we have Java scan start request while no scan is ongoing
+TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_java_scan) {
   com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+
+  // Set Java scan parameters and enable Java scan
   le_scanning_manager->SetScanParameters(TEST_JAVA_SCAN_TYPE, TEST_JAVA_SCANNER_ID,
                                          TEST_JAVA_SCAN_INTERVAL_1M, TEST_JAVA_SCAN_WINDOW_1M,
                                          TEST_JAVA_SCANNER_ID, TEST_JAVA_SCAN_INTERVAL_CODED,
@@ -477,6 +479,27 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_java_scan_only) {
   ASSERT_EQ(scan_parameters[1].le_scan_type_, TEST_JAVA_SCAN_TYPE);
   ASSERT_EQ(scan_parameters[1].le_scan_interval_, TEST_JAVA_SCAN_INTERVAL_CODED);
   ASSERT_EQ(scan_parameters[1].le_scan_window_, TEST_JAVA_SCAN_WINDOW_CODED);
+}
+
+// Test for 'update_stop_scan' when we have Java scan stop request while only Java scan is ongoing
+TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_java_scan) {
+  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  // Enable Java scan
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Disable Java scan, should successfully dispatch a command to the controller
+  le_scanning_manager->Scan(false);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, startup_teardown) {}
