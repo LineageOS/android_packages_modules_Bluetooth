@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 
+#include <algorithm>
 #include <chrono>
 #include <format>
 #include <iomanip>

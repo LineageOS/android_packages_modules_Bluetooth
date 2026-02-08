@@ -20,6 +20,7 @@
 #include <bluetooth/types/address.h>
 
 #include <ostream>
+#include <vector>
 
 namespace bluetooth::le_audio {
 
