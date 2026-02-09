@@ -51,6 +51,14 @@ static constexpr uint8_t kVolumeControlPointSetAbsoluteVolumeLen = 3;
 static constexpr uint8_t kVolumeSettingMin = 0;
 static constexpr uint8_t kVolumeSettingMax = 255;
 
+static constexpr uint8_t kVolumeStateSettingIndex = 0;
+static constexpr uint8_t kVolumeStateMuteIndex = 1;
+static constexpr uint8_t kVolumeStateChangeCounterIndex = 2;
+static constexpr uint8_t kVolumeFlagsIndex = 0;
+static constexpr uint8_t kControlPointOpcodeIndex = 0;
+static constexpr uint8_t kControlPointChangeCounterIndex = 1;
+static constexpr uint8_t kControlPointVolumeSettingIndex = 2;
+
 /**
  * @brief Represents the mute state of the device.
  *

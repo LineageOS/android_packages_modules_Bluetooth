@@ -263,15 +263,15 @@ struct VcsServer::service_impl {
 
     if (handle == volume_state_handle_) {
       p_msg.attr_value.len = kVolumeStateLen;
-      p_msg.attr_value.value[0] = volume_setting_;
-      p_msg.attr_value.value[1] = static_cast<uint8_t>(mute_state_);
-      p_msg.attr_value.value[2] = change_counter_;
+      p_msg.attr_value.value[kVolumeStateSettingIndex] = volume_setting_;
+      p_msg.attr_value.value[kVolumeStateMuteIndex] = static_cast<uint8_t>(mute_state_);
+      p_msg.attr_value.value[kVolumeStateChangeCounterIndex] = change_counter_;
       log::info("Reading Volume State: vol={}, mute={}, counter={}", volume_setting_,
                 static_cast<int>(mute_state_), change_counter_);
     } else if (handle == volume_flags_handle_) {
       p_msg.attr_value.len = kVolumeFlagsLen;
-      p_msg.attr_value.value[0] = volume_flags_.raw;
-      log::info("Reading Volume Flags: {}", (int)p_msg.attr_value.value[0]);
+      p_msg.attr_value.value[kVolumeFlagsIndex] = volume_flags_.raw;
+      log::info("Reading Volume Flags: {}", (int)p_msg.attr_value.value[kVolumeFlagsIndex]);
     } else {
       log::warn("Unhandled read request for invalid handle: 0x{:04x}", handle);
       p_msg.attr_value.len = 0;
@@ -302,8 +302,8 @@ struct VcsServer::service_impl {
       return;
     }
 
-    uint8_t opcode = write_req.value[0];
-    uint8_t counter = write_req.value[1];
+    uint8_t opcode = write_req.value[kControlPointOpcodeIndex];
+    uint8_t counter = write_req.value[kControlPointChangeCounterIndex];
 
     if (counter != change_counter_) {
       log::warn("Invalid change counter. Expected {}, got {}", change_counter_, counter);
@@ -344,7 +344,7 @@ struct VcsServer::service_impl {
                             GATT_INVALID_ATTR_LEN, nullptr);
           return;
         }
-        new_volume = write_req.value[2];
+        new_volume = write_req.value[kControlPointVolumeSettingIndex];
         break;
       case kControlPointOpcodeUnmute:
         new_mute = MuteState::kNotMuted;
