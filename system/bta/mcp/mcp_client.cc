@@ -169,11 +169,11 @@ public:
       return;
     }
     auto service = device->GetService(service_id);
-    if (!service || service->track_position_handle == 0) {
+    if (!service || service->track_position_handle == kInvalidGattHandle) {
       log::error("Service not ready for SetTrackPosition: {}", address);
       return;
     }
-    std::vector<uint8_t> value(4);
+    std::vector<uint8_t> value(kTrackPositionLen);
     uint8_t* ptr = value.data();
     UINT32_TO_STREAM(ptr, position);
     BtaGattQueue::WriteCharacteristic(device->conn_id, service->track_position_handle, value,
@@ -187,12 +187,12 @@ public:
       return;
     }
     auto service = device->GetService(service_id);
-    if (!service || service->playback_speed_handle == 0) {
+    if (!service || service->playback_speed_handle == kInvalidGattHandle) {
       log::error("Service not ready for SetPlaybackSpeed: {}", address);
       return;
     }
-    std::vector<uint8_t> value(1);
-    value[0] = static_cast<uint8_t>(speed);
+    std::vector<uint8_t> value(kPlaybackSpeedLen);
+    value[kPlaybackSpeedIndex] = static_cast<uint8_t>(speed);
     BtaGattQueue::WriteCharacteristic(device->conn_id, service->playback_speed_handle, value,
                                       GATT_WRITE_NO_RSP, nullptr, nullptr);
   }
@@ -205,12 +205,12 @@ public:
       return;
     }
     auto service = device->GetService(service_id);
-    if (!service || service->playing_order_handle == 0) {
+    if (!service || service->playing_order_handle == kInvalidGattHandle) {
       log::error("Service not ready for SetPlayingOrder: {}", address);
       return;
     }
-    std::vector<uint8_t> value(1);
-    value[0] = static_cast<uint8_t>(playing_order);
+    std::vector<uint8_t> value(kPlayingOrderLen);
+    value[kPlayingOrderIndex] = static_cast<uint8_t>(playing_order);
     BtaGattQueue::WriteCharacteristic(device->conn_id, service->playing_order_handle, value,
                                       GATT_WRITE_NO_RSP, nullptr, nullptr);
   }
@@ -307,8 +307,6 @@ public:
   }
 
 private:
-  static constexpr uint16_t kInvalidGattHandle = 0x0000;
-
   void OnGattConnected(const tBTA_GATTC_OPEN& evt) {
     log::info("Connected to {}, conn_id {}", evt.remote_bda, evt.conn_id);
 
@@ -501,11 +499,15 @@ private:
     }
 
     for (const auto& service : device->services) {
-      if (service.media_player_name_handle == 0 || service.track_changed_handle == 0 ||
-          service.track_title_handle == 0 || service.track_duration_handle == 0 ||
-          service.track_position_handle == 0 || service.media_state_handle == 0 ||
-          service.content_control_id_handle == 0 ||
-          (service.media_control_point_handle != 0 && service.opcodes_supported_handle == 0)) {
+      if (service.media_player_name_handle == kInvalidGattHandle ||
+          service.track_changed_handle == kInvalidGattHandle ||
+          service.track_title_handle == kInvalidGattHandle ||
+          service.track_duration_handle == kInvalidGattHandle ||
+          service.track_position_handle == kInvalidGattHandle ||
+          service.media_state_handle == kInvalidGattHandle ||
+          service.content_control_id_handle == kInvalidGattHandle ||
+          (service.media_control_point_handle != kInvalidGattHandle &&
+           service.opcodes_supported_handle == kInvalidGattHandle)) {
         log::error("Mandatory MCS characteristics not found on {} for service {}", device->addr,
                    service.id);
         BTA_GATTC_Close(device->conn_id);
@@ -521,9 +523,10 @@ private:
   void ParseMcpIndication(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                           const tBTA_GATTC_NOTIFY& evt) {
     if (evt.handle == service.media_control_point_handle) {
-      if (evt.len >= 2) {
-        uint8_t opcode = evt.value[0];
-        MediaControlResultCode result = static_cast<MediaControlResultCode>(evt.value[1]);
+      if (evt.len >= kMcpNotificationLen) {
+        uint8_t opcode = evt.value[kMcpNotificationOpcodeIndex];
+        MediaControlResultCode result =
+                static_cast<MediaControlResultCode>(evt.value[kMcpNotificationResultIndex]);
         callbacks_->OnMediaControlResult(device->addr, service.id, opcode, result);
       }
     }
@@ -545,7 +548,7 @@ private:
 
   void ParseTrackDurationNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                       const uint8_t* value, uint16_t len) {
-    if (len != 4) {
+    if (len != kTrackDurationLen) {
       log::error("Invalid Track Duration notification from device: {}, len: {}", device->addr, len);
       return;
     }
@@ -557,7 +560,7 @@ private:
 
   void ParseTrackPositionNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                       const uint8_t* value, uint16_t len) {
-    if (len != 4) {
+    if (len != kTrackPositionLen) {
       log::error("Invalid Track Position notification from device: {}, len: {}", device->addr, len);
       return;
     }
@@ -569,35 +572,37 @@ private:
 
   void ParseMediaStateNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                    const uint8_t* value, uint16_t len) {
-    if (len != 1) {
+    if (len != kMediaStateLen) {
       log::error("Invalid Media State notification from device: {}, len: {}", device->addr, len);
       return;
     }
-    callbacks_->OnMediaStateChanged(device->addr, service.id, static_cast<MediaState>(value[0]));
+    callbacks_->OnMediaStateChanged(device->addr, service.id,
+                                    static_cast<MediaState>(value[kMediaStateIndex]));
   }
 
   void ParsePlaybackSpeedNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                       const uint8_t* value, uint16_t len) {
-    if (len != 1) {
+    if (len != kPlaybackSpeedLen) {
       log::error("Invalid Playback Speed notification from device: {}, len: {}", device->addr, len);
       return;
     }
-    callbacks_->OnPlaybackSpeedChanged(device->addr, service.id, static_cast<int8_t>(value[0]));
+    callbacks_->OnPlaybackSpeedChanged(device->addr, service.id,
+                                       static_cast<int8_t>(value[kPlaybackSpeedIndex]));
   }
 
   void ParsePlayingOrderNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                      const uint8_t* value, uint16_t len) {
-    if (len != 1) {
+    if (len != kPlayingOrderLen) {
       log::error("Invalid Playing Order notification from device: {}, len: {}", device->addr, len);
       return;
     }
     callbacks_->OnPlayingOrderChanged(device->addr, service.id,
-                                      static_cast<PlayingOrder>(value[0]));
+                                      static_cast<PlayingOrder>(value[kPlayingOrderIndex]));
   }
 
   void ParsePlayingOrdersSupported(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                    const uint8_t* value, uint16_t len) {
-    if (len != 2) {
+    if (len != kPlayingOrdersSupportedLen) {
       log::error("Invalid Playing Orders Supported notification from device: {}, len: {}",
                  device->addr, len);
       return;
@@ -610,16 +615,17 @@ private:
 
   void ParseSeekingSpeedNotification(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                                      const uint8_t* value, uint16_t len) {
-    if (len != 1) {
+    if (len != kSeekingSpeedLen) {
       log::error("Invalid Seeking Speed notification from device: {}, len: {}", device->addr, len);
       return;
     }
-    callbacks_->OnSeekingSpeedChanged(device->addr, service.id, static_cast<int8_t>(value[0]));
+    callbacks_->OnSeekingSpeedChanged(device->addr, service.id,
+                                      static_cast<int8_t>(value[kSeekingSpeedIndex]));
   }
 
   void ParseOpcodesSupported(const std::shared_ptr<McpDevice>& device, const Mcs& service,
                              const uint8_t* value, uint16_t len) {
-    if (len != 4) {
+    if (len != kOpcodesSupportedLen) {
       log::error("Invalid Opcodes Supported notification from device: {}, len: {}", device->addr,
                  len);
       return;
@@ -820,7 +826,7 @@ private:
       return;
     }
     auto service = device->GetService(service_id);
-    if (!service || service->media_control_point_handle == 0) {
+    if (!service || service->media_control_point_handle == kInvalidGattHandle) {
       log::error("Service not ready for MCP command: {}", address);
       return;
     }
