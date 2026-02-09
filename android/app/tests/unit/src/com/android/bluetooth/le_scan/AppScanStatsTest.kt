@@ -174,10 +174,10 @@ class AppScanStatsTest {
             attributionTag = "tag5",
         )
 
-        appScanStats.addResults(1, 50)
+        appScanStats.addResults(1, 50, true)
         AppScanStats.setScreenState(false)
-        appScanStats.addResults(2, 60)
-        appScanStats.addResults(1, 70)
+        appScanStats.addResults(2, 60, true)
+        appScanStats.addResults(1, 70, true)
         AppScanStats.setScreenState(true)
 
         appScanStats.dump(listOf(app1, app2))
