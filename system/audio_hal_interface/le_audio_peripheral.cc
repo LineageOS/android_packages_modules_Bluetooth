@@ -109,9 +109,9 @@ public:
       }
       return true;
     };
-    legacy_callbacks_.on_sink_metadata_update_ =
-            [cb_on_meta = callbacks.OnPlaybackMetadataUpdate](
-                    const sink_metadata_v7_t& metadata) -> bool {
+    legacy_callbacks_.on_metadata_update_ = [cb_on_meta = callbacks.OnPlaybackMetadataUpdate](
+                                                    const source_metadata_v7_t& metadata,
+                                                    DsaMode) -> bool {
       if (cb_on_meta) {
         cb_on_meta(metadata);
       }
@@ -205,9 +205,9 @@ public:
       }
       return true;
     };
-    legacy_callbacks_.on_metadata_update_ = [cb_on_meta = callbacks.OnRecordingMetadataUpdate](
-                                                    const source_metadata_v7_t& metadata,
-                                                    DsaMode) -> bool {
+    legacy_callbacks_.on_sink_metadata_update_ =
+            [cb_on_meta = callbacks.OnRecordingMetadataUpdate](
+                    const sink_metadata_v7_t& metadata) -> bool {
       if (cb_on_meta) {
         cb_on_meta(metadata);
       }
