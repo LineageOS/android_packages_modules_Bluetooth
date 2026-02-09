@@ -1080,9 +1080,6 @@ cc_test {
         "libgtest",
         "libosi",
     ],
-    sanitize: {
-        cfi: false,
-    },
     header_libs: ["libbluetooth_headers"],
 }
 
@@ -1198,17 +1195,23 @@ cc_test {
             static_libs: [
                 "libPlatformProperties",
             ],
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
         },
         host: {
             static_libs: [
                 "libbinder_ndk",
             ],
+            sanitize: {
+                address: true,
+            },
         },
     },
     sanitize: {
         cfi: true,
         scs: true,
-        address: true,
+        // address: See above
         all_undefined: true,
         integer_overflow: true,
         diag: {
@@ -1447,11 +1450,23 @@ cc_test {
     sanitize: {
         cfi: true,
         scs: true,
-        address: true,
+        // address: See below
         all_undefined: true,
         integer_overflow: true,
         diag: {
             undefined: true,
+        },
+    },
+    target: {
+        android: {
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
+        },
+        host: {
+            sanitize: {
+                address: true,
+            },
         },
     },
 }

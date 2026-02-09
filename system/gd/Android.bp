@@ -20,9 +20,9 @@ cc_defaults {
             shared_libs: [
                 "liblog",
             ],
-            sanitize: {
-                misc_undefined: ["bounds"],
-            },
+            // sanitize: {
+            //     misc_undefined: ["bounds"],
+            // },
         },
         darwin: {
             enabled: false,
@@ -305,14 +305,16 @@ cc_test {
     host_supported: true,
     target: {
         host: {
-            srcs: [
-                "os/host/system_properties.cc",
-            ],
+            srcs: ["os/host/system_properties.cc"],
+            sanitize: {
+                address: true,
+            },
         },
         android: {
-            srcs: [
-                "os/android/system_properties.cc",
-            ],
+            srcs: ["os/android/system_properties.cc"],
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
         },
     },
     srcs: [
@@ -338,9 +340,6 @@ cc_test {
         "libbase",
         "liblog",
     ],
-    sanitize: {
-        address: true,
-    },
     min_sdk_version: "36",
 }
 
@@ -411,6 +410,9 @@ cc_test {
     isolated: false,
     target: {
         linux: {
+            sanitize: {
+                address: true,
+            },
             srcs: [
                 "os/linux_generic/alarm_unittest.cc",
                 "os/linux_generic/files_test.cc",
@@ -422,6 +424,10 @@ cc_test {
             ],
         },
         host: {
+            sanitize: {
+                address: true,
+
+            },
             srcs: [
                 "hal/hci_hal_impl_host_rootcanal_test.cc",
             ],
@@ -537,9 +543,6 @@ cc_test {
         "libaconfig_storage_read_api_cc",
         "libcrypto",
     ],
-    sanitize: {
-        address: true,
-    },
     min_sdk_version: "36",
 }
 

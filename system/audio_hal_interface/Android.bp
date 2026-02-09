@@ -356,9 +356,9 @@ cc_test {
         "-DBUILDCFG",
     ],
     target: {
-        android: {
+        host: {
             sanitize: {
-                address: true,
+                // address: true, // TODO re-activate
             },
         },
     },
