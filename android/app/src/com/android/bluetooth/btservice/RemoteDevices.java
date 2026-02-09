@@ -2642,6 +2642,8 @@ public class RemoteDevices {
 
         keyMissingIntent.putExtra(BluetoothDevice.EXTRA_BOND_LOSS_REASON, reason);
 
+        Log.d(TAG, "sendKeyMissingIntent: device=" + device + " reason=" + reason);
+
         mAdapterService.sendOrderedBroadcast(
                 keyMissingIntent,
                 BLUETOOTH_CONNECT,
