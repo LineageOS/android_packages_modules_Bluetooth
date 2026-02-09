@@ -19,14 +19,13 @@ package com.android.server.bluetooth
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.os.Handler
 import android.os.Looper
 import android.os.UserHandle
 import android.os.UserManager
 import android.sysprop.BluetoothProperties
+import com.android.bluetooth.util.registerReceiver
 import com.android.internal.annotations.VisibleForTesting
 
 private const val TAG = "SharingRestriction"
@@ -52,17 +51,16 @@ internal constructor(
             }
     }
 
-    private val receiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                Log.d(TAG, "User restriction have been updated for $user")
-                updateRestriction()
-            }
-        }
+    private val receiver: BroadcastReceiver
 
     init {
         val filter = IntentFilter(UserManager.ACTION_USER_RESTRICTIONS_CHANGED)
-        userContext.registerReceiver(receiver, filter, null, Handler(looper))
+        receiver =
+            userContext.registerReceiver(looper, UserManager.ACTION_USER_RESTRICTIONS_CHANGED) {
+                _,
+                _ ->
+                updateRestriction()
+            }
         updateRestriction()
     }
 
@@ -74,7 +72,7 @@ internal constructor(
         val oldState = sharingState
         sharingState = getSharingState()
         if (oldState == sharingState) {
-            Log.v(TAG, "Nothing to do. Sharing state is already $sharingState")
+            Log.v(TAG, "Nothing to do for $user. Sharing state is already $sharingState")
             return
         }
         Log.i(TAG, "Updating sharing state for $user: $oldState -> $sharingState")
