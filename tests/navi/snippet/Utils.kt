@@ -20,6 +20,9 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
+import androidx.media3.common.MediaItem
 import com.google.android.mobly.snippet.event.EventCache
 import com.google.android.mobly.snippet.event.SnippetEvent
 import com.google.android.mobly.snippet.rpc.TypeConverter
@@ -33,6 +36,19 @@ import org.json.JSONObject
 object Utils {
 
     const val TAG = "BtSnippetUtils"
+
+    data class MediaNode(val item: MediaItem, val children: List<MediaNode>)
+
+    /**
+     * A [JSONObject] that can be [Parcelable].
+     *
+     * This is needed to pass a [JSONObject] to [SnippetEvent].
+     */
+    class ParcelableJsonObject : JSONObject(), Parcelable {
+        override fun writeToParcel(dest: Parcel, flags: Int) {}
+
+        override fun describeContents(): Int = 0
+    }
 
     fun getProfileProxy(context: Context, profile: Int): BluetoothProfile {
         val bluetoothManager = context.getSystemService(BluetoothManager::class.java)

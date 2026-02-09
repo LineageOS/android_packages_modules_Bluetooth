@@ -43,11 +43,11 @@ def _default_hf_configuration():
 
 # This class implements the Hid Pandora interface.
 class HFService(HFPServicer):
+    hf_protocol: hfp.HfProtocol
 
     def __init__(self, device: bumble.device.Device, rfcomm_server: rfcomm.Server) -> None:
         super().__init__()
         self.device = device
-        self.hf_protocol: hfp.HfProtocol | None = None
 
         self.hf_config = _default_hf_configuration()
         self.rfcomm_server = rfcomm_server

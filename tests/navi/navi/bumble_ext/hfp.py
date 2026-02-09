@@ -27,6 +27,9 @@ from navi.bumble_ext import rfcomm as rfcomm_ext
 
 _logger = logging.getLogger(__name__)
 
+SCO_H2_HEADER = (b"\x01\x08", b"\x01\x38", b"\x01\xC8", b"\x01\xF8")
+SCO_H2_HEADER_SIZE = 2
+
 # TODO: Remove this once the bug is fixed in Bumble.
 hfp.RESPONSE_CODES.discard("+BCS")
 
@@ -232,25 +235,10 @@ class HfProtocol(hfp.HfProtocol):
         await connection.device.send_command(
             hci.HCI_Enhanced_Accept_Synchronous_Connection_Request_Command(
                 bd_addr=connection.peer_address,
-                **(await self.get_esco_parameters()).asdict(),
+                **(self.get_esco_parameters()).asdict(),
             ))
 
-    async def _get_controller_supported_codecs(self) -> list[hci.CodecID]:
-        """Returns codecs supported by the controller."""
-        device = self.dlc.multiplexer.l2cap_channel.connection.device
-        try:
-            response = await device.send_command(hci.HCI_Read_Local_Supported_Codecs_Command(),
-                                                 check_result=True)
-        except hci.HCI_Error:
-            _logger.debug("Failed to read supported codecs")
-            return []
-
-        controller_supported_codecs = list(
-            hci.CodecID(codec) for codec in response.return_parameters.standard_codec_ids)
-        _logger.debug("Supported codecs: %s", controller_supported_codecs)
-        return controller_supported_codecs
-
-    async def get_esco_parameters(self) -> hfp.EscoParameters:
+    def get_esco_parameters(self) -> hfp.EscoParameters:
         """Returns the ESCO parameters for the active codec.
 
     Returns:
@@ -259,22 +247,11 @@ class HfProtocol(hfp.HfProtocol):
     Raises:
       ValueError: If the active codec is not supported.
     """
-        if self.controller_supported_codecs is None:
-            self.controller_supported_codecs = (await self._get_controller_supported_codecs())
-
         match self.active_codec:
             case hfp.AudioCodec.CVSD:
                 # It's not common that the controller doesn't support CVSD.
                 return hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_CVSD_S4]
-            case hfp.AudioCodec.MSBC:
-                if hci.CodecID.MSBC in self.controller_supported_codecs:
-                    return hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_MSBC_T2]
-                else:
-                    return ESCO_PARAMETERS_T2_TRANSPARENT
-            case hfp.AudioCodec.LC3_SWB:
-                if hci.CodecID.LC3 in self.controller_supported_codecs:
-                    return ESCO_PARAMETERS_LC3_T2
-                else:
-                    return ESCO_PARAMETERS_T2_TRANSPARENT
+            case hfp.AudioCodec.MSBC | hfp.AudioCodec.LC3_SWB:
+                return ESCO_PARAMETERS_T2_TRANSPARENT
             case _:
                 raise ValueError(f"Unsupported codec: {self.active_codec}")

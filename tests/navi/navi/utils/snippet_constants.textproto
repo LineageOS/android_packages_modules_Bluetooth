@@ -165,6 +165,11 @@ constants {
   string_value: "volume"
 }
 
+constants {
+  name: "MEDIA_ITEM"
+  string_value: "media_item"
+}
+
 # =========================== #
 # General                     #
 # =========================== #
@@ -554,6 +559,11 @@ constants {
   string_value: "classic_length"
 }
 
+constants {
+  name: "ENCRYPTION_CHANGE"
+  string_value: "encryption_change"
+}
+
 # =========================== #
 # BluetoothGattClientSnippet  #
 # =========================== #
@@ -836,6 +846,21 @@ constants {
 }
 
 constants {
+  name: "PLAYER_SHUFFLE_MODE_ENABLED_CHANGED"
+  string_value: "PLAYER_SHUFFLE_MODE_ENABLED_CHANGED"
+}
+
+constants {
+  name: "PLAYER_REPEAT_MODE_CHANGED"
+  string_value: "PLAYER_REPEAT_MODE_CHANGED"
+}
+
+constants {
+  name: "MODE"
+  string_value: "mode"
+}
+
+constants {
   name: "CONTENT_TYPE"
   string_value: "content_type"
 }
@@ -853,6 +878,21 @@ constants: {
 constants: {
   name: "URI"
   string_value: "uri"
+}
+
+constants: {
+  name: "TITLE"
+  string_value: "title"
+}
+
+constants: {
+  name: "ARTIST"
+  string_value: "artist"
+}
+
+constants: {
+  name: "ALBUM"
+  string_value: "album"
 }
 
 constants: {
@@ -1234,4 +1274,38 @@ constants {
 constants {
   name: "VOICE_COMMAND"
   string_value: "VOICE_COMMAND"
+}
+
+# ============================ #
+# MediaBrowserServiceSnippet   #
+# ============================ #
+
+constants {
+  name: "MEDIA_ITEM_ADDED"
+  string_value: "MEDIA_ITEM_ADDED"
+}
+
+constants {
+  name: "MEDIA_CONTROLLER_PLAYBACK_STATE_CHANGE"
+  string_value: "MEDIA_CONTROLLER_PLAYBACK_STATE_CHANGE"
+}
+
+constants {
+  name: "FIELD_TITLE"
+  string_value: "title"
+}
+
+constants {
+  name: "FIELD_BROWSABLE"
+  string_value: "browsable"
+}
+
+constants {
+  name: "FIELD_PLAYABLE"
+  string_value: "playable"
+}
+
+constants {
+  name: "FIELD_CHILDREN"
+  string_value: "children"
 }

@@ -97,7 +97,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
 
         if self.dut.device.is_emulator:
-            self.dut.setprop(_PROPERTY_MAP_SERVER_ENABLED, "true")
+            self.setprop_for_class_context(_PROPERTY_MAP_SERVER_ENABLED, "true")
 
         if self.dut.getprop(_PROPERTY_MAP_SERVER_ENABLED) != "true":
             raise signals.TestAbortClass("MAP server is not enabled on DUT.")

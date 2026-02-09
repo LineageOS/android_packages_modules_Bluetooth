@@ -47,10 +47,8 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
 
-        # Force enabling ASHA Central on emulator.
         if self.dut.device.is_emulator:
-            self.logger.info("[DUT] Enable ASHA Central on emulator.")
-            self.dut.setprop(_PROPERTY_ASHA_CENTRAL_ENABLED, "true")
+            self.setprop_for_class_context(_PROPERTY_ASHA_CENTRAL_ENABLED, "true")
 
         if self.dut.getprop(_PROPERTY_ASHA_CENTRAL_ENABLED) != "true":
             raise signals.TestAbortClass("ASHA Central is disabled.")

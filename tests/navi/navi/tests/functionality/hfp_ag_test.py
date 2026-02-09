@@ -125,9 +125,6 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         ref_hfp_protocol = hfp_ext.HfProtocol(dlc, hfp_ext.make_hf_configuration())
         await ref_hfp_protocol.initiate_slc()
 
-    # TODO: Remove this skip once the flag is removed.
-    @navi_test_base.TwoDevicesTestBase.require_flag(
-        "com.android.bluetooth.flags.fix_hfp_rfcomm_collision_state_machine_error")
     async def test_paired_connect_hfp_ag_simultaneous(self) -> None:
         """Tests HFP connection establishment with simultaneous connection.
 

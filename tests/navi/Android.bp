@@ -32,7 +32,7 @@ python_library_host {
 }
 
 python_test_host {
-    name: "navi",
+    name: "navi-mobly",
     main: "main.py",
     srcs: [
         "main.py",
@@ -48,6 +48,9 @@ python_test_host {
     },
     device_common_data: [
         ":BluetoothSnippet",
+    ],
+    data: [
+        "navi/tests/data/**/*",
     ],
     libs: [
         "navi-lib",
@@ -72,6 +75,7 @@ python_test_host {
     },
     data: [
         "config.yml",
+        "navi/tests/data/**/*",
     ],
     device_common_data: [
         ":BluetoothSnippet",

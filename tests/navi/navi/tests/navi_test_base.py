@@ -166,7 +166,7 @@ class AndroidSnippetDeviceWrapper:
 
     def setprop(self, prop_name: str, prop_value: str) -> None:
         """Sets a property of the device."""
-        self.adb.shell(["setprop", prop_name, prop_value])
+        self.adb.shell(["setprop", prop_name, f"'{prop_value}'"])
 
     @property
     @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
@@ -484,7 +484,7 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
       test_method itself.
     """
         partial_method = functools.partial(test_method, *args, **kwargs)
-        if asyncio.coroutines.iscoroutinefunction(test_method):
+        if inspect.iscoroutinefunction(test_method):
             synced_func = functools.partial(self._async_test_wrapper, partial_method)
         else:
             synced_func = partial_method
@@ -818,7 +818,7 @@ class AndroidBumbleTestBase(BaseTestBase):
       filename: The name of the file to save the data to.
       data: The data to save.
     """
-        self.logger.info("[DUT] Saving data to file.")
+        self.logger.info("Saving data to %s.", filename)
         file_path = pathlib.Path(self.current_test_info.output_path, filename)
         with open(file_path, "wb") as f:
             f.write(data)
@@ -1199,6 +1199,24 @@ class AndroidBumbleTestBase(BaseTestBase):
                 )
                 # Trigger profile connections.
                 self.dut.bt.connect(ref_addr)
+
+    def setprop_for_class_context(self, prop: str, tmp_value: str) -> None:
+        """Sets a property and registers a callback to revert it.
+
+    If the property is already set to the tmp_value, do nothing.
+
+    Args:
+      prop: The property to set.
+      tmp_value: The value to set the property to.
+    """
+        current_value = self.dut.getprop(prop)
+        if current_value == tmp_value:
+            return
+
+        self.logger.info("[DUT] Setting %s to %s", prop, tmp_value)
+        self.dut.setprop(prop, tmp_value)
+
+        self.test_class_context.callback(lambda: self.dut.setprop(prop, current_value))
 
 
 class OneDeviceTestBase(AndroidBumbleTestBase):

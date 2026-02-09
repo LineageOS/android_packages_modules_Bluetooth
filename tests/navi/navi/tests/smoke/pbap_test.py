@@ -295,7 +295,7 @@ class PbapTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
 
         if self.dut.device.is_emulator:
-            self.dut.setprop(_PROPERTY_PBAP_SERVER_ENABLED, "true")
+            self.setprop_for_class_context(_PROPERTY_PBAP_SERVER_ENABLED, "true")
 
         if self.dut.getprop(_PROPERTY_PBAP_SERVER_ENABLED) != "true":
             raise signals.TestAbortClass("PBAP server is not enabled on DUT.")

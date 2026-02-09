@@ -31,6 +31,16 @@
         <category android:name="android.intent.category.DEFAULT" />
       </intent-filter>
     </activity>
+    <!-- Empty activity to pretend a Media player. -->
+    <activity
+        android:name="com.google.android.bluetooth.snippet.MediaBrowserServiceSnippet$EmptyActivity"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="audio/*"/>
+      </intent-filter>
+    </activity>
     <provider
         android:name="androidx.core.content.FileProvider"
         android:authorities="com.google.android.bluetooth.snippet.FileProvider"
@@ -72,6 +82,8 @@
                        com.google.android.bluetooth.snippet.BluetoothVolumeControlSnippet,
                        com.google.android.bluetooth.snippet.DistanceMeasurementSnippet,
                        com.google.android.bluetooth.snippet.InputSnippet,
+                       com.google.android.bluetooth.snippet.MediaBrowserServiceSnippet,
+                       com.google.android.bluetooth.snippet.MediaBrowserSnippet,
                        com.google.android.bluetooth.snippet.OtherSnippet,
                        com.google.android.bluetooth.snippet.TelecomSnippet" />
     <service
@@ -88,6 +100,15 @@
       <meta-data
           android:name="android.telecom.INCLUDE_SELF_MANAGED_CALLS"
           android:value="true" />
+    </service>
+    <service
+        android:name=".MediaBrowserServiceSnippet$MediaLibraryServiceImpl"
+        android:foregroundServiceType="mediaPlayback"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="androidx.media3.session.MediaLibraryService" />
+        <action android:name="android.media.browse.MediaBrowserService" />
+      </intent-filter>
     </service>
     <meta-data
         android:name="mobly-object-converter"

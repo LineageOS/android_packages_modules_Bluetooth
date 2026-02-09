@@ -37,7 +37,7 @@ _Callback = bl4a_api.CallbackHandler
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
 _HFP_AG_SDP_HANDLE = 1
 _PROPERTY_SWB_SUPPORTED = "bluetooth.hfp.swb.supported"
-_PROPERTY_HF_FEATURES = "bluetooth.hfp.hf_client_features.config"
+_PROPERTY_HF_CLIENT_FEATURES = "bluetooth.hfp.hf_client_features.config"
 _MIN_HFP_VOLUME = 1
 _MAX_HFP_VOLUME = 15
 _STREAM_TYPE_CALL = android_constants.StreamType.CALL
@@ -50,9 +50,11 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
+
         if self.dut.device.is_emulator:
-            self.dut.setprop(android_constants.Property.HFP_HF_ENABLED, "true")
-            self.dut.setprop(_PROPERTY_HF_FEATURES, "0x1b5")
+            self.setprop_for_class_context(android_constants.Property.HFP_HF_ENABLED, "true")
+
+            self.setprop_for_class_context(_PROPERTY_HF_CLIENT_FEATURES, "0x1b5")
 
         if self.dut.getprop(android_constants.Property.HFP_HF_ENABLED) != "true":
             raise signals.TestAbortClass("DUT does not have HFP HF enabled.")

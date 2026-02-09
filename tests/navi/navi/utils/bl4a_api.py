@@ -93,7 +93,6 @@ class Module(enum.Enum):
     PLAYER = enum.auto()
     BQR = enum.auto()
     A2DP_SINK = enum.auto()
-    AVRCP_CONTROLLER = enum.auto()
     HAP_CLIENT = enum.auto()
     VOLUME_CONTROL = enum.auto()
 
@@ -183,10 +182,6 @@ class CallbackHandler:
                 on_close = snippet.unregisterBluetoothQualityReportCallback
             case Module.A2DP_SINK:
                 handler = snippet.registerProfileCallback(android_constants.Profile.A2DP_SINK)
-                on_close = snippet.unregisterProfileCallback
-            case Module.AVRCP_CONTROLLER:
-                handler = snippet.registerProfileCallback(
-                    android_constants.Profile.AVRCP_CONTROLLER)
                 on_close = snippet.unregisterProfileCallback
             case Module.HAP_CLIENT:
                 handler = snippet.registerHapClientCallback()
@@ -497,6 +492,19 @@ class BondStateChanged(JsonDeserializableEvent):
     })
 
     EVENT_NAME = snippet_constants.BOND_STATE_CHANGE
+
+
+@dataclasses.dataclass
+class EncryptionChanged(JsonDeserializableEvent):
+    """android.bluetooth.device.action.ENCRYPTION_CHANGED.
+
+  Attributes:
+    address: mac address of remote device in string format.
+  """
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+
+    EVENT_NAME = snippet_constants.ENCRYPTION_CHANGE
 
 
 @dataclasses.dataclass
@@ -908,7 +916,28 @@ class PlayerMediaItemTransition(JsonDeserializableEvent):
 
     EVENT_NAME = snippet_constants.PLAYER_MEDIA_ITEM_TRANSITION
 
-    uri: str | None = dataclasses.field(metadata={_FIELD: snippet_constants.URI})
+    media_item: MediaItem = dataclasses.field(metadata={
+        _FIELD: snippet_constants.MEDIA_ITEM,
+        _MAPPER: lambda kwargs: MediaItem(**kwargs),
+    })
+
+
+@dataclasses.dataclass
+class PlayerShuffleModeEnabledChanged(JsonDeserializableEvent):
+    """androidx.media3.common.Player.Listener.onShuffleModeEnabledChanged."""
+
+    EVENT_NAME = snippet_constants.PLAYER_SHUFFLE_MODE_ENABLED_CHANGED
+
+    enabled: bool = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_STATE})
+
+
+@dataclasses.dataclass
+class PlayerRepeatModeChanged(JsonDeserializableEvent):
+    """androidx.media3.common.Player.Listener.onRepeatModeChanged."""
+
+    EVENT_NAME = snippet_constants.PLAYER_REPEAT_MODE_CHANGED
+
+    mode: int = dataclasses.field(metadata={_FIELD: snippet_constants.MODE})
 
 
 @dataclasses.dataclass
@@ -1265,6 +1294,14 @@ class HidHostIdleTimeChanged(JsonDeserializableEvent):
 
 
 @dataclasses.dataclass
+class MediaItemAdded(JsonDeserializableEvent):
+    """Media item added from MediaBrowserServiceSnippet."""
+
+    media_id: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_ID})
+    EVENT_NAME = snippet_constants.MEDIA_ITEM_ADDED
+
+
+@dataclasses.dataclass
 class LegacyAdvertiseSettings:
     """android.bluetooth.le.AdvertiseSettings."""
 
@@ -1548,6 +1585,20 @@ class AudioAttributes:
 
 
 @dataclasses.dataclass
+class MediaItem:
+    """Media3 Media Item, with children field for browsing."""
+
+    id: str | None = None
+    title: str | None = None
+    artist: str | None = None
+    album: str | None = None
+    uri: str | None = None
+    browsable: bool | None = None
+    playable: bool | None = None
+    children: Sequence[MediaItem] = ()
+
+
+@dataclasses.dataclass
 class LeAudioBroadcast:
     """LE Audio Broadcast control block."""
 
@@ -1655,6 +1706,81 @@ class PhoneCall:
     def close(self) -> None:
         """Closes the phone call."""
         self.snippet.disconnectCall(self.cookie)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        with contextlib.suppress(mobly.snippet.errors.ApiError):
+            self.close()
+
+
+@dataclasses.dataclass
+class MediaBrowser:
+    """Context managable Media Browser wrapper."""
+
+    snippet: snippet_stub.BluetoothSnippet
+    cookie: str
+
+    @dataclasses.dataclass
+    class PlaybackStateChanged(JsonDeserializableEvent):
+        """Media playback state changed event."""
+
+        state: android_constants.MediaPlaybackState = dataclasses.field(metadata={
+            _FIELD: snippet_constants.FIELD_STATE,
+            _MAPPER: android_constants.MediaPlaybackState,
+        })
+        EVENT_NAME = snippet_constants.MEDIA_CONTROLLER_PLAYBACK_STATE_CHANGE
+
+    async def get_root_media_item(self) -> str:
+        """Gets the root id."""
+
+        return await asyncio.to_thread(lambda: self.snippet.getMediaBrowserRootId(self.cookie))
+
+    async def get_children(self, parent_id: str) -> list[MediaItem]:
+        """Gets the root id."""
+
+        children = await asyncio.to_thread(
+            lambda: self.snippet.getMediaBrowserChildren(self.cookie, parent_id))
+        return [MediaItem(**child) for child in children]
+
+    def close(self) -> None:
+        """Closes the phone call."""
+        self.snippet.disconnectMediaBrowser(self.cookie)
+
+    def play(self) -> None:
+        """Plays the media."""
+        self.snippet.playMediaController(self.cookie)
+
+    def pause(self) -> None:
+        """Pauses the media."""
+        self.snippet.pauseMediaController(self.cookie)
+
+    def stop(self) -> None:
+        """Stops the media."""
+
+        self.snippet.stopMediaController(self.cookie)
+
+    def fast_forward(self) -> None:
+        """Fast forwards the media."""
+        self.snippet.fastForwardMediaController(self.cookie)
+
+    def rewind(self) -> None:
+        """Rewinds the media."""
+        self.snippet.rewindMediaController(self.cookie)
+
+    def skip_to_next(self) -> None:
+        """Skips to the next media."""
+        self.snippet.skipToNextMediaController(self.cookie)
+
+    def skip_to_previous(self) -> None:
+        """Skips to the previous media."""
+        self.snippet.skipToPreviousMediaController(self.cookie)
+
+    def register_callback(self) -> CallbackHandler:
+        """Registers a media controller callback."""
+        handler = self.snippet.registerMediaControllerCallback(self.cookie)
+        return CallbackHandler(self.snippet, handler)
 
     def __enter__(self) -> Self:
         return self
@@ -2995,3 +3121,28 @@ class SnippetWrapper:
             handler=self.snippet.registerHidDeviceApp(sdp_settings),
             on_close=self.snippet.unregisterHidDeviceApp,
         )
+
+    def register_media_library_session(self, media_tree_root: MediaItem) -> CallbackHandler:
+        """Registers a media browser session."""
+        return CallbackHandler(
+            snippet=self.snippet,
+            handler=self.snippet.registerMediaLibrarySession(_make_json_object(media_tree_root)),
+            on_close=self.snippet.unregisterMediaLibrarySession,
+        )
+
+    def connect_media_browser(self, package_name: str, service_name: str) -> MediaBrowser:
+        """Connects to a media browser."""
+        return MediaBrowser(
+            snippet=self.snippet,
+            cookie=self.snippet.connectMediaBrowser(package_name, service_name),
+        )
+
+    def add_media_item(self, media_item: MediaItem) -> None:
+        """Adds a media item to the media queue."""
+
+        return self.snippet.addMediaItem(_make_json_object(media_item))
+
+    def play_media_item(self, media_item: MediaItem) -> None:
+        """Plays a media item."""
+
+        return self.snippet.playMediaItem(_make_json_object(media_item))

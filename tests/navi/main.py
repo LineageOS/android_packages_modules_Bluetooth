@@ -18,14 +18,15 @@ import sys
 from mobly import suite_runner
 from navi.tests.functionality import a2dp_sink_test
 from navi.tests.functionality import a2dp_source_test
-from navi.tests.functionality import aics_test
+from navi.tests.functionality import asha_dual_devices_test
 from navi.tests.functionality import coex_test
 from navi.tests.functionality import hap_test
 from navi.tests.functionality import hfp_ag_test as hfp_ag_test_venti
 from navi.tests.functionality import le_audio_unicast_client_dual_device_test
 from navi.tests.functionality import le_pairing_test
 from navi.tests.functionality import rfcomm_socket_test
-from navi.tests.functionality import vocs_test
+from navi.tests.functionality import vap_test
+from navi.tests.functionality import vcp_test
 from navi.tests.smoke import a2dp_test
 from navi.tests.smoke import asha_test
 from navi.tests.smoke import avrcp_test
@@ -79,10 +80,11 @@ if __name__ == "__main__":
         hap_test.HapTest,
         bluetooth_service_test.BluetoothServiceTest,
         a2dp_source_test.A2dpSourceTest,
-        aics_test.AicsTest,
         coex_test.CoexTest,
         hfp_ag_test_venti.HfpAgTest,
         rfcomm_socket_test.RfcommSocketTest,
         le_audio_unicast_client_dual_device_test.LeAudioUnicastClientDualDeviceTest,
-        vocs_test.VocsTest,
+        vap_test.VapTest,
+        vcp_test.VcpTest,
+        asha_dual_devices_test.AshaDualDevicesTest,
     ])

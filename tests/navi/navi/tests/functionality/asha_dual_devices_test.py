@@ -79,9 +79,10 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
             watcher.on(asha_service, asha_service.Event.STOPPED, on_state_change)
 
         self.logger.info('Wait for all ASHA services to be stopped')
-        async with self.condition:
-            await self.condition.wait_for(lambda: all(
-                asha_service.active_codec is None for asha_service in self.ref_asha_services))
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            async with self.condition:
+                await self.condition.wait_for(lambda: all(
+                    asha_service.active_codec is None for asha_service in self.ref_asha_services))
 
     async def _prepare_paired_devices(self) -> None:
         """Pairs DUT with REF devices."""
