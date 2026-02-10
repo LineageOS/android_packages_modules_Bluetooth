@@ -167,19 +167,17 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
 
     instance_->feature_map_[bdaddr] = features;
 
-    if (com_android_bluetooth_flags_abs_volume_sdp_conflict()) {
-      // Peer may connect avrcp during SDP. Check the connection state when
-      // SDP completed to resolve the conflict.
-      for (const auto& pair : instance_->device_map_) {
-        if (bdaddr == pair.second->GetAddress()) {
-          log::warn("Connected by peer device with address {}", bdaddr);
-          if (features & BTA_AV_FEAT_ADV_CTRL) {
-            pair.second->RegisterVolumeChanged();
-          } else if (instance_->vol_ != nullptr) {
-            instance_->vol_->DeviceConnected(pair.second->GetAddress());
-          }
-          return;
+    // Peer may connect avrcp during SDP. Check the connection state when SDP completed to resolve
+    // the conflict.
+    for (const auto& pair : instance_->device_map_) {
+      if (bdaddr == pair.second->GetAddress()) {
+        log::warn("Connected by peer device with address {}", bdaddr);
+        if (features & BTA_AV_FEAT_ADV_CTRL) {
+          pair.second->RegisterVolumeChanged();
+        } else if (instance_->vol_ != nullptr) {
+          instance_->vol_->DeviceConnected(pair.second->GetAddress());
         }
+        return;
       }
     }
     instance_->AvrcpConnect(true, bdaddr);
