@@ -268,23 +268,33 @@ public:
     auto target_thread_id = GetLinuxThreadId(this);
     auto caller_thread_id = GetLinuxThreadId();
     sync_task_posted_count_++;
-    if (!blocked_threads_.blocked(target_thread_id)) {
+    if (target_thread_id != -1 && !blocked_threads_.blocked(target_thread_id)) {
       if (!IsRunningOnSameThread()) {
         // block current thread, currently its unblocked
         blocked_threads_.testAndBlock(caller_thread_id);
         log::info("Blocked current_thread id: {}, on the target thread: {}({}), for task#: {}",
                   caller_thread_id, target_thread_id, thread_name_, sync_task_posted_count_);
-        DoInThread(base::BindOnce(task, std::forward<Functor>(func_ptr), std::move(promise), this,
-                                  sync_task_posted_count_, std::forward<Args>(args)...));
-        auto result = future.wait_for(kHandlerStopTimeout);
-        blocked_threads_.unblock(caller_thread_id);  // unblock current thread
-        log::assert_that(result == std::future_status::ready,
-                         "assert failed: Thread: {}, is not idle after waiting for: {} ms",
-                         thread_name_, kHandlerStopTimeout.count());
-        return future.get();
+        bool able_to_post = DoInThread(
+                base::BindOnce(task, std::forward<Functor>(func_ptr), std::move(promise), this,
+                               sync_task_posted_count_, std::forward<Args>(args)...));
+        if (able_to_post) {
+          auto result = future.wait_for(kHandlerStopTimeout);
+          blocked_threads_.unblock(caller_thread_id);  // unblock current thread
+          log::assert_that(result == std::future_status::ready,
+                           "assert failed: Thread: {}, is not idle after waiting for: {} ms",
+                           thread_name_, kHandlerStopTimeout.count());
+          return future.get();
+        } else {
+          blocked_threads_.unblock(caller_thread_id);  // unblock current thread
+          log::warn(
+                  "Failed to post task#: {} on thread: {}, executing task on current thread "
+                  "instead.",
+                  sync_task_posted_count_, thread_name_);
+        }
       }
     } else {
-      log::warn("Target thread {} is blocked, executing task on current thread", thread_name_);
+      log::warn("Target thread: {}(tid: {}) is blocked, executing task on current thread",
+                thread_name_, target_thread_id);
     }
 
     task(std::forward<Functor>(func_ptr), std::move(promise), nullptr, sync_task_posted_count_,

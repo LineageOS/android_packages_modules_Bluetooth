@@ -218,6 +218,7 @@ void MessageLoopThread::ShutDown() {
 
     {
       std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+      log::info("MessageLoopThread {}, is getting stopped.", GetName());
       delete temp_handler;
       delete handler_thread_;
       // The destructor of os::Thread will stop and join the thread.
@@ -399,11 +400,15 @@ PostableContext* MessageLoopThread::Postable() {
 }
 
 pid_t MessageLoopThread::GetLinuxThreadId(MessageLoopThread* context) {
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
-    return context == nullptr ? static_cast<pid_t>(syscall(SYS_gettid))
-                              : context->handler_thread_->GetLinuxTid();
+  if (context == nullptr) {
+    return static_cast<pid_t>(syscall(SYS_gettid));
   }
-  return context == nullptr ? static_cast<pid_t>(syscall(SYS_gettid)) : context->GetLinuxTid();
+
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    // If handler_thread_ is stopped, return -1 (invalid tid)
+    return (context->handler_thread_ == nullptr) ? -1 : context->handler_thread_->GetLinuxTid();
+  }
+  return context->GetLinuxTid();
 }
 
 }  // namespace common
