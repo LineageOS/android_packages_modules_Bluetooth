@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,178 +14,164 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.notification;
+package com.android.bluetooth.notification
 
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.notification.NotificationHelperService.APM_BT_NOTIFICATION;
-import static com.android.bluetooth.notification.NotificationHelperService.NOTIFICATION_ACTION;
-import static com.android.bluetooth.notification.NotificationHelperService.NOTIFICATION_EXTRA;
-import static com.android.bluetooth.notification.NotificationHelperService.NOTIFICATION_TAG;
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.provider.Settings
+import android.service.notification.StatusBarNotification
+import android.test.mock.MockContentProvider
+import android.test.mock.MockContentResolver
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.mockGetSystemService
+import com.android.bluetooth.mockPackageManager
+import com.android.bluetooth.notification.NotificationHelperService.APM_BT_NOTIFICATION
+import com.android.bluetooth.notification.NotificationHelperService.NOTIFICATION_ACTION
+import com.android.bluetooth.notification.NotificationHelperService.NOTIFICATION_EXTRA
+import com.android.bluetooth.notification.NotificationHelperService.NOTIFICATION_TAG
+import com.android.internal.messages.SystemMessageProto.SystemMessage
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.provider.Settings;
-import android.service.notification.StatusBarNotification;
-import android.test.mock.MockContentProvider;
-import android.test.mock.MockContentResolver;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.internal.messages.SystemMessageProto.SystemMessage;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-
-/** Test cases for {@link NotificationHelperService}. */
+/** Test cases for [NotificationHelperService]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class NotificationHelperServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class NotificationHelperServiceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private Context mContext;
-    @Mock private ApplicationInfo mApplicationInfo;
-    @Mock private NotificationManager mNotificationManager;
-    @Mock private PackageManager mPackageManager;
-    @Mock private StatusBarNotification mStatusBarNotification;
+    @Mock private lateinit var mockContext: Context
+    @Mock private lateinit var applicationInfo: ApplicationInfo
+    @Mock private lateinit var notificationManager: NotificationManager
+    @Mock private lateinit var packageManager: PackageManager
+    @Mock private lateinit var statusBarNotification: StatusBarNotification
 
-    private MockContentResolver mMockContentResolver;
-    private NotificationHelperService mNotificationHelperService;
+    private lateinit var mockContentResolver: MockContentResolver
+    private lateinit var notificationHelperService: NotificationHelperService
 
     @Before
-    public void setUp() {
-        final var context = InstrumentationRegistry.getInstrumentation().getContext();
-        mMockContentResolver = new MockContentResolver(context);
-        mMockContentResolver.addProvider(
-                Settings.AUTHORITY,
-                new MockContentProvider() {
-                    @Override
-                    public Bundle call(String method, String request, Bundle args) {
-                        return Bundle.EMPTY;
-                    }
-                });
-        NotificationHelperService.factoryReset(mMockContentResolver);
-        doReturn(mMockContentResolver).when(mContext).getContentResolver();
-        doReturn(context.getResources()).when(mContext).getResources();
-        doReturn(context.getPackageName()).when(mContext).getPackageName();
-        doReturn(mApplicationInfo).when(mContext).getApplicationInfo();
-        doReturn(mPackageManager).when(mContext).getPackageManager();
-        mockGetSystemService(mContext, NotificationManager.class, mNotificationManager);
-        doReturn(new StatusBarNotification[] {})
-                .when(mNotificationManager)
-                .getActiveNotifications();
+    fun setUp() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        mockContentResolver = MockContentResolver(context)
+        mockContentResolver.addProvider(
+            Settings.AUTHORITY,
+            object : MockContentProvider() {
+                override fun call(method: String, request: String?, args: Bundle?): Bundle? {
+                    return Bundle.EMPTY
+                }
+            },
+        )
+        NotificationHelperService.factoryReset(mockContentResolver)
+        doReturn(mockContentResolver).whenever(mockContext).contentResolver
+        doReturn(context.resources).whenever(mockContext).resources
+        doReturn(context.packageName).whenever(mockContext).packageName
+        doReturn(applicationInfo).whenever(mockContext).applicationInfo
+        mockContext.mockPackageManager(packageManager)
+        mockContext.mockGetSystemService<NotificationManager>(notificationManager)
+        doReturn(arrayOf<StatusBarNotification>())
+            .whenever(notificationManager)
+            .getActiveNotifications()
 
-        mNotificationHelperService = new NotificationHelperService(mContext);
+        notificationHelperService = NotificationHelperService(mockContext)
     }
 
     @Test
-    public void onBind_alwaysReturnsNull() {
-        assertThat(mNotificationHelperService.onBind(null)).isNull();
+    fun onBind_alwaysReturnsNull() {
+        assertThat(notificationHelperService.onBind(null)).isNull()
     }
 
     @Test
-    public void onStartCommand_withWrongAction_doesNothing() {
-        Intent intent = new Intent("android.bluetooth.some.other.action");
-        mNotificationHelperService.onStartCommand(intent, 0, 1);
+    fun onStartCommand_withWrongAction_doesNothing() {
+        val intent = Intent("android.bluetooth.some.other.action")
+        notificationHelperService.onStartCommand(intent, 0, 1)
 
-        verify(mNotificationManager, never())
-                .notify(anyString(), anyInt(), any(Notification.class));
+        verify(notificationManager, never()).notify(any<String>(), any<Int>(), any<Notification>())
     }
 
     @Test
-    public void onStartCommand_withUnknownReason_doesNothing() {
-        final String unknownReason = "this_reason_does_not_exist";
-        Intent intent = new Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, unknownReason);
+    fun onStartCommand_withUnknownReason_doesNothing() {
+        val unknownReason = "this_reason_does_not_exist"
+        val intent = Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, unknownReason)
 
-        mNotificationHelperService.onStartCommand(intent, 0, 1);
+        notificationHelperService.onStartCommand(intent, 0, 1)
 
-        verify(mNotificationManager, never())
-                .notify(anyString(), anyInt(), any(Notification.class));
+        verify(notificationManager, never()).notify(any<String>(), any<Int>(), any<Notification>())
     }
 
     @Test
-    public void onStartCommand_withCorrectAction_sendsNotification() {
-        Notification capturedNotification = captureNotificationForApmBtNotification();
+    fun onStartCommand_withCorrectAction_sendsNotification() {
+        val capturedNotification = captureNotificationForApmBtNotification()
 
-        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TITLE)).isNotNull();
-        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TEXT)).isNotNull();
-        assertThat(capturedNotification.contentIntent).isNotNull();
+        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TITLE)).isNotNull()
+        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TEXT)).isNotNull()
+        assertThat(capturedNotification.contentIntent).isNotNull()
     }
 
     @Test
-    public void sendToggleNotification_cancelsPreviousNotifications() {
-        String tag = NOTIFICATION_TAG + "/" + APM_BT_NOTIFICATION;
-        doReturn(tag).when(mStatusBarNotification).getTag();
-        doReturn(SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE)
-                .when(mStatusBarNotification)
-                .getId();
-        doReturn(new StatusBarNotification[] {mStatusBarNotification})
-                .when(mNotificationManager)
-                .getActiveNotifications();
+    fun sendToggleNotification_cancelsPreviousNotifications() {
+        val tag = "$NOTIFICATION_TAG/$APM_BT_NOTIFICATION"
+        doReturn(tag).whenever(statusBarNotification).tag
+        doReturn(SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE).whenever(statusBarNotification).id
+        doReturn(arrayOf(statusBarNotification)).whenever(notificationManager).activeNotifications
 
-        Intent intent =
-                new Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, APM_BT_NOTIFICATION);
-        mNotificationHelperService.onStartCommand(intent, 0, 1);
+        val intent = Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, APM_BT_NOTIFICATION)
+        notificationHelperService.onStartCommand(intent, 0, 1)
 
-        verify(mNotificationManager).cancel(tag, SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE);
+        verify(notificationManager).cancel(tag, SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE)
     }
 
     @Test
-    public void onStartCommand_onWatchDevice_doesNotSetContentIntent() {
+    fun onStartCommand_onWatchDevice_doesNotSetContentIntent() {
         // This test verifies that on a watch device, the notification does not include a
         // content intent, as watches cannot display the help webpage.
-        doReturn(true).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_WATCH);
+        doReturn(true).whenever(packageManager).hasSystemFeature(PackageManager.FEATURE_WATCH)
 
-        Notification capturedNotification = captureNotificationForApmBtNotification();
+        val capturedNotification = captureNotificationForApmBtNotification()
 
         // Expect a null contentIntent on watch devices.
-        assertThat(capturedNotification.contentIntent).isNull();
+        assertThat(capturedNotification.contentIntent).isNull()
     }
 
     @Test
-    public void helper_returnsNotificationWithTitleAndText() {
-        Notification capturedNotification = captureNotificationForApmBtNotification();
+    fun helper_returnsNotificationWithTitleAndText() {
+        val capturedNotification = captureNotificationForApmBtNotification()
 
-        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TITLE)).isNotNull();
-        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TEXT)).isNotNull();
+        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TITLE)).isNotNull()
+        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TEXT)).isNotNull()
     }
 
-    private Notification captureNotificationForApmBtNotification() {
-        Intent intent =
-                new Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, APM_BT_NOTIFICATION);
-        mNotificationHelperService.onStartCommand(intent, 0, 1);
+    private fun captureNotificationForApmBtNotification(): Notification {
+        val intent = Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, APM_BT_NOTIFICATION)
+        notificationHelperService.onStartCommand(intent, 0, 1)
 
-        ArgumentCaptor<Notification> notificationCaptor =
-                ArgumentCaptor.forClass(Notification.class);
-        String expectedTag = NOTIFICATION_TAG + "/" + APM_BT_NOTIFICATION;
+        val notificationCaptor = argumentCaptor<Notification>()
+        val expectedTag = "$NOTIFICATION_TAG/$APM_BT_NOTIFICATION"
 
-        verify(mNotificationManager)
-                .notify(
-                        eq(expectedTag),
-                        eq(SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE),
-                        notificationCaptor.capture());
+        verify(notificationManager)
+            .notify(
+                eq(expectedTag),
+                eq(SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE),
+                notificationCaptor.capture(),
+            )
 
-        return notificationCaptor.getValue();
+        return notificationCaptor.firstValue
     }
 }
