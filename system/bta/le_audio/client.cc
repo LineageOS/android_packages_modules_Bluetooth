@@ -663,8 +663,7 @@ public:
       }
     }
 
-    if (is_multiread_expected &&
-        (ases_num % GATT_MAX_READ_MULTI_HANDLES != 0)) {
+    if (is_multiread_expected && (ases_num % GATT_MAX_READ_MULTI_HANDLES != 0)) {
       multi_read.num_attr = ases_num % GATT_MAX_READ_MULTI_HANDLES;
       BtaGattQueue::ReadMultiCharacteristic(leAudioDevice->conn_id_, multi_read,
                                             OnGattReadMultiRspStatic, notify_flag_ptr);
@@ -6305,10 +6304,10 @@ public:
                                                                    conn_handle);
   }
 
-  void IsoLinkQualityReadCb(uint8_t conn_handle, uint8_t cig_id, uint32_t txUnackedPackets,
-                            uint32_t txFlushedPackets, uint32_t txLastSubeventPackets,
-                            uint32_t retransmittedPackets, uint32_t crcErrorPackets,
-                            uint32_t rxUnreceivedPackets, uint32_t duplicatePackets) {
+  void IsoLinkQualityReadCb(uint8_t conn_handle, uint8_t cig_id, uint32_t tx_unacked_packets,
+                            uint32_t tx_flushed_packets, uint32_t tx_last_subevent_packets,
+                            uint32_t retransmitted_packets, uint32_t crc_error_packets,
+                            uint32_t rx_unreceived_packets, uint32_t duplicate_packets) {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByCisConnHdl(cig_id, conn_handle);
     if (!leAudioDevice) {
       log::warn("device under connection handle: 0x{:x}, has been disconnecected in meantime",
@@ -6318,9 +6317,9 @@ public:
     LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
 
     instance->groupStateMachine_->ProcessHciNotifIsoLinkQualityRead(
-            group, leAudioDevice, conn_handle, txUnackedPackets, txFlushedPackets,
-            txLastSubeventPackets, retransmittedPackets, crcErrorPackets, rxUnreceivedPackets,
-            duplicatePackets);
+            group, leAudioDevice, conn_handle, tx_unacked_packets, tx_flushed_packets,
+            tx_last_subevent_packets, retransmitted_packets, crc_error_packets,
+            rx_unreceived_packets, duplicate_packets);
   }
 
   void HandlePendingDeviceRemove(LeAudioDeviceGroup* group) {
@@ -7254,14 +7253,14 @@ public:
     }
   }
 
-  void OnIsoLinkQualityRead(uint8_t conn_handle, uint8_t cig_id, uint32_t txUnackedPackets,
-                            uint32_t txFlushedPackets, uint32_t txLastSubeventPackets,
-                            uint32_t retransmittedPackets, uint32_t crcErrorPackets,
-                            uint32_t rxUnreceivedPackets, uint32_t duplicatePackets) {
+  void OnIsoLinkQualityRead(uint8_t conn_handle, uint8_t cig_id, uint32_t tx_unacked_packets,
+                            uint32_t tx_flushed_packets, uint32_t tx_last_subevent_packets,
+                            uint32_t retransmitted_packets, uint32_t crc_error_packets,
+                            uint32_t rx_unreceived_packets, uint32_t duplicate_packets) {
     if (instance) {
-      instance->IsoLinkQualityReadCb(conn_handle, cig_id, txUnackedPackets, txFlushedPackets,
-                                     txLastSubeventPackets, retransmittedPackets, crcErrorPackets,
-                                     rxUnreceivedPackets, duplicatePackets);
+      instance->IsoLinkQualityReadCb(conn_handle, cig_id, tx_unacked_packets, tx_flushed_packets,
+                                     tx_last_subevent_packets, retransmitted_packets,
+                                     crc_error_packets, rx_unreceived_packets, duplicate_packets);
     }
   }
 };

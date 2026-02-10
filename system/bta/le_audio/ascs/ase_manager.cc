@@ -370,10 +370,11 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
   }
 
   void OnIsoLinkQualityRead(uint8_t /*conn_handle*/, uint8_t /*cig_id*/,
-                            uint32_t /*txUnackedPackets*/, uint32_t /*txFlushedPackets*/,
-                            uint32_t /*txLastSubeventPackets*/, uint32_t /*retransmittedPackets*/,
-                            uint32_t /*crcErrorPackets*/, uint32_t /*rxUnreceivedPackets*/,
-                            uint32_t /*duplicatePackets*/) override {
+                            uint32_t /*tx_unacked_packets*/, uint32_t /*tx_flushed_packets*/,
+                            uint32_t /*tx_last_subevent_packets*/,
+                            uint32_t /*retransmitted_packets*/, uint32_t /*crc_error_packets*/,
+                            uint32_t /*rx_unreceived_packets*/,
+                            uint32_t /*duplicate_packets*/) override {
     log::debug("Not implemented");
   }
 
