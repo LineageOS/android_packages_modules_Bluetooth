@@ -33,6 +33,8 @@ using bluetooth::mcp::McpClient;
 using bluetooth::mcp::McpClientCallbacks;
 using bluetooth::mcp::McpClientInterface;
 using bluetooth::mcp::MediaControlResultCode;
+using bluetooth::mcp::MediaState;
+using bluetooth::mcp::PlayingOrder;
 
 namespace {
 std::unique_ptr<McpClientInterface> mcp_client_instance;
@@ -101,6 +103,17 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
                                media_controller_id, position));
   }
 
+  void SetPlaybackSpeed(const RawAddress& address, int media_controller_id, int8_t speed) override {
+    do_in_main_thread(BindOnce(&McpClient::SetPlaybackSpeed, Unretained(McpClient::Get()), address,
+                               media_controller_id, speed));
+  }
+
+  void SetPlayingOrder(const RawAddress& address, int media_controller_id,
+                       PlayingOrder playing_order) override {
+    do_in_main_thread(BindOnce(&McpClient::SetPlayingOrder, Unretained(McpClient::Get()), address,
+                               media_controller_id, playing_order));
+  }
+
   // Callbacks
   void OnConnectionState(const RawAddress& address, ConnectionState state) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnConnectionState, Unretained(callbacks_),
@@ -146,6 +159,12 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
                               address, media_controller_id, speed));
   }
 
+  void OnPlayingOrderChanged(const RawAddress& address, int media_controller_id,
+                             PlayingOrder playing_order) override {
+    do_in_jni_thread(BindOnce(&McpClientCallbacks::OnPlayingOrderChanged, Unretained(callbacks_),
+                              address, media_controller_id, playing_order));
+  }
+
   void OnPlayingOrdersSupportedChanged(const RawAddress& address, int media_controller_id,
                                        uint16_t playing_orders) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnPlayingOrdersSupportedChanged,
@@ -160,7 +179,7 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
   }
 
   void OnMediaStateChanged(const RawAddress& address, int media_controller_id,
-                           uint8_t state) override {
+                           MediaState state) override {
     do_in_jni_thread(BindOnce(&McpClientCallbacks::OnMediaStateChanged, Unretained(callbacks_),
                               address, media_controller_id, state));
   }
