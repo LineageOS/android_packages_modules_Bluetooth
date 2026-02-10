@@ -32,6 +32,7 @@
 #include "bta/include/bta_hfp_api.h"
 #include "btif_status.h"
 #include "hci/controller_mock.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
@@ -55,7 +56,7 @@ using namespace bluetooth;
 namespace {
 
 bool bta_ag_hdl_event(const BT_HDR_RIGID* /*p_msg*/) { return true; }
-void BTA_AgDisable() { bta_sys_deregister(BTA_ID_AG); }
+void BTA_AgDisable() {}
 
 const tBTA_SYS_REG bta_ag_reg = {bta_ag_hdl_event, BTA_AgDisable};
 
@@ -72,6 +73,7 @@ class BtaAgTest : public Test {
 protected:
   void SetUp() override {
     reset_mock_function_count_map();
+    memset(&bta_ag_cb, 0, sizeof(bta_ag_cb));
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
@@ -598,18 +600,47 @@ protected:
     PORT_CheckConnection_Fn = {};
     RFCOMM_RemoveConnection_Fn = {};
     RFCOMM_RemoveServer_Fn = {};
+    if (original_SDP_InitDiscoveryDb) {
+      auto sdp_api = const_cast<bluetooth::legacy::stack::sdp::tSdpApi*>(
+              bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api());
+      sdp_api->SDP_InitDiscoveryDb = original_SDP_InitDiscoveryDb;
+      original_SDP_InitDiscoveryDb = nullptr;
+    }
+    if (original_SDP_ServiceSearchAttributeRequest) {
+      auto sdp_api = const_cast<bluetooth::legacy::stack::sdp::tSdpApi*>(
+              bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api());
+      sdp_api->SDP_ServiceSearchAttributeRequest = original_SDP_ServiceSearchAttributeRequest;
+      original_SDP_ServiceSearchAttributeRequest = nullptr;
+    }
     BtaAgTest::TearDown();
   }
+
+  bool (*original_SDP_InitDiscoveryDb)(tSDP_DISCOVERY_DB*, uint32_t, uint16_t,
+                                       const bluetooth::Uuid*, uint16_t, const uint16_t*) = nullptr;
+  bool (*original_SDP_ServiceSearchAttributeRequest)(const RawAddress&, tSDP_DISCOVERY_DB*,
+                                                     tSDP_DISC_CMPL_CB*) = nullptr;
 };
 
 TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__setup_and_open_no_collision,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                         hfp_ag_rfc_race_condition_random_timer))) {
+  auto sdp_api = const_cast<bluetooth::legacy::stack::sdp::tSdpApi*>(
+          bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api());
+  original_SDP_InitDiscoveryDb = sdp_api->SDP_InitDiscoveryDb;
+  original_SDP_ServiceSearchAttributeRequest = sdp_api->SDP_ServiceSearchAttributeRequest;
+
+  sdp_api->SDP_InitDiscoveryDb = [](tSDP_DISCOVERY_DB*, uint32_t, uint16_t, const bluetooth::Uuid*,
+                                    uint16_t, const uint16_t*) -> bool { return true; };
+  sdp_api->SDP_ServiceSearchAttributeRequest =
+          [](const RawAddress&, tSDP_DISCOVERY_DB*, tSDP_DISC_CMPL_CB*) -> bool { return true; };
+
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   p_scb->in_use = true;
-  p_scb->serv_handle[0] = 100;
+  p_scb->serv_handle[1] = 100;
   p_scb->reg_services = BTA_HFP_SERVICE_MASK;
   p_scb->state = BTA_AG_OPENING_ST;
+  p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+  p_scb->collision_timer = alarm_new("bta_ag.scb_collision_timer");
 
   tBTA_AG_DATA data = {};
   data.rfc.port_handle = 100;
@@ -628,35 +659,29 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__setup_and_open_no_collision,
 
   ASSERT_EQ(p_scb->peer_addr, addr);
   ASSERT_EQ(p_scb->conn_handle, 100);
-  ASSERT_EQ(p_scb->conn_service, 0); // BTA_AG_HFP is 1st index? No.
-  // bta_ag_uuid[0] is HEADSET, [1] is HANDSFREE.
-  // But serv_handle array corresponds to index 0 and 1.
-  // If serv_handle[0] is matched, conn_service should be 0.
-  // BTA_AG_HFP is 1. Wait.
-  // bta_ag_act.cc:603: p_scb->conn_service = i;
-  // If serv_handle[0] == 100, then i=0, conn_service=0.
-  // But I set reg_services to BTA_HFP_SERVICE_MASK (bit 1).
-  // Usually HFP is index 1.
-  // Let's set serv_handle[1] = 100 to match HFP.
-  p_scb->conn_service = BTA_AG_HFP; // To be safe or verifying.
+  ASSERT_EQ(p_scb->conn_service, BTA_AG_HFP);
+
+  alarm_free(p_scb->ring_timer);
+  alarm_free(p_scb->collision_timer);
 }
 
 TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__collision_timer,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                         hfp_ag_rfc_race_condition_random_timer))) {
-  // Setup Incoming SCB
-  tBTA_AG_SCB* p_scb_incoming = &bta_ag_cb.scb[0];
-  p_scb_incoming->in_use = true;
-  p_scb_incoming->state = BTA_AG_OPENING_ST;
-  p_scb_incoming->collision_timer = alarm_new("test_collision_timer");
-  p_scb_incoming->serv_handle[1] = 30; // HFP
-  p_scb_incoming->reg_services = BTA_HFP_SERVICE_MASK;
-
   // Setup Outgoing SCB
-  tBTA_AG_SCB* p_scb_outgoing = &bta_ag_cb.scb[1];
+  tBTA_AG_SCB* p_scb_outgoing = &bta_ag_cb.scb[0];
   p_scb_outgoing->in_use = true;
   p_scb_outgoing->peer_addr = addr;
   p_scb_outgoing->conn_handle = 200;
+
+  // Setup Incoming SCB
+  tBTA_AG_SCB* p_scb_incoming = &bta_ag_cb.scb[1];
+  p_scb_incoming->in_use = true;
+  p_scb_incoming->state = BTA_AG_OPENING_ST;
+  p_scb_incoming->collision_timer = alarm_new("test_collision_timer");
+  p_scb_incoming->ring_timer = alarm_new("test_ring_timer");
+  p_scb_incoming->serv_handle[1] = 30; // HFP
+  p_scb_incoming->reg_services = BTA_HFP_SERVICE_MASK;
 
   // Incoming data
   tBTA_AG_DATA data = {};
@@ -703,6 +728,7 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__collision_timer,
   ASSERT_EQ(p_scb_incoming->conn_service, 1); // BTA_AG_HFP
 
   alarm_free(p_scb_incoming->collision_timer);
+  alarm_free(p_scb_incoming->ring_timer);
 }
 
 TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_chld_evt_test) {
