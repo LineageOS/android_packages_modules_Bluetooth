@@ -3738,53 +3738,53 @@ public class AdapterService extends Service {
         switch (profile) {
             case BluetoothProfile.HEADSET -> {
                 final var headset = getHeadsetService();
-                if (headset.isPresent()) {
-                    BluetoothDevice device = headset.get().getActiveDevice();
-                    if (device != null) {
-                        activeDevices.add(device);
-                    }
-                    Log.i(TAG, "getActiveDevices: Headset device: " + device);
-                } else {
+                if (!headset.isPresent()) {
                     Log.e(TAG, "getActiveDevices: HeadsetService is null");
+                    break;
                 }
+                BluetoothDevice device = headset.get().getActiveDevice();
+                if (device != null) {
+                    activeDevices.add(device);
+                }
+                Log.i(TAG, "getActiveDevices: Headset device: " + device);
             }
             case BluetoothProfile.A2DP -> {
                 final var a2dp = getA2dpService();
-                if (a2dp.isPresent()) {
-                    BluetoothDevice device = a2dp.get().getActiveDevice();
-                    if (device != null) {
-                        activeDevices.add(device);
-                    }
-                    Log.i(TAG, "getActiveDevices: A2dp device: " + device);
-                } else {
+                if (!a2dp.isPresent()) {
                     Log.e(TAG, "getActiveDevices: A2dpService is null");
+                    break;
                 }
+                BluetoothDevice device = a2dp.get().getActiveDevice();
+                if (device != null) {
+                    activeDevices.add(device);
+                }
+                Log.i(TAG, "getActiveDevices: A2dp device: " + device);
             }
             case BluetoothProfile.HEARING_AID -> {
                 final var hearingAid = getHearingAidService();
-                if (hearingAid.isPresent()) {
-                    activeDevices = hearingAid.get().getActiveDevices();
-                    Log.i(
-                            TAG,
-                            "getActiveDevices: Hearing Aid devices:"
-                                    + (" Left[" + activeDevices.get(0) + "] -")
-                                    + (" Right[" + activeDevices.get(1) + "]"));
-                } else {
+                if (!hearingAid.isPresent()) {
                     Log.e(TAG, "getActiveDevices: HearingAidService is null");
+                    break;
                 }
+                activeDevices = hearingAid.get().getActiveDevices();
+                Log.i(
+                        TAG,
+                        "getActiveDevices: Hearing Aid devices:"
+                                + (" Left[" + activeDevices.get(0) + "] -")
+                                + (" Right[" + activeDevices.get(1) + "]"));
             }
             case BluetoothProfile.LE_AUDIO -> {
                 final var leAudio = getLeAudioService();
-                if (leAudio.isPresent()) {
-                    activeDevices = leAudio.get().getActiveDevices();
-                    Log.i(
-                            TAG,
-                            "getActiveDevices: LeAudio devices:"
-                                    + (" Lead[" + activeDevices.get(0) + "] -")
-                                    + (" member_1[" + activeDevices.get(1) + "]"));
-                } else {
+                if (!leAudio.isPresent()) {
                     Log.e(TAG, "getActiveDevices: LeAudioService is null");
+                    break;
                 }
+                activeDevices = leAudio.get().getActiveDevices();
+                Log.i(
+                        TAG,
+                        "getActiveDevices: LeAudio devices:"
+                                + (" Lead[" + activeDevices.get(0) + "] -")
+                                + (" member_1[" + activeDevices.get(1) + "]"));
             }
             default -> Log.e(TAG, "getActiveDevices: profile value is not valid");
         }
