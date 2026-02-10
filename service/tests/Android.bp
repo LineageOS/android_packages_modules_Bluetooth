@@ -30,7 +30,7 @@ android_test {
     static_libs: [
         "androidx.test.espresso.intents",
         "androidx.test.rules",
-        "bluetooth-common-java-tests",
+        "bluetooth-common-testutils",
         "flag-junit",
         "frameworks-base-testutils",
         "kotlinx_coroutines_test",
