@@ -109,12 +109,19 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     }
 
     @Test
-    fun enableNoAutoConnect() {
+    fun enableNoAutoConnectAsNfc() {
+        val sourceFromNfc = AttributionSource.Builder(Process.NFC_UID).setPackageName("nfc").build()
         grantBluetoothConnect()
-        binder.enableNoAutoConnect(source)
-        verify(api).enableNoAutoConnect(eq(source.packageName!!))
+        binder.enableNoAutoConnect(sourceFromNfc)
+        verify(api).enableNoAutoConnect(eq(sourceFromNfc.packageName!!))
 
-        enforceFalseReturnWhenBluetoothDisallowed { binder.enableNoAutoConnect(source) }
+        enforceFalseReturnWhenBluetoothDisallowed { binder.enableNoAutoConnect(sourceFromNfc) }
+    }
+
+    @Test
+    fun enableNoAutoConnect_failsWhenNotNfc() {
+        grantBluetoothConnect()
+        assertFailsWith<SecurityException> { binder.enableNoAutoConnect(source) }
     }
 
     @Test
