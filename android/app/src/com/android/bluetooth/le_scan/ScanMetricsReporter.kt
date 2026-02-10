@@ -43,6 +43,34 @@ class ScanMetricsReporter(
     private val logger: MetricsLogger
         get() = MetricsLogger.getInstance()
 
+    fun reportLeScanResult(
+        isBatch: Boolean,
+        numRecords: Int,
+        isScreenOn: Boolean,
+        attributionTag: String,
+    ) =
+        if (isBatch) {
+            BluetoothStatsLog.write(
+                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
+                workSourceUtil.uids,
+                workSourceUtil.tags,
+                numRecords,
+                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_BATCH,
+                isScreenOn,
+                attributionTag,
+            )
+        } else {
+            BluetoothStatsLog.write(
+                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
+                workSourceUtil.uids,
+                workSourceUtil.tags,
+                1, /* num_results */
+                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR,
+                isScreenOn,
+                attributionTag,
+            )
+        }
+
     fun reportScanResults(numberOfNewResults: Int) {
         batteryStatsManager.reportBleScanResults(workSource, numberOfNewResults)
         BluetoothStatsLog.write(
