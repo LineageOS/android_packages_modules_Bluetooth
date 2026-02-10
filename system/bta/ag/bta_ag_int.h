@@ -501,7 +501,7 @@ bool bta_ag_get_swb_supported();
 bool bta_ag_get_sco_offload_enabled();
 void bta_ag_set_sco_offload_enabled(bool value);
 void bta_ag_set_sco_allowed(bool value);
-const RawAddress& bta_ag_get_active_device();
+const RawAddress bta_ag_get_active_device();
 void bta_clear_active_device();
 void bta_ag_send_qac(tBTA_AG_SCB* p_scb);
 void bta_ag_send_qcs(tBTA_AG_SCB* p_scb);

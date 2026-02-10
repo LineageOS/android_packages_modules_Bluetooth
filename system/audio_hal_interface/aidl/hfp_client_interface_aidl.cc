@@ -77,7 +77,7 @@ static std::string command_to_text(tHFP_CTRL_CMD cmd) {
 }
 
 static tBTA_AG_SCB* get_hfp_active_device_control_block() {
-  const RawAddress& addr = bta_ag_get_active_device();
+  const RawAddress addr = bta_ag_get_active_device();
   if (addr.IsEmpty()) {
     log::error("No active device found");
     return nullptr;
