@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,161 +14,153 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.bas;
+package com.android.bluetooth.bas
 
-import static android.bluetooth.BluetoothDevice.BOND_BONDED;
-import static android.bluetooth.BluetoothDevice.BOND_BONDING;
-import static android.bluetooth.BluetoothDevice.BOND_NONE;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_BONDING
+import android.bluetooth.BluetoothDevice.BOND_NONE
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothUuid
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doReturn;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothUuid;
-import android.os.ParcelUuid;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.util.List;
-
-/** Test cases for {@link BatteryService}. */
+/** Test cases for [BatteryService]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class BatteryServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class BatteryServiceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
+    @Mock private lateinit var adapterService: AdapterService
 
-    private final BluetoothDevice mDevice = getTestDevice(78);
+    private val device = getTestDevice(78)
 
-    private BatteryService mService;
-    private TestLooper mLooper;
+    private lateinit var looper: TestLooper
+    private lateinit var service: BatteryService
 
     @Before
-    public void setUp() {
-        mLooper = new TestLooper();
+    fun setUp() {
+        looper = TestLooper()
 
-        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
+        doReturn(BOND_BONDED).whenever(adapterService).getBondState(any())
 
-        mService = new BatteryService(mAdapterService, mLooper.getLooper());
-        mService.setAvailable(true);
+        service = BatteryService(adapterService, looper.looper)
+        service.isAvailable = true
     }
 
     @After
-    public void tearDown() {
-        mService.cleanup();
+    fun tearDown() {
+        service.cleanup()
     }
 
     @Test
-    public void setConnectionPolicy() {
-        assertThat(mService.setConnectionPolicy(mDevice, CONNECTION_POLICY_FORBIDDEN)).isTrue();
+    fun setConnectionPolicy() {
+        assertThat(service.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
     }
 
     @Test
-    public void getConnectionPolicy() {
-        for (int policy :
-                List.of(
-                        CONNECTION_POLICY_UNKNOWN,
-                        CONNECTION_POLICY_FORBIDDEN,
-                        CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.getConnectionPolicy(mDevice)).isEqualTo(policy);
-        }
+    fun getConnectionPolicy() {
+        listOf(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_ALLOWED)
+            .forEach { policy ->
+                doReturn(policy)
+                    .whenever(adapterService)
+                    .getProfileConnectionPolicy(any(), any<Int>())
+                assertThat(service.getConnectionPolicy(device)).isEqualTo(policy)
+            }
     }
 
     @Test
-    public void canConnect_whenNotBonded_returnFalse() {
-        int badPolicyValue = 1024;
-        int badBondState = 42;
-        for (int bondState : List.of(BOND_NONE, BOND_BONDING, badBondState)) {
-            for (int policy :
-                    List.of(
-                            CONNECTION_POLICY_UNKNOWN,
-                            CONNECTION_POLICY_FORBIDDEN,
-                            CONNECTION_POLICY_ALLOWED,
-                            badPolicyValue)) {
-                doReturn(bondState).when(mAdapterService).getBondState(any());
-                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.canConnect(mDevice)).isFalse();
+    fun canConnect_whenNotBonded_returnFalse() {
+        val badPolicyValue = 1024
+        val badBondState = 42
+        val policies =
+            listOf(
+                CONNECTION_POLICY_UNKNOWN,
+                CONNECTION_POLICY_FORBIDDEN,
+                CONNECTION_POLICY_ALLOWED,
+                badPolicyValue,
+            )
+        listOf(BOND_NONE, BOND_BONDING, badBondState).forEach { bondState ->
+            policies.forEach { policy ->
+                doReturn(bondState).whenever(adapterService).getBondState(any())
+                doReturn(policy)
+                    .whenever(adapterService)
+                    .getProfileConnectionPolicy(any(), any<Int>())
+                assertThat(service.canConnect(device)).isFalse()
             }
         }
     }
 
     @Test
-    public void canConnect_whenBonded() {
-        int badPolicyValue = 1024;
-        doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
+    fun canConnect_whenBonded() {
+        val badPolicyValue = 1024
+        doReturn(BOND_BONDED).whenever(adapterService).getBondState(any())
 
-        for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.canConnect(mDevice)).isFalse();
+        listOf(CONNECTION_POLICY_FORBIDDEN, badPolicyValue).forEach { policy ->
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any<Int>())
+            assertThat(service.canConnect(device)).isFalse()
         }
-        for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.canConnect(mDevice)).isEqualTo(true);
+        listOf(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED).forEach { policy ->
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any<Int>())
+            assertThat(service.canConnect(device)).isEqualTo(true)
         }
     }
 
     @Test
-    public void connectAndDump_doesNotCrash() {
+    fun connectAndDump_doesNotCrash() {
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(any(), anyInt());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(any(), any<Int>())
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.BATTERY})
-                .when(mAdapterService)
-                .getRemoteUuids(any(BluetoothDevice.class));
+        doReturn(arrayOf(BluetoothUuid.BATTERY))
+            .whenever(adapterService)
+            .getRemoteUuids(any<BluetoothDevice>())
 
-        assertThat(mService.connect(mDevice)).isTrue();
-
-        mService.dump(new StringBuilder());
+        assertThat(service.connect(device)).isTrue()
+        service.dump(StringBuilder())
     }
 
     @Test
-    public void connect_whenForbiddenPolicy_FailsToConnect() {
+    fun connect_whenForbiddenPolicy_FailsToConnect() {
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(any(), anyInt());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(any(), any<Int>())
 
-        assertThat(mService.connect(mDevice)).isFalse();
+        assertThat(service.connect(device)).isFalse()
     }
 
     @Test
-    public void getConnectionState_whenNoDevicesAreConnected_returnsDisconnectedState() {
-        assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
+    fun getConnectionState_whenNoDevicesAreConnected_returnsDisconnectedState() {
+        assertThat(service.getConnectionState(device)).isEqualTo(STATE_DISCONNECTED)
     }
 
     @Test
-    public void getDevices_whenNoDevicesAreConnected_returnsEmptyList() {
-        assertThat(mService.getDevices()).isEmpty();
+    fun getDevices_whenNoDevicesAreConnected_returnsEmptyList() {
+        assertThat(service.getDevices()).isEmpty()
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        doReturn(new BluetoothDevice[] {mDevice}).when(mAdapterService).getBondedDevices();
-        int[] states = new int[] {STATE_DISCONNECTED};
+    fun getDevicesMatchingConnectionStates() {
+        doReturn(arrayOf(device)).whenever(adapterService).bondedDevices
+        val states = intArrayOf(STATE_DISCONNECTED)
 
-        assertThat(mService.getDevicesMatchingConnectionStates(states)).containsExactly(mDevice);
+        assertThat(service.getDevicesMatchingConnectionStates(states)).containsExactly(device)
     }
 }
