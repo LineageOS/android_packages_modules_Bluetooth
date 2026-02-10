@@ -592,10 +592,12 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   p_cb->peer_io_caps = static_cast<BtIoCap>(peer_io_caps);
 
-  tSMP_STATUS reason = p_cb->cert_failure;
-  if (reason == SMP_ENC_KEY_SIZE) {
+  int min_key_size = btm_sec_get_min_enc_key_size();
+  if (p_cb->cert_failure == SMP_ENC_KEY_SIZE || p_cb->peer_enc_size < min_key_size) {
+    log::warn("Encryption key size {} smaller than the minimum {}", p_cb->peer_enc_size,
+              min_key_size);
     tSMP_INT_DATA smp_int_data;
-    smp_int_data.status = reason;
+    smp_int_data.status = SMP_ENC_KEY_SIZE;
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
     return;
   }
@@ -887,6 +889,16 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   STREAM_TO_UINT8(p_cb->peer_r_key, p);
 
   p_cb->peer_io_caps = static_cast<BtIoCap>(peer_io_caps);
+
+  int min_key_size = btm_sec_get_min_enc_key_size();
+  if (p_cb->peer_enc_size < min_key_size) {
+    log::warn("Encryption key size {} smaller than the minimum {}", p_cb->peer_enc_size,
+              min_key_size);
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_ENC_KEY_SIZE;
+    smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
 
   if (smp_command_has_invalid_parameters(p_cb)) {
     tSMP_INT_DATA smp_int_data;

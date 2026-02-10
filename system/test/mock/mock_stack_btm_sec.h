@@ -813,6 +813,16 @@ struct btm_sec_hci_delete_stored_link_key {
 };
 extern struct btm_sec_hci_delete_stored_link_key btm_sec_hci_delete_stored_link_key;
 
+// Name: btm_sec_get_min_enc_key_size
+// Params: void
+// Return: uint8_t
+struct btm_sec_get_min_enc_key_size {
+  static uint8_t return_value;
+  std::function<uint8_t(void)> body{[](void) { return return_value; }};
+  uint8_t operator()(void) { return body(); }
+};
+extern struct btm_sec_get_min_enc_key_size btm_sec_get_min_enc_key_size;
+
 }  // namespace stack_btm_sec
 }  // namespace mock
 }  // namespace test
