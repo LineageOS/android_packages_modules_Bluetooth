@@ -55,8 +55,7 @@ static std::vector<uint8_t> GetReferencePacRecords() {
   // Channel Count LTV
   pacValue.push_back(0x02);
   pacValue.push_back(le_audio::codec_spec_caps::kLeAudioLtvTypeSupportedAudioChannelCounts);
-  pacValue.push_back(le_audio::codec_spec_caps::ChannelCountConfig2Capability(
-          le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel));
+  pacValue.push_back(le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel);
 
   // Octets Per Frame LTV
   pacValue.push_back(0x05);
@@ -96,8 +95,7 @@ TEST(PacsPacketsTests, PacRecordSingle) {
                   .Add(le_audio::codec_spec_caps::kLeAudioLtvTypeSupportedFrameDurations,
                        (uint8_t)le_audio::codec_spec_caps::kLeAudioCodecFrameDur10000us)
                   .Add(le_audio::codec_spec_caps::kLeAudioLtvTypeSupportedAudioChannelCounts,
-                       (uint8_t)le_audio::codec_spec_caps::ChannelCountConfig2Capability(
-                               le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel))
+                       le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel)
                   .Add(le_audio::codec_spec_caps::kLeAudioLtvTypeSupportedOctetsPerCodecFrame,
                        std::vector<uint8_t>{
                                (le_audio::codec_spec_caps::kLeAudioCodecFrameLen120 >> 0),

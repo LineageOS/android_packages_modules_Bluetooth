@@ -188,22 +188,15 @@ class HidHeadtrackerTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.getprop("ro.audio.spatializer_enabled") != "true":
             raise signals.TestAbortClass("Spatializer is not enabled")
 
-        if (self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true" and
-                not self.dut.getprop(_AndroidProperty.LEAUDIO_ALLOW_LIST) and
-                self.dut.bt.getHardware() != "cutf_cvm"):
-            # Allow list will not be used in the test, but here we still check if the
-            # allow list is empty to make sure DUT is ready to use LE Audio.
-            raise signals.TestAbortClass(
-                "Allow list is empty, DUT is probably not ready to use LE Audio.")
+        if (self.dut.bt.getSdkVersion() >= 35 and android_constants.AudioDeviceType.BLE_HEADSET
+                not in self.dut.bt.getSupportedAudioDeviceTypes(
+                    android_constants.AudioDeviceRole.OUTPUT)):
+            raise signals.TestAbortClass("Device does not support LE Audio.")
 
         self.ref.config.cis_enabled = True
         self.ref.device.cis_enabled = True
 
-        if (self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST)) != "true":
-            self.dut.setprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "true")
-            # Reset the property after tests.
-            self.test_class_context.callback(
-                lambda: self.dut.setprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "false"))
+        self.setprop_for_class_context(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "true")
 
     @override
     async def async_teardown_test(self) -> None:

@@ -39,7 +39,7 @@ from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import pyee_extensions
 
-_DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
+_DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 _A2DP_SERVICE_RECORD_HANDLE = 1
 _AVRCP_CONTROLLER_RECORD_HANDLE = 2
 _AVRCP_TARGET_RECORD_HANDLE = 3
@@ -51,6 +51,7 @@ _SINK_ASE_ID = 1
 _SOURCE_ASE_ID = 2
 _PROPERTY_HF_FEATURES = "bluetooth.hfp.hf_client_features.config"
 _PROPERTY_SWB_SUPPORTED = "bluetooth.hfp.swb.supported"
+_SETUP_TIMEOUT_SECONDS = 15.0
 
 _AudioCodec = hfp.AudioCodec
 _Module: TypeAlias = bl4a_api.Module
@@ -80,20 +81,18 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
-        for ref in self.refs:
-            self.logger.info("[REF] Disable CTKD over Classic to avoid blocking SDP.")
+        for i, ref in enumerate(self.refs):
+            self.logger.info("[REF-%d] Disable CTKD over Classic to avoid blocking SDP.", i)
             ref.config.classic_smp_enabled = False
 
         if self.dut.device.is_emulator:
-            self.dut.setprop(android_constants.Property.HFP_HF_ENABLED, "true")
-            self.dut.setprop(_PROPERTY_HF_FEATURES, "0x1b5")
+            self.setprop_for_class_context(android_constants.Property.HFP_HF_ENABLED, "true")
+
+            self.setprop_for_class_context(_PROPERTY_HF_FEATURES, "0x1b5")
 
         if (self.dut.getprop(_AndroidProperty.BAP_UNICAST_CLIENT_ENABLED) == "true" and
-                self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true" and
                 self.dut.bt.getHardware() != "cutf_cvm"):
-            self.dut.setprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "true")
-            self.test_class_context.callback(
-                lambda: self.dut.setprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "false"))
+            self.setprop_for_class_context(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "true")
 
     @override
     async def async_teardown_test(self) -> None:
@@ -713,6 +712,9 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
             ref.config.cis_enabled = True
             ref.device.cis_enabled = True
 
+        async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+            await asyncio.gather(*[ref.reset() for ref in self.refs],)
+
         self.logger.info("[DUT] Set audio attributes to media.")
         self.dut.bl4a.set_audio_attributes(
             bl4a_api.AudioAttributes(usage=bl4a_api.AudioAttributes.Usage.MEDIA),
@@ -759,9 +761,11 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
                 await dut_lea_cb.wait_for_event(
                     bl4a_api.ProfileActiveDeviceChanged(ref.random_address))
 
-        self.logger.info("[DUT] Start playing music.")
+        self.logger.info("[DUT] Set repeat mode to one.")
         self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
-        await asyncio.to_thread(self.dut.bt.audioPlaySine)
+
+        self.logger.info("[DUT] Start playing music.")
+        self.dut.bt.audioPlaySine()
 
         # The default route should be REF-1.
         async with self.assert_not_timeout(
@@ -770,6 +774,9 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
         ):
             await _wait_for_ase_state(sink_ase[1],
                                       ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
+
+        # Wait for the ase of dut to enter streaming.
+        await asyncio.sleep(0.5)
 
         for i, ref in enumerate(self.refs):
             with self.dut.bl4a.register_callback(_Module.LE_AUDIO) as dut_lea_cb:

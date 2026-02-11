@@ -306,11 +306,11 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
         // Verify that only the matching client received the scan result
         verify(matchingCallback).onScanResult(any<ScanResult>())
-        verify(matchingAppScanStats).addResults(matchingScannerId, 1)
+        verify(matchingAppScanStats).addResults(matchingScannerId, 1, false)
 
         // Verify that the non-matching client did not receive the scan result
         verify(nonMatchingCallback, never()).onScanResult(any<ScanResult>())
-        verify(nonMatchingAppScanStats, never()).addResults(any<Int>(), any<Int>())
+        verify(nonMatchingAppScanStats, never()).addResults(any<Int>(), any<Int>(), any<Boolean>())
     }
 
     @Test

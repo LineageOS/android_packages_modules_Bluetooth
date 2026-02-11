@@ -785,45 +785,6 @@ TEST(CodecSpecTest, test_frame_duration_transition) {
             codec_spec_conf::kLeAudioCodecFrameDur10000us);
 }
 
-TEST(CodecSpecTest, test_channel_count_transition) {
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountNone)),
-            codec_spec_caps::kLeAudioCodecChannelCountNone);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountSingleChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountSingleChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountTwoChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountTwoChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountThreeChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountThreeChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountFourChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountFourChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountFiveChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountFiveChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountSixChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountSixChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountSevenChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountSevenChannel);
-  ASSERT_EQ(codec_spec_caps::ChannelCountConfig2Capability(
-                    codec_spec_conf::SingleChannelCountCapability2Config(
-                            codec_spec_caps::kLeAudioCodecChannelCountEightChannel)),
-            codec_spec_caps::kLeAudioCodecChannelCountEightChannel);
-}
-
 TEST(CodecConfigTest, test_lc3_bits_per_sample) {
   types::CodecConfigSetting lc3_codec_config = {
           .id = {.coding_format = types::kLeAudioCodingFormatLC3},

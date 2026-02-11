@@ -44,6 +44,8 @@ static const bluetooth::Uuid kMediaControlPointOpcodesSupportedUuid =
 static const bluetooth::Uuid kSearchResultsObjIdUuid = bluetooth::Uuid::From16Bit(0x2BA6);
 static const bluetooth::Uuid kContentControlIdUuid = bluetooth::Uuid::From16Bit(0x2BBA);
 
+static const uint16_t kInvalidGattHandle = 0x0000;
+
 // Opcodes for the Media Control Point characteristic
 static constexpr uint8_t kMcpOpcodePlay = 0x01;
 static constexpr uint8_t kMcpOpcodePause = 0x02;
@@ -60,7 +62,7 @@ static constexpr uint8_t kMcpOpcodePreviousTrack = 0x30;
 static constexpr uint8_t kMcpOpcodeNextTrack = 0x31;
 static constexpr uint8_t kMcpOpcodeFirstTrack = 0x32;
 static constexpr uint8_t kMcpOpcodeLastTrack = 0x33;
-static constexpr uint8_t kMcpOpcodeGotoTrack = 0x33;
+static constexpr uint8_t kMcpOpcodeGotoTrack = 0x34;
 static constexpr uint8_t kMcpOpcodePreviousGroup = 0x40;
 static constexpr uint8_t kMcpOpcodeNextGroup = 0x41;
 static constexpr uint8_t kMcpOpcodeFirstGroup = 0x42;
@@ -70,6 +72,12 @@ static constexpr uint8_t kMcpOpcodeGotoGroup = 0x44;
 // Special values for Track Position and Track Duration
 static constexpr uint32_t kTrackPositionUnavailable = 0xFFFFFFFF;
 static constexpr uint32_t kTrackDurationUnknown = 0xFFFFFFFF;
+
+// Media State values
+static constexpr uint8_t kMediaStateInactive = 0x00;
+static constexpr uint8_t kMediaStatePlaying = 0x01;
+static constexpr uint8_t kMediaStatePaused = 0x02;
+static constexpr uint8_t kMediaStateSeeking = 0x03;
 
 // Playing Order values
 static constexpr uint8_t kPlayingOrderSingleOnce = 0x01;
@@ -82,6 +90,27 @@ static constexpr uint8_t kPlayingOrderNewestOnce = 0x07;
 static constexpr uint8_t kPlayingOrderNewestRepeat = 0x08;
 static constexpr uint8_t kPlayingOrderShuffleOnce = 0x09;
 static constexpr uint8_t kPlayingOrderShuffleRepeat = 0x0A;
+
+// Characteristic value lengths
+static constexpr uint8_t kMediaStateLen = 1;
+static constexpr uint8_t kPlaybackSpeedLen = 1;
+static constexpr uint8_t kPlayingOrderLen = 1;
+static constexpr uint8_t kSeekingSpeedLen = 1;
+static constexpr uint8_t kPlayingOrdersSupportedLen = 2;
+static constexpr uint8_t kOpcodesSupportedLen = 4;
+static constexpr uint8_t kTrackDurationLen = 4;
+static constexpr uint8_t kTrackPositionLen = 4;
+static constexpr uint8_t kMcpNotificationLen = 2;
+
+// Characteristic value indices
+static constexpr uint8_t kMediaStateIndex = 0;
+static constexpr uint8_t kPlaybackSpeedIndex = 0;
+static constexpr uint8_t kPlayingOrderIndex = 0;
+static constexpr uint8_t kSeekingSpeedIndex = 0;
+
+// Media Control Point Notification indices
+static constexpr uint8_t kMcpNotificationOpcodeIndex = 0;
+static constexpr uint8_t kMcpNotificationResultIndex = 1;
 
 }  // namespace mcp
 }  // namespace bluetooth

@@ -2,10 +2,13 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "stack_sdp_detect_nil_property_type"
+    name: "stack_sdp_detect_nil_property_type_v2"
     namespace: "bluetooth"
     description: "Check for NIL SDP property length"
     bug: "329171845"
+    metadata {
+      purpose: PURPOSE_BUGFIX
+    }
 }
 
 flag {

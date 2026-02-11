@@ -170,7 +170,7 @@ TEST_F(StackSdpAsClientParseTest, nop) {}
 
 TEST_F_WITH_FLAGS(StackSdpAsClientParseTest, sdp_disc_server_rsp_packets00,
                   REQUIRES_FLAGS_DISABLED(ACONFIG_FLAG(TEST_BT,
-                                                       stack_sdp_detect_nil_property_type))) {
+                                                       stack_sdp_detect_nil_property_type_v2))) {
   EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_DisconnectReq(_)).Times(1);
 
   parse_sdp_responses(bluetooth::testing::stack::sdp::packets00::rx_pkts,
@@ -231,7 +231,7 @@ TEST_F_WITH_FLAGS(StackSdpAsClientParseTest, sdp_disc_server_rsp_packets00,
 
 TEST_F_WITH_FLAGS(StackSdpAsClientParseTest, sdp_disc_server_rsp_packets00b,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      stack_sdp_detect_nil_property_type))) {
+                                                      stack_sdp_detect_nil_property_type_v2))) {
   parse_sdp_responses(bluetooth::testing::stack::sdp::packets00::rx_pkts,
                       bluetooth::testing::stack::sdp::packets00::kNumRxPkts);
 

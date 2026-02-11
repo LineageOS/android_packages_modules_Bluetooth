@@ -141,11 +141,7 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[REF] Enable CIS.")
         self.ref.config.cis_enabled = True
 
-        if (self.dut.getprop(_PROPERTY_BYPASS_ALLOW_LIST)) != "true":
-            self.logger.info("[DUT] Set bypass allow list to true.")
-            self.dut.setprop(_PROPERTY_BYPASS_ALLOW_LIST, "true")
-            self.test_class_context.callback(
-                lambda: self.dut.setprop(_PROPERTY_BYPASS_ALLOW_LIST, "false"))
+        self.setprop_for_class_context(_PROPERTY_BYPASS_ALLOW_LIST, "true")
 
     @override
     async def async_setup_test(self) -> None:

@@ -90,6 +90,12 @@ static void ACL_IgnoreLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_t
   bluetooth::shim::GetAclManagerLe()->CancelLeConnect(
           bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
+
+static void ACL_CancelDirectConnect(const tBLE_BD_ADDR& legacy_address_with_type) {
+  BTM_LogHistory(kBtmLogTagACL, legacy_address_with_type, "Ignore connection from", "Le");
+  bluetooth::shim::GetAclManagerLe()->CancelDirectConnect(
+          bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type));
+}
 }  // namespace
 
 namespace connection_manager {
@@ -535,6 +541,12 @@ static void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& addre
 
   // Notify others about timeout
   on_connection_timed_out(app_id, address);
+
+  if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    // Temporary mapping the error code to PAGE_TIMEOUT
+    bluetooth::metrics::LogLeAclCompletionEvent(address, bluetooth::hci::ErrorCode::PAGE_TIMEOUT,
+                                                true /* is locally initiated */);
+  }
 }
 
 static void find_in_device_record(const RawAddress& bd_addr, tBLE_BD_ADDR* address_with_type) {
@@ -654,10 +666,16 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
   if (is_anyone_interested_to_use_accept_list(it)) {
     log::debug("There is somebody interested in accept list for {}", address);
     if (connection_timeout) {
-      /* In such case we need to add device back to allow list because, when connection timeout
-       * out, the lower layer removes device from the allow list.
-       */
-      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false /* is_direct */, false);
+      if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+        /* Cancel direct connect. Any pending background connect will be preserved. */
+        ACL_CancelDirectConnect(BTM_Sec_GetAddressWithType(address));
+      } else {
+        /* In such case we need to add device back to allow list because, when connection timeout
+         * out, the lower layer removes device from the allow list.
+         */
+        ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false /* is_direct */,
+                                   false);
+      }
     }
     return true;
   }

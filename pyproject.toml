@@ -22,7 +22,7 @@ dependencies = [
     "absl-py",
     # Only for local test.
     "pytest",
-    "bumble == 0.0.223",
+    "bumble == 0.0.225",
     "snippet-uiautomator"
 ]
 
@@ -30,11 +30,11 @@ dependencies = [
 "*" = ["*.pyi", "py.typed"]
 
 [tool.setuptools.package-dir]
-"_pandora_build" = "pandora/interfaces/python"
-"pandora_services" = "pandora/server/pandora_services"
-"pandora" = "pandora/interfaces/python/pandora"
-"mmi2grpc" = "android/pandora/mmi2grpc/mmi2grpc"
-"navi" = "android/navi/navi"
+"_pandora_build" = "tests/pandora/interfaces/python"
+"pandora_services" = "tests/pandora/bumble_server/pandora_services"
+"pandora" = "tests/pandora/interfaces/python/pandora"
+"mmi2grpc" = "tests/pandora/mmi2grpc/mmi2grpc"
+"navi" = "tests/navi/navi"
 
 [tool.setuptools.cmdclass]
 build_py = "_pandora_build._build.cmd.build_py"

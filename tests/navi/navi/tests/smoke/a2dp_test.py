@@ -44,31 +44,6 @@ _StreamType: TypeAlias = android_constants.StreamType
 _A2dpCodec = a2dp_ext.A2dpCodec
 
 
-class LocalSinkWrapper:
-    """Wrapper for LocalSink to provide start/suspend events."""
-
-    def __init__(self, impl: avdtp.LocalSink):
-        self.impl = impl
-        self.condition = asyncio.Condition()
-        for command in (
-                impl.EVENT_CONFIGURATION,
-                impl.EVENT_OPEN,
-                impl.EVENT_START,
-                impl.EVENT_SUSPEND,
-                impl.EVENT_CLOSE,
-                impl.EVENT_ABORT,
-        ):
-            self.impl.on(command, self._on_command)
-
-    async def _on_command(self) -> None:
-        async with self.condition:
-            self.condition.notify_all()
-
-    @property
-    def stream_state(self) -> int | None:
-        return self.impl.stream.state if self.impl.stream else None
-
-
 class A2dpTest(navi_test_base.TwoDevicesTestBase):
     dut_supported_codecs: list[_A2dpCodec]
 
@@ -77,10 +52,8 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
         if (self.dut.getprop(android_constants.Property.A2DP_SOURCE_ENABLED) != "true"):
             raise signals.TestAbortClass("A2DP is not enabled on DUT.")
-
         if self.dut.device.is_emulator:
-            self.logger.info("[DUT] Enable Opus on emulator.")
-            self.dut.setprop(_PROPERTY_OPUS_ENABLED, "true")
+            self.setprop_for_class_context(_PROPERTY_OPUS_ENABLED, "true")
 
         self.dut_supported_codecs = [
             codec for codec in _A2dpCodec
@@ -292,6 +265,48 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     state=android_constants.ConnectionState.DISCONNECTED,
                 ),)
 
+    async def test_reconnect_bt_on_off(self) -> None:
+        """Tests A2DP connection after BT on/off.
+
+    Test steps:
+      1. Setup A2DP on REF.
+      2. Create bond from DUT.
+      3. Wait for A2DP connected on DUT.
+      4. Turn off BT on DUT.
+      5. Wait for A2DP disconnected on DUT.
+      6. Turn on BT on DUT.
+      7. Wait for A2DP connected on DUT.
+    """
+
+        await self.test_pair_and_connect()
+
+        with self.dut.bl4a.register_callback(bl4a_api.Module.A2DP) as a2dp_cb:
+            self.logger.info("[DUT] Turn off BT.")
+            self.assertTrue(self.dut.bt.disable())
+
+            self.logger.info("[DUT] Wait for BT disabled.")
+            self.dut.bt.waitForAdapterState(android_constants.AdapterState.OFF)
+
+            self.logger.info("[DUT] Wait for A2DP disconnected.")
+            await a2dp_cb.wait_for_event(
+                bl4a_api.ProfileConnectionStateChanged(
+                    address=self.ref.address,
+                    state=android_constants.ConnectionState.DISCONNECTED,
+                ),)
+
+            self.logger.info("[DUT] Turn on BT.")
+            self.assertTrue(self.dut.bt.enable())
+
+            self.logger.info("[DUT] Wait for BT enabled.")
+            self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
+
+            self.logger.info("[DUT] Wait for A2DP connected.")
+            await a2dp_cb.wait_for_event(
+                bl4a_api.ProfileConnectionStateChanged(
+                    address=self.ref.address,
+                    state=android_constants.ConnectionState.CONNECTED,
+                ),)
+
     @navi_test_base.parameterized(
         (_A2dpCodec.SBC,),
         (_A2dpCodec.AAC,),
@@ -344,7 +359,7 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
             )
             if not ref_sinks:
                 self.fail("No sink found for codec %s." % preferred_codec.name)
-            ref_sink = LocalSinkWrapper(ref_sinks[0])
+            ref_sink = a2dp_ext.LocalSinkWrapper(ref_sinks[0])
 
             # If there is a playback, wait until it ends.
             if self.dut.bt.isA2dpPlaying(self.ref.address):

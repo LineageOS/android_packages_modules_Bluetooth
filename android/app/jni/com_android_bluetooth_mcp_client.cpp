@@ -35,6 +35,8 @@ using bluetooth::mcp::ConnectionState;
 using bluetooth::mcp::McpClientCallbacks;
 using bluetooth::mcp::McpClientInterface;
 using bluetooth::mcp::MediaControlResultCode;
+using bluetooth::mcp::MediaState;
+using bluetooth::mcp::PlayingOrder;
 
 namespace android {
 static jmethodID method_onConnectionStateChanged;
@@ -45,6 +47,7 @@ static jmethodID method_onTrackTitleChanged;
 static jmethodID method_onTrackDurationChanged;
 static jmethodID method_onTrackPositionChanged;
 static jmethodID method_onPlaybackSpeedChanged;
+static jmethodID method_onPlayingOrderChanged;
 static jmethodID method_onPlayingOrdersSupportedChanged;
 static jmethodID method_onSeekingSpeedChanged;
 static jmethodID method_onMediaStateChanged;
@@ -186,6 +189,22 @@ public:
                                  media_controller_id, (jbyte)speed);
   }
 
+  void OnPlayingOrderChanged(const RawAddress& address, int media_controller_id,
+                             PlayingOrder playing_order) override {
+    log::info("addr: {}, id: {}, playing_order: {}", address.ToRedactedStringForLogging(),
+              media_controller_id, static_cast<int>(playing_order));
+
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+    CallbackEnv sCallbackEnv(__func__);
+    if (!sCallbackEnv.valid() || mCallbacksObj == nullptr) {
+      return;
+    }
+
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPlayingOrderChanged, addr.get(),
+                                 media_controller_id, (jint)playing_order);
+  }
+
   void OnPlayingOrdersSupportedChanged(const RawAddress& address, int media_controller_id,
                                        uint16_t playing_orders) override {
     log::info("addr: {}, id: {}, playing_orders: {}", address.ToRedactedStringForLogging(),
@@ -219,9 +238,9 @@ public:
   }
 
   void OnMediaStateChanged(const RawAddress& address, int media_controller_id,
-                           uint8_t state) override {
+                           MediaState state) override {
     log::info("addr: {}, id: {}, state: {}", address.ToRedactedStringForLogging(),
-              media_controller_id, state);
+              media_controller_id, static_cast<int>(state));
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -458,6 +477,31 @@ static void setTrackPositionNative(JNIEnv* env, jobject /* object */, jbyteArray
   sMcpClientInterface->SetTrackPosition(bd_addr, media_controller_id, position);
 }
 
+static void setPlaybackSpeedNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                   jint media_controller_id, jbyte speed) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sMcpClientInterface) {
+    log::error("sMcpClientInterface is null");
+    return;
+  }
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sMcpClientInterface->SetPlaybackSpeed(bd_addr, media_controller_id, speed);
+}
+
+static void setPlayingOrderNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                  jint media_controller_id, jint playing_order) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sMcpClientInterface) {
+    log::error("sMcpClientInterface is null");
+    return;
+  }
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sMcpClientInterface->SetPlayingOrder(bd_addr, media_controller_id,
+                                       static_cast<PlayingOrder>(playing_order));
+}
+
 int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "()V", reinterpret_cast<void*>(initNative)},
@@ -473,6 +517,8 @@ int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
           {"fastForwardNative", "([BI)V", reinterpret_cast<void*>(fastForwardNative)},
           {"moveRelativeNative", "([BII)V", reinterpret_cast<void*>(moveRelativeNative)},
           {"setTrackPositionNative", "([BII)V", reinterpret_cast<void*>(setTrackPositionNative)},
+          {"setPlaybackSpeedNative", "([BIB)V", reinterpret_cast<void*>(setPlaybackSpeedNative)},
+          {"setPlayingOrderNative", "([BII)V", reinterpret_cast<void*>(setPlayingOrderNative)},
   };
   const char* jniNativeInterfaceClass = "com/android/bluetooth/mcp/McpClientNativeInterface";
   const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
@@ -492,6 +538,7 @@ int register_com_android_bluetooth_mcp_client(JNIEnv* env) {
           {"onTrackDurationChanged", "([BII)V", &method_onTrackDurationChanged},
           {"onTrackPositionChanged", "([BII)V", &method_onTrackPositionChanged},
           {"onPlaybackSpeedChanged", "([BIB)V", &method_onPlaybackSpeedChanged},
+          {"onPlayingOrderChanged", "([BII)V", &method_onPlayingOrderChanged},
           {"onPlayingOrdersSupportedChanged", "([BII)V", &method_onPlayingOrdersSupportedChanged},
           {"onSeekingSpeedChanged", "([BIB)V", &method_onSeekingSpeedChanged},
           {"onMediaStateChanged", "([BII)V", &method_onMediaStateChanged},

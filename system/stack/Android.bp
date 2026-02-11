@@ -1333,10 +1333,18 @@ cc_test {
     target: {
         android: {
             shared_libs: ["libstatssocket"],
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
+        },
+        host: {
+            sanitize: {
+                address: true,
+            },
         },
     },
     sanitize: {
-        address: true,
+        // address: See above
         cfi: true,
         misc_undefined: ["bounds"],
     },
@@ -1796,10 +1804,18 @@ cc_test {
             static_libs: [
                 "libperfetto_client_experimental",
             ],
+            sanitize: {
+                address: false, // TODO(b/481480264) - Mts can't run with asan
+            },
+        },
+        host: {
+            sanitize: {
+                address: true,
+            },
         },
     },
     sanitize: {
-        address: true,
+        // address: See above
         all_undefined: true,
         cfi: true,
         integer_overflow: true,

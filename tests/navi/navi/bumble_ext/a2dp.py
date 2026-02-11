@@ -19,6 +19,7 @@ module majorly refers to the implementation of AOSP:
 * packages/modules/Bluetooth/system/stack/include/
 """
 
+import asyncio
 from collections.abc import Sequence
 import dataclasses
 import enum
@@ -219,15 +220,19 @@ class A2dpCodec(constants.ShortReprEnum):
         """Returns an empty packet pump for the given codec."""
 
         # Empty packet source.
+        # TODO: Implement valid packet source.
         async def read(size: int) -> bytes:
-            return bytes(size)
+            del size
+            return b''
 
-        source: a2dp.SbcPacketSource | a2dp.AacPacketSource
+        source: a2dp.SbcPacketSource | a2dp.AacPacketSource | a2dp.OpusPacketSource
         match self:
             case A2dpCodec.SBC:
                 source = a2dp.SbcPacketSource(read, peer_mtu)
             case A2dpCodec.AAC:
                 source = a2dp.AacPacketSource(read, peer_mtu)
+            case A2dpCodec.OPUS:
+                source = a2dp.OpusPacketSource(read, peer_mtu)
             case _:
                 raise ValueError(f'Unsupported codec: {self}')
         return avdtp.MediaPacketPump(source.packets)
@@ -274,6 +279,31 @@ class A2dpCodec(constants.ShortReprEnum):
             A2dpCodec.LDAC: a2dp.CodecType.NON_A2DP,
             A2dpCodec.OPUS: a2dp.CodecType.NON_A2DP,
         }[self]
+
+
+class LocalSinkWrapper:
+    """Wrapper for LocalSink to provide start/suspend events."""
+
+    def __init__(self, impl: avdtp.LocalSink):
+        self.impl = impl
+        self.condition = asyncio.Condition()
+        for command in (
+                impl.EVENT_CONFIGURATION,
+                impl.EVENT_OPEN,
+                impl.EVENT_START,
+                impl.EVENT_SUSPEND,
+                impl.EVENT_CLOSE,
+                impl.EVENT_ABORT,
+        ):
+            self.impl.on(command, self._on_command)
+
+    async def _on_command(self) -> None:
+        async with self.condition:
+            self.condition.notify_all()
+
+    @property
+    def stream_state(self) -> int | None:
+        return self.impl.stream.state if self.impl.stream else None
 
 
 def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray | None:

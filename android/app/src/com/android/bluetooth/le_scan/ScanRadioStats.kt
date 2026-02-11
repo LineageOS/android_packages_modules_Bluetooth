@@ -19,7 +19,6 @@ package com.android.bluetooth.le_scan
 import android.app.ActivityManager
 import android.bluetooth.BluetoothProtoEnums
 import android.util.Log
-import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
@@ -88,15 +87,6 @@ class ScanRadioStats(private val timeProvider: TimeProvider) {
         if (!isRadioStarted) {
             return
         }
-        BluetoothStatsLog.write(
-            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
-            radioScanUids(),
-            radioScanTags(),
-            1, /* num_results */
-            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR,
-            isScreenOn,
-            radioScanAttributionTag ?: "",
-        )
         logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR, 1)
         if (isScreenOn) {
             logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_ON, 1)
@@ -106,15 +96,6 @@ class ScanRadioStats(private val timeProvider: TimeProvider) {
     }
 
     fun recordBatchScanRadioResultCount(numRecords: Int) {
-        BluetoothStatsLog.write(
-            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
-            radioScanUids(),
-            radioScanTags(),
-            numRecords,
-            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_BATCH,
-            isScreenOn,
-            radioScanAttributionTag ?: "",
-        )
         logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE, 1)
         logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH, numRecords.toLong())
         if (isScreenOn) {

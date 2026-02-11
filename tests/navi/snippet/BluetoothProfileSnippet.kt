@@ -122,9 +122,6 @@ class BluetoothProfileSnippet : Snippet {
                 BluetoothProfile.MAP to BluetoothMap.ACTION_CONNECTION_STATE_CHANGED,
                 BluetoothProfile.SAP to BluetoothSap.ACTION_CONNECTION_STATE_CHANGED,
                 BluetoothProfile.A2DP_SINK to BluetoothA2dpSink.ACTION_CONNECTION_STATE_CHANGED,
-                // BluetoothAvrcpController is hidden, not even SystemApi.
-                BluetoothProfile.AVRCP_CONTROLLER to
-                    "android.bluetooth.avrcp-controller.profile.action.CONNECTION_STATE_CHANGED",
             )
         val ACTIVE_DEVICE_CHANGED_ACTIONS =
             mapOf(BluetoothProfile.HEARING_AID to BluetoothHearingAid.ACTION_ACTIVE_DEVICE_CHANGED)

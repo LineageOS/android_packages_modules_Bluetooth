@@ -809,28 +809,41 @@ public:
     }
     direct_connections_.insert(address_with_type);
 
-    auto emplace_result = create_connection_timeout_alarms_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(address_with_type.GetAddress(),
-                                  address_with_type.GetAddressType()),
-            std::forward_as_tuple(&handler_->thread()));
-    uint32_t connection_timeout =
-            os::GetSystemPropertyUint32(kPropertyDirectConnTimeout, kCreateConnectionTimeoutMs);
-    emplace_result.first->second.Schedule(
-            common::BindOnce(&le_impl::on_create_connection_timeout, common::Unretained(this),
-                             address_with_type),
-            std::chrono::milliseconds(connection_timeout));
+    if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+      auto emplace_result = create_connection_timeout_alarms_.emplace(
+              std::piecewise_construct,
+              std::forward_as_tuple(address_with_type.GetAddress(),
+                                    address_with_type.GetAddressType()),
+              std::forward_as_tuple(&handler_->thread()));
+      uint32_t connection_timeout =
+              os::GetSystemPropertyUint32(kPropertyDirectConnTimeout, kCreateConnectionTimeoutMs);
+      emplace_result.first->second.Schedule(
+              common::BindOnce(&le_impl::on_create_connection_timeout, common::Unretained(this),
+                               address_with_type),
+              std::chrono::milliseconds(connection_timeout));
+    }
   }
 
   void direct_connect_remove(AddressWithType address_with_type) {
     log::debug("{}", address_with_type);
-    auto it = create_connection_timeout_alarms_.find(address_with_type);
-    if (it != create_connection_timeout_alarms_.end()) {
-      it->second.Cancel();
-      create_connection_timeout_alarms_.erase(it);
+    if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+      auto it = create_connection_timeout_alarms_.find(address_with_type);
+      if (it != create_connection_timeout_alarms_.end()) {
+        it->second.Cancel();
+        create_connection_timeout_alarms_.erase(it);
+      }
     }
     direct_connections_.erase(address_with_type);
     relaxed_direct_connections_.erase(address_with_type);
+
+    if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+      if (background_connections_.contains(address_with_type)) {
+        disarm_connectability();
+      } else {
+        // no more connection attempt
+        remove_device_from_accept_list(address_with_type);
+      }
+    }
   }
 
   void add_device_to_accept_list(AddressWithType address_with_type) {
@@ -1275,6 +1288,7 @@ public:
     }
   }
 
+  // TODO: delete with gd_conn_mgr_one_timeout
   void on_create_connection_timeout(AddressWithType address_with_type) {
     log::info("on_create_connection_timeout, address: {}", address_with_type);
     direct_connect_remove(address_with_type);
@@ -1495,6 +1509,7 @@ public:
   bool system_suspend_ = false;
   bool is_using_system_suspend_scan_params_ = false;
   ConnectabilityState connectability_state_{ConnectabilityState::DISARMED};
+  // TODO: delete with gd_conn_mgr_one_timeout
   std::map<AddressWithType, os::Alarm> create_connection_timeout_alarms_{};
 };
 

@@ -131,7 +131,7 @@ class AppScanStats(
     @Synchronized fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
 
     @Synchronized
-    fun addResults(scannerId: Int, numberOfNewResults: Int) {
+    fun addResults(scannerId: Int, numberOfNewResults: Int, isBatch: Boolean) {
         val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
             resultsScreenOn += numberOfNewResults
@@ -151,6 +151,13 @@ class AppScanStats(
         if ((scan.resultsScreenOn + scan.resultsScreenOff) / 100 > resultsBeforeUpdate / 100) {
             scanMetricsReporter.reportScanResults(100)
         }
+
+        scanMetricsReporter.reportLeScanResult(
+            isBatch,
+            numberOfNewResults,
+            isScreenOn,
+            getAttributionTagFromScannerId(scannerId),
+        )
     }
 
     @Synchronized fun isScanning() = ongoingScans.isNotEmpty()

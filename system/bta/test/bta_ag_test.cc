@@ -618,7 +618,7 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__setup_and_open_no_collision,
   PORT_CheckConnection_Fn = [&](uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
     if (handle == 100) {
       *bd_addr = addr;
-      *p_lcid = 1;
+      if (p_lcid) *p_lcid = 1;
       return 0; // PORT_SUCCESS
     }
     return 1; // PORT_ERR
@@ -666,7 +666,7 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__collision_timer,
   PORT_CheckConnection_Fn = [&](uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
     if (handle == 30) {
       *bd_addr = addr; // Collision
-      *p_lcid = 2;
+      if (p_lcid) *p_lcid = 2;
       return 0;
     }
     return 1;

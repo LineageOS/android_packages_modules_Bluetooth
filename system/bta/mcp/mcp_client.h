@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "common/strings.h"
+#include "mcp/mcp_types.h"
 #include "stack/include/gatt_api.h"
 
 namespace bluetooth {
@@ -33,22 +34,23 @@ namespace mcp {
 struct Mcs {
   int id = 0;
   bool is_gmcs = false;
-  uint16_t start_handle = 0;
-  uint16_t end_handle = 0;
+  uint16_t start_handle = kInvalidGattHandle;
+  uint16_t end_handle = kInvalidGattHandle;
 
   // Attribute handles for the Media Control Service (MCS) characteristics.
-  uint16_t media_player_name_handle = 0;
-  uint16_t track_changed_handle = 0;
-  uint16_t track_title_handle = 0;
-  uint16_t track_duration_handle = 0;
-  uint16_t track_position_handle = 0;
-  uint16_t playback_speed_handle = 0;
-  uint16_t playing_orders_supported_handle = 0;
-  uint16_t seeking_speed_handle = 0;
-  uint16_t media_state_handle = 0;
-  uint16_t media_control_point_handle = 0;
-  uint16_t opcodes_supported_handle = 0;
-  uint16_t content_control_id_handle = 0;
+  uint16_t media_player_name_handle = kInvalidGattHandle;
+  uint16_t track_changed_handle = kInvalidGattHandle;
+  uint16_t track_title_handle = kInvalidGattHandle;
+  uint16_t track_duration_handle = kInvalidGattHandle;
+  uint16_t track_position_handle = kInvalidGattHandle;
+  uint16_t playback_speed_handle = kInvalidGattHandle;
+  uint16_t playing_order_handle = kInvalidGattHandle;
+  uint16_t playing_orders_supported_handle = kInvalidGattHandle;
+  uint16_t seeking_speed_handle = kInvalidGattHandle;
+  uint16_t media_state_handle = kInvalidGattHandle;
+  uint16_t media_control_point_handle = kInvalidGattHandle;
+  uint16_t opcodes_supported_handle = kInvalidGattHandle;
+  uint16_t content_control_id_handle = kInvalidGattHandle;
 };
 
 // Base class for GATT service devices, holding common connection state.
@@ -109,6 +111,10 @@ public:
              << bluetooth::common::ToHexString(service.track_position_handle)
              << "\n      Playback Speed Handle: "
              << bluetooth::common::ToHexString(service.playback_speed_handle)
+             << "\n      Playing Order Handle: "
+             << bluetooth::common::ToHexString(service.playing_order_handle)
+             << "\n      Playing Order Supported Handle: "
+             << bluetooth::common::ToHexString(service.playing_orders_supported_handle)
              << "\n      Seeking Speed Handle: "
              << bluetooth::common::ToHexString(service.seeking_speed_handle)
              << "\n      Media State Handle: "

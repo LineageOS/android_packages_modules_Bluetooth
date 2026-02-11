@@ -183,6 +183,7 @@ class BluetoothAdapterSnippet : Snippet {
                 addAction(BluetoothDevice.ACTION_FOUND)
                 addAction(BluetoothDevice.ACTION_BATTERY_LEVEL_CHANGED)
                 addAction(BluetoothDevice.ACTION_UUID)
+                addAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE)
                 addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
             }
         broadcastReceivers[callbackId] =
@@ -263,6 +264,10 @@ class BluetoothAdapterSnippet : Snippet {
                         BluetoothAdapter.ACTION_STATE_CHANGED ->
                             postSnippetEvent(callbackId, SnippetConstants.ADAPTER_STATE_CHANGED) {
                                 putInt(SnippetConstants.FIELD_STATE, adapterState)
+                            }
+                        BluetoothDevice.ACTION_ENCRYPTION_CHANGE ->
+                            postSnippetEvent(callbackId, SnippetConstants.ENCRYPTION_CHANGE) {
+                                putString(SnippetConstants.FIELD_DEVICE, device?.address)
                             }
                     }
                 }

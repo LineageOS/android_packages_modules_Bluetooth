@@ -2492,6 +2492,7 @@ class HeadsetStateMachine extends StateMachine {
                 mSystemInterface
                         .getAudioManager()
                         .handleBluetoothHfpAudioDisconnected(device, reason);
+                mHeadsetService.cleanUpAfterScoDisconnection(device);
             }
             default -> {
                 Log.w(TAG, "Received unknown reason: " + reason);

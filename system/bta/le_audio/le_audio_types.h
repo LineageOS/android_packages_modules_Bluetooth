@@ -225,13 +225,6 @@ uint16_t constexpr SamplingFreqConfig2Capability(uint8_t conf) {
 
 uint8_t constexpr FrameDurationConfig2Capability(uint8_t conf) { return 0x01 << (conf); }
 
-uint16_t constexpr ChannelCountConfig2Capability(uint8_t conf) {
-  if (!conf) {
-    return 0;
-  }
-  return 0x01 << (conf - 1);
-}
-
 /* LTV Types - same values as in Codec Specific Configurations but 0x03 is
  * named differently.
  */

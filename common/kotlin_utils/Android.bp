@@ -13,11 +13,12 @@
 // limitations under the License.
 
 java_library {
-    name: "bluetooth-common-java",
+    name: "bluetooth-common-kotlinutils",
     srcs: [
-        "src/TableBuilder.kt",
-        "src/Text.kt",
-        "src/TimeProvider.kt",
+        "BroadcastReceiver.kt",
+        "TableBuilder.kt",
+        "Text.kt",
+        "TimeProvider.kt",
     ],
 
     apex_available: ["com.android.bt"],

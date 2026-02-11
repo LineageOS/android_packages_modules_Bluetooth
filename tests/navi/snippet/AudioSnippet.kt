@@ -40,6 +40,7 @@ import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.android.bluetooth.snippet.JsonObjectConverter.Companion.toJson
 import com.google.android.bluetooth.snippet.Utils.postSnippetEvent
 import com.google.android.mobly.snippet.Snippet
 import com.google.android.mobly.snippet.rpc.AsyncRpc
@@ -225,9 +226,7 @@ class AudioSnippet : Snippet {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     Log.d(TAG, "onMediaItemTransition: $mediaItem, $reason")
                     postSnippetEvent(callbackId, SnippetConstants.PLAYER_MEDIA_ITEM_TRANSITION) {
-                        mediaItem?.localConfiguration?.uri.let {
-                            putString(SnippetConstants.URI, it.toString())
-                        }
+                        putParcelable(SnippetConstants.MEDIA_ITEM, mediaItem?.toJson())
                     }
                 }
 
@@ -241,6 +240,23 @@ class AudioSnippet : Snippet {
                         putLong(SnippetConstants.OLD_POSITION, oldPosition.positionMs)
                         putLong(SnippetConstants.NEW_POSITION, newPosition.positionMs)
                         putInt(SnippetConstants.FIELD_REASON, reason)
+                    }
+                }
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    Log.d(TAG, "onShuffleModeEnabledChanged: $shuffleModeEnabled")
+                    postSnippetEvent(
+                        callbackId,
+                        SnippetConstants.PLAYER_SHUFFLE_MODE_ENABLED_CHANGED,
+                    ) {
+                        putBoolean(SnippetConstants.FIELD_STATE, shuffleModeEnabled)
+                    }
+                }
+
+                override fun onRepeatModeChanged(repeatMode: Int) {
+                    Log.d(TAG, "onRepeatModeChanged: $repeatMode")
+                    postSnippetEvent(callbackId, SnippetConstants.PLAYER_REPEAT_MODE_CHANGED) {
+                        putInt(SnippetConstants.MODE, repeatMode)
                     }
                 }
             }
@@ -355,6 +371,15 @@ class AudioSnippet : Snippet {
         player.repeatMode = repeatMode
     }
 
+    /** Sets shuffle mode to [shuffleModeEnabled]. */
+    @Rpc(description = "Set shuffle mode")
+    @RunOnUiThread
+    fun setShuffleMode(shuffleModeEnabled: Boolean, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
+        player.shuffleModeEnabled = shuffleModeEnabled
+    }
+
     /** Resumes playing audio. */
     @Rpc(description = "Resume playing audio")
     @RunOnUiThread
@@ -382,13 +407,24 @@ class AudioSnippet : Snippet {
         player.stop()
     }
 
+    /** Set a media item to the player. */
+    @Rpc(description = "Set a media item")
+    @RunOnUiThread
+    fun playMediaItem(mediaItem: MediaItem, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+
     /** Add a media item to the player. */
     @Rpc(description = "Add a media item")
     @RunOnUiThread
-    fun addMediaItem(fileUri: String, @RpcOptional playerId: String? = null) {
+    fun addMediaItem(mediaItem: MediaItem, @RpcOptional playerId: String? = null) {
         val player =
             players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
-        player.addMediaItem(MediaItem.fromUri(fileUri))
+        player.addMediaItem(mediaItem)
     }
 
     /** Add a new player. */
@@ -617,6 +653,15 @@ class AudioSnippet : Snippet {
     fun setMicrophoneMuteState(isMute: Boolean) {
         audioManager.isMicrophoneMute = isMute
     }
+
+    /** Gets the supported audio device types for [direction]. */
+    @Rpc(description = "Get the supported audio device types")
+    fun getSupportedAudioDeviceTypes(direction: Int): Set<Int> =
+        audioManager.getSupportedDeviceTypes(direction)
+
+    /** Checks if volume is fixed. */
+    @Rpc(description = "Check if volume is fixed")
+    fun isVolumeFixed(): Boolean = audioManager.isVolumeFixed
 
     private companion object {
         const val TAG = "AudioSnippet"

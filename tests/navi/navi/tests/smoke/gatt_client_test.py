@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import asyncio
-import datetime
 import secrets
 import struct
 import uuid
@@ -38,19 +37,30 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
+
         if self.dut.getprop(android_constants.Property.GATT_ENABLED) != "true":
             raise signals.TestAbortClass("GATT is not enabled on DUT.")
 
     async def test_discover_services(self) -> None:
-        """Test connect GATT as client."""
+        """Test connect GATT as client.
+
+    Test steps:
+      1. Add a GATT server on REF.
+      2. Start advertising on REF.
+      3. Connect GATT and LE-ACL to REF from DUT.
+      4. Discover GATT services from DUT.
+      5. Check discovered services.
+    """
+        self.logger.info("[REF] Add GATT service.")
         service_uuid = str(uuid.uuid4())
         self.ref.device.add_service(gatt.Service(uuid=service_uuid, characteristics=[]))
 
         self.logger.info("[REF] Start advertising.")
         await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+
         self.logger.info("[DUT] Connect to REF.")
         gatt_client = await self.dut.bl4a.connect_gatt_client(
-            str(self.ref.random_address),
+            self.ref.random_address,
             android_constants.Transport.LE,
             android_constants.AddressTypeStatus.RANDOM,
         )
@@ -73,7 +83,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
     Test steps:
       1. Add a GATT server with a writable characteristic on REF.
       2. Start advertising on REF.
-      3. Connect GATT(and LE-ACL) to REF from DUT.
+      3. Connect GATT and LE-ACL to REF from DUT.
       4. Discover GATT services from DUT.
       5. Write characteristic value on REF from DUT.
       6. Check written value.
@@ -90,6 +100,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
             del connection  # Unused.
             write_future.set_result(value)
 
+        self.logger.info("[REF] Add GATT service.")
         self.ref.device.add_service(
             gatt.Service(
                 uuid=service_uuid,
@@ -106,17 +117,21 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[REF] Start advertising.")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
             await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+
         self.logger.info("[DUT] Connect to REF.")
         gatt_client = await self.dut.bl4a.connect_gatt_client(
-            str(self.ref.random_address),
+            self.ref.random_address,
             android_constants.Transport.LE,
             android_constants.AddressTypeStatus.RANDOM,
         )
+
         self.logger.info("[DUT] Discover services.")
         services = await gatt_client.discover_services()
+
         characteristic = bl4a_api.find_characteristic_by_uuid(characteristic_uuid, services)
+
         if not characteristic.handle:
-            self.fail("Cannot find characteristic.")
+            self.fail("Cannot find characteristic handle.")
 
         expected_value = secrets.token_bytes(16)
         # When receiving insufficient_authentication or insufficient_encryption
@@ -131,6 +146,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
                         android_constants.GattWriteType.DEFAULT,
                     ))
                 self.test_case_context.callback(write_task.cancel)
+
                 self.logger.info("[DUT] Wait for pairing request.")
                 await adapter_cb.wait_for_event(bl4a_api.PairingRequest)
         else:
@@ -140,6 +156,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
                 expected_value,
                 android_constants.GattWriteType.DEFAULT,
             )
+
             self.logger.info("[REF] Check write value.")
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
                 self.assertEqual(expected_value, await write_future)
@@ -155,7 +172,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
     Test steps:
       1. Add a GATT server with a readable characteristic on REF.
       2. Start advertising on REF.
-      3. Connect GATT(and LE-ACL) to REF from DUT.
+      3. Connect GATT and LE-ACL to REF from DUT.
       4. Discover GATT services from DUT.
       5. Read characteristic value on REF from DUT.
       6. Check read value.
@@ -167,6 +184,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         characteristic_uuid = str(uuid.uuid4())
         expected_value = secrets.token_bytes(256)
 
+        self.logger.info("[REF] Add GATT service.")
         self.ref.device.add_service(
             gatt.Service(
                 uuid=service_uuid,
@@ -183,17 +201,20 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[REF] Start advertising.")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
             await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+
         self.logger.info("[DUT] Connect to REF.")
         gatt_client = await self.dut.bl4a.connect_gatt_client(
-            str(self.ref.random_address),
+            self.ref.random_address,
             android_constants.Transport.LE,
             android_constants.AddressTypeStatus.RANDOM,
         )
+
         self.logger.info("[DUT] Discover services.")
         services = await gatt_client.discover_services()
         characteristic = bl4a_api.find_characteristic_by_uuid(characteristic_uuid, services)
+
         if not characteristic.handle:
-            self.fail("Cannot find characteristic.")
+            self.fail("Cannot find characteristic handle.")
 
         # When receiving insufficient_authentication or insufficient_encryption
         # error, Android should start pairing process.
@@ -203,11 +224,13 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
                 read_task = asyncio.create_task(
                     gatt_client.read_characteristic(characteristic.handle))
                 self.test_case_context.callback(read_task.cancel)
+
                 self.logger.info("[DUT] Wait for pairing request.")
                 await adapter_cb.wait_for_event(bl4a_api.PairingRequest)
         else:
             self.logger.info("[DUT] Read characteristic.")
             actual_value = await gatt_client.read_characteristic(characteristic.handle)
+
             self.logger.info("Check read value.")
             self.assertEqual(expected_value, actual_value)
 
@@ -234,6 +257,8 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
             permissions=gatt.Characteristic.Permissions.READABLE,
             value=expected_value,
         )
+
+        self.logger.info("[REF] Add GATT service.")
         self.ref.device.add_service(
             gatt.Service(
                 uuid=service_uuid,
@@ -244,15 +269,16 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
         self.logger.info("[DUT] Connect to REF.")
         gatt_client = await self.dut.bl4a.connect_gatt_client(
-            str(self.ref.random_address),
+            self.ref.random_address,
             android_constants.Transport.LE,
             android_constants.AddressTypeStatus.RANDOM,
         )
         self.logger.info("[DUT] Discover services.")
         services = await gatt_client.discover_services()
         characteristic = bl4a_api.find_characteristic_by_uuid(characteristic_uuid, services)
+
         if not characteristic.handle:
-            self.fail("Cannot find characteristic.")
+            self.fail("Cannot find characteristic handle.")
 
         self.logger.info("[DUT] Subscribe characteristic.")
         await gatt_client.subscribe_characteristic_notifications(characteristic.handle)
@@ -262,12 +288,12 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         await self.ref.device.notify_subscribers(ref_characteristic, expected_value)
 
         self.logger.info("Check notified value.")
-        notification = await gatt_client.wait_for_event(
-            bl4a_api.GattCharacteristicChanged,
-            lambda e: (e.handle == characteristic.handle),
-            datetime.timedelta(seconds=10),
-        )
-        self.assertEqual(expected_value, notification.value)
+        await gatt_client.wait_for_event(
+            bl4a_api.GattCharacteristicChanged(
+                address=self.ref.random_address,
+                handle=characteristic.handle,
+                value=expected_value,
+            ),)
 
     async def test_service_changed_indication(self) -> None:
         """Test service changed indication.
@@ -286,12 +312,14 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[REF] Start advertising.")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
             await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+
         self.logger.info("[DUT] Connect to REF.")
         gatt_client = await self.dut.bl4a.connect_gatt_client(
-            str(self.ref.random_address),
+            self.ref.random_address,
             android_constants.Transport.LE,
             android_constants.AddressTypeStatus.RANDOM,
         )
+
         self.logger.info("[DUT] Discover services.")
         await gatt_client.discover_services()
 
@@ -306,6 +334,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
                     value=struct.pack("<HH", 0x0000, 0xFFFF),
                     force=True,
                 )
+
         self.logger.info("[DUT] Wait for service changed.")
         await gatt_client.wait_for_event(bl4a_api.GattServiceChanged)
 
@@ -325,9 +354,10 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[REF] Start advertising.")
             await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+
             self.logger.info("[DUT] Connect to REF.")
             gatt_client = await self.dut.bl4a.connect_gatt_client(
-                str(self.ref.random_address),
+                self.ref.random_address,
                 android_constants.Transport.LE,
                 android_constants.AddressTypeStatus.RANDOM,
             )
