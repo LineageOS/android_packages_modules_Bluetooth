@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,76 +14,74 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth;
+package com.android.bluetooth
 
-import android.util.Log;
-
-import java.util.ArrayDeque;
-import java.util.Queue;
+import android.util.Log
+import java.util.ArrayDeque
+import java.util.Queue
 
 /** This class is to store logs for given size. */
-public class BluetoothEventLogger {
-    private final String mTitle;
-    private final Queue<String> mEvents;
-    private final int mSize;
+class BluetoothEventLogger(private val size: Int, private val title: String) {
+    private val events: Queue<String> = ArrayDeque(size)
 
-    public BluetoothEventLogger(int size, String title) {
-        if (size <= 0) {
-            throw new IllegalArgumentException("Size must be > 0");
-        }
-        mSize = size;
-        mEvents = new ArrayDeque<>(size);
-        mTitle = title;
+    init {
+        require(size > 0) { "Size must be > 0" }
     }
 
     /** Add the event record */
-    public synchronized void add(String msg) {
-        if (mEvents.size() == mSize) {
-            mEvents.remove();
+    @Synchronized
+    fun add(msg: String) {
+        if (events.size == size) {
+            events.remove()
         }
-        mEvents.add(Utils.getLocalTimeString() + " " + msg);
+        events.add("${Utils.getLocalTimeString()} $msg")
     }
 
     /** Add the event record */
-    public synchronized void clear() {
-        mEvents.clear();
+    @Synchronized
+    fun clear() {
+        events.clear()
     }
 
     /** Add the event record and log message */
-    public synchronized void logv(String tag, String msg) {
-        add(msg);
-        Log.v(tag, msg);
+    @Synchronized
+    fun logv(tag: String, msg: String) {
+        add(msg)
+        Log.v(tag, msg)
     }
 
     /** Add the event record and log debug message */
-    public synchronized void logd(String tag, String msg) {
-        add(msg);
-        Log.d(tag, msg);
+    @Synchronized
+    fun logd(tag: String, msg: String) {
+        add(msg)
+        Log.d(tag, msg)
     }
 
     /** Add the event record and log info message */
-    public synchronized void logi(String tag, String msg) {
-        add(msg);
-        Log.i(tag, msg);
+    @Synchronized
+    fun logi(tag: String, msg: String) {
+        add(msg)
+        Log.i(tag, msg)
     }
 
     /** Add the event record and log warning message */
-    public synchronized void logw(String tag, String msg) {
-        add(msg);
-        Log.w(tag, msg);
+    @Synchronized
+    fun logw(tag: String, msg: String) {
+        add(msg)
+        Log.w(tag, msg)
     }
 
     /** Add the event record and log error message */
-    public synchronized void loge(String tag, String msg) {
-        add(msg);
-        Log.e(tag, msg);
+    @Synchronized
+    fun loge(tag: String, msg: String) {
+        add(msg)
+        Log.e(tag, msg)
     }
 
     /** Dump all the events */
-    public synchronized void dump(StringBuilder sb) {
-        sb.append(mTitle).append(":\n");
-        for (String msg : mEvents) {
-            sb.append("  ").append(msg).append("\n");
-        }
+    @Synchronized
+    fun dump(sb: StringBuilder) {
+        sb.append("$title:\n")
+        events.forEach { msg -> sb.append("  $msg\n") }
     }
 }
