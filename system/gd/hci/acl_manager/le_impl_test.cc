@@ -1400,6 +1400,10 @@ TEST_F(LeImplTest, on_le_connection_canceled_on_pause) {
 
 // TODO: delete with gd_conn_mgr_one_timeout
 TEST_F(LeImplTest, on_create_connection_timeout) {
+  if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    GTEST_SKIP() << "Skipping test because gd_conn_mgr_one_timeout flag is enabled.";
+  }
+
   EXPECT_CALL(mock_le_connection_callbacks_,
               OnLeConnectFail(_, ErrorCode::CONNECTION_ACCEPT_TIMEOUT))
           .Times(1);
