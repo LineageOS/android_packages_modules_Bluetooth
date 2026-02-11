@@ -358,7 +358,7 @@ cc_test {
     target: {
         host: {
             sanitize: {
-                // address: true, // TODO re-activate
+                address: true,
             },
         },
     },

@@ -94,9 +94,9 @@ extern struct bta_ag_create_sco bta_ag_create_sco;
 // Params:
 // Return: const RawAddress&
 struct bta_ag_get_active_device {
-  static const RawAddress& return_value;
-  std::function<const RawAddress&()> body{[]() { return return_value; }};
-  const RawAddress& operator()() { return body(); }
+  static const RawAddress return_value;
+  std::function<const RawAddress()> body{[]() { return return_value; }};
+  const RawAddress operator()() { return body(); }
 };
 extern struct bta_ag_get_active_device bta_ag_get_active_device;
 
