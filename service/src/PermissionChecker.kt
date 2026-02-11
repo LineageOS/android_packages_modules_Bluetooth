@@ -41,6 +41,7 @@ import android.os.Process.SYSTEM_UID
 import android.os.UserHandle
 import android.os.UserManager
 import android.permission.PermissionManager
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.ChangeIds.RESTRICT_ENABLE_DISABLE
 
 private const val TAG = "PermissionChecker"
@@ -121,10 +122,12 @@ internal class PermissionChecker(
         enforceBluetoothRestriction()
 
         val callingAppId = UserHandle.getAppId(source.uid)
-        if (arrayOf(SYSTEM_UID, NFC_UID, SHELL_UID, ROOT_UID).contains(callingAppId)) {
-            // special uid can always toggle
-            // TODO: b/280890575 - remove process bypass
-            return
+        if (!Flags.systemServerNoLongerProvideProcessExemption()) {
+            if (arrayOf(SYSTEM_UID, NFC_UID, SHELL_UID, ROOT_UID).contains(callingAppId)) {
+                // special uid can always toggle
+                // TODO: b/280890575 - remove process bypass
+                return
+            }
         }
 
         val packageName =
