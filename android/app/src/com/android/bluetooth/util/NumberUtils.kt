@@ -19,11 +19,6 @@ package com.android.bluetooth.util
 /** Utility for parsing numbers in Bluetooth. */
 object NumberUtils {
 
-    /** Convert a byte to unsigned int. */
-    fun unsignedByteToInt(b: Byte): Int {
-        return b.toInt() and 0xFF
-    }
-
     /** Convert a little endian byte array to integer. */
     fun littleEndianByteArrayToInt(bytes: ByteArray): Int {
         val length = bytes.size
@@ -36,5 +31,10 @@ object NumberUtils {
             result += (value shl (i * 8))
         }
         return result
+    }
+
+    /** Convert a byte to unsigned int. */
+    private fun unsignedByteToInt(b: Byte): Int {
+        return b.toInt() and 0xFF
     }
 }
