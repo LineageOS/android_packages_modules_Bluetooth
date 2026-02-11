@@ -91,6 +91,10 @@ public:
   virtual void RegisterScanningCallback(ScanningCallback* scanning_callback) = 0;
 
   virtual bool IsAdTypeFilterSupported() const = 0;
+
+  virtual void StartDiscovery(uint8_t duration) = 0;
+
+  virtual void StopDiscovery() = 0;
 };
 }  // namespace hci
 }  // namespace bluetooth

@@ -42,6 +42,7 @@
 #include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
+#include "hci/le_scanning_manager.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -51,11 +52,11 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "packet/bit_inserter.h"
 #include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_eir.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "stack/btm/btm_device_record.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/bt_hdr.h"
@@ -501,7 +502,9 @@ static void BTM_CancelLeScan() {
 #else
   log::assert_that(get_btm_client_interface().local.BTM_IsDeviceUp(),
                    "assert failed: BTM_IsDeviceUp()");
-  if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_GENERAL_INQUIRY) != 0) {
+  if (com_android_bluetooth_flags_migrate_btm_scan_to_gd()) {
+    bluetooth::shim::GetScanning()->StopDiscovery();
+  } else if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_GENERAL_INQUIRY) != 0) {
     btm_ble_stop_inquiry();
   }
 #endif
@@ -593,7 +596,11 @@ static tBTM_STATUS BTM_StartLeScan() {
   return tBTM_STATUS::BTM_WRONG_MODE;
 #else
   if (shim::GetController()->SupportsBle()) {
-    btm_ble_start_inquiry(btm_cb.btm_inq_vars.inqparms.duration);
+    if (com_android_bluetooth_flags_migrate_btm_scan_to_gd()) {
+      bluetooth::shim::GetScanning()->StartDiscovery(btm_cb.btm_inq_vars.inqparms.duration);
+    } else {
+      btm_ble_start_inquiry(btm_cb.btm_inq_vars.inqparms.duration);
+    }
     return tBTM_STATUS::BTM_CMD_STARTED;
   }
   log::warn("Trying to do LE scan on a non-LE adapter");
