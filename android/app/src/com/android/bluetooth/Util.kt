@@ -286,22 +286,25 @@ object Util {
         val packageName = currentAttrib.packageName
 
         // Previous check must have enforced isSameProfileGroup(currentAttrib.uid, myUserHandle)
-        val pm =
+        val packageManager =
             context
                 .createContextAsUser(UserHandle.getUserHandleForUid(currentAttrib.uid), 0)
                 .packageManager
-        try {
-            val pkgInfo = pm.getPackageInfo(packageName!!, GET_PERMISSIONS)
-            for (i in pkgInfo.requestedPermissions!!.indices) {
-                if (pkgInfo.requestedPermissions!![i] == BLUETOOTH_SCAN) {
-                    return (pkgInfo.requestedPermissionsFlags!![i] and
-                        PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION) != 0
-                }
+        val packageInfo =
+            try {
+                packageManager.getPackageInfo(packageName!!, GET_PERMISSIONS)
+            } catch (e: PackageManager.NameNotFoundException) {
+                Log.w(TAG, "Could not find package for disavowal check: $packageName")
+                return false
             }
-        } catch (e: PackageManager.NameNotFoundException) {
-            Log.w(TAG, "Could not find package for disavowal check: $packageName")
+
+        val index = packageInfo.requestedPermissions?.indexOf(BLUETOOTH_SCAN) ?: -1
+        if (index == -1) {
+            return false
         }
-        return false
+
+        val flags = packageInfo.requestedPermissionsFlags?.get(index) ?: 0
+        return (flags and PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION) != 0
     }
 
     /**
