@@ -103,7 +103,9 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     if (p_tcb != nullptr) {
       bluetooth::shim::arbiter::GetArbiter().OnLeDisconnect(p_tcb->tcb_idx);
     }
-    connection_manager::on_connection_complete(bd_addr);
+    if (!com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+      connection_manager::on_connection_complete(bd_addr);
+    }
     gatt_cleanup_upon_disc(bd_addr, static_cast<tGATT_DISCONN_REASON>(reason), transport);
 
     if (com::android::bluetooth::flags::le_subrate_manager()) {

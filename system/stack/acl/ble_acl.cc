@@ -53,6 +53,10 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
                         conn_latency, conn_timeout)) {
     btm_sec_disconnect(handle, HCI_ERR_PEER_USER, "stack::acl::ble_acl fail");
     log::warn("Unable to complete l2cap connection");
+
+    if (com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+      connection_manager::on_connection_failed(address_with_type.bda);
+    }
     return false;
   }
 
@@ -118,7 +122,7 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* 
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
     tBLE_BD_ADDR resolved_address_with_type;
     maybe_resolve_received_address(address_with_type, &resolved_address_with_type);
-    connection_manager::on_connection_timed_out_from_shim(resolved_address_with_type.bda);
+    connection_manager::on_connection_failed(resolved_address_with_type.bda);
     log::warn("LE connection fail peer:{} bd_addr:{} hci_status:{}", address_with_type,
               resolved_address_with_type.bda, hci_status_code_text(status));
   }

@@ -517,9 +517,13 @@ void on_connection_maybe(const RawAddress& address) {
   }
 }
 
-void on_connection_timed_out_from_shim(const RawAddress& address) {
+void on_connection_failed(const RawAddress& address) {
   log::info("Connection failed {}", address);
   on_connection_timed_out(0x00, address);
+
+  if (com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+    remove_all_clients_with_pending_connections(address);
+  }
 }
 
 /** Reset bg device list. If called after controller reset, set |after_reset|
