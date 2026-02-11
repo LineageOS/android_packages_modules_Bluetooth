@@ -505,13 +505,15 @@ cc_test {
                 "libbinder_ndk",
                 "libstatssocket",
             ],
+            sanitize: {
+                never: true, // Required or else the test doesn't build
+            },
         },
-    },
-    // Required or else the test doesn't build
-    sanitize: {
-        address: true,
-        cfi: true,
-        misc_undefined: ["bounds"],
+        host: {
+            sanitize: {
+                address: true,
+            },
+        },
     },
 }
 
@@ -625,12 +627,14 @@ cc_test {
                 "libbinder_ndk",
                 "libstatssocket",
             ],
+            sanitize: {
+                never: true, // Required or else the test doesn't build
+            },
         },
-    },
-    // Required or else the test doesn't build
-    sanitize: {
-        address: true,
-        cfi: true,
-        misc_undefined: ["bounds"],
+        host: {
+            sanitize: {
+                address: true,
+            },
+        },
     },
 }
