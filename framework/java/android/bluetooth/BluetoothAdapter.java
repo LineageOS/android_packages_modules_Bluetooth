@@ -3419,8 +3419,9 @@ public final class BluetoothAdapter {
             };
 
     /**
-     * Enable the Bluetooth Adapter, but don't auto-connect devices and don't persist state. Only
-     * for use by system applications.
+     * Enable the Bluetooth Adapter, but don't auto-connect devices and don't persist state.
+     *
+     * <p>This API should only be used by NFC
      */
     @Hide
     @SystemApi
@@ -3428,6 +3429,10 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean enableNoAutoConnect() {
+        if (isEnabled()) {
+            Log.d(TAG, "enableNoAutoConnect(): Bluetooth is already enabled");
+            return true;
+        }
         try {
             return mManagerService.enableNoAutoConnect(mAttributionSource);
         } catch (RemoteException e) {

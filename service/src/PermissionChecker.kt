@@ -45,6 +45,8 @@ import com.android.server.bluetooth.ChangeIds.RESTRICT_ENABLE_DISABLE
 
 private const val TAG = "PermissionChecker"
 
+fun AttributionSource.isCallingFromNfc() = UserHandle.getAppId(this.uid) == NFC_UID
+
 internal class PermissionChecker(
     private val context: Context,
     private val permissionManager: PermissionManager,
