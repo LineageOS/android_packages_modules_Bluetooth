@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,478 +14,460 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.metrics;
+package com.android.bluetooth.metrics
 
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL;
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY;
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC;
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL;
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY;
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothUuid
+import android.provider.Settings
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.BluetoothMetricsProto
+import com.android.bluetooth.BluetoothStatsLog
+import com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL
+import com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY
+import com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC
+import com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL
+import com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY
+import com.android.bluetooth.TestUtils
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.RemoteDevices
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.hash.BloomFilter
+import com.google.common.hash.Funnels
+import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.InvalidProtocolBufferException
+import java.io.ByteArrayInputStream
+import java.time.LocalDateTime
+import java.time.ZoneId
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.never
+import org.mockito.Mockito.spy
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothUuid;
-import android.content.ContentResolver;
-import android.os.ParcelUuid;
-import android.provider.Settings;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.RemoteDevices;
-import com.android.tests.bluetooth.MockitoRule;
-
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnels;
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.Map;
-
-/** Test cases for {@link MetricsLogger}. */
+/** Test cases for [MetricsLogger]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class MetricsLoggerTest {
-    private static final HashMap<String, String> SANITIZED_DEVICE_NAME_MAP = new HashMap<>();
+@RunWith(AndroidJUnit4::class)
+class MetricsLoggerTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    static {
-        SANITIZED_DEVICE_NAME_MAP.put("AirpoDspro", "airpodspro");
-        SANITIZED_DEVICE_NAME_MAP.put("AirpoDs-pro", "airpodspro");
-        SANITIZED_DEVICE_NAME_MAP.put("Someone's AirpoDs", "airpods");
-        SANITIZED_DEVICE_NAME_MAP.put("Galaxy Buds pro", "galaxybudspro");
-        SANITIZED_DEVICE_NAME_MAP.put("Someone's AirpoDs", "airpods");
-        SANITIZED_DEVICE_NAME_MAP.put("My BMW X5", "bmwx5");
-        SANITIZED_DEVICE_NAME_MAP.put("Jane Doe's Tesla Model--X", "teslamodelx");
-        SANITIZED_DEVICE_NAME_MAP.put("TESLA of Jane DOE", "tesla");
-        SANITIZED_DEVICE_NAME_MAP.put("SONY WH-1000XM4", "sonywh1000xm4");
-        SANITIZED_DEVICE_NAME_MAP.put("Amazon Echo Dot", "amazonechodot");
-        SANITIZED_DEVICE_NAME_MAP.put("Chevy my link", "chevymylink");
-        SANITIZED_DEVICE_NAME_MAP.put("Dad's Hyundai i10", "hyundai");
-        SANITIZED_DEVICE_NAME_MAP.put("Mike's new Galaxy Buds 2", "galaxybuds2");
-        SANITIZED_DEVICE_NAME_MAP.put("My third Ford F-150", "fordf150");
-        SANITIZED_DEVICE_NAME_MAP.put("Bose QuietComfort 35 Series 2", "bosequietcomfort35");
-        SANITIZED_DEVICE_NAME_MAP.put("Fitbit versa 3 band", "fitbitversa3");
-        SANITIZED_DEVICE_NAME_MAP.put("my vw bt", "myvw");
-        SANITIZED_DEVICE_NAME_MAP.put("SomeDevice1", "");
-        SANITIZED_DEVICE_NAME_MAP.put("My traverse", "traverse");
-        SANITIZED_DEVICE_NAME_MAP.put("My Xbox wireless", "xboxwireless");
-        SANITIZED_DEVICE_NAME_MAP.put("Your buds3 lite NC", "buds3lite");
-        SANITIZED_DEVICE_NAME_MAP.put("MC's razer", "razer");
-        SANITIZED_DEVICE_NAME_MAP.put("Tim's Google Pixel Watch", "googlepixelwatch");
-        SANITIZED_DEVICE_NAME_MAP.put("lexus is connected", "lexusis");
-        SANITIZED_DEVICE_NAME_MAP.put("My wireless flash x earbuds", "wirelessflashx");
-    }
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var remoteDevices: RemoteDevices
 
-    private TestableMetricsLogger mTestableMetricsLogger;
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    private val device = getTestDevice(0)
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private RemoteDevices mRemoteDevices;
+    private val SANITIZED_DEVICE_NAME_MAP =
+        mapOf(
+            "AirpoDspro" to "airpodspro",
+            "AirpoDs-pro" to "airpodspro",
+            "Someone's AirpoDs" to "airpods",
+            "Galaxy Buds pro" to "galaxybudspro",
+            "Someone's AirpoDs" to "airpods",
+            "My BMW X5" to "bmwx5",
+            "Jane Doe's Tesla Model--X" to "teslamodelx",
+            "TESLA of Jane DOE" to "tesla",
+            "SONY WH-1000XM4" to "sonywh1000xm4",
+            "Amazon Echo Dot" to "amazonechodot",
+            "Chevy my link" to "chevymylink",
+            "Dad's Hyundai i10" to "hyundai",
+            "Mike's new Galaxy Buds 2" to "galaxybuds2",
+            "My third Ford F-150" to "fordf150",
+            "Bose QuietComfort 35 Series 2" to "bosequietcomfort35",
+            "Fitbit versa 3 band" to "fitbitversa3",
+            "my vw bt" to "myvw",
+            "SomeDevice1" to "",
+            "My traverse" to "traverse",
+            "My Xbox wireless" to "xboxwireless",
+            "Your buds3 lite NC" to "buds3lite",
+            "MC's razer" to "razer",
+            "Tim's Google Pixel Watch" to "googlepixelwatch",
+            "lexus is connected" to "lexusis",
+            "My wireless flash x earbuds" to "wirelessflashx",
+        )
 
-    private BluetoothDevice mTestDevice;
+    private lateinit var testableMetricsLogger: TestableMetricsLogger
 
-    private static class TestableMetricsLogger extends MetricsLogger {
-        final HashMap<Integer, Long> mTestableCounters = new HashMap<>();
-        final HashMap<String, Integer> mTestableDeviceNames = new HashMap<>();
+    private class TestableMetricsLogger : MetricsLogger() {
+        val testableCounters = mutableMapOf<Int, Long>()
+        val testableDeviceNames = mutableMapOf<String, Int>()
 
-        @Override
-        public boolean count(int key, long count) {
-            mTestableCounters.put(key, count);
-            return true;
+        override fun count(key: Int, count: Long): Boolean {
+            testableCounters[key] = count
+            return true
         }
 
-        @Override
-        protected void scheduleDrains() {}
+        override fun scheduleDrains() {}
 
-        @Override
-        protected void cancelPendingDrain() {}
+        override fun cancelPendingDrain() {}
 
-        @Override
-        protected void statslogBluetoothDeviceNames(int metricId, String matchedString) {
-            mTestableDeviceNames.merge(matchedString, 1, Integer::sum);
+        override fun statslogBluetoothDeviceNames(metricId: Int, matchedString: String) {
+            testableDeviceNames.merge(matchedString, 1, Int::plus)
         }
     }
 
     @Before
-    public void setUp() {
-        mTestDevice = getTestDevice(0);
-        mTestableMetricsLogger = new TestableMetricsLogger();
-        mTestableMetricsLogger.init(mAdapterService, mRemoteDevices);
+    fun setUp() {
+        testableMetricsLogger = TestableMetricsLogger()
+        testableMetricsLogger.init(adapterService, remoteDevices)
     }
 
     @After
-    public void tearDown() {
-        mTestableMetricsLogger.close();
+    fun tearDown() {
+        testableMetricsLogger.close()
     }
 
     /** Test add counters and send them to statsd */
     @Test
-    public void testAddAndSendCountersNormalCases() {
-        mTestableMetricsLogger.cacheCount(1, 10);
-        mTestableMetricsLogger.cacheCount(1, 10);
-        mTestableMetricsLogger.cacheCount(2, 5);
-        mTestableMetricsLogger.drainBufferedCounters();
+    fun testAddAndSendCountersNormalCases() {
+        testableMetricsLogger.cacheCount(1, 10)
+        testableMetricsLogger.cacheCount(1, 10)
+        testableMetricsLogger.cacheCount(2, 5)
+        testableMetricsLogger.drainBufferedCounters()
 
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(1).longValue()).isEqualTo(20L);
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(2).longValue()).isEqualTo(5L);
+        assertThat(testableMetricsLogger.testableCounters[1]).isEqualTo(20L)
+        assertThat(testableMetricsLogger.testableCounters[2]).isEqualTo(5L)
 
-        mTestableMetricsLogger.cacheCount(1, 3);
-        mTestableMetricsLogger.cacheCount(2, 5);
-        mTestableMetricsLogger.cacheCount(2, 5);
-        mTestableMetricsLogger.cacheCount(3, 1);
-        mTestableMetricsLogger.drainBufferedCounters();
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(1).longValue()).isEqualTo(3L);
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(2).longValue()).isEqualTo(10L);
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(3).longValue()).isEqualTo(1L);
+        testableMetricsLogger.cacheCount(1, 3)
+        testableMetricsLogger.cacheCount(2, 5)
+        testableMetricsLogger.cacheCount(2, 5)
+        testableMetricsLogger.cacheCount(3, 1)
+        testableMetricsLogger.drainBufferedCounters()
+        assertThat(testableMetricsLogger.testableCounters[1]).isEqualTo(3L)
+        assertThat(testableMetricsLogger.testableCounters[2]).isEqualTo(10L)
+        assertThat(testableMetricsLogger.testableCounters[3]).isEqualTo(1L)
     }
 
     @Test
-    public void testAddAndSendCountersCornerCases() {
-        assertThat(mTestableMetricsLogger.isInitialized()).isTrue();
-        mTestableMetricsLogger.cacheCount(1, -1);
-        mTestableMetricsLogger.cacheCount(3, 0);
-        mTestableMetricsLogger.cacheCount(2, 10);
-        mTestableMetricsLogger.cacheCount(2, Long.MAX_VALUE - 8L);
-        mTestableMetricsLogger.drainBufferedCounters();
+    fun testAddAndSendCountersCornerCases() {
+        assertThat(testableMetricsLogger.isInitialized).isTrue()
+        testableMetricsLogger.cacheCount(1, -1)
+        testableMetricsLogger.cacheCount(3, 0)
+        testableMetricsLogger.cacheCount(2, 10)
+        testableMetricsLogger.cacheCount(2, Long.MAX_VALUE - 8L)
+        testableMetricsLogger.drainBufferedCounters()
 
-        assertThat(mTestableMetricsLogger.mTestableCounters).doesNotContainKey(1);
-        assertThat(mTestableMetricsLogger.mTestableCounters).doesNotContainKey(3);
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(2).longValue())
-                .isEqualTo(Long.MAX_VALUE);
+        assertThat(testableMetricsLogger.testableCounters).doesNotContainKey(1)
+        assertThat(testableMetricsLogger.testableCounters).doesNotContainKey(3)
+        assertThat(testableMetricsLogger.testableCounters[2]).isEqualTo(Long.MAX_VALUE)
     }
 
     @Test
-    public void testMetricsLoggerClose() {
-        mTestableMetricsLogger.cacheCount(1, 1);
-        mTestableMetricsLogger.cacheCount(2, 10);
-        mTestableMetricsLogger.cacheCount(2, Long.MAX_VALUE);
-        mTestableMetricsLogger.close();
+    fun testMetricsLoggerClose() {
+        testableMetricsLogger.cacheCount(1, 1)
+        testableMetricsLogger.cacheCount(2, 10)
+        testableMetricsLogger.cacheCount(2, Long.MAX_VALUE)
+        testableMetricsLogger.close()
 
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(1).longValue()).isEqualTo(1);
-        assertThat(mTestableMetricsLogger.mTestableCounters.get(2).longValue())
-                .isEqualTo(Long.MAX_VALUE);
+        assertThat(testableMetricsLogger.testableCounters[1]).isEqualTo(1)
+        assertThat(testableMetricsLogger.testableCounters[2]).isEqualTo(Long.MAX_VALUE)
     }
 
     @Test
-    public void testMetricsLoggerNotInit() {
-        mTestableMetricsLogger.close();
-        assertThat(mTestableMetricsLogger.cacheCount(1, 1)).isFalse();
-        mTestableMetricsLogger.drainBufferedCounters();
-        assertThat(mTestableMetricsLogger.mTestableCounters).doesNotContainKey(1);
+    fun testMetricsLoggerNotInit() {
+        testableMetricsLogger.close()
+        assertThat(testableMetricsLogger.cacheCount(1, 1)).isFalse()
+        testableMetricsLogger.drainBufferedCounters()
+        assertThat(testableMetricsLogger.testableCounters).doesNotContainKey(1)
     }
 
     @Test
-    public void testAddAndSendCountersDoubleInit() {
-        assertThat(mTestableMetricsLogger.isInitialized()).isTrue();
+    fun testAddAndSendCountersDoubleInit() {
+        assertThat(testableMetricsLogger.isInitialized).isTrue()
         // sending a null adapterService will crash in case the double init no longer works
-        mTestableMetricsLogger.init(null, mRemoteDevices);
+        testableMetricsLogger.init(null, remoteDevices)
     }
 
     @Test
-    public void testDeviceNameToSha() throws IOException {
-        initTestingBloomfilter();
-        for (Map.Entry<String, String> entry : SANITIZED_DEVICE_NAME_MAP.entrySet()) {
-            String deviceName = entry.getKey();
-            String sha256 = MetricsLogger.getSha256String(entry.getValue());
-            assertThat(mTestableMetricsLogger.logAllowlistedDeviceNameHash(1, deviceName))
-                    .isEqualTo(sha256);
+    fun testDeviceNameToSha() {
+        initTestingBloomfilter()
+        for (entry in SANITIZED_DEVICE_NAME_MAP.entries) {
+            val deviceName = entry.key
+            val sha256 = MetricsLogger.getSha256String(entry.value)
+            assertThat(testableMetricsLogger.logAllowlistedDeviceNameHash(1, deviceName))
+                .isEqualTo(sha256)
         }
     }
 
     @Test
-    public void testOuiFromBluetoothDevice() {
-        BluetoothDevice bluetoothDevice = getTestDevice(0);
+    fun testOuiFromBluetoothDevice() {
+        val bluetoothDevice = TestUtils.getTestDevice(0)
 
-        byte[] remoteDeviceInformationBytes =
-                mTestableMetricsLogger.getRemoteDeviceInfoProto(bluetoothDevice);
+        val remoteDeviceInformationBytes =
+            testableMetricsLogger.getRemoteDeviceInfoProto(bluetoothDevice)
 
         try {
-            BluetoothRemoteDeviceInformation bluetoothRemoteDeviceInformation =
-                    BluetoothRemoteDeviceInformation.parseFrom(remoteDeviceInformationBytes);
-            int oui = (0 << 16) | (1 << 8) | 2; // OUI from the above mac address
-            assertThat(bluetoothRemoteDeviceInformation.getOui()).isEqualTo(oui);
-
-        } catch (InvalidProtocolBufferException e) {
-            assertThat(e.getMessage()).isNull(); // test failure here
+            val bluetoothRemoteDeviceInformation =
+                BluetoothMetricsProto.BluetoothRemoteDeviceInformation.parseFrom(
+                    remoteDeviceInformationBytes
+                )
+            val oui = (0 shl 16) or (1 shl 8) or 2 // OUI from the above mac address
+            assertThat(bluetoothRemoteDeviceInformation.oui).isEqualTo(oui)
+        } catch (e: InvalidProtocolBufferException) {
+            assertThat(e.message).isNull() // test failure here
         }
     }
 
     @Test
-    public void testGetAllowlistedDeviceNameHashForMedicalDevice() {
-        String deviceName = "Sam's rphonak hearing aid";
-        String expectMedicalDeviceSha256 = MetricsLogger.getSha256String("rphonakhearingaid");
+    fun testGetAllowlistedDeviceNameHashForMedicalDevice() {
+        val deviceName = "Sam's rphonak hearing aid"
+        val expectMedicalDeviceSha256 = MetricsLogger.getSha256String("rphonakhearingaid")
 
-        String actualMedicalDeviceSha256 =
-                mTestableMetricsLogger.getAllowlistedDeviceNameHash(deviceName, true);
+        val actualMedicalDeviceSha256 =
+            testableMetricsLogger.getAllowlistedDeviceNameHash(deviceName, true)
 
-        assertThat(actualMedicalDeviceSha256).isEqualTo(expectMedicalDeviceSha256);
+        assertThat(actualMedicalDeviceSha256).isEqualTo(expectMedicalDeviceSha256)
     }
 
     @Test
-    public void testGetAllowlistedDeviceNameHashForMedicalDeviceIdentifiedLogging() {
-        String deviceName = "Sam's rphonak hearing aid";
-        String expectMedicalDeviceSha256 = "";
+    fun testGetAllowlistedDeviceNameHashForMedicalDeviceIdentifiedLogging() {
+        val deviceName = "Sam's rphonak hearing aid"
+        val expectMedicalDeviceSha256 = ""
 
-        String actualMedicalDeviceSha256 =
-                mTestableMetricsLogger.getAllowlistedDeviceNameHash(deviceName, false);
+        val actualMedicalDeviceSha256 =
+            testableMetricsLogger.getAllowlistedDeviceNameHash(deviceName, false)
 
-        assertThat(actualMedicalDeviceSha256).isEqualTo(expectMedicalDeviceSha256);
+        assertThat(actualMedicalDeviceSha256).isEqualTo(expectMedicalDeviceSha256)
     }
 
     @Test
-    public void uploadEmptyDeviceName() throws IOException {
-        initTestingBloomfilter();
-        assertThat(mTestableMetricsLogger.logAllowlistedDeviceNameHash(1, "")).isEmpty();
+    fun uploadEmptyDeviceName() {
+        initTestingBloomfilter()
+        assertThat(testableMetricsLogger.logAllowlistedDeviceNameHash(1, "")).isEmpty()
     }
 
     @Test
-    public void testUpdateHearingDeviceActiveTime() {
-        int day = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__DAY;
-        int week = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__WEEK;
-        int month = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__MONTH;
-        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getContentResolver())
-                .when(mAdapterService)
-                .getContentResolver();
+    fun testUpdateHearingDeviceActiveTime() {
+        val day = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__DAY
+        val week = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__WEEK
+        val month = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__MONTH
+        doReturn(InstrumentationRegistry.getInstrumentation().context.contentResolver)
+            .whenever(adapterService)
+            .contentResolver
 
         // last active time is 2 days ago, should update last active day
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        prepareLastActiveTimeDaysAgo(2);
-        logger.updateHearingDeviceActiveTime(mTestDevice, 1);
-        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
-        verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
-        verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+        val logger = spy(testableMetricsLogger)
+        prepareLastActiveTimeDaysAgo(2)
+        logger.updateHearingDeviceActiveTime(device, 1)
+        verify(logger).logHearingDeviceActiveEvent(any(), any<Int>(), eq(day))
+        verify(logger, never()).logHearingDeviceActiveEvent(any(), any<Int>(), eq(week))
+        verify(logger, never()).logHearingDeviceActiveEvent(any(), any<Int>(), eq(month))
 
         // last active time is 8 days ago, should update last active day and week
-        Mockito.reset(logger);
-        prepareLastActiveTimeDaysAgo(8);
-        logger.updateHearingDeviceActiveTime(mTestDevice, 1);
-        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
-        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
-        verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+        Mockito.reset(logger)
+        prepareLastActiveTimeDaysAgo(8)
+        logger.updateHearingDeviceActiveTime(device, 1)
+        verify(logger).logHearingDeviceActiveEvent(any(), any<Int>(), eq(day))
+        verify(logger).logHearingDeviceActiveEvent(any(), any<Int>(), eq(week))
+        verify(logger, never()).logHearingDeviceActiveEvent(any(), any<Int>(), eq(month))
 
         // last active time is 60 days ago, should update last active day, week and month
-        Mockito.reset(logger);
-        prepareLastActiveTimeDaysAgo(60);
-        logger.updateHearingDeviceActiveTime(mTestDevice, 1);
-        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
-        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
-        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+        Mockito.reset(logger)
+        prepareLastActiveTimeDaysAgo(60)
+        logger.updateHearingDeviceActiveTime(device, 1)
+        verify(logger).logHearingDeviceActiveEvent(any(), any<Int>(), eq(day))
+        verify(logger).logHearingDeviceActiveEvent(any(), any<Int>(), eq(week))
+        verify(logger).logHearingDeviceActiveEvent(any(), any<Int>(), eq(month))
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_connecting_logsDeviceName() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doReturn("").when(logger).logAllowlistedDeviceNameHash(anyInt(), any());
+    fun logDeviceConnectionStateChanges_connecting_logsDeviceName() {
+        val logger = spy(testableMetricsLogger)
+        doReturn("").whenever(logger).logAllowlistedDeviceNameHash(any<Int>(), any())
 
-        final int metricId = 1234;
-        final String deviceName = "Test Device";
-        doReturn(metricId).when(mAdapterService).getMetricId(mTestDevice);
-        doReturn(deviceName).when(mRemoteDevices).getName(mTestDevice);
+        val metricId = 1234
+        val deviceName = "Test Device"
+        doReturn(metricId).whenever(adapterService).getMetricId(device)
+        doReturn(deviceName).whenever(remoteDevices).getName(device)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_CONNECTING);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.A2DP, STATE_CONNECTING)
 
-        verify(logger).logAllowlistedDeviceNameHash(metricId, deviceName);
+        verify(logger).logAllowlistedDeviceNameHash(metricId, deviceName)
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_notConnected_doesNotLogHearingDeviceActiveTime() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+    fun logDeviceConnectionStateChanges_notConnected_doesNotLogHearingDeviceActiveTime() {
+        val logger = spy(testableMetricsLogger)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_DISCONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.A2DP, STATE_DISCONNECTED)
 
-        verify(logger, never()).updateHearingDeviceActiveTime(any(), anyInt());
+        verify(logger, never()).updateHearingDeviceActiveTime(any(), any<Int>())
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_a2dpConnected_medicalDevice_logsClassic()
-            throws IOException {
-        initTestingMedicalBloomfilter();
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+    fun logDeviceConnectionStateChanges_a2dpConnected_medicalDevice_logsClassic() {
+        initTestingMedicalBloomfilter()
+        val logger = spy(testableMetricsLogger)
+        doNothing().whenever(logger).updateHearingDeviceActiveTime(any(), any<Int>())
 
         // "rphonak" is in the default medical device bloom filter
-        doReturn("rphonak hearing aid").when(mAdapterService).getRemoteName(mTestDevice);
+        doReturn("rphonak hearing aid").whenever(adapterService).getRemoteName(device)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_CONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.A2DP, STATE_CONNECTED)
 
         verify(logger)
-                .updateHearingDeviceActiveTime(
-                        eq(mTestDevice),
-                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC));
+            .updateHearingDeviceActiveTime(
+                eq(device),
+                eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC),
+            )
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_a2dpConnected_notMedicalDevice_doesNotLog()
-            throws IOException {
-        initTestingMedicalBloomfilter();
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+    fun logDeviceConnectionStateChanges_a2dpConnected_notMedicalDevice_doesNotLog() {
+        initTestingMedicalBloomfilter()
+        val logger = spy(testableMetricsLogger)
 
-        doReturn("not a medical device").when(mAdapterService).getRemoteName(mTestDevice);
+        doReturn("not a medical device").whenever(adapterService).getRemoteName(device)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_CONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.A2DP, STATE_CONNECTED)
 
-        verify(logger, never()).updateHearingDeviceActiveTime(any(), anyInt());
+        verify(logger, never()).updateHearingDeviceActiveTime(any(), any<Int>())
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_headsetConnected_medicalDevice_logsClassic()
-            throws IOException {
-        initTestingMedicalBloomfilter();
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+    fun logDeviceConnectionStateChanges_headsetConnected_medicalDevice_logsClassic() {
+        initTestingMedicalBloomfilter()
+        val logger = spy(testableMetricsLogger)
+        doNothing().whenever(logger).updateHearingDeviceActiveTime(any(), any<Int>())
 
         // "rphonak" is in the default medical device bloom filter
-        doReturn("rphonak hearing aid").when(mAdapterService).getRemoteName(mTestDevice);
+        doReturn("rphonak hearing aid").whenever(adapterService).getRemoteName(device)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.HEADSET, BluetoothProfile.STATE_CONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.HEADSET, STATE_CONNECTED)
 
         verify(logger)
-                .updateHearingDeviceActiveTime(
-                        eq(mTestDevice),
-                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC));
+            .updateHearingDeviceActiveTime(
+                eq(device),
+                eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC),
+            )
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_hearingAidConnected_dualMode_logsAshaDual() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+    fun logDeviceConnectionStateChanges_hearingAidConnected_dualMode_logsAshaDual() {
+        val logger = spy(testableMetricsLogger)
+        doNothing().whenever(logger).updateHearingDeviceActiveTime(any(), any<Int>())
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO})
-                .when(mRemoteDevices)
-                .getUuids(mTestDevice);
+        doReturn(arrayOf(BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO))
+            .whenever(remoteDevices)
+            .getUuids(device)
 
         logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.HEARING_AID, BluetoothProfile.STATE_CONNECTED);
+            device,
+            BluetoothProfile.HEARING_AID,
+            STATE_CONNECTED,
+        )
 
         verify(logger)
-                .updateHearingDeviceActiveTime(
-                        eq(mTestDevice),
-                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL));
+            .updateHearingDeviceActiveTime(
+                eq(device),
+                eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL),
+            )
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_hearingAidConnected_singleMode_logsAshaOnly() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+    fun logDeviceConnectionStateChanges_hearingAidConnected_singleMode_logsAshaOnly() {
+        val logger = spy(testableMetricsLogger)
+        doNothing().whenever(logger).updateHearingDeviceActiveTime(any(), any<Int>())
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID})
-                .when(mRemoteDevices)
-                .getUuids(mTestDevice);
+        doReturn(arrayOf(BluetoothUuid.HEARING_AID)).whenever(remoteDevices).getUuids(device)
 
         logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.HEARING_AID, BluetoothProfile.STATE_CONNECTED);
+            device,
+            BluetoothProfile.HEARING_AID,
+            STATE_CONNECTED,
+        )
 
         verify(logger)
-                .updateHearingDeviceActiveTime(
-                        eq(mTestDevice),
-                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY));
+            .updateHearingDeviceActiveTime(
+                eq(device),
+                eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY),
+            )
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_hapClientConnected_dualMode_logsLeAudioDual() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+    fun logDeviceConnectionStateChanges_hapClientConnected_dualMode_logsLeAudioDual() {
+        val logger = spy(testableMetricsLogger)
+        doNothing().whenever(logger).updateHearingDeviceActiveTime(any(), any<Int>())
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO})
-                .when(mRemoteDevices)
-                .getUuids(mTestDevice);
+        doReturn(arrayOf(BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO))
+            .whenever(remoteDevices)
+            .getUuids(device)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.STATE_CONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.HAP_CLIENT, STATE_CONNECTED)
 
         verify(logger)
-                .updateHearingDeviceActiveTime(
-                        eq(mTestDevice),
-                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL));
+            .updateHearingDeviceActiveTime(
+                eq(device),
+                eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL),
+            )
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_hapClientConnected_singleMode_logsLeAudioOnly() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
-        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+    fun logDeviceConnectionStateChanges_hapClientConnected_singleMode_logsLeAudioOnly() {
+        val logger = spy(testableMetricsLogger)
+        doNothing().whenever(logger).updateHearingDeviceActiveTime(any(), any<Int>())
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
-                .when(mRemoteDevices)
-                .getUuids(mTestDevice);
+        doReturn(arrayOf(BluetoothUuid.LE_AUDIO)).whenever(remoteDevices).getUuids(device)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.STATE_CONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.HAP_CLIENT, STATE_CONNECTED)
 
         verify(logger)
-                .updateHearingDeviceActiveTime(
-                        eq(mTestDevice),
-                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY));
+            .updateHearingDeviceActiveTime(
+                eq(device),
+                eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY),
+            )
     }
 
     @Test
-    public void logDeviceConnectionStateChanges_otherProfileConnected_doesNotLog() {
-        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+    fun logDeviceConnectionStateChanges_otherProfileConnected_doesNotLog() {
+        val logger = spy(testableMetricsLogger)
 
-        logger.logDeviceConnectionStateChanges(
-                mTestDevice, BluetoothProfile.PAN, BluetoothProfile.STATE_CONNECTED);
+        logger.logDeviceConnectionStateChanges(device, BluetoothProfile.PAN, STATE_CONNECTED)
 
-        verify(logger, never()).updateHearingDeviceActiveTime(any(), anyInt());
+        verify(logger, never()).updateHearingDeviceActiveTime(any(), any<Int>())
     }
 
-    private static void prepareLastActiveTimeDaysAgo(int days) {
-        final ContentResolver contentResolver =
-                InstrumentationRegistry.getInstrumentation().getContext().getContentResolver();
-        final LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
-        final String lastActive = now.minusDays(days).toString();
-        Settings.Secure.putString(contentResolver, "last_active_day", lastActive);
-        Settings.Secure.putString(contentResolver, "last_active_week", lastActive);
-        Settings.Secure.putString(contentResolver, "last_active_month", lastActive);
+    private fun prepareLastActiveTimeDaysAgo(days: Int) {
+        val contentResolver = InstrumentationRegistry.getInstrumentation().context.contentResolver
+        val now = LocalDateTime.now(ZoneId.systemDefault())
+        val lastActive = now.minusDays(days.toLong()).toString()
+        Settings.Secure.putString(contentResolver, "last_active_day", lastActive)
+        Settings.Secure.putString(contentResolver, "last_active_week", lastActive)
+        Settings.Secure.putString(contentResolver, "last_active_month", lastActive)
     }
 
-    private void initTestingBloomfilter() throws IOException {
-        byte[] bloomfilterData =
-                DeviceBloomfilterGenerator.hexStringToByteArray(
-                        DeviceBloomfilterGenerator.BLOOM_FILTER_DEFAULT);
-        mTestableMetricsLogger.setBloomfilter(
-                BloomFilter.readFrom(
-                        new ByteArrayInputStream(bloomfilterData), Funnels.byteArrayFunnel()));
+    private fun initTestingBloomfilter() {
+        val bloomfilterData =
+            DeviceBloomfilterGenerator.hexStringToByteArray(
+                DeviceBloomfilterGenerator.BLOOM_FILTER_DEFAULT
+            )
+        testableMetricsLogger.setBloomfilter(
+            BloomFilter.readFrom(ByteArrayInputStream(bloomfilterData), Funnels.byteArrayFunnel())
+        )
     }
 
-    private void initTestingMedicalBloomfilter() throws IOException {
-        byte[] bloomfilterData =
-                MedicalDeviceBloomfilterGenerator.hexStringToByteArray(
-                        MedicalDeviceBloomfilterGenerator.BLOOM_FILTER_DEFAULT);
-        mTestableMetricsLogger.setMedicalDeviceBloomfilter(
-                BloomFilter.readFrom(
-                        new ByteArrayInputStream(bloomfilterData), Funnels.byteArrayFunnel()));
-        mTestableMetricsLogger.mMedicalDeviceBloomFilterInitialized = true;
+    private fun initTestingMedicalBloomfilter() {
+        val bloomfilterData =
+            MedicalDeviceBloomfilterGenerator.hexStringToByteArray(
+                MedicalDeviceBloomfilterGenerator.BLOOM_FILTER_DEFAULT
+            )
+        testableMetricsLogger.setMedicalDeviceBloomfilter(
+            BloomFilter.readFrom(ByteArrayInputStream(bloomfilterData), Funnels.byteArrayFunnel())
+        )
+        testableMetricsLogger.mMedicalDeviceBloomFilterInitialized = true
     }
 }
