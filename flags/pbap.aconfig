@@ -58,3 +58,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "pbap_correct_vcard_filter"
+    namespace: "bluetooth"
+    description: "Ignore wrong vcard lien in filter"
+    bug: "479411499"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
