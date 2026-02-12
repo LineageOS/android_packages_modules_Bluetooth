@@ -363,8 +363,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         callback: IBluetoothGattCallback,
         device: BluetoothDevice,
         source: AttributionSource,
-    ) {
-        onGattThreadEnforceConnect(source) { readRemoteRssi(callback, device) }
+    ): Boolean {
+        val gatt = gattEnforceConnect(source) ?: return false
+        return gatt.runOrFetchOnGattThread(gatt, false) { readRemoteRssi(callback, device) }
     }
 
     override fun configureMTU(
