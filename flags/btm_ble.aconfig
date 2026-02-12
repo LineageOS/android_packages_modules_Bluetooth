@@ -20,3 +20,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "move_conn_mgr_callbacks"
+    namespace: "bluetooth"
+    description: "Move connection management callbacks from GATT to connection manager"
+    bug: "483449240"
+}

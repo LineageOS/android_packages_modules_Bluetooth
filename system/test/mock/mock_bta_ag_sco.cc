@@ -74,7 +74,7 @@ namespace test {
 namespace mock {
 namespace bta_ag_sco {
 
-const RawAddress& bta_ag_get_active_device::return_value = RawAddress::kEmpty;
+const RawAddress bta_ag_get_active_device::return_value = RawAddress::kEmpty;
 bool bta_ag_get_sco_offload_enabled::return_value = true;
 bool bta_ag_is_sco_managed_by_audio::return_value = false;
 bool bta_ag_sco_is_active_device::return_value = false;
@@ -102,7 +102,7 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
   inc_func_call_count(__func__);
   test::mock::bta_ag_sco::bta_ag_create_sco(p_scb, is_orig);
 }
-const RawAddress& bta_ag_get_active_device() {
+const RawAddress bta_ag_get_active_device() {
   inc_func_call_count(__func__);
   return test::mock::bta_ag_sco::bta_ag_get_active_device();
 }

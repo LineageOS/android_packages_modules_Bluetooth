@@ -1603,18 +1603,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         bt_properties.push_back(bt_property_t{BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
                                               sizeof(uint32_t), &asha_truncated_hi_sync_id});
 
-        // Floss expects that EIR uuids are immediately reported when the
-        // device is found and doesn't wait for the pairing intent.
-        //
-        // If a subsequent SDP is completed, the new UUIDs should replace
-        // the existing UUIDs.
-#if TARGET_FLOSS
-        bool report_eir_uuids = true;
-#else
-        bool report_eir_uuids = false;
-#endif
-        // Scope needs to persist until `invoke_device_found_cb` below.
-        std::vector<uint8_t> property_value;
         /* Cache EIR queried services */
         if (num_uuids > 0) {
           uint16_t* p_uuid16 = (uint16_t*)uuid_list;
@@ -1628,18 +1616,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
             Uuid uuid = Uuid::From16Bit(p_uuid16[i]);
             log::info("{}", uuid.ToString());
             uuid_iter->second.insert(uuid);
-          }
-
-          if (report_eir_uuids) {
-            for (auto uuid : uuid_iter->second) {
-              auto uuid_128bit = uuid.To128BitBE();
-              property_value.insert(property_value.end(), uuid_128bit.begin(), uuid_128bit.end());
-            }
-
-            bt_properties.push_back(
-                    bt_property_t{BT_PROPERTY_UUIDS,
-                                  static_cast<int>(uuid_iter->second.size() * Uuid::kNumBytes128),
-                                  (void*)property_value.data()});
           }
         }
 

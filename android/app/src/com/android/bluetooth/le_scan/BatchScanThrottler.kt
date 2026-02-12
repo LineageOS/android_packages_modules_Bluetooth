@@ -33,38 +33,33 @@ private const val TAG = ScanUtil.TAG_PREFIX + "BatchScanThrottler"
  * longer when the screen is off.
  */
 class BatchScanThrottler(private val timeProvider: TimeProvider, screenOn: Boolean) {
-    private val screenOffMinimumDelayFloorMs: Int
-    private val unfilteredDelayFloorMs: Int
-    private val unfilteredScreenOffDelayFloorMs: Int
-    private val screenOffDelayMs: Int
-    private val delayFloorMs: Long
-    private val screenOffDelayFloorMs: Long
+    private val screenOffMinimumDelayFloorMs =
+        SystemProperties.getInt(
+            SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP,
+            SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT,
+        )
+    private val unfilteredDelayFloorMs =
+        SystemProperties.getInt(UNFILTERED_DELAY_FLOOR_PROP, UNFILTERED_DELAY_FLOOR_DEFAULT)
+    private val unfilteredScreenOffDelayFloorMs =
+        SystemProperties.getInt(
+            UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP,
+            UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT,
+        )
+    private val screenOffDelayMs =
+        SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT)
+    private val delayFloorMs =
+        DeviceConfig.getLong(
+            DeviceConfig.NAMESPACE_BLUETOOTH,
+            "report_delay",
+            DEFAULT_REPORT_DELAY_FLOOR_MS,
+        )
+    private val screenOffDelayFloorMs = max(delayFloorMs, screenOffMinimumDelayFloorMs.toLong())
 
     private var backoffStage = 0
     private var screenOffTriggerTime = 0L
     private var screenOffThrottling = false
 
     init {
-        screenOffMinimumDelayFloorMs =
-            SystemProperties.getInt(
-                SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP,
-                SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT,
-            )
-        unfilteredDelayFloorMs =
-            SystemProperties.getInt(UNFILTERED_DELAY_FLOOR_PROP, UNFILTERED_DELAY_FLOOR_DEFAULT)
-        unfilteredScreenOffDelayFloorMs =
-            SystemProperties.getInt(
-                UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP,
-                UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT,
-            )
-        screenOffDelayMs = SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT)
-        delayFloorMs =
-            DeviceConfig.getLong(
-                DeviceConfig.NAMESPACE_BLUETOOTH,
-                "report_delay",
-                DEFAULT_REPORT_DELAY_FLOOR_MS,
-            )
-        screenOffDelayFloorMs = max(delayFloorMs, screenOffMinimumDelayFloorMs.toLong())
         Log.d(
             TAG,
             "Initialized with: screenOffMinimumDelayFloorMs=$screenOffMinimumDelayFloorMs" +

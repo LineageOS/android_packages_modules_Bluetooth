@@ -3490,17 +3490,6 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   }
 }
 
-constexpr int MIN_KEY_SIZE = 7;
-constexpr int MIN_KEY_SIZE_DEFAULT = MIN_KEY_SIZE;
-constexpr int MAX_KEY_SIZE = 16;
-static uint8_t get_min_enc_key_size() {
-  static uint8_t min_key_size = (uint8_t)std::min(
-          std::max(android::sysprop::bluetooth::Gap::min_key_size().value_or(MIN_KEY_SIZE_DEFAULT),
-                   MIN_KEY_SIZE),
-          MAX_KEY_SIZE);
-  return min_key_size;
-}
-
 static void read_encryption_key_size_complete_after_encryption_change(uint8_t encr_enable,
                                                                       uint8_t status,
                                                                       uint16_t handle,
@@ -3521,7 +3510,7 @@ static void read_encryption_key_size_complete_after_encryption_change(uint8_t en
     return;
   }
 
-  if (key_size < get_min_enc_key_size()) {
+  if (key_size < btm_sec_get_min_enc_key_size()) {
     log::error("encryption key too short, disconnecting. handle:0x{:x},key_size:{}", handle,
                key_size);
 
@@ -4117,7 +4106,7 @@ static void read_encryption_key_size_complete_after_key_refresh(uint8_t encr_ena
     return;
   }
 
-  if (key_size < get_min_enc_key_size()) {
+  if (key_size < btm_sec_get_min_enc_key_size()) {
     log::error("encryption key too short, disconnecting. handle: 0x{:x} key_size {}", handle,
                key_size);
 
@@ -4145,24 +4134,25 @@ void btm_sec_encryption_key_refresh_complete(uint16_t handle, tHCI_STATUS status
 }
 
 /** This function is called when a new connection link key is generated */
-void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_key,
+void btm_sec_link_key_notification(const RawAddress& bda, const Octet16& link_key,
                                    uint8_t key_type) {
-  BtmDevice* p_device = btm_find_or_alloc_dev(p_bda);
-
+  BtmDevice* p_device = btm_find_or_alloc_dev(bda);
   if (p_device == nullptr) {
     log::error("No memory to allocate new p_device");
     return;
   }
-  bool we_are_bonding = false;
-  bool ltk_derived_lk = false;
 
-  log::debug("New link key generated device:{} key_type:{}", p_bda, key_type);
+  bool locally_initiated = false;
+  bool ctkd = false;
+
+  log::debug("New link key generated device:{} key_type:{}", bda, key_type);
 
   if ((key_type >= BTM_LTK_DERIVED_LKEY_OFFSET + BTM_LKEY_TYPE_COMBINATION) &&
       (key_type <= BTM_LTK_DERIVED_LKEY_OFFSET + BTM_LKEY_TYPE_AUTH_COMB_P_256)) {
-    ltk_derived_lk = true;
+    ctkd = true;
     key_type -= BTM_LTK_DERIVED_LKEY_OFFSET;
   }
+
   /* If connection was made to do bonding restore link security if changed */
   btm_restore_mode();
 
@@ -4188,22 +4178,22 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
   p_device->sec_rec.link_key = link_key;
 
   if (BtmSecurity::Get().pairing_state_ != BTM_PAIR_STATE_IDLE &&
-      BtmSecurity::Get().link_spec_.addrt.bda == p_bda) {
+      BtmSecurity::Get().link_spec_.addrt.bda == bda) {
     if (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_WE_STARTED_DD) {
-      we_are_bonding = true;
+      locally_initiated = true;
     } else {
       BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
     }
   }
 
-  /* save LTK derived LK no matter what */
-  if (ltk_derived_lk) {
+  /* Always save derived LTK */
+  if (ctkd) {
     if (BtmSecurity::Get().api_.p_link_key_callback) {
       p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SC;  // for CTKD
       log::verbose("Save LTK derived LK (key_type = {})", p_device->sec_rec.link_key_type);
       (*BtmSecurity::Get().api_.p_link_key_callback)(
-              p_bda, p_device->dev_class, p_device->sec_bd_name, link_key,
-              p_device->sec_rec.link_key_type, true /* is_ctkd */);
+              bda, p_device->dev_class, p_device->sec_bd_name, link_key,
+              p_device->sec_rec.link_key_type, true /* ctkd */);
     }
   } else {
     if ((p_device->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256) ||
@@ -4220,25 +4210,20 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
                                     p_device->ControllerSupportsSecureConnections());
   }
 
-  /* If name is not known at this point delay calling callback until the name is
-   */
-  /* resolved. Unless it is a HID Device and we really need to send all link
-   * keys. */
-  if ((!(p_device->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) &&
-       ((p_device->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) != BTM_COD_MAJOR_PERIPHERAL)) &&
-      !ltk_derived_lk) {
-    log::verbose("Delayed BDA: {}, Type: {}", p_bda, key_type);
+  /* Get the name before sending link key to higher layers if it is not known already.
+   * Unless it is a HID Device, then we need to send link key to higher layer right away. */
+  if (!ctkd && !(p_device->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) &&
+      (p_device->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) != BTM_COD_MAJOR_PERIPHERAL) {
+    log::verbose("Delayed BDA: {}, Type: {}", bda, key_type);
 
     p_device->sec_rec.link_key_not_sent = true;
 
-    /* If it is for bonding nothing else will follow, so we need to start name
-     * resolution */
-    if (we_are_bonding) {
-      bluetooth::shim::ACL_RemoteNameRequest(p_bda, HCI_PAGE_SCAN_REP_MODE_R1,
-                                             HCI_MANDATARY_PAGE_SCAN_MODE,
-                                             com_android_bluetooth_flags_use_cached_clock_offset()
-                                                     ? BTM_GetCachedClockOffset(p_bda)
-                                                     : 0);
+    /* If it is for bonding nothing else will follow, so we need to start name resolution */
+    if (locally_initiated) {
+      bluetooth::shim::ACL_RemoteNameRequest(
+              bda, HCI_PAGE_SCAN_REP_MODE_R1, HCI_MANDATARY_PAGE_SCAN_MODE,
+              com_android_bluetooth_flags_use_cached_clock_offset() ? BTM_GetCachedClockOffset(bda)
+                                                                    : 0);
     }
 
     log::verbose("rmt_io_caps:{}, sec_flags:x{:x}, dev_class[1]:x{:02x}",
@@ -4247,24 +4232,19 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
     return;
   }
 
-/* We will save link key only if the user authorized it - BTE report link key in
- * all cases */
-#ifdef BRCM_NONE_BTE
-  if (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_AUTHED)
-#endif
-  {
-    if (BtmSecurity::Get().api_.p_link_key_callback) {
-      if (ltk_derived_lk) {
-        log::verbose(
-                "btm_sec_link_key_notification()  LTK derived LK is saved already "
-                "(key_type = {})",
-                p_device->sec_rec.link_key_type);
-      } else {
-        (*BtmSecurity::Get().api_.p_link_key_callback)(
-                p_bda, p_device->dev_class, p_device->sec_bd_name, link_key,
-                p_device->sec_rec.link_key_type, false /* is_ctkd */);
-      }
+  if (BtmSecurity::Get().api_.p_link_key_callback) {
+    if (ctkd) {
+      log::verbose(
+              "btm_sec_link_key_notification()  LTK derived LK is saved already "
+              "(key_type = {})",
+              p_device->sec_rec.link_key_type);
+
+      return;
     }
+
+    (*BtmSecurity::Get().api_.p_link_key_callback)(bda, p_device->dev_class, p_device->sec_bd_name,
+                                                   link_key, p_device->sec_rec.link_key_type,
+                                                   false /* ctkd */);
   }
 }
 
@@ -5344,4 +5324,12 @@ void btm_update_bond_lost(const RawAddress& bd_addr, bool bond_lost) {
   }
 
   p_device->bond_lost = bond_lost;
+}
+
+uint8_t btm_sec_get_min_enc_key_size() {
+  static uint8_t min_key_size = (uint8_t)std::min(
+          std::max(android::sysprop::bluetooth::Gap::min_key_size().value_or(MIN_KEY_SIZE_DEFAULT),
+                   MIN_KEY_SIZE),
+          MAX_KEY_SIZE);
+  return min_key_size;
 }

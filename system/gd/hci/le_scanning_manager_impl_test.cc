@@ -73,6 +73,7 @@ static constexpr uint16_t TEST_JAVA_SCAN_WINDOW_1M = 250;
 static constexpr uint16_t TEST_JAVA_SCAN_INTERVAL_CODED = 300;
 static constexpr uint16_t TEST_JAVA_SCAN_WINDOW_CODED = 350;
 static constexpr uint8_t TEST_JAVA_SCAN_PHY = 5;
+static constexpr uint8_t TEST_DISCOVERY_DURATION = 10;
 
 hci::AdvertisingPacketContentFilterCommand make_filter(const hci::ApcfFilterType& filter_type) {
   hci::AdvertisingPacketContentFilterCommand filter{};
@@ -465,6 +466,7 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_java_scan) {
                                          TEST_JAVA_SCAN_WINDOW_CODED, TEST_JAVA_SCAN_PHY);
   le_scanning_manager->Scan(true);
 
+  // Check if scan parameters were set successfully to requested Java scan parameters
   auto command_view = LeSetExtendedScanParametersView::Create(
           LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
   ASSERT_TRUE(command_view.IsValid());
@@ -479,6 +481,26 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_java_scan) {
   ASSERT_EQ(scan_parameters[1].le_scan_type_, TEST_JAVA_SCAN_TYPE);
   ASSERT_EQ(scan_parameters[1].le_scan_interval_, TEST_JAVA_SCAN_INTERVAL_CODED);
   ASSERT_EQ(scan_parameters[1].le_scan_window_, TEST_JAVA_SCAN_WINDOW_CODED);
+}
+
+// Test for 'update_start_scan' when we have discovery start request while no scan is ongoing
+TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_discovery) {
+  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+
+  // Start discovery
+  le_scanning_manager->StartDiscovery(TEST_DISCOVERY_DURATION);
+
+  // Check if scan parameters were set successfully to 1m low latency
+  auto command_view = LeSetExtendedScanParametersView::Create(
+          LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(command_view.GetScanningPhys(), LeScanningManagerImpl::k1mPhyMask);
+  auto scan_parameters = command_view.GetParameters();
+  ASSERT_EQ(scan_parameters.size(), static_cast<size_t>(1));
+
+  ASSERT_EQ(scan_parameters[0].le_scan_type_, LeScanType::ACTIVE);
+  ASSERT_EQ(scan_parameters[0].le_scan_interval_, LeScanningManagerImpl::kLeScanIntervalLowLatency);
+  ASSERT_EQ(scan_parameters[0].le_scan_window_, LeScanningManagerImpl::kLeScanWindowLowLatency);
 }
 
 // Test for 'update_stop_scan' when we have Java scan stop request while only Java scan is ongoing
@@ -496,6 +518,27 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_java_scan) {
 
   // Disable Java scan, should successfully dispatch a command to the controller
   le_scanning_manager->Scan(false);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+}
+
+// Test for 'update_stop_scan' when we hava discovery stop request while only discovery is ongoing
+TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_discovery) {
+  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  // Start discovery
+  le_scanning_manager->StartDiscovery(TEST_DISCOVERY_DURATION);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Stop discovery, should successfully dispatch a command to the controller
+  le_scanning_manager->StopDiscovery();
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
           LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));

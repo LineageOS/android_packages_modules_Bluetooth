@@ -160,6 +160,12 @@ tBT_TRANSPORT to_bt_transport(int val) {
   return BT_TRANSPORT_AUTO;
 }
 
+void btif_bluetooth_dump(int fd) {
+  dprintf(fd, "\nNative:\n");
+  dprintf(fd, "  hci_instance_name: %s\n",
+          bluetooth::os::ParameterProvider::GetHciInstanceName().c_str());
+}
+
 }  // namespace
 
 /*******************************************************************************
@@ -924,6 +930,7 @@ static void dump(int fd, const char** /*arguments*/) {
   }
 
   log::debug("Started bluetooth dumpsys");
+  btif_bluetooth_dump(fd);
   btif_debug_conn_dump(fd);
   btif_debug_bond_event_dump(fd);
   btif_debug_linkkey_type_dump(fd);

@@ -38,6 +38,7 @@
 #include "hci/controller.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/entry.h"
+#include "main/shim/shim.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/internal/btm_api.h"
@@ -197,7 +198,7 @@ void BTM_reset_complete() {
  * Returns          true if device is up, else false
  *
  ******************************************************************************/
-bool BTM_IsDeviceUp(void) { return bluetooth::shim::GetController() != nullptr; }
+bool BTM_IsDeviceUp(void) { return bluetooth::shim::is_gd_stack_started_up(); }
 
 static void decode_controller_support() {
   /* Create (e)SCO supported packet types mask */

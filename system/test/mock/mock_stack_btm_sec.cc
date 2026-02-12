@@ -103,6 +103,7 @@ struct is_autonomous_repairing_supported is_autonomous_repairing_supported;
 struct btm_get_security_mode btm_get_security_mode;
 struct btm_sec_report_bond_loss btm_sec_report_bond_loss;
 struct btm_sec_hci_delete_stored_link_key btm_sec_hci_delete_stored_link_key;
+struct btm_sec_get_min_enc_key_size btm_sec_get_min_enc_key_size;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -138,6 +139,7 @@ bool btm_is_bond_lost::return_value = false;
 bool is_autonomous_repairing_supported::return_value = false;
 uint8_t btm_get_security_mode::return_value = 0;
 tBTM_STATUS btm_sec_report_bond_loss::return_value = tBTM_STATUS::BTM_SUCCESS;
+uint8_t btm_sec_get_min_enc_key_size::return_value = MIN_KEY_SIZE_DEFAULT;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -421,6 +423,10 @@ tBTM_STATUS btm_sec_report_bond_loss(const RawAddress& bd_addr, tBT_TRANSPORT tr
 void btm_sec_hci_delete_stored_link_key(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_hci_delete_stored_link_key(bd_addr);
+}
+uint8_t btm_sec_get_min_enc_key_size() {
+  inc_func_call_count(__func__);
+  return test::mock::stack_btm_sec::btm_sec_get_min_enc_key_size();
 }
 // Mocked functions complete
 // END mockcify generation

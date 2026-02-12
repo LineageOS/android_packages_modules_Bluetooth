@@ -1723,7 +1723,7 @@ void bta_ag_stream_suspended() {
   }
 }
 
-const RawAddress& bta_ag_get_active_device() { return active_device_addr; }
+const RawAddress bta_ag_get_active_device() { return active_device_addr; }
 
 void bta_clear_active_device() {
   log::debug("Set bta active device to null, current active device:{}", active_device_addr);

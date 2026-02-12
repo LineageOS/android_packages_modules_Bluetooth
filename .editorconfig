@@ -9,3 +9,6 @@ indent_size = 4
 
 [*.{cc,cpp,c,h}]
 indent_size = 2
+
+[*.java]
+ij_java_continuation_indent_size = 8

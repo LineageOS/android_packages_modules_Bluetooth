@@ -160,6 +160,9 @@ class ServerBinder(
     override fun enableNoAutoConnect(source: AttributionSource): Boolean {
         return try {
             checker.enableAllowed(source, foregroundRequired = false)
+            if (!source.isCallingFromNfc()) {
+                throw SecurityException("Only NFC is allowed to call enableNoAutoConnect")
+            }
             val callerIdentity = getCallerIdentity(source)
             runOnServerThread { api.enableNoAutoConnect(callerIdentity) }
         } catch (e: PermissionChecker.BluetoothPermissionException) {

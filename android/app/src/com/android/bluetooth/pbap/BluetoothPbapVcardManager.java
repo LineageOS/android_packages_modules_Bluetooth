@@ -1211,7 +1211,9 @@ public class BluetoothPbapVcardManager {
             for (String line : lines) {
                 // Check whether the current property is changing (ignoring multi-line properties)
                 // and determine if the current property is filtered in.
-                if (!Character.isWhitespace(line.charAt(0)) && !line.startsWith("=")) {
+                if (!Character.isWhitespace(line.charAt(0))
+                        && !line.startsWith("=")
+                        && (!Flags.pbapCorrectVcardFilter() || !line.startsWith(";"))) {
                     String currentProp = PROPERTY_PATTERN.split(line, 2)[0];
                     filteredIn = true;
 

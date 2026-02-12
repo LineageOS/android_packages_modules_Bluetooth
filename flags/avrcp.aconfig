@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "abs_volume_sdp_conflict"
-    namespace: "bluetooth"
-    description: "Check connection state after SDP discovery to prevent connection collision resulting in no absolute volume support"
-    bug: "336915955"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "get_all_element_attributes_empty"
     namespace: "bluetooth"
     description: "Return all attributes even if empty when requesting all attributes with GetElementAttributes"

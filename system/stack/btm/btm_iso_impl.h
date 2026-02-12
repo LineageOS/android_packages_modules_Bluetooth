@@ -18,19 +18,26 @@
 #pragma once
 
 #include <base/functional/bind.h>
-#include <base/functional/callback.h>
 #include <com_android_bluetooth_flags.h>
 
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstdio>
+#include <format>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <vector>
 
+#include "bluetooth/log.h"
+#include "bluetooth/types/address.h"
 #include "btm_dev.h"
 #include "btm_iso_api.h"
 #include "btm_iso_api_types.h"
 #include "common/time_util.h"
 #include "hci/controller.h"
-#include "hci/include/hci_layer.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
 #include "main/shim/hci_layer.h"
@@ -409,7 +416,7 @@ struct iso_impl {
   }
 
   void create_cig(IsoClientHandle client_handle, uint8_t cig_id,
-                  struct iso_manager::cig_create_params cig_params) {
+                  struct cig_create_params cig_params) {
     log::assert_that(!IsCigKnown(cig_id), "Invalid cig - already exists: {}", cig_id);
 
     {
@@ -431,7 +438,7 @@ struct iso_impl {
                    std::format("cig_id:0x{:02x}, size: {}", cig_id, cig_params.cis_cfgs.size()));
   }
 
-  void reconfigure_cig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
+  void reconfigure_cig(uint8_t cig_id, struct cig_create_params cig_params) {
     log::assert_that(IsCigKnown(cig_id), "No such cig: {}", cig_id);
 
     btsnd_hcic_ble_set_cig_params(
@@ -490,8 +497,8 @@ struct iso_impl {
                    std::format("cig_id:0x{:02x} (f:{})", cig_id, force));
   }
 
-  void on_status_establish_cis(struct iso_manager::cis_establish_params conn_params,
-                               uint8_t* stream, uint16_t len) {
+  void on_status_establish_cis(struct cis_establish_params conn_params, uint8_t* stream,
+                               uint16_t len) {
     uint8_t status;
 
     log::assert_that(len == 2, "Invalid packet length: {}", len);
@@ -530,7 +537,7 @@ struct iso_impl {
     }
   }
 
-  void establish_cis(struct iso_manager::cis_establish_params conn_params) {
+  void establish_cis(struct cis_establish_params conn_params) {
     for (auto& el : conn_params.conn_pairs) {
       auto stream_ptr = GetStream(el.cis_conn_handle);
       log::assert_that(stream_ptr, "No such cis: {}", el.cis_conn_handle);
@@ -630,8 +637,7 @@ struct iso_impl {
     }
   }
 
-  void setup_iso_data_path(uint16_t conn_handle,
-                           struct iso_manager::iso_data_path_params path_params) {
+  void setup_iso_data_path(uint16_t conn_handle, struct iso_data_path_params path_params) {
     iso_stream* iso = GetStream(conn_handle);
     if (!(iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink))) {
       log::assert_that(iso->state_flags & kStateFlagIsConnected, "CIS not established");
@@ -716,13 +722,13 @@ struct iso_impl {
   void on_iso_link_quality_read(uint8_t* stream, uint16_t len) {
     uint8_t status;
     uint16_t conn_handle;
-    uint32_t txUnackedPackets;
-    uint32_t txFlushedPackets;
-    uint32_t txLastSubeventPackets;
-    uint32_t retransmittedPackets;
-    uint32_t crcErrorPackets;
-    uint32_t rxUnreceivedPackets;
-    uint32_t duplicatePackets;
+    uint32_t tx_unacked_packets;
+    uint32_t tx_flushed_packets;
+    uint32_t tx_last_subevent_packets;
+    uint32_t retransmitted_packets;
+    uint32_t crc_error_packets;
+    uint32_t rx_unreceived_packets;
+    uint32_t duplicate_packets;
 
     // 1 + 2 + 4 * 7
 #define ISO_LINK_QUALITY_SIZE 31
@@ -756,17 +762,18 @@ struct iso_impl {
                      conn_handle);
     log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
 
-    STREAM_TO_UINT32(txUnackedPackets, stream);
-    STREAM_TO_UINT32(txFlushedPackets, stream);
-    STREAM_TO_UINT32(txLastSubeventPackets, stream);
-    STREAM_TO_UINT32(retransmittedPackets, stream);
-    STREAM_TO_UINT32(crcErrorPackets, stream);
-    STREAM_TO_UINT32(rxUnreceivedPackets, stream);
-    STREAM_TO_UINT32(duplicatePackets, stream);
+    STREAM_TO_UINT32(tx_unacked_packets, stream);
+    STREAM_TO_UINT32(tx_flushed_packets, stream);
+    STREAM_TO_UINT32(tx_last_subevent_packets, stream);
+    STREAM_TO_UINT32(retransmitted_packets, stream);
+    STREAM_TO_UINT32(crc_error_packets, stream);
+    STREAM_TO_UINT32(rx_unreceived_packets, stream);
+    STREAM_TO_UINT32(duplicate_packets, stream);
 
-    client_cbs->cig_callbacks->OnIsoLinkQualityRead(
-            conn_handle, iso->group_id, txUnackedPackets, txFlushedPackets, txLastSubeventPackets,
-            retransmittedPackets, crcErrorPackets, rxUnreceivedPackets, duplicatePackets);
+    client_cbs->cig_callbacks->OnIsoLinkQualityRead(conn_handle, iso->group_id, tx_unacked_packets,
+                                                    tx_flushed_packets, tx_last_subevent_packets,
+                                                    retransmitted_packets, crc_error_packets,
+                                                    rx_unreceived_packets, duplicate_packets);
   }
 
   void read_iso_link_quality(uint16_t conn_handle) {

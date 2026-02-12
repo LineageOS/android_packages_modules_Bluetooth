@@ -23,8 +23,8 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.State;
 import android.util.Log;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.obex.ResponseCodes;
 import com.android.obex.ServerSession;
 
