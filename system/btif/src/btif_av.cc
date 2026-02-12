@@ -3970,10 +3970,13 @@ BtStatus btif_av_sink_execute_service(bool enable) {
     // Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
     // auto-suspend AV streaming on AG events (SCO or Call). The suspend shall
     // be initiated by the app/audioflinger layers.
+
     tBTA_AV_FEAT features = BTA_AV_FEAT_NO_SCO_SSPD | BTA_AV_FEAT_RCCT | BTA_AV_FEAT_METADATA |
                             BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCTG |
-                            BTA_AV_FEAT_BROWSE | BTA_AV_FEAT_COVER_ARTWORK;
-
+                            BTA_AV_FEAT_BROWSE;
+    if (avrcp_controller_cover_art_enabled()) {
+      features |= BTA_AV_FEAT_COVER_ARTWORK;
+    }
     if (delay_reporting_enabled()) {
       features |= BTA_AV_FEAT_DELAY_RPT;
     }

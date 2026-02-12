@@ -30,6 +30,12 @@ bool avrcp_absolute_volume_is_enabled() {
   inc_func_call_count(__func__);
   return true;
 }
+
+bool avrcp_controller_cover_art_enabled() {
+  inc_func_call_count(__func__);
+  return true;
+}
+
 uint16_t AVRC_Close(uint8_t /* handle */) {
   inc_func_call_count(__func__);
   return 0;
