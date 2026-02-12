@@ -46,6 +46,7 @@
 #include "hardware/bt_le_audio.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio_utils.h"
+#include "osi/include/properties.h"
 #include "stack/include/bt_types.h"
 
 namespace bluetooth::le_audio {
@@ -87,7 +88,7 @@ uint8_t CodecConfigSetting::GetBitsPerSample() const {
   switch (id.coding_format) {
     case kLeAudioCodingFormatLC3:
       /* XXX LC3 supports 16, 24, 32 */
-      return 16;
+      return BLE_BIT_OVERRIDE;
     default:
       log::warn(", invalid codec id: 0x{:02x}", id.coding_format);
       return 0;
