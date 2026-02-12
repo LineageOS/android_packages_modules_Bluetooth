@@ -29,12 +29,16 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
+import android.os.SystemProperties;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
-import com.android.tests.bluetooth.MockitoRule;
+import com.android.bluetooth.btservice.Config;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -51,7 +55,9 @@ public class LeAudioTmapGattServerTest {
     private static final int TEST_ROLE_MASK =
             LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG | LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule
+    public final StaticMockitoRule mMockitoRule =
+            new StaticMockitoRule(Config.class, SystemProperties.class);
 
     @Mock private LeAudioTmapGattServer.BluetoothGattServerProxy mGattServerProxy;
 
@@ -61,7 +67,26 @@ public class LeAudioTmapGattServerTest {
     public void setUp() {
         doReturn(true).when(mGattServerProxy).open(any());
         doReturn(true).when(mGattServerProxy).addService(any());
-        mServer = new LeAudioTmapGattServer(mGattServerProxy);
+
+        ExtendedMockito.doReturn(true)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL));
+        ExtendedMockito.doReturn(true)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.MCP_SERVER));
+        ExtendedMockito.doReturn(false)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST));
+        ExtendedMockito.doReturn(true)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_PERIPHERAL));
+        ExtendedMockito.doReturn(true)
+                .when(
+                        () ->
+                                SystemProperties.getBoolean(
+                                        "bluetooth.profile.tmap.call_terminal.enabled", false));
+        ExtendedMockito.doReturn(true)
+                .when(
+                        () ->
+                                SystemProperties.getBoolean(
+                                        "bluetooth.profile.tmap.unicast_media_receiver.enabled",
+                                        false));
     }
 
     @After
@@ -73,7 +98,7 @@ public class LeAudioTmapGattServerTest {
     public void testStartStopService() {
         ArgumentCaptor<BluetoothGattService> captor =
                 ArgumentCaptor.forClass(BluetoothGattService.class);
-        mServer.start(TEST_ROLE_MASK);
+        mServer = new LeAudioTmapGattServer(mGattServerProxy);
         verify(mGattServerProxy).open(any());
         verify(mGattServerProxy).addService(captor.capture());
 
@@ -90,12 +115,21 @@ public class LeAudioTmapGattServerTest {
         assertThat(characteristic.getProperties()).isEqualTo(PROPERTY_READ);
         assertThat(characteristic.getPermissions()).isEqualTo(PERMISSION_READ);
 
+        int expected_role_mask = TEST_ROLE_MASK;
+        if (SystemProperties.getBoolean("bluetooth.profile.tmap.call_terminal.enabled", false)) {
+            expected_role_mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CT;
+        }
+        if (SystemProperties.getBoolean(
+                "bluetooth.profile.tmap.unicast_media_receiver.enabled", false)) {
+            expected_role_mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMR;
+        }
+
         // verify characteristic value
         int value = characteristic.getIntValue(FORMAT_UINT16, 0);
-        assertThat(value).isEqualTo(TEST_ROLE_MASK);
+        assertThat(value).isEqualTo(expected_role_mask);
 
         // verify stop triggers stop method call
-        mServer.stop();
+        mServer.close();
         verify(mGattServerProxy).close();
     }
 
@@ -103,6 +137,8 @@ public class LeAudioTmapGattServerTest {
     public void testStartServiceFailed() {
         // Verify throw exception when failed to open GATT server
         doReturn(false).when(mGattServerProxy).open(any());
-        assertThrows(IllegalStateException.class, () -> mServer.start(TEST_ROLE_MASK));
+        assertThrows(
+                IllegalStateException.class,
+                () -> mServer = new LeAudioTmapGattServer(mGattServerProxy));
     }
 }

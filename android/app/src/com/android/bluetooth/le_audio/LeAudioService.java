@@ -777,13 +777,12 @@ public class LeAudioService extends ConnectableProfile {
         if (mTmapGattServer != null) {
             throw new IllegalStateException("TMAP GATT server started before start() is called");
         }
-        mTmapGattServer = LeAudioObjectsFactory.getInstance().getTmapGattServer(this);
 
         try {
-            mTmapGattServer.start(mTmapRoleMask);
+            mTmapGattServer =
+                    LeAudioObjectsFactory.getInstance().getTmapGattServer(getAdapterService());
         } catch (IllegalStateException e) {
             Log.e(TAG, "Fail to start TmapGattServer", e);
-            mTmapGattServer = null;
             return false;
         }
 
@@ -870,7 +869,7 @@ public class LeAudioService extends ConnectableProfile {
             if (mTmapGattServer == null) {
                 Log.w(TAG, "TMAP GATT server should never be null before stop() is called");
             } else {
-                mTmapGattServer.stop();
+                mTmapGattServer.close();
                 mTmapGattServer = null;
                 mTmapStarted = false;
             }

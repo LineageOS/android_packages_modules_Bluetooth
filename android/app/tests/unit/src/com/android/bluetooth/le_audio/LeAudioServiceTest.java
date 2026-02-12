@@ -426,7 +426,7 @@ public class LeAudioServiceTest {
         }
         int mask =
                 Flags.leaudioCentralizeTmap()
-                        ? LeAudioTmapService.calculateTmapRoleMask()
+                        ? LeAudioTmapGattServer.calculateTmapRoleMask()
                         : new LeAudioService(
                                         mAdapterService,
                                         mStorage,
