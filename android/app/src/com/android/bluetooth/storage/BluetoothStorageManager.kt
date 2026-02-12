@@ -94,7 +94,7 @@ constructor(
 ) {
     private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
-    private val eventLog = BluetoothEventLogger(30, "$TAG.EventLog") // Dumpsys logger
+    private val eventLog = BluetoothEventLogger(50, "$TAG.EventLog") // Dumpsys logger
 
     // The DataStore instance that handles the UserStorage proto.
     // Data is stored in a file named "user_storage" in the app's device protected storage.
