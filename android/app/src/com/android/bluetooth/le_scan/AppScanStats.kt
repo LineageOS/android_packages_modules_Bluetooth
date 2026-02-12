@@ -157,6 +157,7 @@ class AppScanStats(
             numberOfNewResults,
             isScreenOn,
             getAttributionTagFromScannerId(scannerId),
+            scan,
         )
     }
 
