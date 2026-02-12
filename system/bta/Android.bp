@@ -173,7 +173,10 @@ cc_library_static {
     cflags: [
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
         "-fvisibility=default",
-    ],
+    ] + select(soong_config_variable("bluetooth_module", "leaudio_lc3_default_bit"), {
+            any @ flag_val: ["-DBLE_LC3_DEFAULT_BIT=" + flag_val],
+            default: ["-DBLE_LC3_DEFAULT_BIT=16"],
+        }),
     static_libs: [
         "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.audio@2.0",
