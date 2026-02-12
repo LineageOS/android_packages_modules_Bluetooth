@@ -173,7 +173,10 @@ cc_library_static {
     cflags: [
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
         "-fvisibility=default",
-    ],
+    ] + select(soong_config_variable("bluetooth_module", "le_audio_bit_override"), {
+            any @ flag_val: ["-DBLE_BIT_OVERRIDE=" + flag_val],
+            default: ["-DBLE_BIT_OVERRIDE=16"],
+    }),
     static_libs: [
         "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.audio@2.0",
