@@ -804,6 +804,22 @@ public class AvrcpControllerStateMachineTest {
     }
 
     /**
+     * Test media browsing Verify that a browse tree is created with the proper root Verify that a
+     * player can be fetched and added to the browse tree Verify that the contents of a player are
+     * fetched upon request
+     */
+    @Test
+    @FlakyTest
+    public void testBrowsingCommandsNoBrowse() {
+        setUpConnectedState(true, false);
+        BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
+
+        // Verify requestContents does not start to fetch players.
+        mAvrcpStateMachine.requestContents(results);
+        verify(mNativeInterface, never()).getPlayerList(eq(mTestAddress), anyInt(), anyInt());
+    }
+
+    /**
      * Test our reaction to an available players changed event
      *
      * <p>Verify that we issue a command to fetch the new available players

@@ -257,6 +257,17 @@ bool avrcp_controller_cover_art_enabled();
 
 /******************************************************************************
  *
+ * Function         avrcp_controller_browsing_enabled
+ *
+ * Description      Check if Browsing is enabled in config
+ *
+ * Returns          return true if Browsing is enabled
+ *
+ *****************************************************************************/
+bool avrcp_controller_browsing_enabled();
+
+/******************************************************************************
+ *
  * Function         AVRC_GetControlProfileVersion
  *
  * Description      Get the overlaid AVRCP control profile version

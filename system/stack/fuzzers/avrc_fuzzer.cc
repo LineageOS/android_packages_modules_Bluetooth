@@ -117,6 +117,7 @@ namespace bluetooth {
 namespace Avrcp {
 bool absolute_volume() { return true; }
 bool isAvrcpControllerCoverArtEnabled() { return true; }
+bool isAvrcpControllerBrowsingEnabled() { return true; }
 }  // namespace Avrcp
 
 namespace Bta {
