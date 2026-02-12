@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.util;
+package com.android.bluetooth.util
 
 /** Utility for parsing numbers in Bluetooth. */
-public class NumberUtils {
-
-    private NumberUtils() {}
-
-    /** Convert a byte to unsigned int. */
-    public static int unsignedByteToInt(byte b) {
-        return b & 0xFF;
-    }
+object NumberUtils {
 
     /** Convert a little endian byte array to integer. */
-    public static int littleEndianByteArrayToInt(byte[] bytes) {
-        int length = bytes.length;
+    fun littleEndianByteArrayToInt(bytes: ByteArray): Int {
+        val length = bytes.size
         if (length == 0) {
-            return 0;
+            return 0
         }
-        int result = 0;
-        for (int i = length - 1; i >= 0; i--) {
-            int value = unsignedByteToInt(bytes[i]);
-            result += (value << (i * 8));
+        var result = 0
+        for (i in length - 1 downTo 0) {
+            val value = unsignedByteToInt(bytes[i])
+            result += (value shl (i * 8))
         }
-        return result;
+        return result
+    }
+
+    /** Convert a byte to unsigned int. */
+    private fun unsignedByteToInt(b: Byte): Int {
+        return b.toInt() and 0xFF
     }
 }
