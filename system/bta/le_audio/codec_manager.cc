@@ -266,7 +266,8 @@ public:
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                   .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
-                  .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                  .bits_per_sample =
+                          utils::translateToBtLeAudioCodecConfigBitPerSample(BLE_LC3_DEFAULT_BIT),
                   .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(1),
                   .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
                           types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
@@ -284,7 +285,8 @@ public:
                             types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                     .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                             types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
-                    .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                    .bits_per_sample =
+                            utils::translateToBtLeAudioCodecConfigBitPerSample(BLE_LC3_DEFAULT_BIT),
                     .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(chan_bit),
                     .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
                             types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
@@ -629,7 +631,7 @@ public:
         }
       }
 
-      broadcast_config.bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16;
+      broadcast_config.bits_per_sample = adsp_config.codec.GetBitsPerSample();
       broadcast_config.sampling_rate = core_config.GetSamplingFrequencyHz();
       broadcast_config.frame_duration = core_config.GetFrameDurationUs();
       broadcast_config.octets_per_frame = *(core_config.octets_per_codec_frame);
@@ -742,6 +744,7 @@ public:
     auto const& subgroup = config.subgroups.at(0);
     auto subgroup_config = subgroup.GetCommonBisCodecSpecData().GetAsCoreCodecConfig();
 
+    offload_cfg.bits_per_sample = subgroup.GetBitsPerSample();
     offload_cfg.sampling_rate = subgroup_config.GetSamplingFrequencyHz();
     offload_cfg.frame_duration = subgroup_config.GetFrameDurationUs();
     offload_cfg.octets_per_frame = subgroup_config.GetOctetsPerFrame();

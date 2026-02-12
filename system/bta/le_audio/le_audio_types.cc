@@ -87,7 +87,7 @@ uint8_t CodecConfigSetting::GetBitsPerSample() const {
   switch (id.coding_format) {
     case kLeAudioCodingFormatLC3:
       /* XXX LC3 supports 16, 24, 32 */
-      return 16;
+      return BLE_LC3_DEFAULT_BIT;
     default:
       log::warn(", invalid codec id: 0x{:02x}", id.coding_format);
       return 0;
