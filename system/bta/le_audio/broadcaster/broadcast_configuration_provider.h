@@ -42,7 +42,7 @@ static const BroadcastSubgroupCodecConfig lc3_mono_16_2 = BroadcastSubgroupCodec
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_mono_48_4 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
@@ -76,7 +76,7 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_16_2 = BroadcastSubgroupCod
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_stereo_24_2 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
@@ -93,7 +93,7 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_24_2 = BroadcastSubgroupCod
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_stereo_48_1 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
@@ -110,7 +110,7 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_1 = BroadcastSubgroupCod
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_stereo_48_2 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
@@ -127,7 +127,7 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_2 = BroadcastSubgroupCod
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_stereo_48_3 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
@@ -144,7 +144,7 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_3 = BroadcastSubgroupCod
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_stereo_48_4 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
@@ -161,7 +161,7 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_4 = BroadcastSubgroupCod
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const types::DataPathConfiguration lc3_data_path = {
         .dataPathId = bluetooth::hci::iso_manager::kIsoDataPathHci,
