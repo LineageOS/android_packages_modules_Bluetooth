@@ -494,6 +494,7 @@ public:
     }
   }
 
+  int triggered_le_acl_conn{0};
   bool w4_info_rsp;         /* true when info request is active */
   uint32_t peer_ext_fea;    /* Peer's extended features mask */
   list_t* link_xmit_data_q; /* Link transmit data buffer queue */

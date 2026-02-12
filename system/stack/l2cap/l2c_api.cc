@@ -566,6 +566,9 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_
       l2cu_release_lcb(p_lcb);
       return 0;
     }
+    // ACL connection is triggered, mark it as pending LE ACL connection
+    log::verbose("triggered_le_acl_conn count incremented: {}", p_lcb->triggered_le_acl_conn);
+    p_lcb->triggered_le_acl_conn++;
   }
 
   /* Allocate a channel control block */
@@ -594,6 +597,10 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_
       // should this operation fail
       do_in_main_thread(base::BindOnce(&l2c_csm_execute, base::Unretained(p_ccb),
                                        L2CEVT_L2CA_CONNECT_REQ, nullptr));
+      if (p_lcb->triggered_le_acl_conn > 0) {
+        log::warn("triggered_le_acl_conn count decremented: {}", p_lcb->triggered_le_acl_conn);
+        p_lcb->triggered_le_acl_conn--;
+      }
     }
   } else if (p_lcb->link_state == LST_DISCONNECTING) {
     /* If link is disconnecting, save link info to retry after disconnect
