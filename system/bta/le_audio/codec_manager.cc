@@ -237,6 +237,8 @@ public:
 
     const struct types::LeAudioCoreCodecCapabilities capa =
             record.codec_spec_caps.GetAsCoreCodecCapabilities();
+    const static int bit_override =
+            osi_property_get_int32("persist.bluetooth.leaudio.bit_override", 16);
     for (uint8_t freq_bit = codec_spec_conf::kLeAudioSamplingFreq8000Hz;
          freq_bit <= codec_spec_conf::kLeAudioSamplingFreq384000Hz; freq_bit++) {
       if (!capa.IsSamplingFrequencyConfigSupported(freq_bit)) {
@@ -254,7 +256,8 @@ public:
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                   .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
-                  .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                  .bits_per_sample =
+                          utils::translateToBtLeAudioCodecConfigBitPerSample(bit_override),
                   .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(1),
                   .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
                           types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
@@ -272,7 +275,8 @@ public:
                             types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                     .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                             types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
-                    .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                    .bits_per_sample =
+                            utils::translateToBtLeAudioCodecConfigBitPerSample(bit_override),
                     .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(chan_bit),
                     .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
                             types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
