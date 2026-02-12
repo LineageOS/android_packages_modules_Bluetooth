@@ -318,6 +318,23 @@ static bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
   return true;
 }
 
+static void gatt_set_idle_timeout(const RawAddress& bd_addr, bool is_active) {
+  uint16_t idle_tout = is_active ? GATT_LINK_NO_IDLE_TIMEOUT : GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP;
+  bool status = stack::l2cap::get_interface().L2CA_SetLeGattTimeout(bd_addr, idle_tout);
+
+  if (is_active) {
+    status &= stack::l2cap::get_interface().L2CA_MarkLeLinkAsActive(bd_addr);
+  } else {
+    if (!stack::l2cap::get_interface().L2CA_SetIdleTimeoutByBdAddr(
+                bd_addr, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE)) {
+      log::warn("Unable to set L2CAP link idle timeout peer:{} ", bd_addr);
+    }
+  }
+
+  log::info("idle_timeout={}, is_active={}, status={} (1-OK 0-not performed)", idle_tout, is_active,
+            status);
+}
+
 /*******************************************************************************
  *
  * Function         gatt_update_app_use_link_flag
@@ -357,8 +374,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
     if (p_tcb->att_lcid == L2CAP_ATT_CID && is_valid_handle) {
       log::info("disable link idle timer for {}", p_tcb->peer_bda);
       /* acl link is connected disable the idle timeout */
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport,
-                          true /* is_active */);
+      gatt_set_idle_timeout(p_tcb->peer_bda, true /* is_active */);
     } else {
       log::info("invalid handle {} or dynamic CID {}", is_valid_handle, p_tcb->att_lcid);
     }
@@ -390,8 +406,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
                 "GATT fixed channel is no longer useful, start link idle timer for "
                 "{} seconds",
                 GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP);
-        GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, p_tcb->transport,
-                            false /* is_active */);
+        gatt_set_idle_timeout(p_tcb->peer_bda, false /* is_active */);
       } else {
         // disconnect the dynamic channel
         log::info("disconnect GATT dynamic channel");
@@ -587,11 +602,9 @@ void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
     if (!p_tcb->app_hold_link.empty()) {
       /* disable idle timeout if one or more clients are holding the link
        * disable the idle timer */
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport,
-                          true /* is_active */);
+      gatt_set_idle_timeout(p_tcb->peer_bda, true /* is_active */);
     } else {
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, p_tcb->transport,
-                          false /* is_active */);
+      gatt_set_idle_timeout(p_tcb->peer_bda, false /* is_active */);
     }
   }
 }

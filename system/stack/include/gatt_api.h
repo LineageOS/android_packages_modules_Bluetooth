@@ -1147,28 +1147,6 @@ void GATTC_UpdateUserAttMtuIfNeeded(const RawAddress& remote_bda, tBT_TRANSPORT 
 
 /*******************************************************************************
  *
- * Function         GATT_SetIdleTimeout
- *
- * Description      This function (common to both client and server) sets the
- *                  idle timeout for a transport connection
- *
- * Parameter        bd_addr:   target device bd address.
- *                  idle_tout: timeout value in seconds.
- *                  transport: transport option.
- *                  is_active: whether we should use this as a signal that an
- *                             active client now exists (which changes link
- *                             timeout logic, see
- *                             t_l2c_linkcb.with_active_local_clients for
- *                             details).
- *
- * Returns          void
- *
- ******************************************************************************/
-void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT transport,
-                         bool is_active);
-
-/*******************************************************************************
- *
  * Function         GATT_Register
  *
  * Description      This function is called to register an  application
