@@ -1657,10 +1657,10 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
 
   log::info("Simulate timeout");
 
-  EXPECT_CALL(mock_le_connection_callbacks_,
-              OnLeConnectFail(_, ErrorCode::CONNECTION_ACCEPT_TIMEOUT))
-          .Times(1);
   if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    EXPECT_CALL(mock_le_connection_callbacks_,
+                OnLeConnectFail(_, ErrorCode::CONNECTION_ACCEPT_TIMEOUT))
+            .Times(1);
     le_impl_->on_create_connection_timeout(address);
   } else {
     // upper layer requesting removal on timeout
