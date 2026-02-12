@@ -158,3 +158,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_transport_mutex"
+    namespace: "bluetooth"
+    description: "Add mutex to A2dpTransport to protect pending cmd status"
+    bug: "483900386"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
