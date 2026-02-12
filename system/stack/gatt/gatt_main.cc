@@ -571,8 +571,10 @@ void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
     }
   }
 
-  /* Remove the direct connection */
-  connection_manager::on_connection_complete(p_tcb->peer_bda);
+  if (!com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+    /* Remove the direct connection */
+    connection_manager::on_connection_complete(p_tcb->peer_bda);
+  }
 
   if (p_tcb->att_lcid == L2CAP_ATT_CID) {
     if (!p_tcb->app_hold_link.empty()) {
