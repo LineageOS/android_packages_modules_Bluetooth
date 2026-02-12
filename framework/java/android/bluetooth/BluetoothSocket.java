@@ -25,7 +25,9 @@ import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SystemApi;
+import android.app.compat.CompatChanges;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
+import android.compat.annotation.ChangeId;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
 import android.net.LocalSocket;
@@ -190,6 +192,12 @@ public final class BluetoothSocket implements Closeable {
         LISTENING,
         CLOSED,
     }
+
+    /**
+     * Starting with Android C (CINNAMON_BUN), RFCOMM Sockets will return -1 on EOF to be consistent
+     * with IOStream documentation and with LE CoC sockets behavior
+     */
+    @ChangeId static final long MAKE_SOCKET_READ_BEHAVIOR_CONSISTENT = 383671392L;
 
     /** prevents all native calls after destroyNative() */
     private volatile SocketState mSocketState;
@@ -993,6 +1001,13 @@ public final class BluetoothSocket implements Closeable {
         }
         if (ret < 0) {
             mSocketState = SocketState.CLOSED;
+            // TODO: remove strict SDK version check with isAtleastC() once availalble
+            if (Flags.makeSocketReadBehaviorConsistent()
+                    && CompatChanges.isChangeEnabled(MAKE_SOCKET_READ_BEHAVIOR_CONSISTENT)
+                    && Build.VERSION.SDK_INT >= 37) {
+                if (DBG) Log.d(TAG, "read(): EOF, returning -1");
+                return -1;
+            }
             throw new IOException("bt socket closed, read return: " + ret);
         }
         if (VDBG) Log.d(TAG, "read out:  " + mSocketIS + " ret: " + ret);
