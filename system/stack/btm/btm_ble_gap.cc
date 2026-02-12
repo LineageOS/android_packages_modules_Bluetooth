@@ -1354,7 +1354,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
   const uint8_t* p_flag =
           AdvertiseDataParser::GetFieldByType(advertising_data, BTM_BLE_AD_TYPE_FLAG, &len);
 
-  if (len != 1) {
+  if (len > 1) {
     log::warn("Dropping bad advertising packet from {}: len={}", bda, len);
     return;
   }
