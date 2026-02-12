@@ -254,7 +254,8 @@ public:
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                   .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
-                  .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                  .bits_per_sample =
+                          utils::translateToBtLeAudioCodecConfigBitPerSample(BLE_BIT_OVERRIDE),
                   .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(1),
                   .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
                           types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
@@ -272,7 +273,8 @@ public:
                             types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                     .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                             types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
-                    .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                    .bits_per_sample =
+                            utils::translateToBtLeAudioCodecConfigBitPerSample(BLE_BIT_OVERRIDE),
                     .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(chan_bit),
                     .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
                             types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
