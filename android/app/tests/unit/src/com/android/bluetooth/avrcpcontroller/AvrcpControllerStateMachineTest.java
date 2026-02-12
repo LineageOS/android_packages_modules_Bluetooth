@@ -218,7 +218,7 @@ public class AvrcpControllerStateMachineTest {
         // The temporary workaround below is done because the receiver is only registered when
         // Flags.avrcpControllerAbsVolChangedNotification() is true
         verify(mAdapterService, atLeast(0))
-                .registerReceiver(receiverCaptor.capture(), any(IntentFilter.class));
+                .registerReceiver(receiverCaptor.capture(), any(IntentFilter.class), any(), any());
         List<BroadcastReceiver> receivers = receiverCaptor.getAllValues();
         mBroadcastReceiver = !receivers.isEmpty() ? receivers.getLast() : null;
         // Use this when removing flag
@@ -409,10 +409,11 @@ public class AvrcpControllerStateMachineTest {
      * <p>Only use with {@link Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION}
      */
     private void sendVolumeChangedEvent(int localVol) {
-        Intent intent = new Intent(AudioManager.ACTION_VOLUME_CHANGED);
-        intent.putExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, AudioManager.STREAM_MUSIC);
-        intent.putExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, localVol);
         doReturn(localVol).when(mAudioManager).getStreamVolume(eq(AudioManager.STREAM_MUSIC));
+        Intent intent =
+                new Intent(AudioManager.ACTION_VOLUME_CHANGED)
+                        .putExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, AudioManager.STREAM_MUSIC)
+                        .putExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, localVol);
         mBroadcastReceiver.onReceive(mAdapterService, intent);
         TestUtils.waitForLooperToBeIdle(mAvrcpStateMachine.getHandler().getLooper());
     }
