@@ -390,18 +390,6 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
   }
 }
 
-static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                         tBT_TRANSPORT transport, tGATT_IF gatt_if) {
-  if (transport != BT_TRANSPORT_LE) {
-    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
-                                                                                BTM_SEC_NONE);
-    return p_tcb->att_lcid != 0;
-  } else {
-    p_tcb->att_lcid = L2CAP_ATT_CID;
-    return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
-  }
-}
-
 /** GATT connection initiation */
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                       tBT_TRANSPORT transport) {
@@ -431,7 +419,18 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
     gatt_set_ch_state(p_tcb, GATT_CH_CONN);
   }
 
-  if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
+  bool conn_success = false;
+  if (transport != BT_TRANSPORT_LE) {
+    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, bd_addr,
+                                                                                BTM_SEC_NONE);
+    conn_success = p_tcb->att_lcid != 0;
+  } else {
+    p_tcb->att_lcid = L2CAP_ATT_CID;
+    conn_success =
+            connection_manager::direct_connect_add(p_reg->gatt_if, bd_addr, addr_type, false);
+  }
+
+  if (!conn_success) {
     log::error("gatt_connect failed");
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
     alarm_free(p_tcb->conf_timer);
