@@ -494,11 +494,17 @@ class MceStateMachine extends StateMachine {
             } else if ((supportedMessageTypes & SdpMasRecord.MessageType.SMS_GSM) > 0) {
                 mDefaultMessageType = Bmessage.Type.SMS_GSM;
             }
+
+            Log.i(
+                    TAG,
+                    ("[" + mDevice + "] setDefaultMessageType():")
+                            + (" Using message type=" + mDefaultMessageType));
         }
     }
 
     public void dump(StringBuilder sb) {
         ProfileService.println(sb, "mCurrentDevice: " + mDevice + " " + this.toString());
+        ProfileService.println(sb, "  Preferred Message Type: " + getDefaultMessageType());
         if (mDatabase != null) {
             mDatabase.dump(sb);
         } else {
@@ -556,6 +562,9 @@ class MceStateMachine extends StateMachine {
                             Log.e(TAG, mDevice + " [Connecting]: SDP record is null");
                             return NOT_HANDLED;
                         }
+
+                        Log.i(TAG, mDevice + " [Connecting]: SDP record=" + record);
+
                         mMasClient =
                                 new MasClient(
                                         mAdapterService, mDevice, MceStateMachine.this, record);
