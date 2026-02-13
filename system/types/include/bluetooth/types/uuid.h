@@ -160,6 +160,10 @@ public:
   // Returns true if this UUID is equal to kBase
   bool IsBase() const;
 
+  // Returns true if this UUID is valid (i.e. neither 128-bit empty zeros
+  // nor 16/32-bit 0-value which resolves to kBase).
+  bool IsValid() const;
+
   bool operator<(const Uuid& rhs) const;
   bool operator==(const Uuid& rhs) const;
   bool operator!=(const Uuid& rhs) const;
