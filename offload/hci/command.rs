@@ -48,6 +48,8 @@ pub enum Command {
 pub enum ReturnParameters {
     /// 7.3.2 Reset Command
     Reset(ResetComplete),
+    /// 7.4.5 Read Buffer Size
+    ReadBufferSize(ReadBufferSizeComplete),
     /// 7.8.2 LE Read Buffer Size [V1]
     LeReadBufferSizeV1(LeReadBufferSizeV1Complete),
     /// 7.8.2 LE Read Buffer Size [V2]
@@ -186,6 +188,37 @@ fn test_reset_complete() {
     let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
     let ReturnParameters::Reset(ref p) = e.return_parameters else { panic!() };
     assert_eq!(p.status, Status::Success);
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
+
+// 7.4.5 Read Buffer Size
+
+impl CommandOpCode for ReadBufferSize {
+    const OPCODE: OpCode = OpCode::from(0x04, 0x0005);
+}
+
+#[derive(Debug)]
+pub struct ReadBufferSize;
+
+#[derive(Debug, Read, Write)]
+pub struct ReadBufferSizeComplete {
+    pub status: Status,
+    pub acl_data_packet_length: u16,
+    pub synchronous_data_packet_length: u8,
+    pub total_num_acl_data_packets: u16,
+    pub total_num_synchronous_data_packets: u16,
+}
+
+#[test]
+fn test_read_buffer_size_complete() {
+    let dump = [0x0e, 0x0b, 0x01, 0x05, 0x10, 0x00, 0xff, 0x03, 0xff, 0x0a, 0x00, 0x0a, 0x00];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::ReadBufferSize(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.status, Status::Success);
+    assert_eq!(p.acl_data_packet_length, 1023);
+    assert_eq!(p.synchronous_data_packet_length, 255);
+    assert_eq!(p.total_num_acl_data_packets, 10);
+    assert_eq!(p.total_num_synchronous_data_packets, 10);
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
@@ -723,7 +756,11 @@ impl StartA2dpOffload {
 }
 
 #[derive(Debug, Read, Write)]
-pub struct StopA2dpOffload {}
+pub struct StopA2dpOffload {
+    pub connection_handle: u16,
+    pub l2cap_channel_id: u16,
+    pub data_path_direction: u8,
+}
 
 impl StopA2dpOffload {
     const OPCODE: u8 = 0x04;
@@ -732,7 +769,7 @@ impl StopA2dpOffload {
 #[test]
 fn test_start_a2dp_offload() {
     let dump = [
-        0x5d, 0xfd, 14, 0x03, 0x23, 0x01, 0x67, 0x45, 0x00, 0x00, 0x01, 0x00, 0x42, 0x03, 0x01,
+        0x5d, 0xfd, 0x0e, 0x03, 0x23, 0x01, 0x67, 0x45, 0x00, 0x00, 0x01, 0x00, 0x42, 0x03, 0x01,
         0x02, 0x03,
     ];
     let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StartA2dpOffload(c))) =
@@ -762,12 +799,15 @@ fn test_start_a2dp_complete() {
 
 #[test]
 fn test_stop_a2dp_offload() {
-    let dump = [0x5d, 0xfd, 1, 0x04];
+    let dump = [0x5d, 0xfd, 0x06, 0x04, 0x23, 0x01, 0x67, 0x45, 0x00];
     let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StopA2dpOffload(c))) =
         Command::from_bytes(&dump)
     else {
         panic!()
     };
+    assert_eq!(c.connection_handle, 0x0123);
+    assert_eq!(c.l2cap_channel_id, 0x4567);
+    assert_eq!(c.data_path_direction, 0);
     assert_eq!(A2dpHardwareOffload::StopA2dpOffload(c).to_bytes(), &dump[..]);
 }
 

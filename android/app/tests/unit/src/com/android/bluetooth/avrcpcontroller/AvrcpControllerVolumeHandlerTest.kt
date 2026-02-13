@@ -16,9 +16,7 @@
 
 package com.android.bluetooth.avrcpcontroller
 
-import android.content.BroadcastReceiver
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.platform.test.annotations.EnableFlags
@@ -36,10 +34,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.kotlin.any
-import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -62,10 +58,6 @@ class AvrcpControllerVolumeHandlerTest {
 
     /** [makeVolumeHandler] must be called per test */
     private lateinit var volumeHandler: AvrcpControllerVolumeHandler
-    // A temporary workaround in #makeVolumeHandler is done because the receiver is only registered
-    // when Flags.avrcpControllerAbsVolChangedNotification() is true
-    private var receiver: BroadcastReceiver? = null
-    // private lateinit var receiver: BroadcastReceiver  // Use this when removing flag
     private val looper = TestLooper()
 
     @Before
@@ -80,7 +72,7 @@ class AvrcpControllerVolumeHandlerTest {
 
     @After
     fun tearDown() {
-        destroyAvrcpControllerVolumeHandler()
+        volumeHandler.stop()
         assertThat(looper.nextMessage()).isNull()
     }
 
@@ -357,24 +349,6 @@ class AvrcpControllerVolumeHandlerTest {
 
         volumeHandler =
             AvrcpControllerVolumeHandler(adapterService, device, callback, looper.looper)
-
-        // Capture broadcast receiver
-        val receiverCaptor = ArgumentCaptor.forClass(BroadcastReceiver::class.java)
-        // The temporary workaround below is done because the receiver is only registered when
-        // Flags.avrcpControllerAbsVolChangedNotification() is true
-        verify(adapterService, atLeast(0))
-            .registerReceiver(receiverCaptor.capture(), any<IntentFilter>())
-        val receivers = receiverCaptor.allValues
-        if (!receivers.isEmpty()) receiver = receivers.last()
-        // Use this when removing flag
-        // verify(adapterService, atLeastOnce())
-        //     .registerReceiver(receiverCaptor.capture(), any<IntentFilter>())
-        // receiver = receiverCaptor.value
-    }
-
-    /** Destroy a volume handler you created to test */
-    private fun destroyAvrcpControllerVolumeHandler() {
-        volumeHandler.stop()
     }
 
     /** Call [AvrcpControllerVolumeHandler.setAbsoluteVolume] and drive the test looper. */
@@ -412,11 +386,12 @@ class AvrcpControllerVolumeHandlerTest {
      * Only use with [Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION].
      */
     private fun sendVolumeChangedEvent(localVol: Int) {
-        val intent = Intent(AudioManager.ACTION_VOLUME_CHANGED)
-        intent.putExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, AudioManager.STREAM_MUSIC)
-        intent.putExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, localVol)
         doReturn(localVol).whenever(audioManager).getStreamVolume(eq(AudioManager.STREAM_MUSIC))
-        receiver!!.onReceive(adapterService, intent)
-        looper.dispatchAll()
+
+        val intent =
+            Intent(AudioManager.ACTION_VOLUME_CHANGED)
+                .putExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, AudioManager.STREAM_MUSIC)
+                .putExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, localVol)
+        volumeHandler.onIntentReceived(intent)
     }
 }

@@ -42,7 +42,6 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.GET_PERMISSIONS
-import android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES
 import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
@@ -285,21 +284,27 @@ object Util {
 
         // Check the last attribution in the chain for a neverForLocation disavowal.
         val packageName = currentAttrib.packageName
-        val pm = context.packageManager
-        try {
-            // TODO(b/183478032): Cache PackageInfo for use here.
-            val pkgInfo =
-                pm.getPackageInfo(packageName!!, GET_PERMISSIONS or MATCH_UNINSTALLED_PACKAGES)
-            for (i in pkgInfo.requestedPermissions!!.indices) {
-                if (pkgInfo.requestedPermissions!![i] == BLUETOOTH_SCAN) {
-                    return (pkgInfo.requestedPermissionsFlags!![i] and
-                        PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION) != 0
-                }
+
+        // Previous check must have enforced isSameProfileGroup(currentAttrib.uid, myUserHandle)
+        val packageManager =
+            context
+                .createContextAsUser(UserHandle.getUserHandleForUid(currentAttrib.uid), 0)
+                .packageManager
+        val packageInfo =
+            try {
+                packageManager.getPackageInfo(packageName!!, GET_PERMISSIONS)
+            } catch (e: PackageManager.NameNotFoundException) {
+                Log.w(TAG, "Could not find package for disavowal check: $packageName")
+                return false
             }
-        } catch (e: PackageManager.NameNotFoundException) {
-            Log.w(TAG, "Could not find package for disavowal check: $packageName")
+
+        val index = packageInfo.requestedPermissions?.indexOf(BLUETOOTH_SCAN) ?: -1
+        if (index == -1) {
+            return false
         }
-        return false
+
+        val flags = packageInfo.requestedPermissionsFlags?.get(index) ?: 0
+        return (flags and PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION) != 0
     }
 
     /**
@@ -566,52 +571,42 @@ object Util {
         if (isInstrumentationTestMode) {
             return true
         }
-        val res = checkCallerIsSystemOrActiveOrManagedUser(context)
+        val res = checkCallerIsAllowed(context)
         if (!res) {
             Log.w(TAG, "$tag - Not allowed for non-active user and non-system and non-managed user")
         }
         return res
     }
 
-    private fun checkCallerIsSystemOrActiveOrManagedUser(context: Context?): Boolean {
-        if (context == null) {
-            return checkCallerIsSystemOrActiveUser()
-        }
+    // Allowed caller should be:
+    // * Current user
+    // * Any profile in the same group of the current user (work profile, private space, clone, …)
+    //
+    // Then, for broader compatibility, we need to add some special situation that are miss-handling
+    // the multi-user scenario:
+    // * SystemUiUid because global UI is running under user 0
+    // * System user in case we are in HSUM mode
+    // * System uid for any request from the system server
+    private fun checkCallerIsAllowed(context: Context): Boolean {
+        val currentUser = Process.myUserHandle()
         val callingUid = Binder.getCallingUid()
         val callingUser = UserHandle.getUserHandleForUid(callingUid)
 
-        // Use the Bluetooth process identity when making call to get parent user
         val identity = Binder.clearCallingIdentity()
         try {
-            val userManager = context.getSystemService(UserManager::class.java)
-            val userHandle = userManager.getProfileParent(callingUser)
-
-            // In HSUM mode, UserHandle.SYSTEM is only for System and the human users will use other
-            // ids
-            val isSystemUserInHsumMode =
-                UserManager.isHeadlessSystemUserMode() && callingUser == UserHandle.SYSTEM
-
-            // Always allow SystemUI/System access.
-            return Process.myUserHandle() == callingUser ||
-                Process.myUserHandle() == userHandle ||
-                (UserHandle.getAppId(Utils.getSystemUiUid()) == UserHandle.getAppId(callingUid)) ||
-                (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid)) ||
-                (isSystemUserInHsumMode)
-        } catch (ex: Exception) {
-            Log.e(TAG, "checkCallerAllowManagedProfiles: Exception ex=$ex")
-            return false
+            return currentUser == callingUser ||
+                UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid) ||
+                // SystemUiUid wrongfully run and request for User 0. It needs dedicated exception
+                UserHandle.getAppId(Utils.getSystemUiUid()) == UserHandle.getAppId(callingUid) ||
+                // In HSUM, UserHandle.SYSTEM is only for System, not human
+                (UserManager.isHeadlessSystemUserMode() && callingUser == UserHandle.SYSTEM) ||
+                // Allow any users in the same group (Managed, clone, private...)
+                context
+                    .getSystemService(UserManager::class.java)
+                    .isSameProfileGroup(currentUser, callingUser) // Requires Bluetooth Identity
         } finally {
             Binder.restoreCallingIdentity(identity)
         }
-    }
-
-    private fun checkCallerIsSystemOrActiveUser(): Boolean {
-        val callingUid = Binder.getCallingUid()
-        val callingUser = UserHandle.getUserHandleForUid(callingUid)
-
-        return Process.myUserHandle() == callingUser ||
-            (UserHandle.getAppId(Utils.getSystemUiUid()) == UserHandle.getAppId(callingUid)) ||
-            (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid))
     }
 
     /**

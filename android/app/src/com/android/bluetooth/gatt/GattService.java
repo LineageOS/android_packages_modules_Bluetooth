@@ -21,6 +21,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static com.android.bluetooth.ChangeIds.DONOT_STEAL_AUDIO_ON_GATT_CONN;
 import static com.android.bluetooth.Util.transportToString;
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.gatt.ContextMap.RemoveReason.REASON_BINDER_DIED;
@@ -39,6 +40,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.Nullable;
+import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -59,6 +61,7 @@ import android.os.Looper;
 import android.os.SystemProperties;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
+import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.bluetooth.ActionOnDeathRecipient;
@@ -80,6 +83,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -173,6 +177,12 @@ public class GattService extends ProfileService {
 
     /** HashMap used for storing RSSI cache entries */
     @VisibleForTesting final Map<String, RssiCacheEntry> mRssiCache = new HashMap<>();
+
+    /** A remote device RSSI read is requested, null if none */
+    private BluetoothDevice mPendingRssiDevice;
+
+    /** Set of clients requesting RSSI */
+    @VisibleForTesting final Set<Integer> mClientsPendingRssi = new ArraySet<>();
 
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final GattServerManager mServerManager;
@@ -334,6 +344,7 @@ public class GattService extends ProfileService {
                     mRestrictedHandles.clear();
                     mServerManager.cleanup();
                     mRssiCache.clear();
+                    mClientsPendingRssi.clear();
                     mReliableQueue.clear();
                     mNativeInterface.cleanup();
                     mAdvertiseManager.cleanup();
@@ -813,18 +824,46 @@ public class GattService extends ProfileService {
                 ("onReadRemoteRssi(): clientIf=" + clientIf + ", device=" + device)
                         + (", rssi=" + rssi + ", status=" + statusToString(status)));
 
-        var app = mClientMap.getById(clientIf);
-        if (app == null) {
-            return;
-        }
+        if (Flags.supportMultipleReadRssi()) {
+            // TODO(b/449681465): Remove synchronized when the flag is removed.
+            synchronized (mClientsPendingRssi) {
+                if (!Objects.equals(mPendingRssiDevice, device)) {
+                    Log.w(TAG, "Getting unexpected RSSI callback. requested=" + mPendingRssiDevice);
+                }
+                mPendingRssiDevice = null;
+                if (!mClientsPendingRssi.contains(clientIf)) {
+                    return;
+                }
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.d(TAG, "onReadRemoteRssi(): Putting timestamp and rssi into cache");
+                    mRssiCache.put(
+                            device.getAddress(),
+                            new RssiCacheEntry(mTimeProvider.elapsedRealtime(), rssi));
+                }
 
-        if (status == BluetoothGatt.GATT_SUCCESS) {
-            Log.d(TAG, "onReadRemoteRssi(): Putting timestamp and rssi into cache");
-            mRssiCache.put(
-                    device.getAddress(), new RssiCacheEntry(mTimeProvider.elapsedRealtime(), rssi));
-        }
+                for (int client : mClientsPendingRssi) {
+                    var app = mClientMap.getById(client);
+                    if (app == null) {
+                        continue;
+                    }
+                    callbackToApp(() -> app.getCallback().onReadRemoteRssi(device, rssi, status));
+                }
+                mClientsPendingRssi.clear();
+            }
+        } else {
+            var app = mClientMap.getById(clientIf);
+            if (app == null) {
+                return;
+            }
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "onReadRemoteRssi(): Putting timestamp and rssi into cache");
+                mRssiCache.put(
+                        device.getAddress(),
+                        new RssiCacheEntry(mTimeProvider.elapsedRealtime(), rssi));
+            }
 
-        callbackToApp(() -> app.getCallback().onReadRemoteRssi(device, rssi, status));
+            callbackToApp(() -> app.getCallback().onReadRemoteRssi(device, rssi, status));
+        }
     }
 
     void onConfigureMTUFromNative(int connId, int status, int mtu) {
@@ -1061,17 +1100,44 @@ public class GattService extends ProfileService {
         }
 
         if (transport != TRANSPORT_BREDR && isDirect && !opportunistic) {
-            String attributionTag = getLastAttributionTag(source);
-            if (packageName != null) {
-                for (Map.Entry<String, String> entry :
-                        GATT_CLIENTS_NOTIFY_TO_ADAPTER_PACKAGES.entrySet()) {
-                    if (packageName.contains(entry.getKey())
-                            && ((attributionTag != null
-                                            && attributionTag.contains(entry.getValue()))
-                                    || entry.getValue().isEmpty())) {
-                        getAdapterService().notifyDirectLeGattClientConnect(clientIf, device);
-                        break;
+            if (!Flags.gattConnSettings()) {
+                String attributionTag = getLastAttributionTag(source);
+                if (packageName != null) {
+                    for (Map.Entry<String, String> entry :
+                            GATT_CLIENTS_NOTIFY_TO_ADAPTER_PACKAGES.entrySet()) {
+                        if (packageName.contains(entry.getKey())
+                                && ((attributionTag != null
+                                                && attributionTag.contains(entry.getValue()))
+                                        || entry.getValue().isEmpty())) {
+                            getAdapterService().notifyDirectLeGattClientConnect(clientIf, device);
+                            break;
+                        }
                     }
+                }
+            } else {
+                // This logic prevents app-initiated GATT connections from hijacking an active LE
+                // Audio stream, controlled by the DONOT_STEAL_AUDIO_ON_GATT_CONN compatibility
+                // flag.
+                boolean disableLeAudio = false;
+                if (Flags.gattThread()) {
+                    disableLeAudio =
+                            CompatChanges.isChangeEnabled(
+                                    DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid());
+                } else {
+                    final long token = Binder.clearCallingIdentity();
+                    try {
+                        disableLeAudio =
+                                CompatChanges.isChangeEnabled(
+                                        DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid());
+                    } finally {
+                        Binder.restoreCallingIdentity(token);
+                    }
+                }
+                if (disableLeAudio) {
+                    // Notify gatt connection trigger from connectGatt to LeAudio so that It will
+                    // mark the device as not available for LeAudio
+                    Log.i(TAG, "clientConnect(): notifyDirectLeGattClientConnect");
+                    getAdapterService().notifyDirectLeGattClientConnect(clientIf, device);
                 }
             }
         }
@@ -1380,12 +1446,12 @@ public class GattService extends ProfileService {
         mNativeInterface.gattClientRegisterForNotifications(clientIf, device, handle, enable);
     }
 
-    void readRemoteRssi(IBluetoothGattCallback callback, BluetoothDevice device) {
+    boolean readRemoteRssi(IBluetoothGattCallback callback, BluetoothDevice device) {
         enforceGattThread();
         var clientApp = mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
             Log.w(TAG, "readRemoteRssi(" + callback + "): App not registered");
-            return;
+            return false;
         }
         final var clientIf = clientApp.getId();
         Log.d(TAG, "readRemoteRssi(): device=" + device);
@@ -1401,10 +1467,28 @@ public class GattService extends ProfileService {
                                         .getCallback()
                                         .onReadRemoteRssi(
                                                 device, entry.rssi, BluetoothGatt.GATT_SUCCESS));
-                return;
+                return true;
             }
         }
-        mNativeInterface.gattClientReadRemoteRssi(clientIf, device);
+        if (Flags.supportMultipleReadRssi()) {
+            // TODO(b/449681465): Remove synchronized when the flag is removed.
+            synchronized (mClientsPendingRssi) {
+                if (mClientsPendingRssi.isEmpty()) {
+                    mPendingRssiDevice = device;
+                    mNativeInterface.gattClientReadRemoteRssi(clientIf, device);
+                }
+                // The controller is reading the RSSI of another device.
+                if (!Objects.equals(mPendingRssiDevice, device)) {
+                    Log.d(TAG, "Ignore RSSI request because it's busy.");
+                    return false;
+                } else {
+                    mClientsPendingRssi.add(clientIf);
+                }
+            }
+        } else {
+            mNativeInterface.gattClientReadRemoteRssi(clientIf, device);
+        }
+        return true;
     }
 
     void configureMTU(IBluetoothGattCallback callback, BluetoothDevice device, int mtu) {

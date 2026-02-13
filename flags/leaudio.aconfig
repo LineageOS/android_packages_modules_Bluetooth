@@ -152,6 +152,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_peripheral_mcp_link_abstraction_layer"
+    namespace: "bluetooth"
+    description: "Integration of MCP with MediaAudioServer abstraction layer"
+    bug: "483613067"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_use_game_sonification_as_regular_sonification"
     namespace: "bluetooth"
     description: "GAME sonifications will not impact on the main use case i.e. will not force context type change."

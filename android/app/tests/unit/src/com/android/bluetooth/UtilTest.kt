@@ -21,7 +21,6 @@ import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothStatusCodes
 import android.content.AttributionSource
-import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.location.LocationManager
@@ -58,6 +57,7 @@ class UtilTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var packageManager: PackageManager
 
     private val context = InstrumentationRegistry.getInstrumentation().context
 
@@ -77,11 +77,10 @@ class UtilTest {
 
     @Test
     fun hasDisavowedLocationForScan() {
-        val context = mock<Context>()
-        val packageManager = mock<PackageManager>()
         val sourceStart = mock<AttributionSource>()
         val sourceEnd = mock<AttributionSource>()
-        doReturn(packageManager).whenever(context).packageManager
+        doReturn(packageManager).whenever(adapterService).packageManager
+        doReturn(adapterService).whenever(adapterService).createContextAsUser(any(), any())
 
         // We create a chain: SourceStart -> SourceEnd -> null
         doReturn(sourceEnd).whenever(sourceStart).next
@@ -105,12 +104,12 @@ class UtilTest {
         doReturn(packageInfo).whenever(packageManager).getPackageInfo(eq(packageName), any<Int>())
 
         // The flag REQUESTED_PERMISSION_NEVER_FOR_LOCATION has not yet been set
-        assertThat(Util.hasDisavowedLocationForScan(context, sourceStart, false)).isFalse()
+        assertThat(Util.hasDisavowedLocationForScan(adapterService, sourceStart, false)).isFalse()
 
         // Set the flag for BLUETOOTH_SCAN (Index 1)
         packageInfo.requestedPermissionsFlags =
             intArrayOf(0, PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION, 0)
-        assertThat(Util.hasDisavowedLocationForScan(context, sourceStart, false)).isTrue()
+        assertThat(Util.hasDisavowedLocationForScan(adapterService, sourceStart, false)).isTrue()
     }
 
     @Test

@@ -15,6 +15,120 @@
 use crate::reader::{unpack, Reader};
 use crate::writer::{pack, Write, Writer};
 
+/// 5.4.2 ACL Data packets
+
+/// Exchange of data between the Host and Controller
+#[derive(Debug)]
+pub struct AclData<'a> {
+    /// Identify the connection
+    pub connection_handle: u16,
+    /// ACL packet type
+    pub acl_type: AclType,
+    /// Payload
+    pub payload: &'a [u8],
+}
+
+/// Fragmentation indication of the ACL
+#[derive(Debug)]
+pub enum AclType {
+    /// First packet
+    First {
+        /// Is automatically flushable
+        is_flushable: bool,
+        /// Is broadcast or point-to-point
+        is_broadcast: bool,
+    },
+    /// Continuing fragment
+    Continue {
+        /// Is broadcast or point-to-point
+        is_broadcast: bool,
+    },
+}
+
+impl<'a> AclData<'a> {
+    /// Read an HCI ACL Data packet
+    pub fn from_bytes(data: &'a [u8]) -> Option<Self> {
+        Self::parse(&mut Reader::new(data))
+    }
+
+    /// Output the HCI ACL Data packet
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut w = Writer::new(Vec::with_capacity(4 + self.payload.len()));
+        w.write(self);
+        w.into_vec()
+    }
+
+    /// New ACL Data packet, first, flushable and point-to-point
+    pub fn new(connection_handle: u16, acl_type: AclType, data: &'a [u8]) -> Self {
+        Self { connection_handle, acl_type, payload: data }
+    }
+
+    fn parse(r: &mut Reader<'a>) -> Option<Self> {
+        let (connection_handle, pb_flag, bc_flag) = unpack!(r.read_u16()?, (12, 2, 2));
+        let data_len = r.read_u16()? as usize;
+
+        let acl_type = match pb_flag {
+            0b00 => AclType::First { is_flushable: false, is_broadcast: bc_flag == 1 },
+            0b10 => AclType::First { is_flushable: true, is_broadcast: bc_flag == 1 },
+            0b01 => AclType::Continue { is_broadcast: bc_flag == 1 },
+            _ => panic!("Invalid PB Flag value: {pb_flag}"),
+        };
+
+        Some(Self { connection_handle, acl_type, payload: r.get(data_len)? })
+    }
+}
+
+impl Write for AclData<'_> {
+    fn write(&self, w: &mut Writer) {
+        let (pb_flag, bc_flag) = match self.acl_type {
+            AclType::First { is_flushable: false, is_broadcast: false } => (0b00, 0b00),
+            AclType::First { is_flushable: false, is_broadcast: true } => (0b00, 0b01),
+            AclType::First { is_flushable: true, is_broadcast: false } => (0b10, 0b00),
+            AclType::First { is_flushable: true, is_broadcast: true } => (0b10, 0b01),
+            AclType::Continue { is_broadcast: false } => (0b01, 0b00),
+            AclType::Continue { is_broadcast: true } => (0b01, 0b01),
+        };
+
+        w.write_u16(pack!((self.connection_handle, 12), (pb_flag, 2), (bc_flag, 2)));
+
+        let packet_len = self.payload.len();
+        w.write_u16(
+            u16::try_from(packet_len).expect("ACL Data payload length exceeds maximum u16 value"),
+        );
+        w.put(self.payload);
+    }
+}
+
+#[test]
+fn test_acl_data() {
+    let dump = [
+        0x0b, 0x20, 0x55, 0x00, 0x51, 0x00, 0x40, 0xa0, 0x80, 0xe0, 0x00, 0x03, 0x00, 0x00, 0x08,
+        0x00, 0x00, 0x00, 0x00, 0x02, 0x47, 0xfc, 0x00, 0x00, 0xb0, 0x90, 0x80, 0x03, 0x00, 0x3b,
+        0x21, 0x1b, 0xd3, 0x90, 0x06, 0x90, 0x83, 0x0f, 0x91, 0xbe, 0x4d, 0x4e, 0x36, 0xa5, 0xb2,
+        0xc1, 0x17, 0xbb, 0x43, 0xfc, 0x00, 0x3c, 0xf2, 0xf9, 0xc7, 0xbc, 0xd7, 0x92, 0xf4, 0x6e,
+        0xa3, 0xac, 0x77, 0xed, 0xf7, 0x88, 0xe6, 0xdd, 0x66, 0xdd, 0xa1, 0xe3, 0x78, 0x96, 0x9d,
+        0x3b, 0x0d, 0x59, 0x80, 0xfc, 0x16, 0xcb, 0x04, 0x5e, 0xed, 0x0f, 0xf0, 0x00, 0xf7,
+    ];
+    let Some(pkt) = AclData::from_bytes(&dump) else { panic!() };
+    assert_eq!(pkt.connection_handle, 0x00b);
+
+    let AclType::First { is_flushable: true, is_broadcast: false } = pkt.acl_type else { panic!() };
+
+    assert_eq!(
+        pkt.payload,
+        &[
+            0x51, 0x00, 0x40, 0xa0, 0x80, 0xe0, 0x00, 0x03, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x00, 0x02, 0x47, 0xfc, 0x00, 0x00, 0xb0, 0x90, 0x80, 0x03, 0x00, 0x3b, 0x21, 0x1b,
+            0xd3, 0x90, 0x06, 0x90, 0x83, 0x0f, 0x91, 0xbe, 0x4d, 0x4e, 0x36, 0xa5, 0xb2, 0xc1,
+            0x17, 0xbb, 0x43, 0xfc, 0x00, 0x3c, 0xf2, 0xf9, 0xc7, 0xbc, 0xd7, 0x92, 0xf4, 0x6e,
+            0xa3, 0xac, 0x77, 0xed, 0xf7, 0x88, 0xe6, 0xdd, 0x66, 0xdd, 0xa1, 0xe3, 0x78, 0x96,
+            0x9d, 0x3b, 0x0d, 0x59, 0x80, 0xfc, 0x16, 0xcb, 0x04, 0x5e, 0xed, 0x0f, 0xf0, 0x00,
+            0xf7
+        ]
+    );
+    assert_eq!(pkt.to_bytes(), &dump[..]);
+}
+
 /// 5.4.5 ISO Data Packets
 
 /// Exchange of Isochronous Data between the Host and Controller

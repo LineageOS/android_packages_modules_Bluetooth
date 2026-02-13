@@ -28,6 +28,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.android.bluetooth.Util
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.util.registerReceiver
 import kotlin.math.roundToInt
 
 /**
@@ -68,11 +69,12 @@ class AvrcpControllerVolumeHandler(
     private val audioManager: AudioManager = context.getSystemService(AudioManager::class.java)
 
     // For sending volume changed events back to the object owner
-    private val receiver = VolumeHandlerBroadcastReceiver()
+    // TODO when cleaning avrcpControllerAbsVolChangedNotification make it NonNull
+    private val receiver: BroadcastReceiver?
 
     // To serialize the processing of volume events involving cachedStreamVolume
     // Only used with STRATEGY_ABSOLUTE
-    private val handler: Handler = Handler(looper)
+    private val handler = Handler(looper)
 
     // For distinguishing external volume changed events from setAbsoluteVolume calls
     // This volume is a local index, not absolute volume
@@ -95,10 +97,16 @@ class AvrcpControllerVolumeHandler(
     init {
         debug("Initializing volume handler")
         if (Flags.avrcpControllerAbsVolChangedNotification()) {
-            val filter = IntentFilter()
-            filter.priority = IntentFilter.SYSTEM_HIGH_PRIORITY
-            filter.addAction(AudioManager.ACTION_VOLUME_CHANGED)
-            context.registerReceiver(receiver, filter)
+            receiver =
+                context.registerReceiver(
+                    handler,
+                    AudioManager.ACTION_VOLUME_CHANGED,
+                    priority = IntentFilter.SYSTEM_HIGH_PRIORITY,
+                ) { _, intent ->
+                    onIntentReceived(intent)
+                }
+        } else {
+            receiver = null
         }
         cachedStreamVolume = getStreamVolume()
     }
@@ -247,11 +255,6 @@ class AvrcpControllerVolumeHandler(
         callback.onAbsoluteVolumeChanged(newAbsoluteVolume)
     }
 
-    /** Posts a runnable to [handler] to handle volume changed events. */
-    private fun postVolumeChanged(newLocalVolume: Int) {
-        handler.post { volumeChanged(newLocalVolume) }
-    }
-
     /**
      * A Callback interface so the owning state machine can receive volume changed events from this
      * handler.
@@ -269,28 +272,27 @@ class AvrcpControllerVolumeHandler(
      * If using absolute volume, listens for [AudioManager.ACTION_VOLUME_CHANGED] events to trigger
      * the [callback].
      */
-    private inner class VolumeHandlerBroadcastReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action != AudioManager.ACTION_VOLUME_CHANGED) {
-                return
-            }
-            val streamType = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1)
-            if (streamType != AudioManager.STREAM_MUSIC) {
-                return
-            }
-            if (cachedStreamVolume == VOLUME_VALUE_MISSING) {
-                // We ignore volume changed events before our initial caching at instantiation
-                return
-            }
-
-            // This volume is a local index, not absolute volume
-            val newLocalVolume =
-                intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, VOLUME_VALUE_MISSING)
-            if (newLocalVolume == VOLUME_VALUE_MISSING) {
-                return
-            }
-            postVolumeChanged(newLocalVolume)
+    @VisibleForTesting
+    fun onIntentReceived(intent: Intent) {
+        if (intent.action != AudioManager.ACTION_VOLUME_CHANGED) {
+            return
         }
+        val streamType = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1)
+        if (streamType != AudioManager.STREAM_MUSIC) {
+            return
+        }
+        if (cachedStreamVolume == VOLUME_VALUE_MISSING) {
+            // We ignore volume changed events before our initial caching at instantiation
+            return
+        }
+
+        // This volume is a local index, not absolute volume
+        val newLocalVolume =
+            intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, VOLUME_VALUE_MISSING)
+        if (newLocalVolume == VOLUME_VALUE_MISSING) {
+            return
+        }
+        volumeChanged(newLocalVolume)
     }
 
     private fun getStreamVolume(): Int {

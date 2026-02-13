@@ -103,6 +103,7 @@ void* BtifAvrcpAudioTrackCreate(int trackFreq, int bitsPerSample, int channelCou
   AAudioStreamBuilder_setSessionId(builder, AAUDIO_SESSION_ID_ALLOCATE);
   AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
   AAudioStreamBuilder_setErrorCallback(builder, ErrorCallback, nullptr);
+  AAudioStreamBuilder_setContentType(builder, AAUDIO_CONTENT_TYPE_MUSIC);
   result = AAudioStreamBuilder_openStream(builder, &stream);
   log::assert_that(result == AAUDIO_OK, "assert failed: result == AAUDIO_OK");
   AAudioStreamBuilder_delete(builder);

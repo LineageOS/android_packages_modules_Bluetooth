@@ -27,13 +27,13 @@ import android.content.BroadcastReceiver
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.os.UserHandle
 import android.provider.Settings
 import androidx.annotation.VisibleForTesting
+import com.android.bluetooth.util.registerReceiver
 import com.android.server.bluetooth.airplane.AirplaneModeController
 import com.android.server.bluetooth.airplane.hasAirplaneModeEnhanced
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
@@ -88,15 +88,6 @@ class AutoOn(
             Log.d(TAG, "Airplane bypassed as airplane enhanced mode has been activated previously")
         }
 
-        val receiver =
-            object : BroadcastReceiver() {
-                override fun onReceive(ctx: Context, intent: Intent) {
-                    Log.i(TAG, "Received ${intent.action} that trigger a new alarm scheduling")
-                    pause()
-                    resetAutoOnTimer()
-                }
-            }
-
         val now = LocalDateTime.now()
         val target = getDateFromStorage(contentResolver) ?: nextTimeout(now)
         val timeToSleep = now.until(target, ChronoUnit.NANOS).toDuration(DurationUnit.NANOSECONDS)
@@ -108,7 +99,13 @@ class AutoOn(
             return
         }
 
-        timer = Timer(looper, context, receiver, callback_on, now, target, timeToSleep)
+        timer = Timer(looper, context, callback_on, now, target, timeToSleep)
+    }
+
+    private fun onReceiveIntent(intent: Intent) {
+        Log.i(TAG, "Received ${intent.action} that trigger a new alarm scheduling")
+        pause()
+        resetAutoOnTimer()
     }
 
     fun pause() {
@@ -160,7 +157,6 @@ class AutoOn(
     constructor(
         looper: Looper,
         private val context: Context,
-        private val receiver: BroadcastReceiver,
         private val callback_on: () -> Unit,
         private val now: LocalDateTime,
         private val target: LocalDateTime,
@@ -169,6 +165,7 @@ class AutoOn(
         private val alarmManager: AlarmManager =
             context.getSystemService(AlarmManager::class.java)!!
 
+        private val receiver: BroadcastReceiver
         private val handler = Handler(looper)
 
         init {
@@ -182,16 +179,15 @@ class AutoOn(
             )
             Log.i(TAG, "[$this]: Scheduling next Bluetooth restart")
 
-            context.registerReceiver(
-                receiver,
-                IntentFilter().apply {
-                    addAction(Intent.ACTION_DATE_CHANGED)
-                    addAction(Intent.ACTION_TIMEZONE_CHANGED)
-                    addAction(Intent.ACTION_TIME_CHANGED)
-                },
-                null,
-                handler,
-            )
+            receiver =
+                context.registerReceiver(
+                    looper,
+                    Intent.ACTION_DATE_CHANGED,
+                    Intent.ACTION_TIMEZONE_CHANGED,
+                    Intent.ACTION_TIME_CHANGED,
+                ) { _, intent ->
+                    onReceiveIntent(intent)
+                }
         }
 
         override fun onAlarm() {

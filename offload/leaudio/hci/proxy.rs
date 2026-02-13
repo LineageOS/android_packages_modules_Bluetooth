@@ -17,8 +17,8 @@ use bluetooth_offload_hci as hci;
 use crate::arbiter::Arbiter;
 use crate::service::{Service, StreamConfiguration};
 use hci::{
-    Command, CommandToBytes, Event, EventToBytes, IsoData, Module, ModuleBuilder, ReturnParameters,
-    Status,
+    Command, CommandToBytes, Event, EventToBytes, IsoData, LeDataPathDirection, Module,
+    ModuleBuilder, ReturnParameters, Status,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -198,7 +198,7 @@ impl Module for LeAudioModule {
             }
 
             Ok(Command::LeSetupIsoDataPath(ref c)) if c.data_path_id == DATA_PATH_ID => 'command: {
-                assert_eq!(c.data_path_direction, hci::LeDataPathDirection::Input);
+                assert_eq!(c.data_path_direction, LeDataPathDirection::Input);
                 let mut state = self.state.lock().unwrap();
                 let Some(stream) = state.stream.get_mut(&c.connection_handle) else {
                     log::warn!(

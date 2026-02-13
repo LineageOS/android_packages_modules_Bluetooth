@@ -42,6 +42,16 @@ flag {
 }
 
 flag {
+    name: "system_server_no_longer_provide_process_exemption"
+    namespace: "bluetooth"
+    description: "Calling in process must have appropriate permissions."
+    bug: "483470879"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "user_visible_on_user_starting"
     namespace: "bluetooth"
     description: "Check userVisible API to determine if user should startup bluetooth instance"

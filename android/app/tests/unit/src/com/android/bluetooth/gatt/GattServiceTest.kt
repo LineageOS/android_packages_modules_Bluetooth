@@ -87,6 +87,7 @@ class GattServiceTest(flags: FlagsWrapper) {
 
     @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var gattCallback: IBluetoothGattCallback
+    @Mock private lateinit var gattCallback2: IBluetoothGattCallback
     @Mock private lateinit var clientMap: ContextMap<IBluetoothGattCallback>
     @Mock private lateinit var reliableQueue: MutableSet<BluetoothDevice>
     @Mock private lateinit var nativeInterface: GattNativeInterface
@@ -135,6 +136,12 @@ class GattServiceTest(flags: FlagsWrapper) {
         doReturn(clientApp, null as Array<Any>?)
             .whenever(clientMap)
             .remove(any<Int>(), any<ContextMap.RemoveReason>())
+
+        val clientApp2 = mock<ContextApp<IBluetoothGattCallback>>()
+        doReturn(gattCallback2).whenever(clientApp2).callback
+        doReturn(CLIENT_IF2).whenever(clientApp2).id
+        doReturn(clientApp2).whenever(clientMap).getByCallbackId(gattCallback2)
+        doReturn(clientApp2).whenever(clientMap).getById(CLIENT_IF2)
 
         doReturn(context.packageManager).whenever(adapterService).packageManager
         doReturn(context.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
@@ -492,13 +499,9 @@ class GattServiceTest(flags: FlagsWrapper) {
         val opportunistic = false
         val isAutomaticMtuEnabled = false
 
-        val testAttributeSource =
-            AttributionSource.Builder(Process.SYSTEM_UID)
-                .setPid(Process.myPid())
-                .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                .setPackageName("com.google.android.gms")
-                .setAttributionTag("com.google.android.gms.findmydevice")
-                .build()
+        InstrumentationRegistry.getInstrumentation()
+            .getUiAutomation()
+            .adoptShellPermissionIdentity()
 
         service.clientConnect(
             gattCallback,
@@ -508,7 +511,7 @@ class GattServiceTest(flags: FlagsWrapper) {
             transport,
             opportunistic,
             isAutomaticMtuEnabled,
-            testAttributeSource,
+            source,
         )
 
         verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
@@ -543,13 +546,9 @@ class GattServiceTest(flags: FlagsWrapper) {
         val opportunistic = false
         val isAutomaticMtuEnabled = false
 
-        val testAttributeSource =
-            AttributionSource.Builder(Process.SYSTEM_UID)
-                .setPid(Process.myPid())
-                .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                .setPackageName("com.google.android.gms")
-                .setAttributionTag("com.google.android.gms.findmydevice")
-                .build()
+        InstrumentationRegistry.getInstrumentation()
+            .getUiAutomation()
+            .adoptShellPermissionIdentity()
 
         service.clientConnect(
             gattCallback,
@@ -559,7 +558,7 @@ class GattServiceTest(flags: FlagsWrapper) {
             transport,
             opportunistic,
             isAutomaticMtuEnabled,
-            testAttributeSource,
+            source,
         )
 
         verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
@@ -590,13 +589,9 @@ class GattServiceTest(flags: FlagsWrapper) {
         val opportunistic = false
         val isAutomaticMtuEnabled = false
 
-        val testAttributeSource =
-            AttributionSource.Builder(Process.SYSTEM_UID)
-                .setPid(Process.myPid())
-                .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                .setPackageName("com.google.android.gms")
-                .setAttributionTag("com.google.android.gms.findmydevice")
-                .build()
+        InstrumentationRegistry.getInstrumentation()
+            .getUiAutomation()
+            .adoptShellPermissionIdentity()
 
         service.clientConnect(
             gattCallback,
@@ -606,7 +601,7 @@ class GattServiceTest(flags: FlagsWrapper) {
             transport,
             opportunistic,
             isAutomaticMtuEnabled,
-            testAttributeSource,
+            source,
         )
 
         verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
@@ -712,10 +707,29 @@ class GattServiceTest(flags: FlagsWrapper) {
 
     @Test
     fun clientOnReadRemoteRssiFromNative() {
+        if (Flags.supportMultipleReadRssi()) {
+            service.mClientsPendingRssi.add(CLIENT_IF)
+        }
+
         service.onReadRemoteRssiFromNative(CLIENT_IF, device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
 
         assertThat(service.mRssiCache[device.address]!!.rssi).isEqualTo(TEST_RSSI)
         verify(gattCallback).onReadRemoteRssi(device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SUPPORT_MULTIPLE_READ_RSSI)
+    fun twoClientsReadRemoteRssi() {
+        service.readRemoteRssi(gattCallback, device)
+        service.readRemoteRssi(gattCallback2, device)
+
+        verify(nativeInterface).gattClientReadRemoteRssi(CLIENT_IF, device)
+        verify(nativeInterface, never()).gattClientReadRemoteRssi(CLIENT_IF2, device)
+        service.onReadRemoteRssiFromNative(CLIENT_IF, device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
+
+        assertThat(service.mRssiCache[device.address]!!.rssi).isEqualTo(TEST_RSSI)
+        verify(gattCallback).onReadRemoteRssi(device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
+        verify(gattCallback2).onReadRemoteRssi(device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
     }
 
     @Test
@@ -849,12 +863,6 @@ class GattServiceTest(flags: FlagsWrapper) {
 
         verify(nativeInterface)
             .gattClientRegisterForNotifications(CLIENT_IF, device, handle, enable)
-    }
-
-    @Test
-    fun clientReadRemoteRssi() {
-        service.readRemoteRssi(gattCallback, device)
-        verify(nativeInterface).gattClientReadRemoteRssi(CLIENT_IF, device)
     }
 
     @Test
@@ -1000,6 +1008,7 @@ class GattServiceTest(flags: FlagsWrapper) {
     companion object {
         private const val TEST_RSSI = 43
         private const val CLIENT_IF = 12
+        private const val CLIENT_IF2 = 13
         private const val CLIENT_CONN_ID = 42
 
         @JvmStatic
