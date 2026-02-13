@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "a2dp_aac_decoder.h"
+#include "stack/include/a2dp_aac_decoder.h"
 #include "stack/include/bt_hdr.h"
 
 typedef struct {

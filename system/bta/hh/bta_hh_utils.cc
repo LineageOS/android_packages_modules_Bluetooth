@@ -26,16 +26,16 @@
 #include <cstdint>
 #include <cstring>
 
-#include "bt_name.h"
 #include "bta/hh/bta_hh_int.h"
 #include "bta_hh_api.h"
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
-#include "hiddefs.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
+#include "stack/include/bt_name.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/hiddefs.h"
 #include "stack/include/sdp_api.h"
 
 using namespace bluetooth::legacy::stack::sdp;

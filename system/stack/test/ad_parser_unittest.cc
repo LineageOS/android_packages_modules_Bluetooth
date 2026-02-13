@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "advertise_data_parser.h"
+#include "stack/include/advertise_data_parser.h"
 
 TEST(AdvertiseDataParserTest, IsValidEmpty) {
   const std::vector<uint8_t> data0;

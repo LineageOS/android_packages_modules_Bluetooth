@@ -24,13 +24,13 @@
 #include <set>
 #include <vector>
 
-#include "gap_api.h"
 #include "hardware/bt_has.h"
 #include "has_ctp.h"
 #include "has_journal.h"
 #include "has_preset.h"
 #include "internal_include/bt_trace.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/gap_api.h"
 #include "stack/include/gatt_api.h"
 
 namespace bluetooth::le_audio {

@@ -29,8 +29,8 @@
 
 #include <cstdint>
 
-#include "bnep_api.h"
 #include "macros.h"
+#include "stack/include/bnep_api.h"
 #include "stack/include/bt_hdr.h"
 
 /*****************************************************************************

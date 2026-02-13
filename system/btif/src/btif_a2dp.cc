@@ -29,13 +29,13 @@
 #include <cstdint>
 
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "avdt_api.h"
 #include "bta_av_api.h"
 #include "btif_a2dp_sink.h"
 #include "btif_a2dp_source.h"
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_hf.h"
+#include "stack/include/avdt_api.h"
 
 using namespace bluetooth;
 using bluetooth::audio::a2dp::Status;

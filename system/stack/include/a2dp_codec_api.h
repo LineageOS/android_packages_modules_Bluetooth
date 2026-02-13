@@ -33,8 +33,8 @@
 #include <string>
 #include <vector>
 
-#include "a2dp_api.h"
-#include "avdt_api.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 class tBT_A2DP_OFFLOAD;

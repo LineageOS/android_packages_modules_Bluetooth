@@ -22,13 +22,13 @@
 
 #include <vector>
 
-#include "a2dp_api.h"
 #include "base/functional/bind.h"
 #include "fuzzers/a2dp/a2dpFuzzHelpers.h"
 #include "fuzzers/common/commonFuzzHelpers.h"
 #include "fuzzers/sdp/sdpFuzzFunctions.h"
 #include "osi/include/allocator.h"
 #include "stack/a2dp/a2dp_int.h"
+#include "stack/include/a2dp_api.h"
 #include "stack/include/bt_uuid16.h"
 
 #define MAX_STR_LEN 4096

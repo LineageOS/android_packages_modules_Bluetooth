@@ -41,7 +41,6 @@
 #include "gd/os/rand.h"
 #include "hci/address.h"
 #include "osi/include/allocator.h"
-#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 

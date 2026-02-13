@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gatt_api.h"
+#include "stack/include/gatt_api.h"
 
 #include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>

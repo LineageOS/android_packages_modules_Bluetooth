@@ -24,7 +24,7 @@
  ******************************************************************************/
 #define LOG_TAG "smp"
 
-#include "smp_api.h"
+#include "stack/include/smp_api.h"
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>

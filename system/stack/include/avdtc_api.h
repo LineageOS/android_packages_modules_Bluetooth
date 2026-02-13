@@ -31,7 +31,7 @@
 
 #include <cstdint>
 
-#include "avdt_api.h"
+#include "stack/include/avdt_api.h"
 
 /* start AVDTC events here to distinguish from AVDT events */
 #define AVDTC_EVT_BEGIN 0x80

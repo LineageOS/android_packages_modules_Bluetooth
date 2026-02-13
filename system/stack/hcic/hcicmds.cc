@@ -30,7 +30,6 @@
 #include <string.h>
 
 #include "device/include/esco_parameters.h"
-#include "hcidefs.h"
 #include "hcimsgs.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -39,6 +38,7 @@
 #include "stack/include/bt_lap.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
+#include "stack/include/hcidefs.h"
 
 /* Message by message.... */
 

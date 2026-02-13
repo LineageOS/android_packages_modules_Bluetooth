@@ -40,7 +40,6 @@
 #include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
-#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_api_types.h"

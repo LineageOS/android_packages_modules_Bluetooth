@@ -32,14 +32,14 @@
 
 #include <cstdint>
 
-#include "avdt_api.h"
 #include "avdt_defs.h"
 #include "avdt_int.h"
-#include "avdtc_api.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
+#include "stack/include/avdt_api.h"
+#include "stack/include/avdtc_api.h"
 #include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;

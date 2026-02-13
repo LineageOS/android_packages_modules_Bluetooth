@@ -30,15 +30,15 @@
 #include <cstdint>
 #include <string>
 
-#include "avct_api.h"
 #include "avct_int.h"
 #include "device/include/device_iot_conf_defs.h"
 #include "device/include/device_iot_config.h"
 #include "include/macros.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
+#include "stack/include/avct_api.h"
+#include "stack/include/l2cap_types.h"
 
 using namespace bluetooth;
 

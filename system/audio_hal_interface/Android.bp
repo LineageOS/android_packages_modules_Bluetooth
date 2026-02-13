@@ -19,7 +19,6 @@ cc_library_static {
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
@@ -110,7 +109,6 @@ cc_test {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/audio_hal_interface",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     sanitize: {
         cfi: true,
@@ -234,7 +232,6 @@ cc_defaults {
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/btif",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
 }
 
@@ -254,7 +251,6 @@ cc_test {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
         "aidl/le_audio_utils.cc",

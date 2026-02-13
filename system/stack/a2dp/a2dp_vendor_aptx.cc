@@ -23,7 +23,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_vendor_aptx.h"
+#include "stack/include/a2dp_vendor_aptx.h"
 
 #include <bluetooth/log.h>
 #include <string.h>
@@ -33,16 +33,16 @@
 #include <sstream>
 #include <string>
 
-#include "a2dp_api.h"
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "a2dp_vendor.h"
-#include "a2dp_vendor_aptx_constants.h"
-#include "a2dp_vendor_aptx_encoder.h"
-#include "avdt_api.h"
 #include "btif/include/btif_av_co.h"
 #include "hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_vendor.h"
+#include "stack/include/a2dp_vendor_aptx_constants.h"
+#include "stack/include/a2dp_vendor_aptx_encoder.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;

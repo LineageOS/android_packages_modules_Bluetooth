@@ -21,7 +21,7 @@
 #ifndef A2DP_AAC_DECODER_H
 #define A2DP_AAC_DECODER_H
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 #include "stack/include/bt_hdr.h"
 
 // Loads the A2DP AAC decoder.

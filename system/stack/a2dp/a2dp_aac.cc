@@ -23,7 +23,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_aac.h"
+#include "stack/include/a2dp_aac.h"
 
 #include <bluetooth/log.h>
 #include <string.h>
@@ -35,17 +35,17 @@
 #include <sstream>
 #include <string>
 
-#include "a2dp_aac_constants.h"
-#include "a2dp_aac_decoder.h"
-#include "a2dp_aac_encoder.h"
-#include "a2dp_api.h"
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "avdt_api.h"
 #include "gd/common/utils.h"
 #include "hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/properties.h"
+#include "stack/include/a2dp_aac_constants.h"
+#include "stack/include/a2dp_aac_decoder.h"
+#include "stack/include/a2dp_aac_encoder.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 #define A2DP_AAC_DEFAULT_BITRATE 320000  // 320 kbps

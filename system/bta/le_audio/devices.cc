@@ -38,20 +38,13 @@
 #include <string>
 #include <vector>
 
-#include "acl_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
-#include "btm_ble_api_types.h"
-#include "btm_iso_api.h"
-#include "btm_iso_api_types.h"
 #include "common/le_conn_params.h"
 #include "common/strings.h"
-#include "gatt_api.h"
 #include "hardware/bluetooth.h"
 #include "hci/controller.h"
-#include "hci_error_code.h"
-#include "hcidefs.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio/codec_manager.h"
 #include "le_audio/le_audio_types.h"
@@ -60,7 +53,14 @@
 #include "main/shim/entry.h"
 #include "osi/include/alarm.h"
 #include "osi/include/properties.h"
+#include "stack/include/acl_api.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_iso_api.h"
+#include "stack/include/btm_iso_api_types.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/hci_error_code.h"
+#include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_interface.h"
 
 using bluetooth::hci::kIsoCigPhy1M;

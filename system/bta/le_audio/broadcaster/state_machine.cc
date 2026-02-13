@@ -39,15 +39,15 @@
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
 #include "bta/le_audio/codec_manager.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "btm_api_types.h"
-#include "btm_iso_api_types.h"
 #include "common/strings.h"
 #include "hardware/ble_advertiser.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/le_advertising_manager.h"
-#include "hcidefs.h"
 #include "main/shim/le_advertising_manager.h"
+#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_iso_api.h"
+#include "stack/include/btm_iso_api_types.h"
+#include "stack/include/hcidefs.h"
 
 using bluetooth::common::ToString;
 using bluetooth::hci::IsoManager;

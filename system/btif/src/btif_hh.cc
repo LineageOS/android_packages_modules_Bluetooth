@@ -44,7 +44,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "bt_device_type.h"
 #include "bta_api.h"
 #include "bta_hh_api.h"
 #include "bta_hh_co.h"
@@ -61,6 +60,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
+#include "stack/include/bt_device_type.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/hidh_api.h"

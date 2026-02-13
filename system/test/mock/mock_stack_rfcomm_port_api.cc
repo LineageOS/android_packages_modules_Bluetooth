@@ -23,7 +23,7 @@
 
 #include <functional>
 
-#include "port_api.h"
+#include "stack/include/port_api.h"
 #include "test/common/mock_functions.h"
 
 std::function<int(uint8_t, RawAddress*, uint16_t*)> PORT_CheckConnection_Fn;

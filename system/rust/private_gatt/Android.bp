@@ -131,7 +131,6 @@ cc_library_static {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     export_include_dirs: ["."],
     static_libs: [

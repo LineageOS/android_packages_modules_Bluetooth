@@ -23,7 +23,7 @@
  *
  ******************************************************************************/
 
-#include "a2dp_sbc_up_sample.h"
+#include "stack/include/a2dp_sbc_up_sample.h"
 
 #include <cstdint>
 

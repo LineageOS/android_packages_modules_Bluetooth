@@ -18,10 +18,10 @@
 
 #include <vector>
 
-#include "a2dp_codec_api.h"
 #include "a2dp_encoding.h"
 #include "audio_aidl_interfaces.h"
 #include "audio_hal_interface/a2dp_encoding.h"
+#include "stack/include/a2dp_codec_api.h"
 
 namespace bluetooth::audio::aidl::a2dp::codec {
 

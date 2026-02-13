@@ -44,16 +44,16 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/vcp/vcp_controller_devices.h"
 #include "bta_groups.h"
-#include "btm_ble_api_types.h"
 #include "gatt/database.h"
-#include "gatt_api.h"
 #include "gd/common/utils.h"
 #include "osi/include/alarm.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/gatt_api.h"
 #include "vcp/vcp_controller_types.h"
 
 using bluetooth::groups::DeviceGroups;

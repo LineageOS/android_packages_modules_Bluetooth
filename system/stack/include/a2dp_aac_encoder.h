@@ -21,8 +21,8 @@
 #ifndef A2DP_AAC_ENCODER_H
 #define A2DP_AAC_ENCODER_H
 
-#include "a2dp_aac_constants.h"
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_aac_constants.h"
+#include "stack/include/a2dp_codec_api.h"
 
 // Is used in btav_a2dp_codec_config_t.codec_specific_1 when codec is AAC
 enum class AacEncoderBitrateMode : int64_t {

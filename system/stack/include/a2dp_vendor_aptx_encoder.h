@@ -24,8 +24,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_vendor.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_vendor.h"
 
 // Loads the A2DP aptX encoder.
 // Return loading status

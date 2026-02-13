@@ -31,13 +31,13 @@
 #include <string>
 #include <unordered_map>
 
-#include "avdt_api.h"
 #include "avdt_defs.h"
-#include "avdtc_api.h"
 #include "include/macros.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
+#include "stack/include/avdt_api.h"
+#include "stack/include/avdtc_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
 

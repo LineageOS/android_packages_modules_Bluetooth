@@ -21,7 +21,7 @@
 #ifndef A2DP_VENDOR_OPUS_DECODER_H
 #define A2DP_VENDOR_OPUS_DECODER_H
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 
 // Initialize the A2DP Opus decoder.
 bool a2dp_vendor_opus_decoder_init(decoded_data_callback_t decode_callback);

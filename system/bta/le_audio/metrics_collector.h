@@ -24,9 +24,9 @@
 #include <memory>
 #include <unordered_map>
 
-#include "gatt_api.h"
 #include "le_audio_types.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/gatt_api.h"
 
 namespace bluetooth::le_audio {
 

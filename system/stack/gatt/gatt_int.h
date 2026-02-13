@@ -33,12 +33,12 @@
 
 #include "common/circular_buffer.h"
 #include "common/strings.h"
-#include "gatt_api.h"
 #include "hal/gatt_hal.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/gatt_api.h"
 
 #define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */

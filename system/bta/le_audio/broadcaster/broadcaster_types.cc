@@ -28,10 +28,10 @@
 #include <vector>
 
 #include "bta/le_audio/audio_hal_client/audio_hal_client.h"
-#include "btm_ble_api_types.h"
 #include "hardware/bt_le_audio.h"
 #include "le_audio/le_audio_types.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_api_types.h"
 
 using bluetooth::le_audio::BasicAudioAnnouncementBisConfig;
 using bluetooth::le_audio::BasicAudioAnnouncementCodecConfig;

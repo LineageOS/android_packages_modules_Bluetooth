@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 
 // Loads the A2DP LHDC encoder.
 // Return true on success, otherwise false.

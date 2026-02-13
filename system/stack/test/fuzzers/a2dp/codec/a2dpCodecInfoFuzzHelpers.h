@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include "a2dp_codec_api.h"
+#include "stack/include/a2dp_codec_api.h"
 #include "stack/test/fuzzers/common/commonFuzzHelpers.h"
 
 // Keep a vector of any allocated codec_info objects.

@@ -19,8 +19,8 @@
  *   Functions generated:3
  */
 
-#include "avrc_api.h"
-#include "avrc_defs.h"
+#include "stack/include/avrc_api.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
 

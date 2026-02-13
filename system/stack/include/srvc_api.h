@@ -24,9 +24,9 @@
 
 #include <cstdint>
 
-#include "gatt_api.h"
-#include "gattdefs.h"
 #include "internal_include/bt_target.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/gattdefs.h"
 
 #define DIS_SUCCESS GATT_SUCCESS
 #define DIS_ILLEGAL_PARAM GATT_ILLEGAL_PARAMETER

@@ -31,13 +31,13 @@
 
 #include <bitset>
 
-#include "hcidefs.h"
 #include "hcimsgs.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
+#include "stack/include/hcidefs.h"
 
 /*******************************************************************************
  * BLE Commands

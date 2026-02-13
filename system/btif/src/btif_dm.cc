@@ -51,10 +51,7 @@
 #include <mutex>
 #include <optional>
 
-#include "advertise_data_parser.h"
 #include "bluetooth/types/bt_transport.h"
-#include "bt_dev_class.h"
-#include "bt_name.h"
 #include "bta/dm/bta_dm_device_search.h"
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
@@ -78,7 +75,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
-#include "main_thread.h"
 #include "os/system_properties.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -87,7 +83,9 @@
 #include "stack/btm/btm_sec_utils.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
+#include "stack/include/advertise_data_parser.h"
 #include "stack/include/bt_dev_class.h"
+#include "stack/include/bt_name.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_addr.h"
@@ -98,6 +96,7 @@
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/include/smp_api.h"
 #include "stack/include/srvc_api.h"  // tDIS_VALUE

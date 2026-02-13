@@ -20,11 +20,11 @@
 #include <sstream>
 #include <vector>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "avdt_api.h"
 #include "common/message_loop_thread.h"
 #include "hardware/bt_av.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/avdt_api.h"
 
 namespace bluetooth {
 namespace audio {

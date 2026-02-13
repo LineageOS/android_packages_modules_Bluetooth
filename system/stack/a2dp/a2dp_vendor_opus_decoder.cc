@@ -16,7 +16,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_vendor_opus_decoder.h"
+#include "stack/include/a2dp_vendor_opus_decoder.h"
 
 #include <bluetooth/log.h>
 #include <opus.h>
@@ -25,11 +25,11 @@
 #include <cstdint>
 #include <cstring>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_vendor_opus_constants.h"
-#include "bt_hdr.h"
 #include "opus_defines.h"
 #include "osi/include/allocator.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_vendor_opus_constants.h"
+#include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;
 

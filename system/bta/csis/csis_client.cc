@@ -42,7 +42,6 @@
 #include <utility>
 #include <vector>
 
-#include "advertise_data_parser.h"
 #include "bta_api.h"
 #include "bta_csis_api.h"
 #include "bta_gatt_api.h"
@@ -50,14 +49,9 @@
 #include "bta_groups.h"
 #include "bta_sec_api.h"
 #include "btif/include/btif_storage.h"
-#include "btm_ble_api_types.h"
-#include "btm_sec_api_types.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "csis_types.h"
-#include "gap_api.h"
 #include "gatt/database.h"
-#include "gatt_api.h"
-#include "gattdefs.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/le_scanning_manager.h"
@@ -66,10 +60,16 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/advertise_data_parser.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
+#include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/gap_api.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/gattdefs.h"
 
 using base::OnceClosure;
 using bluetooth::Uuid;

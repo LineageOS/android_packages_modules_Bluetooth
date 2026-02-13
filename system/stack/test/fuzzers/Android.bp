@@ -25,7 +25,6 @@ cc_defaults {
         "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/stack/include",
         "packages/modules/Bluetooth/system/stack/test",
     ],
     static_libs: [

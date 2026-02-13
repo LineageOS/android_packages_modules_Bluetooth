@@ -28,12 +28,12 @@
 
 #include "gap_api.h"
 #include "gap_int.h"
-#include "gatt_api.h"
 #include "hardware/bt_gatt_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/gatt_api.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

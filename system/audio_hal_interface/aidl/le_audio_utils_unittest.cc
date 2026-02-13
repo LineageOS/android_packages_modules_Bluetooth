@@ -26,7 +26,7 @@
 
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "btm_iso_api_types.h"
+#include "stack/include/btm_iso_api_types.h"
 
 namespace bluetooth {
 namespace {

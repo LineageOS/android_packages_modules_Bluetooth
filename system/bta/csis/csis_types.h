@@ -29,7 +29,7 @@
 #include "bta_groups.h"
 #include "btif/include/btif_storage.h"
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "gap_api.h"
+#include "stack/include/gap_api.h"
 
 // Uncomment to debug SIRK calculations
 // #define CSIS_DEBUG

@@ -27,9 +27,9 @@
 #include "bta_hh_api.h"
 #include "btif/include/btif_storage.h"
 #include "gatt/database.h"
-#include "gatt_api.h"
-#include "gattdefs.h"
 #include "hardware/bluetooth.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/gattdefs.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

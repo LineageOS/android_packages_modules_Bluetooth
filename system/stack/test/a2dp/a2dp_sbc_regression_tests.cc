@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "a2dp_sbc.h"
+#include "stack/include/a2dp_sbc.h"
 
 namespace bluetooth {
 namespace testing {

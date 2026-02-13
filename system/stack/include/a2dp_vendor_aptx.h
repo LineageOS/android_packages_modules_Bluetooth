@@ -24,10 +24,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_vendor_aptx_constants.h"
-#include "avdt_api.h"
 #include "internal_include/bt_target.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_vendor_aptx_constants.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 class A2dpCodecConfigAptx : public A2dpCodecConfig {

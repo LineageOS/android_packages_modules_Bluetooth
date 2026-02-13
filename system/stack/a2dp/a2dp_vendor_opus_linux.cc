@@ -16,8 +16,8 @@
 
 // Stubbed non-standard codec.
 
-#include "a2dp_vendor.h"
-#include "a2dp_vendor_opus.h"
+#include "stack/include/a2dp_vendor.h"
+#include "stack/include/a2dp_vendor_opus.h"
 
 bool A2DP_IsCodecValidOpus(const uint8_t* p_codec_info) { return false; }
 

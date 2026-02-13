@@ -20,10 +20,10 @@
 
 #pragma once
 
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "a2dp_vendor_lhdcv5_constants.h"
-#include "avdt_api.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_vendor_lhdcv5_constants.h"
+#include "stack/include/avdt_api.h"
 
 class A2dpCodecConfigLhdcV5Base : public A2dpCodecConfig {
 protected:

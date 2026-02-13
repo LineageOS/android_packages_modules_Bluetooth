@@ -18,7 +18,7 @@
 
 #include <cstdint>
 
-#include "a2dp_vendor_aptx_hd.h"
+#include "stack/include/a2dp_vendor_aptx_hd.h"
 
 bool A2DP_IsCodecValidAptxHd(const uint8_t* p_codec_info) { return false; }
 
