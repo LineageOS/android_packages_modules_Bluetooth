@@ -966,10 +966,8 @@ public class AdapterService extends Service {
     }
 
     public Optional<LeAudioPeripheralService> getLeAudioPeripheralService() {
-        return Flags.leaudioPeripheralFeature()
-                ? getStartedProfile(
-                        BluetoothProfile.LE_AUDIO_PERIPHERAL, LeAudioPeripheralService.class)
-                : Optional.empty();
+        return getStartedProfile(
+                BluetoothProfile.LE_AUDIO_PERIPHERAL, LeAudioPeripheralService.class);
     }
 
     public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
@@ -1405,12 +1403,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.SAP -> new SapService(this);
             case BluetoothProfile.VAP_SERVER -> new VapServerService(this);
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
-            case BluetoothProfile.LE_AUDIO_PERIPHERAL -> {
-                if (!Flags.leaudioPeripheralFeature()) {
-                    throw new IllegalArgumentException(getProfileName(id));
-                }
-                yield new LeAudioPeripheralService(this);
-            }
+            case BluetoothProfile.LE_AUDIO_PERIPHERAL -> new LeAudioPeripheralService(this);
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }
