@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,85 +14,79 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbapclient;
+package com.android.bluetooth.pbapclient
 
-import static com.google.common.truth.Truth.assertThat;
+import android.accounts.Account
+import android.accounts.AccountAuthenticatorResponse
+import android.accounts.AccountManager
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
 
-import static org.junit.Assert.assertThrows;
-
-import android.accounts.Account;
-import android.accounts.AccountAuthenticatorResponse;
-import android.accounts.AccountManager;
-import android.os.Bundle;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link PbapClientAccountAuthenticator}. */
+/** Test cases for [PbapClientAccountAuthenticator]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class PbapClientAccountAuthenticatorTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class PbapClientAccountAuthenticatorTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock AccountAuthenticatorResponse mResponse;
-    @Mock Account mAccount;
+    @Mock private lateinit var response: AccountAuthenticatorResponse
+    @Mock private lateinit var account: Account
 
-    private PbapClientAccountAuthenticator mAuthenticator;
+    private lateinit var authenticator: PbapClientAccountAuthenticator
 
     @Before
-    public void setUp() throws Exception {
-        final var context = InstrumentationRegistry.getInstrumentation().getContext();
-        mAuthenticator = new PbapClientAccountAuthenticator(context);
+    fun setUp() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        authenticator = PbapClientAccountAuthenticator(context)
     }
 
     @Test
-    public void editProperties_throwsUnsupportedOperationException() {
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> mAuthenticator.editProperties(mResponse, null));
+    fun editProperties_throwsUnsupportedOperationException() {
+        assertThrows(UnsupportedOperationException::class.java) {
+            authenticator.editProperties(response, null)
+        }
     }
 
     @Test
-    public void addAccount_throwsUnsupportedOperationException() {
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> mAuthenticator.addAccount(mResponse, null, null, null, null));
+    fun addAccount_throwsUnsupportedOperationException() {
+        assertThrows(UnsupportedOperationException::class.java) {
+            authenticator.addAccount(response, null, null, null, null)
+        }
     }
 
     @Test
-    public void confirmCredentials_returnsNull() throws Exception {
-        assertThat(mAuthenticator.confirmCredentials(mResponse, mAccount, null)).isNull();
+    fun confirmCredentials_returnsNull() {
+        assertThat(authenticator.confirmCredentials(response, account, null)).isNull()
     }
 
     @Test
-    public void getAuthToken_throwsUnsupportedOperationException() {
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> mAuthenticator.getAuthToken(mResponse, mAccount, null, null));
+    fun getAuthToken_throwsUnsupportedOperationException() {
+        assertThrows(UnsupportedOperationException::class.java) {
+            authenticator.getAuthToken(response, account, null, null)
+        }
     }
 
     @Test
-    public void getAuthTokenLabel_returnsNull() {
-        assertThat(mAuthenticator.getAuthTokenLabel(null)).isNull();
+    fun getAuthTokenLabel_returnsNull() {
+        assertThat(authenticator.getAuthTokenLabel(null)).isNull()
     }
 
     @Test
-    public void updateCredentials_returnsNull() throws Exception {
-        assertThat(mAuthenticator.updateCredentials(mResponse, mAccount, null, null)).isNull();
+    fun updateCredentials_returnsNull() {
+        assertThat(authenticator.updateCredentials(response, account, null, null)).isNull()
     }
 
     @Test
-    public void hasFeatures_notSupported() throws Exception {
-        Bundle result = mAuthenticator.hasFeatures(mResponse, mAccount, null);
-        assertThat(result.getBoolean(AccountManager.KEY_BOOLEAN_RESULT)).isFalse();
+    fun hasFeatures_notSupported() {
+        val result = authenticator.hasFeatures(response, account, null)
+        assertThat(result.getBoolean(AccountManager.KEY_BOOLEAN_RESULT)).isFalse()
     }
 }
