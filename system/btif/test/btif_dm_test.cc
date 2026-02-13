@@ -43,6 +43,8 @@
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_osi_properties.h"
 
+#define TEST_BT com::android::bluetooth::flags
+
 using bluetooth::core::testing::MockCoreInterface;
 using ::testing::ElementsAre;
 
@@ -304,4 +306,17 @@ TEST_F(BtifDmWithStackTest, test_btif_dm_reset_irk) {
 
     ASSERT_TRUE(paired_devices.empty());
   }
+}
+
+TEST_F_WITH_FLAGS(BtifDmWithStackTest, btif_is_interesting_le_service_gmcs,
+                  REQUIRES_FLAGS_ENABLED(
+                          ACONFIG_FLAG(TEST_BT, leaudio_peripheral_mcp_link_abstraction_layer))) {
+  auto uuid_gmcs = bluetooth::Uuid::From16Bit(0x1849);
+  EXPECT_TRUE(btif_is_interesting_le_service(uuid_gmcs));
+
+  auto uuid_le_audio = bluetooth::Uuid::From16Bit(0x184E);
+  EXPECT_TRUE(btif_is_interesting_le_service(uuid_le_audio));
+
+  auto uuid_random = bluetooth::Uuid::From16Bit(0x9999);
+  EXPECT_FALSE(btif_is_interesting_le_service(uuid_random));
 }
