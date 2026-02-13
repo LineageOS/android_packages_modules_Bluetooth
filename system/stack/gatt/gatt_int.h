@@ -598,7 +598,6 @@ bool gatt_disconnect_br(tGATT_TCB* p_tcb);
 void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested);
 bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
                   tBT_TRANSPORT transport, tGATT_IF gatt_if);
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                       tBT_TRANSPORT transport);
 void gatt_data_process(tGATT_TCB& p_tcb, uint16_t cid, BT_HDR* p_buf);

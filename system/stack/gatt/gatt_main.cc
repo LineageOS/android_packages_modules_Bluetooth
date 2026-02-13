@@ -463,10 +463,6 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
   return true;
 }
 
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  return gatt_act_connect(p_reg, bd_addr, BLE_ADDR_PUBLIC, transport);
-}
-
 /** This function is called to process the congestion callback from lcb */
 void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   tCONN_ID conn_id;
