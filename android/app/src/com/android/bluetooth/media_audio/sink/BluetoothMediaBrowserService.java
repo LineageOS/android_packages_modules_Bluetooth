@@ -362,11 +362,15 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     public static synchronized void onAudioFocusStateChanged(int state) {
         BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
         if (service == null) {
-            Log.w(TAG, "onAudioFocusStateChanged(state=" + state + "): Service not available");
+            Log.w(
+                    TAG,
+                    "onAudioFocusStateChanged(state="
+                            + audioFocusToString(state)
+                            + "): Service not available");
             return;
         }
 
-        Log.i(TAG, "onAudioFocusStateChanged(state=" + state);
+        Log.i(TAG, "onAudioFocusStateChanged(state=" + audioFocusToString(state) + ")");
 
         if (state == AudioManager.AUDIOFOCUS_LOSS) {
             service.setActive(false);
@@ -380,7 +384,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         Log.i(
                 TAG,
                 "onAudioFocusStateChanged(state="
-                        + state
+                        + audioFocusToString(state)
                         + "): Focus gained, become active and briefly signal connecting");
 
         service.setActive(true);
@@ -401,7 +405,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             Log.w(
                     TAG,
                     "onAudioFocusStateChanged(state="
-                            + state
+                            + audioFocusToString(state)
                             + "): current playback state is null");
         }
     }
@@ -623,6 +627,20 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                 + " ("
                 + playbackState
                 + ")";
+    }
+
+    private static String audioFocusToString(int focusChange) {
+        return switch (focusChange) {
+            case AudioManager.AUDIOFOCUS_NONE -> "NONE";
+            case AudioManager.AUDIOFOCUS_GAIN -> "GAIN";
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT -> "GAIN_TRANSIENT";
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> "GAIN_TRANSIENT_MAY_DUCK";
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE -> "GAIN_TRANSIENT_EXCLUSIVE";
+            case AudioManager.AUDIOFOCUS_LOSS -> "LOSS";
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> "LOSS_TRANSIENT";
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> "LOSS_TRANSIENT_CAN_DUCK";
+            default -> "UNKNOWN (" + focusChange + ")";
+        };
     }
 
     /** Get the state of the BluetoothMediaBrowserService as a debug string */
