@@ -3910,12 +3910,16 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   }
   bond_state_changed(status, bd_addr, BT_TRANSPORT_LE, state, pairing_cb.pairing_type);
 
-  // If the bonding is initiated by local device (on a bond los device) and it fails, we should
+  // If the bonding is initiated by local device (on a bond loss device) and it fails, we should
   // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
   // any reason, it will be handled above (such as re-pairing attempt).
-  // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
-  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr) &&
-      p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
+  // Disconnect the link only when the device didn't recover from bond-loss as repairing failed.
+  // TODO (b/481170402): Replace the `fail_reason` with just the `state` check while removing
+  // bugfix_autonomous_repairing.
+  bool disconnect = com::android::bluetooth::flags::bugfix_autonomous_repairing()
+                            ? state == BT_BOND_STATE_NONE
+                            : p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND;
+  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr) && disconnect) {
     log::info("Disconnecting the link, because create bond failed.");
     btif_dm_disconnect_acl(
             bd_addr, BT_TRANSPORT_AUTO);  // `btif_dm_disconnect_acl` will identify the transport.
