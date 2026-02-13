@@ -139,3 +139,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "correct_gatt_error_code"
+    namespace: "bluetooth"
+    description: "Returns correct status in onConnectionStateChange"
+    bug: "482945446"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
