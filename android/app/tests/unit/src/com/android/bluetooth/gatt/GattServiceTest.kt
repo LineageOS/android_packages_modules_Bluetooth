@@ -17,6 +17,7 @@
 package com.android.bluetooth.gatt
 
 import android.app.ActivityManager
+import android.app.compat.CompatChanges
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothProfile
@@ -40,6 +41,7 @@ import android.test.mock.MockContentResolver
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.ActionOnDeathRecipient
+import com.android.bluetooth.ChangeIds.DONOT_STEAL_AUDIO_ON_GATT_CONN
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.CompanionManager
@@ -58,6 +60,7 @@ import java.util.Optional
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -493,6 +496,7 @@ class GattServiceTest(flags: FlagsWrapper) {
 
     @Test
     fun clientConnectOverLeFailed() {
+        assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
         val transport = BluetoothDevice.TRANSPORT_LE
@@ -540,6 +544,7 @@ class GattServiceTest(flags: FlagsWrapper) {
 
     @Test
     fun clientConnectDisconnectOverLe() {
+        assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
         val transport = BluetoothDevice.TRANSPORT_LE
@@ -583,6 +588,7 @@ class GattServiceTest(flags: FlagsWrapper) {
 
     @Test
     fun clientConnectOverLeDisconnectedByRemote() {
+        assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
         val transport = BluetoothDevice.TRANSPORT_LE
