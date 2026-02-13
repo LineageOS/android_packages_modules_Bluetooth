@@ -899,7 +899,7 @@ struct iso_impl {
                                    HCI_ERR_CONN_CAUSE_LOCAL_HOST);
   }
 
-  bool add_incoming_cis_events_listener(iso_manager::IsoClientHandle client_handle,
+  bool add_incoming_cis_events_listener(IsoClientHandle client_handle,
                                         const RawAddress& pseudo_address, uint8_t cig_id,
                                         uint8_t cis_id) {
     if (!com_android_bluetooth_flags_leaudio_peripheral_feature()) {
@@ -955,7 +955,7 @@ struct iso_impl {
     return true;
   }
 
-  void remove_incoming_cis_events_listener(iso_manager::IsoClientHandle client_handle,
+  void remove_incoming_cis_events_listener(IsoClientHandle client_handle,
                                            const RawAddress& pseudo_address, uint8_t cig_id,
                                            uint8_t cis_id) {
     if (!com_android_bluetooth_flags_leaudio_peripheral_feature()) {
