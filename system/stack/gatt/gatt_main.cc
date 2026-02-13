@@ -392,24 +392,14 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
 
 static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
                          tBT_TRANSPORT transport, tGATT_IF gatt_if) {
-  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
-    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
-  }
-
   if (transport != BT_TRANSPORT_LE) {
     p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
                                                                                 BTM_SEC_NONE);
     return p_tcb->att_lcid != 0;
+  } else {
+    p_tcb->att_lcid = L2CAP_ATT_CID;
+    return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
   }
-
-  // Already connected, mark the link as used
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
-    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
-    return true;
-  }
-
-  p_tcb->att_lcid = L2CAP_ATT_CID;
-  return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
 }
 
 /** GATT connection initiation */
@@ -421,9 +411,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
     /* before link down, another app try to open a GATT connection */
     uint8_t st = gatt_get_ch_state(p_tcb);
     if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() && transport == BT_TRANSPORT_LE) {
-      if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
-        return false;
-      }
+      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
     } else if (st == GATT_CH_CLOSING) {
       log::info("Must finish disconnection before new connection");
       /* need to complete the closing first */
@@ -437,6 +425,10 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
   if (!p_tcb) {
     log::error("Max TCB for gatt_if [ {}] reached.", p_reg->gatt_if);
     return false;
+  }
+
+  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
+    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
   }
 
   if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
