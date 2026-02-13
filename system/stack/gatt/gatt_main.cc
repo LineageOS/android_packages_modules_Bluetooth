@@ -156,40 +156,6 @@ void gatt_free(void) {
 
 /*******************************************************************************
  *
- * Function         gatt_connect
- *
- * Description      This function is called to initiate a connection to a peer
- *                  device.
- *
- * Parameter        rem_bda: remote device address to connect to.
- *
- * Returns          true if connection is started, otherwise return false.
- *
- ******************************************************************************/
-bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                  tBT_TRANSPORT transport, tGATT_IF gatt_if) {
-  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
-    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
-  }
-
-  if (transport != BT_TRANSPORT_LE) {
-    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
-                                                                                BTM_SEC_NONE);
-    return p_tcb->att_lcid != 0;
-  }
-
-  // Already connected, mark the link as used
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
-    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
-    return true;
-  }
-
-  p_tcb->att_lcid = L2CAP_ATT_CID;
-  return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
-}
-
-/*******************************************************************************
- *
  * Function         gatt_force_disconnect
  *
  * Description      This function is called to forcefully disconnect a device.
@@ -422,6 +388,28 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
                                .holders_info = holders});
     }
   }
+}
+
+static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
+                         tBT_TRANSPORT transport, tGATT_IF gatt_if) {
+  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
+    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
+  }
+
+  if (transport != BT_TRANSPORT_LE) {
+    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
+                                                                                BTM_SEC_NONE);
+    return p_tcb->att_lcid != 0;
+  }
+
+  // Already connected, mark the link as used
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
+    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
+    return true;
+  }
+
+  p_tcb->att_lcid = L2CAP_ATT_CID;
+  return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
 }
 
 /** GATT connection initiation */
