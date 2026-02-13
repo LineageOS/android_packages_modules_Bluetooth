@@ -4064,6 +4064,13 @@ public class AdapterService extends Service {
                                     : BluetoothStatsLog
                                             .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL,
                             source.getUid());
+
+            if (Utils.isAutonomousRepairingSupported()
+                    && getBondState(device) == BluetoothDevice.BOND_BONDING
+                    && isBondLost(device)
+                    && !accepted) {
+                MetricsLogger.getInstance().count(BluetoothProtoEnums.BOND_REPAIR_LOCAL_CANCEL, 1);
+            }
         } finally {
             Binder.restoreCallingIdentity(token);
         }

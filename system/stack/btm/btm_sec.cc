@@ -34,6 +34,7 @@
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/remote_version.h>
 #include <com_android_bluetooth_flags.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -4254,7 +4255,7 @@ void btm_sec_link_key_notification(const RawAddress& bda, const Octet16& link_ke
  *
  * Description      This function is called when controller requests link key
  *
- * Returns          Pointer to the record or NULL
+ * Returns          void
  *
  ******************************************************************************/
 void btm_sec_link_key_request(const RawAddress bda) {
@@ -4299,13 +4300,18 @@ void btm_sec_link_key_request(const RawAddress bda) {
  * Description      This function is called when host does not provide PIN
  *                  within requested time
  *
- * Returns          Pointer to the TLE struct
+ * Returns          void
  *
  ******************************************************************************/
 static void btm_sec_pairing_timeout(void* /* data */) {
   log::warn("State: {} Flags: {} Device: {}",
             btm_pair_state_descr(BtmSecurity::Get().pairing_state_),
             BtmSecurity::Get().pairing_flags_, BtmSecurity::Get().link_spec_);
+
+  if (is_autonomous_repairing_supported() &&
+      btm_is_bond_lost(BtmSecurity::Get().link_spec_.addrt.bda)) {
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_LOCAL_TIMEOUT);
+  }
 
   const BtIoCap local_io_caps = btm_sec_get_local_iocaps();
   BtmDevice* p_device = btm_get_dev(BtmSecurity::Get().link_spec_.addrt.bda);
@@ -4411,7 +4417,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
  *
  * Description      This function is called when controller requests PIN code
  *
- * Returns          Pointer to the record or NULL
+ * Returns          void
  *
  ******************************************************************************/
 void btm_sec_pin_code_request(const RawAddress p_bda) {
@@ -4831,7 +4837,7 @@ static void btm_sec_auth_timer_timeout(RawAddress bd_addr) {
  * Description      Encryption could not start because of the collision
  *                  try to do it again
  *
- * Returns          Pointer to the TLE struct
+ * Returns          void
  *
  ******************************************************************************/
 static void btm_sec_collision_timeout(void* /* data */) {
