@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2024 The Android Open Source Project
+ *  Copyright (C) 2024 The Android Open Source Project
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -46,21 +46,12 @@ static uint32_t api_level;
 static void ais_request_cback(tCONN_ID, uint32_t, tGATTS_REQ_TYPE, tGATTS_DATA*);
 
 static tGATT_CBACK ais_cback = {
-        .p_conn_cb = nullptr,
-        .p_cmpl_cb = nullptr,
-        .p_disc_res_cb = nullptr,
-        .p_disc_cmpl_cb = nullptr,
         .p_req_cb = ais_request_cback,
-        .p_enc_cmpl_cb = nullptr,
-        .p_congestion_cb = nullptr,
-        .p_phy_update_cb = nullptr,
-        .p_conn_update_cb = nullptr,
-        .p_subrate_chg_cb = nullptr,
 };
 
 /** AIS ATT server attribute access request callback */
 static void ais_request_cback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type,
-                       tGATTS_DATA* p_data) {
+                              tGATTS_DATA* p_data) {
   tGATT_STATUS status = GATT_INVALID_PDU;
   tGATTS_RSP rsp_msg = {};
   uint16_t handle = p_data->read_req.handle;
@@ -100,41 +91,39 @@ static void ais_request_cback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TY
  * Returns          void.
  *
  ******************************************************************************/
-static void ais_attr_db_init(void) {
+void AIS_Init(void) {
   api_level = bluetooth::os::GetSystemPropertyUint32(kPropertyAndroidAPILevel,
                                                      kPropertyAndroidAPILevelDefault);
   // Add Android OS identifier if API level is defined.
-  if (api_level != kPropertyAndroidAPILevelDefault) {
-    std::array<uint8_t, Uuid::kNumBytes128> tmp;
-    tmp.fill(0xc5);  // any number is fine here
-    Uuid app_uuid = Uuid::From128BitBE(tmp);
-
-    tGATT_IF gatt_if = GATT_Register(app_uuid, "Ais", &ais_cback, false);
-
-    GATT_StartIf(gatt_if);
-
-    btgatt_db_element_t android_information_service[] = {
-            {
-                    .uuid = ANDROID_INFORMATION_SERVICE_UUID,
-                    .type = BTGATT_DB_PRIMARY_SERVICE,
-            },
-            {
-                    .uuid = GATT_UUID_AIS_API_LEVEL,
-                    .type = BTGATT_DB_CHARACTERISTIC,
-                    .properties = GATT_CHAR_PROP_BIT_READ,
-                    .permissions = GATT_PERM_READ_IF_ENCRYPTED_OR_DISCOVERABLE,
-            }};
-    if (GATTS_AddService(gatt_if, android_information_service,
-                         sizeof(android_information_service) / sizeof(btgatt_db_element_t)) !=
-        GATT_SERVICE_STARTED) {
-      error("Unable to add Android Information Server gatt_if:{}", gatt_if);
-    }
-
-    attr_api_level_handle = android_information_service[1].attribute_handle;
+  if (api_level == kPropertyAndroidAPILevelDefault) {
+    warn("Failed to identify API level. Cannot initialize AIS");
+    return;
   }
-}
 
-/*
- * This routine should not be called except once per stack invocation.
- */
-void AIS_Init(void) { ais_attr_db_init(); }
+  std::array<uint8_t, Uuid::kNumBytes128> tmp;
+  tmp.fill(0xc5);  // any number is fine here
+  Uuid app_uuid = Uuid::From128BitBE(tmp);
+
+  tGATT_IF gatt_if = GATT_Register(app_uuid, "Ais", &ais_cback, false);
+
+  GATT_StartIf(gatt_if);
+
+  btgatt_db_element_t android_information_service[] = {
+          {
+                  .uuid = ANDROID_INFORMATION_SERVICE_UUID,
+                  .type = BTGATT_DB_PRIMARY_SERVICE,
+          },
+          {
+                  .uuid = GATT_UUID_AIS_API_LEVEL,
+                  .type = BTGATT_DB_CHARACTERISTIC,
+                  .properties = GATT_CHAR_PROP_BIT_READ,
+                  .permissions = GATT_PERM_READ_IF_ENCRYPTED_OR_DISCOVERABLE,
+          }};
+  if (GATTS_AddService(gatt_if, android_information_service,
+                       sizeof(android_information_service) / sizeof(btgatt_db_element_t)) !=
+      GATT_SERVICE_STARTED) {
+    error("Unable to add Android Information Server gatt_if:{}", gatt_if);
+  }
+
+  attr_api_level_handle = android_information_service[1].attribute_handle;
+}
