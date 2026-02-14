@@ -2021,6 +2021,69 @@ public class ActiveDeviceManagerTest {
     }
 
     /**
+     * Test that active LE Audio device is cleared, when the only device in group disconnects.
+     *
+     * <pre>
+     * Steps:
+     * 1. LE Audio device is connected and becomes active.
+     * 2. Device disconnects.
+     * 3. Active device is set to null
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CLEAR_ACTIVE_DEVICE_ON_DISCONNECT)
+    public void leAudioDeviceConnected_clearActiveWhenDisconnected() {
+        leAudioConnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        leAudioActiveDeviceChanged(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).removeActiveDevice(false);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
+     * Test that active LE Audio device is cleared, only when all devices in group disconnect.
+     *
+     * <pre>
+     * Steps:
+     * 1. Two LE Audio devices are connected and lead device becomes active.
+     * 2. Lead device disconnects.
+     * 3. Assert that device is still active.
+     * 4. Secondary device disconnects.
+     * 5. Active device is set to null
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CLEAR_ACTIVE_DEVICE_ON_DISCONNECT)
+    public void leAudioGroupConnected_clearActiveDeviceWhenAllDisconnected() {
+        leAudioConnected(mLeAudioDevice);
+        leAudioConnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        leAudioActiveDeviceChanged(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService, never()).setActiveDevice(null);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+
+        leAudioDisconnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).removeActiveDevice(false);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
      * HFP device is connected. LE Audio device is connected. HFP is set to active. This should
      * remove LE Audio active device.
      */

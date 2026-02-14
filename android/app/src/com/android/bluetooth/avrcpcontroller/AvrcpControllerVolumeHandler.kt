@@ -68,7 +68,10 @@ class AvrcpControllerVolumeHandler(
 ) {
     private val audioManager: AudioManager = context.getSystemService(AudioManager::class.java)
 
-    // For sending volume changed events back to the object owner
+    /**
+     * For sending volume changed events back to the object owner. Listens for
+     * [AudioManager.ACTION_VOLUME_CHANGED] events and posts [onIntentReceived] to [handler].
+     */
     // TODO when cleaning avrcpControllerAbsVolChangedNotification make it NonNull
     private val receiver: BroadcastReceiver?
 
@@ -91,13 +94,13 @@ class AvrcpControllerVolumeHandler(
         get() = volumeStrategy == STRATEGY_ABSOLUTE
 
     /**
-     * Registers the [VolumeHandlerBroadcastReceiver]. Initializes [cachedStreamVolume] to the
-     * current stream volume.
+     * Registers a broadcast receiver for volume changed events. Initializes [cachedStreamVolume] to
+     * the current stream volume.
      */
     init {
         debug("Initializing volume handler")
-        if (Flags.avrcpControllerAbsVolChangedNotification()) {
-            receiver =
+        receiver =
+            if (Flags.avrcpControllerAbsVolChangedNotification()) {
                 context.registerReceiver(
                     handler,
                     AudioManager.ACTION_VOLUME_CHANGED,
@@ -105,15 +108,15 @@ class AvrcpControllerVolumeHandler(
                 ) { _, intent ->
                     onIntentReceived(intent)
                 }
-        } else {
-            receiver = null
-        }
+            } else {
+                null
+            }
         cachedStreamVolume = getStreamVolume()
     }
 
     /**
-     * Unregisters the [VolumeHandlerBroadcastReceiver]. Clears the handler's message queue. Resets
-     * [cachedStreamVolume].
+     * Unregisters the broadcast receiver used for volume changed events. Clears the handler's
+     * message queue. Resets [cachedStreamVolume].
      *
      * This object should no longer be used. Further invocations may result in undefined behavior,
      * including exceptions.
@@ -268,10 +271,7 @@ class AvrcpControllerVolumeHandler(
         fun onAbsoluteVolumeChanged(absVol: Int)
     }
 
-    /**
-     * If using absolute volume, listens for [AudioManager.ACTION_VOLUME_CHANGED] events to trigger
-     * the [callback].
-     */
+    /** Handles the [AudioManager.ACTION_VOLUME_CHANGED] intents [receiver] listens for. */
     @VisibleForTesting
     fun onIntentReceived(intent: Intent) {
         if (intent.action != AudioManager.ACTION_VOLUME_CHANGED) {
