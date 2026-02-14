@@ -131,8 +131,7 @@ internal class PermissionChecker(
         }
 
         val packageName =
-            source.packageName
-                ?: throw BluetoothPermissionException("Null package name from ${source.uid}")
+            requireNotNull(source.packageName) { "Unknown package caller. Identify yourself" }
         checkPackageName(callingAppId, packageName)
 
         if (foregroundRequired) {
@@ -160,7 +159,7 @@ internal class PermissionChecker(
                         context.packageManager.getPackageUid(name, MATCH_ANY_USER)
                     } catch (e: NameNotFoundException) {
                         Log.w(TAG, "checkPackageName($appId, $name): Failed", e)
-                        throw SecurityException(e.message)
+                        throw SecurityException(e)
                     } finally {
                         Binder.restoreCallingIdentity(callingIdentity)
                     }
