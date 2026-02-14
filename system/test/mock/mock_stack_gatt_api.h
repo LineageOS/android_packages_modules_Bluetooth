@@ -406,21 +406,6 @@ struct GATT_Register {
 };
 extern struct GATT_Register GATT_Register;
 
-// Name: GATT_SetIdleTimeout
-// Params: const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT
-// transport Return: void
-struct GATT_SetIdleTimeout {
-  std::function<void(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT transport,
-                     bool is_active)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* idle_tout */,
-                  tBT_TRANSPORT /* transport */, bool /* is_active */) {}};
-  void operator()(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT transport,
-                  bool is_active) {
-    body(bd_addr, idle_tout, transport, is_active);
-  }
-};
-extern struct GATT_SetIdleTimeout GATT_SetIdleTimeout;
-
 // Name: GATT_StartIf
 // Params: tGATT_IF gatt_if
 // Return: void

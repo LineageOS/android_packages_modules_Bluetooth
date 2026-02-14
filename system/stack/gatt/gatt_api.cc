@@ -1327,49 +1327,6 @@ void GATTC_SetDefaultMtu(const RawAddress& remote_bda) {
 /*                  GATT  APIs                                                */
 /*                                                                            */
 /******************************************************************************/
-/*******************************************************************************
- *
- * Function         GATT_SetIdleTimeout
- *
- * Description      This function (common to both client and server) sets the
- *                  idle timeout for a transport connection
- *
- * Parameter        bd_addr:   target device bd address.
- *                  idle_tout: timeout value in seconds.
- *                  transport: transport option.
- *                  is_active: whether we should use this as a signal that an
- *                             active client now exists (which changes link
- *                             timeout logic, see
- *                             t_l2c_linkcb.with_active_local_clients for
- *                             details).
- *
- * Returns          void
- *
- ******************************************************************************/
-void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT transport,
-                         bool is_active) {
-  bool status = false;
-
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
-  if (p_tcb != nullptr) {
-    status = stack::l2cap::get_interface().L2CA_SetLeGattTimeout(bd_addr, idle_tout);
-
-    if (is_active) {
-      status &= stack::l2cap::get_interface().L2CA_MarkLeLinkAsActive(bd_addr);
-    }
-
-    if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP) {
-      if (!stack::l2cap::get_interface().L2CA_SetIdleTimeoutByBdAddr(
-                  p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE)) {
-        log::warn("Unable to set L2CAP link idle timeout peer:{} transport:{}", p_tcb->peer_bda,
-                  bt_transport_text(transport));
-      }
-    }
-  }
-
-  log::info("idle_timeout={}, is_active={}, status={} (1-OK 0-not performed)", idle_tout, is_active,
-            status);
-}
 
 /*******************************************************************************
  *
