@@ -40,12 +40,12 @@
 #include "hidd_api.h"
 #include "hiddefs.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
 #include "osi/include/allocator.h"
 #include "stack/hid/hidd_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
 #include "stack/include/l2cdefs.h"
 
 using namespace bluetooth;

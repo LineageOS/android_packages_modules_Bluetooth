@@ -16,7 +16,6 @@ cc_library_static {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     export_include_dirs: ["./"],
     srcs: [
@@ -57,7 +56,6 @@ cc_test {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
         "tests/avrcp_connection_handler_test.cc",
@@ -110,7 +108,6 @@ cc_fuzz {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/packet/tests",
-        "packages/modules/Bluetooth/system/stack/include",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",

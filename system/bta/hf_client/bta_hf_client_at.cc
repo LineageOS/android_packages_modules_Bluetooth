@@ -31,13 +31,13 @@
 #include "bta_hf_client_api.h"
 #include "bta_hfp_api.h"
 #include "bta_sys.h"
-#include "btm_api_types.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/properties.h"
 #include "power_mode.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api_types.h"
 #include "stack/include/port_api.h"
 
 #define PRIVATE_CELL(number)                                        \

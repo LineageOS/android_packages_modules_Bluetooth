@@ -25,15 +25,15 @@
 #include <optional>
 #include <vector>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
 #include "a2dp_encoding_aidl_utils.h"
-#include "a2dp_vendor.h"
-#include "a2dp_vendor_aptx_constants.h"
-#include "a2dp_vendor_aptx_hd_constants.h"
-#include "a2dp_vendor_ldac_constants.h"
-#include "a2dp_vendor_opus_constants.h"
 #include "client_interface_aidl.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_vendor.h"
+#include "stack/include/a2dp_vendor_aptx_constants.h"
+#include "stack/include/a2dp_vendor_aptx_hd_constants.h"
+#include "stack/include/a2dp_vendor_ldac_constants.h"
+#include "stack/include/a2dp_vendor_opus_constants.h"
 
 namespace bluetooth::audio::aidl::a2dp {
 

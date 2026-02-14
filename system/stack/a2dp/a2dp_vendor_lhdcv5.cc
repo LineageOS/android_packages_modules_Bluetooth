@@ -23,17 +23,17 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_vendor_lhdcv5.h"
+#include "stack/include/a2dp_vendor_lhdcv5.h"
 
 #include <bluetooth/log.h>
 
 #include <cstring>
 
-#include "a2dp_constants.h"
-#include "a2dp_vendor.h"
-#include "a2dp_vendor_lhdcv5_encoder.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/osi.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_vendor.h"
+#include "stack/include/a2dp_vendor_lhdcv5_encoder.h"
 
 using namespace bluetooth;
 

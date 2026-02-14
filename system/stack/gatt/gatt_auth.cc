@@ -26,7 +26,6 @@
 #include <bluetooth/types/address.h>
 #include <string.h>
 
-#include "gatt_api.h"
 #include "gatt_int.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -37,6 +36,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/gatt_api.h"
 
 using namespace bluetooth;
 

@@ -21,9 +21,9 @@
 
 #include <bluetooth/types/address.h>
 
-#include "gatt_api.h"
 #include "internal_include/bt_target.h"
-#include "srvc_api.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/srvc_api.h"
 
 #define SRVC_MAX_APPS GATT_MAX_APPS
 

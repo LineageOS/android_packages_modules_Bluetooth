@@ -156,40 +156,6 @@ void gatt_free(void) {
 
 /*******************************************************************************
  *
- * Function         gatt_connect
- *
- * Description      This function is called to initiate a connection to a peer
- *                  device.
- *
- * Parameter        rem_bda: remote device address to connect to.
- *
- * Returns          true if connection is started, otherwise return false.
- *
- ******************************************************************************/
-bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                  tBT_TRANSPORT transport, tGATT_IF gatt_if) {
-  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
-    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
-  }
-
-  if (transport != BT_TRANSPORT_LE) {
-    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
-                                                                                BTM_SEC_NONE);
-    return p_tcb->att_lcid != 0;
-  }
-
-  // Already connected, mark the link as used
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
-    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
-    return true;
-  }
-
-  p_tcb->att_lcid = L2CAP_ATT_CID;
-  return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
-}
-
-/*******************************************************************************
- *
  * Function         gatt_force_disconnect
  *
  * Description      This function is called to forcefully disconnect a device.
@@ -318,6 +284,23 @@ static bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
   return true;
 }
 
+static void gatt_set_idle_timeout(const RawAddress& bd_addr, bool is_active) {
+  uint16_t idle_tout = is_active ? GATT_LINK_NO_IDLE_TIMEOUT : GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP;
+  bool status = stack::l2cap::get_interface().L2CA_SetLeGattTimeout(bd_addr, idle_tout);
+
+  if (is_active) {
+    status &= stack::l2cap::get_interface().L2CA_MarkLeLinkAsActive(bd_addr);
+  } else {
+    if (!stack::l2cap::get_interface().L2CA_SetIdleTimeoutByBdAddr(
+                bd_addr, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE)) {
+      log::warn("Unable to set L2CAP link idle timeout peer:{} ", bd_addr);
+    }
+  }
+
+  log::info("idle_timeout={}, is_active={}, status={} (1-OK 0-not performed)", idle_tout, is_active,
+            status);
+}
+
 /*******************************************************************************
  *
  * Function         gatt_update_app_use_link_flag
@@ -357,8 +340,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
     if (p_tcb->att_lcid == L2CAP_ATT_CID && is_valid_handle) {
       log::info("disable link idle timer for {}", p_tcb->peer_bda);
       /* acl link is connected disable the idle timeout */
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport,
-                          true /* is_active */);
+      gatt_set_idle_timeout(p_tcb->peer_bda, true /* is_active */);
     } else {
       log::info("invalid handle {} or dynamic CID {}", is_valid_handle, p_tcb->att_lcid);
     }
@@ -390,8 +372,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
                 "GATT fixed channel is no longer useful, start link idle timer for "
                 "{} seconds",
                 GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP);
-        GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, p_tcb->transport,
-                            false /* is_active */);
+        gatt_set_idle_timeout(p_tcb->peer_bda, false /* is_active */);
       } else {
         // disconnect the dynamic channel
         log::info("disconnect GATT dynamic channel");
@@ -409,6 +390,18 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
   }
 }
 
+static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
+                         tBT_TRANSPORT transport, tGATT_IF gatt_if) {
+  if (transport != BT_TRANSPORT_LE) {
+    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
+                                                                                BTM_SEC_NONE);
+    return p_tcb->att_lcid != 0;
+  } else {
+    p_tcb->att_lcid = L2CAP_ATT_CID;
+    return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
+  }
+}
+
 /** GATT connection initiation */
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                       tBT_TRANSPORT transport) {
@@ -418,9 +411,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
     /* before link down, another app try to open a GATT connection */
     uint8_t st = gatt_get_ch_state(p_tcb);
     if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() && transport == BT_TRANSPORT_LE) {
-      if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
-        return false;
-      }
+      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
     } else if (st == GATT_CH_CLOSING) {
       log::info("Must finish disconnection before new connection");
       /* need to complete the closing first */
@@ -436,6 +427,10 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
     return false;
   }
 
+  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
+    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
+  }
+
   if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
     log::error("gatt_connect failed");
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
@@ -446,10 +441,6 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
   }
 
   return true;
-}
-
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  return gatt_act_connect(p_reg, bd_addr, BLE_ADDR_PUBLIC, transport);
 }
 
 /** This function is called to process the congestion callback from lcb */
@@ -587,11 +578,9 @@ void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
     if (!p_tcb->app_hold_link.empty()) {
       /* disable idle timeout if one or more clients are holding the link
        * disable the idle timer */
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport,
-                          true /* is_active */);
+      gatt_set_idle_timeout(p_tcb->peer_bda, true /* is_active */);
     } else {
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, p_tcb->transport,
-                          false /* is_active */);
+      gatt_set_idle_timeout(p_tcb->peer_bda, false /* is_active */);
     }
   }
 }

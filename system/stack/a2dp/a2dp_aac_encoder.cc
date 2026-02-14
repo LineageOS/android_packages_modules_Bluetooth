@@ -16,7 +16,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_aac_encoder.h"
+#include "stack/include/a2dp_aac_encoder.h"
 
 #include <FDK_audio.h>
 #include <aacenc_lib.h>
@@ -28,13 +28,13 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "a2dp_aac.h"
-#include "a2dp_aac_constants.h"
-#include "a2dp_codec_api.h"
-#include "avdt_api.h"
 #include "common/time_util.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
+#include "stack/include/a2dp_aac.h"
+#include "stack/include/a2dp_aac_constants.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 //

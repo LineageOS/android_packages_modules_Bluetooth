@@ -584,9 +584,9 @@ TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_dial_fail) {
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
 }
 
-extern std::function<int(uint16_t, RawAddress*, uint16_t*)> PORT_CheckConnection_Fn;
-extern std::function<int(uint16_t)> RFCOMM_RemoveConnection_Fn;
-extern std::function<int(uint16_t)> RFCOMM_RemoveServer_Fn;
+extern std::function<int(uint8_t, RawAddress*, uint16_t*)> PORT_CheckConnection_Fn;
+extern std::function<int(uint8_t)> RFCOMM_RemoveConnection_Fn;
+extern std::function<int(uint8_t)> RFCOMM_RemoveServer_Fn;
 
 class BtaAgRfcTest : public BtaAgTest {
 protected:
@@ -646,7 +646,7 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__setup_and_open_no_collision,
   data.rfc.port_handle = 100;
 
   // Mock PORT_CheckConnection
-  PORT_CheckConnection_Fn = [&](uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
+  PORT_CheckConnection_Fn = [&](uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
     if (handle == 100) {
       *bd_addr = addr;
       if (p_lcid) *p_lcid = 1;
@@ -688,7 +688,7 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__collision_timer,
   data.rfc.port_handle = 30;
 
   // Mock PORT_CheckConnection
-  PORT_CheckConnection_Fn = [&](uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
+  PORT_CheckConnection_Fn = [&](uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
     if (handle == 30) {
       *bd_addr = addr; // Collision
       if (p_lcid) *p_lcid = 2;
@@ -715,7 +715,7 @@ TEST_F_WITH_FLAGS(BtaAgRfcTest, rfc_acp_open__collision_timer,
 
   // Mock RFCOMM_RemoveConnection
   bool remove_called = false;
-  RFCOMM_RemoveConnection_Fn = [&](uint16_t handle) {
+  RFCOMM_RemoveConnection_Fn = [&](uint8_t handle) {
     if (handle == 200) remove_called = true;
     return 0;
   };

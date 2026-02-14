@@ -16,9 +16,9 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "a2dp_api.h"
 #include "fuzzers/a2dp/a2dpFuzzFunctions.h"
 #include "fuzzers/common/commonFuzzHelpers.h"
+#include "stack/include/a2dp_api.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   // Init our wrapper

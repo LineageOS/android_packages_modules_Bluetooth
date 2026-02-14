@@ -21,7 +21,9 @@
 
 #include <vector>
 
+#include "hardware/bt_av.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/a2dp_codec_api.h"
 
 static const std::vector<btav_a2dp_codec_index_t> CODEC_INDEX_ENUM_VALS = {
         BTAV_A2DP_CODEC_INDEX_SOURCE_MIN,

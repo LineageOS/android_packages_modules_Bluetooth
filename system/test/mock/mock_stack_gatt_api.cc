@@ -70,7 +70,6 @@ struct GATT_Disconnect GATT_Disconnect;
 struct GATT_GetConnIdIfConnected GATT_GetConnIdIfConnected;
 struct GATT_GetConnectionInfor GATT_GetConnectionInfor;
 struct GATT_Register GATT_Register;
-struct GATT_SetIdleTimeout GATT_SetIdleTimeout;
 struct GATT_StartIf GATT_StartIf;
 
 }  // namespace stack_gatt_api
@@ -234,11 +233,6 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name, tGATT_C
                        bool eatt_support) {
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_Register(app_uuid128, name, p_cb_info, eatt_support);
-}
-void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT transport,
-                         bool is_active) {
-  inc_func_call_count(__func__);
-  test::mock::stack_gatt_api::GATT_SetIdleTimeout(bd_addr, idle_tout, transport, is_active);
 }
 void GATT_StartIf(tGATT_IF gatt_if) {
   inc_func_call_count(__func__);

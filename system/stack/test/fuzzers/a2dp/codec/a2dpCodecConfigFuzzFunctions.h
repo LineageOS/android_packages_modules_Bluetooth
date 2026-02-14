@@ -21,11 +21,11 @@
 
 #include <vector>
 
-#include "a2dp_codec_api.h"
 #include "fuzzers/a2dp/codec/a2dpCodecConfigFuzzHelpers.h"
 #include "fuzzers/a2dp/codec/a2dpCodecHelperFunctions.h"
 #include "fuzzers/a2dp/codec/a2dpCodecInfoFuzzFunctions.h"
 #include "fuzzers/common/commonFuzzHelpers.h"
+#include "stack/include/a2dp_codec_api.h"
 
 /* This is a vector of lambda functions the fuzzer will pull from.
  *  This is done so new functions can be added to the fuzzer easily

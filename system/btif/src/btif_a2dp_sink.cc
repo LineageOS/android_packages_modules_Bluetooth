@@ -36,10 +36,7 @@
 #include <string>
 #include <utility>
 
-#include "a2dp_api.h"
-#include "a2dp_codec_api.h"
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "avdt_api.h"
 #include "bta_av_api.h"
 #include "btif/include/btif_av.h"
 #include "btif/include/btif_av_co.h"
@@ -49,6 +46,9 @@
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 using bluetooth::common::MessageLoopThread;

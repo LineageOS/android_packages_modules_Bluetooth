@@ -38,7 +38,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
-import org.robolectric.Shadows
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
@@ -99,7 +99,7 @@ class BluetoothComponentTest(flags: FlagsWrapper) {
         setupPackage(context, false)
 
         // Only the last call to setPackagesForUid is taken into consideration
-        Shadows.shadowOf(context.packageManager)
+        shadowOf(context.packageManager)
             .setPackagesForUid(
                 Process.BLUETOOTH_UID,
                 "random.first.package.name",
@@ -130,7 +130,7 @@ class BluetoothComponentTest(flags: FlagsWrapper) {
         }
 
         private fun setupPackage(context: Context, safeMode: Boolean) {
-            val pm = Shadows.shadowOf(context.packageManager)
+            val pm = shadowOf(context.packageManager)
             pm.setSafeMode(safeMode)
 
             val componentName = ComponentName(PACKAGE_NAME, BLUETOOTH_SERVICE)

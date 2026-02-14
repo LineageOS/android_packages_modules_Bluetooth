@@ -55,19 +55,19 @@ class ConnectableProfileTest {
         // Nothing to do for test
         override fun cleanup() = Unit
 
-        override fun connect(device: BluetoothDevice?): Boolean {
+        override fun connect(device: BluetoothDevice): Boolean {
             return false
         }
 
-        override fun disconnect(device: BluetoothDevice?): Boolean {
+        override fun disconnect(device: BluetoothDevice): Boolean {
             return true
         }
 
-        override fun getConnectionState(device: BluetoothDevice?): Int {
+        override fun getConnectionState(device: BluetoothDevice): Int {
             return BluetoothProfile.STATE_DISCONNECTED
         }
 
-        override fun setConnectionPolicy(device: BluetoothDevice?, connectionPolicy: Int): Boolean {
+        override fun setConnectionPolicy(device: BluetoothDevice, connectionPolicy: Int): Boolean {
             return false
         }
     }

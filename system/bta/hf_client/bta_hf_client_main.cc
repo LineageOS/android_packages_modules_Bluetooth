@@ -26,17 +26,17 @@
 #include <cstdio>
 #include <cstring>
 
-#include "bt_dev_class.h"
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/utl.h"
 #include "bta_api_data_types.h"
 #include "bta_hf_client_api.h"
 #include "bta_sys.h"
-#include "btm_api_types.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/sdp_api.h"
 

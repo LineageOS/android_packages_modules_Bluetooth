@@ -29,6 +29,7 @@ namespace bluetooth {
 namespace hci {
 
 using ::bluetooth::hci::iso_manager::big_create_params;
+using ::bluetooth::hci::iso_manager::big_create_sync_params;
 using ::bluetooth::hci::iso_manager::BigCallbacks;
 using ::bluetooth::hci::iso_manager::cig_create_params;
 using ::bluetooth::hci::iso_manager::CigCallbacks;
@@ -161,8 +162,8 @@ void IsoManager::SetBigChannelMapClassificationByConnHandles(uint8_t action, uin
   }
 }
 
-void IsoManager::BigCreateSync(iso_manager::IsoClientHandle client_handle,
-                               struct iso_manager::big_create_sync_params sync_params) {
+void IsoManager::BigCreateSync(IsoClientHandle client_handle,
+                               struct big_create_sync_params sync_params) {
   if (pimpl_->IsRunning()) {
     pimpl_->iso_impl_->big_create_sync(client_handle, std::move(sync_params));
   }
@@ -216,7 +217,7 @@ void IsoManager::Dump(int fd) {
   }
 }
 
-bool IsoManager::AddIncomingCisEventsListener(iso_manager::IsoClientHandle client_handle,
+bool IsoManager::AddIncomingCisEventsListener(IsoClientHandle client_handle,
                                               const RawAddress& pseudo_address, uint8_t cig_id,
                                               uint8_t cis_id) {
   if (pimpl_->IsRunning()) {
@@ -226,7 +227,7 @@ bool IsoManager::AddIncomingCisEventsListener(iso_manager::IsoClientHandle clien
   return false;
 }
 
-void IsoManager::RemoveIncomingCisEventsListener(iso_manager::IsoClientHandle client_handle,
+void IsoManager::RemoveIncomingCisEventsListener(IsoClientHandle client_handle,
                                                  const RawAddress& pseudo_address, uint8_t cig_id,
                                                  uint8_t cis_id) {
   if (pimpl_->IsRunning()) {

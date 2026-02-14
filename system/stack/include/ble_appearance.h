@@ -21,7 +21,7 @@
 
 #include <cstdint>
 
-#include "bt_dev_class.h"
+#include "stack/include/bt_dev_class.h"
 
 /**
  * BLE appearance values as per BT spec assigned numbers.

@@ -29,12 +29,12 @@
 #include <string>
 
 #include "btm_ble_api.h"
-#include "gattdefs.h"
 #include "hardware/bt_gatt_types.h"
 #include "include/hardware/bt_common_types.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "stack/include/gattdefs.h"
 #include "stack/include/hci_error_code.h"
 
 /*****************************************************************************
@@ -1144,28 +1144,6 @@ void GATTC_UpdateUserAttMtuIfNeeded(const RawAddress& remote_bda, tBT_TRANSPORT 
  *
  ******************************************************************************/
 [[nodiscard]] tGATT_STATUS GATTC_SendHandleValueConfirm(tCONN_ID conn_id, uint16_t handle);
-
-/*******************************************************************************
- *
- * Function         GATT_SetIdleTimeout
- *
- * Description      This function (common to both client and server) sets the
- *                  idle timeout for a transport connection
- *
- * Parameter        bd_addr:   target device bd address.
- *                  idle_tout: timeout value in seconds.
- *                  transport: transport option.
- *                  is_active: whether we should use this as a signal that an
- *                             active client now exists (which changes link
- *                             timeout logic, see
- *                             t_l2c_linkcb.with_active_local_clients for
- *                             details).
- *
- * Returns          void
- *
- ******************************************************************************/
-void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRANSPORT transport,
-                         bool is_active);
 
 /*******************************************************************************
  *

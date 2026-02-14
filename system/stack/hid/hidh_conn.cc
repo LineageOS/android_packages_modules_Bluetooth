@@ -40,8 +40,6 @@
 #include "hidh_api.h"
 #include "hidh_int.h"
 #include "internal_include/bt_target.h"
-#include "l2cap_types.h"
-#include "l2cdefs.h"
 #include "macros.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
@@ -53,6 +51,8 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_types.h"
+#include "stack/include/l2cdefs.h"
 
 using namespace bluetooth;
 

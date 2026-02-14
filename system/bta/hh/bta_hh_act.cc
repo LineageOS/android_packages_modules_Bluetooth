@@ -42,15 +42,15 @@
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 #include "osi/include/allocator.h"
-#include "sdp_device_id.h"
-#include "sdp_status.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/hiddefs.h"
 #include "stack/include/hidh_api.h"
 #include "stack/include/sdp_api.h"
+#include "stack/include/sdp_device_id.h"
 #include "stack/include/sdp_discovery_db.h"
+#include "stack/include/sdp_status.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

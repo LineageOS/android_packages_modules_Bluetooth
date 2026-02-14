@@ -23,11 +23,11 @@
 
 #include <vector>
 
-#include "a2dp_codec_api.h"
 #include "fuzzers/a2dp/codec/a2dpCodecFuzzHelpers.h"
 #include "fuzzers/a2dp/codec/a2dpCodecHelperFunctions.h"
 #include "fuzzers/a2dp/codec/a2dpCodecInfoFuzzFunctions.h"
 #include "fuzzers/common/commonFuzzHelpers.h"
+#include "stack/include/a2dp_codec_api.h"
 
 #define MAX_NUM_PROPERTIES 128
 #define A2DP_MAX_INIT_RUNS 16

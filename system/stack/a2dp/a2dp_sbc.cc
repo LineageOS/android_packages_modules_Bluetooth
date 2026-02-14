@@ -25,7 +25,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_sbc.h"
+#include "stack/include/a2dp_sbc.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -36,17 +36,17 @@
 #include <sstream>
 #include <string>
 
-#include "a2dp_api.h"
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "a2dp_sbc_constants.h"
-#include "a2dp_sbc_decoder.h"
-#include "a2dp_sbc_encoder.h"
-#include "avdt_api.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
 #include "gd/common/utils.h"
 #include "hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_sbc_constants.h"
+#include "stack/include/a2dp_sbc_decoder.h"
+#include "stack/include/a2dp_sbc_encoder.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 #define A2DP_SBC_MAX_BITPOOL 53

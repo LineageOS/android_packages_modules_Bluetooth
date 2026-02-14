@@ -20,26 +20,26 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_vendor.h"
+#include "stack/include/a2dp_vendor.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <string>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
-#include "a2dp_vendor_aptx.h"
-#include "a2dp_vendor_aptx_constants.h"
-#include "a2dp_vendor_aptx_hd.h"
-#include "a2dp_vendor_aptx_hd_constants.h"
-#include "a2dp_vendor_ldac.h"
-#include "a2dp_vendor_ldac_constants.h"
-#include "a2dp_vendor_lhdcv5.h"
-#include "a2dp_vendor_lhdcv5_constants.h"
-#include "a2dp_vendor_opus.h"
-#include "a2dp_vendor_opus_constants.h"
-#include "avdt_api.h"
 #include "hardware/bt_av.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/a2dp_vendor_aptx.h"
+#include "stack/include/a2dp_vendor_aptx_constants.h"
+#include "stack/include/a2dp_vendor_aptx_hd.h"
+#include "stack/include/a2dp_vendor_aptx_hd_constants.h"
+#include "stack/include/a2dp_vendor_ldac.h"
+#include "stack/include/a2dp_vendor_ldac_constants.h"
+#include "stack/include/a2dp_vendor_lhdcv5.h"
+#include "stack/include/a2dp_vendor_lhdcv5_constants.h"
+#include "stack/include/a2dp_vendor_opus.h"
+#include "stack/include/a2dp_vendor_opus_constants.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 bool A2DP_IsVendorSourceCodecValid(const uint8_t* p_codec_info) {

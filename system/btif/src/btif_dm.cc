@@ -51,10 +51,7 @@
 #include <mutex>
 #include <optional>
 
-#include "advertise_data_parser.h"
 #include "bluetooth/types/bt_transport.h"
-#include "bt_dev_class.h"
-#include "bt_name.h"
 #include "bta/dm/bta_dm_device_search.h"
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
@@ -78,7 +75,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
-#include "main_thread.h"
 #include "os/system_properties.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -87,7 +83,9 @@
 #include "stack/btm/btm_sec_utils.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
+#include "stack/include/advertise_data_parser.h"
 #include "stack/include/bt_dev_class.h"
+#include "stack/include/bt_name.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_addr.h"
@@ -98,6 +96,7 @@
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/include/smp_api.h"
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
@@ -3911,12 +3910,16 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   }
   bond_state_changed(status, bd_addr, BT_TRANSPORT_LE, state, pairing_cb.pairing_type);
 
-  // If the bonding is initiated by local device (on a bond los device) and it fails, we should
+  // If the bonding is initiated by local device (on a bond loss device) and it fails, we should
   // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
   // any reason, it will be handled above (such as re-pairing attempt).
-  // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
-  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr) &&
-      p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
+  // Disconnect the link only when the device didn't recover from bond-loss as repairing failed.
+  // TODO (b/481170402): Replace the `fail_reason` with just the `state` check while removing
+  // bugfix_autonomous_repairing.
+  bool disconnect = com::android::bluetooth::flags::bugfix_autonomous_repairing()
+                            ? state == BT_BOND_STATE_NONE
+                            : p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND;
+  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr) && disconnect) {
     log::info("Disconnecting the link, because create bond failed.");
     btif_dm_disconnect_acl(
             bd_addr, BT_TRANSPORT_AUTO);  // `btif_dm_disconnect_acl` will identify the transport.

@@ -34,12 +34,12 @@
 #include "bta_ag_api.h"
 #include "bta_api.h"
 #include "bta_sys.h"
-#include "btm_api_types.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "osi/include/alarm.h"
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_client_interface.h"
 
 using namespace bluetooth;

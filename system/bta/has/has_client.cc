@@ -48,13 +48,7 @@
 #include "bta_has_api.h"
 #include "bta_le_audio_uuids.h"
 #include "btif/include/btif_profile_storage.h"
-#include "btm_ble_api_types.h"
-#include "btm_sec_api_types.h"
-#include "btm_status.h"
-#include "gap_api.h"
 #include "gatt/database.h"
-#include "gatt_api.h"
-#include "gattdefs.h"
 #include "has_ctp.h"
 #include "has_journal.h"
 #include "has_preset.h"
@@ -63,7 +57,13 @@
 #include "osi/include/properties.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api_types.h"
+#include "stack/include/btm_status.h"
+#include "stack/include/gap_api.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/gattdefs.h"
 
 using bluetooth::Uuid;
 using bluetooth::csis::CsisClient;

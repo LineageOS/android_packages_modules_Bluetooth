@@ -93,6 +93,7 @@ private:
   const SessionType session_type_;
   AudioConfiguration audio_config_{};
   tA2DP_CTRL_CMD a2dp_pending_cmd_{A2DP_CTRL_CMD_NONE};
+  mutable std::mutex mutex_;
   uint16_t remote_delay_report_{0};
   uint64_t total_bytes_read_{0};
   timespec data_position_{};

@@ -37,9 +37,9 @@
 #include "bta_ag_swb_aptx.h"
 #include "bta_sys.h"
 #include "btif/include/btif_storage.h"
-#include "btm_api_types.h"
 #include "hardware/bt_hf.h"
 #include "osi/include/alarm.h"
+#include "stack/include/btm_api_types.h"
 
 #ifdef __ANDROID__
 #include "bta_le_audio_api.h"

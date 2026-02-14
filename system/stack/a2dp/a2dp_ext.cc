@@ -16,7 +16,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_ext.h"
+#include "stack/include/a2dp_ext.h"
 
 #include <bluetooth/log.h>
 
@@ -25,10 +25,10 @@
 #include <cstring>
 #include <vector>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_constants.h"
 #include "audio_hal_interface/a2dp_encoding.h"
 #include "hardware/bt_av.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_constants.h"
 
 using namespace bluetooth;
 

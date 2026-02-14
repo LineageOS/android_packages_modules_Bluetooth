@@ -21,9 +21,9 @@
 #ifndef A2DP_VENDOR_OPUS_H
 #define A2DP_VENDOR_OPUS_H
 
-#include "a2dp_codec_api.h"
-#include "a2dp_vendor_opus_constants.h"
-#include "avdt_api.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_vendor_opus_constants.h"
+#include "stack/include/avdt_api.h"
 
 class A2dpCodecConfigOpusBase : public A2dpCodecConfig {
 protected:

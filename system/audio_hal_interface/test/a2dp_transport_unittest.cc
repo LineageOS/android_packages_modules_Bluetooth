@@ -20,10 +20,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "a2dp_constants.h"
 #include "a2dp_encoding.h"
 #include "audio_hal_interface/aidl/a2dp/a2dp_aidl_transport.h"
 #include "audio_hal_interface/aidl/a2dp/client_interface_aidl.h"
+#include "stack/include/a2dp_constants.h"
 
 using bluetooth::audio::a2dp::Status;
 using ::testing::_;

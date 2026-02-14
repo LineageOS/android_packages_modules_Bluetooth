@@ -30,10 +30,10 @@
 #include "bta/ag/bta_ag_int.h"
 #include "btif/include/btif_hf.h"
 #include "btif_status.h"
-#include "btm_api_types.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bluetooth_headset_interface.h"
 #include "provider_info.h"
+#include "stack/include/btm_api_types.h"
 
 namespace bluetooth {
 namespace audio {

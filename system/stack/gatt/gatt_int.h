@@ -33,12 +33,12 @@
 
 #include "common/circular_buffer.h"
 #include "common/strings.h"
-#include "gatt_api.h"
 #include "hal/gatt_hal.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/gatt_api.h"
 
 #define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
@@ -596,9 +596,6 @@ void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment);
 bool gatt_disconnect(tGATT_TCB* p_tcb);
 bool gatt_disconnect_br(tGATT_TCB* p_tcb);
 void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested);
-bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                  tBT_TRANSPORT transport, tGATT_IF gatt_if);
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                       tBT_TRANSPORT transport);
 void gatt_data_process(tGATT_TCB& p_tcb, uint16_t cid, BT_HDR* p_buf);

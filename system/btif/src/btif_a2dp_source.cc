@@ -39,17 +39,13 @@
 #include <utility>
 #include <vector>
 
-#include "a2dp_api.h"
-#include "a2dp_codec_api.h"
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "avdt_api.h"
 #include "bta_av_api.h"
 #include "bta_av_ci.h"
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_common.h"
 #include "btif_hf.h"
-#include "btm_iso_api.h"
 #include "common/message_loop_thread.h"
 #include "common/repeating_timer.h"
 #include "common/time_util.h"
@@ -57,9 +53,13 @@
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/wakelock.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/a2dp_codec_api.h"
 #include "stack/include/a2dp_sbc_constants.h"
 #include "stack/include/a2dp_vendor_ldac_constants.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_iso_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
 

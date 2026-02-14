@@ -32,7 +32,7 @@
 
 #include "base/callback.h"
 #include "device/include/esco_parameters.h"
-#include "hcimsgs.h"
+#include "stack/include/hcimsgs.h"
 
 // Mocked compile conditionals, if any
 

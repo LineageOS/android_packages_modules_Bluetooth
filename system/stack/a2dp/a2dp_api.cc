@@ -24,7 +24,7 @@
 
 #define LOG_TAG "bluetooth-a2dp"
 
-#include "a2dp_api.h"
+#include "stack/include/a2dp_api.h"
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
@@ -34,17 +34,17 @@
 
 #include <cstdint>
 
-#include "a2dp_constants.h"
 #include "a2dp_int.h"
-#include "avdt_api.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "sdp_discovery_db.h"
-#include "sdp_status.h"
-#include "sdpdefs.h"
+#include "stack/include/a2dp_constants.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
+#include "stack/include/sdp_status.h"
+#include "stack/include/sdpdefs.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;

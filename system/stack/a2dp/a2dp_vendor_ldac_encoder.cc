@@ -17,18 +17,18 @@
 #define LOG_TAG "bluetooth-a2dp"
 #define ATRACE_TAG ATRACE_TAG_AUDIO
 
-#include "a2dp_vendor_ldac_encoder.h"
+#include "stack/include/a2dp_vendor_ldac_encoder.h"
 
 #include <stdio.h>
 
 #include <cstdint>
 #include <string>
 
-#include "a2dp_codec_api.h"
-#include "a2dp_vendor_ldac_constants.h"
-#include "avdt_api.h"
 #include "hardware/bt_av.h"
 #include "ldacBT.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/a2dp_vendor_ldac_constants.h"
+#include "stack/include/avdt_api.h"
 
 #ifdef __ANDROID__
 #include <cutils/trace.h>
@@ -38,11 +38,11 @@
 #include <ldacBT_abr.h>
 #include <string.h>
 
-#include "a2dp_vendor_ldac.h"
 #include "common/time_util.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
+#include "stack/include/a2dp_vendor_ldac.h"
 #include "stack/include/bt_hdr.h"
 
 //

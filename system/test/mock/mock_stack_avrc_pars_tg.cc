@@ -19,8 +19,8 @@
  *   Functions generated:4
  */
 
-#include "avrc_api.h"
-#include "avrc_defs.h"
+#include "stack/include/avrc_api.h"
+#include "stack/include/avrc_defs.h"
 #include "test/common/mock_functions.h"
 
 tAVRC_STS AVRC_Ctrl_ParsCommand(tAVRC_MSG* /* p_msg */, tAVRC_COMMAND* /* p_result */) {

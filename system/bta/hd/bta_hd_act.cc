@@ -30,8 +30,8 @@
 
 #include "bta_hd_api.h"
 #include "bta_sys.h"
-#include "hiddefs.h"
 #include "internal_include/bt_target.h"
+#include "stack/include/hiddefs.h"
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
 #include <bluetooth/log.h>

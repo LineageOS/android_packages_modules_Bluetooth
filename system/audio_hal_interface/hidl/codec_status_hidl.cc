@@ -22,14 +22,14 @@
 
 #include <vector>
 
-#include "a2dp_aac_constants.h"
 #include "a2dp_encoding.h"
-#include "a2dp_sbc_constants.h"
-#include "a2dp_vendor_aptx_constants.h"
-#include "a2dp_vendor_aptx_hd_constants.h"
-#include "a2dp_vendor_ldac_constants.h"
 #include "bta/include/bta_av_api.h"
 #include "client_interface_hidl.h"
+#include "stack/include/a2dp_aac_constants.h"
+#include "stack/include/a2dp_sbc_constants.h"
+#include "stack/include/a2dp_vendor_aptx_constants.h"
+#include "stack/include/a2dp_vendor_aptx_hd_constants.h"
+#include "stack/include/a2dp_vendor_ldac_constants.h"
 
 namespace bluetooth::audio::hidl::codec {
 

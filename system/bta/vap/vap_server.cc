@@ -14,116 +14,115 @@
  * limitations under the License.
  */
 
- #include <base/functional/bind.h>
- #include <base/functional/callback.h>
- #include <bluetooth/log.h>
- #include <com_android_bluetooth_flags.h>
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
+#include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
- #include <algorithm>
- #include <cstdint>
- #include <cstring>
- #include <mutex>
- #include <unordered_map>
- #include <vector>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <mutex>
+#include <unordered_map>
+#include <vector>
 
- #include "bta/include/bta_csis_api.h"
- #include "bta/include/bta_gatt_api.h"
- #include "bta/include/bta_vap_server_api.h"
- #include "bta/vap/vap_server_types.h"
- #include "bta/le_audio/device_groups.h"
- #include "btm_ble_api_types.h"
- #include "gatt_api.h"
- #include "gd/os/rand.h"
- #include "hardware/bt_common_types.h"
- #include "main/shim/entry.h"
- #include "stack/include/bt_types.h"
- #include "stack/include/btm_ble_addr.h"
- #include "stack/include/main_thread.h"
- #include "bluetooth/types/ble_address_with_type.h"
- #include "bluetooth/types/bt_transport.h"
- #include "bluetooth/types/uuid.h"
- #include "bluetooth/types/address.h"
+#include "bluetooth/types/address.h"
+#include "bluetooth/types/ble_address_with_type.h"
+#include "bluetooth/types/bt_transport.h"
+#include "bluetooth/types/uuid.h"
+#include "bta/include/bta_csis_api.h"
+#include "bta/include/bta_gatt_api.h"
+#include "bta/include/bta_vap_server_api.h"
+#include "bta/le_audio/device_groups.h"
+#include "bta/vap/vap_server_types.h"
+#include "gd/os/rand.h"
+#include "hardware/bt_common_types.h"
+#include "main/shim/entry.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_addr.h"
+#include "stack/include/btm_ble_api_types.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/main_thread.h"
 
- using namespace bluetooth;
- using bluetooth::csis::CsisClient;
- using namespace ::vap;
- using namespace ::vap::uuid;
+using namespace bluetooth;
+using bluetooth::csis::CsisClient;
+using namespace ::vap;
+using namespace ::vap::uuid;
 
- namespace {
+namespace {
 
- class VapServerImpl;
- VapServerImpl* instance;
+class VapServerImpl;
+VapServerImpl* instance;
 
- static uint8_t kVapCcid = 0;
- static uint8_t kVaSupportedFeatures = 0;
+static uint8_t kVapCcid = 0;
+static uint8_t kVaSupportedFeatures = 0;
 
- class VapServerImpl : public bluetooth::vap::VapServer {
- public:
-   struct VapCharacteristic {
-     bluetooth::Uuid uuid_;
-     uint16_t attribute_handle_;
-     uint16_t attribute_handle_ccc_;
-   };
+class VapServerImpl : public bluetooth::vap::VapServer {
+public:
+  struct VapCharacteristic {
+    bluetooth::Uuid uuid_;
+    uint16_t attribute_handle_;
+    uint16_t attribute_handle_ccc_;
+  };
 
-   struct PendingWriteResponse {
-     tCONN_ID conn_id_;
-     uint32_t trans_id_;
-     uint16_t write_req_handle_;
-   };
+  struct PendingWriteResponse {
+    tCONN_ID conn_id_;
+    uint32_t trans_id_;
+    uint16_t write_req_handle_;
+  };
 
-   struct RemoteClient {
-     tCONN_ID conn_id_;
-     std::unordered_map<Uuid, uint16_t> ccc_values_;
-     bool handling_control_point_command_ = false;
-     PendingWriteResponse pending_write_response_;
-     uint16_t mtu_ = kDefaultGattMtu;
-   };
+  struct RemoteClient {
+    tCONN_ID conn_id_;
+    std::unordered_map<Uuid, uint16_t> ccc_values_;
+    bool handling_control_point_command_ = false;
+    PendingWriteResponse pending_write_response_;
+    uint16_t mtu_ = kDefaultGattMtu;
+  };
 
-   void Initialize(bluetooth::vap::VapServerCallbacks* callbacks) override {
-     do_in_main_thread(base::BindOnce(
-         &VapServerImpl::do_initialize, base::Unretained(this), callbacks));
-   }
+  void Initialize(bluetooth::vap::VapServerCallbacks* callbacks) override {
+    do_in_main_thread(
+            base::BindOnce(&VapServerImpl::do_initialize, base::Unretained(this), callbacks));
+  }
 
-   void do_initialize(bluetooth::vap::VapServerCallbacks* callbacks) {
-     log::info("initialize vap server");
-     callbacks_ = callbacks;
+  void do_initialize(bluetooth::vap::VapServerCallbacks* callbacks) {
+    log::info("initialize vap server");
+    callbacks_ = callbacks;
 
-     Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
-     app_uuid_ = uuid;
-     log::info("Register server with uuid:{}", app_uuid_.ToString());
-     BTA_GATTS_AppRegister(
-             app_uuid_,
-             [](tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
-               if (instance && p_data) {
-                 instance->GattsCallback(event, p_data);
-               }
-             },
-             true);
-   }
+    Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
+    app_uuid_ = uuid;
+    log::info("Register server with uuid:{}", app_uuid_.ToString());
+    BTA_GATTS_AppRegister(
+            app_uuid_,
+            [](tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
+              if (instance && p_data) {
+                instance->GattsCallback(event, p_data);
+              }
+            },
+            true);
+  }
 
-   void Cleanup() override {
-     do_in_main_thread(base::BindOnce(
-         &VapServerImpl::do_cleanup, base::Unretained(this)));
-   }
+  void Cleanup() override {
+    do_in_main_thread(base::BindOnce(&VapServerImpl::do_cleanup, base::Unretained(this)));
+  }
 
-   void do_cleanup() {
-     if (!instance) {
-       log::error("Not initialized");
-       return;
-     }
+  void do_cleanup() {
+    if (!instance) {
+      log::error("Not initialized");
+      return;
+    }
 
-     if (server_if_) {
-       BTA_GATTS_AppDeregister(server_if_);
-     }
-     characteristics_.clear();
-     remote_clients_.clear();
-     callbacks_ = nullptr;
-     va_name_.clear();
-     va_session_state_ = VaSessionState::VA_SESSION_UNAVAILABLE;
-     server_if_ = 0;
+    if (server_if_) {
+      BTA_GATTS_AppDeregister(server_if_);
+    }
+    characteristics_.clear();
+    remote_clients_.clear();
+    callbacks_ = nullptr;
+    va_name_.clear();
+    va_session_state_ = VaSessionState::VA_SESSION_UNAVAILABLE;
+    server_if_ = 0;
 
-     instance = nullptr;
-     log::info("cleanup done");
+    instance = nullptr;
+    log::info("cleanup done");
   }
 
    void set_ccid(int ccid) {

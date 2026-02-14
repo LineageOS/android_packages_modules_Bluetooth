@@ -20,10 +20,10 @@
 
 #include <cstdint>
 
-#include "avrc_api.h"
-#include "avrc_defs.h"
 #include "avrc_int.h"
 #include "osi/include/allocator.h"
+#include "stack/include/avrc_api.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/bt_types.h"
 
 using namespace bluetooth;

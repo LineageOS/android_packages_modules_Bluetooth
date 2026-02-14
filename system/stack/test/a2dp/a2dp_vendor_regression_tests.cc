@@ -16,8 +16,8 @@
 
 #include <gtest/gtest.h>
 
-#include "a2dp_vendor_ldac.h"
-#include "a2dp_vendor_opus.h"
+#include "stack/include/a2dp_vendor_ldac.h"
+#include "stack/include/a2dp_vendor_opus.h"
 
 // namespace
 namespace bluetooth {
