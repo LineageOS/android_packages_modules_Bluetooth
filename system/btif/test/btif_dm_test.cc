@@ -304,4 +304,5 @@ TEST_F(BtifDmWithStackTest, test_btif_dm_reset_irk) {
 
     ASSERT_TRUE(paired_devices.empty());
   }
+  thread_->GetReactor()->WaitForIdle(std::chrono::seconds(2));
 }
