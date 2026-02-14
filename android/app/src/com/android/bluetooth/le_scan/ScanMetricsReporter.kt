@@ -48,6 +48,7 @@ class ScanMetricsReporter(
         numRecords: Int,
         isScreenOn: Boolean,
         attributionTag: String,
+        scan: AppScanStats.LastScan,
     ) =
         if (isBatch) {
             BluetoothStatsLog.write(
@@ -58,6 +59,10 @@ class ScanMetricsReporter(
                 BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_BATCH,
                 isScreenOn,
                 attributionTag,
+                scan.isFilterScan,
+                scan.isCallbackScan,
+                convertScanCallbackType(scan.callbackType),
+                convertScanMode(scan.scanMode.value),
             )
         } else {
             BluetoothStatsLog.write(
@@ -68,6 +73,10 @@ class ScanMetricsReporter(
                 BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR,
                 isScreenOn,
                 attributionTag,
+                scan.isFilterScan,
+                scan.isCallbackScan,
+                convertScanCallbackType(scan.callbackType),
+                convertScanMode(scan.scanMode.value),
             )
         }
 
