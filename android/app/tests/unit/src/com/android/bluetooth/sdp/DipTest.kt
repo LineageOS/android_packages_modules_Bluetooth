@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,140 +14,148 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.sdp;
+package com.android.bluetooth.sdp
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothUuid;
-import android.bluetooth.SdpDipRecord;
-import android.content.Intent;
-import android.os.Bundle;
-import android.os.Looper;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.AbstractionLayer;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothUuid
+import android.bluetooth.SdpDipRecord
+import android.content.Intent
+import android.os.Bundle
+import android.os.Looper
+import android.os.ParcelUuid
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.Utils
+import com.android.bluetooth.btservice.AbstractionLayer
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doCallRealMethod
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.KArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
 
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class DipTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class DipTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private SdpManagerNativeInterface mNativeInterface;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var nativeInterface: SdpManagerNativeInterface
 
-    private final BluetoothDevice mDevice = getTestDevice(123);
+    private val device = getTestDevice(123)
 
-    private final ArgumentCaptor<Intent> mIntentArgument = ArgumentCaptor.forClass(Intent.class);
-    private final ArgumentCaptor<String> mStringArgument = ArgumentCaptor.forClass(String.class);
-    private final ArgumentCaptor<Bundle> mBundleArgument = ArgumentCaptor.forClass(Bundle.class);
+    private val intentArgument = argumentCaptor<Intent>()
+    private val stringArgument = argumentCaptor<String>()
+    private val bundleArgument = argumentCaptor<Bundle>()
 
-    private SdpManager mSdpManager;
+    private lateinit var sdpManager: SdpManager
 
     @Before
-    public void setUp() throws Exception {
-        doReturn("00:01:02:03:04:05").when(mAdapterService).getIdentityAddress("00:01:02:03:04:05");
-        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(BluetoothDevice.class));
-        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(String.class));
+    fun setUp() {
+        doReturn("00:01:02:03:04:05")
+            .whenever(adapterService)
+            .getIdentityAddress("00:01:02:03:04:05")
+        doCallRealMethod().whenever(adapterService).getBrEdrAddress(any<BluetoothDevice>())
+        doCallRealMethod().whenever(adapterService).getBrEdrAddress(any<String>())
 
         if (Looper.myLooper() == null) {
-            Looper.prepare();
+            Looper.prepare()
         }
 
-        mSdpManager = new SdpManager(mAdapterService, mNativeInterface);
+        sdpManager = SdpManager(adapterService, nativeInterface)
     }
 
-    private static void verifyDipSdpRecordIntent(
-            ArgumentCaptor<Intent> intentArgument,
-            int status,
-            BluetoothDevice device,
-            byte[] uuid,
-            int specificationId,
-            int vendorId,
-            int vendorIdSource,
-            int productId,
-            int version,
-            boolean primaryRecord) {
-        Intent intent = intentArgument.getValue();
+    private fun verifyDipSdpRecordIntent(
+        intentArgument: KArgumentCaptor<Intent>,
+        status: Int,
+        device: BluetoothDevice,
+        uuid: ByteArray,
+        specificationId: Int,
+        vendorId: Int,
+        vendorIdSource: Int,
+        productId: Int,
+        version: Int,
+        primaryRecord: Boolean,
+    ) {
+        val intent = intentArgument.firstValue
 
-        assertThat(intent).isNotNull();
-        assertThat(intent.getAction()).isEqualTo(BluetoothDevice.ACTION_SDP_RECORD);
-        assertThat(device).isEqualTo(intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+        assertThat(intent).isNotNull()
+        assertThat(intent.action).isEqualTo(BluetoothDevice.ACTION_SDP_RECORD)
+        assertThat(device)
+            .isEqualTo(
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+            )
         assertThat(Utils.byteArrayToUuid(uuid)[0])
-                .isEqualTo(intent.getParcelableExtra(BluetoothDevice.EXTRA_UUID));
+            .isEqualTo(
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_UUID, ParcelUuid::class.java)
+            )
         assertThat(status)
-                .isEqualTo(intent.getIntExtra(BluetoothDevice.EXTRA_SDP_SEARCH_STATUS, -1));
+            .isEqualTo(intent.getIntExtra(BluetoothDevice.EXTRA_SDP_SEARCH_STATUS, -1))
 
-        SdpDipRecord record = intent.getParcelableExtra(BluetoothDevice.EXTRA_SDP_RECORD);
-        assertThat(record).isNotNull();
-        assertThat(specificationId).isEqualTo(record.getSpecificationId());
-        assertThat(vendorId).isEqualTo(record.getVendorId());
-        assertThat(vendorIdSource).isEqualTo(record.getVendorIdSource());
-        assertThat(productId).isEqualTo(record.getProductId());
-        assertThat(version).isEqualTo(record.getVersion());
-        assertThat(primaryRecord).isEqualTo(record.getPrimaryRecord());
+        val record =
+            intent.getParcelableExtra(BluetoothDevice.EXTRA_SDP_RECORD, SdpDipRecord::class.java)
+        assertThat(record).isNotNull()
+        assertThat(specificationId).isEqualTo(record!!.specificationId)
+        assertThat(vendorId).isEqualTo(record.vendorId)
+        assertThat(vendorIdSource).isEqualTo(record.vendorIdSource)
+        assertThat(productId).isEqualTo(record.productId)
+        assertThat(version).isEqualTo(record.version)
+        assertThat(primaryRecord).isEqualTo(record.primaryRecord)
     }
 
     /** Test that an outgoing connection/disconnection succeeds */
     @Test
-    @SmallTest
-    public void testDipCallbackSuccess() {
+    fun testDipCallbackSuccess() {
         // DIP uuid in bytes
-        byte[] uuid = {0, 0, 18, 0, 0, 0, 16, 0, -128, 0, 0, -128, 95, -101, 52, -5};
-        int specificationId = 0x0103;
-        int vendorId = 0x18d1;
-        int vendorIdSource = 1;
-        int productId = 0x1234;
-        int version = 0x0100;
-        boolean primaryRecord = true;
-        boolean moreResults = false;
+        val uuid = byteArrayOf(0, 0, 18, 0, 0, 0, 16, 0, -128, 0, 0, -128, 95, -101, 52, -5)
+        val specificationId = 0x0103
+        val vendorId = 0x18d1
+        val vendorIdSource = 1
+        val productId = 0x1234
+        val version = 0x0100
+        val primaryRecord = true
+        val moreResults = false
 
-        mSdpManager.sdpSearch(mDevice, BluetoothUuid.DIP);
-        mSdpManager.sdpDipRecordFoundCallback(
-                AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
-                uuid,
-                specificationId,
-                vendorId,
-                vendorIdSource,
-                productId,
-                version,
-                primaryRecord,
-                moreResults);
-        verify(mAdapterService)
-                .sendBroadcast(
-                        mIntentArgument.capture(),
-                        mStringArgument.capture(),
-                        mBundleArgument.capture());
+        sdpManager.sdpSearch(device, BluetoothUuid.DIP)
+        sdpManager.sdpDipRecordFoundCallback(
+            AbstractionLayer.BT_STATUS_SUCCESS,
+            Utils.getByteAddress(device),
+            uuid,
+            specificationId,
+            vendorId,
+            vendorIdSource,
+            productId,
+            version,
+            primaryRecord,
+            moreResults,
+        )
+        verify(adapterService)
+            .sendBroadcast(
+                intentArgument.capture(),
+                stringArgument.capture(),
+                bundleArgument.capture(),
+            )
         verifyDipSdpRecordIntent(
-                mIntentArgument,
-                AbstractionLayer.BT_STATUS_SUCCESS,
-                mDevice,
-                uuid,
-                specificationId,
-                vendorId,
-                vendorIdSource,
-                productId,
-                version,
-                primaryRecord);
+            intentArgument,
+            AbstractionLayer.BT_STATUS_SUCCESS,
+            device,
+            uuid,
+            specificationId,
+            vendorId,
+            vendorIdSource,
+            productId,
+            version,
+            primaryRecord,
+        )
     }
 }
