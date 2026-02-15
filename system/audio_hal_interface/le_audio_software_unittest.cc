@@ -799,6 +799,30 @@ TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastConfig) {
   ASSERT_NE(source_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
 }
 
+// Test scenario: Verify that a broadcast source can be acquired for software
+// decoding.
+TEST_F(LeAudioSoftwareBroadcastTestAidl, GetSourceSoftwareDecoding) {
+  // Release the source created in SetUp with ADSP location
+  ASSERT_NE(nullptr, source_);
+  LeAudioClientInterface::Get()->ReleaseSource(source_);
+  source_ = nullptr;
+  ASSERT_FALSE(LeAudioClientInterface::Get()->IsBroadcastSourceAcquired());
+
+  // Set codec location to Host for software decoding
+  ON_CALL(*mock_codec_manager_, GetCodecLocation())
+          .WillByDefault(Return(::bluetooth::le_audio::types::CodecLocation::HOST));
+
+  // Get source for broadcast software decoding
+  source_ = LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
+                                                     &message_loop_thread, is_broadcast_);
+  ASSERT_NE(nullptr, source_);
+  ASSERT_TRUE(LeAudioClientInterface::Get()->IsBroadcastSourceAcquired());
+  ASSERT_NE(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface_broadcast_,
+            nullptr);
+  ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface_unicast_,
+            nullptr);
+}
+
 // Test scenario: Test the retrieval of a unicast configuration with valid
 // requirements.
 TEST_F(LeAudioSoftwareUnicastTestAidl, GetUnicastConfig) {
