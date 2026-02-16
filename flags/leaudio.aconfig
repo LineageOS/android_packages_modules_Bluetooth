@@ -332,6 +332,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_always_clear_notified_flags"
+    namespace: "bluetooth"
+    description: "Clear notified flags on each start searching for sources"
+    bug: "484860097"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_cancel_stream_request_when_invalid_group"
     namespace: "bluetooth"
     description: "Cancel stream request when active group is invalid"
