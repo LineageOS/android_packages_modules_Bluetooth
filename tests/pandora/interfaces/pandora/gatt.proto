@@ -194,6 +194,8 @@ message DiscoverServiceByUuidRequest {
 // Request for the `DiscoverServices` rpc.
 message DiscoverServicesRequest {
   Connection connection = 1;
+  // If true, the GATT cache will be cleared and services will be discovered again.
+  bool force = 2;
 }
 
 // Response for the `DiscoverServices` rpc.
