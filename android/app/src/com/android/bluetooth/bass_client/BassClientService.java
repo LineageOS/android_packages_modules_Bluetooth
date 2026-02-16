@@ -2430,14 +2430,19 @@ public class BassClientService extends ConnectableProfile {
 
                 Log.d(TAG, "startSearchingForSources with filters: " + filters);
 
-                if (foreground && !firstForegroundStart && isAnySearchInProgress()) {
+                if (!Flags.leaudioBroadcastAlwaysClearNotifiedFlags()
+                        && foreground
+                        && !firstForegroundStart
+                        && isAnySearchInProgress()) {
                     Log.e(TAG, "startSearchingForSources: already started");
                     mCallbacks.notifySearchStartFailed(
                             BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
                     return;
                 }
 
-                if (firstForegroundStart) {
+                if ((Flags.leaudioBroadcastAlwaysClearNotifiedFlags() && foreground)
+                        || (!Flags.leaudioBroadcastAlwaysClearNotifiedFlags()
+                                && firstForegroundStart)) {
                     // Has to checked before any addSelectSourceRequest which start searching too
                     if (isAnySearchInProgress()) {
                         // Notify about search started by APP if it was started previously by stack
@@ -2465,6 +2470,15 @@ public class BassClientService extends ConnectableProfile {
                     // Clear previous sources notify flag before scanning new result
                     // this is to make sure the active sources are notified even if already synced
                     clearNotifiedFlags();
+
+                    if (Flags.leaudioBroadcastAlwaysClearNotifiedFlags()
+                            && !firstForegroundStart
+                            && isAnySearchInProgress()) {
+                        Log.e(TAG, "startSearchingForSources: already started");
+                        mCallbacks.notifySearchStartFailed(
+                                BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                        return;
+                    }
                 }
 
                 if (isAnySearchInitializing() || isAnySearchInProgress()) {
@@ -2529,7 +2543,7 @@ public class BassClientService extends ConnectableProfile {
 
                 // Clear previous sources notify flag before scanning new result
                 // this is to make sure the active sources are notified even if already synced
-                if (firstForegroundStart) {
+                if (Flags.leaudioBroadcastAlwaysClearNotifiedFlags() || firstForegroundStart) {
                     clearNotifiedFlags();
                 }
 

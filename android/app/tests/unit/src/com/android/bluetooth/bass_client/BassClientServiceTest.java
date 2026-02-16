@@ -4830,6 +4830,43 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_BROADCAST_ALWAYS_CLEAR_NOTIFIED_FLAGS,
+        Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS
+    })
+    public void testStartSearchingForSources_ClearNotifiedFlags_WhenAlreadySearching()
+            throws RemoteException {
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+
+        // 1. Source found and notified
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+        verify(mCallback).onSourceFound(any());
+        clearInvocations(mCallback);
+
+        // 2. Source report again - should NOT notify
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+        verify(mCallback, never()).onSourceFound(any());
+
+        // 3. Start searching AGAIN (while already running)
+        // With the flag enabled, this should clear notified flags, even if it returns error.
+        assertThat(mBassClientService.isSearchInProgress()).isTrue();
+
+        mBassClientService.startSearchingForSources(new ArrayList<>());
+        mLooper.dispatchAll();
+
+        // It should fail with ALREADY_IN_TARGET_STATE because it is already searching
+        verify(mCallback).onSearchStartFailed(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+
+        // 4. Source report again - SHOULD notify because flags were cleared
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+        verify(mCallback).onSourceFound(any());
+    }
+
+    @Test
     public void onSyncLost_notifySourceLostAndCancelSync() throws RemoteException {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
@@ -7182,6 +7219,7 @@ public class BassClientServiceTest {
         mBassClientService.startSearchingForSources(scanFilters);
         mLooper.dispatchAll();
         verify(mCallback).onSearchStartFailed(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
 
         // 3. Stop Foreground
         mBassClientService.stopSearchingForSources();
