@@ -46,6 +46,7 @@
 #include "le_audio_health_status.h"
 #include "le_audio_log_history.h"
 #include "le_audio_types.h"
+#include "le_audio_utils.h"
 #include "osi/include/alarm.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -2268,7 +2269,8 @@ private:
                  ase->id, ase->cis_id, ToString(ase->state));
       conf.ase_id = ase->id;
       conf.target_latency = ase->target_latency;
-      conf.target_phy = group->GetTargetPhy(ase->direction);
+      conf.target_phy =
+              le_audio::utils::GetTargetPhyFromPreferredPhy(group->GetPhyBitmask(ase->direction));
       conf.codec_id = ase->codec_config.id;
 
       if (!ase->codec_config.vendor_params.empty()) {

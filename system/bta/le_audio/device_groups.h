@@ -214,7 +214,6 @@ public:
   uint8_t GetRtn(uint8_t direction, uint8_t cis_id) const;
   uint16_t GetMaxSduSize(uint8_t direction, uint8_t cis_id) const;
   uint8_t GetPhyBitmask(uint8_t direction) const;
-  uint8_t GetTargetPhy(uint8_t direction) const;
   bool GetPresentationDelay(uint32_t* delay, uint8_t direction) const;
   uint16_t GetRemoteDelay(uint8_t direction) const;
   bool UpdateAudioSetConfigurationCache(types::LeAudioContextType ctx_type,

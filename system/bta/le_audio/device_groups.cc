@@ -819,19 +819,6 @@ uint8_t LeAudioDeviceGroup::GetPhyBitmask(uint8_t direction) const {
   return phy_bitfield;
 }
 
-uint8_t LeAudioDeviceGroup::GetTargetPhy(uint8_t direction) const {
-  uint8_t phy_bitfield = GetPhyBitmask(direction);
-
-  // prefer to use 2M if supported
-  if (phy_bitfield & bluetooth::hci::kIsoCigPhy2M) {
-    return types::kTargetPhy2M;
-  } else if (phy_bitfield & bluetooth::hci::kIsoCigPhy1M) {
-    return types::kTargetPhy1M;
-  } else {
-    return 0;
-  }
-}
-
 bool LeAudioDeviceGroup::GetPresentationDelay(uint32_t* delay, uint8_t direction) const {
   uint32_t common_delay_min = 0;
   uint32_t common_delay_max = 0xFFFFFF; /* 3 Octects  */
