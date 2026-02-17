@@ -78,7 +78,7 @@ protected:
       return tBTM_STATUS::BTM_SUCCESS;
     };
     mock_btm_client_interface.security.BTM_SecRegister =
-            [](const tBTM_APPL_INFO* /*p_cb_info*/) -> bool { return true; };
+            [](const BtmAppReg& /* app_reg */) -> bool { return true; };
   }
 
   void TearDown() override {

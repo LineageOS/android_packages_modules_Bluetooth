@@ -217,9 +217,9 @@ bool btm_sec_is_le_security_pending(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_sec_is_le_security_pending(bd_addr);
 }
-bool btm_sec_register(const tBTM_APPL_INFO* p_cb_info) {
+bool btm_sec_register(const BtmAppReg& app_reg) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::btm_sec_register(p_cb_info);
+  return test::mock::stack_btm_sec::btm_sec_register(app_reg);
 }
 tBTM_STATUS btm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,

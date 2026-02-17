@@ -126,12 +126,6 @@ typedef struct {
   PairingAlgorithm pairing_algorithm;
 } tBTM_LE_EVT_DATA;
 
-/* Simple Pairing Events. Called by the stack when Simple Pairing related
- * events occur.
- */
-typedef tBTM_STATUS(tBTM_LE_CALLBACK)(tBTM_LE_EVT event, const RawAddress& bda,
-                                      tBTM_LE_EVT_DATA* p_data);
-
 #define BTM_BLE_KEY_TYPE_ID 1
 #define BTM_BLE_KEY_TYPE_ER 2
 #define BTM_BLE_KEY_TYPE_COUNTER 3  // tobe obsolete
@@ -146,7 +140,3 @@ typedef union {
   tBTM_BLE_LOCAL_ID_KEYS id_keys;
   Octet16 er;
 } tBTM_BLE_LOCAL_KEYS;
-
-/* New LE identity key for local device.
- */
-typedef void(tBTM_LE_KEY_CALLBACK)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);

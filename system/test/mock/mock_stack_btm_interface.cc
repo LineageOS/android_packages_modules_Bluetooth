@@ -127,9 +127,7 @@ struct btm_client_interface_t default_btm_client_interface = {
                 .BTM_PeerSupportsSecureConnections = [](const RawAddress& /* bd_addr */) -> bool {
                   return false;
                 },
-                .BTM_SecRegister = [](const tBTM_APPL_INFO* /* p_cb_info */) -> bool {
-                  return false;
-                },
+                .BTM_SecRegister = [](const BtmAppReg& /* app_reg */) -> bool { return false; },
                 .BTM_BleLoadLocalKeys = [](uint8_t /* key_type */,
                                            tBTM_BLE_LOCAL_KEYS* /* p_key */) {},
                 .BTM_SecAddDevice =

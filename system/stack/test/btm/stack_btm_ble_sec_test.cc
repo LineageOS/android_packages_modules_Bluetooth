@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "btm_status.h"
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_security.h"
@@ -49,6 +50,41 @@ static tBTM_STATUS StaticLeCallback(tBTM_LE_EVT event, const RawAddress& bda,
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
+static tBTM_STATUS StaticPinCallback(const RawAddress&, DEV_CLASS, const BD_NAME, bool,
+                                     PairingAlgorithm) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
+static tBTM_STATUS StaticLinkKeyCallback(const RawAddress&, DEV_CLASS, BD_NAME, const LinkKey&,
+                                         uint8_t, bool) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
+static void StaticAuthCompleteCallback(const RawAddress&, DEV_CLASS, BD_NAME, tHCI_REASON) {}
+
+static void StaticBondCancelCmplCallback(tBTM_STATUS) {}
+
+static tBTM_STATUS StaticSpCallback(tBTM_SP_EVT, tBTM_SP_EVT_DATA*) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
+static void StaticLeKeyCallback(uint8_t, tBTM_BLE_LOCAL_KEYS*) {}
+
+static tBTM_STATUS StaticSirkVerificationCallback(const RawAddress&) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
+static BtmAppReg kAppReg = {
+        .pin_callback = StaticPinCallback,
+        .link_key_callback = StaticLinkKeyCallback,
+        .auth_complete_callback = StaticAuthCompleteCallback,
+        .bond_cancel_cmpl_callback = StaticBondCancelCmplCallback,
+        .sp_callback = StaticSpCallback,
+        .le_callback = StaticLeCallback,
+        .le_key_callback = StaticLeKeyCallback,
+        .sirk_verification_callback = StaticSirkVerificationCallback,
+};
+
 class StackBtmBleSecTest : public BtmWithMocksTest {
 protected:
   void SetUp() override {
@@ -56,11 +92,11 @@ protected:
     BtmWithMocksTest::SetUp();
     BTM_Sec_Init();
     p_mock_le_callback = &mock_le_callback_;
-    BtmSecurity::Get().api_.p_le_callback = StaticLeCallback;
+    BtmSecurity::Get().app_ = &kAppReg;
   }
 
   void TearDown() override {
-    BtmSecurity::Get().api_.p_le_callback = nullptr;
+    BtmSecurity::Get().app_ = nullptr;
     p_mock_le_callback = nullptr;
     BTM_Sec_Free();
     BtmWithMocksTest::TearDown();
