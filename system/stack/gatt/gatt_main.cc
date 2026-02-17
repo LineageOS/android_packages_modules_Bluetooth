@@ -390,29 +390,13 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
   }
 }
 
-static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                         tBT_TRANSPORT transport, tGATT_IF gatt_if) {
-  if (transport != BT_TRANSPORT_LE) {
-    p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda,
-                                                                                BTM_SEC_NONE);
-    return p_tcb->att_lcid != 0;
-  } else {
-    p_tcb->att_lcid = L2CAP_ATT_CID;
-    return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
-  }
-}
-
-/** GATT connection initiation */
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                      tBT_TRANSPORT transport) {
-  log::verbose("address:{}, transport:{}", bd_addr, bt_transport_text(transport));
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+/** GATT BR/EDR connection initiation */
+bool gatt_act_connect_br(tGATT_REG* p_reg, const RawAddress& bd_addr) {
+  log::verbose("address:{}", bd_addr);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_tcb != NULL) {
-    /* before link down, another app try to open a GATT connection */
     uint8_t st = gatt_get_ch_state(p_tcb);
-    if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() && transport == BT_TRANSPORT_LE) {
-      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
-    } else if (st == GATT_CH_CLOSING) {
+    if (st == GATT_CH_CLOSING) {
       log::info("Must finish disconnection before new connection");
       /* need to complete the closing first */
       return false;
@@ -421,17 +405,16 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
     return true;
   }
 
-  p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport);
+  p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_BR_EDR);
   if (!p_tcb) {
     log::error("Max TCB for gatt_if [ {}] reached.", p_reg->gatt_if);
     return false;
   }
 
-  if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
-    gatt_set_ch_state(p_tcb, GATT_CH_CONN);
-  }
-
-  if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
+  gatt_set_ch_state(p_tcb, GATT_CH_CONN);
+  p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, bd_addr,
+                                                                              BTM_SEC_NONE);
+  if (p_tcb->att_lcid == 0) {
     log::error("gatt_connect failed");
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
     alarm_free(p_tcb->conf_timer);
