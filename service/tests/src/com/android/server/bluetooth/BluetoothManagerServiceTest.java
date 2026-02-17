@@ -1404,12 +1404,12 @@ public class BluetoothManagerServiceTest {
         mManagerService.registerAdapter(mManagerCallback);
 
         var supervisor =
-                new BluetoothSupervisor(
+                new BluetoothSupervisorLegacy(
                         mContext, mLooper.getLooper(), mBluetoothComponent, mManagerService);
-        supervisor.onUserStarting(DEFAULT_USER);
+        supervisor.onUserStartingFromJava(DEFAULT_USER);
 
         mCurrentUser = OTHER_USER;
-        supervisor.onUserStopping(DEFAULT_USER);
+        supervisor.onUserStoppingFromJava(DEFAULT_USER);
 
         mManagerService.enable(0, "supervisor__userStop_priorToUserSwitch_emulateSwitch");
         transition_offToOn(); // Enforce mCurrentUser is used (see acceptBluetoothBinding)
@@ -1432,10 +1432,10 @@ public class BluetoothManagerServiceTest {
                 mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
         mManagerService.registerAdapter(mManagerCallback);
         var supervisor =
-                new BluetoothSupervisor(
+                new BluetoothSupervisorLegacy(
                         mContext, mLooper.getLooper(), mBluetoothComponent, mManagerService);
-        supervisor.onUserStarting(DEFAULT_USER);
-        supervisor.onUserStopping(OTHER_USER);
+        supervisor.onUserStartingFromJava(DEFAULT_USER);
+        supervisor.onUserStoppingFromJava(OTHER_USER);
 
         mManagerService.enable(0, "supervisor__userStop_priorToUserSwitch_emulateSwitch");
         transition_offToOn(); // Enforce mCurrentUser is used (see acceptBluetoothBinding)
@@ -1458,12 +1458,13 @@ public class BluetoothManagerServiceTest {
                 mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
         mManagerService.registerAdapter(mManagerCallback);
         var supervisor =
-                new BluetoothSupervisor(
+                new BluetoothSupervisorLegacy(
                         mContext, mLooper.getLooper(), mBluetoothComponent, mManagerService);
 
         mCurrentUser = OTHER_USER;
-        supervisor.onUserStarting(OTHER_USER);
-        assertThrows(IllegalStateException.class, () -> supervisor.onUserStopping(mCurrentUser));
+        supervisor.onUserStartingFromJava(OTHER_USER);
+        assertThrows(
+                IllegalStateException.class, () -> supervisor.onUserStoppingFromJava(mCurrentUser));
 
         endTest();
     }
