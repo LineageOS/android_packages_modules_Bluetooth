@@ -25,7 +25,6 @@
 
 #include <cstdint>
 
-#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"
@@ -46,21 +45,14 @@ void BtmSecurity::Init() {
 }
 
 void BtmSecurity::Init(uint8_t initial_security_mode) {
-  pin_code_ = {};
-  memset(&cfg_, 0, sizeof(cfg_));
-  memset(&devcb_, 0, sizeof(devcb_));
-  memset(&enc_rand_, 0, sizeof(enc_rand_));
-  memset(sec_serv_rec_, 0, sizeof(sec_serv_rec_));
+  *this = {};
+
   connecting_bda_ = RawAddress::kEmpty;
   connecting_dc_ = kDevClassEmpty;
-
-  app_ = nullptr;
   sec_collision_timer_ = alarm_new("btm.sec_collision_timer_");
   pairing_timer_ = alarm_new("btm.pairing_timer_");
   execution_wait_timer_ = alarm_new("btm.execution_wait_timer_");
-
   security_mode_ = initial_security_mode;
-  link_spec_ = {};
   link_spec_.addrt.bda = RawAddress::kAny;
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     sec_dev_rec_ = list_new([](void* ptr) {
@@ -71,8 +63,6 @@ void BtmSecurity::Init(uint8_t initial_security_mode) {
     });
     return;
   }
-
-  device_records_ = {};
 }
 
 void BtmSecurity::Free() {
