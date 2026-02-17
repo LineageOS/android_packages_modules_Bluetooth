@@ -28,6 +28,11 @@
 #include "os/alarm.h"
 #include "os/handler.h"
 
+#ifdef USE_FAKE_TIMERS
+#include "os/fake_timer/fake_timerfd.h"
+using bluetooth::os::fake_timer::fake_timerfd_get_clock;
+#endif
+
 namespace bluetooth::hci {
 
 class HciDataRouter {
@@ -110,8 +115,13 @@ private:
                   }))) {
         return true;
       }
-      bool expired = std::chrono::steady_clock::now() >=
-                     packet.enqueued_timestamp + kWaitBeforeDroppingUnknownAcl;
+#ifdef USE_FAKE_TIMERS
+      auto now = std::chrono::steady_clock::time_point(
+              std::chrono::milliseconds(static_cast<int64_t>(fake_timerfd_get_clock())));
+#else
+      auto now = std::chrono::steady_clock::now();
+#endif
+      bool expired = now >= packet.enqueued_timestamp + kWaitBeforeDroppingUnknownAcl;
       if (expired) {
         log::error("Dropping packet of size {} to unknown connection 0x{:x}", packet.packet.size(),
                    packet.packet.GetHandle());
@@ -192,7 +202,13 @@ private:
                 kWaitBeforeDroppingUnknownAcl);
       }
     }
+#ifdef USE_FAKE_TIMERS
+    waiting_packets_.emplace_back(*packet,
+                                  std::chrono::steady_clock::time_point(std::chrono::milliseconds(
+                                          static_cast<int64_t>(fake_timerfd_get_clock()))));
+#else
     waiting_packets_.emplace_back(*packet, std::chrono::steady_clock::now());
+#endif
     log::info("Saving packet of size {} to unknown connection 0x{:x}", packet->size(),
               packet->GetHandle());
     if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {

@@ -763,6 +763,84 @@ TEST_F(AclManagerLifeCycleTest, unregister_le_before_enhanced_connection_complet
   ASSERT_NE(connection_future_status, std::future_status::ready);
 }
 
+TEST_F(AclManagerTest, acl_packet_dropped_after_timeout) {
+  // In this test we send 8 packets(2 at a time) at t=0,300,600,900.
+  // At t=1000ms alarm fires and rejects the first 2 packets for new behaviour, but
+  // when flag is disabled the alarm would get postponed and will fire at
+  // t=2200ms at which test would have completed execution.
+
+  //we fake the time of 1000ms using fake timerfd.
+
+  uint16_t handle = 0x123;
+  int total_packets = 8, sent_packets = 0;
+  int interval_ms = 300;
+
+  while (sent_packets < total_packets) {
+    test_hci_layer_->IncomingAclData(handle);
+    test_hci_layer_->IncomingAclData(handle);
+    client_handler_->Post(common::BindOnce(fake_timerfd_advance, interval_ms));
+    sync_client_handler();
+    sent_packets += 2;
+  }
+  sync_client_handler();
+
+  // Create connection for handle
+  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+  acl_manager_->CreateLeConnection(remote_with_type, true, false);
+  GetConnectionManagementCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
+  test_hci_layer_->IncomingEvent(
+          LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  auto packet = GetConnectionManagementCommand(OpCode::LE_CREATE_CONNECTION);
+  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+
+  auto first_connection = GetLeConnectionFuture();
+  EXPECT_CALL(mock_le_connection_callbacks_, OnLeConnectSuccess(remote_with_type, _))
+          .WillRepeatedly([this](hci::AddressWithType /* address_with_type */,
+                                 std::unique_ptr<LeAclConnection> connection) {
+            le_connections_.push_back(std::move(connection));
+            if (le_connection_promise_ != nullptr) {
+              le_connection_promise_->set_value();
+              le_connection_promise_.reset();
+            }
+          });
+
+  test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
+          ErrorCode::SUCCESS, handle, Role::CENTRAL, AddressType::PUBLIC_DEVICE_ADDRESS, remote,
+          0x0100, 0x0010, 0x0C80, ClockAccuracy::PPM_30));
+
+  GetConnectionManagementCommand(OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
+  test_hci_layer_->IncomingEvent(
+          LeRemoveDeviceFromFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  auto first_connection_status = first_connection.wait_for(kShortTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
+  auto connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetHandle(), handle);
+
+  // This time all waiting_packets would be sent successfully on retry and here
+  // waiting_packets would contain all 8 packets when flag disabled, but when
+  // flag enabled 2 packets would be rejected due to firing of alarm at
+  // t=1000ms. Whenever sending packet is successful, it gets enqueued into
+  // queue here from which we calculate received packets count.
+  test_hci_layer_->IncomingAclData(handle);
+  sync_client_handler();
+
+  int received_count = 0;
+  auto queue_end = connection->GetAclQueueEnd();
+  while (queue_end->TryDequeue() != nullptr) {
+    received_count++;
+  }
+
+  if (com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+    ASSERT_EQ(received_count, total_packets - 1);
+  } else {
+    // No packets are rejected because just alarm is rescheduled as per old behaviour and when after
+    // establishing connection, all waiting packets would be sent successfully in retry_unknown_acl.
+    ASSERT_EQ(received_count, total_packets + 1);
+  }
+}
+
 }  // namespace acl_manager
 }  // namespace hci
 }  // namespace bluetooth
