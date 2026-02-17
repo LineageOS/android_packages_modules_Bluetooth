@@ -169,6 +169,9 @@ public class ActiveDeviceManagerTest {
         doReturn(true)
                 .when(mAdapterService)
                 .isProfileSupported(mLeHearingAidDevice, BluetoothProfile.HAP_CLIENT);
+        doReturn(true)
+                .when(mAdapterService)
+                .isProfileSupported(mDualModeAudioDevice, BluetoothProfile.LE_AUDIO);
 
         mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mStorage);
         mActiveDeviceManager.start();
@@ -3183,6 +3186,261 @@ public class ActiveDeviceManagerTest {
         // Verify that we tried to set LE Audio active but it failed.
         verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
         assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
+     * Set Hearing Aid device as active.
+     *
+     * <pre>
+     * Steps:
+     * 1. Connect Hearing Aid device.
+     * 2. Set active device to null.
+     * 3. Set Hearing Aid device as active.
+     * 4. Verify Hearing Aid service is called to setActiveDevice.
+     * 5. Verify ActiveDeviceManager does not have Hearing Aid active device yet.
+     * 6. Hearing Aid active device changed.
+     * 7. Verify ActiveDeviceManager has Hearing Aid active device.
+     * </pre>
+     */
+    @Test
+    public void setActiveDevice_hearingAid() {
+        hearingAidConnected(mHearingAidDevice);
+        hearingAidActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        Mockito.clearInvocations(mHearingAidService);
+
+        mActiveDeviceManager.setActiveDevice(mHearingAidDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices())
+                .doesNotContain(mHearingAidDevice);
+        Mockito.clearInvocations(mHearingAidService);
+
+        hearingAidActiveDeviceChanged(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).contains(mHearingAidDevice);
+    }
+
+    /**
+     * Set A2DP device as active.
+     *
+     * <pre>
+     * Steps:
+     * 1. Connect A2DP device.
+     * 2. Set active device to null.
+     * 3. Set A2DP device as active.
+     * 4. Verify A2DP service is called to setActiveDevice.
+     * 5. Verify ActiveDeviceManager does not have A2DP active device yet.
+     * 6. A2DP active device changed.
+     * 7. Verify ActiveDeviceManager has A2DP active device.
+     * </pre>
+     */
+    @Test
+    public void setActiveDevice_a2dp() {
+        a2dpConnected(mA2dpDevice, false);
+        a2dpActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        Mockito.clearInvocations(mA2dpService);
+
+        mActiveDeviceManager.setActiveDevice(mA2dpDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isNotEqualTo(mA2dpDevice);
+        Mockito.clearInvocations(mA2dpService);
+
+        a2dpActiveDeviceChanged(mA2dpDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpDevice);
+    }
+
+    /**
+     * Set Headset device as active.
+     *
+     * <pre>
+     * Steps:
+     * 1. Connect Headset device.
+     * 2. Set active device to null.
+     * 3. Set Headset device as active.
+     * 4. Verify Headset service is called to setActiveDevice.
+     * 5. Verify ActiveDeviceManager does not have Headset active device yet.
+     * 6. Headset active device changed.
+     * 7. Verify ActiveDeviceManager has Headset active device.
+     * </pre>
+     */
+    @Test
+    public void setActiveDevice_headset() {
+        headsetConnected(mHeadsetDevice, false);
+        headsetActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        Mockito.clearInvocations(mHeadsetService);
+
+        mActiveDeviceManager.setActiveDevice(mHeadsetDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNotEqualTo(mHeadsetDevice);
+        Mockito.clearInvocations(mHeadsetService);
+
+        headsetActiveDeviceChanged(mHeadsetDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isEqualTo(mHeadsetDevice);
+    }
+
+    /**
+     * Set A2DP Headset device as active.
+     *
+     * <pre>
+     * Steps:
+     * 1. Connect A2DP Headset device.
+     * 2. Set active device to null.
+     * 3. Set A2DP Headset device as active.
+     * 4. Verify A2DP and Headset services are called to setActiveDevice.
+     * 5. Verify ActiveDeviceManager does not have A2DP and Headset active device yet.
+     * 6. A2DP active device changed.
+     * 7. Verify ActiveDeviceManager has A2DP active device.
+     * 8. Headset active device changed.
+     * 9. Verify ActiveDeviceManager has Headset active device.
+     * </pre>
+     */
+    @Test
+    public void setActiveDevice_a2dpHeadset() {
+        a2dpConnected(mA2dpHeadsetDevice, true);
+        a2dpActiveDeviceChanged(null);
+        headsetActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        Mockito.clearInvocations(mA2dpService, mHeadsetService);
+
+        mActiveDeviceManager.setActiveDevice(
+                mA2dpHeadsetDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mA2dpHeadsetDevice);
+        verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
+
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNotEqualTo(mA2dpHeadsetDevice);
+        Mockito.clearInvocations(mA2dpService, mHeadsetService);
+
+        a2dpActiveDeviceChanged(mA2dpHeadsetDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNotEqualTo(mA2dpHeadsetDevice);
+
+        Mockito.clearInvocations(mA2dpService, mHeadsetService);
+
+        headsetActiveDeviceChanged(mA2dpHeadsetDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpHeadsetDevice);
+    }
+
+    /**
+     * Set LE Audio device as active.
+     *
+     * <pre>
+     * Steps:
+     * 1. Connect LE Audio device.
+     * 2. Set active device to null.
+     * 3. Set LE Audio device as active.
+     * 4. Verify LE Audio service is called to setActiveDevice.
+     * 5. Verify ActiveDeviceManager does not have LE Audio active device yet.
+     * 6. LE Audio active device changed.
+     * 7. Verify ActiveDeviceManager has LE Audio active device.
+     * </pre>
+     */
+    @Test
+    public void setActiveDevice_leAudio() {
+        leAudioConnected(mLeAudioDevice);
+        leAudioActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        Mockito.clearInvocations(mLeAudioService);
+
+        mActiveDeviceManager.setActiveDevice(mLeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNotEqualTo(mLeAudioDevice);
+        Mockito.clearInvocations(mLeAudioService);
+
+        leAudioActiveDeviceChanged(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+    }
+
+    /**
+     * Set Dual Mode device as active.
+     *
+     * <pre>
+     * Steps:
+     * 1. Enable dual mode audio.
+     * 2. Connect Dual Mode device (LE Audio, A2DP, Headset).
+     * 3. Set active device to null.
+     * 4. Set Dual Mode device as active.
+     * 5. Verify all service are called to setActiveDevice.
+     * 6. Verify ActiveDeviceManager does not have active device yet.
+     * 7. LE Audio active device changed.
+     * 8. Verify ActiveDeviceManager has LE Audio active device.
+     * 9. A2DP active device changed.
+     * 10. Verify ActiveDeviceManager has A2DP active device.
+     * 11. Headset active device changed.
+     * 12. Verify ActiveDeviceManager has Headset active device.
+     * </pre>
+     */
+    @Test
+    public void setActiveDevice_dualMode() {
+        Utils.setDualModeAudioStateForTesting(true);
+        leAudioConnected(mDualModeAudioDevice);
+        a2dpConnected(mDualModeAudioDevice, true);
+        leAudioActiveDeviceChanged(null);
+        a2dpActiveDeviceChanged(null);
+        headsetActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        Mockito.clearInvocations(mA2dpService, mHeadsetService, mLeAudioService);
+
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mHeadsetService)
+                .getConnectionPolicy(mDualModeAudioDevice);
+
+        mActiveDeviceManager.setActiveDevice(
+                mDualModeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mDualModeAudioDevice);
+        verify(mA2dpService).setActiveDevice(mDualModeAudioDevice);
+        verify(mHeadsetService).setActiveDevice(mDualModeAudioDevice);
+
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice())
+                .isNotEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNotEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isNotEqualTo(mDualModeAudioDevice);
+        Mockito.clearInvocations(mA2dpService, mHeadsetService, mLeAudioService);
+
+        leAudioActiveDeviceChanged(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNotEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isNotEqualTo(mDualModeAudioDevice);
+        verify(mA2dpService, never()).removeActiveDevice(anyBoolean());
+        verify(mHeadsetService, never()).setActiveDevice(null);
+
+        Mockito.clearInvocations(mA2dpService, mHeadsetService, mLeAudioService);
+
+        a2dpActiveDeviceChanged(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isNotEqualTo(mDualModeAudioDevice);
+        verify(mLeAudioService, never()).removeActiveDevice(anyBoolean());
+        verify(mHeadsetService, never()).setActiveDevice(null);
+
+        Mockito.clearInvocations(mA2dpService, mHeadsetService, mLeAudioService);
+
+        headsetActiveDeviceChanged(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mDualModeAudioDevice);
+        assertThat(mActiveDeviceManager.getHfpActiveDevice()).isEqualTo(mDualModeAudioDevice);
+        verify(mLeAudioService, never()).removeActiveDevice(false);
+        verify(mA2dpService, never()).removeActiveDevice(anyBoolean());
     }
 
     /**
