@@ -709,3 +709,60 @@ TEST_F(McpClientTest, connect_cached_services_before_encryption) {
   tBTA_GATTC p_data_enc_cmpl = {.enc_cmpl = enc_cmpl_data};
   (*gatt_callback_)(BTA_GATTC_ENC_CMPL_CB_EVT, &p_data_enc_cmpl);
 }
+
+TEST_F(McpClientTest, add_from_storage) {
+  EXPECT_CALL(gatt_client_interface_, Open(kTestAppId, kTestAddress, BTM_BLE_OPPORTUNISTIC));
+  McpClient::AddFromStorage(kTestAddress);
+}
+
+TEST_F(McpClientTest, reconnect_after_disconnect) {
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
+
+  // Initial connect
+  EXPECT_CALL(gatt_client_interface_, Open(kTestAppId, kTestAddress, BTM_BLE_OPPORTUNISTIC));
+  mcp_client_->Connect(kTestAddress);
+
+  // Connected
+  EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
+  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
+  SimulateGattConnect(kTestAddress, kTestConnId);
+  SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
+
+  // Disconnect
+  EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::DISCONNECTED));
+  // Expect re-connect (opportunistic)
+  EXPECT_CALL(gatt_client_interface_, Open(kTestAppId, kTestAddress, BTM_BLE_OPPORTUNISTIC));
+
+  tBTA_GATTC_CLOSE close_data;
+  close_data.conn_id = kTestConnId;
+  close_data.remote_bda = kTestAddress;
+  close_data.status = GATT_SUCCESS;
+  close_data.reason = GATT_CONN_TERMINATE_PEER_USER;
+  tBTA_GATTC p_data_close = {.close = close_data};
+  (*gatt_callback_)(BTA_GATTC_CLOSE_EVT, &p_data_close);
+}
+
+TEST_F(McpClientTest, reconnect_after_connection_failure) {
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
+
+  // Initial connect
+  EXPECT_CALL(gatt_client_interface_, Open(kTestAppId, kTestAddress, BTM_BLE_OPPORTUNISTIC));
+  mcp_client_->Connect(kTestAddress);
+
+  // Connect failure
+  EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::DISCONNECTED));
+  // Expect re-connect (opportunistic)
+  EXPECT_CALL(gatt_client_interface_, Open(kTestAppId, kTestAddress, BTM_BLE_OPPORTUNISTIC));
+
+  tBTA_GATTC_OPEN open_data;
+  open_data.status = GATT_ERROR;
+  open_data.conn_id = kTestConnId;
+  open_data.remote_bda = kTestAddress;
+  open_data.transport = BT_TRANSPORT_LE;
+  tBTA_GATTC p_data = {.open = open_data};
+  (*gatt_callback_)(BTA_GATTC_OPEN_EVT, &p_data);
+}
