@@ -443,6 +443,7 @@ enum BtaEnqueuedResult_t {
   ENQUEUED_FOR_LATER,
 };
 
+void bta_gattc_set_state(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_STATE state);
 BtaEnqueuedResult_t bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 bool bta_gattc_is_data_queued(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_continue(tBTA_GATTC_CLCB* p_clcb);
@@ -533,6 +534,30 @@ inline std::string bta_gattc_state_text(const tBTA_GATTC_CB_STATE& state) {
     CASE_RETURN_TEXT(BTA_GATTC_STATE_DISABLING);
     default:
       return std::format("UNKNOWN[{}]", static_cast<int>(state));
+  }
+}
+
+inline const std::string bta_gattc_evt_code_text(tBTA_GATTC_INT_EVT evt_code) {
+  switch (evt_code) {
+    CASE_RETURN_TEXT(BTA_GATTC_API_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_INT_OPEN_FAIL_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_CANCEL_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_INT_CANCEL_OPEN_OK_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_READ_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_WRITE_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_EXEC_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_CLOSE_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_SEARCH_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_CONFIRM_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_READ_MULTI_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_INT_CONN_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_INT_DISCOVER_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_DISCOVER_CMPL_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_OP_CMPL_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_INT_DISCONN_EVT);
+    CASE_RETURN_TEXT(BTA_GATTC_API_CFG_MTU_EVT);
+    default:
+      return std::format("UNKNOWN GATTC event code[{}]", static_cast<int>(evt_code));
   }
 }
 

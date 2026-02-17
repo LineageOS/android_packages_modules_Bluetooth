@@ -224,11 +224,6 @@ const tBTA_GATTC_ST_TBL bta_gattc_st_tbl[] = {
 /* GATTC control block */
 tBTA_GATTC_CB bta_gattc_cb;
 
-#if (BTA_GATT_DEBUG == TRUE)
-static const char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code);
-static const char* gattc_state_code(tBTA_GATTC_STATE state_code);
-#endif
-
 /*******************************************************************************
  *
  * Function         bta_gattc_sm_execute
@@ -247,12 +242,10 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
   bool rt = true;
   tBTA_GATTC_STATE in_state = p_clcb->state;
   uint16_t in_event = event;
-#if (BTA_GATT_DEBUG == TRUE)
-  log::verbose("State 0x{:02x} [{}], Event 0x{:x}[{}], Addr {}", in_state,
-               gattc_state_code(in_state), in_event, gattc_evt_code(in_event), p_clcb->bda);
-#else
-  log::verbose("State 0x{:02x}, Event 0x{:x}, Addr {}", in_state, in_event, p_clcb->bda);
-#endif
+
+  log::verbose("State {:#x} [{}], Event {:#x}[{}], Addr {}", in_state,
+               bta_clcb_state_text(in_state), in_event, bta_gattc_evt_code_text(in_event),
+               p_clcb->bda);
 
   /* look up the state table for the current state */
   state_table = bta_gattc_st_tbl[p_clcb->state];
@@ -260,7 +253,7 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
   event &= 0x00FF;
 
   /* set next state */
-  p_clcb->state = (tBTA_GATTC_STATE)(state_table[event][BTA_GATTC_NEXT_STATE]);
+  bta_gattc_set_state(p_clcb, (tBTA_GATTC_STATE)(state_table[event][BTA_GATTC_NEXT_STATE]));
 
   /* execute action functions */
   for (i = 0; i < BTA_GATTC_ACTIONS; i++) {
@@ -278,16 +271,6 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
     }
   }
 
-#if (BTA_GATT_DEBUG == TRUE)
-  if (in_state != p_clcb->state) {
-    log::verbose("GATTC State Change: [{}] -> [{}] after Event [{}], Addr {}",
-                 gattc_state_code(in_state), gattc_state_code(p_clcb->state),
-                 gattc_evt_code(in_event), p_clcb->bda);
-  }
-#else
-  log::verbose("GATTC State Change: 0x{:02x} -> 0x{:02x} after Event 0x{:x}, Addr {}", in_state,
-               p_clcb->state, in_event, p_clcb->bda);
-#endif
   return rt;
 }
 
@@ -304,29 +287,40 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
 bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg) {
   tBTA_GATTC_CLCB* p_clcb = NULL;
   bool rt = true;
-#if (BTA_GATT_DEBUG == TRUE)
-  log::verbose("Event:{}", gattc_evt_code(p_msg->event));
-#endif
+
+  const auto p = (tBTA_GATTC_DATA*)p_msg;
+
   switch (p_msg->event) {
     case BTA_GATTC_API_OPEN_EVT:
-      bta_gattc_process_api_open((tBTA_GATTC_DATA*)p_msg);
+      log::verbose("Event:{}, addr: ", bta_gattc_evt_code_text(p_msg->event),
+                   p->api_conn.remote_bda);
+      bta_gattc_process_api_open(p);
+
       break;
 
     case BTA_GATTC_API_CANCEL_OPEN_EVT:
-      bta_gattc_process_api_open_cancel((tBTA_GATTC_DATA*)p_msg);
+      log::verbose("Event:{}, addr: ", bta_gattc_evt_code_text(p_msg->event),
+                   p->api_cancel_conn.remote_bda);
+      bta_gattc_process_api_open_cancel(p);
       break;
 
     default:
       if (p_msg->event == BTA_GATTC_INT_CONN_EVT) {
-        p_clcb = bta_gattc_find_int_conn_clcb((tBTA_GATTC_DATA*)p_msg);
+        log::verbose("Event:{}, addr: ", bta_gattc_evt_code_text(p_msg->event),
+                     p->int_conn.remote_bda);
+        p_clcb = bta_gattc_find_int_conn_clcb(p);
       } else if (p_msg->event == BTA_GATTC_INT_DISCONN_EVT) {
-        p_clcb = bta_gattc_find_int_disconn_clcb((tBTA_GATTC_DATA*)p_msg);
+        log::verbose("Event:{}, conn_id: {:#x} ", bta_gattc_evt_code_text(p_msg->event),
+                     p->int_conn.hdr.layer_specific);
+        p_clcb = bta_gattc_find_int_disconn_clcb(p);
       } else {
+        log::verbose("Event:{}, conn_id: {:#x} ", bta_gattc_evt_code_text(p_msg->event),
+                     p->int_conn.hdr.layer_specific);
         p_clcb = bta_gattc_find_clcb_by_conn_id(static_cast<tCONN_ID>(p_msg->layer_specific));
       }
 
       if (p_clcb != nullptr) {
-        rt = bta_gattc_sm_execute(p_clcb, p_msg->event, (const tBTA_GATTC_DATA*)p_msg);
+        rt = bta_gattc_sm_execute(p_clcb, p_msg->event, p);
       } else {
         log::error("Ignore unknown conn ID: {}", p_msg->layer_specific);
       }
@@ -336,84 +330,3 @@ bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg) {
 
   return rt;
 }
-
-/*****************************************************************************
- *  Debug Functions
- ****************************************************************************/
-#if (BTA_GATT_DEBUG == TRUE)
-
-/*******************************************************************************
- *
- * Function         gattc_evt_code
- *
- * Description
- *
- * Returns          void
- *
- ******************************************************************************/
-static const char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code) {
-  switch (evt_code) {
-    case BTA_GATTC_API_OPEN_EVT:
-      return "BTA_GATTC_API_OPEN_EVT";
-    case BTA_GATTC_INT_OPEN_FAIL_EVT:
-      return "BTA_GATTC_INT_OPEN_FAIL_EVT";
-    case BTA_GATTC_API_CANCEL_OPEN_EVT:
-      return "BTA_GATTC_API_CANCEL_OPEN_EVT";
-    case BTA_GATTC_INT_CANCEL_OPEN_OK_EVT:
-      return "BTA_GATTC_INT_CANCEL_OPEN_OK_EVT";
-    case BTA_GATTC_API_READ_EVT:
-      return "BTA_GATTC_API_READ_EVT";
-    case BTA_GATTC_API_WRITE_EVT:
-      return "BTA_GATTC_API_WRITE_EVT";
-    case BTA_GATTC_API_EXEC_EVT:
-      return "BTA_GATTC_API_EXEC_EVT";
-    case BTA_GATTC_API_CLOSE_EVT:
-      return "BTA_GATTC_API_CLOSE_EVT";
-    case BTA_GATTC_API_SEARCH_EVT:
-      return "BTA_GATTC_API_SEARCH_EVT";
-    case BTA_GATTC_API_CONFIRM_EVT:
-      return "BTA_GATTC_API_CONFIRM_EVT";
-    case BTA_GATTC_API_READ_MULTI_EVT:
-      return "BTA_GATTC_API_READ_MULTI_EVT";
-    case BTA_GATTC_INT_CONN_EVT:
-      return "BTA_GATTC_INT_CONN_EVT";
-    case BTA_GATTC_INT_DISCOVER_EVT:
-      return "BTA_GATTC_INT_DISCOVER_EVT";
-    case BTA_GATTC_DISCOVER_CMPL_EVT:
-      return "BTA_GATTC_DISCOVER_CMPL_EVT";
-    case BTA_GATTC_OP_CMPL_EVT:
-      return "BTA_GATTC_OP_CMPL_EVT";
-    case BTA_GATTC_INT_DISCONN_EVT:
-      return "BTA_GATTC_INT_DISCONN_EVT";
-    case BTA_GATTC_API_CFG_MTU_EVT:
-      return "BTA_GATTC_API_CFG_MTU_EVT";
-    default:
-      return "unknown GATTC event code";
-  }
-}
-
-/*******************************************************************************
- *
- * Function         gattc_state_code
- *
- * Description
- *
- * Returns          void
- *
- ******************************************************************************/
-static const char* gattc_state_code(tBTA_GATTC_STATE state_code) {
-  switch (state_code) {
-    case BTA_GATTC_IDLE_ST:
-      return "GATTC_IDLE_ST";
-    case BTA_GATTC_W4_CONN_ST:
-      return "GATTC_W4_CONN_ST";
-    case BTA_GATTC_CONN_ST:
-      return "GATTC_CONN_ST";
-    case BTA_GATTC_DISCOVER_ST:
-      return "GATTC_DISCOVER_ST";
-    default:
-      return "unknown GATTC state code";
-  }
-}
-
-#endif /* Debug Functions */
