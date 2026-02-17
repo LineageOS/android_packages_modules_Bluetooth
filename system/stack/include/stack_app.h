@@ -22,6 +22,8 @@
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/gatt_api.h"
 
+namespace bluetooth::stack {
+
 /* discover result callback function */
 typedef void(tGATT_DISC_RES_CB)(tCONN_ID conn_id, tGATT_DISC_TYPE disc_type,
                                 tGATT_DISC_RES* p_data);
@@ -80,7 +82,7 @@ typedef struct {
 
 /*******************************************************************************
  *
- * Function         GATT_Register
+ * Function         stack::appRegister
  *
  * Description      This function is called to register an  application
  *                  with GATT
@@ -93,12 +95,12 @@ typedef struct {
  *                  with GATT
  *
  ******************************************************************************/
-[[nodiscard]] tGATT_IF GATT_Register(const bluetooth::Uuid& p_app_uuid128, const std::string& name,
-                                     tGATT_CBACK* p_cb_info, bool eatt_support);
+[[nodiscard]] tGATT_IF appRegister(const bluetooth::Uuid& p_app_uuid128, const std::string& name,
+                                   tGATT_CBACK* p_cb_info, bool eatt_support);
 
 /*******************************************************************************
  *
- * Function         GATT_Deregister
+ * Function         stack::appDeregister
  *
  * Description      This function deregistered the application from GATT.
  *
@@ -107,11 +109,11 @@ typedef struct {
  * Returns          None.
  *
  ******************************************************************************/
-void GATT_Deregister(tGATT_IF gatt_if);
+void appDeregister(tGATT_IF gatt_if);
 
 /*******************************************************************************
  *
- * Function         GATT_StartIf
+ * Function         stack::appStartIf
  *
  * Description      This function is called after registration to start
  *                  receiving callbacks for registered interface.  Function may
@@ -122,4 +124,6 @@ void GATT_Deregister(tGATT_IF gatt_if);
  * Returns          None
  *
  ******************************************************************************/
-void GATT_StartIf(tGATT_IF gatt_if);
+void appStartIf(tGATT_IF gatt_if);
+
+}  // namespace bluetooth::stack

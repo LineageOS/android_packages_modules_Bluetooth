@@ -67,9 +67,9 @@ protected:
     bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface_);
     bluetooth::testing::stack::rnr::set_interface(&mock_stack_rnr_interface_);
 
-    test::mock::stack_app::GATT_Register.body =
+    test::mock::stack_app::appRegister.body =
             [](const bluetooth::Uuid& /*p_app_uuid128*/, const std::string /*name*/,
-               tGATT_CBACK* /*p_cb_info*/,
+               stack::tGATT_CBACK* /*p_cb_info*/,
                bool /*eatt_support*/) -> tGATT_IF { return kGattRegisteredIf; };
     mock_btm_client_interface.eir.BTM_GetEirSupportedServices =
             [](uint32_t* /*p_eir_uuid*/, uint8_t** /*p*/, uint8_t /*max_num_uuid16*/,
@@ -86,7 +86,7 @@ protected:
     mock_btm_client_interface.security.BTM_SecRegister = {};
     mock_btm_client_interface.eir.BTM_WriteEIR = {};
     mock_btm_client_interface.eir.BTM_GetEirSupportedServices = {};
-    test::mock::stack_app::GATT_Register = {};
+    test::mock::stack_app::appRegister = {};
 
     bluetooth::testing::stack::rnr::reset_interface();
     bluetooth::testing::stack::l2cap::reset_interface();

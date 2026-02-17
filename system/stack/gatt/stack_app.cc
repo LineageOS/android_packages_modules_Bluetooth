@@ -36,15 +36,17 @@ using namespace bluetooth;
 
 using bluetooth::Uuid;
 
+namespace bluetooth::stack {
+
 inline constexpr tGATT_IF GATT_IF_INVALID = static_cast<tGATT_IF>(0);
 // 0xF1 ~ 0xFF are reserved for special use cases.
 inline constexpr tGATT_IF GATT_IF_MAX = static_cast<tGATT_IF>(0xf8);
 
-static tGATT_IF GATT_FindNextFreeClRcbId();
+static tGATT_IF FindNextFreeClRcbId();
 
 /*******************************************************************************
  *
- * Function         GATT_Register
+ * Function         stack::appRegister
  *
  * Description      This function is called to register an  application
  *                  with GATT
@@ -57,8 +59,8 @@ static tGATT_IF GATT_FindNextFreeClRcbId();
  *                  with GATT
  *
  ******************************************************************************/
-tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                       bool eatt_support) {
+tGATT_IF appRegister(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
+                     bool eatt_support) {
   for (auto& [gatt_if, p_reg] : gatt_cb.cl_rcb_map) {
     if (p_reg->app_uuid128 == app_uuid128) {
       log::error("Application already registered, uuid={}", app_uuid128.ToString());
@@ -76,7 +78,7 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name, tGATT_C
     return 0;
   }
 
-  tGATT_IF gatt_if = GATT_FindNextFreeClRcbId();
+  tGATT_IF gatt_if = FindNextFreeClRcbId();
   if (gatt_if == GATT_IF_INVALID) {
     return gatt_if;
   }
@@ -95,7 +97,7 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name, tGATT_C
   return gatt_if;
 }
 
-static tGATT_IF GATT_FindNextFreeClRcbId() {
+static tGATT_IF FindNextFreeClRcbId() {
   tGATT_IF gatt_if = gatt_cb.last_gatt_if;
   for (int i = 0; i < GATT_IF_MAX; i++) {
     if (++gatt_if > GATT_IF_MAX) {
@@ -113,7 +115,7 @@ static tGATT_IF GATT_FindNextFreeClRcbId() {
 
 /*******************************************************************************
  *
- * Function         GATT_Deregister
+ * Function         stack::appDeregister
  *
  * Description      This function deregistered the application from GATT.
  *
@@ -122,7 +124,7 @@ static tGATT_IF GATT_FindNextFreeClRcbId() {
  * Returns          None.
  *
  ******************************************************************************/
-void GATT_Deregister(tGATT_IF gatt_if) {
+void appDeregister(tGATT_IF gatt_if) {
   log::info("gatt_if={}", gatt_if);
 
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
@@ -179,7 +181,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
 
 /*******************************************************************************
  *
- * Function         GATT_StartIf
+ * Function         stack::appStartIf
  *
  * Description      This function is called after registration to start
  *                  receiving callbacks for registered interface.  Function may
@@ -190,7 +192,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
  * Returns          None.
  *
  ******************************************************************************/
-void GATT_StartIf(tGATT_IF gatt_if) {
+void appStartIf(tGATT_IF gatt_if) {
   tGATT_REG* p_reg;
   tGATT_TCB* p_tcb;
   RawAddress bda = {};
@@ -217,3 +219,5 @@ void GATT_StartIf(tGATT_IF gatt_if) {
     }
   }
 }
+
+}  // namespace bluetooth::stack

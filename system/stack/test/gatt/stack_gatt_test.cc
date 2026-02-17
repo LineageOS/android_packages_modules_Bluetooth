@@ -38,6 +38,8 @@
 
 #define TEST_BT com::android::bluetooth::flags
 
+using namespace bluetooth;
+
 namespace bluetooth {
 namespace legacy {
 namespace testing {
@@ -89,7 +91,7 @@ void tGATT_PHY_UPDATE_CB(tGATT_IF /*gatt_if*/, uint16_t /*conn_id*/, uint8_t /*t
 void tGATT_CONN_UPDATE_CB(tGATT_IF /*gatt_if*/, uint16_t /*conn_id*/, uint16_t /*interval*/,
                           uint16_t /*latency*/, uint16_t /*timeout*/, tGATT_STATUS /*status*/) {}
 
-tGATT_CBACK gatt_callbacks = {
+stack::tGATT_CBACK gatt_callbacks = {
         .p_conn_cb = tGATT_CONN_CBACK,
         .p_cmpl_cb = tGATT_CMPL_CBACK,
         .p_disc_res_cb = tGATT_DISC_RES_CB,
@@ -108,7 +110,7 @@ TEST_F(StackGattTest, gatt_init_free) {
   gatt_free();
 }
 
-TEST_F(StackGattTest, GATT_Register_Deregister) {
+TEST_F(StackGattTest, stack_AppRegister_Deregister) {
   gatt_init();
 
   // Gatt db profile always takes the first slot
@@ -119,11 +121,11 @@ TEST_F(StackGattTest, GATT_Register_Deregister) {
 
     bluetooth::Uuid uuid = bluetooth::Uuid::From128BitBE(
             bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
-    apps[i] = GATT_Register(uuid, name, &gatt_callbacks, false);
+    apps[i] = stack::appRegister(uuid, name, &gatt_callbacks, false);
   }
 
   for (int i = 0; i < GATT_MAX_APPS - 1; i++) {
-    GATT_Deregister(apps[i]);
+    stack::appDeregister(apps[i]);
   }
 
   gatt_free();

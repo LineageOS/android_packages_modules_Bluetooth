@@ -1692,9 +1692,9 @@ bool gatt_is_outstanding_msg_in_att_send_queue(const tGATT_TCB& tcb) {
 void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
   tGATT_CL_COMPLETE cb_data;
   tGATT_REG* p_reg = gatt_get_regcb(gatt_get_gatt_if(p_clcb->conn_id));
-  tGATT_CMPL_CBACK* p_cmpl_cb =
+  stack::tGATT_CMPL_CBACK* p_cmpl_cb =
           ((p_clcb->p_reg == p_reg) && p_reg) ? p_reg->app_cb.p_cmpl_cb : NULL;
-  tGATT_DISC_CMPL_CB* p_disc_cmpl_cb =
+  stack::tGATT_DISC_CMPL_CB* p_disc_cmpl_cb =
           ((p_clcb->p_reg == p_reg) && p_reg) ? p_clcb->p_reg->app_cb.p_disc_cmpl_cb : NULL;
   tGATTC_OPTYPE op = p_clcb->operation;
   tGATT_DISC_TYPE disc_type = GATT_DISC_MAX;

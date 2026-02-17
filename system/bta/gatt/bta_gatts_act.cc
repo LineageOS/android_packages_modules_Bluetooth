@@ -61,7 +61,7 @@ static void bta_gatts_subrate_chg_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint
 static void bta_gatts_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
                                                         uint32_t session_id, tGATT_STATUS status);
 
-static tGATT_CBACK bta_gatts_cback = {
+static stack::tGATT_CBACK bta_gatts_cback = {
         .p_conn_cb = bta_gatts_conn_cback,
         .p_cmpl_cb = nullptr,
         .p_disc_res_cb = nullptr,
@@ -147,7 +147,7 @@ void bta_gatts_api_disable(tBTA_GATTS_CB* p_cb) {
   if (p_cb->enabled) {
     for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
       if (p_cb->rcb[i].in_use) {
-        GATT_Deregister(p_cb->rcb[i].gatt_if);
+        stack::appDeregister(p_cb->rcb[i].gatt_if);
       }
     }
     memset(p_cb, 0, sizeof(tBTA_GATTS_CB));
@@ -200,7 +200,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
       p_cb->rcb[first_unuse].in_use = true;
       p_cb->rcb[first_unuse].p_cback = p_msg->api_reg.p_cback;
       p_cb->rcb[first_unuse].app_uuid = p_msg->api_reg.app_uuid;
-      cb_data.reg_oper.server_if = p_cb->rcb[first_unuse].gatt_if = GATT_Register(
+      cb_data.reg_oper.server_if = p_cb->rcb[first_unuse].gatt_if = stack::appRegister(
               p_msg->api_reg.app_uuid, "GattServer", &bta_gatts_cback, p_msg->api_reg.eatt_support);
       if (!p_cb->rcb[first_unuse].gatt_if) {
         status = GATT_NO_RESOURCES;
@@ -233,7 +233,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
  ******************************************************************************/
 void bta_gatts_start_if(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
   if (bta_gatts_find_app_rcb_by_app_if(p_msg->int_start_if.server_if)) {
-    GATT_StartIf(p_msg->int_start_if.server_if);
+    stack::appStartIf(p_msg->int_start_if.server_if);
   } else {
     log::error("Unable to start app.: Unknown interface={}", p_msg->int_start_if.server_if);
   }
@@ -262,7 +262,7 @@ void bta_gatts_deregister(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
       status = GATT_SUCCESS;
 
       /* deregister the app */
-      GATT_Deregister(p_cb->rcb[i].gatt_if);
+      stack::appDeregister(p_cb->rcb[i].gatt_if);
 
       /* reset cb */
       memset(&p_cb->rcb[i], 0, sizeof(tBTA_GATTS_RCB));

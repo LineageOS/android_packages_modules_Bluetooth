@@ -66,7 +66,7 @@ static void client_connect_cback(tGATT_IF, const RawAddress&, tCONN_ID, bool, tG
                                  tBT_TRANSPORT);
 static void client_cmpl_cback(tCONN_ID, tGATTC_OPTYPE, tGATT_STATUS, tGATT_CL_COMPLETE*);
 
-tGATT_CBACK gap_cback = {
+stack::tGATT_CBACK gap_cback = {
         .p_conn_cb = client_connect_cback,
         .p_cmpl_cb = client_cmpl_cback,
         .p_disc_res_cb = nullptr,
@@ -444,9 +444,9 @@ void gap_attr_db_init(void) {
   Uuid app_uuid = Uuid::From128BitBE(tmp);
   gatt_attr.fill({});
 
-  gatt_if = GATT_Register(app_uuid, "Gap", &gap_cback, false);
+  gatt_if = stack::appRegister(app_uuid, "Gap", &gap_cback, false);
 
-  GATT_StartIf(gatt_if);
+  stack::appStartIf(gatt_if);
 
   Uuid svc_uuid = Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER);
   Uuid name_uuid = Uuid::From16Bit(GATT_UUID_GAP_DEVICE_NAME);

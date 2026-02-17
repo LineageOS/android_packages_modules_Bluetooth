@@ -37,9 +37,9 @@ namespace mock {
 namespace stack_app {
 
 // Function state capture and return values, if needed
-struct GATT_Deregister GATT_Deregister;
-struct GATT_Register GATT_Register;
-struct GATT_StartIf GATT_StartIf;
+struct appDeregister appDeregister;
+struct appRegister appRegister;
+struct appStartIf appStartIf;
 
 }  // namespace stack_app
 }  // namespace mock
@@ -50,24 +50,26 @@ namespace test {
 namespace mock {
 namespace stack_app {
 
-tGATT_IF GATT_Register::return_value = 0;
+tGATT_IF appRegister::return_value = 0;
 
 }  // namespace stack_app
 }  // namespace mock
 }  // namespace test
 
 // Mocked functions, if any
-tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                       bool eatt_support) {
+namespace bluetooth::stack {
+tGATT_IF appRegister(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
+                     bool eatt_support) {
   inc_func_call_count(__func__);
-  return test::mock::stack_app::GATT_Register(app_uuid128, name, p_cb_info, eatt_support);
+  return test::mock::stack_app::appRegister(app_uuid128, name, p_cb_info, eatt_support);
 }
-void GATT_Deregister(tGATT_IF gatt_if) {
+void appDeregister(tGATT_IF gatt_if) {
   inc_func_call_count(__func__);
-  test::mock::stack_app::GATT_Deregister(gatt_if);
+  test::mock::stack_app::appDeregister(gatt_if);
 }
-void GATT_StartIf(tGATT_IF gatt_if) {
+void appStartIf(tGATT_IF gatt_if) {
   inc_func_call_count(__func__);
-  test::mock::stack_app::GATT_StartIf(gatt_if);
+  test::mock::stack_app::appStartIf(gatt_if);
 }
+}  // namespace bluetooth::stack
 // END mockcify generation

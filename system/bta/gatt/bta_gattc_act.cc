@@ -75,7 +75,7 @@ static void bta_gattc_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_
                                                         uint32_t session_id, tGATT_STATUS status);
 static void bta_gattc_offloaded_service_chg_cback(tCONN_ID conn_id);
 
-static tGATT_CBACK bta_gattc_cl_cback = {
+static stack::tGATT_CBACK bta_gattc_cl_cback = {
         .p_conn_cb = bta_gattc_conn_cback,
         .p_cmpl_cb = bta_gattc_cmpl_cback,
         .p_disc_res_cb = bta_gattc_disc_res_cback,
@@ -166,7 +166,7 @@ static void bta_gattc_start_if(uint8_t client_if) {
     return;
   }
 
-  GATT_StartIf(client_if);
+  stack::appStartIf(client_if);
 }
 
 /** Register a GATT client application with BTA */
@@ -182,7 +182,7 @@ void bta_gattc_register(const Uuid& app_uuid, const std::string& name, tBTA_GATT
     bta_gattc_enable();
   }
 
-  client_if = GATT_Register(app_uuid, name, &bta_gattc_cl_cback, eatt_support);
+  client_if = stack::appRegister(app_uuid, name, &bta_gattc_cl_cback, eatt_support);
   if (client_if == 0) {
     log::error("Register with GATT stack failed");
     status = GATT_ERROR;
@@ -1439,7 +1439,7 @@ static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg) {
 
   memset(&cb_data, 0, sizeof(tBTA_GATTC));
 
-  GATT_Deregister(p_clreg->client_if);
+  stack::appDeregister(p_clreg->client_if);
   if (bta_gattc_cb.cl_rcb_map.erase(p_clreg->client_if) == 0) {
     log::warn("deregistered unknown rcb client_if={}", p_clreg->client_if);
   }

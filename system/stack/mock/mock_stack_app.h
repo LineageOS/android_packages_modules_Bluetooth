@@ -37,45 +37,48 @@
 // Original usings
 using bluetooth::Uuid;
 
+using namespace bluetooth;
+
 // Mocked compile conditionals, if any
 
 namespace test {
 namespace mock {
 namespace stack_app {
 
-// Name: GATT_Register
-// Params: const Uuid& app_uuid128, std::string name, tGATT_CBACK* p_cb_info,
+// Name: appRegister
+// Params: const Uuid& app_uuid128, std::string name, stack::tGATT_CBACK* p_cb_info,
 // bool eatt_support Return: tGATT_IF
-struct GATT_Register {
+struct appRegister {
   static tGATT_IF return_value;
-  std::function<tGATT_IF(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                         bool eatt_support)>
+  std::function<tGATT_IF(const Uuid& app_uuid128, const std::string& name,
+                         stack::tGATT_CBACK* p_cb_info, bool eatt_support)>
           body{[](const Uuid& /* app_uuid128 */, const std::string& /* name */,
-                  tGATT_CBACK* /* p_cb_info */, bool /* eatt_support */) { return return_value; }};
-  tGATT_IF operator()(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                      bool eatt_support) {
+                  stack::tGATT_CBACK* /* p_cb_info */,
+                  bool /* eatt_support */) { return return_value; }};
+  tGATT_IF operator()(const Uuid& app_uuid128, const std::string& name,
+                      stack::tGATT_CBACK* p_cb_info, bool eatt_support) {
     return body(app_uuid128, name, p_cb_info, eatt_support);
   }
 };
-extern struct GATT_Register GATT_Register;
+extern struct appRegister appRegister;
 
-// Name: GATT_Deregister
+// Name: appDeregister
 // Params: tGATT_IF gatt_if
 // Return: void
-struct GATT_Deregister {
+struct appDeregister {
   std::function<void(tGATT_IF gatt_if)> body{[](tGATT_IF /* gatt_if */) {}};
   void operator()(tGATT_IF gatt_if) { body(gatt_if); }
 };
-extern struct GATT_Deregister GATT_Deregister;
+extern struct appDeregister appDeregister;
 
-// Name: GATT_StartIf
+// Name: appStartIf
 // Params: tGATT_IF gatt_if
 // Return: void
-struct GATT_StartIf {
+struct appStartIf {
   std::function<void(tGATT_IF gatt_if)> body{[](tGATT_IF /* gatt_if */) {}};
   void operator()(tGATT_IF gatt_if) { body(gatt_if); }
 };
-extern struct GATT_StartIf GATT_StartIf;
+extern struct appStartIf appStartIf;
 
 }  // namespace stack_app
 }  // namespace mock
