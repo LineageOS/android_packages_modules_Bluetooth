@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "downgrade_to_basic_mode_on_no_info_resp"
-    namespace: "bluetooth"
-    description: "Downgrade L2cap mode to basic on info response timeout"
-    bug: "416031394"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "consider_l2c_header_bytes_for_mps_selection"
     namespace: "bluetooth"
     description: "while selecting the local MPS, consider the L2cap header bytes"
