@@ -59,7 +59,7 @@ constexpr int MAX_KEY_SIZE = 16;
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool btm_sec_register(const tBTM_APPL_INFO* p_cb_info);
+bool btm_sec_register(const BtmAppReg& app_reg);
 
 bool btm_is_encrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool btm_is_link_key_authed(const RawAddress& bd_addr, tBT_TRANSPORT transport);

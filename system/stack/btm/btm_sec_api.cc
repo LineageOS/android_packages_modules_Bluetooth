@@ -56,7 +56,7 @@ bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr) {
   return btm_peer_supports_secure_connections(bd_addr);
 }
 
-bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) { return btm_sec_register(p_cb_info); }
+bool BTM_SecRegister(const BtmAppReg& app_reg) { return btm_sec_register(app_reg); }
 
 void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {
   btm_ble_load_local_keys(key_type, p_key);

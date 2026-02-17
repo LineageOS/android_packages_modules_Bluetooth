@@ -1168,13 +1168,11 @@ static void btm_ble_get_auth_req(const BtmDevice* p_device, tBTM_LE_AUTH_REQ* p_
  ******************************************************************************/
 static tBTM_STATUS btm_ble_io_capabilities_req(BtmDevice* p_device, tBTM_LE_IO_REQ* p_data) {
   log::verbose("p_device->bd_addr:{}", p_device->bd_addr);
-  if (BtmSecurity::Get().api_.p_le_callback) {
-    tBTM_STATUS status = (*BtmSecurity::Get().api_.p_le_callback)(
-            BTM_LE_IO_REQ_EVT, p_device->bd_addr, (tBTM_LE_EVT_DATA*)p_data);
-    if (status != tBTM_STATUS::BTM_SUCCESS) {
-      log::warn("Security callback failed {} for {}", btm_status_text(status), p_device->bd_addr);
-      return status;
-    }
+  tBTM_STATUS status = (BtmSecurity::Get().app_->le_callback)(BTM_LE_IO_REQ_EVT, p_device->bd_addr,
+                                                              (tBTM_LE_EVT_DATA*)p_data);
+  if (status != tBTM_STATUS::BTM_SUCCESS) {
+    log::warn("Security callback failed {} for {}", btm_status_text(status), p_device->bd_addr);
+    return status;
   }
 
   if (BTM_OOB_UNKNOWN == p_data->oob_data) {
@@ -1463,9 +1461,9 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
   log::verbose("after update result={} sec_level=0x{:x} sec_flags=0x{:x}", res,
                p_data->complt.sec_level, p_device->sec_rec.sec_flags);
 
-  if (p_data->complt.is_pair_cancel && BtmSecurity::Get().api_.p_bond_cancel_cmpl_callback) {
+  if (p_data->complt.is_pair_cancel) {
     log::verbose("Pairing Cancel completed");
-    (*BtmSecurity::Get().api_.p_bond_cancel_cmpl_callback)(tBTM_STATUS::BTM_SUCCESS);
+    (BtmSecurity::Get().app_->bond_cancel_cmpl_callback)(tBTM_STATUS::BTM_SUCCESS);
   }
 
   if (res != tBTM_STATUS::BTM_SUCCESS && p_data->complt.reason != SMP_CONN_TOUT) {
@@ -1519,7 +1517,7 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
 }
 
 static tBTM_STATUS btm_ble_sirk_verification_req(const RawAddress& bd_addr) {
-  tBTM_STATUS res = (*BtmSecurity::Get().api_.p_sirk_verification_callback)(bd_addr);
+  tBTM_STATUS res = (BtmSecurity::Get().app_->sirk_verification_callback)(bd_addr);
   if (res == tBTM_STATUS::BTM_CMD_STARTED) {
     res = tBTM_STATUS::BTM_SUCCESS;
   } else {
@@ -1732,29 +1730,28 @@ void btm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, tBTM_STATUS re
  ******************************************************************************/
 /** This function is to notify application new keys have been generated. */
 static void btm_notify_new_key(uint8_t key_type) {
-  tBTM_BLE_LOCAL_KEYS* p_local_keys = NULL;
+  tBTM_BLE_LOCAL_KEYS* p_local_keys = nullptr;
 
   log::verbose("key_type={}", key_type);
 
-  if (BtmSecurity::Get().api_.p_le_key_callback) {
-    switch (key_type) {
-      case BTM_BLE_KEY_TYPE_ID:
-        log::verbose("BTM_BLE_KEY_TYPE_ID");
-        p_local_keys = (tBTM_BLE_LOCAL_KEYS*)&BtmSecurity::Get().devcb_.id_keys;
-        break;
+  switch (key_type) {
+    case BTM_BLE_KEY_TYPE_ID:
+      log::verbose("BTM_BLE_KEY_TYPE_ID");
+      p_local_keys = (tBTM_BLE_LOCAL_KEYS*)&BtmSecurity::Get().devcb_.id_keys;
+      break;
 
-      case BTM_BLE_KEY_TYPE_ER:
-        log::verbose("BTM_BLE_KEY_TYPE_ER");
-        p_local_keys = (tBTM_BLE_LOCAL_KEYS*)&BtmSecurity::Get().devcb_.ble_encryption_key_value;
-        break;
+    case BTM_BLE_KEY_TYPE_ER:
+      log::verbose("BTM_BLE_KEY_TYPE_ER");
+      p_local_keys = (tBTM_BLE_LOCAL_KEYS*)&BtmSecurity::Get().devcb_.ble_encryption_key_value;
+      break;
 
-      default:
-        log::error("unknown key type: {}", key_type);
-        break;
-    }
-    if (p_local_keys != NULL) {
-      (*BtmSecurity::Get().api_.p_le_key_callback)(key_type, p_local_keys);
-    }
+    default:
+      log::error("unknown key type: {}", key_type);
+      break;
+  }
+
+  if (p_local_keys != nullptr) {
+    (BtmSecurity::Get().app_->le_key_callback)(key_type, p_local_keys);
   }
 }
 

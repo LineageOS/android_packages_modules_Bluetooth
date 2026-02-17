@@ -50,11 +50,11 @@ void BtmSecurity::Init(uint8_t initial_security_mode) {
   memset(&cfg_, 0, sizeof(cfg_));
   memset(&devcb_, 0, sizeof(devcb_));
   memset(&enc_rand_, 0, sizeof(enc_rand_));
-  memset(&api_, 0, sizeof(api_));
   memset(sec_serv_rec_, 0, sizeof(sec_serv_rec_));
   connecting_bda_ = RawAddress::kEmpty;
   connecting_dc_ = kDevClassEmpty;
 
+  app_ = nullptr;
   sec_collision_timer_ = alarm_new("btm.sec_collision_timer_");
   pairing_timer_ = alarm_new("btm.pairing_timer_");
   execution_wait_timer_ = alarm_new("btm.execution_wait_timer_");

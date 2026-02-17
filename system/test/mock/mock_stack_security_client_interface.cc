@@ -54,10 +54,10 @@ MockSecurityClientInterface::MockSecurityClientInterface() {
             const_cast<SecurityClientInterface&>(get_security_client_interface()))
             .BTM_Sec_Free();
   };
-  SecurityClientInterface::BTM_SecRegister = [](const tBTM_APPL_INFO* p_cb_info) -> bool {
+  SecurityClientInterface::BTM_SecRegister = [](const BtmAppReg& app_reg) -> bool {
     return static_cast<MockSecurityClientInterface&>(
                    const_cast<SecurityClientInterface&>(get_security_client_interface()))
-            .BTM_SecRegister(p_cb_info);
+            .BTM_SecRegister(app_reg);
   };
   SecurityClientInterface::BTM_BleLoadLocalKeys = [](uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {
     static_cast<MockSecurityClientInterface&>(

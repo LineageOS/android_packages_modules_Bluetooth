@@ -33,10 +33,6 @@
 /****************************************
  *  Security Manager Callback Functions
  ****************************************/
-/* Authorize device for service.  Parameters are
- *              Service Id (NULL - unknown service or unused)
- */
-typedef tBTM_STATUS(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
 
 /* Get PIN for the connection.  Parameters are
  *              BD Address of remote
@@ -45,24 +41,18 @@ typedef tBTM_STATUS(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
  *              Flag indicating the minimum pin code length to be 16 digits
  *              Pairing Algorithm being used
  */
-typedef tBTM_STATUS(tBTM_PIN_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                       const BD_NAME bd_name, bool min_16_digit,
-                                       PairingAlgorithm pairing_algorithm);
+typedef tBTM_STATUS(BtmPinCallback)(const RawAddress& bd_addr, DEV_CLASS dev_class,
+                                    const BD_NAME bd_name, bool min_16_digit,
+                                    PairingAlgorithm pairing_algorithm);
 
 /* New Link Key for the connection.  Parameters are
  *              BD Address of remote
  *              Link Key
  *              Key Type: Combination, Local Unit, or Remote Unit
  */
-typedef tBTM_STATUS(tBTM_LINK_KEY_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                            BD_NAME bd_name, const LinkKey& key, uint8_t key_type,
-                                            bool is_ctkd);
-
-/* Remote Name Resolved.  Parameters are
- *              BD Address of remote
- *              BD Name of remote
- */
-typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc, BD_NAME bd_name);
+typedef tBTM_STATUS(BtmLinkKeyCallback)(const RawAddress& bd_addr, DEV_CLASS dev_class,
+                                        BD_NAME bd_name, const LinkKey& key, uint8_t key_type,
+                                        bool is_ctkd);
 
 /* Authentication complete for the connection.  Parameters are
  *              BD Address of remote
@@ -70,21 +60,47 @@ typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc, BD
  *              BD Name of remote
  *
  */
-typedef void(tBTM_AUTH_COMPLETE_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                          BD_NAME bd_name, tHCI_REASON reason);
+typedef void(BtmAuthCompleteCallback)(const RawAddress& bd_addr, DEV_CLASS dev_class,
+                                      BD_NAME bd_name, tHCI_REASON reason);
+
+/* Bond Cancel complete. Parameters are
+ *              Result of the cancel operation
+ *
+ */
+typedef void(BtmBondCancelCmplCallback)(tBTM_STATUS result);
+
+/* Simple Pairing Events.  Called by the stack when Simple Pairing related
+ * events occur.
+ */
+typedef tBTM_STATUS(BtmSpCallback)(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
+
+/* LE Pairing Events. Called by the stack when LE Pairing related events occur.
+ */
+typedef tBTM_STATUS(BtmLeCallback)(tBTM_LE_EVT event, const RawAddress& bda,
+                                   tBTM_LE_EVT_DATA* p_data);
+
+/* New LE identity key for local device.
+ */
+typedef void(BtmLeKeyCallback)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
 
 /* Request SIRK verification for found member. Parameters are
  *              BD Address of remote
  */
-typedef tBTM_STATUS(tBTM_SIRK_VERIFICATION_CALLBACK)(const RawAddress& bd_addr);
+typedef tBTM_STATUS(BtmSirkVerificationCallback)(const RawAddress& bd_addr);
 
-struct tBTM_APPL_INFO {
-  tBTM_PIN_CALLBACK* p_pin_callback{nullptr};
-  tBTM_LINK_KEY_CALLBACK* p_link_key_callback{nullptr};
-  tBTM_AUTH_COMPLETE_CALLBACK* p_auth_complete_callback{nullptr};
-  tBTM_BOND_CANCEL_CMPL_CALLBACK* p_bond_cancel_cmpl_callback{nullptr};
-  tBTM_SP_CALLBACK* p_sp_callback{nullptr};
-  tBTM_LE_CALLBACK* p_le_callback{nullptr};
-  tBTM_LE_KEY_CALLBACK* p_le_key_callback{nullptr};
-  tBTM_SIRK_VERIFICATION_CALLBACK* p_sirk_verification_callback{nullptr};
+/* Remote Name Resolved.  Parameters are
+ *              BD Address of remote
+ *              BD Name of remote
+ */
+typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc, BD_NAME bd_name);
+
+struct BtmAppReg {
+  BtmPinCallback& pin_callback;
+  BtmLinkKeyCallback& link_key_callback;
+  BtmAuthCompleteCallback& auth_complete_callback;
+  BtmBondCancelCmplCallback& bond_cancel_cmpl_callback;
+  BtmSpCallback& sp_callback;
+  BtmLeCallback& le_callback;
+  BtmLeKeyCallback& le_key_callback;
+  BtmSirkVerificationCallback& sirk_verification_callback;
 };
