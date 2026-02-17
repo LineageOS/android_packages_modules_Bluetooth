@@ -64,7 +64,8 @@ struct GATTS_UnoffloadCharacteristics GATTS_UnoffloadCharacteristics;
 struct GATT_UpdateSubrateConfig GATT_UpdateSubrateConfig;
 struct GATT_SubrateRequest GATT_SubrateRequest;
 struct GATT_CancelConnect GATT_CancelConnect;
-struct GATT_Connect GATT_Connect;
+struct GATT_BR_Connect GATT_BR_Connect;
+struct GATT_LE_Connect GATT_LE_Connect;
 struct GATT_Deregister GATT_Deregister;
 struct GATT_Disconnect GATT_Disconnect;
 struct GATT_GetConnIdIfConnected GATT_GetConnIdIfConnected;
@@ -98,7 +99,8 @@ bool GATTS_NVRegister::return_value = false;
 tGATT_STATUS GATTS_SendRsp::return_value = GATT_SUCCESS;
 bool GATT_SubrateRequest::return_value = false;
 bool GATT_CancelConnect::return_value = false;
-bool GATT_Connect::return_value = false;
+bool GATT_BR_Connect::return_value = false;
+bool GATT_LE_Connect::return_value = false;
 tGATT_STATUS GATT_Disconnect::return_value = GATT_SUCCESS;
 bool GATT_GetConnIdIfConnected::return_value = false;
 bool GATT_GetConnectionInfor::return_value = false;
@@ -201,13 +203,13 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_dir
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_CancelConnect(gatt_if, bd_addr, is_direct);
 }
-bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                  tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                  uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
+bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                     bool prefer_relax_mode, bool auto_mtu_enabled) {
   inc_func_call_count(__func__);
-  return test::mock::stack_gatt_api::GATT_Connect(gatt_if, bd_addr, addr_type, connection_type,
-                                                  transport, opportunistic, preferred_mtu,
-                                                  prefer_relax_mode, auto_mtu_enabled);
+  return test::mock::stack_gatt_api::GATT_LE_Connect(gatt_if, bd_addr, addr_type, connection_type,
+                                                     opportunistic, preferred_mtu,
+                                                     prefer_relax_mode, auto_mtu_enabled);
 }
 void GATT_Deregister(tGATT_IF gatt_if) {
   inc_func_call_count(__func__);
@@ -278,11 +280,14 @@ void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
 }
 // Mocked functions complete
 //
-bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBTM_BLE_CONN_TYPE connection_type,
-                  tBT_TRANSPORT transport, bool opportunistic) {
+bool GATT_BR_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
-  return test::mock::stack_gatt_api::GATT_Connect(gatt_if, bd_addr, 0, connection_type, transport,
-                                                  opportunistic, 0, false, false);
+  return test::mock::stack_gatt_api::GATT_BR_Connect(gatt_if, bd_addr);
 }
-
+bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_gatt_api::GATT_LE_Connect(gatt_if, bd_addr, 0, connection_type,
+                                                     opportunistic, 0, false, false);
+}
 // END mockcify generation
