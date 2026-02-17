@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -344,15 +344,6 @@ struct GATT_LE_Connect {
 };
 extern struct GATT_LE_Connect GATT_LE_Connect;
 
-// Name: GATT_Deregister
-// Params: tGATT_IF gatt_if
-// Return: void
-struct GATT_Deregister {
-  std::function<void(tGATT_IF gatt_if)> body{[](tGATT_IF /* gatt_if */) {}};
-  void operator()(tGATT_IF gatt_if) { body(gatt_if); }
-};
-extern struct GATT_Deregister GATT_Deregister;
-
 // Name: GATT_Disconnect
 // Params: uint16_t conn_id
 // Return: tGATT_STATUS
@@ -396,31 +387,6 @@ struct GATT_GetConnectionInfor {
   }
 };
 extern struct GATT_GetConnectionInfor GATT_GetConnectionInfor;
-
-// Name: GATT_Register
-// Params: const Uuid& app_uuid128, std::string name, tGATT_CBACK* p_cb_info,
-// bool eatt_support Return: tGATT_IF
-struct GATT_Register {
-  static tGATT_IF return_value;
-  std::function<tGATT_IF(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                         bool eatt_support)>
-          body{[](const Uuid& /* app_uuid128 */, const std::string& /* name */,
-                  tGATT_CBACK* /* p_cb_info */, bool /* eatt_support */) { return return_value; }};
-  tGATT_IF operator()(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                      bool eatt_support) {
-    return body(app_uuid128, name, p_cb_info, eatt_support);
-  }
-};
-extern struct GATT_Register GATT_Register;
-
-// Name: GATT_StartIf
-// Params: tGATT_IF gatt_if
-// Return: void
-struct GATT_StartIf {
-  std::function<void(tGATT_IF gatt_if)> body{[](tGATT_IF /* gatt_if */) {}};
-  void operator()(tGATT_IF gatt_if) { body(gatt_if); }
-};
-extern struct GATT_StartIf GATT_StartIf;
 
 // Name: GATTC_OffloadCharacteristics
 // Params: tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count, uint64_t

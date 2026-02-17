@@ -26,6 +26,7 @@
 #include "srvc_eng_int.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 using namespace bluetooth;
 

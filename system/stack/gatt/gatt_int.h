@@ -39,6 +39,7 @@
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 #define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */

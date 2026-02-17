@@ -25,6 +25,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_app.h"
 #include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_gatt_api.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
@@ -66,7 +67,7 @@ protected:
     bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface_);
     bluetooth::testing::stack::rnr::set_interface(&mock_stack_rnr_interface_);
 
-    test::mock::stack_gatt_api::GATT_Register.body =
+    test::mock::stack_app::GATT_Register.body =
             [](const bluetooth::Uuid& /*p_app_uuid128*/, const std::string /*name*/,
                tGATT_CBACK* /*p_cb_info*/,
                bool /*eatt_support*/) -> tGATT_IF { return kGattRegisteredIf; };
@@ -85,7 +86,7 @@ protected:
     mock_btm_client_interface.security.BTM_SecRegister = {};
     mock_btm_client_interface.eir.BTM_WriteEIR = {};
     mock_btm_client_interface.eir.BTM_GetEirSupportedServices = {};
-    test::mock::stack_gatt_api::GATT_Register = {};
+    test::mock::stack_app::GATT_Register = {};
 
     bluetooth::testing::stack::rnr::reset_interface();
     bluetooth::testing::stack::l2cap::reset_interface();

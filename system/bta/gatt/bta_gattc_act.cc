@@ -46,6 +46,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
+#include "stack/include/stack_app.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

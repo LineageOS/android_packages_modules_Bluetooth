@@ -42,6 +42,7 @@
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

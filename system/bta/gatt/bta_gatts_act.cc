@@ -37,6 +37,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 using namespace bluetooth;
 

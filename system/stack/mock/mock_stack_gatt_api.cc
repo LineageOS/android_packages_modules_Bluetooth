@@ -66,12 +66,9 @@ struct GATT_SubrateRequest GATT_SubrateRequest;
 struct GATT_CancelConnect GATT_CancelConnect;
 struct GATT_BR_Connect GATT_BR_Connect;
 struct GATT_LE_Connect GATT_LE_Connect;
-struct GATT_Deregister GATT_Deregister;
 struct GATT_Disconnect GATT_Disconnect;
 struct GATT_GetConnIdIfConnected GATT_GetConnIdIfConnected;
 struct GATT_GetConnectionInfor GATT_GetConnectionInfor;
-struct GATT_Register GATT_Register;
-struct GATT_StartIf GATT_StartIf;
 
 }  // namespace stack_gatt_api
 }  // namespace mock
@@ -104,7 +101,6 @@ bool GATT_LE_Connect::return_value = false;
 tGATT_STATUS GATT_Disconnect::return_value = GATT_SUCCESS;
 bool GATT_GetConnIdIfConnected::return_value = false;
 bool GATT_GetConnectionInfor::return_value = false;
-tGATT_IF GATT_Register::return_value = 0;
 
 }  // namespace stack_gatt_api
 }  // namespace mock
@@ -210,10 +206,6 @@ bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE
                                                      opportunistic, preferred_mtu,
                                                      prefer_relax_mode, auto_mtu_enabled);
 }
-void GATT_Deregister(tGATT_IF gatt_if) {
-  inc_func_call_count(__func__);
-  test::mock::stack_gatt_api::GATT_Deregister(gatt_if);
-}
 tGATT_STATUS GATT_Disconnect(uint16_t conn_id) {
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_Disconnect(conn_id);
@@ -229,15 +221,6 @@ bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if, RawAddress& 
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_GetConnectionInfor(conn_id, p_gatt_if, bd_addr,
                                                              p_transport);
-}
-tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                       bool eatt_support) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_gatt_api::GATT_Register(app_uuid128, name, p_cb_info, eatt_support);
-}
-void GATT_StartIf(tGATT_IF gatt_if) {
-  inc_func_call_count(__func__);
-  test::mock::stack_gatt_api::GATT_StartIf(gatt_if);
 }
 void GATTC_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
