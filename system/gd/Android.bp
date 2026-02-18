@@ -460,7 +460,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackBtm",
         "common/bidi_queue_unittest.cc",
         "common/blocking_queue_unittest.cc",
         "common/byte_array_test.cc",
@@ -530,6 +529,7 @@ cc_test {
         "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -683,10 +683,10 @@ cc_fuzz {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
-        ":TestMockStackBtm",
         "hci/fuzz/acl_manager_fuzz_test.cc",
     ],
     static_libs: [
+        "libbt-stack-mock",
         "libbtdevice",
     ],
     include_dirs: [

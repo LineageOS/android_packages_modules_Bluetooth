@@ -73,8 +73,6 @@ struct L2CA_FlushChannel L2CA_FlushChannel;
 struct L2CA_IsLinkEstablished L2CA_IsLinkEstablished;
 struct L2CA_SetMediaStreamChannel L2CA_SetMediaStreamChannel;
 struct L2CA_isMediaChannel L2CA_isMediaChannel;
-struct L2CA_LeCreditDefault L2CA_LeCreditDefault;
-struct L2CA_LeCreditThreshold L2CA_LeCreditThreshold;
 struct L2CA_GetAclHandle L2CA_GetAclHandle;
 struct L2CA_GetLocalMtu L2CA_GetLocalMtu;
 
@@ -247,14 +245,6 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
 bool L2CA_isMediaChannel(uint16_t handle, uint16_t channel_id, bool is_local_cid) {
   inc_func_call_count(__func__);
   return test::mock::stack_l2cap_api::L2CA_isMediaChannel(handle, channel_id, is_local_cid);
-}
-uint16_t L2CA_LeCreditDefault() {
-  inc_func_call_count(__func__);
-  return test::mock::stack_l2cap_api::L2CA_LeCreditDefault();
-}
-uint16_t L2CA_LeCreditThreshold() {
-  inc_func_call_count(__func__);
-  return test::mock::stack_l2cap_api::L2CA_LeCreditThreshold();
 }
 bool L2CA_GetAclHandle(uint16_t lcid, uint16_t* acl_handle) {
   inc_func_call_count(__func__);

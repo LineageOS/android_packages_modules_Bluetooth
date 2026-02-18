@@ -452,23 +452,6 @@ struct L2CA_isMediaChannel {
   }
 };
 extern struct L2CA_isMediaChannel L2CA_isMediaChannel;
-// Name: L2CA_LeCreditDefault
-// Params:
-// Returns: uint16_t
-struct L2CA_LeCreditDefault {
-  std::function<uint16_t()> body{[]() { return 0; }};
-  uint16_t operator()() { return body(); }
-};
-extern struct L2CA_LeCreditDefault L2CA_LeCreditDefault;
-// Name: L2CA_LeCreditThreshold
-// Params:
-// Returns: uint16_t
-struct L2CA_LeCreditThreshold {
-  std::function<uint16_t()> body{[]() { return 0; }};
-  uint16_t operator()() { return body(); }
-};
-extern struct L2CA_LeCreditThreshold L2CA_LeCreditThreshold;
-
 // Name: L2CA_GetAclHandle
 // Params: uint16_t lcid, uint16_t* acl_handle
 // Returns: bool

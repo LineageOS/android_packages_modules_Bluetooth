@@ -37,3 +37,11 @@ void bluetooth::testing::stack::l2cap::set_interface(
 bluetooth::stack::l2cap::Interface& bluetooth::stack::l2cap::get_interface() {
   return (mock_interface_ != nullptr) ? (*mock_interface_) : (*interface_);
 }
+
+uint16_t L2CA_LeCreditDefault() {
+  return mock_interface_ ? mock_interface_->L2CA_LeCreditDefault() : 0;
+}
+
+uint16_t L2CA_LeCreditThreshold() {
+  return mock_interface_ ? mock_interface_->L2CA_LeCreditThreshold() : 0;
+}
