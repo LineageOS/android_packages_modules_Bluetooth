@@ -159,6 +159,7 @@ import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioBroadcast;
 import com.android.bluetooth.le_audio.LeAudioPeripheralService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.le_audio.LeAudioTmapService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
@@ -1404,6 +1405,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.VAP_SERVER -> new VapServerService(this);
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
             case BluetoothProfile.LE_AUDIO_PERIPHERAL -> new LeAudioPeripheralService(this);
+            case BluetoothProfile.TMAP_SERVER -> new LeAudioTmapService(this);
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }

@@ -74,6 +74,7 @@ import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -319,32 +320,66 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         // Initialize Broadcast native interface
-        int mask = 0;
-        if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
-            // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
-            mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
-        }
-        if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
-            // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
-            mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
-        }
-        if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
-            Log.i(TAG, "Init Le Audio broadcaster");
-            final var broadcastNativeInterface =
-                    requireNonNullElseGet(
-                            leAudioBroadcasterNativeInterface,
-                            () -> new LeAudioBroadcasterNativeInterface(getAdapterService(), this));
-            broadcastNativeInterface.init();
-            mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
+        if (Flags.leaudioCentralizeTmap()) {
+            mTmapRoleMask = 0;
 
-            mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
+            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
+                Log.i(TAG, "Init Le Audio broadcaster");
+                final var broadcastNativeInterface =
+                        requireNonNullElseGet(
+                                leAudioBroadcasterNativeInterface,
+                                () ->
+                                        new LeAudioBroadcasterNativeInterface(
+                                                getAdapterService(), this));
+                broadcastNativeInterface.init();
+                mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
+            } else {
+                mLeAudioBroadcasterNativeInterface = Optional.empty();
+                Log.w(TAG, "Le Audio Broadcasts not supported.");
+            }
         } else {
-            mLeAudioBroadcasterNativeInterface = Optional.empty();
-            Log.w(TAG, "Le Audio Broadcasts not supported.");
-        }
-        mTmapRoleMask = mask;
+            int mask = 0;
+            if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
+                // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
+                mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
+            }
+            if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
+                // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
+                mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
+            }
+            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
+                Log.i(TAG, "Init Le Audio broadcaster");
+                final var broadcastNativeInterface =
+                        requireNonNullElseGet(
+                                leAudioBroadcasterNativeInterface,
+                                () ->
+                                        new LeAudioBroadcasterNativeInterface(
+                                                getAdapterService(), this));
+                broadcastNativeInterface.init();
+                mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
 
-        mTmapStarted = registerTmap();
+                mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
+            } else {
+                mLeAudioBroadcasterNativeInterface = Optional.empty();
+                Log.w(TAG, "Le Audio Broadcasts not supported.");
+            }
+            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_PERIPHERAL)) {
+                Log.i(TAG, "Check Le Audio server TMAP role");
+                if (SystemProperties.getBoolean(
+                        "bluetooth.profile.tmap.call_terminal.enabled", false)) {
+                    mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CT;
+                }
+
+                if (SystemProperties.getBoolean(
+                        "bluetooth.profile.tmap.unicast_media_receiver.enabled", false)) {
+                    mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMR;
+                }
+            } else {
+                Log.i(TAG, "Le Audio Peripheral not supported - initialization skipped");
+            }
+            mTmapRoleMask = mask;
+            mTmapStarted = registerTmap();
+        }
 
         mLeAudioInbandRingtoneSupportedByPlatform =
                 BluetoothProperties.isLeAudioInbandRingtoneSupported().orElse(true);
@@ -733,6 +768,11 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private boolean registerTmap() {
+        if (Flags.leaudioCentralizeTmap()) {
+            throw new IllegalStateException(
+                    "Decentralized TMAP GATT server start sequence was deprecated");
+        }
+
         if (mTmapGattServer != null) {
             throw new IllegalStateException("TMAP GATT server started before start() is called");
         }
@@ -825,12 +865,14 @@ public class LeAudioService extends ConnectableProfile {
 
         removeActiveDevice(false);
 
-        if (mTmapGattServer == null) {
-            Log.w(TAG, "TMAP GATT server should never be null before stop() is called");
-        } else {
-            mTmapGattServer.stop();
-            mTmapGattServer = null;
-            mTmapStarted = false;
+        if (!Flags.leaudioCentralizeTmap()) {
+            if (mTmapGattServer == null) {
+                Log.w(TAG, "TMAP GATT server should never be null before stop() is called");
+            } else {
+                mTmapGattServer.stop();
+                mTmapGattServer = null;
+                mTmapStarted = false;
+            }
         }
 
         mScanCallback.stopBackgroundScan();
@@ -4393,7 +4435,7 @@ public class LeAudioService extends ConnectableProfile {
                 Pair<Integer, Integer> ccidInformation = entry.getValue();
                 setCcidInformation(userUuid, ccidInformation.first, ccidInformation.second);
             }
-            if (!mTmapStarted) {
+            if (!Flags.leaudioCentralizeTmap() && !mTmapStarted) {
                 mTmapStarted = registerTmap();
             }
         } else if (stackEvent.type == LeAudioStackEvent.EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS) {
