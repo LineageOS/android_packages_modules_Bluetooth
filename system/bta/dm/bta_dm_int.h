@@ -329,10 +329,6 @@ void bta_dm_ble_reset_id(void);
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
 void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID& curr, bool adding);
 
-void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
-                                uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
-                                uint16_t timeout);
-
 tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index);
 
 namespace bluetooth::legacy::testing {

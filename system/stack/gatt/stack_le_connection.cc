@@ -36,6 +36,7 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/l2cap_interface.h"
 
 using namespace bluetooth;
 
@@ -245,6 +246,32 @@ bool leConnectionSubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_add
     return false;
   }
   return true;
+}
+
+/*******************************************************************************
+ *
+ * Function         leConnectionSubrateRequest
+ *
+ * Description      subrate request, can only be used when connection is up.
+ *
+ * Parameters:      bd_addr       - BD address of the peer
+ *                  subrate_min   - subrate factor minimum, [0x0001 - 0x01F4]
+ *                  subrate_max   - subrate factor maximum, [0x0001 - 0x01F4]
+ *                  max_latency   - max peripheral latency [0x0000 - 01F3]
+ *                  cont_num      - continuation number [0x0000 - 01F3]
+ *                  timeout       - supervision timeout [0x000a - 0xc80]
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void leConnectionSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
+                                uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
+                                uint16_t timeout) {
+  // Logging done in l2c_ble.cc
+  if (!stack::l2cap::get_interface().L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max,
+                                                         max_latency, cont_num, timeout)) {
+    log::warn("Unable to set L2CAP ble subrating peer:{}", bd_addr);
+  }
 }
 
 }  // namespace bluetooth::stack

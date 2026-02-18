@@ -1804,25 +1804,6 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_subrate_request
- *
- * Description      This function requests BLE subrate procedure.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
-                                uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
-                                uint16_t timeout) {
-  // Logging done in l2c_ble.cc
-  if (!stack::l2cap::get_interface().L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max,
-                                                         max_latency, cont_num, timeout)) {
-    log::warn("Unable to set L2CAP ble subrating peer:{}", bd_addr);
-  }
-}
-
 namespace bluetooth {
 namespace legacy {
 namespace testing {
