@@ -38,6 +38,7 @@
 #include "osi/include/osi.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/stack_app.h"
+#include "stack/include/stack_le_connection.h"
 
 using namespace bluetooth;
 

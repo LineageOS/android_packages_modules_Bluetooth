@@ -28,6 +28,7 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/stack_app.h"
+#include "stack/include/stack_le_connection.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
 #include "stack/mock/mock_stack_l2cap_api.h"
