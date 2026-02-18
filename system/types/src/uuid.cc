@@ -165,6 +165,8 @@ bool Uuid::IsEmpty() const { return *this == kEmpty; }
 
 bool Uuid::IsBase() const { return *this == kBase; }
 
+bool Uuid::IsValid() const { return !IsEmpty() && !IsBase(); }
+
 bool Uuid::operator<(const Uuid& rhs) const {
   return std::lexicographical_compare(uu.begin(), uu.end(), rhs.uu.begin(), rhs.uu.end());
 }
