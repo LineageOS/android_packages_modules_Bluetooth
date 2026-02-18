@@ -1827,8 +1827,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 sb.append("    Connected: ").append(mLeAudioConnectedDevices.size()).append("\n");
                 getDevicesInfo(sb, mLeAudioConnectedDevices, null);
                 sb.append("    Active: ");
-                if (mAdapterService.isProfileSupported(
-                        mLeAudioActiveDevice, BluetoothProfile.HAP_CLIENT)) {
+                if (isLeAudioHearingAidDevice(mLeAudioActiveDevice)) {
                     getDevicesInfo(sb, mLeAudioActiveDevice);
                 }
                 sb.append("    Most recent: ");
