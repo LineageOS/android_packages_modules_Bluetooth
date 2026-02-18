@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,683 +14,692 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hearingaid;
+package com.android.bluetooth.hearingaid
 
-import static android.bluetooth.BluetoothDevice.BOND_BONDED;
-import static android.bluetooth.BluetoothDevice.BOND_BONDING;
-import static android.bluetooth.BluetoothDevice.BOND_NONE;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_BONDING
+import android.bluetooth.BluetoothDevice.BOND_NONE
+import android.bluetooth.BluetoothHearingAid
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.HEARING_AID
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
+import android.bluetooth.BluetoothUuid
+import android.content.Intent
+import android.media.AudioManager
+import android.media.BluetoothProfileConnectionInfo
+import android.os.Bundle
+import android.os.ParcelUuid
+import android.os.UserHandle
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.btservice.ActiveDeviceManager
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getRealDevice
+import com.android.bluetooth.mockGetSystemService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.hamcrest.Matcher
+import org.hamcrest.core.AllOf
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.InOrder
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.hamcrest.MockitoHamcrest.argThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
-
-import static com.android.bluetooth.TestUtils.getRealDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHearingAid;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothUuid;
-import android.content.Intent;
-import android.media.AudioManager;
-import android.media.BluetoothProfileConnectionInfo;
-import android.os.ParcelUuid;
-import android.os.UserHandle;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.ActiveDeviceManager;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.hamcrest.Matcher;
-import org.hamcrest.core.AllOf;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.hamcrest.MockitoHamcrest;
-
-import java.util.List;
-
-/** Test cases for {@link HearingAidService}. */
+/** Test cases for [HearingAidService]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HearingAidServiceTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class HearingAidServiceTest {
+    @get:Rule val setFlagsRule = SetFlagsRule()
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private ActiveDeviceManager mActiveDeviceManager;
-    @Mock private HearingAidNativeInterface mNativeInterface;
-    @Mock private AudioManager mAudioManager;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var activeDeviceManager: ActiveDeviceManager
+    @Mock private lateinit var nativeInterface: HearingAidNativeInterface
+    @Mock private lateinit var audioManager: AudioManager
 
-    private final BluetoothDevice mLeftDevice = getRealDevice(43);
-    private final BluetoothDevice mRightDevice = getRealDevice(23);
-    private final BluetoothDevice mSingleDevice = getRealDevice(13);
+    private val leftDevice = getRealDevice(43)
+    private val rightDevice = getRealDevice(23)
+    private val singleDevice = getRealDevice(13)
 
-    private HearingAidService mService;
-    private HearingAidServiceBinder mBinder;
-    private InOrder mInOrder;
-    private TestLooper mLooper;
+    private lateinit var service: HearingAidService
+    private lateinit var binder: HearingAidServiceBinder
+    private lateinit var inOrder: InOrder
+    private lateinit var looper: TestLooper
 
     @Before
-    public void setUp() {
-        mInOrder = inOrder(mAdapterService);
-        mLooper = new TestLooper();
+    fun setUp() {
+        inOrder = Mockito.inOrder(adapterService)
+        looper = TestLooper()
 
-        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
+        adapterService.mockGetSystemService<AudioManager>(audioManager)
 
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(any(), anyInt());
-        doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
-        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID})
-                .when(mAdapterService)
-                .getRemoteUuids(any());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(any(), any<Int>())
+        doReturn(BOND_BONDED).whenever(adapterService).getBondState(any())
+        doReturn(arrayOf(BluetoothUuid.HEARING_AID)).whenever(adapterService).getRemoteUuids(any())
 
-        doReturn(true).when(mNativeInterface).connectHearingAid(any());
-        doReturn(true).when(mNativeInterface).disconnectHearingAid(any());
+        doReturn(true).whenever(nativeInterface).connectHearingAid(any())
+        doReturn(true).whenever(nativeInterface).disconnectHearingAid(any())
 
-        mService =
-                new HearingAidService(
-                        mAdapterService,
-                        mNativeInterface,
-                        mActiveDeviceManager,
-                        mLooper.getLooper());
-        mService.setAvailable(true);
-        mBinder = (HearingAidServiceBinder) mService.initBinder();
+        service =
+            HearingAidService(adapterService, nativeInterface, activeDeviceManager, looper.looper)
+        service.isAvailable = true
+        binder = service.initBinder() as HearingAidServiceBinder
     }
 
     @After
-    public void tearDown() {
-        mService.cleanup();
+    fun tearDown() {
+        service.cleanup()
     }
 
     @SafeVarargs
-    private void verifyIntentSent(Matcher<Intent>... matchers) {
+    private fun verifyIntentSent(vararg matchers: Matcher<Intent>) {
         if (Flags.onlyBroadcastToLocalUser()) {
-            mInOrder.verify(mAdapterService)
-                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
+            inOrder
+                .verify(adapterService)
+                .sendBroadcast(argThat(AllOf.allOf(*matchers)), any<String>(), any<Bundle>())
         } else {
-            mInOrder.verify(mAdapterService)
-                    .sendBroadcastAsUser(
-                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                            eq(UserHandle.ALL),
-                            any(),
-                            any());
+            inOrder
+                .verify(adapterService)
+                .sendBroadcastAsUser(
+                    argThat(AllOf.allOf(*matchers)),
+                    eq(UserHandle.ALL),
+                    any<String>(),
+                    any<Bundle>(),
+                )
         }
     }
 
-    private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
-        verifyConnectionStateIntent(device, newState, prevState, true);
-    }
-
-    private void verifyConnectionStateIntent(
-            BluetoothDevice device, int newState, int prevState, boolean stopAudio) {
+    private fun verifyConnectionStateIntent(
+        device: BluetoothDevice,
+        newState: Int,
+        prevState: Int,
+        stopAudio: Boolean = true,
+    ) {
         verifyIntentSent(
-                hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-                hasExtra(BluetoothProfile.EXTRA_STATE, newState),
-                hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
+            hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothProfile.EXTRA_STATE, newState),
+            hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState),
+        )
 
         if (newState == STATE_CONNECTED) {
             // ActiveDeviceManager calls setActiveDevice when connected.
-            mService.setActiveDevice(device);
+            service.setActiveDevice(device)
         } else if (prevState == STATE_CONNECTED) {
-            if (mService.getConnectedDevices().isEmpty()) {
-                mService.removeActiveDevice(stopAudio);
+            if (service.connectedDevices.isEmpty()) {
+                service.removeActiveDevice(stopAudio)
             }
         }
     }
 
     @Test
-    public void getConnectionPolicy() {
-        for (int policy :
-                List.of(
-                        CONNECTION_POLICY_UNKNOWN,
-                        CONNECTION_POLICY_FORBIDDEN,
-                        CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.getConnectionPolicy(mLeftDevice)).isEqualTo(policy);
+    fun getConnectionPolicy() {
+        for (policy in
+            listOf(
+                CONNECTION_POLICY_UNKNOWN,
+                CONNECTION_POLICY_FORBIDDEN,
+                CONNECTION_POLICY_ALLOWED,
+            )) {
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any<Int>())
+            assertThat(service.getConnectionPolicy(leftDevice)).isEqualTo(policy)
         }
     }
 
     @Test
-    public void okToConnect_whenNotBonded_returnFalse() {
-        int badPolicyValue = 1024;
-        int badBondState = 42;
-        for (int bondState : List.of(BOND_NONE, BOND_BONDING, badBondState)) {
-            doReturn(bondState).when(mAdapterService).getBondState(any());
-            for (int policy :
-                    List.of(
-                            CONNECTION_POLICY_UNKNOWN,
-                            CONNECTION_POLICY_ALLOWED,
-                            CONNECTION_POLICY_FORBIDDEN,
-                            badPolicyValue)) {
-                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mSingleDevice)).isFalse();
+    fun okToConnect_whenNotBonded_returnFalse() {
+        val badPolicyValue = 1024
+        val badBondState = 42
+        for (bondState in listOf(BOND_NONE, BOND_BONDING, badBondState)) {
+            doReturn(bondState).whenever(adapterService).getBondState(any())
+            for (policy in
+                listOf(
+                    CONNECTION_POLICY_UNKNOWN,
+                    CONNECTION_POLICY_ALLOWED,
+                    CONNECTION_POLICY_FORBIDDEN,
+                    badPolicyValue,
+                )) {
+                doReturn(policy)
+                    .whenever(adapterService)
+                    .getProfileConnectionPolicy(any(), any<Int>())
+                assertThat(service.okToConnect(singleDevice)).isFalse()
             }
         }
     }
 
     @Test
-    public void okToConnect_whenBonded() {
-        int badPolicyValue = 1024;
-        for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mSingleDevice)).isFalse();
+    fun okToConnect_whenBonded() {
+        val badPolicyValue = 1024
+        for (policy in listOf(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any<Int>())
+            assertThat(service.okToConnect(singleDevice)).isFalse()
         }
-        for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mSingleDevice)).isTrue();
+        for (policy in listOf(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any<Int>())
+            assertThat(service.okToConnect(singleDevice)).isTrue()
         }
     }
 
     @Test
-    public void connectToDevice_whenUuidIsMissing_returnFalse() {
+    fun connectToDevice_whenUuidIsMissing_returnFalse() {
         // Return No UUID
-        doReturn(new ParcelUuid[] {})
-                .when(mAdapterService)
-                .getRemoteUuids(any(BluetoothDevice.class));
+        doReturn(arrayOf<ParcelUuid>())
+            .whenever(adapterService)
+            .getRemoteUuids(any<BluetoothDevice>())
 
-        assertThat(mService.connect(mLeftDevice)).isFalse();
+        assertThat(service.connect(leftDevice)).isFalse()
     }
 
     @Test
-    public void connectToDevice_whenPolicyForbid_returnFalse() {
+    fun connectToDevice_whenPolicyForbid_returnFalse() {
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(any(), anyInt());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(any(), any<Int>())
 
-        assertThat(mService.connect(mLeftDevice)).isFalse();
+        assertThat(service.connect(leftDevice)).isFalse()
     }
 
     @Test
-    public void outgoingConnect_whenTimeOut_isDisconnected() {
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+    fun outgoingConnect_whenTimeOut_isDisconnected() {
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
 
-        mLooper.moveTimeForward(HearingAidStateMachine.CONNECT_TIMEOUT.toMillis());
-        mLooper.dispatchAll();
+        looper.moveTimeForward(HearingAidStateMachine.CONNECT_TIMEOUT.toMillis())
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_DISCONNECTED, STATE_CONNECTING);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
+        verifyConnectionStateIntent(leftDevice, STATE_DISCONNECTED, STATE_CONNECTING)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
     }
 
     @Test
-    public void connectLeft_whenInAPair_connectBothDevices() {
-        getHiSyncIdFromNative();
+    fun connectLeft_whenInAPair_connectBothDevices() {
+        getHiSyncIdFromNative()
 
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
-        verifyConnectionStateIntent(mRightDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTING);
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
+        verifyConnectionStateIntent(rightDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTING)
     }
 
     @Test
-    public void connectDifferentPair_whenConnected_currentIsDisconnected() {
-        getHiSyncIdFromNative();
+    fun connectDifferentPair_whenConnected_currentIsDisconnected() {
+        getHiSyncIdFromNative()
 
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        verifyConnectionStateIntent(mRightDevice, STATE_CONNECTING, STATE_DISCONNECTED);
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        verifyConnectionStateIntent(rightDevice, STATE_CONNECTING, STATE_DISCONNECTED)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        generateConnectionMessageFromNative(mRightDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        generateConnectionMessageFromNative(rightDevice, STATE_CONNECTED, STATE_CONNECTING)
 
-        assertThat(mService.connect(mSingleDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.connect(singleDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        verifyConnectionStateIntent(mRightDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        verifyConnectionStateIntent(mSingleDevice, STATE_CONNECTING, STATE_DISCONNECTED);
+        verifyConnectionStateIntent(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        verifyConnectionStateIntent(rightDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        verifyConnectionStateIntent(singleDevice, STATE_CONNECTING, STATE_DISCONNECTED)
 
-        assertThat(mService.getConnectedDevices()).isEmpty();
-        assertThat(mService.getConnectionState(mSingleDevice)).isEqualTo(STATE_CONNECTING);
+        assertThat(service.connectedDevices).isEmpty()
+        assertThat(service.getConnectionState(singleDevice)).isEqualTo(STATE_CONNECTING)
     }
 
     @Test
-    public void disconnect_whenAudioRoutedToHa_audioIsPaused() {
-        getHiSyncIdFromNative();
+    fun disconnect_whenAudioRoutedToHa_audioIsPaused() {
+        getHiSyncIdFromNative()
 
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
 
-        assertThat(mService.connect(mRightDevice)).isTrue();
-        mLooper.dispatchAll();
-        verifyConnectionStateIntent(mRightDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTING);
+        assertThat(service.connect(rightDevice)).isTrue()
+        looper.dispatchAll()
+        verifyConnectionStateIntent(rightDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTING)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        generateConnectionMessageFromNative(mRightDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        generateConnectionMessageFromNative(rightDevice, STATE_CONNECTED, STATE_CONNECTING)
 
-        assertThat(mService.getConnectedDevices()).containsExactly(mLeftDevice, mRightDevice);
+        assertThat(service.connectedDevices).containsExactly(leftDevice, rightDevice)
 
         // Verify the audio is routed to Hearing Aid Profile
-        verify(mAudioManager)
-                .handleBluetoothActiveDeviceChanged(
-                        eq(mLeftDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
+        verify(audioManager)
+            .handleBluetoothActiveDeviceChanged(
+                eq(leftDevice),
+                eq(null),
+                any<BluetoothProfileConnectionInfo>(),
+            )
 
-        assertThat(mService.disconnect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.disconnect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTING);
+        verifyConnectionStateIntent(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTING)
 
-        assertThat(mService.disconnect(mRightDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.disconnect(rightDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mRightDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_DISCONNECTING);
+        verifyConnectionStateIntent(rightDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_DISCONNECTING)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
-        generateConnectionMessageFromNative(mRightDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING)
+        generateConnectionMessageFromNative(rightDevice, STATE_DISCONNECTED, STATE_DISCONNECTING)
 
-        assertThat(mService.getConnectedDevices()).isEmpty();
+        assertThat(service.connectedDevices).isEmpty()
 
         // Verify the audio is not routed to Hearing Aid Profile.
         // Music should be paused (i.e. should not suppress noisy intent)
-        ArgumentCaptor<BluetoothProfileConnectionInfo> connectionInfoArgumentCaptor =
-                ArgumentCaptor.forClass(BluetoothProfileConnectionInfo.class);
-        verify(mAudioManager)
-                .handleBluetoothActiveDeviceChanged(
-                        eq(null), eq(mLeftDevice), connectionInfoArgumentCaptor.capture());
-        BluetoothProfileConnectionInfo connectionInfo = connectionInfoArgumentCaptor.getValue();
-        assertThat(connectionInfo.isSuppressNoisyIntent()).isFalse();
+        val connectionInfoArgumentCaptor = argumentCaptor<BluetoothProfileConnectionInfo>()
+        verify(audioManager)
+            .handleBluetoothActiveDeviceChanged(
+                eq(null),
+                eq(leftDevice),
+                connectionInfoArgumentCaptor.capture(),
+            )
+        val connectionInfo = connectionInfoArgumentCaptor.firstValue
+        assertThat(connectionInfo.isSuppressNoisyIntent).isFalse()
     }
 
     @Test
-    public void outgoingDisconnect_whenAudioRoutedToHa_audioIsNotPaused() {
-        getHiSyncIdFromNative();
+    fun outgoingDisconnect_whenAudioRoutedToHa_audioIsNotPaused() {
+        getHiSyncIdFromNative()
 
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
 
-        assertThat(mService.getConnectedDevices()).containsExactly(mLeftDevice);
+        assertThat(service.connectedDevices).containsExactly(leftDevice)
 
         // Verify the audio is routed to Hearing Aid Profile
-        verify(mAudioManager)
-                .handleBluetoothActiveDeviceChanged(
-                        eq(mLeftDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
+        verify(audioManager)
+            .handleBluetoothActiveDeviceChanged(
+                eq(leftDevice),
+                eq(null),
+                any<BluetoothProfileConnectionInfo>(),
+            )
 
-        assertThat(mService.disconnect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.disconnect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
         // Note that we call verifyConnectionStateIntent() with (stopAudio == false).
-        verifyConnectionStateIntent(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED, false);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTING);
+        verifyConnectionStateIntent(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED, false)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTING)
 
         // Verify the audio is not routed to Hearing Aid Profile.
         // Note that music should be not paused (i.e. should suppress noisy intent)
-        ArgumentCaptor<BluetoothProfileConnectionInfo> connectionInfoArgumentCaptor =
-                ArgumentCaptor.forClass(BluetoothProfileConnectionInfo.class);
-        verify(mAudioManager)
-                .handleBluetoothActiveDeviceChanged(
-                        eq(null), eq(mLeftDevice), connectionInfoArgumentCaptor.capture());
-        BluetoothProfileConnectionInfo connectionInfo = connectionInfoArgumentCaptor.getValue();
-        assertThat(connectionInfo.isSuppressNoisyIntent()).isTrue();
+        val connectionInfoArgumentCaptor = argumentCaptor<BluetoothProfileConnectionInfo>()
+        verify(audioManager)
+            .handleBluetoothActiveDeviceChanged(
+                eq(null),
+                eq(leftDevice),
+                connectionInfoArgumentCaptor.capture(),
+            )
+        val connectionInfo = connectionInfoArgumentCaptor.firstValue
+        assertThat(connectionInfo.isSuppressNoisyIntent).isTrue()
     }
 
     @Test
-    public void incomingConnecting_whenNoDevice_createStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun incomingConnecting_whenNoDevice_createStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void incomingDisconnect_whenConnectingDevice_keepStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
+    fun incomingDisconnect_whenConnectingDevice_keepStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_CONNECTING);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_CONNECTING)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void incomingConnect_whenNoDevice_createStateMachine() {
+    fun incomingConnect_whenNoDevice_createStateMachine() {
         // Theoretically impossible case
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void incomingDisconnect_whenConnectedDevice_keepStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+    fun incomingDisconnect_whenConnectedDevice_keepStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_DISCONNECTED)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_CONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void incomingDisconnecting_whenNoDevice_noStateMachine() {
-        generateUnexpectedConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTING);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).doesNotContain(mLeftDevice);
+    fun incomingDisconnecting_whenNoDevice_noStateMachine() {
+        generateUnexpectedConnectionMessageFromNative(leftDevice, STATE_DISCONNECTING)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
+        assertThat(service.getDevices()).doesNotContain(leftDevice)
     }
 
     @Test
-    public void incomingDisconnect_whenNoDevice_noStateMachine() {
-        generateUnexpectedConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).doesNotContain(mLeftDevice);
+    fun incomingDisconnect_whenNoDevice_noStateMachine() {
+        generateUnexpectedConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
+        assertThat(service.getDevices()).doesNotContain(leftDevice)
     }
 
     @Test
-    public void unBondDevice_whenConnecting_keepStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun unBondDevice_whenConnecting_keepStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
+        assertThat(service.getDevices()).contains(leftDevice)
 
-        mService.bondStateChanged(mLeftDevice, BOND_NONE);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        service.bondStateChanged(leftDevice, BOND_NONE)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void unBondDevice_whenConnected_keepStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun unBondDevice_whenConnected_keepStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
 
-        mService.bondStateChanged(mLeftDevice, BOND_NONE);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        service.bondStateChanged(leftDevice, BOND_NONE)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void unBondDevice_whenDisconnecting_keepStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTING);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun unBondDevice_whenDisconnecting_keepStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTING)
+        assertThat(service.getDevices()).contains(leftDevice)
 
-        mService.bondStateChanged(mLeftDevice, BOND_NONE);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        service.bondStateChanged(leftDevice, BOND_NONE)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void unBondDevice_whenDisconnected_removeStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun unBondDevice_whenDisconnected_removeStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
 
-        mService.bondStateChanged(mLeftDevice, BOND_NONE);
-        assertThat(mService.getDevices()).doesNotContain(mLeftDevice);
+        service.bondStateChanged(leftDevice, BOND_NONE)
+        assertThat(service.getDevices()).doesNotContain(leftDevice)
     }
 
     @Test
-    public void disconnect_whenBonded_keepStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun disconnect_whenBonded_keepStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
     }
 
     @Test
-    public void disconnect_whenUnBonded_removeStateMachine() {
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTING, STATE_CONNECTED);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+    fun disconnect_whenUnBonded_removeStateMachine() {
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTING, STATE_CONNECTED)
+        assertThat(service.getDevices()).contains(leftDevice)
 
-        doReturn(BOND_NONE).when(mAdapterService).getBondState(any());
-        mService.bondStateChanged(mLeftDevice, BOND_NONE);
-        assertThat(mService.getDevices()).contains(mLeftDevice);
+        doReturn(BOND_NONE).whenever(adapterService).getBondState(any())
+        service.bondStateChanged(leftDevice, BOND_NONE)
+        assertThat(service.getDevices()).contains(leftDevice)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_DISCONNECTING)
 
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mService.getDevices()).doesNotContain(mLeftDevice);
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_DISCONNECTED)
+        assertThat(service.getDevices()).doesNotContain(leftDevice)
     }
 
     @Test
-    public void getActiveDevice() {
-        getHiSyncIdFromNative();
+    fun getActiveDevice() {
+        getHiSyncIdFromNative()
 
-        generateConnectionMessageFromNative(mRightDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        assertThat(mService.getActiveDevices()).containsExactly(null, mRightDevice);
+        generateConnectionMessageFromNative(rightDevice, STATE_CONNECTED, STATE_DISCONNECTED)
+        assertThat(service.getActiveDevices()).containsExactly(null, rightDevice)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        assertThat(mService.getActiveDevices()).containsExactly(mRightDevice, mLeftDevice);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_DISCONNECTED)
+        assertThat(service.getActiveDevices()).containsExactly(rightDevice, leftDevice)
 
-        generateConnectionMessageFromNative(mRightDevice, STATE_DISCONNECTED, STATE_CONNECTED);
-        assertThat(mService.getActiveDevices()).containsExactly(null, mLeftDevice);
+        generateConnectionMessageFromNative(rightDevice, STATE_DISCONNECTED, STATE_CONNECTED)
+        assertThat(service.getActiveDevices()).containsExactly(null, leftDevice)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_DISCONNECTED, STATE_CONNECTED);
-        assertThat(mService.getActiveDevices()).containsExactly(null, null);
+        generateConnectionMessageFromNative(leftDevice, STATE_DISCONNECTED, STATE_CONNECTED)
+        assertThat(service.getActiveDevices()).containsExactly(null, null)
     }
 
     @Test
-    public void connectNewDevice_whenOtherPairIsActive_newDeviceIsActive() {
-        getHiSyncIdFromNative();
+    fun connectNewDevice_whenOtherPairIsActive_newDeviceIsActive() {
+        getHiSyncIdFromNative()
 
-        generateConnectionMessageFromNative(mRightDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        assertThat(mService.getActiveDevices()).containsExactly(mRightDevice, mLeftDevice);
+        generateConnectionMessageFromNative(rightDevice, STATE_CONNECTED, STATE_DISCONNECTED)
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_DISCONNECTED)
+        assertThat(service.getActiveDevices()).containsExactly(rightDevice, leftDevice)
 
-        generateConnectionMessageFromNative(mSingleDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        assertThat(mService.getActiveDevices()).containsExactly(null, mSingleDevice);
+        generateConnectionMessageFromNative(singleDevice, STATE_CONNECTED, STATE_DISCONNECTED)
+        assertThat(service.getActiveDevices()).containsExactly(null, singleDevice)
 
-        assertThat(mService.setActiveDevice(null)).isTrue();
-        assertThat(mService.getActiveDevices()).containsExactly(null, null);
+        assertThat(service.setActiveDevice(null)).isTrue()
+        assertThat(service.getActiveDevices()).containsExactly(null, null)
     }
 
     // Verify the correctness during first time connection.
     // Connect to left device -> Get left device hiSyncId -> Connect to right device ->
     // Get right device hiSyncId -> Both devices should be always connected
     @Test
-    public void firstTimeConnection_shouldConnectToBothDevices() {
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+    fun firstTimeConnection_shouldConnectToBothDevices() {
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
 
         // Get hiSyncId for left device
-        mService.onDeviceAvailableFromNative(mLeftDevice, 0x02, 0x0101);
-        mLooper.dispatchAll();
+        service.onDeviceAvailableFromNative(leftDevice, 0x02, 0x0101)
+        looper.dispatchAll()
 
-        assertThat(mService.connect(mRightDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.connect(rightDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mRightDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTING);
+        verifyConnectionStateIntent(rightDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTING)
         // Verify the left device is still connected
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
 
-        generateConnectionMessageFromNative(mRightDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(rightDevice, STATE_CONNECTED, STATE_CONNECTING)
 
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
 
         // Get hiSyncId for right device
-        mService.onDeviceAvailableFromNative(mRightDevice, 0x02, 0x0101);
-        mLooper.dispatchAll();
+        service.onDeviceAvailableFromNative(rightDevice, 0x02, 0x0101)
+        looper.dispatchAll()
 
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
     }
 
     @Test
-    public void getHiSyncId_afterFirstDeviceConnected() {
-        assertThat(mService.connect(mLeftDevice)).isTrue();
-        mLooper.dispatchAll();
+    fun getHiSyncId_afterFirstDeviceConnected() {
+        assertThat(service.connect(leftDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mLeftDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTING);
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_DISCONNECTED);
+        verifyConnectionStateIntent(leftDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTING)
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_DISCONNECTED)
 
-        generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(leftDevice, STATE_CONNECTED, STATE_CONNECTING)
 
-        getHiSyncIdFromNative();
+        getHiSyncIdFromNative()
 
-        assertThat(mService.connect(mRightDevice)).isTrue();
-        mLooper.dispatchAll();
+        assertThat(service.connect(rightDevice)).isTrue()
+        looper.dispatchAll()
 
-        verifyConnectionStateIntent(mRightDevice, STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTING);
+        verifyConnectionStateIntent(rightDevice, STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTING)
         // Verify the left device is still connected
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
 
-        generateConnectionMessageFromNative(mRightDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(rightDevice, STATE_CONNECTED, STATE_CONNECTING)
 
-        assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTED);
-        assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
+        assertThat(service.getConnectionState(rightDevice)).isEqualTo(STATE_CONNECTED)
+        assertThat(service.getConnectionState(leftDevice)).isEqualTo(STATE_CONNECTED)
     }
 
     /** Test that the service can update HiSyncId from native message */
     @Test
-    public void getHiSyncIdFromNative_addToMap() {
-        getHiSyncIdFromNative();
-        assertThat(mService.getHiSyncIdMap()).containsKey(mLeftDevice);
-        assertThat(mService.getHiSyncIdMap()).containsKey(mRightDevice);
-        assertThat(mService.getHiSyncIdMap()).containsKey(mSingleDevice);
+    fun getHiSyncIdFromNative_addToMap() {
+        getHiSyncIdFromNative()
+        assertThat(service.hiSyncIdMap).containsKey(leftDevice)
+        assertThat(service.hiSyncIdMap).containsKey(rightDevice)
+        assertThat(service.hiSyncIdMap).containsKey(singleDevice)
 
-        long id = mBinder.getHiSyncId(mLeftDevice, null);
-        assertThat(id).isNotEqualTo(BluetoothHearingAid.HI_SYNC_ID_INVALID);
+        var id = binder.getHiSyncId(leftDevice, null)
+        assertThat(id).isNotEqualTo(BluetoothHearingAid.HI_SYNC_ID_INVALID)
 
-        id = mBinder.getHiSyncId(mRightDevice, null);
-        assertThat(id).isNotEqualTo(BluetoothHearingAid.HI_SYNC_ID_INVALID);
+        id = binder.getHiSyncId(rightDevice, null)
+        assertThat(id).isNotEqualTo(BluetoothHearingAid.HI_SYNC_ID_INVALID)
 
-        id = mBinder.getHiSyncId(mSingleDevice, null);
-        assertThat(id).isNotEqualTo(BluetoothHearingAid.HI_SYNC_ID_INVALID);
+        id = binder.getHiSyncId(singleDevice, null)
+        assertThat(id).isNotEqualTo(BluetoothHearingAid.HI_SYNC_ID_INVALID)
     }
 
     /** Test that the service removes the device from HiSyncIdMap when it's unbonded */
     @Test
-    public void deviceUnbonded_removeHiSyncId() {
-        getHiSyncIdFromNative();
-        mService.bondStateChanged(mLeftDevice, BOND_NONE);
-        assertThat(mService.getHiSyncIdMap()).doesNotContainKey(mLeftDevice);
+    fun deviceUnbonded_removeHiSyncId() {
+        getHiSyncIdFromNative()
+        service.bondStateChanged(leftDevice, BOND_NONE)
+        assertThat(service.hiSyncIdMap).doesNotContainKey(leftDevice)
     }
 
     @Test
-    public void serviceBinder_callGetDeviceMode() {
-        int mode = mBinder.getDeviceMode(mSingleDevice, null);
+    fun serviceBinder_callGetDeviceMode() {
+        val mode = binder.getDeviceMode(singleDevice, null)
         // return unknown value if no device connected
-        assertThat(mode).isEqualTo(BluetoothHearingAid.MODE_UNKNOWN);
+        assertThat(mode).isEqualTo(BluetoothHearingAid.MODE_UNKNOWN)
     }
 
     @Test
-    public void serviceBinder_callGetDeviceSide() {
-        int side = mBinder.getDeviceSide(mSingleDevice, null);
+    fun serviceBinder_callGetDeviceSide() {
+        val side = binder.getDeviceSide(singleDevice, null)
 
         // return unknown value if no device connected
-        assertThat(side).isEqualTo(BluetoothHearingAid.SIDE_UNKNOWN);
+        assertThat(side).isEqualTo(BluetoothHearingAid.SIDE_UNKNOWN)
     }
 
     @Test
-    public void serviceBinder_setConnectionPolicy() {
+    fun serviceBinder_setConnectionPolicy() {
         doReturn(true)
-                .when(mAdapterService)
-                .setProfileConnectionPolicy(
-                        mSingleDevice, BluetoothProfile.HEARING_AID, CONNECTION_POLICY_UNKNOWN);
+            .whenever(adapterService)
+            .setProfileConnectionPolicy(singleDevice, HEARING_AID, CONNECTION_POLICY_UNKNOWN)
 
-        assertThat(mBinder.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_UNKNOWN, null))
-                .isTrue();
-        verify(mAdapterService)
-                .setProfileConnectionPolicy(
-                        mSingleDevice, BluetoothProfile.HEARING_AID, CONNECTION_POLICY_UNKNOWN);
+        assertThat(binder.setConnectionPolicy(singleDevice, CONNECTION_POLICY_UNKNOWN, null))
+            .isTrue()
+        verify(adapterService)
+            .setProfileConnectionPolicy(singleDevice, HEARING_AID, CONNECTION_POLICY_UNKNOWN)
     }
 
     @Test
-    public void serviceBinder_setVolume() {
-        mBinder.setVolume(0, null);
-        verify(mNativeInterface).setVolume(0);
+    fun serviceBinder_setVolume() {
+        binder.setVolume(0, null)
+        verify(nativeInterface).setVolume(0)
     }
 
     @Test
-    public void dump_doesNotCrash() {
-        mService.connect(mSingleDevice);
-        mLooper.dispatchAll();
+    fun dump_doesNotCrash() {
+        service.connect(singleDevice)
+        looper.dispatchAll()
 
-        mService.dump(new StringBuilder());
+        service.dump(StringBuilder())
     }
 
-    private void generateConnectionMessageFromNative(
-            BluetoothDevice device, int newConnectionState, int oldConnectionState) {
-        mService.onConnectionStateChangedFromNative(device, newConnectionState);
-        mLooper.dispatchAll();
-        verifyConnectionStateIntent(device, newConnectionState, oldConnectionState);
-        assertThat(mService.getConnectionState(device)).isEqualTo(newConnectionState);
+    private fun generateConnectionMessageFromNative(
+        device: BluetoothDevice,
+        newConnectionState: Int,
+        oldConnectionState: Int,
+    ) {
+        service.onConnectionStateChangedFromNative(device, newConnectionState)
+        looper.dispatchAll()
+        verifyConnectionStateIntent(device, newConnectionState, oldConnectionState)
+        assertThat(service.getConnectionState(device)).isEqualTo(newConnectionState)
     }
 
-    private void generateUnexpectedConnectionMessageFromNative(
-            BluetoothDevice device, int newConnectionState) {
-        mService.onConnectionStateChangedFromNative(device, newConnectionState);
-        mLooper.dispatchAll();
+    private fun generateUnexpectedConnectionMessageFromNative(
+        device: BluetoothDevice,
+        newConnectionState: Int,
+    ) {
+        service.onConnectionStateChangedFromNative(device, newConnectionState)
+        looper.dispatchAll()
         if (Flags.onlyBroadcastToLocalUser()) {
-            mInOrder.verify(mAdapterService, never())
-                    .sendBroadcast(
-                            MockitoHamcrest.argThat(
-                                    hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
-                            any(),
-                            any());
+            inOrder
+                .verify(adapterService, never())
+                .sendBroadcast(
+                    argThat(hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
+                    any<String>(),
+                    any<Bundle>(),
+                )
         } else {
-            mInOrder.verify(mAdapterService, never())
-                    .sendBroadcastAsUser(
-                            MockitoHamcrest.argThat(
-                                    hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
-                            eq(UserHandle.ALL),
-                            any(),
-                            any());
+            inOrder
+                .verify(adapterService, never())
+                .sendBroadcastAsUser(
+                    argThat(hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
+                    eq(UserHandle.ALL),
+                    any<String>(),
+                    any<Bundle>(),
+                )
         }
     }
 
     // Emulate hiSyncId map update from native stack
-    private void getHiSyncIdFromNative() {
-        mService.onDeviceAvailableFromNative(mLeftDevice, 0x02, 0x0101);
-        mLooper.dispatchAll();
-        mService.onDeviceAvailableFromNative(mRightDevice, 0x03, 0x0101);
-        mLooper.dispatchAll();
-        mService.onDeviceAvailableFromNative(mSingleDevice, 0x00, 0x0102);
-        mLooper.dispatchAll();
+    private fun getHiSyncIdFromNative() {
+        service.onDeviceAvailableFromNative(leftDevice, 0x02, 0x0101)
+        looper.dispatchAll()
+        service.onDeviceAvailableFromNative(rightDevice, 0x03, 0x0101)
+        looper.dispatchAll()
+        service.onDeviceAvailableFromNative(singleDevice, 0x00, 0x0102)
+        looper.dispatchAll()
     }
 }
