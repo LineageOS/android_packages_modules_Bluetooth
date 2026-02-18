@@ -103,6 +103,8 @@ bool direct_connect_add(uint8_t /* id */, const RawAddress& /* bd_addr */,
                         tBLE_ADDR_TYPE /* addr_type */, bool /* prefer_relax_mode */) {
   return true;
 }
+
+void on_connection_complete(const RawAddress& /* address */) {}
 }  // namespace connection_manager
 
 namespace {
