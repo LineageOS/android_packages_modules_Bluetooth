@@ -51,14 +51,14 @@
 #include "packet/raw_builder.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_btm_sec.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "test/common/core_interface.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_osi_thread.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_btm_sec.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);

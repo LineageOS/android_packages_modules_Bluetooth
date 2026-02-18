@@ -40,9 +40,9 @@
 #include "mock_csis_client.h"
 #include "mock_test_sync_main_handler.h"
 #include "stack/include/bt_types.h"
+#include "stack/mock/mock_stack_btm_iso.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_btm_iso.h"
 
 using ::bluetooth::le_audio::DeviceConnectState;
 using ::bluetooth::le_audio::StateMachineInvalidStatus;

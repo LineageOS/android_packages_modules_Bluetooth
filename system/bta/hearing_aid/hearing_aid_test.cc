@@ -42,13 +42,13 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_gap_conn_interface.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_bta_hearing_aid_audio_source.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_gap_conn_interface.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 static std::map<const char*, bool> fake_osi_bool_props;
 

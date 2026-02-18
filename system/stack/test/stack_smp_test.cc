@@ -32,9 +32,9 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/smp_status.h"
+#include "stack/mock/mock_stack_acl.h"
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
-#include "test/mock/mock_stack_acl.h"
 
 using testing::StrEq;
 

@@ -23,7 +23,7 @@
 
 #include "stack/btm/btm_dev.h"
 #include "stack/include/btm_iso_api.h"
-#include "test/mock/mock_stack_btm_iso.h"
+#include "stack/mock/mock_stack_btm_iso.h"
 
 std::map<uint16_t, BtmDevice> AclHandleToMockBtmDevice = {};
 const BtmDevice* btm_find_dev_by_handle(uint16_t handle) {

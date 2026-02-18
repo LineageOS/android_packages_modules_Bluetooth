@@ -33,7 +33,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_types.h"
-#include "test/mock/mock_stack_sdp_legacy_api.h"
+#include "stack/mock/mock_stack_sdp_legacy_api.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
