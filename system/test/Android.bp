@@ -507,13 +507,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockBtu",
-    srcs: [
-        "mock/mock_btu_*cc",
-    ],
-}
-
-filegroup {
     name: "TestCommonMockFunctions",
     srcs: [
         "common/mock_functions.cc",
