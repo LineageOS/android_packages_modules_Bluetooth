@@ -76,7 +76,6 @@ cc_test {
         ":TestFakeOsi",
         ":TestMockBta",
         ":TestMockBtif",
-        ":TestMockBtu",
         ":TestMockJni",
         ":TestMockLegacyHciInterface",
         ":TestMockMainShimEntry",
