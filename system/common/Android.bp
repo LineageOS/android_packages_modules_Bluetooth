@@ -78,13 +78,13 @@ cc_test {
         },
     },
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "liblog",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd_os",
         "libbluetooth_hci_pdl",
@@ -121,12 +121,12 @@ cc_test {
         "test/thread_performance_test.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "liblog",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_gd_os",
         "libbluetooth_log",
         "libbt-common",
