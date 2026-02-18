@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,182 +14,185 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hearingaid;
+package com.android.bluetooth.hearingaid
 
-import static android.bluetooth.BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED;
-import static android.bluetooth.BluetoothProfile.EXTRA_STATE;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED
+import android.bluetooth.BluetoothProfile.EXTRA_STATE
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.content.Intent
+import android.os.Bundle
+import android.os.UserHandle
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.hearingaid.HearingAidStateMachine.MESSAGE_CONNECTION_STATE_CHANGED
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.hamcrest.Matcher
+import org.hamcrest.core.AllOf
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.InOrder
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.inOrder
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
-
-import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.hearingaid.HearingAidStateMachine.MESSAGE_CONNECTION_STATE_CHANGED;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.Intent;
-import android.os.UserHandle;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.flags.Flags;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.hamcrest.Matcher;
-import org.hamcrest.core.AllOf;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.hamcrest.MockitoHamcrest;
-
-/** Test cases for {@link HearingAidStateMachine}. */
+/** Test cases for [HearingAidStateMachine]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HearingAidStateMachineTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class HearingAidStateMachineTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private HearingAidService mService;
-    @Mock private HearingAidNativeInterface mNativeInterface;
+    @Mock private lateinit var service: HearingAidService
+    @Mock private lateinit var nativeInterface: HearingAidNativeInterface
 
-    private final BluetoothDevice mDevice = getTestDevice(0xDA);
+    private val device = getTestDevice(0xDA)
 
-    private HearingAidStateMachine mStateMachine;
-    private InOrder mInOrder;
-    private TestLooper mLooper;
+    private lateinit var stateMachine: HearingAidStateMachine
+    private lateinit var inOrder: InOrder
+    private lateinit var looper: TestLooper
 
     @Before
-    public void setUp() {
-        mInOrder = inOrder(mService);
-        mLooper = new TestLooper();
+    fun setUp() {
+        inOrder = inOrder(service)
+        looper = TestLooper()
 
-        doReturn(true).when(mService).okToConnect(any());
-        doReturn(true).when(mService).isConnectedPeerDevices(mDevice);
+        doReturn(true).whenever(service).okToConnect(any())
+        doReturn(true).whenever(service).isConnectedPeerDevices(device)
+        doReturn(true).whenever(nativeInterface).connectHearingAid(any())
+        doReturn(true).whenever(nativeInterface).disconnectHearingAid(any())
 
-        doReturn(true).when(mNativeInterface).connectHearingAid(any());
-        doReturn(true).when(mNativeInterface).disconnectHearingAid(any());
-
-        mStateMachine =
-                new HearingAidStateMachine(
-                        mService, mDevice, mNativeInterface, mLooper.getLooper());
-        mStateMachine.start();
+        stateMachine = HearingAidStateMachine(service, device, nativeInterface, looper.looper)
+        stateMachine.start()
     }
 
     @Test
-    public void initialState_isDisconnected() {
-        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
+    fun initialState_isDisconnected() {
+        assertThat(stateMachine.connectionState).isEqualTo(STATE_DISCONNECTED)
     }
 
     @Test
-    public void incomingConnect_whenNotOkToConnect_isRejected() {
-        doReturn(false).when(mService).okToConnect(any());
-        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED);
-        mLooper.dispatchAll();
+    fun incomingConnect_whenNotOkToConnect_isRejected() {
+        doReturn(false).whenever(service).okToConnect(any())
+        stateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED)
+        looper.dispatchAll()
 
-        verify(mService, never()).sendBroadcastAsUser(any(), any(), anyString(), any());
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Disconnected.class);
+        verify(service, never()).sendBroadcastAsUser(any(), any(), any<String>(), any<Bundle>())
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Disconnected::class.java)
     }
 
     @Test
-    public void incomingConnect_whenOkToConnect_isConnected() {
-        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING);
-        mLooper.dispatchAll();
+    fun incomingConnect_whenOkToConnect_isConnected() {
+        stateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING)
+        looper.dispatchAll()
 
         verifyIntentSent(
-                hasAction(ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(EXTRA_STATE, STATE_CONNECTING));
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_CONNECTING),
+        )
 
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Connecting.class);
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Connecting::class.java)
 
-        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED);
-        mLooper.dispatchAll();
+        stateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED)
+        looper.dispatchAll()
 
         verifyIntentSent(
-                hasAction(ACTION_CONNECTION_STATE_CHANGED), hasExtra(EXTRA_STATE, STATE_CONNECTED));
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Connected.class);
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_CONNECTED),
+        )
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Connected::class.java)
     }
 
     @Test
-    public void outgoingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
-        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_CONNECT, mDevice);
+    fun outgoingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
+        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_CONNECT, device)
 
         verifyIntentSent(
-                hasAction(ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(EXTRA_STATE, STATE_CONNECTING));
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Connecting.class);
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_CONNECTING),
+        )
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Connecting::class.java)
 
-        mLooper.moveTimeForward(HearingAidStateMachine.CONNECT_TIMEOUT.toMillis());
-        mLooper.dispatchAll();
+        looper.moveTimeForward(HearingAidStateMachine.CONNECT_TIMEOUT.toMillis())
+        looper.dispatchAll()
 
         verifyIntentSent(
-                hasAction(ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(EXTRA_STATE, STATE_DISCONNECTED));
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Disconnected.class);
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_DISCONNECTED),
+        )
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Disconnected::class.java)
 
-        verify(mNativeInterface).addToAcceptlist(eq(mDevice));
+        verify(nativeInterface).addToAcceptlist(eq(device))
     }
 
     @Test
-    public void incomingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
-        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING);
-        mLooper.dispatchAll();
+    fun incomingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
+        stateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING)
+        looper.dispatchAll()
 
         verifyIntentSent(
-                hasAction(ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(EXTRA_STATE, STATE_CONNECTING));
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Connecting.class);
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_CONNECTING),
+        )
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Connecting::class.java)
 
-        mLooper.moveTimeForward(HearingAidStateMachine.CONNECT_TIMEOUT.toMillis());
-        mLooper.dispatchAll();
+        looper.moveTimeForward(HearingAidStateMachine.CONNECT_TIMEOUT.toMillis())
+        looper.dispatchAll()
 
         verifyIntentSent(
-                hasAction(ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(EXTRA_STATE, STATE_DISCONNECTED));
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(HearingAidStateMachine.Disconnected.class);
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_DISCONNECTED),
+        )
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(HearingAidStateMachine.Disconnected::class.java)
 
-        verify(mNativeInterface).addToAcceptlist(eq(mDevice));
+        verify(nativeInterface).addToAcceptlist(eq(device))
     }
 
-    private void sendAndDispatchMessage(int what, Object obj) {
-        mStateMachine.sendMessage(what, obj);
-        mLooper.dispatchAll();
+    private fun sendAndDispatchMessage(what: Int, obj: Any?) {
+        stateMachine.sendMessage(what, obj)
+        looper.dispatchAll()
     }
 
     @SafeVarargs
-    private void verifyIntentSent(Matcher<Intent>... matchers) {
+    private fun verifyIntentSent(vararg matchers: Matcher<Intent?>?) {
         if (Flags.onlyBroadcastToLocalUser()) {
-            mInOrder.verify(mService)
-                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
+            inOrder
+                .verify(service)
+                .sendBroadcast(
+                    MockitoHamcrest.argThat(AllOf.allOf(*matchers)),
+                    any<String>(),
+                    any<Bundle>(),
+                )
         } else {
-            mInOrder.verify(mService)
-                    .sendBroadcastAsUser(
-                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                            eq(UserHandle.ALL),
-                            any(),
-                            any());
+            inOrder
+                .verify(service)
+                .sendBroadcastAsUser(
+                    MockitoHamcrest.argThat(AllOf.allOf(*matchers)),
+                    eq(UserHandle.ALL),
+                    any<String>(),
+                    any<Bundle>(),
+                )
         }
     }
 }
