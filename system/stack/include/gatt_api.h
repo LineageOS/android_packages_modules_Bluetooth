@@ -1193,7 +1193,7 @@ void GATT_StartIf(tGATT_IF gatt_if);
 
 /*******************************************************************************
  *
- * Function         GATT_Connect
+ * Function         GATT_LE_Connect GATT_BR_Connect
  *
  * Description      This function initiate a connection to a remote device on
  *                  GATT channel.
@@ -1211,15 +1211,15 @@ void GATT_StartIf(tGATT_IF gatt_if);
  * Returns          true if connection started; else false
  *
  ******************************************************************************/
-[[nodiscard]] bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                                tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
-                                tBT_TRANSPORT transport, bool opportunistic,
-                                uint16_t preferred_transport, bool prefer_relax_mode,
-                                bool auto_mtu_enabled);
+[[nodiscard]] bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                   tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
+                                   bool opportunistic, uint16_t preferred_transport,
+                                   bool prefer_relax_mode, bool auto_mtu_enabled);
 
-[[nodiscard]] bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                                tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
-                                bool opportunistic);
+[[nodiscard]] bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic);
+
+[[nodiscard]] bool GATT_BR_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -1293,15 +1293,14 @@ void GATT_StartIf(tGATT_IF gatt_if);
 
 /*******************************************************************************
  *
- * Function         GATT_ConfigServiceChangeCCC
+ * Function         GATT_LE_ConfigServiceChangeCCC
  *
  * Description      Configure service change indication on remote device
  *
  * Returns          None.
  *
  ******************************************************************************/
-void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool enable,
-                                 tBT_TRANSPORT transport);
+void GATT_LE_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool enable);
 
 /*******************************************************************************
  *

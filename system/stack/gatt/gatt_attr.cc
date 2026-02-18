@@ -790,26 +790,25 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
 
 /*******************************************************************************
  *
- * Function         GATT_ConfigServiceChangeCCC
+ * Function         GATT_LE_ConfigServiceChangeCCC
  *
  * Description      Configure service change indication on remote device
  *
  * Returns          none
  *
  ******************************************************************************/
-void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool /* enable */,
-                                 tBT_TRANSPORT transport) {
-  tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_bd_addr(remote_bda, transport);
+void GATT_LE_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool /* enable */) {
+  tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_bd_addr(remote_bda, BT_TRANSPORT_LE);
 
   if (p_clcb == NULL) {
-    p_clcb = gatt_profile_clcb_alloc(0, remote_bda, transport);
+    p_clcb = gatt_profile_clcb_alloc(0, remote_bda, BT_TRANSPORT_LE);
   }
 
   if (p_clcb == NULL) {
     return;
   }
 
-  if (GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &p_clcb->conn_id, transport)) {
+  if (GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &p_clcb->conn_id, BT_TRANSPORT_LE)) {
     p_clcb->connected = true;
   } else {
     log::warn(
@@ -819,14 +818,13 @@ void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool /* enable */
   }
 
   /* hold the link here */
-  if (!GATT_Connect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_PUBLIC, BTM_BLE_DIRECT_CONNECTION,
-                    transport, true, 0, false,
-                    com::android::bluetooth::flags::gatt_conn_settings())) {
+  if (!GATT_LE_Connect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_PUBLIC, BTM_BLE_DIRECT_CONNECTION,
+                       true, 0, false, com::android::bluetooth::flags::gatt_conn_settings())) {
     log::warn(
             "Unable to connect GATT client gatt_if:{} peer:{} transport:{} "
             "connection_tyoe:{} opporunistic:{}",
-            gatt_cb.gatt_if, remote_bda, bt_transport_text(transport), "BTM_BLE_DIRECT_CONNECTION",
-            true);
+            gatt_cb.gatt_if, remote_bda, bt_transport_text(BT_TRANSPORT_LE),
+            "BTM_BLE_DIRECT_CONNECTION", true);
   }
   p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
 

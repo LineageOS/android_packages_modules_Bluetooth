@@ -416,9 +416,14 @@ void bta_gatts_open(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
   p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_open.server_if);
   if (p_rcb != NULL) {
     /* should always get the connection ID */
-    bool success = GATT_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
+    bool success;
+    if (p_msg->api_open.transport == BT_TRANSPORT_BR_EDR) {
+      success = GATT_BR_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda);
+    } else {
+      success = GATT_LE_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
                                 p_msg->api_open.remote_addr_type, p_msg->api_open.connection_type,
-                                p_msg->api_open.transport, false, 0, false, false);
+                                false, 0, false, false);
+    }
 
     if (success) {
       status = GATT_SUCCESS;

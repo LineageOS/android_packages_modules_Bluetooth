@@ -44,8 +44,7 @@ bool gatt_sr_is_cl_change_aware(tGATT_TCB& /* tcb */) {
   inc_func_call_count(__func__);
   return false;
 }
-void GATT_ConfigServiceChangeCCC(const RawAddress& /* remote_bda */, bool /* enable */,
-                                 tBT_TRANSPORT /* transport */) {
+void GATT_LE_ConfigServiceChangeCCC(const RawAddress& /* remote_bda */, bool /* enable */) {
   inc_func_call_count(__func__);
 }
 void gatt_profile_db_init(void) { inc_func_call_count(__func__); }

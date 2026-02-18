@@ -28,10 +28,6 @@
 #include "test/common/mock_functions.h"
 
 void gatt_init(void) { inc_func_call_count(__func__); }
-bool gatt_act_connect_br(tGATT_REG* /* p_reg */, const RawAddress& /* bd_addr */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 void gatt_force_disconnect(tGATT_TCB* /* p_tcb */, std::string /* comment */) {
   inc_func_call_count(__func__);
 }

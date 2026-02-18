@@ -208,7 +208,7 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
     // Subscribing to service changed indication before discovering services, so that we can
     // restart service discovery if remote database changes during database discovery.
     log::info("Subscribing to service changed indication before discovering services");
-    GATT_ConfigServiceChangeCCC(p_clcb->p_srcb->server_bda, true, BT_TRANSPORT_LE);
+    GATT_LE_ConfigServiceChangeCCC(p_clcb->p_srcb->server_bda, true);
   }
 
   return GATTC_Discover(conn_id, disc_type, 0x0001, 0xFFFF);
