@@ -70,6 +70,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.permission.PermissionManager;
@@ -380,16 +381,26 @@ public class AdapterServiceTest {
                 : List.of(mMockService1, mMockService2);
     }
 
+    private static boolean isAdapterSuspendFeatureEnabled() {
+        if (!Flags.adapterSuspendMgmt()) return false;
+        return SystemProperties.getBoolean(AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL, false)
+                || SystemProperties.getBoolean(
+                        AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false)
+                || SystemProperties.getBoolean(AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false)
+                || SystemProperties.getBoolean(
+                        AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
+    }
+
     void offToBleOn() {
         mAdapter.offToBleOn(false, "default");
         syncHandler(0); // `init` need to be run first
-        if (Flags.adapterSuspendMgmt()) {
+        if (isAdapterSuspendFeatureEnabled()) {
             syncHandler(-2); // Init AdapterSuspendStateMachine
         }
         syncHandler(AdapterState.BLE_TURN_ON);
         verifyStateChange(State.OFF, State.BLE_TURNING_ON);
 
-        if (Flags.adapterSuspendMgmt()) {
+        if (isAdapterSuspendFeatureEnabled()) {
             // Called after callbacks are registered in DeviceStateManager
             syncHandler(0); // notifySupportedDeviceStateChanged
             syncHandler(0); // notifyDeviceStateChanged
@@ -599,13 +610,13 @@ public class AdapterServiceTest {
 
         mAdapter.offToBleOn(false, "default");
         syncHandler(0); // `init` need to be run first
-        if (Flags.adapterSuspendMgmt()) {
+        if (isAdapterSuspendFeatureEnabled()) {
             syncHandler(-2); // Init AdapterSuspendStateMachine
         }
         syncHandler(AdapterState.BLE_TURN_ON);
         verifyStateChange(State.OFF, State.BLE_TURNING_ON);
         assertThat(mAdapter.getBluetoothGatt()).isNotNull();
-        if (Flags.adapterSuspendMgmt()) {
+        if (isAdapterSuspendFeatureEnabled()) {
             // Called after callbacks are registered in DeviceStateManager
             syncHandler(0); // notifySupportedDeviceStateChanged
             syncHandler(0); // notifyDeviceStateChanged

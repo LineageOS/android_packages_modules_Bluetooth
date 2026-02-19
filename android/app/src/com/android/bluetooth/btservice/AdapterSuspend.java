@@ -36,7 +36,6 @@ import android.hardware.display.DisplayManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
-import android.os.SystemProperties;
 import android.util.Log;
 import android.view.Display;
 
@@ -83,18 +82,15 @@ public class AdapterSuspend {
         ACL_DISCONNECTION,
     }
 
-    @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_DISCONNECT_ACL =
             "bluetooth.power.suspend.disconnect_acl.enabled";
 
-    @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
             "bluetooth.power.suspend.scan_mode_none.enabled";
 
     static final String BLUETOOTH_SUSPEND_STOP_LE_SCAN =
             "bluetooth.power.suspend.stop_le_scan.enabled";
 
-    @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT =
             "bluetooth.power.suspend.pause_advertisement.enabled";
 
@@ -217,10 +213,18 @@ public class AdapterSuspend {
             Looper looper,
             DeviceStateManager deviceStateManager,
             PowerManager powerManager,
-            DisplayManager displayManager) {
+            DisplayManager displayManager,
+            boolean disconnectAcl,
+            boolean scanModeNone,
+            boolean stopLeScan,
+            boolean pauseAdvertisement) {
         mAdapterService = requireNonNull(adapterService);
         mAdapterNativeInterface = requireNonNull(adapterService.getNative());
         mPowerManager = requireNonNull(powerManager);
+        mDisconnectAclOnSuspend = disconnectAcl;
+        mScanModeNoneOnSuspend = scanModeNone;
+        mStopLeScanOnSuspend = stopLeScan;
+        mPauseAdvertisementOnSuspend = pauseAdvertisement;
 
         mSuspendStateMachine =
                 new AdapterSuspendStateMachine(adapterService, this, requireNonNull(looper));
@@ -229,14 +233,6 @@ public class AdapterSuspend {
         mDisplayManager.registerDisplayListener(mDisplayListener, mHandler);
         mDeviceStateManager = requireNonNull(deviceStateManager);
         mDeviceStateManager.registerCallback(mHandler::post, mDeviceStateCallback);
-
-        mDisconnectAclOnSuspend =
-                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_DISCONNECT_ACL, false);
-        mScanModeNoneOnSuspend =
-                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
-        mStopLeScanOnSuspend = SystemProperties.getBoolean(BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
-        mPauseAdvertisementOnSuspend =
-                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
     }
 
     void aclDisconnected(BluetoothDevice device, int transport) {
@@ -568,6 +564,8 @@ public class AdapterSuspend {
         writer.println(TAG);
         writer.println("  Disconnect ACL on suspend=" + mDisconnectAclOnSuspend);
         writer.println("  Set scan mode to none on suspend=" + mScanModeNoneOnSuspend);
+        writer.println("  Stop Le scan on suspend=" + mStopLeScanOnSuspend);
+        writer.println("  Pause advertisement on suspend=" + mPauseAdvertisementOnSuspend);
         writer.println();
         mSuspendStateMachine.dump(fd, writer, args);
     }

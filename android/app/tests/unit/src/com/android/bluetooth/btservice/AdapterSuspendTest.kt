@@ -25,7 +25,6 @@ import android.bluetooth.BluetoothProfile
 import android.hardware.devicestate.DeviceStateManager
 import android.hardware.display.DisplayManager
 import android.os.PowerManager
-import android.os.SystemProperties
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
@@ -33,11 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.TestUtils.mockSystemPropertyGet
 import com.android.bluetooth.btservice.AdapterSuspend.AWAKE
-import com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL
-import com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT
-import com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE
 import com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP
 import com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP
 import com.android.bluetooth.btservice.RemoteDevices.AclLinkSpec
@@ -45,7 +40,7 @@ import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.gatt.AdvertiseManager
 import com.android.bluetooth.gatt.GattService
 import com.android.bluetooth.hid.HidHostService
-import com.android.tests.bluetooth.StaticMockitoRule
+import com.android.tests.bluetooth.MockitoRule
 import java.util.Optional
 import org.junit.Before
 import org.junit.Rule
@@ -65,7 +60,7 @@ import org.mockito.kotlin.whenever
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class AdapterSuspendTest {
-    @get:Rule val mockitoRule = StaticMockitoRule(SystemProperties::class.java)
+    @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val setFlagsRule = SetFlagsRule()
 
     @Mock private lateinit var adapterNativeInterface: AdapterNativeInterface
@@ -94,9 +89,6 @@ class AdapterSuspendTest {
 
         testLooper = TestLooper()
 
-        mockSystemPropertyGet(BLUETOOTH_SUSPEND_DISCONNECT_ACL, true)
-        mockSystemPropertyGet(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, true)
-        mockSystemPropertyGet(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, true)
         adapterSuspend =
             spy(
                 AdapterSuspend(
@@ -105,6 +97,10 @@ class AdapterSuspendTest {
                     deviceStateManager,
                     powerManager,
                     displayManager,
+                    true, // disconnectAcl
+                    true, // scanModeNone
+                    false, // stopLeScan
+                    true, // pauseAdvertisement
                 )
             )
     }

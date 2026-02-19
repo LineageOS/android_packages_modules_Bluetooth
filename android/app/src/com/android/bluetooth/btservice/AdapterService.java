@@ -1116,14 +1116,32 @@ public class AdapterService extends Service {
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
         if (Flags.adapterSuspendMgmt()) {
-            mAdapterSuspend =
-                    Optional.of(
-                            new AdapterSuspend(
-                                    this,
-                                    mLooper,
-                                    getSystemService(DeviceStateManager.class),
-                                    mPowerManager,
-                                    getSystemService(DisplayManager.class)));
+            var disconnectAcl =
+                    SystemProperties.getBoolean(
+                            AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL, false);
+            var scanModeNone =
+                    SystemProperties.getBoolean(
+                            AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
+            var stopLeScan =
+                    SystemProperties.getBoolean(
+                            AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
+            var pauseAdvertisement =
+                    SystemProperties.getBoolean(
+                            AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
+            if (disconnectAcl || scanModeNone || stopLeScan || pauseAdvertisement) {
+                mAdapterSuspend =
+                        Optional.of(
+                                new AdapterSuspend(
+                                        this,
+                                        mLooper,
+                                        getSystemService(DeviceStateManager.class),
+                                        mPowerManager,
+                                        getSystemService(DisplayManager.class),
+                                        disconnectAcl,
+                                        scanModeNone,
+                                        stopLeScan,
+                                        pauseAdvertisement));
+            }
         }
 
         invalidateBluetoothCaches();
