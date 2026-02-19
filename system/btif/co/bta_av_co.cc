@@ -1069,15 +1069,24 @@ BtaAvCo::GetProviderCodecConfiguration(BtaAvCoPeer* p_peer) {
   auto a2dp_codec_config = p_peer->GetCodecs()->orderedSourceCodecs().front();
 
   auto a2dp_codec_user_config = a2dp_codec_config->getCodecUserConfig();
-  if (!::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex())) {
-    log::debug("User preferred codec not supported by the provider: {}",
-               a2dp_codec_user_config.codec_type);
-    return std::nullopt;
+  // TODO: pass the highest priority codec from the list of offload-supported codecs
+  std::optional<::bluetooth::a2dp::CodecId> user_preferred_codec_id = std::nullopt;
+  if (com_android_bluetooth_flags_a2dp_offload_user_codec_selection()) {
+    if (::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex())) {
+      user_preferred_codec_id = a2dp_codec_config->codecId();
+    }
+  } else {
+    if (!::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex())) {
+      log::debug("User preferred codec not supported by the provider: {}",
+                 a2dp_codec_user_config.codec_type);
+      return std::nullopt;
+    }
+    user_preferred_codec_id = a2dp_codec_config->codecId();
   }
 
   // Pass all gathered codec capabilities to the provider
   return ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(
-          p_peer->addr, a2dp_remote_caps, a2dp_codec_user_config, a2dp_codec_config->codecId(),
+          p_peer->addr, a2dp_remote_caps, a2dp_codec_user_config, user_preferred_codec_id,
           /* is_source */ true);
 }
 
