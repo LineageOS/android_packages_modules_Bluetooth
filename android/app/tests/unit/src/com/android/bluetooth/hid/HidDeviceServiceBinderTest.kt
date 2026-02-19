@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,166 +14,161 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hid;
+package com.android.bluetooth.hid
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothHidDeviceAppQosSettings
+import android.bluetooth.BluetoothHidDeviceAppSdpSettings
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.IBluetoothHidDeviceCallback
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHidDeviceAppQosSettings;
-import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
-import android.bluetooth.IBluetoothHidDeviceCallback;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link HidDeviceServiceBinder}. */
+/** Test cases for [HidDeviceServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HidDeviceServiceBinderTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class HidDeviceServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private HidDeviceService mService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: HidDeviceService
 
-    private final BluetoothDevice mDevice = getTestDevice(29);
+    private val device = getTestDevice(29)
 
-    private HidDeviceServiceBinder mBinder;
+    private lateinit var binder: HidDeviceServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(true).when(mService).isAvailable();
-        mBinder = new HidDeviceServiceBinder(mService);
+    fun setUp() {
+        doReturn(true).whenever(service).isAvailable
+        binder = HidDeviceServiceBinder(service)
     }
 
     @Test
-    public void cleanup() {
-        mBinder.cleanup();
+    fun cleanup() {
+        binder.cleanup()
     }
 
     @Test
-    public void registerApp() {
-        String name = "test-name";
-        String description = "test-description";
-        String provider = "test-provider";
-        byte subclass = 1;
-        byte[] descriptors = new byte[] {10};
-        BluetoothHidDeviceAppSdpSettings sdp =
-                new BluetoothHidDeviceAppSdpSettings(
-                        name, description, provider, subclass, descriptors);
+    fun registerApp() {
+        val name = "test-name"
+        val description = "test-description"
+        val provider = "test-provider"
+        val subclass: Byte = 1
+        val descriptors = byteArrayOf(10)
+        val sdp =
+            BluetoothHidDeviceAppSdpSettings(name, description, provider, subclass, descriptors)
 
-        int tokenRate = 800;
-        int tokenBucketSize = 9;
-        int peakBandwidth = 10;
-        int latency = 11250;
-        int delayVariation = BluetoothHidDeviceAppQosSettings.MAX;
-        BluetoothHidDeviceAppQosSettings inQos =
-                new BluetoothHidDeviceAppQosSettings(
-                        BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
-                        tokenRate,
-                        tokenBucketSize,
-                        peakBandwidth,
-                        latency,
-                        delayVariation);
-        BluetoothHidDeviceAppQosSettings outQos =
-                new BluetoothHidDeviceAppQosSettings(
-                        BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
-                        tokenRate,
-                        tokenBucketSize,
-                        peakBandwidth,
-                        latency,
-                        delayVariation);
-        IBluetoothHidDeviceCallback cb = mock(IBluetoothHidDeviceCallback.class);
+        val tokenRate = 800
+        val tokenBucketSize = 9
+        val peakBandwidth = 10
+        val latency = 11250
+        val delayVariation = BluetoothHidDeviceAppQosSettings.MAX
+        val inQos =
+            BluetoothHidDeviceAppQosSettings(
+                BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
+                tokenRate,
+                tokenBucketSize,
+                peakBandwidth,
+                latency,
+                delayVariation,
+            )
+        val outQos =
+            BluetoothHidDeviceAppQosSettings(
+                BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
+                tokenRate,
+                tokenBucketSize,
+                peakBandwidth,
+                latency,
+                delayVariation,
+            )
+        val cb = mock<IBluetoothHidDeviceCallback>()
 
-        mBinder.registerApp(sdp, inQos, outQos, cb, mSource);
-        verify(mService).registerApp(sdp, inQos, outQos, cb);
+        binder.registerApp(sdp, inQos, outQos, cb, source)
+        verify(service).registerApp(sdp, inQos, outQos, cb)
     }
 
     @Test
-    public void unregisterApp() {
-        mBinder.unregisterApp(mSource);
-        verify(mService).unregisterApp();
+    fun unregisterApp() {
+        binder.unregisterApp(source)
+        verify(service).unregisterApp()
     }
 
     @Test
-    public void sendReport() {
-        int id = 100;
-        byte[] data = new byte[] {0x00, 0x01};
-        mBinder.sendReport(mDevice, id, data, mSource);
-        verify(mService).sendReport(mDevice, id, data);
+    fun sendReport() {
+        val id = 100
+        val data = byteArrayOf(0x00, 0x01)
+        binder.sendReport(device, id, data, source)
+        verify(service).sendReport(device, id, data)
     }
 
     @Test
-    public void replyReport() {
-        byte type = 0;
-        byte id = 100;
-        byte[] data = new byte[] {0x00, 0x01};
-        mBinder.replyReport(mDevice, type, id, data, mSource);
-        verify(mService).replyReport(mDevice, type, id, data);
+    fun replyReport() {
+        val type: Byte = 0
+        val id: Byte = 100
+        val data = byteArrayOf(0x00, 0x01)
+        binder.replyReport(device, type, id, data, source)
+        verify(service).replyReport(device, type, id, data)
     }
 
     @Test
-    public void unplug() {
-        mBinder.unplug(mDevice, mSource);
-        verify(mService).unplug(mDevice);
+    fun unplug() {
+        binder.unplug(device, source)
+        verify(service).unplug(device)
     }
 
     @Test
-    public void connect() {
-        mBinder.connect(mDevice, mSource);
-        verify(mService).connect(mDevice);
+    fun connect() {
+        binder.connect(device, source)
+        verify(service).connect(device)
     }
 
     @Test
-    public void disconnect() {
-        mBinder.disconnect(mDevice, mSource);
-        verify(mService).disconnect(mDevice);
+    fun disconnect() {
+        binder.disconnect(device, source)
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void reportError() {
-        byte error = -1;
-        mBinder.reportError(mDevice, error, mSource);
-        verify(mService).reportError(mDevice, error);
+    fun reportError() {
+        val error: Byte = -1
+        binder.reportError(device, error, source)
+        verify(service).reportError(device, error)
     }
 
     @Test
-    public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mSource);
-        verify(mService).getConnectionState(mDevice);
+    fun getConnectionState() {
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getDevicesMatchingConnectionStates(any(int[].class));
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).getDevicesMatchingConnectionStates(any<IntArray>())
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(BluetoothProfile.STATE_CONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getUserAppName() {
-        mBinder.getUserAppName(mSource);
-        verify(mService).getUserAppName();
+    fun getUserAppName() {
+        binder.getUserAppName(source)
+        verify(service).getUserAppName()
     }
 }
