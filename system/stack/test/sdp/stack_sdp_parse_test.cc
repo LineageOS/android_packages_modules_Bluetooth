@@ -28,12 +28,12 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdp_discovery_db.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/sdp/sdpint.h"
 #include "stack/test/sdp/sdp_packet00.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_osi_allocator.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
 
 constexpr uint32_t kBtDefaultBufferSize = static_cast<uint32_t>(BT_DEFAULT_BUFFER_SIZE);
 

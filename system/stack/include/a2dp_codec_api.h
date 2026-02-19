@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "stack/include/a2dp_api.h"
+#include "stack/include/a2dp_constants.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
@@ -255,9 +256,9 @@ protected:
   // The selected audio feeding configuration.
   btav_a2dp_codec_config_t codec_audio_config_;
 
-  uint8_t ota_codec_config_[AVDT_CODEC_SIZE];
-  uint8_t ota_codec_peer_capability_[AVDT_CODEC_SIZE];
-  uint8_t ota_codec_peer_config_[AVDT_CODEC_SIZE];
+  bluetooth::a2dp::MediaCodecCapabilities ota_codec_config_;
+  bluetooth::a2dp::MediaCodecCapabilities ota_codec_peer_capability_;
+  bluetooth::a2dp::MediaCodecCapabilities ota_codec_peer_config_;
 };
 
 class A2dpCodecs {

@@ -250,7 +250,7 @@ if (use.test) {
       "//bt/system/test/mock/mock_osi_allocator.cc",
       "//bt/system/test/mock/mock_osi_fixed_queue.cc",
       "//bt/system/test/mock/mock_osi_list.cc",
-      "//bt/system/test/mock/mock_stack_rnr_interface.cc",
+      "//bt/system/stack/mock/mock_stack_rnr_interface.cc",
       "//bt/system/test/mock/mock_udrv_ulinux_uipc.cc",
       "btm/btm_sco_hci.cc",
       "test/btm/sco_hci_linux_test.cc",

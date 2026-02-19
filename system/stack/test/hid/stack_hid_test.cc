@@ -28,8 +28,8 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
 #include "test/common/mock_functions.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 tHCI_REASON btm_get_acl_disc_reason_code(void) { return HCI_SUCCESS; }

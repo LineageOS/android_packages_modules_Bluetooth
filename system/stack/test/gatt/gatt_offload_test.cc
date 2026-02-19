@@ -34,8 +34,8 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/main_thread.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 
 // To override the mock function to return a specific handle.
 extern struct btm_client_interface_t mock_btm_client_interface;

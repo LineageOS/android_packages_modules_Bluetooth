@@ -39,10 +39,10 @@
 #include "stack/include/l2cap_module.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/l2cap/l2c_int.h"
+#include "stack/mock/mock_stack_acl.h"
+#include "stack/mock/mock_stack_btm_devctl.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_acl.h"
-#include "test/mock/mock_stack_btm_devctl.h"
 
 using bluetooth::Uuid;
 using testing::Return;

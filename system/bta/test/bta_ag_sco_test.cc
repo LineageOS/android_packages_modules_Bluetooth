@@ -29,11 +29,11 @@
 #include "hci/controller_mock.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
+#include "stack/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_audio_hal_interface_hfp_client_interface.h"
 #include "test/mock/mock_device_esco_parameters.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_properties.h"
-#include "test/mock/mock_stack_btm_interface.h"
 
 using ::testing::NiceMock;
 using ::testing::Return;

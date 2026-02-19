@@ -22,8 +22,8 @@
 #include "bta/dm/bta_dm_sec_int.h"
 #include "bta/test/bta_test_fixtures.h"
 #include "stack/include/btm_status.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_rnr_interface.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_rnr_interface.h"
 
 using ::testing::_;
 using ::testing::ElementsAre;

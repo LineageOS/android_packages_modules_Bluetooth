@@ -20,9 +20,9 @@
 
 #include "stack/include/avct_api.h"
 #include "stack/include/bt_psm_types.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
+#include "stack/mock/mock_stack_l2cap_utils.h"
 #include "test/fake/fake_osi.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
-#include "test/mock/mock_stack_l2cap_utils.h"
 
 using ::testing::_;
 using ::testing::Args;

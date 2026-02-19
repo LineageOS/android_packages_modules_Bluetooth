@@ -40,10 +40,10 @@
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btm_iso_api_types.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_btm_iso.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_alarm.h"
-#include "test/mock/mock_stack_btm_iso.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

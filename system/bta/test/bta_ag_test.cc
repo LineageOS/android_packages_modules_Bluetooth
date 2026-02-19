@@ -32,17 +32,17 @@
 #include "bta/include/bta_hfp_api.h"
 #include "btif_status.h"
 #include "hci/controller_mock.h"
-#include "stack/include/sdp_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
+#include "stack/include/sdp_api.h"
+#include "stack/mock/mock_stack_acl.h"
+#include "stack/mock/mock_stack_btm_interface.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_bta_sys_main.h"
 #include "test/mock/mock_device_esco_parameters.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_alarm.h"
-#include "test/mock/mock_stack_acl.h"
-#include "test/mock/mock_stack_btm_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

@@ -30,9 +30,9 @@
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btm_iso_api_types.h"
+#include "stack/mock/mock_stack_btm_iso.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_le_advertising_manager.h"
-#include "test/mock/mock_stack_btm_iso.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

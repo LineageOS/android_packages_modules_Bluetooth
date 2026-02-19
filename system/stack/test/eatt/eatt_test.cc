@@ -28,13 +28,13 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cdefs.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "stack/test/common/mock_eatt.h"
 #include "stack/test/common/mock_gatt_layer.h"
 #include "stack/test/common/mock_l2cap_layer.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 using testing::_;
 using testing::DoAll;

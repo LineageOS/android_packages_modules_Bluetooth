@@ -18,9 +18,9 @@
 
 #include <gtest/gtest.h>
 
+#include "stack/mock/mock_stack_rnr_interface.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
-#include "test/mock/mock_stack_rnr_interface.h"
 
 class BtmWithFakesTest : public testing::Test {
 protected:

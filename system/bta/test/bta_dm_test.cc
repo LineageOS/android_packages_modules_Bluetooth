@@ -38,15 +38,15 @@
 #include "hci/controller_mock.h"
 #include "hci/le_rand_callback.h"
 #include "stack/include/btm_status.h"
+#include "stack/mock/mock_stack_acl.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
 #include "test/common/mock_functions.h"
 #include "test/common/sync_main_handler.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_properties.h"
-#include "test/mock/mock_stack_acl.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

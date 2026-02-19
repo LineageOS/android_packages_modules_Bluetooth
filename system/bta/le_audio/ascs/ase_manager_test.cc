@@ -36,11 +36,11 @@
 #include "bta/le_audio/common/mock_iso_app_proxy.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_iso_api.h"
+#include "stack/mock/mock_stack_btm_dev.h"
+#include "stack/mock/mock_stack_btm_iso.h"
 #include "test/common/sync_main_handler.h"
 #include "test/mock/mock_legacy_hci_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_btm_dev.h"
-#include "test/mock/mock_stack_btm_iso.h"
 
 static constexpr char kIsPeripheralCachingSupportedProperty[] =
         "bluetooth.le_audio.peripheral.caching.enabled";

@@ -44,9 +44,9 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "test/common/mock_functions.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 bool gatt_profile_get_eatt_support(const RawAddress& /*addr*/) { return true; }
 
