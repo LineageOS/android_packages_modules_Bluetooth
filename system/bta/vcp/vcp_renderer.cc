@@ -107,8 +107,6 @@ public:
 
   void Dump(int fd) {
     std::stringstream stream;
-    stream << "Volume Renderer:\n";
-    stream << "  VCS:\n";
     vcs_->Dump(stream);
     dprintf(fd, "%s", stream.str().c_str());
   }
@@ -179,12 +177,13 @@ void VolumeRenderer::Cleanup(void) {
 
 void VolumeRenderer::DebugDump(int fd) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
-  dprintf(fd, "Volume Renderer Manager:\n");
+  dprintf(fd, "Volume Control Profile (VCP) Renderer:\n");
   if (instance) {
     instance->Dump(fd);
   } else {
     dprintf(fd, "  Not initialized\n");
   }
+  dprintf(fd, "\n");
 }
 
 }  // namespace bluetooth::vcp
