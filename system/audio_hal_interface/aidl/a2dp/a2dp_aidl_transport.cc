@@ -62,11 +62,8 @@ void A2dpTransport::UpdateAudioConfiguration(const AudioConfiguration& audio_con
 }
 
 Status A2dpTransport::StartRequest(bool is_low_latency) {
-  // TODO: when removing flag change to lock_guard and lock immediately
-  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-  if (com::android::bluetooth::flags::a2dp_transport_mutex()) {
-    lock.lock();
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
+
   // Check if a previous Start request is ongoing.
   if (a2dp_pending_cmd_ == A2DP_CTRL_CMD_START) {
     log::warn("unable to start stream: already pending");
@@ -88,11 +85,8 @@ Status A2dpTransport::StartRequest(bool is_low_latency) {
 }
 
 Status A2dpTransport::SuspendRequest() {
-  // TODO: when removing flag change to lock_guard and lock immediately
-  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-  if (com::android::bluetooth::flags::a2dp_transport_mutex()) {
-    lock.lock();
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
+
   // Check if a previous Suspend request is ongoing.
   if (a2dp_pending_cmd_ == A2DP_CTRL_CMD_SUSPEND) {
     log::warn("unable to suspend stream: already pending");
@@ -114,11 +108,8 @@ Status A2dpTransport::SuspendRequest() {
 }
 
 void A2dpTransport::StopRequest() {
-  // TODO: when removing flag change to lock_guard and lock immediately
-  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-  if (com::android::bluetooth::flags::a2dp_transport_mutex()) {
-    lock.lock();
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
+
   log::info("");
 
   auto status = stream_callbacks_->StopStream();
@@ -153,20 +144,12 @@ bool A2dpTransport::GetPresentationPosition(uint64_t* remote_delay_report_ns,
 }
 
 tA2DP_CTRL_CMD A2dpTransport::GetPendingCmd() const {
-  // TODO: when removing flag change to lock_guard and lock immediately
-  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-  if (com::android::bluetooth::flags::a2dp_transport_mutex()) {
-    lock.lock();
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
   return a2dp_pending_cmd_;
 }
 
 void A2dpTransport::ResetPendingCmd() {
-  // TODO: when removing flag change to lock_guard and lock immediately
-  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-  if (com::android::bluetooth::flags::a2dp_transport_mutex()) {
-    lock.lock();
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
   a2dp_pending_cmd_ = A2DP_CTRL_CMD_NONE;
 }
 
