@@ -560,27 +560,6 @@ bool BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info);
 
 /*******************************************************************************
  *
- * Function         BTA_DmSetBlePrefConnParams
- *
- * Description      This function is called to set the preferred connection
- *                  parameters when default connection parameter is not desired.
- *
- * Parameters:      bd_addr          - BD address of the peripheral
- *                  min_conn_int     - minimum preferred connection interval
- *                  max_conn_int     - maximum preferred connection interval
- *                  peripheral_latency    - preferred peripheral latency
- *                  supervision_tout - preferred supervision timeout
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
-                                uint16_t max_conn_int, uint16_t peripheral_latency,
-                                uint16_t supervision_tout);
-
-/*******************************************************************************
- *
  * Function         BTA_DmBleScan
  *
  * Description      Start or stop the scan procedure.
@@ -635,26 +614,6 @@ void BTA_DmBleConfigLocalPrivacy(bool privacy_enable);
  *
  ******************************************************************************/
 void BTA_DmBleEnableRemotePrivacy(const RawAddress& bd_addr, bool privacy_enable);
-
-/*******************************************************************************
- *
- * Function         BTA_DmBleUpdateConnectionParams
- *
- * Description      Update connection parameters, can only be used when
- *                  connection is up.
- *
- * Parameters:      bd_addr   - BD address of the peer
- *                  min_int   - minimum connection interval, [0x0004 ~ 0x4000]
- *                  max_int   - maximum connection interval, [0x0004 ~ 0x4000]
- *                  latency   - peripheral latency [0 ~ 500]
- *                  timeout   - supervision timeout [0x000a ~ 0xc80]
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-                                     uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
-                                     uint16_t max_ce_len);
 
 /*******************************************************************************
  *

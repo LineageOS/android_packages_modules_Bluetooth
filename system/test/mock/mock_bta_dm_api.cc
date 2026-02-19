@@ -53,7 +53,6 @@ struct BTA_DmBleResetId BTA_DmBleResetId;
 struct BTA_DmBleScan BTA_DmBleScan;
 struct BTA_DmBleSecurityGrant BTA_DmBleSecurityGrant;
 struct BTA_DmBleSubrateRequest BTA_DmBleSubrateRequest;
-struct BTA_DmBleUpdateConnectionParams BTA_DmBleUpdateConnectionParams;
 struct BTA_DmBond BTA_DmBond;
 struct BTA_DmBondCancel BTA_DmBondCancel;
 struct BTA_DmCheckLeAudioCapable BTA_DmCheckLeAudioCapable;
@@ -71,7 +70,6 @@ struct BTA_DmRemoveDevice BTA_DmRemoveDevice;
 struct BTA_DmRestoreFilterAcceptList BTA_DmRestoreFilterAcceptList;
 struct BTA_DmSearch BTA_DmSearch;
 struct BTA_DmSearchCancel BTA_DmSearchCancel;
-struct BTA_DmSetBlePrefConnParams BTA_DmSetBlePrefConnParams;
 struct BTA_DmSetDefaultEventMaskExcept BTA_DmSetDefaultEventMaskExcept;
 struct BTA_DmSetDeviceName BTA_DmSetDeviceName;
 struct BTA_DmSetEncryption BTA_DmSetEncryption;
@@ -165,13 +163,6 @@ void BTA_DmBleSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min, ui
   test::mock::bta_dm_api::BTA_DmBleSubrateRequest(bd_addr, subrate_min, subrate_max, max_latency,
                                                   cont_num, timeout);
 }
-void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-                                     uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
-                                     uint16_t max_ce_len) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleUpdateConnectionParams(bd_addr, min_int, max_int, latency,
-                                                          timeout, min_ce_len, max_ce_len);
-}
 void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmBond(bd_addr, addr_type, transport);
@@ -240,13 +231,6 @@ void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback) {
 void BTA_DmSearchCancel(void) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmSearchCancel();
-}
-void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
-                                uint16_t max_conn_int, uint16_t peripheral_latency,
-                                uint16_t supervision_tout) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSetBlePrefConnParams(bd_addr, min_conn_int, max_conn_int,
-                                                     peripheral_latency, supervision_tout);
 }
 void BTA_DmSetDefaultEventMaskExcept(uint64_t mask, uint64_t le_mask) {
   inc_func_call_count(__func__);

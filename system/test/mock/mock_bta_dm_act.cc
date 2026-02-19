@@ -58,9 +58,7 @@ struct bta_dm_ble_csis_observe bta_dm_ble_csis_observe;
 struct bta_dm_ble_get_energy_info bta_dm_ble_get_energy_info;
 struct bta_dm_ble_passkey_reply bta_dm_ble_passkey_reply;
 struct bta_dm_ble_scan bta_dm_ble_scan;
-struct bta_dm_ble_set_conn_params bta_dm_ble_set_conn_params;
 struct bta_dm_ble_set_data_length bta_dm_ble_set_data_length;
-struct bta_dm_ble_update_conn_params bta_dm_ble_update_conn_params;
 struct bta_dm_bond bta_dm_bond;
 struct bta_dm_bond_cancel bta_dm_bond_cancel;
 struct bta_dm_check_if_only_hd_connected bta_dm_check_if_only_hd_connected;
@@ -153,23 +151,9 @@ void bta_dm_ble_scan(bool start, uint8_t duration_sec) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_ble_scan(start, duration_sec);
 }
-void bta_dm_ble_set_conn_params(const RawAddress& bd_addr, uint16_t conn_int_min,
-                                uint16_t conn_int_max, uint16_t peripheral_latency,
-                                uint16_t supervision_tout) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_ble_set_conn_params(bd_addr, conn_int_min, conn_int_max,
-                                                     peripheral_latency, supervision_tout);
-}
 void bta_dm_ble_set_data_length(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_ble_set_data_length(bd_addr);
-}
-void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-                                   uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
-                                   uint16_t max_ce_len) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_ble_update_conn_params(bd_addr, min_int, max_int, latency, timeout,
-                                                        min_ce_len, max_ce_len);
 }
 void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
