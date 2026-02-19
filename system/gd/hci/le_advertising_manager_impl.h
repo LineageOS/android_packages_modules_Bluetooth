@@ -49,8 +49,6 @@ public:
   LeAdvertisingManagerImpl& operator=(const LeAdvertisingManagerImpl&) = delete;
   ~LeAdvertisingManagerImpl() override;
 
-  size_t GetNumberOfAdvertisingInstances() const override;
-
   size_t GetNumberOfAdvertisingInstancesInUse() const override;
 
   int GetAdvertiserRegId(AdvertiserId advertiser_id) override;

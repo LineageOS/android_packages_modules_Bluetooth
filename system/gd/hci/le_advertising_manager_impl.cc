@@ -222,8 +222,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     return calibrated_tx_power;
   }
 
-  size_t GetNumberOfAdvertisingInstances() const { return num_instances_; }
-
   size_t GetNumberOfAdvertisingInstancesInUse() const {
     return std::count_if(advertising_sets_.begin(), advertising_sets_.end(),
                          [](const auto& set) { return set.second.in_use; });
@@ -1860,10 +1858,6 @@ LeAdvertisingManagerImpl::LeAdvertisingManagerImpl(
 LeAdvertisingManagerImpl::~LeAdvertisingManagerImpl() {
   log::verbose("LeAdvertisingManager module stopped !!");
 };
-
-size_t LeAdvertisingManagerImpl::GetNumberOfAdvertisingInstances() const {
-  return pimpl_->GetNumberOfAdvertisingInstances();
-}
 
 size_t LeAdvertisingManagerImpl::GetNumberOfAdvertisingInstancesInUse() const {
   return pimpl_->GetNumberOfAdvertisingInstancesInUse();
