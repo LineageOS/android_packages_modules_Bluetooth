@@ -165,7 +165,7 @@ protected:
   bluetooth::storage::StorageModule* storage_module_;
 };
 
-TEST_F_WITH_FLAGS(BtifDmWithStackTest, btif_dm_search_services_evt__BTA_DM_NAME_READ_EVT) {
+TEST_F(BtifDmWithStackTest, btif_dm_search_services_evt__BTA_DM_NAME_READ_EVT) {
   static struct {
     bt_status_t status;
     RawAddress bd_addr;
