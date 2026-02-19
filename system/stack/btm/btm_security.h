@@ -57,7 +57,7 @@ public:
   /*****************************************************
   **      Security Management
   *****************************************************/
-  tBTM_APPL_INFO api_;
+  const BtmAppReg* app_;
 
   BtmDevice* p_collided_dev_{nullptr};
   alarm_t* sec_collision_timer_{nullptr};
@@ -86,7 +86,6 @@ public:
   list_t* sec_dev_rec_{nullptr}; /* list of BtmDevice */
   std::array<BtmDevice, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records_ = {};
   tBTM_SEC_SERV_REC* p_out_serv_{nullptr};
-  tBTM_MKEY_CALLBACK* mkey_cback_{nullptr};
 
   RawAddress connecting_bda_;
 
@@ -125,12 +124,10 @@ public:
   BtmDevice* for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context);
 };
 
-#define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                                \
-  do {                                                                                           \
-    if (BtmSecurity::Get().api_.p_le_callback != nullptr) {                                      \
-      tBTM_STATUS status_ = (*BtmSecurity::Get().api_.p_le_callback)((event_), (bda_), (data_)); \
-      if (status_ != tBTM_STATUS::BTM_SUCCESS) {                                                 \
-        log::warn("Security callback failed {} for {}", btm_status_text(status_), (bda_));       \
-      }                                                                                          \
-    }                                                                                            \
+#define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                            \
+  do {                                                                                       \
+    tBTM_STATUS status_ = (BtmSecurity::Get().app_->le_callback)((event_), (bda_), (data_)); \
+    if (status_ != tBTM_STATUS::BTM_SUCCESS) {                                               \
+      log::warn("Security callback failed {} for {}", btm_status_text(status_), (bda_));     \
+    }                                                                                        \
   } while (0)

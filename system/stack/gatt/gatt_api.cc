@@ -1547,15 +1547,35 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     return true;
   }
 
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    log::debug("Starting direct connect gatt_if={} address={} BR/EDR", gatt_if, bd_addr);
+    bool ret = gatt_act_connect_br(p_reg, bd_addr);
+    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+    if (p_tcb && ret) {
+      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, !is_direct);
+    }
+    return ret;
+  }
+
+  // transport == BT_TRANSPORT_LE
   bool ret = false;
   if (is_direct) {
     log::debug("Starting direct connect gatt_if={} address={} transport={} prefer_relax_mode={}",
                gatt_if, bd_addr, transport, prefer_relax_mode);
-    bool tcb_exist = !!gatt_find_tcb_by_addr(bd_addr, transport);
+    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
 
-    if (tcb_exist || transport == BT_TRANSPORT_BR_EDR) {
-      /* Consider to remove gatt_act_connect at all */
-      ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport);
+    if (p_tcb != nullptr) {
+      uint8_t st = gatt_get_ch_state(p_tcb);
+      if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty()) {
+        gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
+        ret = true;
+      } else if (st == GATT_CH_CLOSING) {
+        log::info("Must finish disconnection before new connection");
+        /* need to complete the closing first */
+        ret = false;
+      } else {
+        ret = true;
+      }
     } else {
       log::verbose("Connecting without tcb to: {}", bd_addr);
       bool has_direct_conn = connection_manager::is_direct_connection(bd_addr);

@@ -258,13 +258,13 @@ struct btm_sec_is_le_security_pending {
 extern struct btm_sec_is_le_security_pending btm_sec_is_le_security_pending;
 
 // Name: btm_sec_register
-// Params: const tBTM_APPL_INFO* p_cb_info
+// Params: const BtmAppReg& app_reg
 // Return: bool
 struct btm_sec_register {
   static bool return_value;
-  std::function<bool(const tBTM_APPL_INFO* p_cb_info)> body{
-          [](const tBTM_APPL_INFO* /* p_cb_info */) { return return_value; }};
-  bool operator()(const tBTM_APPL_INFO* p_cb_info) { return body(p_cb_info); }
+  std::function<bool(const BtmAppReg& app_reg)> body{
+          [](const BtmAppReg& /* app_reg */) { return return_value; }};
+  bool operator()(const BtmAppReg& app_reg) { return body(app_reg); }
 };
 extern struct btm_sec_register btm_sec_register;
 

@@ -339,6 +339,7 @@ cc_test {
     ],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "libcutils",
@@ -346,7 +347,6 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_gd_os",

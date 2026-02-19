@@ -148,7 +148,7 @@ bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr);
  * Returns          true if registered successfully, false otherwise.
  *
  ******************************************************************************/
-bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
+bool BTM_SecRegister(const BtmAppReg& app_reg);
 
 /*******************************************************************************
  *
@@ -625,7 +625,7 @@ typedef struct {
 
   bool (*BTM_PeerSupportsSecureConnections)(const RawAddress& bd_addr);
 
-  bool (*BTM_SecRegister)(const tBTM_APPL_INFO* p_cb_info);
+  bool (*BTM_SecRegister)(const BtmAppReg& app_reg);
 
   void (*BTM_BleLoadLocalKeys)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
 

@@ -51,12 +51,12 @@ struct PeripheralStreamCallbacks {
    * Callback for playback metadata updates.
    * @param metadata The updated playback metadata.
    */
-  std::function<void(const sink_metadata_v7_t& metadata)> OnPlaybackMetadataUpdate;
+  std::function<void(const source_metadata_v7_t& metadata)> OnPlaybackMetadataUpdate;
   /**
    * Callback for recording metadata updates.
    * @param metadata The updated recording metadata.
    */
-  std::function<void(const source_metadata_v7_t& metadata)> OnRecordingMetadataUpdate;
+  std::function<void(const sink_metadata_v7_t& metadata)> OnRecordingMetadataUpdate;
 };
 
 struct AudioHalCapability {

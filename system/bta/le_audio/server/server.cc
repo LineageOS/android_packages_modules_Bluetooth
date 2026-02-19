@@ -311,7 +311,7 @@ public:
                       weak_this->OnDecodingAudioSessionSuspend();
                     },
             .OnPlaybackMetadataUpdate =
-                    [weak_this](const sink_metadata_v7_t& metadata) {
+                    [weak_this](const source_metadata_v7_t& metadata) {
                       if (!weak_this.get()) {
                         return;
                       }
@@ -384,7 +384,7 @@ public:
                       weak_this->OnEncodingAudioSessionSuspend();
                     },
             .OnRecordingMetadataUpdate =
-                    [weak_this](const source_metadata_v7_t& metadata) {
+                    [weak_this](const sink_metadata_v7_t& metadata) {
                       if (!weak_this.get()) {
                         return;
                       }
@@ -599,7 +599,7 @@ public:
     }
   }
 
-  void OnDecodingAudioSessionMetadataUpdate(const sink_metadata_v7_t& metadata) {
+  void OnDecodingAudioSessionMetadataUpdate(const source_metadata_v7_t& metadata) {
     log::debug("metadata tracks count: {}", metadata.track_count);
 
     if (!is_decoding_session_started_) {
@@ -638,7 +638,7 @@ public:
     }
   }
 
-  void OnEncodingAudioSessionMetadataUpdate(const source_metadata_v7_t& /*source_metadata*/,
+  void OnEncodingAudioSessionMetadataUpdate(const sink_metadata_v7_t& /*source_metadata*/,
                                             DsaMode /*dsa_mode*/) {
     log::debug("");
     if (!is_encoding_session_started_) {

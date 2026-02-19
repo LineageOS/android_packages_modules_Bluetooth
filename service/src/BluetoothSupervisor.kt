@@ -16,182 +16,18 @@
 
 package com.android.server.bluetooth
 
-import android.app.ActivityManager
-import android.bluetooth.IBluetoothManagerCallback
-import android.content.Context
-import android.os.IBinder
-import android.os.Looper
 import android.os.UserHandle
-import com.android.bluetooth.flags.Flags
-import com.android.bluetooth.util.TimeProvider
-import com.android.server.bluetooth.airplane.initialize as initializeAirplaneMode
-import com.android.server.bluetooth.satellite.initialize as initializeSatelliteMode
-import java.io.FileDescriptor
-import java.io.PrintWriter
 
-private const val TAG = "BluetoothSupervisor"
+interface BluetoothSupervisor {
+    val api: BluetoothManagerServiceApi
 
-class BluetoothSupervisor(
-    context: Context,
-    private val looper: Looper,
-    bluetoothComponent: BluetoothComponent,
-    private val bms: BluetoothManagerService =
-        BluetoothManagerService(
-            context,
-            looper,
-            BluetoothHciInstance().getInstance(),
-            bluetoothComponent,
-            TimeProvider.systemClock,
-        ),
-) {
+    fun onBluetoothDisallowed()
 
-    private var currentUser: UserHandle? = null
+    fun onBootCompleted()
 
-    private var initialized = false
-    val api: BluetoothManagerServiceApi = Api(BmsProvider())
+    suspend fun onUserStarting(userHandle: UserHandle)
 
-    init {
-        initializeAirplaneMode(looper, context.contentResolver, this::onAirplaneModeChanged)
-        initializeSatelliteMode(looper, context.contentResolver, this::onSatelliteModeChanged)
-        Log.i(TAG, "Created BluetoothSupervisor")
-    }
+    suspend fun onUserSwitching(userHandle: UserHandle)
 
-    fun onBluetoothDisallowed() {
-        enforceCorrectThread()
-        bms.onBluetoothDisallowed()
-    }
-
-    fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {
-        enforceCorrectThread()
-        if (!initialized) {
-            Log.i(TAG, "onAirplaneModeChanged before initialization - skipping")
-            return
-        }
-        bms.airplaneModeController.onAirplaneModeChanged(isAirplaneModeOn)
-    }
-
-    fun onSatelliteModeChanged(isSatelliteModeOn: Boolean) {
-        enforceCorrectThread()
-        if (!initialized) {
-            Log.i(TAG, "onSatelliteModeChanged before initialization - skipping")
-            return
-        }
-        bms.onSatelliteModeChanged(isSatelliteModeOn)
-    }
-
-    fun onBootCompleted() {
-        enforceCorrectThread()
-        bms.onBootCompleted()
-    }
-
-    fun onUserStarting(userHandle: UserHandle) {
-        enforceCorrectThread()
-        if (initialized) {
-            Log.i(TAG, "onUserStarting($userHandle) but already initialized")
-            return
-        }
-        currentUser = userHandle
-        bms.handleOnBootPhase(userHandle)
-        initialized = true
-    }
-
-    fun onUserSwitching(userHandle: UserHandle) {
-        enforceCorrectThread()
-        check(initialized) { "Initialize did not happen" }
-        if (Flags.switchWhenCurrentUserStop()) {
-            if (userHandle == currentUser) {
-                Log.i(TAG, "onUserSwitching($userHandle): Nothing to do.")
-                return
-            }
-        }
-        currentUser = userHandle
-        bms.onUserSwitching(userHandle)
-    }
-
-    // See b/446749636:
-    // Android is meant to always have a foreground user, but in some situation, onUserStopping can
-    // be called before onUserSwitching. This lead to undefined behavior in Bluetooth. To prevent
-    // this, we need to emulate a user switch on the current foreground user using
-    // `ActivityManager.getCurrentUser()`
-    fun onUserStopping(userHandle: UserHandle) {
-        enforceCorrectThread()
-        if (userHandle != currentUser) {
-            Log.v(TAG, "onUserStopping($userHandle): Nothing to do. currentUser=$currentUser.")
-            return
-        }
-        val foregroundUser = UserHandle.of(ActivityManager.getCurrentUser())
-        if (foregroundUser == userHandle) {
-            throw IllegalStateException("onUserStopping($userHandle): No remaining user")
-        }
-        Log.wtf(TAG, "onUserStopping: Called while being the Bluetooth current user !")
-        Log.e(TAG, "onUserStopping: Fallback to onUserSwitching $userHandle => $foregroundUser")
-        onUserSwitching(foregroundUser)
-    }
-
-    private fun enforceCorrectThread() {
-        if (looper == Looper.myLooper()) {
-            return
-        }
-        throw IllegalThreadStateException("Must be called on BluetoothSystemServer looper")
-    }
-
-    private inner class BmsProvider {
-        fun bms(): BluetoothManagerService {
-            enforceCorrectThread()
-            return bms
-        }
-
-        fun multithreadBms() = bms
-    }
-
-    private class Api(private val bmsProvider: BmsProvider) : BluetoothManagerServiceApi {
-        private fun bms() = bmsProvider.bms()
-
-        private fun multithreadBms() = bmsProvider.multithreadBms()
-
-        override fun getState() = multithreadBms().state
-
-        override fun waitForState(state: Int) = multithreadBms().waitForState(state)
-
-        override fun registerAdapter(callback: IBluetoothManagerCallback) =
-            bms().registerAdapter(callback)
-
-        override fun unregisterAdapter(callback: IBluetoothManagerCallback) =
-            bms().unregisterAdapter(callback)
-
-        override fun getAddress() = bms().address
-
-        override fun setName(name: String?) = bms().setName(name)
-
-        override fun getName() = bms().name
-
-        override fun isBleScanAvailable() = bms().isBleScanAvailable()
-
-        override fun isHearingAidProfileSupported() = bms().isHearingAidProfileSupported
-
-        override fun enable(reason: Int, packageName: String) = bms().enable(reason, packageName)
-
-        override fun enableBle(packageName: String, token: IBinder) =
-            bms().enableBle(packageName, token)
-
-        override fun enableNoAutoConnect(packageName: String) =
-            bms().enableNoAutoConnect(packageName)
-
-        override fun disable(packageName: String, persist: Boolean) =
-            bms().disable(packageName, persist)
-
-        override fun disableBle(packageName: String, token: IBinder) =
-            bms().disableBle(packageName, token)
-
-        override fun factoryReset() = bms().factoryReset(0)
-
-        override fun isAutoOnSupported() = bms().isAutoOnSupported
-
-        override fun isAutoOnEnabled() = bms().isAutoOnEnabled
-
-        override fun setAutoOnEnabled(status: Boolean) = bms().setAutoOnEnabled(status)
-
-        override fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<String?>?) =
-            bms().dump(fd, writer, args)
-    }
+    suspend fun onUserStopping(userHandle: UserHandle)
 }

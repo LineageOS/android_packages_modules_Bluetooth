@@ -1185,7 +1185,8 @@ static void bta_dm_set_eir(char* local_name) {
       for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID;
            custom_uuid_idx++) {
         const Uuid& curr = bta_dm_cb.bta_custom_uuid[custom_uuid_idx].custom_uuid;
-        if (curr.GetShortestRepresentationSize() == Uuid::kNumBytes16) {
+        if (bta_dm_cb.bta_custom_uuid[custom_uuid_idx].handle != 0 && curr.IsValid() &&
+            curr.GetShortestRepresentationSize() == Uuid::kNumBytes16) {
           if (num_uuid < max_num_uuid) {
             UINT16_TO_STREAM(p, curr.As16Bit());
             num_uuid++;
@@ -1216,7 +1217,8 @@ static void bta_dm_set_eir(char* local_name) {
 
     for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
       const Uuid& curr = bta_dm_cb.bta_custom_uuid[custom_uuid_idx].custom_uuid;
-      if (curr.GetShortestRepresentationSize() == Uuid::kNumBytes32) {
+      if (bta_dm_cb.bta_custom_uuid[custom_uuid_idx].handle != 0 && curr.IsValid() &&
+          curr.GetShortestRepresentationSize() == Uuid::kNumBytes32) {
         if (num_uuid < max_num_uuid) {
           UINT32_TO_STREAM(p, curr.As32Bit());
           num_uuid++;
@@ -1244,7 +1246,8 @@ static void bta_dm_set_eir(char* local_name) {
 
     for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
       const Uuid& curr = bta_dm_cb.bta_custom_uuid[custom_uuid_idx].custom_uuid;
-      if (curr.GetShortestRepresentationSize() == Uuid::kNumBytes128) {
+      if (bta_dm_cb.bta_custom_uuid[custom_uuid_idx].handle != 0 && curr.IsValid() &&
+          curr.GetShortestRepresentationSize() == Uuid::kNumBytes128) {
         if (num_uuid < max_num_uuid) {
           ARRAY16_TO_STREAM(p, curr.To128BitBE().data());
           num_uuid++;

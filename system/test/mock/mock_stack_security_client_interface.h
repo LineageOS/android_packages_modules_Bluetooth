@@ -23,7 +23,7 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
   MockSecurityClientInterface();
   MOCK_METHOD((void), BTM_Sec_Init, ());
   MOCK_METHOD((void), BTM_Sec_Free, ());
-  MOCK_METHOD((bool), BTM_SecRegister, (const tBTM_APPL_INFO*));
+  MOCK_METHOD((bool), BTM_SecRegister, (const BtmAppReg& /* app_reg */));
   MOCK_METHOD((void), BTM_BleLoadLocalKeys,
               (uint8_t /* key_type */, tBTM_BLE_LOCAL_KEYS* /* p_key */));
   MOCK_METHOD(void, BTM_SecAddDevice,

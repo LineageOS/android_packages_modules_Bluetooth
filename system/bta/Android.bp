@@ -665,6 +665,7 @@ cc_test {
         "vcp/vcs_server_test.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "libcutils",
@@ -674,7 +675,6 @@ cc_test {
         "aics",
         "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -938,6 +938,7 @@ cc_test {
         "LeAudioSetConfigSchemas_h",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "libcutils",
@@ -946,7 +947,6 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -1498,13 +1498,13 @@ cc_test {
         "test/common/mock_csis_client.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "liblog",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -1911,13 +1911,13 @@ cc_test {
         "test/common/btm_api_mock.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "liblog",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
-        "libaconfig_storage_read_api_cc",
         "libbluetooth_ascs_pdl",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",

@@ -385,7 +385,8 @@ cc_test {
         "libcrypto",
     ],
     sanitize: {
-        address: true,
+        // TODO(b/484475434): Mts fails with asan
+        address: false,
     },
     min_sdk_version: "36",
 }
@@ -429,6 +430,11 @@ cc_test {
             ],
         },
         android: {
+            sanitize: {
+                // TODO(b/484475434): Mts fails with asan
+                address: false,
+                cfi: false,
+            },
             srcs: [
                 "hal/hci_hal_impl_android_test.cc",
                 "os/android/wakelock_native_test.cc",

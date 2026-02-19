@@ -61,15 +61,15 @@ static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr);
 static BtIoCap bta_dm_le_iocap_from_sysprop();
 
 /* bta security callback */
-const tBTM_APPL_INFO bta_security = {
-        .p_pin_callback = &bta_dm_pin_cback,
-        .p_link_key_callback = &bta_dm_new_link_key_cback,
-        .p_auth_complete_callback = &bta_dm_authentication_complete_cback,
-        .p_bond_cancel_cmpl_callback = &bta_dm_bond_cancel_complete_cback,
-        .p_sp_callback = &bta_dm_sp_cback,
-        .p_le_callback = &bta_dm_ble_smp_cback,
-        .p_le_key_callback = &bta_dm_ble_id_key_cback,
-        .p_sirk_verification_callback = &bta_dm_sirk_verification_cback};
+static const BtmAppReg bta_security = {
+        .pin_callback = bta_dm_pin_cback,
+        .link_key_callback = bta_dm_new_link_key_cback,
+        .auth_complete_callback = bta_dm_authentication_complete_cback,
+        .bond_cancel_cmpl_callback = bta_dm_bond_cancel_complete_cback,
+        .sp_callback = bta_dm_sp_cback,
+        .le_callback = bta_dm_ble_smp_cback,
+        .le_key_callback = bta_dm_ble_id_key_cback,
+        .sirk_verification_callback = bta_dm_sirk_verification_cback};
 
 void btm_sec_on_hw_on() {
   tBTA_DM_SEC_CBACK* temp_sec_cback = bta_dm_sec_cb.p_sec_cback;
@@ -104,7 +104,7 @@ void bta_dm_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) 
   }
 }
 
-void btm_dm_sec_init() { get_btm_client_interface().security.BTM_SecRegister(&bta_security); }
+void btm_dm_sec_init() { get_btm_client_interface().security.BTM_SecRegister(bta_security); }
 
 /** Initialises the BT device security manager */
 void bta_dm_sec_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
