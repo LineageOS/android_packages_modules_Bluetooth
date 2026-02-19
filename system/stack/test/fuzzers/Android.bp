@@ -39,6 +39,7 @@ cc_defaults {
         "android.system.suspend.control-V1-ndk",
         "bluetooth_flags_c_lib_for_test",
         "libFraunhoferAAC",
+        "libPlatformProperties",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -70,7 +71,6 @@ cc_defaults {
         "libudrv-uipc",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaaudio",
         "libaconfig_storage_read_api_cc",
         "libbase",

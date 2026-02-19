@@ -36,7 +36,6 @@ cc_defaults {
         "latest_android_media_audio_common_types_ndk_static",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaaudio",
         "libaconfig_storage_read_api_cc",
         "libbinder_ndk",
@@ -58,6 +57,7 @@ cc_defaults {
         "android.system.suspend.control-V1-ndk",
         "bluetooth_flags_c_lib_for_test",
         "libFraunhoferAAC",
+        "libPlatformProperties",
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",

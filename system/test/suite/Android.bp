@@ -37,7 +37,6 @@ cc_defaults {
         "adapter/bluetooth_test.cc",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaaudio",
         "libbinder_ndk",
         "libcrypto",
@@ -61,6 +60,7 @@ cc_defaults {
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
         "libFraunhoferAAC",
+        "libPlatformProperties",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
         "libbluetooth_private_gatt_rs",

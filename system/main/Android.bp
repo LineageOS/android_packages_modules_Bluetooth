@@ -99,6 +99,7 @@ cc_test {
     static_libs: [
         "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
+        "libPlatformProperties",
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -120,7 +121,6 @@ cc_test {
         "libosi",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
         "libbinder_ndk",
         "libcrypto",

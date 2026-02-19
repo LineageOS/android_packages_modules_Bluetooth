@@ -365,6 +365,7 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
+        "libPlatformProperties",
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -380,9 +381,9 @@ cc_test {
         "server_configurable_flags",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
         "libcrypto",
+        "liblog",
     ],
     sanitize: {
         // TODO(b/484475434): Mts fails with asan
@@ -518,6 +519,7 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
+        "libPlatformProperties",
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd_os_mock",
@@ -541,9 +543,9 @@ cc_test {
         "server_configurable_flags",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
         "libcrypto",
+        "liblog",
     ],
     min_sdk_version: "36",
 }
@@ -613,6 +615,7 @@ cc_defaults {
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
+        "libPlatformProperties",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd_fuzzing",
         "libbluetooth_log",
@@ -627,7 +630,6 @@ cc_defaults {
     ],
     host_supported: true,
     shared_libs: [
-        "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
