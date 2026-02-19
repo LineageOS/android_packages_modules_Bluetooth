@@ -182,6 +182,7 @@ import com.android.bluetooth.util.DeviceConfigUtils;
 import com.android.bluetooth.util.Text;
 import com.android.bluetooth.vap.VapServerService;
 import com.android.bluetooth.vc.VolumeControlService;
+import com.android.bluetooth.vcp.VcpRendererService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
@@ -959,6 +960,10 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.MCP_CLIENT, McpClientService.class);
     }
 
+    public Optional<VcpRendererService> getVcpRendererService() {
+        return getStartedProfile(BluetoothProfile.VCP_RENDERER, VcpRendererService.class);
+    }
+
     public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
     }
@@ -1404,6 +1409,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.LE_AUDIO_PERIPHERAL -> new LeAudioPeripheralService(this);
             case BluetoothProfile.TMAP_SERVER -> new LeAudioTmapService(this);
             case BluetoothProfile.MCP_CLIENT -> new McpClientService(this);
+            case BluetoothProfile.VCP_RENDERER -> new VcpRendererService(this);
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }

@@ -200,6 +200,9 @@ public interface BluetoothProfile {
     /** Media Control Profile (MCP) Client */
     @Hide int MCP_CLIENT = 35;
 
+    /** Volume Control Profile (VCP) Renderer */
+    @Hide int VCP_RENDERER = 36;
+
     /**
      * Gets the maximum profile ID.
      *
@@ -210,6 +213,10 @@ public interface BluetoothProfile {
     @Hide
     static int getMaxProfileId() {
         /* Return value dependent on feature flags */
+        if (Flags.leaudioPeripheralVcpLinkAbstractionLayer()) {
+            return VCP_RENDERER;
+        }
+
         if (Flags.leaudioPeripheralMcpLinkAbstractionLayer()) {
             return MCP_CLIENT;
         }
@@ -420,6 +427,7 @@ public interface BluetoothProfile {
             case VAP_SERVER -> "VAP_SERVER";
             case TMAP_SERVER -> "TMAP_SERVER";
             case MCP_CLIENT -> "MCP_CLIENT";
+            case VCP_RENDERER -> "VCP_RENDERER";
             default -> "UNKNOWN_PROFILE (" + profile + ")";
         };
     }

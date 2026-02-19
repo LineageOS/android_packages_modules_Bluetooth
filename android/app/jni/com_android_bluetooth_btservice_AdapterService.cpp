@@ -2179,6 +2179,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_vcp_renderer(e);
+  if (status < 0) {
+    log::error("jni vcp renderer registration failure: {}", status);
+    return JNI_ERR;
+  }
+
   status = android::register_com_android_bluetooth_csip_set_coordinator(e);
   if (status < 0) {
     log::error("jni csis client registration failure: {}", status);
