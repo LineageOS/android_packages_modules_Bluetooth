@@ -290,24 +290,6 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu, GATT_CONFIGURE_MTU_O
  *
  * Function         BTA_GATTC_SubrateModeRequest
  *
- * Description      subrate mode request, can only be used when connection is up.
- *
- * Parameters:      client_if     - client interface.
- *                  bd_addr       - BD address of the peer
- *                  subrate_mode  - subrate mode [none/low/balanced/high/lea]
- *
- * Returns          tGATT_STATUS
- *
- ******************************************************************************/
-tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
-                                          tGATT_SUBRATE_MODE subrate_mode) {
-  return bta_gattc_subrate_mode_request(client_if, bd_addr, subrate_mode, 0, 0, 0);
-}
-
-/*******************************************************************************
- *
- * Function         BTA_GATTC_SubrateModeRequest
- *
  * Description      Update fixed subrate parameters of subrate mode in config.
  *                  Subrate mode request, can only be used when connection is up.
  *
