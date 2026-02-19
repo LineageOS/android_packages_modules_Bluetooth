@@ -1549,7 +1549,7 @@ tGATT_STATUS bta_gattc_subrate_mode_request(tGATT_IF client_if, const RawAddress
     GATT_UpdateSubrateConfig(subrate_mode, subrate_max, subrate_min, cont_num);
   }
   if (!GATT_SubrateRequest(client_if, bd_addr, subrate_mode)) {
-    return GATT_ERROR;;
+    return GATT_ERROR;
   }
   return GATT_SUCCESS;
 }

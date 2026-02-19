@@ -124,12 +124,6 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu) {
 }
 
 tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
-                                          tGATT_SUBRATE_MODE subrate_mode) {
-  log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  return gatt_interface->SubrateModeRequest(client_if, bd_addr, subrate_mode);
-}
-
-tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
                                           tGATT_SUBRATE_MODE subrate_mode,
                                           uint16_t subrate_max, uint16_t subrate_min,
                                           uint16_t cont_num) {
