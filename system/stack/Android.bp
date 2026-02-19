@@ -973,18 +973,17 @@ cc_test {
         "mts_defaults",
     ],
     test_suites: ["general-tests"],
+    host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     include_dirs: [
         "packages/modules/Bluetooth/system",
     ],
     srcs: [
         "test/ad_parser_unittest.cc",
     ],
-    shared_libs: [
-        "libbinder_ndk",
-        "libcrypto",
-    ],
     static_libs: [
-        "android.system.suspend.control-V1-ndk",
         "libbluetooth_log",
         "libbluetooth_types",
         "libgmock",
