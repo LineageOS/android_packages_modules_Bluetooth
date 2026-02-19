@@ -371,6 +371,9 @@ private:
     if (device->service_found) {
       log::debug("Service already discovered, re-registering notifications for {}", device->addr);
       RegisterForNotifications(device);
+      if (com::android::bluetooth::flags::leaudio_peripheral_mcp_link_abstraction_layer()) {
+        ReadInitialState(device);
+      }
     } else {
       log::debug("Initiating service search for {}", device->addr);
       device->ClearHandles();
@@ -456,7 +459,9 @@ private:
       return;
     }
     device->searching_for_gmcs = false;
-    device->service_found = true;
+    if (!com::android::bluetooth::flags::leaudio_peripheral_mcp_link_abstraction_layer()) {
+      device->service_found = true;
+    }
 
     log::info("Found {} GMCS/MCS services on {}. Discovering characteristics...",
               device->services.size(), device->addr);
@@ -516,8 +521,19 @@ private:
     }
 
     callbacks_->OnDiscovered(device->addr);
-    RegisterForNotifications(device);
-    ReadInitialState(device);
+
+    if (com::android::bluetooth::flags::leaudio_peripheral_mcp_link_abstraction_layer()) {
+      device->service_found = true;
+
+      /* Initial state would be read after encryption complete */
+      if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+        RegisterForNotifications(device);
+        ReadInitialState(device);
+      }
+    } else {
+      RegisterForNotifications(device);
+      ReadInitialState(device);
+    }
   }
 
   void ParseMcpIndication(const std::shared_ptr<McpDevice>& device, const Mcs& service,

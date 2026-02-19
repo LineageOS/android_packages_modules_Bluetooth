@@ -742,6 +742,7 @@ cc_test {
         "libbt-common",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
+        "libflagtest",
         "libgmock",
         "libosi",
         "server_configurable_flags",
