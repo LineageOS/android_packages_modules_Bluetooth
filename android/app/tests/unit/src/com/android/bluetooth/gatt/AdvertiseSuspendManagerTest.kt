@@ -28,6 +28,7 @@ import com.android.bluetooth.btservice.AdapterSuspend
 import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
+import java.util.Optional
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,7 +59,7 @@ class AdvertiseSuspendManagerTest {
     @Before
     fun setUp() {
         advertiseSuspendManager = AdvertiseSuspendManager(advertiseManager, adapterService)
-        doReturn(adapterSuspend).whenever(adapterService).adapterSuspend
+        doReturn(Optional.of(adapterSuspend)).whenever(adapterService).adapterSuspend
     }
 
     @Test

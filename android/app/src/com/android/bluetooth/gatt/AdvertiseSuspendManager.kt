@@ -330,7 +330,7 @@ class AdvertiseSuspendManager(
 
     private fun finalizeSuspend() {
         suspendState = SuspendState.SUSPENDED
-        adapterService.adapterSuspend.advertiseSuspendReady()
+        adapterService.adapterSuspend.orElse(null)?.advertiseSuspendReady()
     }
 
     /** Initiates resume sequence. Enable all paused advertisements. */
