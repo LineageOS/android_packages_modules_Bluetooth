@@ -30,7 +30,6 @@
 #include "stack/include/rfcdefs.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
-#include "stack/mock/mock_stack_l2cap_api.h"
 #include "stack/mock/mock_stack_l2cap_ble.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/test/common/stack_test_packet_utils.h"

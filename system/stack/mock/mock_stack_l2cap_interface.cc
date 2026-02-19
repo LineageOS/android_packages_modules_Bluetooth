@@ -17,6 +17,7 @@
 #include "stack/mock/mock_stack_l2cap_interface.h"
 
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_module.h"
 
 namespace {
 bluetooth::testing::stack::l2cap::Mock default_l2cap_interface;
@@ -45,3 +46,5 @@ uint16_t L2CA_LeCreditDefault() {
 uint16_t L2CA_LeCreditThreshold() {
   return mock_interface_ ? mock_interface_->L2CA_LeCreditThreshold() : 0;
 }
+
+void L2CA_Dumpsys(int /*fd*/) {}
