@@ -515,7 +515,7 @@ void BtaAvCo::ProcessSetConfig(tBTA_AV_HNDL bta_av_handle, const RawAddress& pee
         capabilities.capabilities = p_codec_info;
         auto result = ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(
                 p_peer->addr, a2dp_remote_caps, codec_config,
-                bluetooth::a2dp::ParseCodecId(p_codec_info).value(), false);
+                bluetooth::a2dp::ParseCodecId(p_codec_info), false);
         if (!result.has_value()) {
           status = A2DP_FAIL;
         }
