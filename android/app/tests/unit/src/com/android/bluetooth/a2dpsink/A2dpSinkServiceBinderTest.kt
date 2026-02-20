@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,103 +14,90 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.a2dpsink;
+package com.android.bluetooth.a2dpsink
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link A2dpSinkServiceBinder}. */
+/** Test cases for [A2dpSinkServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class A2dpSinkServiceBinderTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class A2dpSinkServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private A2dpSinkService mService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: A2dpSinkService
 
-    private A2dpSinkServiceBinder mBinder;
+    private lateinit var binder: A2dpSinkServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        mBinder = new A2dpSinkServiceBinder(mService);
+    fun setUp() {
+        binder = A2dpSinkServiceBinder(service)
     }
 
     @After
-    public void cleanUp() {
-        mBinder.cleanup();
+    fun cleanup() {
+        binder.cleanup()
     }
 
     @Test
-    public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED};
-
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_CONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState() {
-        BluetoothDevice device = getTestDevice(0);
-
-        mBinder.getConnectionState(device, mSource);
-        verify(mService).getConnectionState(device);
+    fun getConnectionState() {
+        val device = getTestDevice(0)
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setConnectionPolicy() {
-        BluetoothDevice device = getTestDevice(0);
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-
-        mBinder.setConnectionPolicy(device, connectionPolicy, mSource);
-        verify(mService).setConnectionPolicy(device, connectionPolicy);
+    fun setConnectionPolicy() {
+        val device = getTestDevice(0)
+        val connectionPolicy = CONNECTION_POLICY_ALLOWED
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void getConnectionPolicy() {
-        BluetoothDevice device = getTestDevice(0);
-
-        mBinder.getConnectionPolicy(device, mSource);
-        verify(mService).getConnectionPolicy(device);
+    fun getConnectionPolicy() {
+        val device = getTestDevice(0)
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(device)
     }
 
     @Test
-    public void isA2dpPlaying() {
-        BluetoothDevice device = getTestDevice(0);
-
-        mBinder.isA2dpPlaying(device, mSource);
-        verify(mService).isA2dpPlaying(device);
+    fun isA2dpPlaying() {
+        val device = getTestDevice(0)
+        binder.isA2dpPlaying(device, source)
+        verify(service).isA2dpPlaying(device)
     }
 
     @Test
-    public void getAudioConfig() {
-        BluetoothDevice device = getTestDevice(0);
-
-        mBinder.getAudioConfig(device, mSource);
-        verify(mService).getAudioConfig(device);
+    fun getAudioConfig() {
+        val device = getTestDevice(0)
+        binder.getAudioConfig(device, source)
+        verify(service).getAudioConfig(device)
     }
 }
