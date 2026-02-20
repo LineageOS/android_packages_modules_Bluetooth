@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,106 +14,95 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.mapclient;
+package com.android.bluetooth.mapclient
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.content.AttributionSource
+import android.net.Uri
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-import android.net.Uri;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link MapClientServiceBinder}. */
+/** Test cases for [MapClientServiceBinder]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class MapClientServiceBinderTest {
+@RunWith(AndroidJUnit4::class)
+class MapClientServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: MapClientService
 
-    @Mock private AttributionSource mSource;
-    @Mock private MapClientService mService;
+    private val device = getTestDevice(65)
 
-    private final BluetoothDevice mDevice = getTestDevice(65);
-
-    private MapClientServiceBinder mBinder;
+    private lateinit var binder: MapClientServiceBinder
 
     @Before
-    public void setUp() {
-        mBinder = new MapClientServiceBinder(mService);
+    fun setUp() {
+        binder = MapClientServiceBinder(service)
     }
 
     @Test
-    public void connect_callsServiceMethod() {
-        mBinder.connect(mDevice, mSource);
-        verify(mService).connect(mDevice);
+    fun connect() {
+        binder.connect(device, source)
+        verify(service).connect(device)
     }
 
     @Test
-    public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mDevice, mSource);
-        verify(mService).disconnect(mDevice);
+    fun disconnect() {
+        binder.disconnect(device, source)
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates_callsServiceMethod() {
-        int[] states = new int[] {STATE_CONNECTED};
-
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_CONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, mSource);
-        verify(mService).getConnectionState(mDevice);
+    fun getConnectionState() {
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setConnectionPolicy_callsServiceMethod() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
-        verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
+    fun setConnectionPolicy() {
+        val connectionPolicy = CONNECTION_POLICY_ALLOWED
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void getConnectionPolicy_callsServiceMethod() {
-        mBinder.getConnectionPolicy(mDevice, mSource);
-        verify(mService).getConnectionPolicy(mDevice);
+    fun getConnectionPolicy() {
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(device)
     }
 
     @Test
-    public void sendMessage_callsServiceMethod() {
-        Uri[] contacts = new Uri[] {};
-        String message = "test_message";
-
-        mBinder.sendMessage(mDevice, contacts, message, null, null, mSource);
-        verify(mService).sendMessage(mDevice, contacts, message, null, null);
+    fun sendMessage() {
+        val contacts = arrayOf<Uri>()
+        val message = "test_message"
+        binder.sendMessage(device, contacts, message, null, null, source)
+        verify(service).sendMessage(device, contacts, message, null, null)
     }
 
     @Test
-    public void cleanup_doesNotCrash() {
-        mBinder.cleanup();
+    fun cleanup() {
+        binder.cleanup()
     }
 }
