@@ -122,6 +122,7 @@ constexpr char kBtmLogTagSdp[] = "SDP";
 static constinit Uuid UUID_HEARING_AID("FDF0");
 static constinit Uuid UUID_VC("1844");
 static constinit Uuid UUID_CSIS("1846");
+static constinit Uuid UUID_GMCS("1849");
 static constinit Uuid UUID_LE_AUDIO("184E");
 static constinit Uuid UUID_LE_MIDI("03B80E5A-EDE8-4B33-A751-6CE34EC4C700");
 static constinit Uuid UUID_HAS("1854");
@@ -1946,9 +1947,11 @@ static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len,
 /* Returns true if |uuid| should be passed as device property */
 bool btif_is_interesting_le_service(const bluetooth::Uuid& uuid) {
   return uuid.As16Bit() == UUID_SERVCLASS_LE_HID || uuid == UUID_HEARING_AID || uuid == UUID_VC ||
-         uuid == UUID_CSIS || uuid == UUID_LE_AUDIO || uuid == UUID_LE_MIDI || uuid == UUID_HAS ||
-         uuid == UUID_BASS || uuid == UUID_BATTERY || uuid == ANDROID_HEADTRACKER_SERVICE_UUID ||
-         uuid == UUID_GMAP;
+         uuid == UUID_CSIS ||
+         (uuid == UUID_GMCS &&
+          com::android::bluetooth::flags::leaudio_peripheral_mcp_link_abstraction_layer()) ||
+         uuid == UUID_LE_AUDIO || uuid == UUID_LE_MIDI || uuid == UUID_HAS || uuid == UUID_BASS ||
+         uuid == UUID_BATTERY || uuid == ANDROID_HEADTRACKER_SERVICE_UUID || uuid == UUID_GMAP;
 }
 
 static bool btif_should_ignore_uuid(const Uuid& uuid) { return uuid.IsEmpty() || uuid.IsBase(); }
