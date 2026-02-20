@@ -413,11 +413,9 @@ cc_defaults {
         "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
         "libbluetooth_private_gatt_rs_bridge",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-common",
     ],
@@ -477,7 +475,6 @@ cc_defaults {
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "libcrypto",
-        "libstatssocket",
         "server_configurable_flags",
     ],
     static_libs: [
@@ -485,11 +482,9 @@ cc_defaults {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
         "libbluetooth_private_gatt_rs_bridge",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-common",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -541,7 +536,6 @@ cc_defaults {
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libstatssocket",
         "server_configurable_flags",
     ],
     static_libs: [
@@ -549,10 +543,8 @@ cc_defaults {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-common",
         "libevent",
@@ -604,9 +596,7 @@ cc_defaults {
     ],
     static_libs: [
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
     ],
 }
@@ -664,9 +654,7 @@ cc_defaults {
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
@@ -716,10 +704,8 @@ cc_defaults {
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-common",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -780,7 +766,6 @@ cc_test {
         "libevent",
         "libhidlbase",
         "liblog",
-        "libstatssocket",
         "libutils",
         "libz",
         "server_configurable_flags",
@@ -911,10 +896,8 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
@@ -930,9 +913,6 @@ cc_test {
     ],
     target: {
         android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
             static_libs: [
                 "libperfetto_client_experimental",
             ],
@@ -1001,10 +981,8 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_smp_pdl",
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-btu-main-thread",
@@ -1016,13 +994,6 @@ cc_test {
         "liblog",
         "libosi",
     ],
-    target: {
-        android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
-        },
-    },
 }
 
 // Bluetooth stack advertise data parsing unit tests for target
@@ -1113,7 +1084,6 @@ cc_test {
             shared_libs: [
                 "libcutils",
                 "libhidlbase",
-                "libstatssocket",
                 "libutils",
             ],
             static_libs: [
@@ -1183,13 +1153,6 @@ cc_test {
         "liblog",
         "libosi",
     ],
-    target: {
-        android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
-        },
-    },
     sanitize: {
         address: true,
         cfi: true,
@@ -1255,11 +1218,6 @@ cc_test {
         "libosi",
         "libprotobuf-cpp-lite",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     sanitize: {
         address: true,
         cfi: true,
@@ -1327,7 +1285,6 @@ cc_test {
     ],
     target: {
         android: {
-            shared_libs: ["libstatssocket"],
             sanitize: {
                 address: false, // TODO(b/481480264) - Mts can't run with asan
             },
@@ -1525,11 +1482,6 @@ cc_test {
         "liblog",
         "libosi",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     header_libs: ["libbluetooth_headers"],
 }
 
@@ -1661,11 +1613,6 @@ cc_test {
         "libprotobuf-cpp-lite",
         "server_configurable_flags",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     sanitize: {
         cfi: false,
     },
@@ -1791,9 +1738,6 @@ cc_test {
     ],
     target: {
         android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
             static_libs: [
                 "libperfetto_client_experimental",
             ],
@@ -1925,11 +1869,6 @@ cc_test {
         "libaconfig_storage_read_api_cc",
         "libcrypto",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     sanitize: {
         address: true,
         all_undefined: true,
@@ -2097,11 +2036,6 @@ cc_test {
         "libcutils",
         "server_configurable_flags",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     sanitize: {
         address: true,
         all_undefined: true,
@@ -2196,13 +2130,6 @@ cc_test {
         "liblog",
         "libosi",
     ],
-    target: {
-        android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
-        },
-    },
     sanitize: {
         address: true,
         cfi: true,
@@ -2295,11 +2222,6 @@ cc_test {
         "libcutils",
         "server_configurable_flags",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     sanitize: {
         address: true,
         all_undefined: true,
@@ -2388,7 +2310,6 @@ cc_test {
         android: {
             shared_libs: [
                 "libPlatformProperties",
-                "libstatssocket",
             ],
             static_libs: [
                 "libperfetto_client_experimental",
@@ -2477,11 +2398,6 @@ cc_test {
         "libcrypto",
         "server_configurable_flags",
     ],
-    target: {
-        android: {
-            shared_libs: ["libstatssocket"],
-        },
-    },
     sanitize: {
         address: true,
         all_undefined: true,

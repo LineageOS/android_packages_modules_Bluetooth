@@ -840,7 +840,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
         sec_event.auth_cmpl.success = true;
         if (!com_android_bluetooth_flags_gatt_service_changed_subscription() &&
             !p_data->complt.smp_over_br) {
-          GATT_ConfigServiceChangeCCC(bda, true, BT_TRANSPORT_LE);
+          GATT_LE_ConfigServiceChangeCCC(bda, true);
         }
       }
 

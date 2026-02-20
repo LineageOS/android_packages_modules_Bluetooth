@@ -596,7 +596,6 @@ void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment);
 bool gatt_disconnect(tGATT_TCB* p_tcb);
 bool gatt_disconnect_br(tGATT_TCB* p_tcb);
 void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested);
-bool gatt_act_connect_br(tGATT_REG* p_reg, const RawAddress& bd_addr);
 void gatt_data_process(tGATT_TCB& p_tcb, uint16_t cid, BT_HDR* p_buf);
 void gatt_send_conn_cback(tGATT_TCB* p_tcb);
 void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_add,

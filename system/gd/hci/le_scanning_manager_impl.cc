@@ -66,8 +66,8 @@ constexpr uint8_t kDataStatusBits = 5;
 
 // Flags for keeping state information of different types of scan
 constexpr uint8_t kLeJavaScanActive = 0x10;   // 0b00010000
-constexpr uint8_t kLeCsisScanActive = 0x20;   // 0b00100000
-constexpr uint8_t kLeDiscoveryActive = 0x40;  // 0b01000000
+constexpr uint8_t kLeDiscoveryActive = 0x20;  // 0b00100000
+constexpr uint8_t kLeCsisScanActive = 0x40;   // 0b01000000
 
 // system properties
 const std::string kLeRxPathLossCompProperty = "bluetooth.hardware.radio.le_rx_path_loss_comp_db";
@@ -575,13 +575,14 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     switch (callerType) {
       case ScanCallerType::DISCOVERY:
       case ScanCallerType::CSIS:
-        if (!is_le_scan_active()) {
+        if (!is_scan_active()) {
           // If no scan exists, configure 1m low latency scan
           configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
                          kLeScanWindowNone, kLeScanIntervalNone, LeScanningFilterPolicy::ACCEPT_ALL,
                          k1mPhyMask);
-        } else if ((is_le_java_scan_active() && !is_java_scan_1m_low_latency()) &&
-                   !is_le_discovery_active() && !is_le_csis_scan_active()) {
+        } else if ((is_scan_active(ScanCallerType::JAVA) && !is_java_scan_1m_low_latency()) &&
+                   !is_scan_active(ScanCallerType::DISCOVERY) &&
+                   !is_scan_active(ScanCallerType::CSIS)) {
           // If only Java scan exists and is non 1m low latency, configure 1m low latency while
           // keeping coded Java scan alive if it exists
           configure_scan(kLeScanWindowLowLatency, kLeScanIntervalLowLatency, LeScanType::ACTIVE,
@@ -593,14 +594,11 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         }
 
         // Mark CSIS scan or discovery as active
-        if (callerType == ScanCallerType::DISCOVERY) {
-          set_le_discovery_active();
-        } else {
-          set_le_csis_scan_active();
-        }
+        set_scan_activity(callerType);
         break;
       case ScanCallerType::JAVA:
-        if (!is_le_scan_active() || (!is_le_csis_scan_active() && !is_le_discovery_active())) {
+        if (!is_scan_active() ||
+            (!is_scan_active(ScanCallerType::DISCOVERY) && !is_scan_active(ScanCallerType::CSIS))) {
           // If no scan exists or only java scan exists, configure and start Java scan
           configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
                          interval_ms_coded_, filter_policy_, phy_);
@@ -617,7 +615,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         }
 
         // Mark Java scan as active
-        set_le_java_scan_active();
+        set_scan_activity(ScanCallerType::JAVA);
         break;
     }
     return should_start_scan;
@@ -629,16 +627,13 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       case ScanCallerType::DISCOVERY:
       case ScanCallerType::CSIS:
         // Mark discovery or CSIS scan as inactive
-        if (callerType == ScanCallerType::DISCOVERY) {
-          reset_le_discovery();
-        } else {
-          reset_le_csis_scan();
-        }
-        if (!is_le_scan_active()) {
+        reset_scan_activity(callerType);
+        if (!is_scan_active()) {
           // If we only had one of discovery or CSIS scan ongoing, simply stop scan
           should_stop_scan = true;
-        } else if (is_le_java_scan_active() && !is_le_csis_scan_active() &&
-                   !is_le_discovery_active()) {
+        } else if (is_scan_active(ScanCallerType::JAVA) &&
+                   !is_scan_active(ScanCallerType::DISCOVERY) &&
+                   !is_scan_active(ScanCallerType::CSIS)) {
           // If we had ongoing Java scan with one of discovery or CSIS scan, stop and restart with
           // stored Java scan parameters
           configure_scan(window_ms_1m_, interval_ms_1m_, le_scan_type_, window_ms_coded_,
@@ -650,8 +645,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         break;
       case ScanCallerType::JAVA:
         // Mark Java scan as inactive
-        reset_le_java_scan();
-        if (!is_le_scan_active()) {
+        reset_scan_activity(ScanCallerType::JAVA);
+        if (!is_scan_active()) {
           // If we only had Java scan ongoing, simply stop scan
           should_stop_scan = true;
         } else if (is_coded_phy_configured()) {
@@ -670,7 +665,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
   void start_discovery(uint8_t duration) {
     // If discovery is already active, reject it
-    if (is_le_discovery_active()) {
+    if (is_scan_active(ScanCallerType::DISCOVERY)) {
       log::error("LE discovery is active, can not start discovery");
       return;
     }
@@ -691,7 +686,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
   void stop_discovery() {
     // If discovery is already inactive, reject it
-    if (!is_le_discovery_active()) {
+    if (!is_scan_active(ScanCallerType::DISCOVERY)) {
       log::error("LE discovery is inactive, can not stop discovery");
       return;
     }
@@ -1803,21 +1798,49 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     le_address_manager_->AckResume(this);
   }
 
+  void set_scan_activity(ScanCallerType callerType) {
+    switch (callerType) {
+      case ScanCallerType::JAVA:
+        scan_activity_ |= kLeJavaScanActive;
+        break;
+      case ScanCallerType::DISCOVERY:
+        scan_activity_ |= kLeDiscoveryActive;
+        break;
+      case ScanCallerType::CSIS:
+        scan_activity_ |= kLeCsisScanActive;
+        break;
+    }
+  }
+
+  void reset_scan_activity(ScanCallerType callerType) {
+    switch (callerType) {
+      case ScanCallerType::JAVA:
+        scan_activity_ &= ~kLeJavaScanActive;
+        break;
+      case ScanCallerType::DISCOVERY:
+        scan_activity_ &= ~kLeDiscoveryActive;
+        break;
+      case ScanCallerType::CSIS:
+        scan_activity_ &= ~kLeCsisScanActive;
+        break;
+    }
+  }
+
+  bool is_scan_active() { return scan_activity_ != 0; }
+
+  bool is_scan_active(ScanCallerType callerType) {
+    switch (callerType) {
+      case ScanCallerType::JAVA:
+        return scan_activity_ & kLeJavaScanActive;
+      case ScanCallerType::DISCOVERY:
+        return scan_activity_ & kLeDiscoveryActive;
+      case ScanCallerType::CSIS:
+        return scan_activity_ & kLeCsisScanActive;
+    }
+  }
+
   bool is_coded_phy_configured() { return phy_ & kCodedPhyMask; }
   bool is_1m_phy_configured() { return phy_ & k1mPhyMask; }
-
-  bool is_le_java_scan_active() { return scan_activity_ & kLeJavaScanActive; }
-  bool is_le_csis_scan_active() { return scan_activity_ & kLeCsisScanActive; }
-  bool is_le_discovery_active() { return scan_activity_ & kLeDiscoveryActive; }
-  bool is_le_scan_active() { return scan_activity_ != 0; }
-
-  void set_le_java_scan_active() { scan_activity_ |= kLeJavaScanActive; }
-  void set_le_csis_scan_active() { scan_activity_ |= kLeCsisScanActive; }
-  void set_le_discovery_active() { scan_activity_ |= kLeDiscoveryActive; }
-
-  void reset_le_java_scan() { scan_activity_ &= ~kLeJavaScanActive; }
-  void reset_le_csis_scan() { scan_activity_ &= ~kLeCsisScanActive; }
-  void reset_le_discovery() { scan_activity_ &= ~kLeDiscoveryActive; }
 
   os::Handler* handler_;
   HciInterface* hci_layer_;

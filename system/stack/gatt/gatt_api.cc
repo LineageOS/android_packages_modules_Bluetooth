@@ -47,6 +47,7 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/ais_api.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_acl_interface.h"
@@ -1506,7 +1507,70 @@ void GATT_StartIf(tGATT_IF gatt_if) {
 
 /*******************************************************************************
  *
- * Function         GATT_Connect
+ * Function         GATT_BR_Connect
+ *
+ * Description      This function initiate a connection to a remote device on
+ *                  GATT channel.
+ *
+ * Parameters       gatt_if: application interface
+ *                  bd_addr: peer device address.
+ *
+ * Returns          true if connection started; false if connection start
+ *                  failure.
+ *
+ ******************************************************************************/
+bool GATT_BR_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr) {
+  /* Make sure app is registered */
+  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
+  if (!p_reg) {
+    log::error("Unable to find registered app gatt_if={}", gatt_if);
+    return false;
+  }
+
+  if (bd_addr == RawAddress::kEmpty) {
+    log::error("Unsupported empty address, gatt_if={}", gatt_if);
+    return false;
+  }
+
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_tcb != NULL) {
+    uint8_t st = gatt_get_ch_state(p_tcb);
+    if (st == GATT_CH_CLOSING) {
+      log::info("Must finish disconnection before new connection");
+      /* need to complete the closing first */
+      return false;
+    }
+    log::debug("Already connected, reusing BR/EDR gatt_if={} address={}", gatt_if, bd_addr);
+    gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, false);
+    return true;
+  }
+
+  log::debug("Starting BR/EDR connection gatt_if={} address={}", gatt_if, bd_addr);
+  p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (!p_tcb) {
+    log::error("Max TCB for gatt_if [ {}] reached.", p_reg->gatt_if);
+    return false;
+  }
+
+  gatt_set_ch_state(p_tcb, GATT_CH_CONN);
+  p_tcb->att_lcid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(BT_PSM_ATT, bd_addr,
+                                                                              BTM_SEC_NONE);
+  if (p_tcb->att_lcid == 0) {
+    log::error("gatt_connect failed");
+    fixed_queue_free(p_tcb->pending_ind_q, NULL);
+    alarm_free(p_tcb->conf_timer);
+    alarm_free(p_tcb->ind_ack_timer);
+    *p_tcb = tGATT_TCB();
+    return false;
+  }
+
+  gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, false);
+  return true;
+}
+
+/*******************************************************************************
+ *
+ * Function         GATT_LE_Connect
  *
  * Description      This function initiate a connection to a remote device on
  *                  GATT channel.
@@ -1520,9 +1584,9 @@ void GATT_StartIf(tGATT_IF gatt_if) {
  *                  failure.
  *
  ******************************************************************************/
-bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                  tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                  uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
+bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                     bool prefer_relax_mode, bool auto_mtu_enabled) {
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -1531,11 +1595,6 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
   }
 
   bool is_direct = (connection_type == BTM_BLE_DIRECT_CONNECTION);
-
-  if (!is_direct && transport != BT_TRANSPORT_LE) {
-    log::warn("Unsupported transport for background connection gatt_if={}", gatt_if);
-    return false;
-  }
 
   if (bd_addr == RawAddress::kEmpty) {
     log::error("Unsupported empty address, gatt_if={}", gatt_if);
@@ -1547,22 +1606,11 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     return true;
   }
 
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    log::debug("Starting direct connect gatt_if={} address={} BR/EDR", gatt_if, bd_addr);
-    bool ret = gatt_act_connect_br(p_reg, bd_addr);
-    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
-    if (p_tcb && ret) {
-      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, !is_direct);
-    }
-    return ret;
-  }
-
-  // transport == BT_TRANSPORT_LE
   bool ret = false;
   if (is_direct) {
-    log::debug("Starting direct connect gatt_if={} address={} transport={} prefer_relax_mode={}",
-               gatt_if, bd_addr, transport, prefer_relax_mode);
-    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+    log::debug("Starting direct connect gatt_if={} address={} prefer_relax_mode={}", gatt_if,
+               bd_addr, prefer_relax_mode);
+    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
 
     if (p_tcb != nullptr) {
       uint8_t st = gatt_get_ch_state(p_tcb);
@@ -1604,7 +1652,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     }
   }
 
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   // background connections don't necessarily create tcb
   if (p_tcb && ret) {
     gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, !is_direct);
@@ -1633,10 +1681,10 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
   return ret;
 }
 
-bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBTM_BLE_CONN_TYPE connection_type,
-                  tBT_TRANSPORT transport, bool opportunistic) {
-  return GATT_Connect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, transport, opportunistic,
-                      0, false, false);
+bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+  return GATT_LE_Connect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, opportunistic, 0,
+                         false, false);
 }
 
 /*******************************************************************************

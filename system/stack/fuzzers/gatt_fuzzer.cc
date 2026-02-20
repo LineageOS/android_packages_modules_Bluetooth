@@ -232,7 +232,7 @@ static void FuzzAsServer(FuzzedDataProvider& fdp) {
 
 static void ClientInit() {
   GattInit();
-  (void)GATT_Connect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, BT_TRANSPORT_LE, false);
+  (void)GATT_LE_Connect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, false);
 }
 
 static void ClientCleanup() {

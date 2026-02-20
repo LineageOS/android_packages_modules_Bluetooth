@@ -668,7 +668,7 @@ class HidHostTest {
                 .onSendHostData(Empty.getDefaultInstance())
 
         val future = CompletableFuture<Int?>()
-        future.completeOnTimeout(null, 50, TimeUnit.MILLISECONDS).join()
+        future.completeOnTimeout(null, 100, TimeUnit.MILLISECONDS).join()
         // Send data
         val Data = "010203040506070809"
         assertThat(hidService.sendData(device, Data)).isTrue()
