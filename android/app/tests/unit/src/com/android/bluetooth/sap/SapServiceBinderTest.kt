@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,118 +14,107 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.sap;
+package com.android.bluetooth.sap
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.times
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link SapServiceBinder}. */
+/** Test cases for [SapServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class SapServiceBinderTest {
+@RunWith(AndroidJUnit4::class)
+class SapServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: SapService
 
-    @Mock private AttributionSource mSource;
-    @Mock private SapService mService;
-
-    private SapServiceBinder mBinder;
+    private lateinit var binder: SapServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(true).when(mService).isAvailable();
-        mBinder = new SapServiceBinder(mService);
+    fun setUp() {
+        doReturn(true).whenever(service).isAvailable
+        binder = SapServiceBinder(service)
     }
 
     @Test
-    public void getState() {
-        mBinder.getState(mSource);
-        verify(mService).getState();
+    fun getState() {
+        binder.getState(source)
+        verify(service).state
     }
 
     @Test
-    public void getClient() {
-        mBinder.getClient(mSource);
+    fun getClient() {
+        binder.getClient(source)
         // times(2) due to the Log
-        verify(mService, times(2)).getRemoteDevice();
+        verify(service, times(2)).remoteDevice
     }
 
     @Test
-    public void isConnected() {
-        BluetoothDevice device = mock(BluetoothDevice.class);
-
-        mBinder.isConnected(device, mSource);
-        verify(mService).getConnectionState(device);
+    fun isConnected() {
+        val device = mock<BluetoothDevice>()
+        binder.isConnected(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void disconnect() {
-        BluetoothDevice device = mock(BluetoothDevice.class);
-
-        mBinder.disconnect(device, mSource);
-        verify(mService).disconnect(device);
+    fun disconnect() {
+        val device = mock<BluetoothDevice>()
+        binder.disconnect(device, source)
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED, STATE_DISCONNECTED};
-
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_CONNECTED, STATE_DISCONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState() {
-        BluetoothDevice device = mock(BluetoothDevice.class);
-
-        mBinder.getConnectionState(device, mSource);
-        verify(mService).getConnectionState(device);
+    fun getConnectionState() {
+        val device = mock<BluetoothDevice>()
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setConnectionPolicy() {
-        BluetoothDevice device = mock(BluetoothDevice.class);
-        int connectionPolicy = 1;
-
-        mBinder.setConnectionPolicy(device, connectionPolicy, mSource);
-        verify(mService).setConnectionPolicy(device, connectionPolicy);
+    fun setConnectionPolicy() {
+        val device = mock<BluetoothDevice>()
+        val connectionPolicy = 1
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void getConnectionPolicy() {
-        BluetoothDevice device = mock(BluetoothDevice.class);
-
-        mBinder.getConnectionPolicy(device, mSource);
-        verify(mService).getConnectionPolicy(device);
+    fun getConnectionPolicy() {
+        val device = mock<BluetoothDevice>()
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(device)
     }
 
     @Test
-    public void cleanup_doesNotCrash() {
-        mBinder.cleanup();
+    fun cleanup() {
+        binder.cleanup()
     }
 }
