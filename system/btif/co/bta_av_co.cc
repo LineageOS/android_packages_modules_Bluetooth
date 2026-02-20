@@ -208,7 +208,8 @@ void BtaAvCo::ProcessDiscoveryResult(tBTA_AV_HNDL bta_av_handle, const RawAddres
 static void bta_av_co_store_peer_codectype(const BtaAvCoPeer* p_peer);
 static bool bta_av_co_should_select_hardware_codec(
         const A2dpCodecConfig& software_config,
-        const ::bluetooth::audio::a2dp::provider::a2dp_configuration& hardware_config);
+        const ::bluetooth::audio::a2dp::provider::a2dp_configuration& hardware_config,
+        const btav_a2dp_codec_config_t& user_codec_config);
 
 tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(tBTA_AV_HNDL bta_av_handle,
                                              const RawAddress& peer_address, uint8_t* p_codec_info,
@@ -1134,8 +1135,9 @@ const BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
   auto provider_codec_config = GetProviderCodecConfiguration(p_peer);
 
   // Query the preferred codec configuration for software codecs.
+  auto ordered_source_codecs = p_peer->GetCodecs()->orderedSourceCodecs();
   A2dpCodecConfig* software_codec_config = nullptr;
-  for (const auto& iter : p_peer->GetCodecs()->orderedSourceCodecs()) {
+  for (const auto& iter : ordered_source_codecs) {
     if (iter->isHardwareProviderCodec()) {
       continue;
     }
@@ -1162,8 +1164,9 @@ const BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
 
   if (provider_codec_config.has_value() &&
       (software_codec_config == nullptr ||
-       bta_av_co_should_select_hardware_codec(*software_codec_config,
-                                              provider_codec_config.value()))) {
+       bta_av_co_should_select_hardware_codec(
+               *software_codec_config, provider_codec_config.value(),
+               ordered_source_codecs.front()->getCodecUserConfig()))) {
     // Select hardware offload codec configuration
     return SelectProviderCodecConfiguration(p_peer, provider_codec_config.value());
   }
@@ -1449,9 +1452,19 @@ static void bta_av_co_store_peer_codectype(const BtaAvCoPeer* p_peer) {
 
 static bool bta_av_co_should_select_hardware_codec(
         const A2dpCodecConfig& software_config,
-        const ::bluetooth::audio::a2dp::provider::a2dp_configuration& hardware_config) {
+        const ::bluetooth::audio::a2dp::provider::a2dp_configuration& hardware_config,
+        const btav_a2dp_codec_config_t& user_codec_config) {
   btav_a2dp_codec_index_t software_codec_index = software_config.codecIndex();
   btav_a2dp_codec_index_t hardware_offload_index = hardware_config.codec_parameters.codec_type;
+
+  // Check and prioritize user configuration
+  if (com_android_bluetooth_flags_a2dp_offload_user_codec_selection() &&
+      user_codec_config.codec_type == hardware_config.codec_parameters.codec_type &&
+      user_codec_config.codec_priority == BTAV_A2DP_CODEC_PRIORITY_HIGHEST) {
+    log::verbose("select hardware codec: {} - user config",
+                 A2DP_CodecIndexStr(hardware_offload_index));
+    return true;
+  }
 
   // Prioritize any offload codec except SBC and AAC
   if (A2DP_GetCodecType(hardware_config.codec_config) == A2DP_MEDIA_CT_NON_A2DP) {
