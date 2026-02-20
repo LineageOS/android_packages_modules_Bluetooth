@@ -23,8 +23,7 @@ import android.bluetooth.le.IAdvertisingSetCallback
 import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.content.AttributionSource
 import android.util.Log
-import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.btservice.AdapterSuspend
 
 private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseSuspendManager"
 
@@ -36,7 +35,7 @@ private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseSuspendManager"
  */
 class AdvertiseSuspendManager(
     private val advertiseManager: AdvertiseManager,
-    private val adapterService: AdapterService,
+    private val adapterSuspend: AdapterSuspend,
 ) {
 
     enum class SuspendState {
@@ -330,7 +329,7 @@ class AdvertiseSuspendManager(
 
     private fun finalizeSuspend() {
         suspendState = SuspendState.SUSPENDED
-        adapterService.adapterSuspend.orElse(null)?.advertiseSuspendReady()
+        adapterSuspend.advertiseSuspendReady()
     }
 
     /** Initiates resume sequence. Enable all paused advertisements. */
@@ -377,25 +376,16 @@ class AdvertiseSuspendManager(
         maxExtAdvEvents: Int,
         source: AttributionSource,
     ) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         suspendInfoMap[regId] = AdvertiserSuspendInfo(duration, maxExtAdvEvents, source)
     }
 
     /** To be called from AdvertiseManager when stopping an advertising set. */
     fun onStopAdvertisingSet(advertiserId: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         suspendInfoMap.remove(advertiserId)
     }
 
     /** To be called from AdvertiseManager when enabling an advertising set. */
     fun onEnableAdvertisingSet(advertiserId: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         val suspendInfo = suspendInfoMap[advertiserId]
         if (suspendInfo == null) {
             Log.wtf(TAG, "onEnableAdvertisingSet: suspendInfo is null for id $advertiserId")
@@ -406,9 +396,6 @@ class AdvertiseSuspendManager(
 
     /** To be called from AdvertiseManager when an advertising set is started. */
     fun onAdvertisingSetStarted(regId: Int, advertiserId: Int, status: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         val suspendInfo = suspendInfoMap.remove(regId)
         if (suspendInfo == null) {
             Log.wtf(TAG, "onAdvertisingSetStarted: suspendInfo is null for id $regId")
@@ -430,10 +417,6 @@ class AdvertiseSuspendManager(
 
     /** To be called from AdvertiseManager when an advertising set is enabled. */
     fun onAdvertisingEnabled(advertiserId: Int, enable: Boolean, status: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
-
         val suspendInfo = suspendInfoMap[advertiserId]
         if (suspendInfo == null) {
             Log.wtf(TAG, "onAdvertisingEnabled: suspendInfo is null for id $advertiserId")
