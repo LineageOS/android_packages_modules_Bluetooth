@@ -24,7 +24,7 @@ namespace common {
 class IPostableContext {
 public:
   virtual ~IPostableContext() {}
-  virtual void Post(base::OnceClosure closure) = 0;
+  virtual std::optional<base::OnceClosure> Post(base::OnceClosure closure) = 0;
 };
 
 }  // namespace common

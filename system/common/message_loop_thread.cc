@@ -388,7 +388,10 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
   }
 }
 
-void MessageLoopThread::Post(base::OnceClosure closure) { DoInThread(std::move(closure)); }
+std::optional<base::OnceClosure> MessageLoopThread::Post(base::OnceClosure closure) {
+  DoInThread(std::move(closure));
+  return std::nullopt;
+}
 
 PostableContext* MessageLoopThread::Postable() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
