@@ -31,7 +31,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -3645,9 +3644,11 @@ public class BluetoothMapContentObserver {
 
             Log.d(TAG, "sendMessage to " + msgInfo.phone);
 
-            // TODO(b/480794923): replace SKD_INT check with SkdLevel.isAtLeastC() once available
+            // TODO(b/480794923): Change this to SDK check once the SDK is finalized
             boolean isMessageUpgradeAvailable =
-                    Flags.mapUseNewMessageApi() && Build.VERSION.SDK_INT >= 37;
+                    Flags.mapUseNewMessageApi()
+                            && com.android.internal.telephony.flags.Flags.messagePromotion();
+            Log.d(TAG, "isMessageUpgradeAvailable: " + isMessageUpgradeAvailable);
             if (parts.size() == 1) {
                 if (isMessageUpgradeAvailable) {
                     smsMng.sendStoredTextMessage(
