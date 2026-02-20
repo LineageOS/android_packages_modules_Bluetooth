@@ -79,7 +79,7 @@ void connection_manager::on_connection_complete(const RawAddress& /* address */)
   inc_func_call_count(__func__);
 }
 
-void connection_manager::on_connection_timed_out_from_shim(const RawAddress& /* address */) {
+void connection_manager::on_connection_failed(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }
 
