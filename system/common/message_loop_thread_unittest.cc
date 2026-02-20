@@ -522,3 +522,50 @@ TEST_F(MessageLoopThreadTest, test_linux_tid_success) {
   // Verify that the callback is executed synchronously
   message_loop_thread1.ShutDown();
 }
+
+TEST_F(MessageLoopThreadTest, test_do_in_thread_else_return_with_move_only_argument) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  // Note: We are not starting the thread, so DoInThreadElseReturn will return the task.
+
+  std::promise<int> p;
+  std::future<int> f = p.get_future();
+  int value_set = 42;
+
+  auto task = base::BindOnce(
+          [](std::promise<int> promise, int value_set) { promise.set_value(value_set); },
+          std::move(p), value_set);
+
+  auto returned_task = message_loop_thread.DoInThreadElseReturn(std::move(task));
+
+  // The task should be returned since the thread is not running
+  ASSERT_TRUE(returned_task.has_value());
+
+  // Now, run the returned task and check the future
+  std::move(returned_task.value()).Run();
+  ASSERT_EQ(f.get(), value_set);
+}
+
+TEST_F(MessageLoopThreadTest, test_do_in_thread_delayed_else_return_with_move_only_argument) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  // Note: We are not starting the thread, so DoInThreadDelayedElseReturn will return the task.
+
+  std::promise<int> p;
+  std::future<int> f = p.get_future();
+  int value_set = 42;
+
+  auto task = base::BindOnce(
+          [](std::promise<int> promise, int value_set) { promise.set_value(value_set); },
+          std::move(p), value_set);
+
+  auto returned_task = message_loop_thread.DoInThreadDelayedElseReturn(
+          std::move(task), std::chrono::milliseconds(1));
+
+  // The task should be returned since the thread is not running
+  ASSERT_TRUE(returned_task.has_value());
+
+  // Now, run the returned task and check the future
+  std::move(returned_task.value()).Run();
+  ASSERT_EQ(f.get(), value_set);
+}
