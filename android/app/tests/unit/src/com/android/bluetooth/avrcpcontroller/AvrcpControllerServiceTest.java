@@ -254,21 +254,21 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void handleChangeFolderRsp() {
+    public void onChangeFolderResponse() {
         int count = 1;
 
-        mService.handleChangeFolderRsp(mDevice1, count);
+        mService.onChangeFolderResponse(mDevice1, count);
 
         verify(mStateMachine)
                 .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_FOLDER_PATH, count);
     }
 
     @Test
-    public void handleSetBrowsedPlayerRsp() {
+    public void onSetBrowsedPlayerResponse() {
         int items = 3;
         int depth = 5;
 
-        mService.handleSetBrowsedPlayerRsp(mDevice1, items, depth);
+        mService.onSetBrowsedPlayerResponse(mDevice1, items, depth);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -278,20 +278,20 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void handleSetAddressedPlayerRsp() {
+    public void onSetAddressedPlayerResponse() {
         int status = 1;
 
-        mService.handleSetAddressedPlayerRsp(mDevice1, status);
+        mService.onSetAddressedPlayerResponse(mDevice1, status);
 
         verify(mStateMachine)
                 .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ADDRESSED_PLAYER);
     }
 
     @Test
-    public void handleAddressedPlayerChanged() {
+    public void onAddressedPlayerChanged() {
         int id = 1;
 
-        mService.handleAddressedPlayerChanged(mDevice1, id);
+        mService.onAddressedPlayerChanged(mDevice1, id);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -299,8 +299,8 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void handleNowPlayingContentChanged() {
-        mService.handleNowPlayingContentChanged(mDevice1);
+    public void onNowPlayingContentChanged() {
+        mService.onNowPlayingContentChanged(mDevice1);
 
         verify(mStateMachine).nowPlayingContentChanged();
     }
@@ -325,10 +325,10 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void getRcPsm() {
+    public void onCoverArtPsmReceived() {
         int psm = 1;
 
-        mService.getRcPsm(mDevice1, psm);
+        mService.onCoverArtPsmReceived(mDevice1, psm);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -348,10 +348,10 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void handleRegisterNotificationAbsVol() {
+    public void onRegisterAbsoluteVolumeNotification() {
         byte label = 1;
 
-        mService.handleRegisterNotificationAbsVol(mDevice1, label);
+        mService.onRegisterAbsoluteVolumeNotification(mDevice1, label);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -360,11 +360,11 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void handleSetAbsVolume() {
+    public void onSetAbsoluteVolumeRequest() {
         byte absVol = 15;
         byte label = 1;
 
-        mService.handleSetAbsVolume(mDevice1, absVol, label);
+        mService.onSetAbsoluteVolumeRequest(mDevice1, absVol, label);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -391,11 +391,11 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void onPlayPositionChanged() {
+    public void onPlaybackPositionChanged() {
         int songLen = 100;
         int currSongPos = 33;
 
-        mService.onPlayPositionChanged(mDevice1, songLen, currSongPos);
+        mService.onPlaybackPositionChanged(mDevice1, songLen, currSongPos);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -405,10 +405,10 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void onPlayStatusChanged() {
+    public void onPlaybackStatusChanged() {
         byte status = PlaybackStateCompat.STATE_REWINDING;
 
-        mService.onPlayStatusChanged(mDevice1, status);
+        mService.onPlaybackStatusChanged(mDevice1, status);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -435,19 +435,19 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void onAvailablePlayerChanged() {
-        mService.onAvailablePlayerChanged(mDevice1);
+    public void onAvailablePlayersChanged() {
+        mService.onAvailablePlayersChanged(mDevice1);
 
         verify(mStateMachine)
                 .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED);
     }
 
     @Test
-    public void handleGetFolderItemsRsp() {
+    public void onGetFolderItemsResponse() {
         int status = 2;
         AvrcpItem[] items = new AvrcpItem[] {mock(AvrcpItem.class)};
 
-        mService.handleGetFolderItemsRsp(mDevice1, status, items);
+        mService.onGetFolderItemsResponse(mDevice1, status, items);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -456,10 +456,10 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void handleGetPlayerItemsRsp() {
+    public void onGetPlayerItemsResponse() {
         List<AvrcpPlayer> items = List.of(mock(AvrcpPlayer.class));
 
-        mService.handleGetPlayerItemsRsp(mDevice1, items);
+        mService.onGetPlayerItemsResponse(mDevice1, items);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -469,7 +469,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void dump_doesNotCrash() {
-        mService.getRcPsm(mDevice1, 1);
+        mService.onCoverArtPsmReceived(mDevice1, 1);
         mService.dump(new StringBuilder());
     }
 
