@@ -294,9 +294,7 @@ public class AdapterService extends Service {
                 @Override
                 public void onStateChanged(boolean enabled) {
                     // Skip isPresent as the listener is only registered when AdapterSuspend exist
-                    if (Flags.adapterSuspendMgmt()) {
-                        mAdapterSuspend.get().updateWakeLockState(enabled);
-                    }
+                    mAdapterSuspend.get().updateWakeLockState(enabled);
                 }
             };
 
@@ -1128,8 +1126,9 @@ public class AdapterService extends Service {
                     SystemProperties.getBoolean(
                             AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
             var stopLeScan =
-                    SystemProperties.getBoolean(
-                            AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
+                    Flags.stopLeScanSystemSuspend()
+                            && SystemProperties.getBoolean(
+                                    AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
             var pauseAdvertisement =
                     SystemProperties.getBoolean(
                             AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
@@ -1657,9 +1656,7 @@ public class AdapterService extends Service {
             mBluetoothSocketManagerBinder = null;
         }
 
-        if (Flags.adapterSuspendMgmt()) {
-            mAdapterSuspend.ifPresent(AdapterSuspend::cleanup);
-        }
+        mAdapterSuspend.ifPresent(AdapterSuspend::cleanup);
 
         mDisplayListener.close();
 
@@ -2448,7 +2445,7 @@ public class AdapterService extends Service {
                 () ->
                         mAdapterProperties.updateOnProfileConnectionChanged(
                                 device, profile, state, prevState));
-        if (Flags.adapterSuspendMgmt() && Flags.leHidConnectionPolicySuspend()) {
+        if (Flags.leHidConnectionPolicySuspend()) {
             mAdapterSuspend.ifPresent(
                     adapterSuspend ->
                             adapterSuspend.profileConnectionStateChanged(
@@ -4553,7 +4550,7 @@ public class AdapterService extends Service {
      * for a given {@code transport}.
      */
     public void notifyAclDisconnected(BluetoothDevice device, int transport) {
-        if (Flags.leHidConnectionPolicySuspend() && Flags.adapterSuspendMgmt()) {
+        if (Flags.leHidConnectionPolicySuspend()) {
             mAdapterSuspend.ifPresent(
                     adapterSuspend -> adapterSuspend.aclDisconnected(device, transport));
         }
@@ -4587,7 +4584,7 @@ public class AdapterService extends Service {
         mPhonePolicy.ifPresent(
                 policy ->
                         policy.profileConnectionStateChanged(profile, device, fromState, toState));
-        if (Flags.adapterSuspendMgmt() && !Flags.leHidConnectionPolicySuspend()) {
+        if (!Flags.leHidConnectionPolicySuspend()) {
             // When leHidConnectionPolicySuspend is true, the function call below is done by
             // updateProfileConnectionAdapterProperties, so it can be safely removed.
             mAdapterSuspend.ifPresent(
@@ -4677,7 +4674,7 @@ public class AdapterService extends Service {
         synchronized (this) {
             if (mWakeLock == null) {
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
-                if (Flags.adapterSuspendMgmt() && mAdapterSuspend.isPresent()) {
+                if (mAdapterSuspend.isPresent()) {
                     mWakeLock.setStateListener(mHandler::post, mWakeLockListener);
                 }
             }
@@ -4862,9 +4859,7 @@ public class AdapterService extends Service {
             return;
         }
 
-        if (Flags.adapterSuspendMgmt()) {
-            mAdapterSuspend.ifPresent(adapterSuspend -> adapterSuspend.dump(fd, writer, args));
-        }
+        mAdapterSuspend.ifPresent(adapterSuspend -> adapterSuspend.dump(fd, writer, args));
 
         writer.println();
 
