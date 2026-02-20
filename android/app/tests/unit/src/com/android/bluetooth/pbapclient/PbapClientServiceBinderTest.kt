@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,64 +14,50 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbapclient;
+package com.android.bluetooth.pbapclient
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.util.List;
-
-/** Test cases for {@link PbapClientServiceBinder}. */
+/** Test cases for [PbapClientServiceBinder]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class PbapClientServiceBinderTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class PbapClientServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private PbapClientService mMockService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: PbapClientService
 
-    private final BluetoothDevice mDevice = getTestDevice(1);
+    private val device = getTestDevice(1)
 
-    private PbapClientServiceBinder mPbapClientServiceBinder;
+    private lateinit var binder: PbapClientServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        mPbapClientServiceBinder = new PbapClientServiceBinder(mMockService);
+    fun setUp() {
+        binder = PbapClientServiceBinder(service)
     }
 
     @After
-    public void tearDown() throws Exception {
-        if (mPbapClientServiceBinder != null) {
-            mPbapClientServiceBinder.cleanup();
-            mPbapClientServiceBinder = null;
-        }
+    fun tearDown() {
+        binder.cleanup()
     }
 
     // *********************************************************************************************
@@ -79,47 +65,47 @@ public class PbapClientServiceBinderTest {
     // *********************************************************************************************
 
     @Test
-    public void testConnect() {
-        mPbapClientServiceBinder.connect(mDevice, mSource);
-        verify(mMockService).connect(eq(mDevice));
+    fun connect() {
+        binder.connect(device, source)
+        verify(service).connect(eq(device))
     }
 
     @Test
-    public void testDisconnect() {
-        mPbapClientServiceBinder.disconnect(mDevice, mSource);
-        verify(mMockService).disconnect(eq(mDevice));
+    fun disconnect() {
+        binder.disconnect(device, source)
+        verify(service).disconnect(eq(device))
     }
 
     @Test
-    public void testGetConnectedDevices() {
-        mPbapClientServiceBinder.getConnectedDevices(mSource);
-        verify(mMockService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
     }
 
     @Test
-    public void testGetDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED};
-        mPbapClientServiceBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mMockService).getDevicesMatchingConnectionStates(eq(states));
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_CONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(eq(states))
     }
 
     @Test
-    public void testGetConnectionState() {
-        mPbapClientServiceBinder.getConnectionState(mDevice, mSource);
-        verify(mMockService).getConnectionState(eq(mDevice));
+    fun getConnectionState() {
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(eq(device))
     }
 
     @Test
-    public void testSetConnectionPolicy() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        mPbapClientServiceBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
-        verify(mMockService).setConnectionPolicy(eq(mDevice), eq(connectionPolicy));
+    fun setConnectionPolicy() {
+        val connectionPolicy = CONNECTION_POLICY_ALLOWED
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service).setConnectionPolicy(eq(device), eq(connectionPolicy))
     }
 
     @Test
-    public void testGetConnectionPolicy() {
-        mPbapClientServiceBinder.getConnectionPolicy(mDevice, mSource);
-        verify(mMockService).getConnectionPolicy(eq(mDevice));
+    fun getConnectionPolicy() {
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(eq(device))
     }
 
     // *********************************************************************************************
@@ -127,62 +113,60 @@ public class PbapClientServiceBinderTest {
     // *********************************************************************************************
 
     @Test
-    public void testConnect_afterCleanup_returnsFalse() {
-        mPbapClientServiceBinder.cleanup();
-        boolean result = mPbapClientServiceBinder.connect(mDevice, mSource);
-        verify(mMockService, never()).connect(any(BluetoothDevice.class));
-        assertThat(result).isFalse();
+    fun connect_afterCleanup_returnsFalse() {
+        binder.cleanup()
+        val result = binder.connect(device, source)
+        verify(service, never()).connect(any())
+        assertThat(result).isFalse()
     }
 
     @Test
-    public void testDisconnect_afterCleanup_returnsFalse() {
-        mPbapClientServiceBinder.cleanup();
-        boolean result = mPbapClientServiceBinder.disconnect(mDevice, mSource);
-        verify(mMockService, never()).disconnect(any(BluetoothDevice.class));
-        assertThat(result).isFalse();
+    fun disconnect_afterCleanup_returnsFalse() {
+        binder.cleanup()
+        val result = binder.disconnect(device, source)
+        verify(service, never()).disconnect(any())
+        assertThat(result).isFalse()
     }
 
     @Test
-    public void testGetConnectedDevices_afterCleanup_returnsEmptyList() {
-        mPbapClientServiceBinder.cleanup();
-        List<BluetoothDevice> devices = mPbapClientServiceBinder.getConnectedDevices(mSource);
-        verify(mMockService, never()).getConnectedDevices();
-        assertThat(devices).isEmpty();
+    fun getConnectedDevices_afterCleanup_returnsEmptyList() {
+        binder.cleanup()
+        val devices = binder.getConnectedDevices(source)
+        verify(service, never()).connectedDevices
+        assertThat(devices).isEmpty()
     }
 
     @Test
-    public void testGetDevicesMatchingConnectionStates_afterCleanup_returnsEmptyList() {
-        mPbapClientServiceBinder.cleanup();
-        int[] states = new int[] {STATE_CONNECTED};
-        List<BluetoothDevice> devices =
-                mPbapClientServiceBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mMockService, never()).getDevicesMatchingConnectionStates(any(int[].class));
-        assertThat(devices).isEmpty();
+    fun getDevicesMatchingConnectionStates_afterCleanup_returnsEmptyList() {
+        binder.cleanup()
+        val states = intArrayOf(STATE_CONNECTED)
+        val devices = binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service, never()).getDevicesMatchingConnectionStates(any())
+        assertThat(devices).isEmpty()
     }
 
     @Test
-    public void testGetConnectionState_afterCleanup_returnsDisconnected() {
-        mPbapClientServiceBinder.cleanup();
-        int state = mPbapClientServiceBinder.getConnectionState(mDevice, mSource);
-        verify(mMockService, never()).getConnectionState(any(BluetoothDevice.class));
-        assertThat(state).isEqualTo(STATE_DISCONNECTED);
+    fun getConnectionState_afterCleanup_returnsDisconnected() {
+        binder.cleanup()
+        val state = binder.getConnectionState(device, source)
+        verify(service, never()).getConnectionState(any())
+        assertThat(state).isEqualTo(STATE_DISCONNECTED)
     }
 
     @Test
-    public void testSetConnectionPolicy_afterCleanup_returnsFalse() {
-        mPbapClientServiceBinder.cleanup();
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        boolean result =
-                mPbapClientServiceBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
-        verify(mMockService, never()).setConnectionPolicy(any(BluetoothDevice.class), anyInt());
-        assertThat(result).isFalse();
+    fun setConnectionPolicy_afterCleanup_returnsFalse() {
+        binder.cleanup()
+        val connectionPolicy = CONNECTION_POLICY_ALLOWED
+        val result = binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service, never()).setConnectionPolicy(any(), any())
+        assertThat(result).isFalse()
     }
 
     @Test
-    public void testGetConnectionPolicy_afterCleanup_returnsUnknown() {
-        mPbapClientServiceBinder.cleanup();
-        int result = mPbapClientServiceBinder.getConnectionPolicy(mDevice, mSource);
-        verify(mMockService, never()).getConnectionPolicy(any(BluetoothDevice.class));
-        assertThat(result).isEqualTo(CONNECTION_POLICY_UNKNOWN);
+    fun getConnectionPolicy_afterCleanup_returnsUnknown() {
+        binder.cleanup()
+        val result = binder.getConnectionPolicy(device, source)
+        verify(service, never()).getConnectionPolicy(any())
+        assertThat(result).isEqualTo(CONNECTION_POLICY_UNKNOWN)
     }
 }
