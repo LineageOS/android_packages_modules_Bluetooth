@@ -14,234 +14,227 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hfpclient;
+package com.android.bluetooth.hfpclient
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link HeadsetClientServiceBinder}. */
+/** Test cases for [HeadsetClientServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HeadsetClientServiceBinderTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class HeadsetClientServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private HeadsetClientService mService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: HeadsetClientService
 
-    private final BluetoothDevice mDevice = getTestDevice(54);
+    private val device = getTestDevice(54)
 
-    private HeadsetClientServiceBinder mBinder;
+    private lateinit var binder: HeadsetClientServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        mBinder = new HeadsetClientServiceBinder(mService);
+    fun setUp() {
+        binder = HeadsetClientServiceBinder(service)
     }
 
     @Test
-    public void connect_callsServiceMethod() {
-        mBinder.connect(mDevice, mSource);
+    fun connect_callsServiceMethod() {
+        binder.connect(device, source)
 
-        verify(mService).connect(mDevice);
+        verify(service).connect(device)
     }
 
     @Test
-    public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mDevice, mSource);
+    fun disconnect_callsServiceMethod() {
+        binder.disconnect(device, source)
 
-        verify(mService).disconnect(mDevice);
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(mSource);
+    fun getConnectedDevices_callsServiceMethod() {
+        binder.getConnectedDevices(source)
 
-        verify(mService).getConnectedDevices();
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates_callsServiceMethod() {
-        int[] states = new int[] {STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
+    fun getDevicesMatchingConnectionStates_callsServiceMethod() {
+        val states = intArrayOf(STATE_CONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
 
-        verify(mService).getDevicesMatchingConnectionStates(states);
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, mSource);
+    fun getConnectionState_callsServiceMethod() {
+        binder.getConnectionState(device, source)
 
-        verify(mService).getConnectionState(mDevice);
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setConnectionPolicy_callsServiceMethod() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
+    fun setConnectionPolicy_callsServiceMethod() {
+        val connectionPolicy = CONNECTION_POLICY_ALLOWED
+        binder.setConnectionPolicy(device, connectionPolicy, source)
 
-        verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void getConnectionPolicy_callsServiceMethod() {
-        mBinder.getConnectionPolicy(mDevice, mSource);
+    fun getConnectionPolicy_callsServiceMethod() {
+        binder.getConnectionPolicy(device, source)
 
-        verify(mService).getConnectionPolicy(mDevice);
+        verify(service).getConnectionPolicy(device)
     }
 
     @Test
-    public void startVoiceRecognition_callsServiceMethod() {
-        mBinder.startVoiceRecognition(mDevice, mSource);
+    fun startVoiceRecognition_callsServiceMethod() {
+        binder.startVoiceRecognition(device, source)
 
-        verify(mService).startVoiceRecognition(mDevice);
+        verify(service).startVoiceRecognition(device)
     }
 
     @Test
-    public void stopVoiceRecognition_callsServiceMethod() {
-        mBinder.stopVoiceRecognition(mDevice, mSource);
+    fun stopVoiceRecognition_callsServiceMethod() {
+        binder.stopVoiceRecognition(device, source)
 
-        verify(mService).stopVoiceRecognition(mDevice);
+        verify(service).stopVoiceRecognition(device)
     }
 
     @Test
-    public void getAudioState_callsServiceMethod() {
-        mBinder.getAudioState(mDevice, mSource);
+    fun getAudioState_callsServiceMethod() {
+        binder.getAudioState(device, source)
 
-        verify(mService).getAudioState(mDevice);
+        verify(service).getAudioState(device)
     }
 
     @Test
-    public void setAudioRouteAllowed_callsServiceMethod() {
-        boolean allowed = true;
-        mBinder.setAudioRouteAllowed(mDevice, allowed, mSource);
+    fun setAudioRouteAllowed_callsServiceMethod() {
+        val allowed = true
+        binder.setAudioRouteAllowed(device, allowed, source)
 
-        verify(mService).setAudioRouteAllowed(mDevice, allowed);
+        verify(service).setAudioRouteAllowed(device, allowed)
     }
 
     @Test
-    public void getAudioRouteAllowed_callsServiceMethod() {
-        mBinder.getAudioRouteAllowed(mDevice, mSource);
+    fun getAudioRouteAllowed_callsServiceMethod() {
+        binder.getAudioRouteAllowed(device, source)
 
-        verify(mService).getAudioRouteAllowed(mDevice);
+        verify(service).getAudioRouteAllowed(device)
     }
 
     @Test
-    public void connectAudio_callsServiceMethod() {
-        mBinder.connectAudio(mDevice, mSource);
+    fun connectAudio_callsServiceMethod() {
+        binder.connectAudio(device, source)
 
-        verify(mService).connectAudio(mDevice);
+        verify(service).connectAudio(device)
     }
 
     @Test
-    public void disconnectAudio_callsServiceMethod() {
-        mBinder.disconnectAudio(mDevice, mSource);
+    fun disconnectAudio_callsServiceMethod() {
+        binder.disconnectAudio(device, source)
 
-        verify(mService).disconnectAudio(mDevice);
+        verify(service).disconnectAudio(device)
     }
 
     @Test
-    public void acceptCall_callsServiceMethod() {
-        int flag = 2;
-        mBinder.acceptCall(mDevice, flag, mSource);
+    fun acceptCall_callsServiceMethod() {
+        val flag = 2
+        binder.acceptCall(device, flag, source)
 
-        verify(mService).acceptCall(mDevice, flag);
+        verify(service).acceptCall(device, flag)
     }
 
     @Test
-    public void rejectCall_callsServiceMethod() {
-        mBinder.rejectCall(mDevice, mSource);
+    fun rejectCall_callsServiceMethod() {
+        binder.rejectCall(device, source)
 
-        verify(mService).rejectCall(mDevice);
+        verify(service).rejectCall(device)
     }
 
     @Test
-    public void holdCall_callsServiceMethod() {
-        mBinder.holdCall(mDevice, mSource);
+    fun holdCall_callsServiceMethod() {
+        binder.holdCall(device, source)
 
-        verify(mService).holdCall(mDevice);
+        verify(service).holdCall(device)
     }
 
     @Test
-    public void terminateCall_callsServiceMethod() {
-        mBinder.terminateCall(mDevice, null, mSource);
+    fun terminateCall_callsServiceMethod() {
+        binder.terminateCall(device, null, source)
 
-        verify(mService).terminateCall(mDevice, null);
+        verify(service).terminateCall(device, null)
     }
 
     @Test
-    public void explicitCallTransfer_callsServiceMethod() {
-        mBinder.explicitCallTransfer(mDevice, mSource);
+    fun explicitCallTransfer_callsServiceMethod() {
+        binder.explicitCallTransfer(device, source)
 
-        verify(mService).explicitCallTransfer(mDevice);
+        verify(service).explicitCallTransfer(device)
     }
 
     @Test
-    public void enterPrivateMode_callsServiceMethod() {
-        int index = 1;
-        mBinder.enterPrivateMode(mDevice, index, mSource);
+    fun enterPrivateMode_callsServiceMethod() {
+        val index = 1
+        binder.enterPrivateMode(device, index, source)
 
-        verify(mService).enterPrivateMode(mDevice, index);
+        verify(service).enterPrivateMode(device, index)
     }
 
     @Test
-    public void dial_callsServiceMethod() {
-        String number = "12532523";
-        mBinder.dial(mDevice, number, mSource);
+    fun dial_callsServiceMethod() {
+        val number = "12532523"
+        binder.dial(device, number, source)
 
-        verify(mService).dial(mDevice, number);
+        verify(service).dial(device, number)
     }
 
     @Test
-    public void sendDTMF_callsServiceMethod() {
-        byte code = 21;
-        mBinder.sendDTMF(mDevice, code, mSource);
+    fun sendDTMF_callsServiceMethod() {
+        val code: Byte = 21
+        binder.sendDTMF(device, code, source)
 
-        verify(mService).sendDTMF(mDevice, code);
+        verify(service).sendDTMF(device, code)
     }
 
     @Test
-    public void getCurrentAgEvents_callsServiceMethod() {
-        mBinder.getCurrentAgEvents(mDevice, mSource);
+    fun getCurrentAgEvents_callsServiceMethod() {
+        binder.getCurrentAgEvents(device, source)
 
-        verify(mService).getCurrentAgEvents(mDevice);
+        verify(service).getCurrentAgEvents(device)
     }
 
     @Test
-    public void sendVendorAtCommand_callsServiceMethod() {
-        int vendorId = 5;
-        String cmd = "test_command";
+    fun sendVendorAtCommand_callsServiceMethod() {
+        val vendorId = 5
+        val cmd = "test_command"
 
-        mBinder.sendVendorAtCommand(mDevice, vendorId, cmd, mSource);
+        binder.sendVendorAtCommand(device, vendorId, cmd, source)
 
-        verify(mService).sendVendorAtCommand(mDevice, vendorId, cmd);
+        verify(service).sendVendorAtCommand(device, vendorId, cmd)
     }
 
     @Test
-    public void getCurrentAgFeatures_callsServiceMethod() {
-        mBinder.getCurrentAgFeatures(mDevice, mSource);
+    fun getCurrentAgFeatures_callsServiceMethod() {
+        binder.getCurrentAgFeatures(device, source)
 
-        verify(mService).getCurrentAgFeaturesBundle(mDevice);
+        verify(service).getCurrentAgFeaturesBundle(device)
     }
 
     @Test
-    public void cleanUp_doesNotCrash() {
-        mBinder.cleanup();
+    fun cleanUp_doesNotCrash() {
+        binder.cleanup()
     }
 }
