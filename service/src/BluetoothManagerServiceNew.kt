@@ -16,14 +16,29 @@
 
 package com.android.server.bluetooth
 
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.app.BroadcastOptions
+import android.bluetooth.IBluetoothManager.ACTION_LOCAL_NAME_CHANGED
+import android.bluetooth.IBluetoothManager.EXTRA_LOCAL_NAME
 import android.bluetooth.IBluetoothManagerCallback
 import android.bluetooth.State
 import android.content.Context
+import android.content.Intent
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerExemptionManager.REASON_BLUETOOTH_BROADCAST
+import android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED
+import android.os.SystemProperties
 import android.os.UserHandle
+import android.provider.Settings.Global
+import android.provider.Settings.Secure
+import com.android.bluetooth.util.truncateUtf8String
 import java.io.FileDescriptor
 import java.io.PrintWriter
+import kotlin.time.Duration.Companion.seconds
+
+// Must match android.provider.Settings.Secure.BLUETOOTH_NAME but cannot depend on the variable
+const val BLUETOOTH_NAME = "bluetooth_name"
 
 class BluetoothManagerServiceNew(
     private val context: Context,
@@ -31,9 +46,16 @@ class BluetoothManagerServiceNew(
     private val userHandle: UserHandle,
     private var isBootCompleted: Boolean,
 ) {
+    private val contentResolver = context.contentResolver
+    private val state = State.OFF
+
+    private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
 
     init {
-        Log.i(TAG, "Starting for user $userHandle (boot completed=$isBootCompleted)")
+        Log.i(
+            TAG,
+            "Starting for user $userHandle (boot completed=$isBootCompleted) Name=$localName",
+        )
     }
 
     fun shutdown() {
@@ -70,7 +92,7 @@ class BluetoothManagerServiceNew(
     }
 
     // API Delegate methods
-    fun getState(): Int = State.OFF
+    fun getState(): Int = state
 
     fun waitForState(state: Int): Boolean = false
 
@@ -80,9 +102,52 @@ class BluetoothManagerServiceNew(
 
     fun getAddress(): String? = null
 
-    fun setName(name: String?) {}
+    fun getName() = localName
 
-    fun getName(): String? = null
+    fun setName(name: String?) {
+        val validatedName = validateLocalName(name)
+        if (validatedName == localName) {
+            return
+        }
+        if (state != State.OFF) {
+            throw NotImplementedError("setName when Bluetooth is ON") // TODO
+        }
+        persistentStorageForLocalName(validatedName)
+    }
+
+    private fun validateLocalName(_name: String?): String {
+        var name = _name
+        if (name.isNullOrEmpty()) {
+            name = SystemProperties.get("bluetooth.device.default_name")
+        }
+        if (name.isNullOrEmpty()) {
+            name = Global.getString(contentResolver, Global.DEVICE_NAME)
+        }
+        if (name.isNullOrEmpty()) {
+            name = SystemProperties.get("ro.product.model")
+        }
+        if (name.isNullOrEmpty()) {
+            name = "Android"
+        }
+        // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section 4.3.5).
+        return name.truncateUtf8String(248)
+    }
+
+    private fun persistentStorageForLocalName(name: String) {
+        Secure.putString(contentResolver, BLUETOOTH_NAME, name)
+        val intent =
+            Intent(ACTION_LOCAL_NAME_CHANGED)
+                .putExtra(EXTRA_LOCAL_NAME, name)
+                .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT)
+        context.sendBroadcastAsUser(
+            intent,
+            userHandle,
+            BLUETOOTH_CONNECT,
+            getTempAllowlistBroadcastOptions(),
+        )
+        Log.v(TAG, "persistentStorageForLocalName($name): Name updated $localName -> $name")
+        localName = name
+    }
 
     fun isBleScanAvailable(): Boolean = false
 
@@ -112,5 +177,17 @@ class BluetoothManagerServiceNew(
 
     companion object {
         private const val TAG = "BluetoothManagerServiceNew"
+
+        fun getTempAllowlistBroadcastOptions() =
+            BroadcastOptions.makeBasic()
+                .apply {
+                    setTemporaryAppAllowlist(
+                        10.seconds.inWholeMilliseconds,
+                        TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED,
+                        REASON_BLUETOOTH_BROADCAST,
+                        "",
+                    )
+                }
+                .toBundle()
     }
 }

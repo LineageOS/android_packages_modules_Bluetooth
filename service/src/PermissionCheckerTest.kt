@@ -151,11 +151,14 @@ class PermissionCheckerTest(private val flags: FlagsWrapper) {
         val foregroundUserId = 0
         val backgroundUserId = 10
         ShadowProcess.setUid(
-            UserHandle.getUid(foregroundUserId, UserHandle.getAppId(Process.myUid()))
+            UserHandle.of(foregroundUserId).getUid(UserHandle.getAppId(Process.myUid()))
         )
-        val backgroundUid = UserHandle.getUid(backgroundUserId, UserHandle.getAppId(TEST_APP_UID))
+
+        val backgroundUid =
+            UserHandle.of(backgroundUserId).getUid(UserHandle.getAppId(TEST_APP_UID))
         ShadowBinder.setCallingUid(backgroundUid)
-        val backgroundSource = AttributionSource(backgroundUid, TEST_APP_PACKAGE_NAME, null)
+        val backgroundSource =
+            AttributionSource.Builder(backgroundUid).setPackageName(TEST_APP_PACKAGE_NAME).build()
         grantBluetoothConnect(permissionManager)
 
         val exception =
@@ -170,12 +173,14 @@ class PermissionCheckerTest(private val flags: FlagsWrapper) {
         val foregroundUserId = 0
         val backgroundUserId = 10
         ShadowProcess.setUid(
-            UserHandle.getUid(foregroundUserId, UserHandle.getAppId(Process.myUid()))
+            UserHandle.of(foregroundUserId).getUid(UserHandle.getAppId(Process.myUid()))
         )
 
-        val backgroundUid = UserHandle.getUid(backgroundUserId, UserHandle.getAppId(TEST_APP_UID))
+        val backgroundUid =
+            UserHandle.of(backgroundUserId).getUid(UserHandle.getAppId(TEST_APP_UID))
         ShadowBinder.setCallingUid(backgroundUid)
-        val backgroundSource = AttributionSource(backgroundUid, TEST_APP_PACKAGE_NAME, null)
+        val backgroundSource =
+            AttributionSource.Builder(backgroundUid).setPackageName(TEST_APP_PACKAGE_NAME).build()
         grantBluetoothConnect(permissionManager)
 
         permissionChecker.enableAllowed(backgroundSource, false) // no throw

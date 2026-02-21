@@ -25,6 +25,7 @@ import com.android.server.bluetooth.BluetoothSupervisorNew
 import com.google.common.truth.Truth.assertThat
 import java.io.PrintWriter
 import java.io.StringWriter
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -32,6 +33,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+
+// TODO when cleaning systemServerMigrateBmsToKotlin, remove all transition comments from this file
 
 @RunWith(RobolectricTestRunner::class)
 @ExperimentalCoroutinesApi
@@ -95,7 +98,7 @@ class BluetoothSupervisorTest {
         verifyActiveUser(user2)
     }
 
-    @Test
+    @Test // From supervisor__userStop_whenCurrent_emulateSwitch
     fun onUserStopping_currentUser_stopsService() = runTest {
         val user = UserHandle.of(10)
         supervisor.onUserSwitching(user)
@@ -108,7 +111,7 @@ class BluetoothSupervisorTest {
         verifyActiveUser(foregroundUser)
     }
 
-    @Test
+    @Test // From supervisor__userStop_whenNotCurrent_nothingHappen
     fun onUserStopping_otherUser_ignored() = runTest {
         val currentUser = UserHandle.of(10)
         val otherUser = UserHandle.of(11)
@@ -118,6 +121,15 @@ class BluetoothSupervisorTest {
 
         // Should remain on currentUser
         verifyActiveUser(currentUser)
+    }
+
+    @Test // From supervisor__foregroundUserStop_whenCurrent_isUnsupported
+    fun onUserStopping_onForegroundUser_isNotSupported() = runTest {
+        val foregroundUser = UserHandle.of(ActivityManager.getCurrentUser())
+
+        supervisor.onUserSwitching(foregroundUser)
+
+        assertFailsWith<IllegalStateException> { supervisor.onUserStopping(foregroundUser) }
     }
 
     @Test
