@@ -217,23 +217,6 @@ struct BTA_DmBleSubrateRequest {
 };
 extern struct BTA_DmBleSubrateRequest BTA_DmBleSubrateRequest;
 
-// Name: BTA_DmBleUpdateConnectionParams
-// Params: const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-// uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len
-// Return: void
-struct BTA_DmBleUpdateConnectionParams {
-  std::function<void(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-                     uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* min_int */, uint16_t /* max_int */,
-                  uint16_t /* latency */, uint16_t /* timeout */, uint16_t /* min_ce_len */,
-                  uint16_t /* max_ce_len */) {}};
-  void operator()(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int, uint16_t latency,
-                  uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len) {
-    body(bd_addr, min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
-  }
-};
-extern struct BTA_DmBleUpdateConnectionParams BTA_DmBleUpdateConnectionParams;
-
 // Name: BTA_DmBond
 // Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport
 // Return: void
@@ -410,23 +393,6 @@ struct BTA_DmSearchCancel {
   void operator()(void) { body(); }
 };
 extern struct BTA_DmSearchCancel BTA_DmSearchCancel;
-
-// Name: BTA_DmSetBlePrefConnParams
-// Params: const RawAddress& bd_addr, uint16_t min_conn_int, uint16_t
-// max_conn_int, uint16_t peripheral_latency, uint16_t supervision_tout Return:
-// void
-struct BTA_DmSetBlePrefConnParams {
-  std::function<void(const RawAddress& bd_addr, uint16_t min_conn_int, uint16_t max_conn_int,
-                     uint16_t peripheral_latency, uint16_t supervision_tout)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* min_conn_int */,
-                  uint16_t /* max_conn_int */, uint16_t /* peripheral_latency */,
-                  uint16_t /* supervision_tout */) {}};
-  void operator()(const RawAddress& bd_addr, uint16_t min_conn_int, uint16_t max_conn_int,
-                  uint16_t peripheral_latency, uint16_t supervision_tout) {
-    body(bd_addr, min_conn_int, max_conn_int, peripheral_latency, supervision_tout);
-  }
-};
-extern struct BTA_DmSetBlePrefConnParams BTA_DmSetBlePrefConnParams;
 
 // Name: BTA_DmSetDefaultEventMaskExcept
 // Params: uint64_t mask, uint64_t le_mask

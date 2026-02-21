@@ -59,14 +59,14 @@
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_btm_iso.h"
+#include "stack/mock/mock_stack_gatt_api.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "storage_helper.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_btm_iso.h"
-#include "test/mock/mock_stack_gatt_api.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

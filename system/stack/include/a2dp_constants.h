@@ -22,6 +22,9 @@
 #include <cstdint>
 #include <optional>
 
+/* Maximum size in bytes of the codec capabilities information element. */
+#define AVDT_CODEC_SIZE 20
+
 /* Profile supported features */
 #define A2DP_SUPF_PLAYER 0x0001
 #define A2DP_SUPF_MIC 0x0002
@@ -105,6 +108,29 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]);
 
 // Returns codec and vendor IDs as string.
 std::string CodecIdToString(CodecId codec_id);
+
+/// Type of media codec capabilities.
+/// Contains the Codec Specific Information elements as defined in [AVDTP_1.3].
+struct MediaCodecCapabilities {
+  MediaCodecCapabilities() = default;
+  MediaCodecCapabilities(uint8_t const* media_codec_capabilities) {
+    std::copy(media_codec_capabilities, media_codec_capabilities + inner.size(), inner.begin());
+  }
+
+  /// Return the length of the Media Codec Capabilities.
+  size_t length() const { return inner[0]; }
+
+  /// Extract the standardized codec identifier from the Media Codec Capabilities.
+  /// Returns `std::nullopt` if the capabilities are not well formed.
+  std::optional<a2dp::CodecId> codecId() const { return a2dp::ParseCodecId(inner.data()); }
+
+  uint8_t* data() { return inner.data(); }
+  uint8_t const* data() const { return inner.data(); }
+  uint8_t const& operator[](size_t idx) const { return inner[idx]; }
+
+private:
+  std::array<uint8_t, AVDT_CODEC_SIZE> inner{};
+};
 
 }  // namespace bluetooth::a2dp
 

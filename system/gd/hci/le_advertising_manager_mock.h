@@ -28,8 +28,6 @@ namespace testing {
 using hci::AdvertiserId;
 class MockLeAdvertisingManager : public LeAdvertisingManager {
 public:
-  MOCK_METHOD(size_t, GetNumberOfAdvertisingInstances, (), (const override));
-
   MOCK_METHOD(size_t, GetNumberOfAdvertisingInstancesInUse, (), (const override));
 
   MOCK_METHOD(int, GetAdvertiserRegId, (AdvertiserId advertiser_id), (override));

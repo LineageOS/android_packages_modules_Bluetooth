@@ -39,9 +39,9 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "test/common/mock_functions.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 bool gatt_cl_read_sirk_req(const RawAddress& /*peer_bda*/,
                            base::OnceCallback<void(tGATT_STATUS status, const RawAddress&,

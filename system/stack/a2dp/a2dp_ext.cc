@@ -45,9 +45,11 @@ A2dpCodecConfigExt::A2dpCodecConfigExt(btav_a2dp_codec_index_t codec_index, bool
                       BTAV_A2DP_CODEC_PRIORITY_DEFAULT),
       is_source_(is_source) {
   // Load the local capabilities from the provider info.
-  auto result = ::bluetooth::audio::a2dp::provider::codec_info(
-          codec_index, nullptr, ota_codec_config_, &codec_local_capability_);
+  uint8_t codec_info[AVDT_CODEC_SIZE];
+  auto result = ::bluetooth::audio::a2dp::provider::codec_info(codec_index, nullptr, codec_info,
+                                                               &codec_local_capability_);
   log::assert_that(result, "provider::codec_info unexpectdly failed");
+  ota_codec_config_ = bluetooth::a2dp::MediaCodecCapabilities(codec_info);
 }
 
 tA2DP_STATUS A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info,
@@ -81,8 +83,8 @@ tA2DP_STATUS A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info
   codec_selectable_capability_ = codec_local_capability_;
   codec_config_ = result->codec_parameters;
   vendor_specific_parameters_ = result->vendor_specific_parameters;
-  memcpy(ota_codec_config_, result->codec_config, sizeof(ota_codec_config_));
-  memcpy(p_result_codec_config, result->codec_config, sizeof(ota_codec_config_));
+  ota_codec_config_ = bluetooth::a2dp::MediaCodecCapabilities(result->codec_config);
+  memcpy(p_result_codec_config, result->codec_config, AVDT_CODEC_SIZE);
   return A2DP_SUCCESS;
 }
 
@@ -92,7 +94,7 @@ bool A2dpCodecConfigExt::setPeerCodecCapabilities(const uint8_t* p_peer_codec_ca
   // peer capabilities and the selectable capabilities cannot be
   // computed.
   codec_selectable_capability_ = codec_local_capability_;
-  memcpy(ota_codec_peer_capability_, p_peer_codec_capabilities, sizeof(ota_codec_peer_capability_));
+  ota_codec_peer_capability_ = bluetooth::a2dp::MediaCodecCapabilities(p_peer_codec_capabilities);
   return true;
 }
 
@@ -105,7 +107,7 @@ void A2dpCodecConfigExt::setCodecConfig(btav_a2dp_codec_config_t codec_parameter
   // computed.
   codec_selectable_capability_ = codec_local_capability_;
   codec_config_ = codec_parameters;
-  memcpy(ota_codec_config_, codec_config, sizeof(ota_codec_config_));
+  ota_codec_config_ = bluetooth::a2dp::MediaCodecCapabilities(codec_config);
   vendor_specific_parameters_ = vendor_specific_parameters;
 }
 

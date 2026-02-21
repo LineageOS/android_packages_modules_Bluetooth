@@ -25,10 +25,10 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/port_api.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/rfcomm/rfc_int.h"
 #include "stack/test/common/stack_test_packet_utils.h"
 #include "stack/test/rfcomm/stack_rfcomm_test_utils.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

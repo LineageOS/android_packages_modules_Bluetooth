@@ -233,23 +233,6 @@ struct bta_dm_ble_scan {
 };
 extern struct bta_dm_ble_scan bta_dm_ble_scan;
 
-// Name: bta_dm_ble_set_conn_params
-// Params: const RawAddress& bd_addr, uint16_t conn_int_min, uint16_t
-// conn_int_max, uint16_t peripheral_latency, uint16_t supervision_tout Return:
-// void
-struct bta_dm_ble_set_conn_params {
-  std::function<void(const RawAddress& bd_addr, uint16_t conn_int_min, uint16_t conn_int_max,
-                     uint16_t peripheral_latency, uint16_t supervision_tout)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* conn_int_min */,
-                  uint16_t /* conn_int_max */, uint16_t /* peripheral_latency */,
-                  uint16_t /* supervision_tout */) {}};
-  void operator()(const RawAddress& bd_addr, uint16_t conn_int_min, uint16_t conn_int_max,
-                  uint16_t peripheral_latency, uint16_t supervision_tout) {
-    body(bd_addr, conn_int_min, conn_int_max, peripheral_latency, supervision_tout);
-  }
-};
-extern struct bta_dm_ble_set_conn_params bta_dm_ble_set_conn_params;
-
 // Name: bta_dm_ble_set_data_length
 // Params: const RawAddress& bd_addr
 // Return: void
@@ -258,23 +241,6 @@ struct bta_dm_ble_set_data_length {
   void operator()(const RawAddress& bd_addr) { body(bd_addr); }
 };
 extern struct bta_dm_ble_set_data_length bta_dm_ble_set_data_length;
-
-// Name: bta_dm_ble_update_conn_params
-// Params: const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-// uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len
-// Return: void
-struct bta_dm_ble_update_conn_params {
-  std::function<void(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-                     uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* min_int */, uint16_t /* max_int */,
-                  uint16_t /* latency */, uint16_t /* timeout */, uint16_t /* min_ce_len */,
-                  uint16_t /* max_ce_len */) {}};
-  void operator()(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int, uint16_t latency,
-                  uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len) {
-    body(bd_addr, min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
-  }
-};
-extern struct bta_dm_ble_update_conn_params bta_dm_ble_update_conn_params;
 
 // Name: bta_dm_bond
 // Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport

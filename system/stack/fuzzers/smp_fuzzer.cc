@@ -26,15 +26,15 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/smp_api.h"
+#include "stack/mock/mock_stack_acl.h"
+#include "stack/mock/mock_stack_btm_dev.h"
+#include "stack/mock/mock_stack_l2cap_api.h"
+#include "stack/mock/mock_stack_l2cap_ble.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/smp/smp_int.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_acl.h"
-#include "test/mock/mock_stack_btm_dev.h"
-#include "test/mock/mock_stack_l2cap_api.h"
-#include "test/mock/mock_stack_l2cap_ble.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
 
 using ::testing::NiceMock;
 using ::testing::Unused;

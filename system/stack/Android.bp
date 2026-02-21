@@ -2565,3 +2565,206 @@ cc_test {
     ],
     header_libs: ["libbluetooth_headers"],
 }
+
+filegroup {
+    name: "TestMockStackA2dp",
+    srcs: [
+        "mock/mock_stack_a2dp_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackA2dpApi",
+    srcs: [
+        "mock/mock_stack_a2dp_api.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackArbiter",
+    srcs: [
+        "mock/mock_stack_arbiter_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAvct",
+    srcs: [
+        "mock/mock_stack_avct_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAvdt",
+    srcs: [
+        "mock/mock_stack_avdt_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAvrc",
+    srcs: [
+        "mock/mock_stack_avrc_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackL2cap",
+    srcs: [
+        "mock/mock_stack_l2cap_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackL2capInterface",
+    srcs: [
+        "mock/mock_stack_l2cap_interface.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackRfcomm",
+    srcs: [
+        "mock/mock_stack_rfcomm*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackRfcommMetrics",
+    srcs: [
+        "mock/mock_stack_rfcomm_metrics.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackRnr",
+    srcs: [
+        "mock/mock_stack_rnr_interface.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStack",
+    srcs: [
+        "mock/mock_stack_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackHid",
+    srcs: [
+        "mock/mock_stack_hid*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackPan",
+    srcs: [
+        "mock/mock_stack_pan*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackSdp",
+    srcs: [
+        "mock/mock_stack_sdp*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackBtm",
+    srcs: [
+        "mock/mock_stack_btm*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackBtmInterface",
+    srcs: [
+        "mock/mock_stack_btm_interface.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackSecurityClientInterface",
+    srcs: [
+        "mock/mock_stack_security_client_interface.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackBtmIso",
+    srcs: [
+        "mock/mock_stack_btm_iso.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAcl",
+    srcs: [
+        "mock/mock_stack_acl*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackSmp",
+    srcs: [
+        "mock/mock_stack_smp*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackGap",
+    srcs: [
+        "mock/mock_stack_gap*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackGapConnInterface",
+    srcs: [
+        "mock/mock_stack_gap_conn_interface.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackConnMgr",
+    srcs: [
+        "mock/mock_stack_connection_manager.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackGatt",
+    srcs: [
+        "mock/mock_stack_gatt*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackGattOffload",
+    srcs: [
+        "mock/mock_stack_gatt_offload.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackBtu",
+    srcs: [
+        "mock/mock_stack_btu*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackHcic",
+    srcs: [
+        "mock/mock_stack_hcic*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockSrvcDis",
+    srcs: [
+        "mock/mock_stack_srvc_dis.cc",
+    ],
+}

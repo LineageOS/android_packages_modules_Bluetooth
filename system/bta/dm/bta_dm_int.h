@@ -301,10 +301,6 @@ void bta_dm_enable(tBTA_DM_SEC_CBACK*, tBTA_DM_ACL_CBACK*);
 void bta_dm_disable();
 void bta_dm_set_dev_name(const std::vector<uint8_t>&);
 
-void bta_dm_ble_set_conn_params(const RawAddress&, uint16_t, uint16_t, uint16_t, uint16_t);
-void bta_dm_ble_update_conn_params(const RawAddress&, uint16_t, uint16_t, uint16_t, uint16_t,
-                                   uint16_t, uint16_t);
-
 void bta_dm_ble_set_data_length(const RawAddress& bd_addr);
 
 void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);

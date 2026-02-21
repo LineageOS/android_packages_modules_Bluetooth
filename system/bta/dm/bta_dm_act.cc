@@ -1505,30 +1505,6 @@ bool bta_dm_check_if_only_hd_connected(const RawAddress& peer_addr) {
   return true;
 }
 
-/** This function set the preferred connection parameters */
-void bta_dm_ble_set_conn_params(const RawAddress& bd_addr, uint16_t conn_int_min,
-                                uint16_t conn_int_max, uint16_t peripheral_latency,
-                                uint16_t supervision_tout) {
-  stack::l2cap::get_interface().L2CA_AdjustConnectionIntervals(&conn_int_min, &conn_int_max,
-                                                               BTM_BLE_CONN_INT_MIN);
-
-  get_btm_client_interface().ble.BTM_BleSetPrefConnParams(bd_addr, conn_int_min, conn_int_max,
-                                                          peripheral_latency, supervision_tout);
-}
-
-/** This function update LE connection parameters */
-void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-                                   uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
-                                   uint16_t max_ce_len) {
-  stack::l2cap::get_interface().L2CA_AdjustConnectionIntervals(&min_int, &max_int,
-                                                               BTM_BLE_CONN_INT_MIN);
-
-  if (!stack::l2cap::get_interface().L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency,
-                                                              timeout, min_ce_len, max_ce_len)) {
-    log::error("Update connection parameters failed!");
-  }
-}
-
 /** This function set the maximum transmission packet size */
 void bta_dm_ble_set_data_length(const RawAddress& bd_addr) {
   uint16_t max_len =

@@ -108,8 +108,6 @@ class LeAdvertisingManager {
 public:
   virtual ~LeAdvertisingManager() = default;
 
-  virtual size_t GetNumberOfAdvertisingInstances() const = 0;
-
   virtual size_t GetNumberOfAdvertisingInstancesInUse() const = 0;
 
   virtual int GetAdvertiserRegId(AdvertiserId advertiser_id) = 0;

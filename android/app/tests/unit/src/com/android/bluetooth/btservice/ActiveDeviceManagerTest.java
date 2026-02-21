@@ -1476,8 +1476,9 @@ public class ActiveDeviceManagerTest {
      * Steps:
      * 1. Connect LE Audio device.
      * 2. Disconnect LE Audio device.
-     * 3. Verify LE Audio service removes active device.
-     * 3. Verify LE Audio service is informed about disconnection.
+     * 3. Verify that ActiveDeviceManager doesn't remove active device from service - service
+     *    should do that itself, call would be redundant
+     * 4. Verify LE Audio service is informed about disconnection.
      * </pre>
      */
     @Test

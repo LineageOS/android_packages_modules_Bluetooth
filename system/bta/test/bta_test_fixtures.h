@@ -25,13 +25,13 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_gatt_api.h"
+#include "stack/mock/mock_stack_l2cap_interface.h"
+#include "stack/mock/mock_stack_rnr_interface.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_gatt_api.h"
-#include "test/mock/mock_stack_l2cap_interface.h"
-#include "test/mock/mock_stack_rnr_interface.h"
 
 constexpr tGATT_IF kGattRegisteredIf = 5;
 

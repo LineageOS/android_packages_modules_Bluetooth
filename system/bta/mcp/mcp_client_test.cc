@@ -24,12 +24,12 @@
 #include "bta/include/bta_mcp_client_api.h"
 #include "gatt/database_builder.h"
 #include "mcp/mcp_types.h"
+#include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "test/common/bta_gatt_api_mock.h"
 #include "test/common/bta_gatt_queue_mock.h"
 #include "test/common/btm_api_mock.h"
 #include "test/common/mock_functions.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_security_client_interface.h"
 
 using namespace bluetooth;
 using namespace bluetooth::mcp;

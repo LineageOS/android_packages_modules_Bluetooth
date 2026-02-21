@@ -155,10 +155,6 @@ A2dpCodecConfig::A2dpCodecConfig(btav_a2dp_codec_index_t codec_index, a2dp::Code
   init_btav_a2dp_codec_config(&codec_selectable_capability_, codec_index_, codecPriority());
   init_btav_a2dp_codec_config(&codec_user_config_, codec_index_, BTAV_A2DP_CODEC_PRIORITY_DEFAULT);
   init_btav_a2dp_codec_config(&codec_audio_config_, codec_index_, BTAV_A2DP_CODEC_PRIORITY_DEFAULT);
-
-  memset(ota_codec_config_, 0, sizeof(ota_codec_config_));
-  memset(ota_codec_peer_capability_, 0, sizeof(ota_codec_peer_capability_));
-  memset(ota_codec_peer_config_, 0, sizeof(ota_codec_peer_config_));
 }
 
 A2dpCodecConfig::~A2dpCodecConfig() {}
@@ -243,18 +239,17 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(btav_a2dp_codec_index_t codec_inde
 }
 
 int A2dpCodecConfig::getTrackBitRate() const {
-  uint8_t p_codec_info[AVDT_CODEC_SIZE];
-  memcpy(p_codec_info, ota_codec_config_, sizeof(ota_codec_config_));
-  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
+  bluetooth::a2dp::MediaCodecCapabilities p_codec_info = ota_codec_config_;
+  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info.data());
 
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
       return A2DP_GetBitrateSbc();
 #if !defined(EXCLUDE_NONSTANDARD_CODECS)
     case A2DP_MEDIA_CT_AAC:
-      return A2DP_GetBitRateAac(p_codec_info);
+      return A2DP_GetBitRateAac(p_codec_info.data());
     case A2DP_MEDIA_CT_NON_A2DP:
-      return A2DP_VendorGetBitRate(p_codec_info);
+      return A2DP_VendorGetBitRate(p_codec_info.data());
 #endif
     default:
       break;
@@ -267,18 +262,18 @@ int A2dpCodecConfig::getTrackBitRate() const {
 bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
 
-  uint8_t codec_config[AVDT_CODEC_SIZE];
+  bluetooth::a2dp::MediaCodecCapabilities codec_config;
   uint32_t vendor_id;
   uint16_t codec_id;
 
   memset(p_a2dp_offload->codec_info, 0, sizeof(p_a2dp_offload->codec_info));
 
-  if (!A2DP_IsSourceCodecValid(ota_codec_config_)) {
+  if (!A2DP_IsSourceCodecValid(ota_codec_config_.data())) {
     return false;
   }
 
-  memcpy(codec_config, ota_codec_config_, sizeof(ota_codec_config_));
-  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(codec_config);
+  codec_config = ota_codec_config_;
+  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(codec_config.data());
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
       p_a2dp_offload->codec_info[0] = codec_config[4];  // blk_len | subbands | Alloc Method
@@ -292,8 +287,8 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
       p_a2dp_offload->codec_info[1] = codec_config[6];  // VBR | BR
       break;
     case A2DP_MEDIA_CT_NON_A2DP:
-      vendor_id = A2DP_VendorCodecGetVendorId(codec_config);
-      codec_id = A2DP_VendorCodecGetCodecId(codec_config);
+      vendor_id = A2DP_VendorCodecGetVendorId(codec_config.data());
+      codec_id = A2DP_VendorCodecGetCodecId(codec_config.data());
       p_a2dp_offload->codec_info[0] = (vendor_id & 0x000000FF);
       p_a2dp_offload->codec_info[1] = (vendor_id & 0x0000FF00) >> 8;
       p_a2dp_offload->codec_info[2] = (vendor_id & 0x00FF0000) >> 16;
@@ -337,10 +332,10 @@ bool A2dpCodecConfig::copyOutOtaCodecConfig(uint8_t* p_codec_info) {
 
   // TODO: We should use a mechanism to verify codec config,
   // not codec capability.
-  if (!A2DP_IsSourceCodecValid(ota_codec_config_)) {
+  if (!A2DP_IsSourceCodecValid(ota_codec_config_.data())) {
     return false;
   }
-  memcpy(p_codec_info, ota_codec_config_, sizeof(ota_codec_config_));
+  memcpy(p_codec_info, ota_codec_config_.data(), AVDT_CODEC_SIZE);
   return true;
 }
 
@@ -416,8 +411,7 @@ tA2DP_STATUS A2dpCodecConfig::setCodecUserConfig(
   // Save copies of the current codec config, and the OTA codec config, so they
   // can be compared for changes.
   btav_a2dp_codec_config_t saved_codec_config = getCodecConfig();
-  uint8_t saved_ota_codec_config[AVDT_CODEC_SIZE];
-  memcpy(saved_ota_codec_config, ota_codec_config_, sizeof(ota_codec_config_));
+  bluetooth::a2dp::MediaCodecCapabilities saved_ota_codec_config = ota_codec_config_;
 
   btav_a2dp_codec_config_t saved_codec_user_config = codec_user_config_;
   codec_user_config_ = codec_user_config;
@@ -445,7 +439,7 @@ tA2DP_STATUS A2dpCodecConfig::setCodecUserConfig(
   // The output (the connection) should be restarted if OTA codec config
   // has changed.
   //
-  if (!A2DP_CodecEquals(saved_ota_codec_config, p_result_codec_config)) {
+  if (!A2DP_CodecEquals(saved_ota_codec_config.data(), p_result_codec_config)) {
     *p_restart_output = true;
   }
 
