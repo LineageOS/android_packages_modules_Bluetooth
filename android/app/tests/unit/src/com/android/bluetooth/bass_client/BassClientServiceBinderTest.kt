@@ -14,233 +14,218 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.bass_client;
+package com.android.bluetooth.bass_client
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.IBluetoothLeBroadcastAssistantCallback
+import android.bluetooth.le.ScanFilter
+import android.content.AttributionSource
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
-import android.bluetooth.le.ScanFilter;
-import android.content.AttributionSource;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.util.Collections;
-import java.util.List;
-
-/** Test cases for {@link BassClientServiceBinder}. */
+/** Test cases for [BassClientServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class BassClientServiceBinderTest {
+@RunWith(AndroidJUnit4::class)
+class BassClientServiceBinderTest {
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private BassClientService mService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: BassClientService
 
-    private final BluetoothDevice mDevice = getTestDevice(0);
+    private val device = getTestDevice(0)
 
-    private BassClientServiceBinder mBinder;
+    private lateinit var binder: BassClientServiceBinder
 
     @Before
-    public void setUp() {
-        mBinder = new BassClientServiceBinder(mService);
+    fun setUp() {
+        binder = BassClientServiceBinder(service)
     }
 
     @Test
-    public void cleanUp() {
-        mBinder.cleanup();
+    fun cleanUp() {
+        binder.cleanup()
     }
 
     @Test
-    public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mSource);
-        verify(mService).getConnectionState(mDevice);
+    fun getConnectionState() {
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
 
-        mBinder.cleanup();
-        assertThat(mBinder.getConnectionState(mDevice, mSource)).isEqualTo(STATE_DISCONNECTED);
+        binder.cleanup()
+        assertThat(binder.getConnectionState(device, source)).isEqualTo(STATE_DISCONNECTED)
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_DISCONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_DISCONNECTED)
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
 
-        mBinder.cleanup();
-        assertThat(mBinder.getDevicesMatchingConnectionStates(states, mSource))
-                .isEqualTo(Collections.emptyList());
+        binder.cleanup()
+        assertThat(binder.getDevicesMatchingConnectionStates(states, source)).isEmpty()
     }
 
     @Test
-    public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
 
-        mBinder.cleanup();
-        assertThat(mBinder.getConnectedDevices(mSource)).isEqualTo(Collections.emptyList());
+        binder.cleanup()
+        assertThat(binder.getConnectedDevices(source)).isEmpty()
     }
 
     @Test
-    public void setConnectionPolicy() {
-        mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mSource);
-        verify(mService).setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED);
+    fun setConnectionPolicy() {
+        binder.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED, source)
+        verify(service).setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED)
 
-        mBinder.cleanup();
-        assertThat(mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mSource))
-                .isFalse();
+        binder.cleanup()
+        assertThat(binder.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED, source)).isFalse()
     }
 
     @Test
-    public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mDevice, mSource);
-        verify(mService).getConnectionPolicy(mDevice);
+    fun getConnectionPolicy() {
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(device)
 
-        mBinder.cleanup();
-        assertThat(mBinder.getConnectionPolicy(mDevice, mSource))
-                .isEqualTo(CONNECTION_POLICY_FORBIDDEN);
+        binder.cleanup()
+        assertThat(binder.getConnectionPolicy(device, source))
+            .isEqualTo(CONNECTION_POLICY_FORBIDDEN)
     }
 
     @Test
-    public void registerCallback() {
-        IBluetoothLeBroadcastAssistantCallback cb =
-                Mockito.mock(IBluetoothLeBroadcastAssistantCallback.class);
-        mBinder.registerCallback(cb, mSource);
-        verify(mService).registerCallback(cb);
+    fun registerCallback() {
+        val cb = mock<IBluetoothLeBroadcastAssistantCallback>()
+        binder.registerCallback(cb, source)
+        verify(service).registerCallback(cb)
     }
 
     @Test
-    public void registerCallback_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.registerCallback(null, mSource);
-        verify(mService, never()).registerCallback(any());
+    fun registerCallback_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.registerCallback(null, source)
+        verify(service, never()).registerCallback(anyOrNull())
     }
 
     @Test
-    public void unregisterCallback() {
-        IBluetoothLeBroadcastAssistantCallback cb =
-                Mockito.mock(IBluetoothLeBroadcastAssistantCallback.class);
-        mBinder.unregisterCallback(cb, mSource);
-        verify(mService).unregisterCallback(cb);
+    fun unregisterCallback() {
+        val cb = mock<IBluetoothLeBroadcastAssistantCallback>()
+        binder.unregisterCallback(cb, source)
+        verify(service).unregisterCallback(cb)
     }
 
     @Test
-    public void unregisterCallback_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.unregisterCallback(null, mSource);
-        verify(mService, never()).unregisterCallback(any());
+    fun unregisterCallback_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.unregisterCallback(null, source)
+        verify(service, never()).unregisterCallback(anyOrNull())
     }
 
     @Test
-    public void startSearchingForSources() {
-        List<ScanFilter> filters = Collections.EMPTY_LIST;
-        mBinder.startSearchingForSources(filters, mSource);
-        verify(mService).startSearchingForSources(filters);
+    fun startSearchingForSources() {
+        val filters: List<ScanFilter> = emptyList()
+        binder.startSearchingForSources(filters, source)
+        verify(service).startSearchingForSources(filters)
     }
 
     @Test
-    public void startSearchingForSources_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.startSearchingForSources(null, mSource);
-        verify(mService, never()).startSearchingForSources(any());
+    fun startSearchingForSources_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.startSearchingForSources(null, source)
+        verify(service, never()).startSearchingForSources(anyOrNull())
     }
 
     @Test
-    public void stopSearchingForSources() {
-        mBinder.stopSearchingForSources(mSource);
-        verify(mService).stopSearchingForSources();
+    fun stopSearchingForSources() {
+        binder.stopSearchingForSources(source)
+        verify(service).stopSearchingForSources()
     }
 
     @Test
-    public void stopSearchingForSources_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.stopSearchingForSources(mSource);
-        verify(mService, never()).stopSearchingForSources();
+    fun stopSearchingForSources_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.stopSearchingForSources(source)
+        verify(service, never()).stopSearchingForSources()
     }
 
     @Test
-    public void isSearchInProgress() {
-        mBinder.isSearchInProgress(mSource);
-        verify(mService).isSearchInProgress();
+    fun isSearchInProgress() {
+        binder.isSearchInProgress(source)
+        verify(service).isSearchInProgress
 
-        mBinder.cleanup();
-        assertThat(mBinder.isSearchInProgress(mSource)).isFalse();
+        binder.cleanup()
+        assertThat(binder.isSearchInProgress(source)).isFalse()
     }
 
     @Test
-    public void addSource() {
-        mBinder.addSource(mDevice, null, false, mSource);
-        verify(mService).addSource(mDevice, null, false);
+    fun addSource() {
+        binder.addSource(device, null, false, source)
+        verify(service).addSource(device, null, false)
     }
 
     @Test
-    public void addSource_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.addSource(mDevice, null, false, mSource);
-        verify(mService, never()).addSource(mDevice, null, false);
+    fun addSource_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.addSource(device, null, false, source)
+        verify(service, never()).addSource(device, null, false)
     }
 
     @Test
-    public void modifySource() {
-        mBinder.modifySource(mDevice, 0, null, mSource);
-        verify(mService).modifySource(mDevice, 0, null);
+    fun modifySource() {
+        binder.modifySource(device, 0, null, source)
+        verify(service).modifySource(device, 0, null)
     }
 
     @Test
-    public void modifySource_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.modifySource(mDevice, 0, null, mSource);
-        verify(mService, never()).modifySource(mDevice, 0, null);
+    fun modifySource_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.modifySource(device, 0, null, source)
+        verify(service, never()).modifySource(device, 0, null)
     }
 
     @Test
-    public void removeSource() {
-        mBinder.removeSource(mDevice, 0, mSource);
-        verify(mService).removeSource(mDevice, 0);
+    fun removeSource() {
+        binder.removeSource(device, 0, source)
+        verify(service).removeSource(device, 0)
     }
 
     @Test
-    public void removeSource_afterCleanup_doNothing() {
-        mBinder.cleanup();
-        mBinder.removeSource(mDevice, 0, mSource);
-        verify(mService, never()).removeSource(mDevice, 0);
+    fun removeSource_afterCleanup_doNothing() {
+        binder.cleanup()
+        binder.removeSource(device, 0, source)
+        verify(service, never()).removeSource(device, 0)
     }
 
     @Test
-    public void getAllSources() {
-        mBinder.getAllSources(mDevice, mSource);
-        verify(mService).getAllSources(mDevice);
+    fun getAllSources() {
+        binder.getAllSources(device, source)
+        verify(service).getAllSources(device)
 
-        mBinder.cleanup();
-        assertThat(mBinder.getAllSources(mDevice, mSource)).isEqualTo(Collections.emptyList());
+        binder.cleanup()
+        assertThat(binder.getAllSources(device, source)).isEmpty()
     }
 
     @Test
-    public void getMaximumSourceCapacity() {
-        mBinder.getMaximumSourceCapacity(mDevice, mSource);
-        verify(mService).getMaximumSourceCapacity(mDevice);
+    fun getMaximumSourceCapacity() {
+        binder.getMaximumSourceCapacity(device, source)
+        verify(service).getMaximumSourceCapacity(device)
 
-        mBinder.cleanup();
-        assertThat(mBinder.getMaximumSourceCapacity(mDevice, mSource)).isEqualTo(0);
+        binder.cleanup()
+        assertThat(binder.getMaximumSourceCapacity(device, source)).isEqualTo(0)
     }
 }
