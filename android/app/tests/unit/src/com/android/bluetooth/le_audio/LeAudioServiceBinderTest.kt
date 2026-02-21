@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,329 +14,319 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_audio;
+package com.android.bluetooth.le_audio
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothLeAudio
+import android.bluetooth.BluetoothLeAudioCodecConfig
+import android.bluetooth.BluetoothLeAudioContentMetadata
+import android.bluetooth.BluetoothLeBroadcastSettings
+import android.bluetooth.BluetoothLeBroadcastSubgroupSettings
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.IBluetoothLeAudioCallback
+import android.bluetooth.IBluetoothLeBroadcastCallback
+import android.content.AttributionSource
+import android.os.ParcelUuid
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import java.util.UUID
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothLeAudio;
-import android.bluetooth.BluetoothLeAudioCodecConfig;
-import android.bluetooth.BluetoothLeAudioContentMetadata;
-import android.bluetooth.BluetoothLeBroadcastSettings;
-import android.bluetooth.BluetoothLeBroadcastSubgroupSettings;
-import android.bluetooth.IBluetoothLeAudioCallback;
-import android.bluetooth.IBluetoothLeBroadcastCallback;
-import android.content.AttributionSource;
-import android.os.ParcelUuid;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.util.UUID;
-
-/** Test cases for {@link LeAudioServiceBinder}. */
+/** Test cases for [LeAudioServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class LeAudioServiceBinderTest {
+@RunWith(AndroidJUnit4::class)
+class LeAudioServiceBinderTest {
+    @get:Rule val setFlagsRule = SetFlagsRule()
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: LeAudioService
 
-    @Mock private AttributionSource mSource;
-    @Mock private LeAudioService mService;
-
-    private static final String TEST_BROADCAST_NAME = "TEST";
-    private static final int TEST_QUALITY = BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD;
-
-    private LeAudioServiceBinder mBinder;
+    private lateinit var binder: LeAudioServiceBinder
 
     @Before
-    public void setUp() {
-        mBinder = new LeAudioServiceBinder(mService);
+    fun setUp() {
+        binder = LeAudioServiceBinder(service)
     }
 
     @Test
-    public void connect() {
-        BluetoothDevice device = getTestDevice(0);
+    fun connect() {
+        val device = getTestDevice(0)
 
-        mBinder.connect(device, mSource);
-        verify(mService).connect(device);
+        binder.connect(device, source)
+        verify(service).connect(device)
     }
 
     @Test
-    public void disconnect() {
-        BluetoothDevice device = getTestDevice(0);
+    fun disconnect() {
+        val device = getTestDevice(0)
 
-        mBinder.disconnect(device, mSource);
-        verify(mService).disconnect(device);
+        binder.disconnect(device, source)
+        verify(service).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getConnectedGroupLeadDevice() {
-        int groupId = 1;
+    fun getConnectedGroupLeadDevice() {
+        val groupId = 1
 
-        mBinder.getConnectedGroupLeadDevice(groupId, mSource);
-        verify(mService).getConnectedGroupLeadDevice(groupId);
+        binder.getConnectedGroupLeadDevice(groupId, source)
+        verify(service).getConnectedGroupLeadDevice(groupId)
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_DISCONNECTED};
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_DISCONNECTED)
 
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState() {
-        BluetoothDevice device = getTestDevice(0);
+    fun getConnectionState() {
+        val device = getTestDevice(0)
 
-        mBinder.getConnectionState(device, mSource);
-        verify(mService).getConnectionState(device);
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(device)
     }
 
     @Test
-    public void setActiveDevice() {
-        BluetoothDevice device = getTestDevice(0);
+    fun setActiveDevice() {
+        val device = getTestDevice(0)
 
-        mBinder.setActiveDevice(device, mSource);
-        verify(mService).setActiveDevice(device);
+        binder.setActiveDevice(device, source)
+        verify(service).setActiveDevice(device)
     }
 
     @Test
-    public void setActiveDevice_withNullDevice_callsRemoveActiveDevice() {
-        mBinder.setActiveDevice(null, mSource);
-        verify(mService).removeActiveDevice(true);
+    fun setActiveDevice_withNullDevice_callsRemoveActiveDevice() {
+        binder.setActiveDevice(null, source)
+        verify(service).removeActiveDevice(true)
     }
 
     @Test
-    public void getActiveDevices() {
-        mBinder.getActiveDevices(mSource);
-        verify(mService).getActiveDevices();
+    fun getActiveDevices() {
+        binder.getActiveDevices(source)
+        verify(service).activeDevices
     }
 
     @Test
-    public void getAudioLocation() {
-        BluetoothDevice device = getTestDevice(0);
+    fun getAudioLocation() {
+        val device = getTestDevice(0)
 
-        mBinder.getAudioLocation(device, mSource);
-        verify(mService).getAudioLocation(device);
+        binder.getAudioLocation(device, source)
+        verify(service).getAudioLocation(device)
     }
 
     @Test
-    public void setConnectionPolicy() {
-        BluetoothDevice device = getTestDevice(0);
-        int connectionPolicy = CONNECTION_POLICY_UNKNOWN;
+    fun setConnectionPolicy() {
+        val device = getTestDevice(0)
+        val connectionPolicy = CONNECTION_POLICY_UNKNOWN
 
-        mBinder.setConnectionPolicy(device, connectionPolicy, mSource);
-        verify(mService).setConnectionPolicy(device, connectionPolicy);
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(service).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void getConnectionPolicy() {
-        BluetoothDevice device = getTestDevice(0);
+    fun getConnectionPolicy() {
+        val device = getTestDevice(0)
 
-        mBinder.getConnectionPolicy(device, mSource);
-        verify(mService).getConnectionPolicy(device);
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(device)
     }
 
     @Test
-    public void setCcidInformation() {
-        ParcelUuid uuid = new ParcelUuid(new UUID(0, 0));
-        int ccid = 0;
-        int contextType = BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED;
+    fun setCcidInformation() {
+        val uuid = ParcelUuid(UUID(0, 0))
+        val ccid = 0
+        val contextType = BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
 
-        mBinder.setCcidInformation(uuid, ccid, contextType, mSource);
-        verify(mService).setCcidInformation(uuid, ccid, contextType);
+        binder.setCcidInformation(uuid, ccid, contextType, source)
+        verify(service).setCcidInformation(uuid, ccid, contextType)
     }
 
     @Test
-    public void getGroupId() {
-        BluetoothDevice device = getTestDevice(0);
+    fun getGroupId() {
+        val device = getTestDevice(0)
 
-        mBinder.getGroupId(device, mSource);
-        verify(mService).getGroupId(device);
+        binder.getGroupId(device, source)
+        verify(service).getGroupId(device)
     }
 
     @Test
-    public void groupAddNode() {
-        int groupId = 1;
-        BluetoothDevice device = getTestDevice(0);
+    fun groupAddNode() {
+        val groupId = 1
+        val device = getTestDevice(0)
 
-        mBinder.groupAddNode(groupId, device, mSource);
-        verify(mService).groupAddNode(groupId, device);
+        binder.groupAddNode(groupId, device, source)
+        verify(service).groupAddNode(groupId, device)
     }
 
     @Test
-    public void setInCall() {
-        boolean inCall = true;
+    fun setInCall() {
+        val inCall = true
 
-        mBinder.setInCall(inCall, mSource);
-        verify(mService).setInCall(inCall);
+        binder.setInCall(inCall, source)
+        verify(service).setInCall(inCall)
     }
 
     @Test
-    public void setInactiveForHfpHandover() {
-        BluetoothDevice device = getTestDevice(0);
+    fun setInactiveForHfpHandover() {
+        val device = getTestDevice(0)
 
-        mBinder.setInactiveForHfpHandover(device, mSource);
-        verify(mService).setInactiveForHfpHandover(device);
+        binder.setInactiveForHfpHandover(device, source)
+        verify(service).setInactiveForHfpHandover(device)
     }
 
     @Test
-    public void groupRemoveNode() {
-        int groupId = 1;
-        BluetoothDevice device = getTestDevice(0);
+    fun groupRemoveNode() {
+        val groupId = 1
+        val device = getTestDevice(0)
 
-        mBinder.groupRemoveNode(groupId, device, mSource);
-        verify(mService).groupRemoveNode(groupId, device);
+        binder.groupRemoveNode(groupId, device, source)
+        verify(service).groupRemoveNode(groupId, device)
     }
 
     @Test
-    public void setVolume() {
-        int volume = 3;
+    fun setVolume() {
+        val volume = 3
 
-        mBinder.setVolume(volume, mSource);
-        verify(mService).setVolume(volume);
+        binder.setVolume(volume, source)
+        verify(service).setVolume(volume)
     }
 
     @Test
-    public void registerUnregisterCallback() {
-        IBluetoothLeAudioCallback callback = Mockito.mock(IBluetoothLeAudioCallback.class);
+    fun registerUnregisterCallback() {
+        val callback = mock<IBluetoothLeAudioCallback>()
 
-        mBinder.registerCallback(callback, mSource);
-        verify(mService).registerCallback(callback);
+        binder.registerCallback(callback, source)
+        verify(service).registerCallback(callback)
 
-        mBinder.unregisterCallback(callback, mSource);
-        verify(mService).unregisterCallback(callback);
+        binder.unregisterCallback(callback, source)
+        verify(service).unregisterCallback(callback)
     }
 
     @Test
-    public void registerUnregisterLeBroadcastCallback() {
-        IBluetoothLeBroadcastCallback callback = Mockito.mock(IBluetoothLeBroadcastCallback.class);
+    fun registerUnregisterLeBroadcastCallback() {
+        val callback = mock<IBluetoothLeBroadcastCallback>()
 
-        mBinder.registerLeBroadcastCallback(callback, mSource);
-        verify(mService).registerLeBroadcastCallback(callback);
+        binder.registerLeBroadcastCallback(callback, source)
+        verify(service).registerLeBroadcastCallback(callback)
 
-        mBinder.unregisterLeBroadcastCallback(callback, mSource);
-        verify(mService).unregisterLeBroadcastCallback(callback);
+        binder.unregisterLeBroadcastCallback(callback, source)
+        verify(service).unregisterLeBroadcastCallback(callback)
     }
 
     @Test
-    public void startBroadcast() {
-        BluetoothLeBroadcastSettings broadcastSettings = buildBroadcastSettingsFromMetadata();
+    fun startBroadcast() {
+        val broadcastSettings = buildBroadcastSettingsFromMetadata()
 
-        mBinder.startBroadcast(broadcastSettings, mSource);
-        verify(mService).createBroadcast(broadcastSettings);
+        binder.startBroadcast(broadcastSettings, source)
+        verify(service).createBroadcast(broadcastSettings)
     }
 
     @Test
-    public void stopBroadcast() {
-        int id = 1;
+    fun stopBroadcast() {
+        val id = 1
 
-        mBinder.stopBroadcast(id, mSource);
-        verify(mService).stopBroadcast(id);
+        binder.stopBroadcast(id, source)
+        verify(service).stopBroadcast(id)
     }
 
     @Test
-    public void updateBroadcast() {
-        int id = 1;
-        BluetoothLeBroadcastSettings broadcastSettings = buildBroadcastSettingsFromMetadata();
+    fun updateBroadcast() {
+        val id = 1
+        val broadcastSettings = buildBroadcastSettingsFromMetadata()
 
-        mBinder.updateBroadcast(id, broadcastSettings, mSource);
-        verify(mService).updateBroadcast(id, broadcastSettings);
+        binder.updateBroadcast(id, broadcastSettings, source)
+        verify(service).updateBroadcast(id, broadcastSettings)
     }
 
     @Test
-    public void isPlaying() {
-        int id = 1;
+    fun isPlaying() {
+        val id = 1
 
-        mBinder.isPlaying(id, mSource);
-        verify(mService).isPlaying(id);
+        binder.isPlaying(id, source)
+        verify(service).isPlaying(id)
     }
 
     @Test
-    public void getAllBroadcastMetadata() {
-        mBinder.getAllBroadcastMetadata(mSource);
-        verify(mService).getAllBroadcastMetadata();
+    fun getAllBroadcastMetadata() {
+        binder.getAllBroadcastMetadata(source)
+        verify(service).allBroadcastMetadata
     }
 
     @Test
-    public void getMaximumNumberOfBroadcasts() {
-        mBinder.getMaximumNumberOfBroadcasts();
-        verify(mService).getMaximumNumberOfBroadcasts();
+    fun getMaximumNumberOfBroadcasts() {
+        binder.maximumNumberOfBroadcasts
+        verify(service).maximumNumberOfBroadcasts
     }
 
     @Test
-    public void getMaximumStreamsPerBroadcast() {
-        mBinder.getMaximumStreamsPerBroadcast();
-        verify(mService).getMaximumStreamsPerBroadcast();
+    fun getMaximumStreamsPerBroadcast() {
+        binder.maximumStreamsPerBroadcast
+        verify(service).maximumStreamsPerBroadcast
     }
 
     @Test
-    public void getMaximumSubgroupsPerBroadcast() {
-        mBinder.getMaximumSubgroupsPerBroadcast();
-        verify(mService).getMaximumSubgroupsPerBroadcast();
+    fun getMaximumSubgroupsPerBroadcast() {
+        binder.maximumSubgroupsPerBroadcast
+        verify(service).maximumSubgroupsPerBroadcast
     }
 
     @Test
-    public void getCodecStatus() {
-        int groupId = 1;
+    fun getCodecStatus() {
+        val groupId = 1
 
-        mBinder.getCodecStatus(groupId, mSource);
-        verify(mService).getCodecStatus(groupId);
+        binder.getCodecStatus(groupId, source)
+        verify(service).getCodecStatus(groupId)
     }
 
     @Test
-    public void setCodecConfigPreference() {
-        int groupId = 1;
-        BluetoothLeAudioCodecConfig inputConfig = new BluetoothLeAudioCodecConfig.Builder().build();
-        BluetoothLeAudioCodecConfig outputConfig =
-                new BluetoothLeAudioCodecConfig.Builder().build();
+    fun setCodecConfigPreference() {
+        val groupId = 1
+        val inputConfig = BluetoothLeAudioCodecConfig.Builder().build()
+        val outputConfig = BluetoothLeAudioCodecConfig.Builder().build()
 
-        mBinder.setCodecConfigPreference(groupId, inputConfig, outputConfig, mSource);
-        verify(mService).setCodecConfigPreference(groupId, inputConfig, outputConfig);
+        binder.setCodecConfigPreference(groupId, inputConfig, outputConfig, source)
+        verify(service).setCodecConfigPreference(groupId, inputConfig, outputConfig)
     }
 
-    private static BluetoothLeBroadcastSettings buildBroadcastSettingsFromMetadata() {
-        BluetoothLeAudioContentMetadata metadata =
-                new BluetoothLeAudioContentMetadata.Builder().build();
+    private fun buildBroadcastSettingsFromMetadata(): BluetoothLeBroadcastSettings {
+        val metadata = BluetoothLeAudioContentMetadata.Builder().build()
 
-        BluetoothLeAudioContentMetadata publicBroadcastMetadata =
-                new BluetoothLeAudioContentMetadata.Builder().build();
+        val publicBroadcastMetadata = BluetoothLeAudioContentMetadata.Builder().build()
 
-        BluetoothLeBroadcastSubgroupSettings.Builder subgroupBuilder =
-                new BluetoothLeBroadcastSubgroupSettings.Builder()
-                        .setPreferredQuality(TEST_QUALITY)
-                        .setContentMetadata(metadata);
+        val subgroupBuilder =
+            BluetoothLeBroadcastSubgroupSettings.Builder()
+                .setPreferredQuality(TEST_QUALITY)
+                .setContentMetadata(metadata)
 
-        return new BluetoothLeBroadcastSettings.Builder()
-                .setPublicBroadcast(false)
-                .setBroadcastName(TEST_BROADCAST_NAME)
-                .setBroadcastCode(null)
-                .setPublicBroadcastMetadata(publicBroadcastMetadata)
-                .addSubgroupSettings(subgroupBuilder.build())
-                .build();
+        return BluetoothLeBroadcastSettings.Builder()
+            .setPublicBroadcast(false)
+            .setBroadcastName(TEST_BROADCAST_NAME)
+            .setBroadcastCode(null)
+            .setPublicBroadcastMetadata(publicBroadcastMetadata)
+            .addSubgroupSettings(subgroupBuilder.build())
+            .build()
+    }
+
+    companion object {
+        private const val TEST_BROADCAST_NAME = "TEST"
+        private const val TEST_QUALITY = BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD
     }
 }
