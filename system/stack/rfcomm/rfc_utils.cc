@@ -34,7 +34,6 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/port_ext.h"
 #include "stack/rfcomm/rfc_int.h"
 
 using namespace bluetooth;
@@ -213,6 +212,12 @@ void rfc_release_multiplexer_channel(tRFC_MCB* p_mcb) {
   p_mcb->state = RFC_MX_STATE_IDLE;
 }
 
+static void rfcomm_mcb_timer_timeout(void* data) {
+  tRFC_MCB* p_mcb = (tRFC_MCB*)data;
+
+  rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_TIMEOUT, nullptr);
+}
+
 /*******************************************************************************
  *
  * Function         rfc_timer_start
@@ -238,6 +243,12 @@ void rfc_timer_stop(tRFC_MCB* p_mcb) {
   log::verbose("");
 
   alarm_cancel(p_mcb->mcb_timer);
+}
+
+static void rfcomm_port_timer_timeout(void* data) {
+  tPORT* p_port = (tPORT*)data;
+
+  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, nullptr);
 }
 
 /*******************************************************************************
@@ -294,18 +305,6 @@ void rfc_check_mcb_active(tRFC_MCB* p_mcb) {
   } else {
     rfc_timer_start(p_mcb, RFC_MCB_RELEASE_INACT_TIMER);
   }
-}
-
-void rfcomm_port_timer_timeout(void* data) {
-  tPORT* p_port = (tPORT*)data;
-
-  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, nullptr);
-}
-
-void rfcomm_mcb_timer_timeout(void* data) {
-  tRFC_MCB* p_mcb = (tRFC_MCB*)data;
-
-  rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_TIMEOUT, nullptr);
 }
 
 /*******************************************************************************
