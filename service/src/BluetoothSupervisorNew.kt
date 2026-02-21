@@ -112,7 +112,13 @@ class BluetoothSupervisorNew(
         }
 
         Log.i(TAG, "Starting service for $pendingUser")
-        activeBms = BluetoothManagerServiceNew(context, looper, pendingUser!!, isBootCompleted)
+        activeBms =
+            BluetoothManagerServiceNew(
+                context.createContextAsUser(pendingUser!!, 0),
+                looper,
+                pendingUser!!,
+                isBootCompleted,
+            )
         currentUser = pendingUser
         pendingUser = null
     }

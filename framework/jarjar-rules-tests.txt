@@ -29,3 +29,7 @@ rule android.media.audio.Flags com.android.bluetooth.jarjarForTests.@0
 rule android.bluetooth.platform.flags.*FeatureFlags* com.android.bluetooth.jarjarForTests.@0
 rule android.bluetooth.platform.flags.FeatureFlags* com.android.bluetooth.jarjarForTests.@0
 rule android.bluetooth.platform.flags.Flags com.android.bluetooth.jarjarForTests.@0
+
+rule com.android.internal.telephony.flags.*FeatureFlags* com.android.bluetooth.jarjarForTests.@0
+rule com.android.internal.telephony.flags.FeatureFlags* com.android.bluetooth.jarjarForTests.@0
+rule com.android.internal.telephony.flags.Flags com.android.bluetooth.jarjarForTests.@0

@@ -1800,7 +1800,8 @@ public class ScanManager {
 
                 @Override
                 public void onDisplayChanged(int displayId) {
-                    if (Flags.adapterSuspendMgmt() && Flags.stopLeScanSystemSuspend()) {
+                    if (mAdapterService.getAdapterSuspend().isPresent()
+                            && Flags.stopLeScanSystemSuspend()) {
                         Log.d(TAG, "Listen to display changes from adapter suspend manager");
                         return;
                     }

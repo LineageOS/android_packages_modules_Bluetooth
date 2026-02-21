@@ -1388,7 +1388,7 @@ public class BluetoothManagerServiceTest {
         endTest();
     }
 
-    @Test
+    @Test // replaced by BluetoothSupervisorTest.onUserStopping_currentUser_stopsService
     @EnableFlags(Flags.FLAG_SWITCH_WHEN_CURRENT_USER_STOP)
     public void supervisor__userStop_whenCurrent_emulateSwitch() throws Exception {
         mLooper = new TestLooper(() -> 0L);
@@ -1417,7 +1417,7 @@ public class BluetoothManagerServiceTest {
         endTest();
     }
 
-    @Test
+    @Test // replaced by BluetoothSupervisorTest.onUserStopping_otherUser_ignored
     @EnableFlags(Flags.FLAG_SWITCH_WHEN_CURRENT_USER_STOP)
     public void supervisor__userStop_whenNotCurrent_nothingHappen() throws Exception {
         mLooper = new TestLooper(() -> 0L);
@@ -1443,7 +1443,7 @@ public class BluetoothManagerServiceTest {
         endTest();
     }
 
-    @Test
+    @Test // replaced by BluetoothSupervisorTest.onUserStopping_onForegroundUser_isNotSupported
     @EnableFlags(Flags.FLAG_SWITCH_WHEN_CURRENT_USER_STOP)
     public void supervisor__foregroundUserStop_whenCurrent_isUnsupported() throws Exception {
         mLooper = new TestLooper(() -> 0L);
