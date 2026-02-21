@@ -100,7 +100,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.devicestate.DeviceStateManager;
-import android.hardware.display.DisplayManager;
 import android.net.MacAddress;
 import android.os.AsyncTask;
 import android.os.BatteryStatsManager;
@@ -357,6 +356,7 @@ public class AdapterService extends Service {
     private BondStateMachine mBondStateMachine;
     private RemoteDevices mRemoteDevices;
     private Optional<AdapterSuspend> mAdapterSuspend = Optional.empty();
+    private DisplayListener mDisplayListener;
 
     /* TODO: Consider to remove the search API from this class, if changed to use call-back */
     private Optional<SdpManager> mSdpManager = Optional.empty();
@@ -856,6 +856,10 @@ public class AdapterService extends Service {
         return mAdapterSuspend;
     }
 
+    public DisplayListener getDisplayListener() {
+        return mDisplayListener;
+    }
+
     public Optional<A2dpService> getA2dpService() {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
@@ -1023,7 +1027,8 @@ public class AdapterService extends Service {
         mAdapterStateMachine.sendMessage(AdapterState.USER_TURN_OFF);
     }
 
-    private void init(String hciInstanceName) {
+    @VisibleForTesting
+    void init(String hciInstanceName) {
         Log.d(TAG, "init(instance=" + hciInstanceName + ")");
 
         factoryResetIfNeeded();
@@ -1135,8 +1140,6 @@ public class AdapterService extends Service {
                                         this,
                                         mLooper,
                                         getSystemService(DeviceStateManager.class),
-                                        mPowerManager,
-                                        getSystemService(DisplayManager.class),
                                         disconnectAcl,
                                         scanModeNone,
                                         stopLeScan,
@@ -1177,6 +1180,7 @@ public class AdapterService extends Service {
             // Some platforms, such as wearables do not have a system ui.
             Log.w(TAG, "Unable to resolve SystemUI's UID.", e);
         }
+        mDisplayListener = new DisplayListener(this, mLooper, mPowerManager);
     }
 
     private void factoryResetIfNeeded() {
@@ -1656,6 +1660,8 @@ public class AdapterService extends Service {
         if (Flags.adapterSuspendMgmt()) {
             mAdapterSuspend.ifPresent(AdapterSuspend::cleanup);
         }
+
+        mDisplayListener.close();
 
         mPreferredAudioProfilesCallbacks.kill();
 

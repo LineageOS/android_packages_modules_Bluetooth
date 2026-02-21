@@ -23,7 +23,6 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProtoEnums
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
-import android.hardware.display.DisplayManager
 import android.location.LocationManager
 import android.os.BatteryStatsManager
 import android.os.Binder
@@ -45,6 +44,7 @@ import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.DisplayListener
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanMetricsReporter.Companion.convertScanMode
 import com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
@@ -102,6 +102,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
     @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var displayListener: DisplayListener
     @Mock private lateinit var locationManager: LocationManager
     @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var metricsLogger: MetricsLogger
@@ -121,6 +122,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
     @Before
     fun setUp() {
+        doReturn(displayListener).whenever(adapterService).displayListener
         doReturn(DEFAULT_SCAN_TIMEOUT).whenever(adapterService).scanTimeout
         doReturn(DEFAULT_NUM_OFFLOAD_SCAN_FILTER)
             .whenever(adapterService)
@@ -147,7 +149,6 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         adapterService.mockGetSystemService<LocationManager>(locationManager)
         doReturn(true).whenever(locationManager).isLocationEnabled
-        adapterService.mockGetSystemService<DisplayManager>()
         adapterService.mockGetSystemService<BatteryStatsManager>(batteryStatsManager)
         adapterService.mockGetSystemService<AlarmManager>()
 

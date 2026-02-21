@@ -23,8 +23,6 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothProfile
 import android.hardware.devicestate.DeviceStateManager
-import android.hardware.display.DisplayManager
-import android.os.PowerManager
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
@@ -73,8 +71,6 @@ class AdapterSuspendTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val deviceStateManager = context.getSystemService(DeviceStateManager::class.java)
-    private val displayManager = context.getSystemService(DisplayManager::class.java)
-    private val powerManager = context.getSystemService(PowerManager::class.java)
 
     private lateinit var testLooper: TestLooper
     private lateinit var adapterSuspend: AdapterSuspend
@@ -95,8 +91,6 @@ class AdapterSuspendTest {
                     adapterService,
                     testLooper.looper,
                     deviceStateManager,
-                    powerManager,
-                    displayManager,
                     true, // disconnectAcl
                     true, // scanModeNone
                     false, // stopLeScan

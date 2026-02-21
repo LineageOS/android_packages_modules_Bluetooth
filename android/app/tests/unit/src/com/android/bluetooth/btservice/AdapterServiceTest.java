@@ -340,9 +340,9 @@ public class AdapterServiceTest {
 
         configureEnabledProfiles();
 
-        Config.init(mContext);
-        MetricsLogger.setInstanceForTesting(mMockMetricsLogger);
         mAdapter.onCreate();
+        mAdapter.init("CoolName");
+        MetricsLogger.setInstanceForTesting(mMockMetricsLogger);
         mLooper.dispatchAll();
         mAdapter.registerRemoteCallback(mIBluetoothCallback);
         mAdapter.getBluetoothConnectionCallbacks().register(mConnectionCallback);

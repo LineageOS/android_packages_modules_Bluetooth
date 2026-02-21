@@ -57,14 +57,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.hardware.display.DisplayManager;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.util.SparseBooleanArray;
-import android.view.Display;
 
 import androidx.annotation.Nullable;
 
@@ -171,7 +169,6 @@ public class ScanManager {
     private final TimeProvider mTimeProvider;
     private final AlarmManager mAlarmManager;
     private final PendingIntent mBatchScanIntervalIntent;
-    private final DisplayManager mDisplayManager;
     private final ActivityManager mActivityManager;
     private final LocationManager mLocationManager;
     private final ScanThrottler mScanThrottler;
@@ -274,7 +271,6 @@ public class ScanManager {
         mIsMsftSupported = mNativeInterface.isMsftSupported();
         // Prefer APCF filtering over MSFT if both are available
         mUseMsftFiltering = !isFilteringSupported() && mIsMsftSupported;
-        mDisplayManager = requireNonNull(mAdapterService.getSystemService(DisplayManager.class));
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
         mIsConnecting = false;
@@ -285,8 +281,7 @@ public class ScanManager {
             mHandler = null;
             mClientHandler = new ClientHandler(looper);
         }
-        mDisplayManager.registerDisplayListener(mDisplayListener, null);
-        mScreenOn = isScreenOn();
+        mScreenOn = mAdapterService.getDisplayListener().isScreenOn();
         mScanController.doOnScanThread(
                 () -> {
                     AppScanStats.setScreenState(mScreenOn);
@@ -319,8 +314,6 @@ public class ScanManager {
                 Log.w(TAG, "exception when invoking removeOnUidImportanceListener", e);
             }
         }
-
-        mDisplayManager.unregisterDisplayListener(mDisplayListener);
 
         if (!Flags.scanControllerThread()) {
             // Shut down the thread
@@ -1762,21 +1755,6 @@ public class ScanManager {
         }
     }
 
-    private boolean isScreenOn() {
-        final var displays = mDisplayManager.getDisplays();
-        if (displays == null) {
-            return false;
-        }
-
-        for (Display display : displays) {
-            if (display.getState() == Display.STATE_ON) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     void onDisplayChanged(boolean screenOn) {
         if (Flags.scanControllerThread()) {
             if (screenOn) handleScreenOn();
@@ -1785,37 +1763,6 @@ public class ScanManager {
             sendMessage(screenOn ? MSG_SCREEN_ON : MSG_SCREEN_OFF, null);
         }
     }
-
-    private final DisplayManager.DisplayListener mDisplayListener =
-            new DisplayManager.DisplayListener() {
-                @Override
-                public void onDisplayAdded(int displayId) {
-                    onDisplayChanged(displayId);
-                }
-
-                @Override
-                public void onDisplayRemoved(int displayId) {
-                    onDisplayChanged(displayId);
-                }
-
-                @Override
-                public void onDisplayChanged(int displayId) {
-                    if (mAdapterService.getAdapterSuspend().isPresent()
-                            && Flags.stopLeScanSystemSuspend()) {
-                        Log.d(TAG, "Listen to display changes from adapter suspend manager");
-                        return;
-                    }
-                    final var screenOn = isScreenOn();
-                    if (Flags.scanControllerThread()) {
-                        mScanController.doOnScanThread(
-                                screenOn
-                                        ? ScanManager.this::handleScreenOn
-                                        : ScanManager.this::handleScreenOff);
-                    } else {
-                        sendMessage(screenOn ? MSG_SCREEN_ON : MSG_SCREEN_OFF, null);
-                    }
-                }
-            };
 
     private final ActivityManager.OnUidImportanceListener mUidImportanceListener =
             new ActivityManager.OnUidImportanceListener() {
