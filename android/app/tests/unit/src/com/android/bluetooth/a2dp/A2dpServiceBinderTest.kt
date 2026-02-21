@@ -14,214 +14,207 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.a2dp;
+package com.android.bluetooth.a2dp
 
-import static android.bluetooth.BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothCodecConfig
+import android.bluetooth.BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.content.AttributionSource
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothA2dp;
-import android.bluetooth.BluetoothCodecConfig;
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link A2dpServiceBinder}. */
+/** Test cases for [A2dpServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class A2dpServiceBinderTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class A2dpServiceBinderTest {
+    @get:Rule val setFlagsRule = SetFlagsRule()
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private A2dpService mA2dpService;
-    @Mock private PackageManager mPackageManager;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var a2dpService: A2dpService
+    @Mock private lateinit var packageManager: PackageManager
 
-    private final BluetoothDevice mDevice = getTestDevice(0);
+    private val device = getTestDevice(0)
 
-    private A2dpServiceBinder mBinder;
+    private lateinit var binder: A2dpServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        final var context = InstrumentationRegistry.getInstrumentation().getContext();
-        doReturn(context.getPackageName()).when(mSource).getPackageName();
-        doReturn(mPackageManager).when(mA2dpService).getPackageManager();
-        var appInfo = new ApplicationInfo();
-        appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT;
-        doReturn(appInfo).when(mPackageManager).getApplicationInfo(any(), anyInt());
+    fun setUp() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        doReturn(context.packageName).whenever(source).packageName
+        doReturn(packageManager).whenever(a2dpService).packageManager
+        val appInfo = ApplicationInfo()
+        appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT
+        doReturn(appInfo).whenever(packageManager).getApplicationInfo(any<String>(), any<Int>())
 
-        mBinder = new A2dpServiceBinder(mA2dpService);
+        binder = A2dpServiceBinder(a2dpService)
     }
 
     @After
-    public void cleanUp() {
-        mBinder.cleanup();
+    fun cleanUp() {
+        binder.cleanup()
     }
 
     @Test
-    public void connect() {
-        mBinder.connect(mDevice, mSource);
-        verify(mA2dpService).connect(mDevice);
+    fun connect() {
+        binder.connect(device, source)
+        verify(a2dpService).connect(device)
     }
 
     @Test
-    public void disconnect() {
-        mBinder.disconnect(mDevice, mSource);
-        verify(mA2dpService).disconnect(mDevice);
+    fun disconnect() {
+        binder.disconnect(device, source)
+        verify(a2dpService).disconnect(device)
     }
 
     @Test
-    public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mSource);
-        verify(mA2dpService).getConnectedDevices();
+    fun getConnectedDevices() {
+        binder.getConnectedDevices(source)
+        verify(a2dpService).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED};
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_CONNECTED)
 
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mA2dpService).getDevicesMatchingConnectionStates(states);
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(a2dpService).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mSource);
-        verify(mA2dpService).getConnectionState(mDevice);
+    fun getConnectionState() {
+        binder.getConnectionState(device, source)
+        verify(a2dpService).getConnectionState(device)
     }
 
     @Test
-    public void setActiveDevice() {
-        mBinder.setActiveDevice(mDevice, mSource);
-        verify(mA2dpService).setActiveDevice(mDevice);
+    fun setActiveDevice() {
+        binder.setActiveDevice(device, source)
+        verify(a2dpService).setActiveDevice(device)
     }
 
     @Test
-    public void setActiveDevice_withNull_callsRemoveActiveDevice() {
-        mBinder.setActiveDevice(null, mSource);
-        verify(mA2dpService).removeActiveDevice(false);
+    fun setActiveDevice_withNull_callsRemoveActiveDevice() {
+        binder.setActiveDevice(null, source)
+        verify(a2dpService).removeActiveDevice(false)
     }
 
     @Test
-    public void getActiveDevice() {
-        mBinder.getActiveDevice(mSource);
-        verify(mA2dpService).getActiveDevice();
+    fun getActiveDevice() {
+        binder.getActiveDevice(source)
+        verify(a2dpService).activeDevice
     }
 
     @Test
-    public void setConnectionPolicy() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
+    fun setConnectionPolicy() {
+        val connectionPolicy = CONNECTION_POLICY_ALLOWED
 
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
-        verify(mA2dpService).setConnectionPolicy(mDevice, connectionPolicy);
+        binder.setConnectionPolicy(device, connectionPolicy, source)
+        verify(a2dpService).setConnectionPolicy(device, connectionPolicy)
     }
 
     @Test
-    public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mDevice, mSource);
-        verify(mA2dpService).getConnectionPolicy(mDevice);
+    fun getConnectionPolicy() {
+        binder.getConnectionPolicy(device, source)
+        verify(a2dpService).getConnectionPolicy(device)
     }
 
     @Test
-    public void setAvrcpAbsoluteVolume() {
-        int volume = 3;
+    fun setAvrcpAbsoluteVolume() {
+        val volume = 3
 
-        mBinder.setAvrcpAbsoluteVolume(volume, mSource);
-        verify(mA2dpService).setAvrcpAbsoluteVolume(volume);
+        binder.setAvrcpAbsoluteVolume(volume, source)
+        verify(a2dpService).setAvrcpAbsoluteVolume(volume)
     }
 
     @Test
-    public void isA2dpPlaying() {
-        mBinder.isA2dpPlaying(mDevice, mSource);
-        verify(mA2dpService).isA2dpPlaying(mDevice);
+    fun isA2dpPlaying() {
+        binder.isA2dpPlaying(device, source)
+        verify(a2dpService).isA2dpPlaying(device)
     }
 
     @Test
-    public void getCodecStatus() {
-        mBinder.getCodecStatus(mDevice, mSource);
-        verify(mA2dpService).getCodecStatus(mDevice);
+    fun getCodecStatus() {
+        binder.getCodecStatus(device, source)
+        verify(a2dpService).getCodecStatus(device)
     }
 
     @Test
-    public void setCodecConfigPreference() {
-        BluetoothCodecConfig config = new BluetoothCodecConfig(SOURCE_CODEC_TYPE_INVALID);
+    fun setCodecConfigPreference() {
+        val config = BluetoothCodecConfig(SOURCE_CODEC_TYPE_INVALID)
 
-        mBinder.setCodecConfigPreference(mDevice, config, mSource);
-        verify(mA2dpService).setCodecConfigPreference(mDevice, config);
+        binder.setCodecConfigPreference(device, config, source)
+        verify(a2dpService).setCodecConfigPreference(device, config)
     }
 
     @Test
-    public void enableOptionalCodecs() {
-        mBinder.enableOptionalCodecs(mDevice, mSource);
-        verify(mA2dpService).enableOptionalCodecs(mDevice);
+    fun enableOptionalCodecs() {
+        binder.enableOptionalCodecs(device, source)
+        verify(a2dpService).enableOptionalCodecs(device)
     }
 
     @Test
-    public void disableOptionalCodecs() {
-        mBinder.disableOptionalCodecs(mDevice, mSource);
-        verify(mA2dpService).disableOptionalCodecs(mDevice);
+    fun disableOptionalCodecs() {
+        binder.disableOptionalCodecs(device, source)
+        verify(a2dpService).disableOptionalCodecs(device)
     }
 
     @Test
-    public void isOptionalCodecsSupported() {
-        mBinder.isOptionalCodecsSupported(mDevice, mSource);
-        verify(mA2dpService).getSupportsOptionalCodecs(mDevice);
+    fun isOptionalCodecsSupported() {
+        binder.isOptionalCodecsSupported(device, source)
+        verify(a2dpService).getSupportsOptionalCodecs(device)
     }
 
     @Test
-    public void isOptionalCodecsEnabled() {
-        mBinder.isOptionalCodecsEnabled(mDevice, mSource);
-        verify(mA2dpService).getOptionalCodecsEnabled(mDevice);
+    fun isOptionalCodecsEnabled() {
+        binder.isOptionalCodecsEnabled(device, source)
+        verify(a2dpService).getOptionalCodecsEnabled(device)
     }
 
     @Test
-    public void setOptionalCodecsEnabled() {
-        int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
+    fun setOptionalCodecsEnabled() {
+        val value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN
 
-        mBinder.setOptionalCodecsEnabled(mDevice, value, mSource);
-        verify(mA2dpService).setOptionalCodecsEnabled(mDevice, value);
+        binder.setOptionalCodecsEnabled(device, value, source)
+        verify(a2dpService).setOptionalCodecsEnabled(device, value)
     }
 
     @Test
-    public void getDynamicBufferSupport() {
-        mBinder.getDynamicBufferSupport(mSource);
-        verify(mA2dpService).getDynamicBufferSupport();
+    fun getDynamicBufferSupport() {
+        binder.getDynamicBufferSupport(source)
+        verify(a2dpService).dynamicBufferSupport
     }
 
     @Test
-    public void getBufferConstraints() {
-        mBinder.getBufferConstraints(mSource);
-        verify(mA2dpService).getBufferConstraints();
+    fun getBufferConstraints() {
+        binder.getBufferConstraints(source)
+        verify(a2dpService).bufferConstraints
     }
 
     @Test
-    public void setBufferLengthMillis() {
-        int codec = 0;
-        int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
+    fun setBufferLengthMillis() {
+        val codec = 0
+        val value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN
 
-        mBinder.setBufferLengthMillis(codec, value, mSource);
-        verify(mA2dpService).setBufferLengthMillis(codec, value);
+        binder.setBufferLengthMillis(codec, value, source)
+        verify(a2dpService).setBufferLengthMillis(codec, value)
     }
 }
