@@ -20,6 +20,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <stdint.h>
+#include <sys/cdefs.h>
 
 #include <string>
 
