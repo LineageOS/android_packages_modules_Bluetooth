@@ -18,6 +18,7 @@
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 
+#include <atomic>
 #include <iterator>
 #include <memory>
 #include <mutex>
@@ -187,6 +188,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       le_address_manager_->UnregisterSync(this);
     }
     advertising_sets_.clear();
+    num_advertisers_in_use_.store(0);
   }
 
   int8_t get_tx_path_loss_compensation() {
@@ -414,6 +416,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
     advertising_sets_[id] = Advertiser();
     advertising_sets_[id].in_use = true;
+    num_advertisers_in_use_++;
 
     if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list() &&
         removed_advertising_sets_.contains(id)) {
@@ -464,6 +467,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
 
     advertising_sets_.erase(advertiser_id);
+    num_advertisers_in_use_--;
     if (advertising_sets_.empty() && address_manager_registered) {
       le_address_manager_->Unregister(this);
       address_manager_registered = false;
@@ -1542,6 +1546,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   bool paused = false;
 
   size_t num_instances_;
+  std::atomic<size_t> num_advertisers_in_use_{0};
   std::vector<hci::EnabledSet> enabled_sets_;
   // map to mapping the id from java layer and advertiser id
   std::map<uint8_t, int> id_map_;
