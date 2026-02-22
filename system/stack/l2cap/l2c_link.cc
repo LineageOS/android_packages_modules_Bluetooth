@@ -46,6 +46,7 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_acl_interface.h"
+#include "stack/include/l2cap_av_interface.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
@@ -689,6 +690,7 @@ void l2c_link_adjust_chnl_allocation(void) {
 }
 
 void l2c_link_init(const uint16_t acl_buffer_count_classic) {
+  l2cb.full_num_lm_acl_bufs = acl_buffer_count_classic;
   l2cb.num_lm_acl_bufs = acl_buffer_count_classic;
   l2cb.controller_xmit_window = acl_buffer_count_classic;
 }
@@ -751,6 +753,43 @@ void l2c_pin_code_request(const RawAddress& bd_addr) {
   if ((p_lcb) && (!p_lcb->ccb_queue.p_first_ccb)) {
     alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_EXT_TIMEOUT_MS,
                        l2c_lcb_timer_timeout, p_lcb);
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         l2c_link_set_br_coex_buf_cap
+ *
+ * Description      This function is called to limit amount of buffers used,
+ *                  in order for L2CAP to coexist with A2DP offload on MTK.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2c_link_set_br_coex_buf_cap(uint16_t bufs_to_reserve, tL2C_COEX_READY cb) {
+  uint16_t new_bufs_count = l2cb.full_num_lm_acl_bufs - bufs_to_reserve;
+  uint16_t pending_acks = l2cb.num_lm_acl_bufs - l2cb.controller_xmit_window + l2cb.pending_acks_until_coex_cb;
+
+  log::debug(
+      "coex buf cap: total={} reserving={} available={} pending_acks={} xmit_window={}",
+      l2cb.full_num_lm_acl_bufs, bufs_to_reserve, new_bufs_count,
+      pending_acks, l2cb.controller_xmit_window);
+
+  if (l2cb.pending_acks_until_coex_cb > 0) {
+    std::move(l2cb.coex_cb).Run(/* success= */ false);
+  }
+  l2cb.num_lm_acl_bufs = new_bufs_count;
+  if (pending_acks > new_bufs_count) {
+    l2cb.controller_xmit_window = 0;
+    l2cb.pending_acks_until_coex_cb = pending_acks - new_bufs_count;
+    l2cb.coex_cb = std::move(cb);
+  } else {
+    l2cb.controller_xmit_window = new_bufs_count - pending_acks;
+    l2cb.pending_acks_until_coex_cb = 0;
+  }
+  l2c_link_adjust_allocation();
+  if (pending_acks <= new_bufs_count) {
+    std::move(cb).Run(/* success= */ true);
   }
 }
 
@@ -1031,7 +1070,17 @@ void l2c_packets_completed(uint16_t handle, uint16_t num_sent) {
 
   switch (p_lcb->transport) {
     case BT_TRANSPORT_BR_EDR:
-      l2cb.controller_xmit_window += num_sent;
+      if (l2cb.pending_acks_until_coex_cb > 0) {
+        if (l2cb.pending_acks_until_coex_cb > num_sent) {
+          l2cb.pending_acks_until_coex_cb -= num_sent;
+        } else {
+          l2cb.controller_xmit_window += num_sent - l2cb.pending_acks_until_coex_cb;
+          l2cb.pending_acks_until_coex_cb = 0;
+          std::move(l2cb.coex_cb).Run(/* success= */ true);
+        }
+      } else {
+        l2cb.controller_xmit_window += num_sent;
+      }
       if (p_lcb->is_round_robin_scheduling()) {
         l2cb.update_outstanding_classic_packets(num_sent);
       }
