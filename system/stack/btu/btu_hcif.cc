@@ -40,6 +40,7 @@
 #include <cstdint>
 
 #include "btm_iso_api.h"
+#include "hci_evt_length.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/hci_layer.h"
 #include "osi/include/allocator.h"
@@ -53,7 +54,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/hci_evt_length.h"
 #include "stack/include/inq_hci_link_interface.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sco_hci_link_interface.h"
