@@ -72,7 +72,7 @@ inline std::string link_policy_text(const LinkPolicy& policy) {
 
 constexpr LinkPolicy kLinkPolicyDefault = {
         .role_switch = true,
-        .hold_mode = true,
+        .hold_mode = false,
         .sniff_mode = true,
         .park_mode = false,
 };
