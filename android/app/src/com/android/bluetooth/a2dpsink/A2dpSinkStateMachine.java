@@ -24,11 +24,9 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import android.bluetooth.BluetoothA2dpSink;
-import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
-import android.media.AudioFormat;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
@@ -68,7 +66,6 @@ class A2dpSinkStateMachine extends StateMachine {
     protected final Disconnecting mDisconnecting;
 
     protected int mMostRecentState = STATE_DISCONNECTED;
-    protected BluetoothAudioConfig mAudioConfig = null;
 
     A2dpSinkStateMachine(
             A2dpSinkService service,
@@ -136,11 +133,6 @@ class A2dpSinkStateMachine extends StateMachine {
         mService.connectionStateChanged(mDevice, mMostRecentState, currentState);
         mMostRecentState = currentState;
         mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-    }
-
-    /** Get current audio config */
-    BluetoothAudioConfig getAudioConfig() {
-        return mAudioConfig;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -317,7 +309,6 @@ class A2dpSinkStateMachine extends StateMachine {
 
         void processAudioConfigEvent(int rate, int channels) {
             debug("Config changed, sampleRate=" + rate + ", channelCount=" + channels);
-            mAudioConfig = new BluetoothAudioConfig(rate, channels, AudioFormat.ENCODING_PCM_16BIT);
         }
     }
 
