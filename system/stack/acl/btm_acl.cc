@@ -150,7 +150,6 @@ static void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
                                               uint16_t flush_timeout_in_ticks);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_number);
 static void btm_read_rssi_timeout(void* data);
-static void btm_set_link_policy(tACL_CONN* conn, const LinkPolicy& link_policy);
 static void btm_apply_link_policy(tACL_CONN* conn);
 static void sanitize_link_policy(LinkPolicy& link_policy);
 
@@ -179,7 +178,6 @@ void NotifyAclRoleSwitchComplete(const RawAddress& bda, tHCI_ROLE new_role,
 
 void NotifyAclFeaturesReadComplete(tACL_CONN& acl, uint8_t max_page_number) {
   btm_process_remote_ext_features(&acl, max_page_number);
-  btm_set_link_policy(&acl, kLinkPolicyDefault);
   int32_t flush_timeout = osi_property_get_int32(PROPERTY_AUTO_FLUSH_TIMEOUT, 0);
   if (bluetooth::shim::GetController()->SupportsNonFlushablePb() && flush_timeout != 0) {
     acl_write_automatic_flush_timeout(acl.link_spec.addrt.bda,
@@ -376,9 +374,6 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
     p_acl->hci_handle = hci_handle;
     p_acl->link_role = link_role;
     p_acl->link_spec = link_spec;
-    if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
-      btm_set_link_policy(p_acl, kLinkPolicyDefault);
-    }
     log::warn(
             "Unable to create duplicate acl when one already exists handle:{} "
             "role:{} link_spec:{}",
@@ -406,7 +401,6 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
 
   if (p_acl->is_transport_br_edr()) {
     BTM_PM_OnConnected(hci_handle, link_spec.addrt.bda);
-    btm_set_link_policy(p_acl, kLinkPolicyDefault);
   }
 
   // save remote properties to iot conf file
@@ -674,11 +668,6 @@ static void sanitize_link_policy(LinkPolicy& link_policy) {
   }
 }
 
-static void btm_set_link_policy(tACL_CONN* conn, const LinkPolicy& link_policy) {
-  conn->link_policy = link_policy;
-  btm_apply_link_policy(conn);
-}
-
 static void btm_apply_link_policy(tACL_CONN* conn) {
   sanitize_link_policy(conn->link_policy);
   if (conn->link_policy.role_switch &&
@@ -887,7 +876,6 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl, bool locally_initi
       log::error("Unable to change connection packet type types:{:04x} address:{}",
                  default_packet_type_mask, p_acl->RemoteAddress());
     }
-    btm_set_link_policy(p_acl, kLinkPolicyDefault);
   } else if (p_acl->is_transport_ble()) {
     btm_ble_connection_established(p_acl->link_spec.addrt.bda);
     locally_initiated = p_acl->link_role == HCI_ROLE_CENTRAL ? true : false;
