@@ -48,37 +48,34 @@ enum class BtmAclSwitchKeyState : uint8_t {
   kInProgress,
 };
 
-/* Policy settings status */
-typedef enum : uint16_t {
-  HCI_DISABLE_ALL_LM_MODES = 0,
-  HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH = (1u << 0),
-  HCI_ENABLE_HOLD_MODE = (1u << 1),
-  HCI_ENABLE_SNIFF_MODE = (1u << 2),
-  HCI_ENABLE_PARK_MODE = (1u << 3),
-} tLINK_POLICY_BITMASK;
-typedef uint16_t tLINK_POLICY;
+struct LinkPolicy {
+  bool role_switch;
+  bool hold_mode;  // Not supported in Android
+  bool sniff_mode;
+  bool park_mode;  // Deprecated
 
-constexpr tLINK_POLICY kAllLinkPoliciesEnabled =
-        (HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE);
-
-static const char* link_policy_string[] = {
-        " role_switch ",
-        " hold_mode ",
-        " sniff_mode ",
-        " park_mode ",
+public:
+  constexpr uint16_t toUint16() const {
+    return (role_switch << 0) | (hold_mode << 1) | (sniff_mode << 2) | (park_mode << 3);
+  }
+  constexpr operator uint16_t() const { return toUint16(); }
 };
 
-inline std::string link_policy_text(tLINK_POLICY policy) {
+inline std::string link_policy_text(const LinkPolicy& policy) {
   std::ostringstream os;
-  os << "0x" << loghex(static_cast<uint16_t>(policy)) << " :";
-  std::string s = os.str();
-  for (uint16_t i = 0; i < 4; i++) {
-    if (policy & (0x1 << i)) {
-      s += link_policy_string[i];
-    }
-  }
-  return s;
+  os << "role_switch: " << (policy.role_switch == 0 ? "disabled" : "enabled") << ", ";
+  os << "hold_mode: " << (policy.hold_mode == 0 ? "disabled" : "enabled") << ", ";
+  os << "sniff_mode: " << (policy.sniff_mode == 0 ? "disabled" : "enabled") << ", ";
+  os << "park_mode: " << (policy.park_mode == 0 ? "disabled" : "enabled");
+  return os.str();
 }
+
+constexpr LinkPolicy kLinkPolicyDefault = {
+        .role_switch = true,
+        .hold_mode = true,
+        .sniff_mode = true,
+        .park_mode = false,
+};
 
 // Power mode states.
 // Used as both value and bitmask
@@ -193,7 +190,7 @@ public:
 
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
-  tLINK_POLICY link_policy;
+  LinkPolicy link_policy;
 
 public:
   uint16_t Handle() const { return hci_handle; }
@@ -286,3 +283,8 @@ public:
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status, uint8_t encr_enable);
+
+namespace std {
+template <>
+struct formatter<LinkPolicy> : string_formatter<LinkPolicy, link_policy_text> {};
+}  // namespace std

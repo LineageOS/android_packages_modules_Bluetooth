@@ -150,8 +150,9 @@ static void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
                                               uint16_t flush_timeout_in_ticks);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_number);
 static void btm_read_rssi_timeout(void* data);
-static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
-static void check_link_policy(tLINK_POLICY* settings);
+static void btm_set_link_policy(tACL_CONN* conn, const LinkPolicy& link_policy);
+static void btm_apply_link_policy(tACL_CONN* conn);
+static void sanitize_link_policy(LinkPolicy& link_policy);
 
 namespace {
 void NotifyAclLinkUp(tACL_CONN& p_acl, bool locally_initiated) {
@@ -176,15 +177,15 @@ void NotifyAclRoleSwitchComplete(const RawAddress& bda, tHCI_ROLE new_role,
   BTA_dm_report_role_change(bda, new_role, hci_status);
 }
 
-void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl, uint8_t max_page_number) {
-  btm_process_remote_ext_features(&p_acl, max_page_number);
-  btm_set_link_policy(&p_acl, kAllLinkPoliciesEnabled);
+void NotifyAclFeaturesReadComplete(tACL_CONN& acl, uint8_t max_page_number) {
+  btm_process_remote_ext_features(&acl, max_page_number);
+  btm_set_link_policy(&acl, kLinkPolicyDefault);
   int32_t flush_timeout = osi_property_get_int32(PROPERTY_AUTO_FLUSH_TIMEOUT, 0);
   if (bluetooth::shim::GetController()->SupportsNonFlushablePb() && flush_timeout != 0) {
-    acl_write_automatic_flush_timeout(p_acl.link_spec.addrt.bda,
+    acl_write_automatic_flush_timeout(acl.link_spec.addrt.bda,
                                       static_cast<uint16_t>(flush_timeout));
   }
-  BTA_dm_notify_remote_features_complete(p_acl.link_spec.addrt.bda);
+  BTA_dm_notify_remote_features_complete(acl.link_spec.addrt.bda);
 }
 
 }  // namespace
@@ -376,7 +377,7 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
     p_acl->link_role = link_role;
     p_acl->link_spec = link_spec;
     if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
-      btm_set_link_policy(p_acl, kAllLinkPoliciesEnabled);
+      btm_set_link_policy(p_acl, kLinkPolicyDefault);
     }
     log::warn(
             "Unable to create duplicate acl when one already exists handle:{} "
@@ -405,7 +406,7 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
 
   if (p_acl->is_transport_br_edr()) {
     BTM_PM_OnConnected(hci_handle, link_spec.addrt.bda);
-    btm_set_link_policy(p_acl, kAllLinkPoliciesEnabled);
+    btm_set_link_policy(p_acl, kLinkPolicyDefault);
   }
 
   // save remote properties to iot conf file
@@ -654,55 +655,37 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t /* status */, uint8_t encr_
   }
 }
 
-static void check_link_policy(tLINK_POLICY* settings) {
-  if ((*settings & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
-      (!bluetooth::shim::GetController()->SupportsRoleSwitch())) {
-    *settings &= (~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
-    log::info("Role switch not supported (settings: 0x{:04x})", *settings);
+static void sanitize_link_policy(LinkPolicy& link_policy) {
+  if (link_policy.role_switch && (!bluetooth::shim::GetController()->SupportsRoleSwitch())) {
+    link_policy.role_switch = false;
+    log::info("Role switch not supported (link policy: {})", link_policy);
   }
-  if ((*settings & HCI_ENABLE_HOLD_MODE) &&
-      (!bluetooth::shim::GetController()->SupportsHoldMode())) {
-    *settings &= (~HCI_ENABLE_HOLD_MODE);
-    log::info("hold not supported (settings: 0x{:04x})", *settings);
+  if (link_policy.hold_mode && (!bluetooth::shim::GetController()->SupportsHoldMode())) {
+    link_policy.hold_mode = false;
+    log::info("Hold mode not supported (link policy: {})", link_policy);
   }
-  if ((*settings & HCI_ENABLE_SNIFF_MODE) &&
-      (!bluetooth::shim::GetController()->SupportsSniffMode())) {
-    *settings &= (~HCI_ENABLE_SNIFF_MODE);
-    log::info("sniff not supported (settings: 0x{:04x})", *settings);
+  if (link_policy.sniff_mode && (!bluetooth::shim::GetController()->SupportsSniffMode())) {
+    link_policy.sniff_mode = false;
+    log::info("Sniff not supported (link policy: {})", link_policy);
   }
-  if ((*settings & HCI_ENABLE_PARK_MODE) &&
-      (!bluetooth::shim::GetController()->SupportsParkMode())) {
-    *settings &= (~HCI_ENABLE_PARK_MODE);
-    log::info("park not supported (settings: 0x{:04x})", *settings);
+  if (link_policy.park_mode) {
+    link_policy.park_mode = false;
+    log::info("Park mode is deprecated (link policy: {})", link_policy);
   }
 }
 
-static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
-  conn->link_policy = policy;
-  check_link_policy(&conn->link_policy);
-  if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
+static void btm_set_link_policy(tACL_CONN* conn, const LinkPolicy& link_policy) {
+  conn->link_policy = link_policy;
+  btm_apply_link_policy(conn);
+}
+
+static void btm_apply_link_policy(tACL_CONN* conn) {
+  sanitize_link_policy(conn->link_policy);
+  if (conn->link_policy.role_switch &&
       interop_match_addr(INTEROP_DISABLE_SNIFF, conn->link_spec.addrt.bda)) {
-    conn->link_policy &= (~HCI_ENABLE_SNIFF_MODE);
+    conn->link_policy.sniff_mode = false;
   }
   btsnd_hcic_write_policy_set(conn->hci_handle, static_cast<uint16_t>(conn->link_policy));
-}
-
-static void btm_toggle_policy_on_for(const RawAddress& peer_addr, uint16_t flag) {
-  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
-  if (!conn) {
-    log::warn("Unable to find active acl");
-    return;
-  }
-  btm_set_link_policy(conn, conn->link_policy | flag);
-}
-
-static void btm_toggle_policy_off_for(const RawAddress& peer_addr, uint16_t flag) {
-  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
-  if (!conn) {
-    log::warn("Unable to find active acl");
-    return;
-  }
-  btm_set_link_policy(conn, conn->link_policy & ~flag);
 }
 
 bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr) {
@@ -711,38 +694,75 @@ bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr) {
     log::warn("Unable to find active acl");
     return false;
   }
-  return conn->link_policy & HCI_ENABLE_SNIFF_MODE;
+  return conn->link_policy.sniff_mode;
 }
 
 void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
+  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    log::warn("Unable to find active acl");
+    return;
+  }
+  conn->link_policy.sniff_mode = true;
+  btm_apply_link_policy(conn);
 }
 
 void BTM_block_sniff_mode_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
+  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    log::warn("Unable to find active acl");
+    return;
+  }
+  conn->link_policy.sniff_mode = false;
+  btm_apply_link_policy(conn);
 }
 
 void BTM_unblock_role_switch_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
+  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    log::warn("Unable to find active acl");
+    return;
+  }
+  conn->link_policy.role_switch = true;
+  btm_apply_link_policy(conn);
 }
 
 void BTM_block_role_switch_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
+  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    log::warn("Unable to find active acl");
+    return;
+  }
+  conn->link_policy.role_switch = false;
+  btm_apply_link_policy(conn);
 }
 
 void BTM_unblock_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
+  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    log::warn("Unable to find active acl");
+    return;
+  }
+  conn->link_policy.role_switch = true;
+  conn->link_policy.sniff_mode = true;
+  btm_apply_link_policy(conn);
 }
 
 void BTM_block_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_off_for(peer_addr,
-                            HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
+  auto conn = internal_.btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    log::warn("Unable to find active acl");
+    return;
+  }
+  conn->link_policy.role_switch = false;
+  conn->link_policy.sniff_mode = false;
+  btm_apply_link_policy(conn);
 }
 
 void StackAclBtmAcl::btm_set_default_link_policy() {
-  tLINK_POLICY settings = kAllLinkPoliciesEnabled;
-  check_link_policy(&settings);
-  btsnd_hcic_write_def_policy_set(settings);
+  LinkPolicy link_policy = kLinkPolicyDefault;
+  sanitize_link_policy(link_policy);
+  btsnd_hcic_write_def_policy_set(static_cast<uint16_t>(link_policy));
 }
 
 static void maybe_chain_more_commands_after_read_remote_version_complete(uint8_t /* status */,
@@ -867,7 +887,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl, bool locally_initi
       log::error("Unable to change connection packet type types:{:04x} address:{}",
                  default_packet_type_mask, p_acl->RemoteAddress());
     }
-    btm_set_link_policy(p_acl, kAllLinkPoliciesEnabled);
+    btm_set_link_policy(p_acl, kLinkPolicyDefault);
   } else if (p_acl->is_transport_ble()) {
     btm_ble_connection_established(p_acl->link_spec.addrt.bda);
     locally_initiated = p_acl->link_role == HCI_ROLE_CENTRAL ? true : false;
