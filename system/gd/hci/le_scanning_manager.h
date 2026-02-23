@@ -92,6 +92,20 @@ public:
 
   virtual bool IsAdTypeFilterSupported() const = 0;
 
+  virtual bool Is1mPhyConfigured() const = 0;
+
+  virtual bool IsCodedPhyConfigured() const = 0;
+
+  virtual bool IsScanActive() const = 0;
+
+  virtual uint32_t GetIntervalMs1m() const = 0;
+
+  virtual uint16_t GetWindowMs1m() const = 0;
+
+  virtual uint32_t GetIntervalMsCoded() const = 0;
+
+  virtual uint16_t GetWindowMsCoded() const = 0;
+
   virtual void StartDiscovery(uint8_t duration) = 0;
 
   virtual void StopDiscovery() = 0;

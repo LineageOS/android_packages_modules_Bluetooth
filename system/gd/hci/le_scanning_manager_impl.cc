@@ -2009,6 +2009,22 @@ bool LeScanningManagerImpl::IsAdTypeFilterSupported() const {
   return pimpl_->is_ad_type_filter_supported();
 }
 
+bool LeScanningManagerImpl::Is1mPhyConfigured() const { return pimpl_->is_1m_phy_configured(); }
+
+bool LeScanningManagerImpl::IsCodedPhyConfigured() const {
+  return pimpl_->is_coded_phy_configured();
+}
+
+bool LeScanningManagerImpl::IsScanActive() const { return pimpl_->is_scan_active(); }
+
+uint32_t LeScanningManagerImpl::GetIntervalMs1m() const { return pimpl_->interval_ms_1m_; }
+
+uint16_t LeScanningManagerImpl::GetWindowMs1m() const { return pimpl_->window_ms_1m_; }
+
+uint32_t LeScanningManagerImpl::GetIntervalMsCoded() const { return pimpl_->interval_ms_coded_; }
+
+uint16_t LeScanningManagerImpl::GetWindowMsCoded() const { return pimpl_->window_ms_coded_; }
+
 void LeScanningManagerImpl::StartDiscovery(uint8_t duration) {
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_discovery, duration);
 }

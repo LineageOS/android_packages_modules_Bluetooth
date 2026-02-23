@@ -105,6 +105,20 @@ public:
 
   bool IsAdTypeFilterSupported() const override;
 
+  bool Is1mPhyConfigured() const override;
+
+  bool IsCodedPhyConfigured() const override;
+
+  bool IsScanActive() const override;
+
+  uint32_t GetIntervalMs1m() const override;
+
+  uint16_t GetWindowMs1m() const override;
+
+  uint32_t GetIntervalMsCoded() const override;
+
+  uint16_t GetWindowMsCoded() const override;
+
   void StartDiscovery(uint8_t duration) override;
 
   void StopDiscovery() override;
