@@ -231,8 +231,7 @@ public class AdvertiseManager {
 
         mAdvertiseSuspendManager.ifPresent(
                 manager -> {
-                    manager.onAdvertisingEnabled(advertiserId, enable, status);
-                    if (!manager.shouldSkipCallback()) {
+                    if (manager.onAdvertisingEnabled(advertiserId, enable, status)) {
                         final var callback = entry.getValue().callback;
                         callbackToApp(
                                 () -> callback.onAdvertisingEnabled(advertiserId, enable, status));
