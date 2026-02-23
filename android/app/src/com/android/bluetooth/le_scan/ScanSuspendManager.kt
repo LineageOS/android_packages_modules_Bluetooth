@@ -56,7 +56,7 @@ internal class ScanSuspendManager(
         }
     }
 
-    fun handleSystemSuspend() {
+    private fun handleSystemSuspend() {
         if (systemSuspended) {
             return
         }
@@ -65,7 +65,7 @@ internal class ScanSuspendManager(
         handleSuspendAllScans()
     }
 
-    fun handleSystemResume() {
+    private fun handleSystemResume() {
         Log.d(TAG, "handleSystemResume(): Scan will be resumed when screen is on")
         systemSuspended = false
     }
