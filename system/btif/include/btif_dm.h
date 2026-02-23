@@ -165,6 +165,6 @@ namespace bluetooth::legacy::testing {
 void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time, tBTM_BLE_RX_TIME_MS rx_time,
                         tBTM_BLE_IDLE_TIME_MS idle_time, tBTM_BLE_ENERGY_USED energy_used,
                         tBTM_CONTRL_STATE ctrl_state, tBTA_STATUS status);
-void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
-                       bool during_device_search);
+void btif_on_name_read(const RawAddress& bd_addr, tHCI_ERROR_CODE hci_status,
+                       const BD_NAME& bd_name, bool during_device_search);
 }  // namespace bluetooth::legacy::testing

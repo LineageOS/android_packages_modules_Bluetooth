@@ -302,8 +302,8 @@ static const char* btif_get_default_local_name();
 static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_function_t function,
                                       bt_bond_state_t state);
 
-static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
-                              bool during_device_search);
+static void btif_on_name_read(const RawAddress& bd_addr, tHCI_ERROR_CODE hci_status,
+                              const BD_NAME& bd_name, bool during_device_search);
 
 static void btif_dm_report_discovery_state_change(bt_discovery_state_t state);
 static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len,
@@ -2269,8 +2269,8 @@ static void btif_on_gatt_results(RawAddress bd_addr, std::vector<bluetooth::Uuid
           BT_STATUS_SUCCESS, bd_addr, addr_type, prop.size(), prop.data());
 }
 
-static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
-                              bool during_device_search) {
+static void btif_on_name_read(const RawAddress& bd_addr, tHCI_ERROR_CODE hci_status,
+                              const BD_NAME& bd_name, bool during_device_search) {
   if (hci_status != HCI_SUCCESS) {
     log::warn("Received RNR event with bad status addr:{} hci_status:{}", bd_addr,
               hci_error_code_text(hci_status));
@@ -2308,7 +2308,8 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, co
 
   uint32_t cod = btif_get_cod(bd_addr);
   if (cod != 0) {
-    properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bd_addr), &bd_addr});
+    RawAddress addr = bd_addr;
+    properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(addr), &addr});
     properties.push_back(bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(uint32_t), &cod});
     log::debug("report new device to JNI");
     GetInterfaceToProfiles()->events->invoke_device_found_cb(properties.size(), properties.data());
@@ -2318,8 +2319,7 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, co
   }
 }
 
-static void btif_on_name_read_from_btm(const RawAddress& bd_addr, DEV_CLASS /* dc */,
-                                       BD_NAME bd_name) {
+static void btif_on_name_read_from_btm(const RawAddress& bd_addr, const BD_NAME& bd_name) {
   log::info("{} {}", bd_addr, reinterpret_cast<char const*>(bd_name));
   btif_on_name_read(bd_addr, HCI_SUCCESS, bd_name, false /* during_device_search */);
 }
@@ -4583,8 +4583,8 @@ void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time, tBTM_BLE_RX_TIME_MS rx_time
   ::bta_energy_info_cb(tx_time, rx_time, idle_time, energy_used, ctrl_state, status);
 }
 
-void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
-                       bool during_device_search) {
+void btif_on_name_read(const RawAddress& bd_addr, tHCI_ERROR_CODE hci_status,
+                       const BD_NAME& bd_name, bool during_device_search) {
   ::btif_on_name_read(bd_addr, hci_status, bd_name, during_device_search);
 }
 

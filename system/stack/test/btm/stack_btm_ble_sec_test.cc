@@ -50,17 +50,17 @@ static tBTM_STATUS StaticLeCallback(tBTM_LE_EVT event, const RawAddress& bda,
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
-static tBTM_STATUS StaticPinCallback(const RawAddress&, DEV_CLASS, const BD_NAME, bool,
+static tBTM_STATUS StaticPinCallback(const RawAddress&, const DEV_CLASS&, const BD_NAME&, bool,
                                      PairingAlgorithm) {
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
-static tBTM_STATUS StaticLinkKeyCallback(const RawAddress&, DEV_CLASS, BD_NAME, const LinkKey&,
-                                         uint8_t, bool) {
+static tBTM_STATUS StaticLinkKeyCallback(const RawAddress&, const BD_NAME&, const LinkKey&, uint8_t,
+                                         bool) {
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
-static void StaticAuthCompleteCallback(const RawAddress&, DEV_CLASS, BD_NAME, tHCI_REASON) {}
+static void StaticAuthCompleteCallback(const RawAddress&, const BD_NAME&, tHCI_REASON) {}
 
 static void StaticBondCancelCmplCallback(tBTM_STATUS) {}
 

@@ -55,7 +55,7 @@ public:
    * Returns          true if registered OK, else false
    *
    ******************************************************************************/
-  virtual bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) = 0;
+  virtual bool BTM_SecAddRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback) = 0;
 
   /*******************************************************************************
    *
@@ -70,7 +70,7 @@ public:
    * Returns          true if unregistered OK, else false
    *
    ******************************************************************************/
-  virtual bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) = 0;
+  virtual bool BTM_SecDeleteRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback) = 0;
 
   /*******************************************************************************
    *

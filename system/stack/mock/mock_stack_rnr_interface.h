@@ -35,8 +35,8 @@ class Mock : public ::bluetooth::stack::rnr::Interface {
 public:
   Mock() = default;
 
-  MOCK_METHOD(bool, BTM_SecAddRmtNameNotifyCallback, (tBTM_RMT_NAME_CALLBACK*));
-  MOCK_METHOD(bool, BTM_SecDeleteRmtNameNotifyCallback, (tBTM_RMT_NAME_CALLBACK*));
+  MOCK_METHOD(bool, BTM_SecAddRmtNameNotifyCallback, (BtmRemoteNameCallback*));
+  MOCK_METHOD(bool, BTM_SecDeleteRmtNameNotifyCallback, (BtmRemoteNameCallback*));
   MOCK_METHOD(bool, BTM_IsRemoteNameKnown, (const RawAddress& bd_addr, tBT_TRANSPORT transport));
   MOCK_METHOD(tBTM_STATUS, BTM_ReadRemoteDeviceName,
               (const RawAddress& bd_addr, tBTM_NAME_CMPL_CB* p_callback, tBT_TRANSPORT transport));

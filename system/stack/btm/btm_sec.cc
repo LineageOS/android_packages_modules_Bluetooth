@@ -180,8 +180,7 @@ static BtIoCap btm_sec_get_local_iocaps() {
 }
 
 static void NotifyBondingChange(BtmDevice& p_device, tHCI_STATUS status) {
-  (BtmSecurity::Get().app_->auth_complete_callback)(p_device.bd_addr, p_device.dev_class,
-                                                    p_device.sec_bd_name, status);
+  (BtmSecurity::Get().app_->auth_complete_callback)(p_device.bd_addr, p_device.sec_bd_name, status);
 }
 
 static bool is_sec_state_equal(void* data, void* context) {
@@ -2097,28 +2096,11 @@ static tBTM_STATUS btm_sec_dd_create_conn(BtmDevice* p_device) {
  * Returns          None
  *
  ******************************************************************************/
-static void call_registered_rmt_name_callbacks(const RawAddress* p_bd_addr,
-                                               const DEV_CLASS& dev_class, uint8_t* p_bd_name,
-                                               tHCI_STATUS status) {
-  int i;
-
-  if (p_bd_addr == nullptr) {
-    // TODO Still need to send status back to get SDP state machine
-    // running
-    log::error("Unable to issue callback with unknown address status:{}",
-               hci_status_code_text(status));
-    return;
-  }
-
-  if (p_bd_name == nullptr) {
-    p_bd_name = (uint8_t*)kBtmBdNameEmpty;
-  }
-
-  /* Notify all clients waiting for name to be resolved even if not found so
-   * clients can continue */
-  for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
+static void call_registered_rmt_name_callbacks(const RawAddress& bd_addr, const BD_NAME& bd_name) {
+  /* Notify all clients waiting for name to be resolved even if not found so clients can continue */
+  for (int i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
     if (btm_cb.rnr.p_rmt_name_callback[i]) {
-      (*btm_cb.rnr.p_rmt_name_callback[i])(*p_bd_addr, dev_class, p_bd_name);
+      (*btm_cb.rnr.p_rmt_name_callback[i])(bd_addr, bd_name);
     }
   }
 }
@@ -2163,8 +2145,8 @@ static BtmDevice* btm_rnr_add_name_to_security_record(const RawAddress* p_bd_add
                              reinterpret_cast<char const*>(p_bd_name)));
 
   if (p_device == nullptr) {
-    // We need to send the callbacks to complete the RNR cycle despite failure
-    call_registered_rmt_name_callbacks(p_bd_addr, kDevClassEmpty, nullptr, hci_status);
+    log::warn("Unable to issue callback with unknown address status:{}",
+              hci_status_code_text(hci_status));
     return nullptr;
   }
 
@@ -2196,8 +2178,7 @@ static BtmDevice* btm_rnr_add_name_to_security_record(const RawAddress* p_bd_add
   bluetooth::metrics::LogRemoteNameRequestCompletion(bd_addr, hci_status);
 
   /* Notify all clients waiting for name to be resolved */
-  call_registered_rmt_name_callbacks(&bd_addr, p_device->dev_class, p_device->sec_bd_name,
-                                     hci_status);
+  call_registered_rmt_name_callbacks(bd_addr, p_device->sec_bd_name);
   return p_device;
 }
 
@@ -3117,8 +3098,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   /* User probably disabled the keyboard while it was asleap. Let them try to report the
    * authentication status */
   if (old_state != BTM_PAIR_STATE_IDLE || status != HCI_SUCCESS) {
-    (BtmSecurity::Get().app_->auth_complete_callback)(p_device->bd_addr, p_device->dev_class,
-                                                      p_device->sec_bd_name, status);
+    (BtmSecurity::Get().app_->auth_complete_callback)(p_device->bd_addr, p_device->sec_bd_name,
+                                                      status);
   }
 
   /* If this is a bonding procedure can disconnect the link now */
@@ -4156,9 +4137,8 @@ void btm_sec_link_key_notification(const RawAddress& bda, const Octet16& link_ke
   if (ctkd) {
     p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SC;  // for CTKD
     log::verbose("Save LTK derived LK (key_type = {})", p_device->sec_rec.link_key_type);
-    (BtmSecurity::Get().app_->link_key_callback)(bda, p_device->dev_class, p_device->sec_bd_name,
-                                                 link_key, p_device->sec_rec.link_key_type,
-                                                 true /* ctkd */);
+    (BtmSecurity::Get().app_->link_key_callback)(bda, p_device->sec_bd_name, link_key,
+                                                 p_device->sec_rec.link_key_type, true /* ctkd */);
 
   } else {
     if ((p_device->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256) ||
@@ -4206,9 +4186,8 @@ void btm_sec_link_key_notification(const RawAddress& bda, const Octet16& link_ke
     return;
   }
 
-  (BtmSecurity::Get().app_->link_key_callback)(bda, p_device->dev_class, p_device->sec_bd_name,
-                                               link_key, p_device->sec_rec.link_key_type,
-                                               false /* ctkd */);
+  (BtmSecurity::Get().app_->link_key_callback)(bda, p_device->sec_bd_name, link_key,
+                                               p_device->sec_rec.link_key_type, false /* ctkd */);
 }
 
 /*******************************************************************************
@@ -4297,8 +4276,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       if (p_device == nullptr) {
         BD_NAME name = {};
         (BtmSecurity::Get().app_->auth_complete_callback)(BtmSecurity::Get().link_spec_.addrt.bda,
-                                                          kDevClassEmpty, name,
-                                                          HCI_ERR_CONNECTION_TOUT);
+                                                          name, HCI_ERR_CONNECTION_TOUT);
       } else {
         NotifyBondingChange(*p_device, HCI_ERR_CONNECTION_TOUT);
       }
@@ -4360,8 +4338,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       if (p_device == nullptr) {
         BD_NAME name = {};
         (BtmSecurity::Get().app_->auth_complete_callback)(BtmSecurity::Get().link_spec_.addrt.bda,
-                                                          kDevClassEmpty, name,
-                                                          HCI_ERR_CONNECTION_TOUT);
+                                                          name, HCI_ERR_CONNECTION_TOUT);
       } else {
         NotifyBondingChange(*p_device, HCI_ERR_CONNECTION_TOUT);
       }
@@ -4823,8 +4800,8 @@ static void btm_sec_collision_timeout(void* /* data */) {
  *
  ******************************************************************************/
 static void btm_send_link_key_notif(BtmDevice* p_device) {
-  (BtmSecurity::Get().app_->link_key_callback)(p_device->bd_addr, p_device->dev_class,
-                                               p_device->sec_bd_name, p_device->sec_rec.link_key,
+  (BtmSecurity::Get().app_->link_key_callback)(p_device->bd_addr, p_device->sec_bd_name,
+                                               p_device->sec_rec.link_key,
                                                p_device->sec_rec.link_key_type, false);
 }
 
