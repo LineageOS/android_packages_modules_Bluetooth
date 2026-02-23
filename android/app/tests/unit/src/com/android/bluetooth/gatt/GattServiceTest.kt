@@ -35,6 +35,7 @@ import android.os.Process
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.annotations.RequiresFlagsEnabled
+import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import android.test.mock.MockContentProvider
@@ -92,6 +93,7 @@ private const val TAG = "GattServiceTest"
 @RunWith(ParameterizedAndroidJunit4::class)
 class GattServiceTest(flags: FlagsWrapper) {
     @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val compatChangeRule: TestRule = CoreCompatChangeRule()
 
