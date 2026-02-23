@@ -39,9 +39,11 @@
 
 using namespace bluetooth;
 
+namespace bluetooth::stack {
+
 /*******************************************************************************
  *
- * Function         GATT_LE_Connect
+ * Function         leConnectionConnect
  *
  * Description      This function initiate a connection to a remote device on
  *                  GATT channel.
@@ -55,9 +57,9 @@ using namespace bluetooth;
  *                  failure.
  *
  ******************************************************************************/
-bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
-                     bool prefer_relax_mode, bool auto_mtu_enabled) {
+bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
+                         uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -152,15 +154,15 @@ bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE
   return ret;
 }
 
-bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
-  return GATT_LE_Connect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, opportunistic, 0,
-                         false, false);
+bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+  return leConnectionConnect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, opportunistic, 0,
+                             false, false);
 }
 
 /*******************************************************************************
  *
- * Function         GATT_CancelConnect
+ * Function         stack::leConnectionCancelConnect
  *
  * Description      This function terminates the connection initiation to a
  *                  remote device on GATT channel.
@@ -173,7 +175,7 @@ bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
  * Returns          true if the connection started; false otherwise.
  *
  ******************************************************************************/
-bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct) {
+bool leConnectionCancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct) {
   log::info("gatt_if:{}, address: {}, direct:{}", gatt_if, bd_addr, is_direct);
 
   tGATT_REG* p_reg;
@@ -217,8 +219,8 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_dir
   return true;
 }
 
-void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                              uint16_t subrate_min, uint16_t cont_num) {
+void leConnectionUpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                                     uint16_t subrate_min, uint16_t cont_num) {
   if (!gatt_cb.subrate_mode_config.contains(subrate_mode)) {
     log::warn("This is a unknown subrate mode to update: {}", subrate_mode);
     return;
@@ -236,11 +238,13 @@ void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_
   gatt_cb.subrate_mode_config[subrate_mode].cont_num = cont_num;
 }
 
-bool GATT_SubrateRequest(tGATT_IF client_if, const RawAddress& bd_addr,
-                         tGATT_SUBRATE_MODE subrate_mode) {
+bool leConnectionSubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
+                                    tGATT_SUBRATE_MODE subrate_mode) {
   log::debug("client_if:{} addr:{}, subrate_mode:{}", client_if, bd_addr, subrate_mode);
   if (!gatt_register_subrate_config(client_if, bd_addr, subrate_mode)) {
     return false;
   }
   return true;
 }
+
+}  // namespace bluetooth::stack

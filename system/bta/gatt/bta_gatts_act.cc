@@ -422,9 +422,9 @@ void bta_gatts_open(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
     if (p_msg->api_open.transport == BT_TRANSPORT_BR_EDR) {
       success = GATT_BR_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda);
     } else {
-      success = GATT_LE_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
-                                p_msg->api_open.remote_addr_type, p_msg->api_open.connection_type,
-                                false, 0, false, false);
+      success = stack::leConnectionConnect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
+                                           p_msg->api_open.remote_addr_type,
+                                           p_msg->api_open.connection_type, false, 0, false, false);
     }
 
     if (success) {
@@ -459,8 +459,8 @@ void bta_gatts_cancel_open(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
 
   p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_cancel_open.server_if);
   if (p_rcb != NULL) {
-    if (!GATT_CancelConnect(p_rcb->gatt_if, p_msg->api_cancel_open.remote_bda,
-                            p_msg->api_cancel_open.is_direct)) {
+    if (!stack::leConnectionCancelConnect(p_rcb->gatt_if, p_msg->api_cancel_open.remote_bda,
+                                          p_msg->api_cancel_open.is_direct)) {
       log::error("failed for open request");
     } else {
       status = GATT_SUCCESS;

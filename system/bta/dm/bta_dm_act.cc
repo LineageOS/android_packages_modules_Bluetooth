@@ -488,8 +488,9 @@ void bta_dm_remove_device(const RawAddress& target) {
   bool& bredr_connected = conn_info.bredr_connected;
 
   // Remove from LE allowlist
-  if (!GATT_CancelConnect(0, pseudo_addr, false)) {
-    if (identity_addr != pseudo_addr && !GATT_CancelConnect(0, identity_addr, false)) {
+  if (!stack::leConnectionCancelConnect(0, pseudo_addr, false)) {
+    if (identity_addr != pseudo_addr &&
+        !stack::leConnectionCancelConnect(0, identity_addr, false)) {
       log::warn("Unable to cancel GATT connect peer:{}", pseudo_addr);
     }
   }

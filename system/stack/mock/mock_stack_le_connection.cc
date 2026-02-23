@@ -37,10 +37,10 @@ namespace mock {
 namespace stack_le_connection {
 
 // Function state capture and return values, if needed
-struct GATT_UpdateSubrateConfig GATT_UpdateSubrateConfig;
-struct GATT_SubrateRequest GATT_SubrateRequest;
-struct GATT_CancelConnect GATT_CancelConnect;
-struct GATT_LE_Connect GATT_LE_Connect;
+struct leConnectionUpdateSubrateConfig leConnectionUpdateSubrateConfig;
+struct leConnectionSubrateModeRequest leConnectionSubrateModeRequest;
+struct leConnectionCancelConnect leConnectionCancelConnect;
+struct leConnectionConnect leConnectionConnect;
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test
@@ -50,42 +50,47 @@ namespace test {
 namespace mock {
 namespace stack_le_connection {
 
-bool GATT_SubrateRequest::return_value = false;
-bool GATT_CancelConnect::return_value = false;
-bool GATT_LE_Connect::return_value = false;
+bool leConnectionSubrateModeRequest::return_value = false;
+bool leConnectionCancelConnect::return_value = false;
+bool leConnectionConnect::return_value = false;
 
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test
 
+namespace bluetooth::stack {
 // Mocked functions, if any
-void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                              uint16_t subrate_min, uint16_t cont_num) {
+void leConnectionUpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                                     uint16_t subrate_min, uint16_t cont_num) {
   inc_func_call_count(__func__);
-  test::mock::stack_le_connection::GATT_UpdateSubrateConfig(subrate_mode, subrate_max, subrate_min,
-                                                            cont_num);
+  test::mock::stack_le_connection::leConnectionUpdateSubrateConfig(subrate_mode, subrate_max,
+                                                                   subrate_min, cont_num);
 }
-bool GATT_SubrateRequest(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                         tGATT_SUBRATE_MODE subrate_mode) {
+bool leConnectionSubrateModeRequest(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                    tGATT_SUBRATE_MODE subrate_mode) {
   inc_func_call_count(__func__);
-  return test::mock::stack_le_connection::GATT_SubrateRequest(gatt_if, bd_addr, subrate_mode);
+  return test::mock::stack_le_connection::leConnectionSubrateModeRequest(gatt_if, bd_addr,
+                                                                         subrate_mode);
 }
-bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct) {
+bool leConnectionCancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct) {
   inc_func_call_count(__func__);
-  return test::mock::stack_le_connection::GATT_CancelConnect(gatt_if, bd_addr, is_direct);
+  return test::mock::stack_le_connection::leConnectionCancelConnect(gatt_if, bd_addr, is_direct);
 }
-bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
-                     bool prefer_relax_mode, bool auto_mtu_enabled) {
+bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
+                         uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
   inc_func_call_count(__func__);
-  return test::mock::stack_le_connection::GATT_LE_Connect(
+  return test::mock::stack_le_connection::leConnectionConnect(
           gatt_if, bd_addr, addr_type, connection_type, opportunistic, preferred_mtu,
           prefer_relax_mode, auto_mtu_enabled);
 }
-bool GATT_LE_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
   inc_func_call_count(__func__);
-  return test::mock::stack_le_connection::GATT_LE_Connect(gatt_if, bd_addr, 0, connection_type,
-                                                          opportunistic, 0, false, false);
+  return test::mock::stack_le_connection::leConnectionConnect(gatt_if, bd_addr, 0, connection_type,
+                                                              opportunistic, 0, false, false);
 }
+
+}  // namespace bluetooth::stack
+
 // END mockcify generation

@@ -236,11 +236,11 @@ static void FuzzAsServer(FuzzedDataProvider& fdp) {
 
 static void ClientInit() {
   GattInit();
-  (void)GATT_LE_Connect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, false);
+  (void)stack::leConnectionConnect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, false);
 }
 
 static void ClientCleanup() {
-  (void)GATT_CancelConnect(s_AppIf, kDummyAddr, true);
+  (void)stack::leConnectionCancelConnect(s_AppIf, kDummyAddr, true);
   stack::appDeregister(s_AppIf);
   gatt_free();
 }
