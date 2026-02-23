@@ -17,7 +17,7 @@ use crate::ffi::{CAudioConfig, CIsoStream};
 use std::cmp::{max, min};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, Weak};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock};
 use std::thread::{self, sleep, JoinHandle};
 use std::time::{Duration, Instant};
 
@@ -59,7 +59,7 @@ struct IsoStream {
 
 enum State {
     Idle,
-    Running { fifo: Weak<Fifo>, _worker: Worker },
+    Running { fifo: Fifo, _worker: Worker },
 }
 
 impl<Cb: Callbacks> Streamer<Cb> {
@@ -120,11 +120,11 @@ impl<Cb: Callbacks> Streamer<Cb> {
             let sample_rate = self.audio.sample_rate;
             let frame_duration_us = self.audio.frame_duration_us;
             let frame_len = ((sample_rate as u64 * frame_duration_us as u64) / 1_000_000) as usize;
-            let fifo = Arc::new(Fifo::new(self.audio.bitdepth, frame_len));
+            let fifo = Fifo::new(self.audio.bitdepth, frame_len);
 
             let cb_clone = self.callbacks.clone();
             *state = State::Running {
-                fifo: Arc::downgrade(&fifo),
+                fifo: fifo.clone(),
                 _worker: Worker::new(
                     self.iso.clone(),
                     fifo,
@@ -162,7 +162,7 @@ impl<Cb: Callbacks> Streamer<Cb> {
         let fifo = {
             let state = self.state.lock().unwrap();
             if let State::Running { ref fifo, .. } = *state {
-                fifo.upgrade()
+                Some(fifo.inner.clone())
             } else {
                 None
             }
@@ -251,7 +251,7 @@ struct Worker {
 impl Worker {
     fn new<F>(
         iso: Arc<RwLock<IsoState>>,
-        fifo: Arc<Fifo>,
+        fifo: Fifo,
         max_sdu_size: usize,
         audio: AudioConfig,
         anchor_delay: Duration,
@@ -430,12 +430,37 @@ impl Clocker {
     }
 }
 
-struct Fifo {
+struct InnerFifo {
     channels: usize,
     bitdepth: usize,
     queue: Mutex<VecDeque<u8>>,
     cvar_rd: Condvar,
     cvar_wr: Condvar,
+    is_shutdown: AtomicBool,
+}
+
+/// A handle to the FIFO that automatically shuts down the stream when dropped.
+/// **Warning**: Cloning creates a new handle to the *same* FIFO. Dropping *any* clone will
+///              trigger the shutdown, terminating the stream for all other handles.
+#[derive(Clone)]
+struct Fifo {
+    inner: Arc<InnerFifo>,
+}
+
+impl std::ops::Deref for Fifo {
+    type Target = InnerFifo;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl Drop for Fifo {
+    fn drop(&mut self) {
+        if bluetooth_swoffload_aconfig_flags_rust::swoff_streamer_deadlock_protection() {
+            self.inner.shutdown();
+        }
+    }
 }
 
 pub struct FifoFrame<'a> {
@@ -451,11 +476,30 @@ impl Fifo {
         let channels = 2;
         let capacity = channels * length * (bitdepth / 8);
         Self {
-            channels: 2,
-            bitdepth,
-            queue: Mutex::new(VecDeque::with_capacity(capacity)),
-            cvar_rd: Condvar::new(),
-            cvar_wr: Condvar::new(),
+            inner: Arc::new(InnerFifo {
+                channels: 2,
+                bitdepth,
+                queue: Mutex::new(VecDeque::with_capacity(capacity)),
+                cvar_rd: Condvar::new(),
+                cvar_wr: Condvar::new(),
+                is_shutdown: AtomicBool::new(false),
+            }),
+        }
+    }
+}
+
+impl InnerFifo {
+    fn is_shutdown(&self) -> bool {
+        bluetooth_swoffload_aconfig_flags_rust::swoff_streamer_deadlock_protection()
+            && self.is_shutdown.load(Ordering::Relaxed)
+    }
+
+    fn shutdown(&self) {
+        if bluetooth_swoffload_aconfig_flags_rust::swoff_streamer_deadlock_protection() {
+            let _lock = self.queue.lock().unwrap();
+            self.is_shutdown.store(true, Ordering::Relaxed);
+            self.cvar_wr.notify_all();
+            self.cvar_rd.notify_all();
         }
     }
 
@@ -467,7 +511,14 @@ impl Fifo {
 
         let cvar = &self.cvar_rd;
         let size = self.channels * length * (self.bitdepth / 8);
-        let (queue, result) = cvar.wait_timeout_while(queue, timeout, |q| q.len() < size).unwrap();
+        let (queue, result) = cvar
+            .wait_timeout_while(queue, timeout, |q| !self.is_shutdown() && q.len() < size)
+            .unwrap();
+
+        if self.is_shutdown() {
+            return None;
+        }
+
         if result.timed_out() {
             None
         } else {
@@ -488,8 +539,15 @@ impl Fifo {
         let cvar = &self.cvar_wr;
 
         while !chunk.is_empty() {
-            queue =
-                cvar.wait_while(queue, |q| q.capacity() > 0 && q.len() >= q.capacity()).unwrap();
+            queue = cvar
+                .wait_while(queue, |q| {
+                    !self.is_shutdown() && q.capacity() > 0 && q.len() >= q.capacity()
+                })
+                .unwrap();
+
+            if self.is_shutdown() {
+                break;
+            }
 
             if queue.capacity() == 0 {
                 break;
@@ -506,7 +564,7 @@ impl Fifo {
     }
 }
 
-impl Drop for Fifo {
+impl Drop for InnerFifo {
     fn drop(&mut self) {
         let mut queue = self.queue.lock().unwrap();
         queue.clear();
