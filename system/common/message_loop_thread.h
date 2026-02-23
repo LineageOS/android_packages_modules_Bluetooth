@@ -227,7 +227,7 @@ public:
   /**
    * Wrapper around DoInThread without a location.
    */
-  void Post(base::OnceClosure closure) override;
+  std::optional<base::OnceClosure> Post(base::OnceClosure closure) override;
 
   /**
    * Returns a postable object

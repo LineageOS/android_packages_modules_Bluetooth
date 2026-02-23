@@ -67,7 +67,7 @@ public:
   virtual ~Handler();
 
   // Enqueue a closure to the queue of this handler
-  virtual void Post(base::OnceClosure closure) override;
+  virtual std::optional<base::OnceClosure> Post(base::OnceClosure closure) override;
 
   // Remove all pending events from the queue of this handler, and asynchronously stop the handler.
   void Clear();
@@ -104,7 +104,8 @@ public:
 
   common::PostableContext* GetPostableContext() { return this; }
 
-  bool PostWithDelay(base::OnceClosure closure, std::chrono::milliseconds delay);
+  std::optional<base::OnceClosure> PostWithDelay(base::OnceClosure closure,
+                                                 std::chrono::milliseconds delay);
 
   std::future<void> NotifyWhenIdle();
 
