@@ -44,7 +44,6 @@ android_test {
         "bluetooth-common-testutils",
         "bluetooth_flags_java_lib",
         "com.android.sysprop.bluetooth",
-        "core-compat-test-rules",
         "flag-junit",
         "framework-bluetooth-pre-jarjar",
         "gson",
