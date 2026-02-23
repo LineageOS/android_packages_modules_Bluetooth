@@ -770,4 +770,9 @@ void LogRfcommMxEvent(hci::Address address, State state) {
   LogBluetoothEvent(address, EventType::RFCOMM_MX_EVENT, state);
 }
 
+void LogBondRepairComplete(hci::Address address, bt_bond_state_t state) {
+  LogBluetoothEvent(address, EventType::BOND_REPAIR,
+                    state == BT_BOND_STATE_BONDED ? State::SUCCESS : State::FAIL);
+}
+
 }  // namespace bluetooth::metrics
