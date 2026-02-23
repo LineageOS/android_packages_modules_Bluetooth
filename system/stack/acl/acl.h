@@ -257,7 +257,6 @@ private:
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
   uint16_t btm_acl_pkt_types_supported = kDefaultPacketTypeMask;
-  uint16_t btm_def_link_policy;
   tHCI_STATUS acl_disc_reason = HCI_ERR_UNDEFINED;
 
 public:
@@ -268,7 +267,6 @@ public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
   uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
-  uint16_t DefaultLinkPolicy() const { return btm_def_link_policy; }
 
   struct {
     std::vector<tBTM_PM_STATUS_CBACK*> clients;

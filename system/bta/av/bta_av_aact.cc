@@ -2460,10 +2460,6 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
             p_scb->hndl, p_scb->open_status, p_scb->chnl, p_scb->co_started);
 
   BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
-  if (bta_av_cb.audio_open_cnt <= 1) {
-    get_btm_client_interface().link_policy.BTM_default_unblock_role_switch();
-  }
-
   stack::l2cap::get_interface().L2CA_SetMediaStreamChannel(p_scb->l2c_cid, false);
 
   if (p_scb->open_status != BTA_AV_SUCCESS) {

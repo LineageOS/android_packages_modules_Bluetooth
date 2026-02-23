@@ -61,7 +61,6 @@ static struct btm_client_interface_t btm_client_interface = {
                         .BTM_SwitchRoleToCentral = ::BTM_SwitchRoleToCentral,
                         .BTM_block_role_switch_for = ::BTM_block_role_switch_for,
                         .BTM_block_sniff_mode_for = ::BTM_block_sniff_mode_for,
-                        .BTM_default_unblock_role_switch = ::BTM_default_unblock_role_switch,
                         .BTM_unblock_role_switch_for = ::BTM_unblock_role_switch_for,
                         .BTM_unblock_sniff_mode_for = ::BTM_unblock_sniff_mode_for,
                         .BTM_WritePageTimeout = ::BTM_WritePageTimeout,

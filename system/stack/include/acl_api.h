@@ -43,8 +43,6 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr);
 void BTM_unblock_role_switch_and_sniff_mode_for(const RawAddress& peer_addr);
 void BTM_block_role_switch_and_sniff_mode_for(const RawAddress& peer_addr);
 
-void BTM_default_unblock_role_switch();
-
 void BTM_acl_after_controller_started();
 
 /*******************************************************************************
@@ -202,8 +200,6 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle);
 uint8_t acl_link_role_from_handle(uint16_t handle);
 
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
-
-bool acl_is_role_switch_allowed();
 
 uint16_t acl_get_supported_packet_types();
 

@@ -102,7 +102,7 @@ struct StackAclBtmAcl {
   tACL_CONN* btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT transport);
   bool change_connection_packet_types(tACL_CONN& link, const uint16_t new_packet_type_bitmask);
   void btm_establish_continue(tACL_CONN* p_acl_cb, bool locally_initiated = false);
-  void btm_set_default_link_policy(tLINK_POLICY settings);
+  void btm_set_default_link_policy();
   void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr, tHCI_ROLE new_role);
   void hci_start_role_switch_to_central(tACL_CONN& p_acl);
   void set_default_packet_types_supported(uint16_t packet_types_supported) {
@@ -178,7 +178,7 @@ void NotifyAclRoleSwitchComplete(const RawAddress& bda, tHCI_ROLE new_role,
 
 void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl, uint8_t max_page_number) {
   btm_process_remote_ext_features(&p_acl, max_page_number);
-  btm_set_link_policy(&p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
+  btm_set_link_policy(&p_acl, kAllLinkPoliciesEnabled);
   int32_t flush_timeout = osi_property_get_int32(PROPERTY_AUTO_FLUSH_TIMEOUT, 0);
   if (bluetooth::shim::GetController()->SupportsNonFlushablePb() && flush_timeout != 0) {
     acl_write_automatic_flush_timeout(p_acl.link_spec.addrt.bda,
@@ -208,9 +208,7 @@ void StackAclBtmAcl::hci_start_role_switch_to_central(tACL_CONN& p_acl) {
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
 void BTM_acl_after_controller_started() {
-  internal_.btm_set_default_link_policy(HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH |
-                                        HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE |
-                                        HCI_ENABLE_PARK_MODE);
+  internal_.btm_set_default_link_policy();
 
   /* Create ACL supported packet types mask */
   uint16_t btm_acl_pkt_types_supported = (HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1);
@@ -378,7 +376,7 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
     p_acl->link_role = link_role;
     p_acl->link_spec = link_spec;
     if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
-      btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
+      btm_set_link_policy(p_acl, kAllLinkPoliciesEnabled);
     }
     log::warn(
             "Unable to create duplicate acl when one already exists handle:{} "
@@ -407,7 +405,7 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
 
   if (p_acl->is_transport_br_edr()) {
     BTM_PM_OnConnected(hci_handle, link_spec.addrt.bda);
-    btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
+    btm_set_link_policy(p_acl, kAllLinkPoliciesEnabled);
   }
 
   // save remote properties to iot conf file
@@ -741,15 +739,10 @@ void BTM_block_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {
                             HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
-void StackAclBtmAcl::btm_set_default_link_policy(tLINK_POLICY settings) {
+void StackAclBtmAcl::btm_set_default_link_policy() {
+  tLINK_POLICY settings = kAllLinkPoliciesEnabled;
   check_link_policy(&settings);
-  btm_cb.acl_cb_.btm_def_link_policy = settings;
   btsnd_hcic_write_def_policy_set(settings);
-}
-
-void BTM_default_unblock_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() |
-                                        HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
 static void maybe_chain_more_commands_after_read_remote_version_complete(uint8_t /* status */,
@@ -874,7 +867,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl, bool locally_initi
       log::error("Unable to change connection packet type types:{:04x} address:{}",
                  default_packet_type_mask, p_acl->RemoteAddress());
     }
-    btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
+    btm_set_link_policy(p_acl, kAllLinkPoliciesEnabled);
   } else if (p_acl->is_transport_ble()) {
     btm_ble_connection_established(p_acl->link_spec.addrt.bda);
     locally_initiated = p_acl->link_role == HCI_ROLE_CENTRAL ? true : false;
@@ -1867,10 +1860,6 @@ bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle) {
 
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
   btm_cb.acl_cb_.set_disconnect_reason(acl_disc_reason);
-}
-
-bool acl_is_role_switch_allowed() {
-  return btm_cb.acl_cb_.DefaultLinkPolicy() & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH;
 }
 
 uint16_t acl_get_supported_packet_types() { return btm_cb.acl_cb_.DefaultPacketTypes(); }
