@@ -132,7 +132,6 @@ protected:
     mock_metrics_logger_ = std::make_shared<bluetooth::metrics::MockMetrics>();
     bluetooth::metrics::MockMetrics::SetInstance(mock_metrics_logger_);
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     EXPECT_CALL(*mock_, InitializeGattHal(_))
             .WillOnce(DoAll(SaveArg<0>(&gatt_hal_callback_), Return(true)));

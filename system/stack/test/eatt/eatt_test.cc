@@ -224,7 +224,6 @@ protected:
             .WillRepeatedly(Return(le_buffer_size_));
     bluetooth::gatt::SetMockGattInterface(&gatt_interface_);
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     // Clear the static memory for each test case
     memset(&test_tcb, 0, sizeof(test_tcb));

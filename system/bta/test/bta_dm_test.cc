@@ -212,7 +212,6 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
   // Fake indication that the encryption is in progress with non-null callback
   p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
-  ASSERT_EQ(0, get_func_call_count("BTM_SetEncryption"));
   ASSERT_EQ(1UL, BTA_DM_ENCRYPT_CBACK_queue.size());
   auto params = BTA_DM_ENCRYPT_CBACK_queue.front();
   BTA_DM_ENCRYPT_CBACK_queue.pop();
@@ -220,30 +219,18 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
   p_link->p_encrypt_cback = nullptr;
 
   // Setup a device that fails encryption
-  mock_btm_client_interface.security.BTM_SetEncryption =
-          [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /*transport*/,
-             tBTM_SEC_CALLBACK* /*p_callback*/, void* /*p_ref_data*/,
-             tBTM_BLE_SEC_ACT /*sec_act*/) -> tBTM_STATUS {
-    inc_func_call_count("BTM_SetEncryption");
-    return tBTM_STATUS::BTM_MODE_UNSUPPORTED;
-  };
+  EXPECT_CALL(mock_security_client_interface_, BTM_SetEncryption(_, _, _, _, _))
+    .WillOnce(::testing::Return(tBTM_STATUS::BTM_MODE_UNSUPPORTED));
 
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
-  ASSERT_EQ(1, get_func_call_count("BTM_SetEncryption"));
   ASSERT_EQ(0UL, BTA_DM_ENCRYPT_CBACK_queue.size());
   p_link->p_encrypt_cback = nullptr;
 
   // Setup a device that successfully starts encryption
-  mock_btm_client_interface.security.BTM_SetEncryption =
-          [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /*transport*/,
-             tBTM_SEC_CALLBACK* /*p_callback*/, void* /*p_ref_data*/,
-             tBTM_BLE_SEC_ACT /*sec_act*/) -> tBTM_STATUS {
-    inc_func_call_count("BTM_SetEncryption");
-    return tBTM_STATUS::BTM_CMD_STARTED;
-  };
+  EXPECT_CALL(mock_security_client_interface_, BTM_SetEncryption(_, _, _, _, _))
+    .WillOnce(::testing::Return(tBTM_STATUS::BTM_CMD_STARTED));
 
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
-  ASSERT_EQ(2, get_func_call_count("BTM_SetEncryption"));
   ASSERT_EQ(0UL, BTA_DM_ENCRYPT_CBACK_queue.size());
   ASSERT_NE(nullptr, p_link->p_encrypt_cback);
 

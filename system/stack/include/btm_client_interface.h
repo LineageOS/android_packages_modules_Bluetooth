@@ -89,7 +89,6 @@ struct btm_client_interface_t {
     [[nodiscard]] tBTM_STATUS (*BTM_ReadRSSI)(const RawAddress& bd_addr, tBTM_CMPL_CB* p_cb);
   } link_controller;
 
-  SecurityClientInterface security;
   struct {
     [[nodiscard]] tBTM_STATUS (*BTM_BleGetEnergyInfo)(tBTM_BLE_ENERGY_INFO_CBACK* callback);
     [[nodiscard]] tBTM_STATUS (*BTM_BleObserve)(bool start, uint8_t duration,

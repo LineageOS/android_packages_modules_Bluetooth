@@ -80,7 +80,6 @@ public:
     gatt::SetMockBtaGattQueue(&gatt_queue_mock_);
 
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     BtaAppRegisterCallback app_register_callback;
     EXPECT_CALL(gatt_client_interface_, AppRegister(_, NotNull(), _, _))

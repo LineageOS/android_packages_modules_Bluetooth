@@ -168,7 +168,7 @@ static void bta_jv_free_sec_id(uint8_t* p_sec_id) {
   uint8_t sec_id = *p_sec_id;
   *p_sec_id = 0;
   if (sec_id >= BTA_JV_FIRST_SERVICE_ID && sec_id <= BTA_JV_LAST_SERVICE_ID) {
-    get_btm_client_interface().security.BTM_SecClrService(sec_id);
+    get_security_client_interface().BTM_SecClrService(sec_id);
     bta_jv_cb.sec_id[sec_id - BTA_JV_FIRST_SERVICE_ID] = 0;
   }
 }

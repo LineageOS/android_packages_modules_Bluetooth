@@ -19,8 +19,8 @@
 
 #include "stack/include/btm_sec_api.h"
 
-struct MockSecurityClientInterface : public SecurityClientInterface {
-  MockSecurityClientInterface();
+struct MockSecurityClientInterface {
+public:
   MOCK_METHOD((void), BTM_Sec_Init, ());
   MOCK_METHOD((void), BTM_Sec_Free, ());
   MOCK_METHOD((bool), BTM_SecRegister, (const BtmAppReg& /* app_reg */));
@@ -72,14 +72,25 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
   MOCK_METHOD((uint8_t), BTM_GetSecurityMode, ());
   MOCK_METHOD((const char*), BTM_SecReadDevName, (const RawAddress& /* bd_addr */));
   MOCK_METHOD((DEV_CLASS), BTM_SecReadDevClass, (const RawAddress& /* bd_addr */));
+  MOCK_METHOD(tBTM_STATUS, BTM_BleStartSecCheck,
+              (const RawAddress& /* bd_addr */, uint16_t /* psm */, bool outgoing,
+               tBTM_SEC_CALLBACK* /* p_callback */, void* /* p_ref_data */));
+  MOCK_METHOD(void, BTM_SecSaveLeKey,
+              (const RawAddress& /* bd_addr */, tBTM_LE_KEY_TYPE /* key_type */,
+               const tBTM_LE_KEY_VALUE& /* key */, bool /* pass_to_application */));
+  MOCK_METHOD(void, BTM_BleLtkRequestReply,
+              (const RawAddress& /* bda */, bool /* use_stk */, const Octet16& /* stk */));
+  MOCK_METHOD(tBTM_STATUS, BTM_SecReportBondLoss,
+              (const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */));
+  MOCK_METHOD(tBTM_BLE_SEC_REQ_ACT, BTM_BleLinkSecCheck,
+              (const RawAddress& /* bd_addr */, tBTM_LE_AUTH_REQ /* auth_req */));
+  MOCK_METHOD(tBTM_STATUS, BTM_BleStartEncrypt,
+              (const RawAddress& /* bda */, bool /* use_stk */, Octet16* /* p_stk */));
 };
 
 // Initialize the working btm client interface to the default
 // Reset the working btm client interface to the default
 void reset_mock_security_client_interface();
 
-// Serve the working mock security interface
-const SecurityClientInterface& get_security_client_interface();
-
 // Set the working mock security interface
-void set_security_client_interface(SecurityClientInterface& interface);
+void set_security_client_interface(MockSecurityClientInterface& interface);

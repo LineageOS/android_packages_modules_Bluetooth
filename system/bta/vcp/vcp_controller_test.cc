@@ -452,7 +452,6 @@ protected:
     gatt::SetMockBtaGattQueue(&gatt_queue);
     reset_mock_function_count_map();
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     ON_CALL(mock_btm_security_, BTM_IsBonded(_, _)).WillByDefault(DoAll(Return(true)));
 

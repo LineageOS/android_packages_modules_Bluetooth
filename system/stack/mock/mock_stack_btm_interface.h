@@ -19,6 +19,4 @@
 #include "stack/include/btm_client_interface.h"
 
 void reset_mock_btm_client_interface();
-void set_mock_btm_client_interface_security(SecurityClientInterface& security);
-
 extern struct btm_client_interface_t mock_btm_client_interface;

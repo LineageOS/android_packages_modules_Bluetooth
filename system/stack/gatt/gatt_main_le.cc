@@ -91,7 +91,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
   p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
   if (p_srv_chg_clt != NULL) {
     check_srv_chg = true;
-  } else if (get_btm_client_interface().security.BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
+  } else if (get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
     gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
     if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection()) {
       p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);

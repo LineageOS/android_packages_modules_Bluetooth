@@ -390,7 +390,7 @@ static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda, tC
   log::verbose("from {} connected: {}, conn_id: 0x{:x}", bda, connected, conn_id);
 
   // if the device is not trusted, remove data when the link is disconnected
-  if (!connected && !get_btm_client_interface().security.BTM_IsBonded(bda, BT_TRANSPORT_AUTO)) {
+  if (!connected && !get_security_client_interface().BTM_IsBonded(bda, BT_TRANSPORT_AUTO)) {
     log::info("remove untrusted client status, bda={}", bda);
     btif_storage_remove_gatt_cl_supp_feat(bda);
     btif_storage_remove_gatt_cl_db_hash(bda);

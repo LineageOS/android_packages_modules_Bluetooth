@@ -400,7 +400,7 @@ void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   };
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LENC, le_key,
+    get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LENC, le_key,
                                                          true);
   }
   smp_key_distribution(p_cb, NULL);
@@ -418,7 +418,7 @@ void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   smp_send_cmd(SMP_OPCODE_ID_ADDR, p_cb);
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LID,
+    get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LID,
                                                          tBTM_LE_KEY_VALUE{}, true);
   }
 
@@ -440,7 +440,7 @@ void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
                             .csrk = p_cb->csrk,
                     },
     };
-    get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LCSRK, key,
+    get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LCSRK, key,
                                                          true);
   }
 
@@ -457,7 +457,7 @@ void smp_send_ltk_reply(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   Octet16 stk;
   memcpy(stk.data(), p_data->key.p_data, stk.size());
   /* send stk as LTK response */
-  get_btm_client_interface().security.BTM_BleLtkRequestReply(p_cb->pairing_bda, true, stk);
+  get_security_client_interface().BTM_BleLtkRequestReply(p_cb->pairing_bda, true, stk);
 }
 
 /*******************************************************************************
@@ -474,7 +474,7 @@ void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   tBTM_LE_AUTH_REQ auth_req = *(tBTM_LE_AUTH_REQ*)p_data->p_data;
   tBTM_BLE_SEC_REQ_ACT sec_req_act =
-          get_btm_client_interface().security.BTM_BleLinkSecCheck(p_cb->pairing_bda, auth_req);
+          get_security_client_interface().BTM_BleLinkSecCheck(p_cb->pairing_bda, auth_req);
 
   p_cb->cb_evt = SMP_EVT_NONE;
   log::verbose("auth_req={:#x} sec_req_act={}", auth_req, sec_req_act);
@@ -561,9 +561,9 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
      * If we are bonded, its key upgrade and ok to continue.
      * If we are not bonded, its new device pairing and ok.
      */
-    if (get_btm_client_interface().security.BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
-        !get_btm_client_interface().security.BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
-      get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
+    if (get_security_client_interface().BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
+        !get_security_client_interface().BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+      get_security_client_interface().BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
       if (!is_autonomous_repairing_supported() || !p_device->bond_lost) {
         // continue with pairing if it's a bond loss scenario.
         return;
@@ -1056,7 +1056,7 @@ void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   le_key.pairing_algorithm = smp_get_pairing_algorithm(p_cb);
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PENC, le_key,
+    get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PENC, le_key,
                                                          true);
   }
 
@@ -1110,7 +1110,7 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   /* store the ID key from peer device */
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PID, pid_key,
+    get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PID, pid_key,
                                                          true);
     p_cb->cb_evt = SMP_LE_ADDR_ASSOC_EVT;
     smp_send_app_cback(p_cb, NULL);
@@ -1149,7 +1149,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   le_key.pcsrk_key.counter = 0;
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-    get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PCSRK,
+    get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PCSRK,
                                                          le_key, true);
   }
 }
@@ -1212,10 +1212,10 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   log::verbose("addr:{}", p_cb->pairing_bda);
   if (p_data != NULL) {
-    cmd = get_btm_client_interface().security.BTM_BleStartEncrypt(p_cb->pairing_bda, true,
+    cmd = get_security_client_interface().BTM_BleStartEncrypt(p_cb->pairing_bda, true,
                                                                   (Octet16*)p_data->key.p_data);
   } else {
-    cmd = get_btm_client_interface().security.BTM_BleStartEncrypt(p_cb->pairing_bda, false, NULL);
+    cmd = get_security_client_interface().BTM_BleStartEncrypt(p_cb->pairing_bda, false, NULL);
   }
 
   if (cmd != tBTM_STATUS::BTM_CMD_STARTED && cmd != tBTM_STATUS::BTM_BUSY) {
@@ -2134,7 +2134,7 @@ void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable) {
      * overwritten when key exchange happens                                 */
     if (p_cb->loc_enc_size != 0 && encr_enable) {
       /* update the link encryption key size if a SMP pairing just performed */
-      get_btm_client_interface().security.BTM_BleUpdateSecKeySize(bda, p_cb->loc_enc_size);
+      get_security_client_interface().BTM_BleUpdateSecKeySize(bda, p_cb->loc_enc_size);
     }
 
     tSMP_INT_DATA smp_int_data = {

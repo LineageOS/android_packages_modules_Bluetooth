@@ -595,22 +595,22 @@ public:
       log::warn("Unable to set BLE data length peer:{} size:{}", address, 167);
     }
 
-    if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(address)) {
+    if (get_security_client_interface().BTM_SecIsLeSecurityPending(address)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT) */
       return;
     }
 
     /* verify bond */
-    if (get_btm_client_interface().security.BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
       /* if link has been encrypted */
       OnEncryptionComplete(address, true);
       return;
     }
 
-    if (get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       /* if bonded and link not encrypted */
-      get_btm_client_interface().security.BTM_SetEncryption(
+      get_security_client_interface().BTM_SetEncryption(
               address, BT_TRANSPORT_LE, encryption_callback, nullptr, BTM_BLE_SEC_ENCRYPT);
       return;
     }
@@ -1076,7 +1076,7 @@ public:
     log::info("read PSM: bd_addr={} psm=0x{:x}", hearingDevice->address, psm);
 
     if (hearingDevice->gap_handle == GAP_INVALID_HANDLE &&
-        get_btm_client_interface().security.BTM_IsEncrypted(hearingDevice->address,
+        get_security_client_interface().BTM_IsEncrypted(hearingDevice->address,
                                                             BT_TRANSPORT_LE)) {
       ConnectSocket(hearingDevice, psm);
     }
@@ -2179,7 +2179,7 @@ static void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) 
         return;
       }
       instance->OnEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                                     get_btm_client_interface().security.BTM_IsEncrypted(
+                                     get_security_client_interface().BTM_IsEncrypted(
                                              p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
       break;
 
