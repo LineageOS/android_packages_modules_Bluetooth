@@ -34,8 +34,6 @@ import android.os.IBinder
 import android.os.Process
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
-import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import android.test.mock.MockContentProvider
@@ -61,14 +59,11 @@ import java.time.Duration
 import java.util.Optional
 import java.util.UUID
 import kotlin.time.ExperimentalTime
-import libcore.junit.util.compat.CoreCompatChangeRule
-import libcore.junit.util.compat.CoreCompatChangeRule.EnableCompatChanges
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.kotlin.any
@@ -85,17 +80,13 @@ import org.mockito.kotlin.whenever
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4
 import platform.test.runner.parameterized.Parameters
 
-private const val TAG = "GattServiceTest"
-
 /** Test cases for [GattService]. */
 @OptIn(ExperimentalTime::class)
 @SmallTest
 @RunWith(ParameterizedAndroidJunit4::class)
 class GattServiceTest(flags: FlagsWrapper) {
     @get:Rule val mockitoRule = MockitoRule()
-    @get:Rule val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
-    @get:Rule val compatChangeRule: TestRule = CoreCompatChangeRule()
 
     @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var gattCallback: IBluetoothGattCallback
@@ -504,8 +495,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableCompatChanges(DONOT_STEAL_AUDIO_ON_GATT_CONN)
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_conn_settings")
     fun clientConnectOverLeFailed() {
         assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
@@ -554,8 +543,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableCompatChanges(DONOT_STEAL_AUDIO_ON_GATT_CONN)
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_conn_settings")
     fun clientConnectDisconnectOverLe() {
         assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
@@ -600,8 +587,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableCompatChanges(DONOT_STEAL_AUDIO_ON_GATT_CONN)
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_conn_settings")
     fun clientConnectOverLeDisconnectedByRemote() {
         assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
