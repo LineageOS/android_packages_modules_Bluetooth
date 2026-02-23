@@ -1712,6 +1712,7 @@ protected:
     ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectionSubrating)
             .WillByDefault(Return(true));
     bluetooth::manager::SetMockBtmInterface(&mock_btm_interface_);
+    set_mock_btm_client_interface(&mock_btm_client_interface_);
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
     gatt::SetMockBtaGattQueue(&mock_gatt_queue_);
     bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
@@ -2044,7 +2045,7 @@ protected:
             .Times(1);
 
     // For test purpose use the acl handle same as conn_id
-    ON_CALL(mock_btm_interface_, GetHCIConnHandle(address, _))
+    ON_CALL(mock_btm_client_interface_, BTM_GetHCIConnHandle(address, _))
             .WillByDefault([conn_id](RawAddress const& /*bd_addr*/, tBT_TRANSPORT /*transport*/) {
               return conn_id;
             });
@@ -2066,7 +2067,7 @@ protected:
             .Times(1);
 
     // For test purpose use the acl handle same as conn_id
-    ON_CALL(mock_btm_interface_, GetHCIConnHandle(address, _))
+    ON_CALL(mock_btm_client_interface_, BTM_GetHCIConnHandle(address, _))
             .WillByDefault([conn_id](RawAddress const& /*bd_addr*/, tBT_TRANSPORT /*transport*/) {
               return conn_id;
             });
@@ -3111,6 +3112,7 @@ protected:
   NiceMock<MockFunction<bool()>> mock_hal_2_1_verifier;
 
   NiceMock<bluetooth::manager::MockBtmInterface> mock_btm_interface_;
+  NiceMock<MockBtmClientInterface> mock_btm_client_interface_;
   NiceMock<MockSecurityClientInterface> mock_btm_security_;
   NiceMock<gatt::MockBtaGattInterface> mock_gatt_interface_;
   NiceMock<gatt::MockBtaGattQueue> mock_gatt_queue_;
@@ -3185,7 +3187,7 @@ protected:
               return tBTM_STATUS::BTM_SUCCESS;
             });
 
-    ON_CALL(mock_btm_interface_, GetHCIConnHandle(_, _))
+    ON_CALL(mock_btm_client_interface_, BTM_GetHCIConnHandle(_, _))
             .WillByDefault(
                     [this](RawAddress const& bd_addr, tBT_TRANSPORT /*transport*/) -> uint16_t {
                       for (auto const& [conn_id, dev_wrapper] : peer_devices) {
@@ -3196,6 +3198,7 @@ protected:
                       log::error("GetHCIConnHandle Mock: not a valid test device!");
                       return 0x00FE;
                     });
+
     ON_CALL(mock_btm_interface_, AclDisconnectFromHandle(_, _))
             .WillByDefault([this](uint16_t handle, tHCI_STATUS /*rs*/) {
               ASSERT_NE(handle, GATT_INVALID_CONN_ID);
@@ -3547,7 +3550,7 @@ TEST_F(UnicastTest, FailedToConnectWhenUserInitiateConnection) {
   const RawAddress test_address0 = GetTestAddress(0);
 
   ON_CALL(mock_gatt_interface_, Open(_, _, BTM_BLE_DIRECT_CONNECTION)).WillByDefault(Return());
-  ON_CALL(mock_btm_interface_, IsDeviceBonded(test_address0, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   EXPECT_CALL(mock_gatt_interface_, Open(gatt_if, test_address0, BTM_BLE_DIRECT_CONNECTION))
           .Times(1);
@@ -3578,12 +3581,12 @@ TEST_F(UnicastTest, DisconnectBeforeProfileConnected_WhenUserInitiateConnection)
                                 true,                                /*add_pacs*/
                                 default_ase_cnt /*add_ascs*/);
 
-  ON_CALL(mock_btm_interface_, IsDeviceBonded(test_address0, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_security_, BTM_IsBonded(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   /* Keep device in Getting Ready state */
-  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+  ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _))
           .WillByDefault(DoAll(Return(false)));
-  ON_CALL(mock_btm_interface_, SetEncryption(test_address0, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address0, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
 
   do_in_main_thread(base::BindOnce(&LeAudioClient::Connect, base::Unretained(LeAudioClient::Get()),
@@ -5175,7 +5178,7 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsCsisGroupedDifferently) {
   /* Keep device in Getting Ready state */
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _))
           .WillByDefault(DoAll(Return(false)));
-  ON_CALL(mock_btm_interface_, SetEncryption(test_address0, _, _, _, _))
+  ON_CALL(mock_btm_security_, BTM_SetEncryption(test_address0, _, _, _, _))
           .WillByDefault(Return(tBTM_STATUS::BTM_SUCCESS));
 
   /* For background connect, test needs to Inject Connected Event */
