@@ -26,6 +26,7 @@
 #include "srvc_eng_int.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 using namespace bluetooth;
 
@@ -35,7 +36,7 @@ static void srvc_eng_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda
 static void srvc_eng_c_cmpl_cback(tCONN_ID conn_id, tGATTC_OPTYPE op, tGATT_STATUS status,
                                   tGATT_CL_COMPLETE* p_data);
 
-static tGATT_CBACK srvc_gatt_cback = {
+static stack::tGATT_CBACK srvc_gatt_cback = {
         .p_conn_cb = srvc_eng_connect_cback,
         .p_cmpl_cb = srvc_eng_c_cmpl_cback,
         .p_disc_res_cb = nullptr,
@@ -264,8 +265,9 @@ tGATT_STATUS srvc_eng_init(void) {
 
     /* Create a GATT profile service */
     bluetooth::Uuid app_uuid = bluetooth::Uuid::From16Bit(UUID_SERVCLASS_DEVICE_INFO);
-    srvc_eng_cb.gatt_if = GATT_Register(app_uuid, "GattServiceEngine", &srvc_gatt_cback, false);
-    GATT_StartIf(srvc_eng_cb.gatt_if);
+    srvc_eng_cb.gatt_if =
+            stack::appRegister(app_uuid, "GattServiceEngine", &srvc_gatt_cback, false);
+    stack::appStartIf(srvc_eng_cb.gatt_if);
 
     log::verbose("Srvc_Init:  gatt_if={}", srvc_eng_cb.gatt_if);
 

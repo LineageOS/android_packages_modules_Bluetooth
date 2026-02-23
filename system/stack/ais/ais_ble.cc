@@ -27,8 +27,10 @@
 #include "stack/include/ais_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
-using bluetooth::Uuid;
+using namespace bluetooth;
+
 using bluetooth::log::error;
 using bluetooth::log::warn;
 
@@ -45,7 +47,7 @@ static uint32_t api_level;
 
 static void ais_request_cback(tCONN_ID, uint32_t, tGATTS_REQ_TYPE, tGATTS_DATA*);
 
-static tGATT_CBACK ais_cback = {
+static stack::tGATT_CBACK ais_cback = {
         .p_req_cb = ais_request_cback,
 };
 
@@ -104,9 +106,9 @@ void AIS_Init(void) {
   tmp.fill(0xc5);  // any number is fine here
   Uuid app_uuid = Uuid::From128BitBE(tmp);
 
-  tGATT_IF gatt_if = GATT_Register(app_uuid, "Ais", &ais_cback, false);
+  tGATT_IF gatt_if = stack::appRegister(app_uuid, "Ais", &ais_cback, false);
 
-  GATT_StartIf(gatt_if);
+  stack::appStartIf(gatt_if);
 
   btgatt_db_element_t android_information_service[] = {
           {
