@@ -792,20 +792,29 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
             boolean hasFallbackDevice = false;
 
-            if (Objects.equals(mLeAudioActiveDevice, device)) {
-                hasFallbackDevice = setFallbackDeviceActiveLocked(device);
-            }
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                /* Look for fallback if all devices from the active group disconnected. */
+                BluetoothDevice leadDevice = leAudio.get().getLeadDevice(device);
+                if (Objects.equals(mLeAudioActiveDevice, leadDevice)
+                        && leAudio.get().getGroupDevices(leadDevice).stream()
+                                .noneMatch(mLeAudioConnectedDevices::contains)) {
+                    hasFallbackDevice = setFallbackDeviceActiveLocked(device);
 
-            if (Flags.admClearActiveDeviceOnDisconnect()) {
-                /* If hasFallbackDevice is true, it means fallback was found, and active device is
-                 * being changed, or there is another LE Audio device active, from the same group
-                 * as disconnected device.
-                 * In case fallback was not found, we should deactivate LE Audio device.
-                 */
-                if (!hasFallbackDevice) {
-                    setLeAudioActiveDevice(null, /* stopAudio= */ true);
+                    /* If hasFallbackDevice is true, it means fallback was found, and active device
+                     * is being changed, or there is another LE Audio device active, from the same
+                     * as the disconnected device.
+                     * In case fallback was not found, we should clear LE Audio active device.
+                     */
+                    if (!hasFallbackDevice) {
+                        mLeAudioActiveDevice = null;
+                    }
+                }
+            } else {
+                if (Objects.equals(mLeAudioActiveDevice, device)) {
+                    hasFallbackDevice = setFallbackDeviceActiveLocked(device);
                 }
             }
+
             leAudio.get().deviceDisconnected(device, hasFallbackDevice);
         }
     }
