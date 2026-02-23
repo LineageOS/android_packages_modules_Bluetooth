@@ -622,6 +622,9 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
           pairing_type.algorithm, pairing_type.algorithm);
 
   if (bond_loss_scenario) {
+    if (state == BT_BOND_STATE_BONDED || state == BT_BOND_STATE_NONE) {
+      bluetooth::metrics::LogBondRepairComplete(bd_addr, state);
+    }
     if (state == BT_BOND_STATE_BONDED) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_SUCCESS);
 

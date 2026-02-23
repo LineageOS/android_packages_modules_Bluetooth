@@ -21,6 +21,7 @@
 
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_sec_api.h"
+#include "hardware/bluetooth.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "include/hardware/bt_sock.h"
@@ -311,5 +312,12 @@ void LogRfcommL2capEvent(hci::Address address, EventType event, tL2CAP_CONN l2ca
  * @param state
  */
 void LogRfcommMxEvent(hci::Address address, State state);
+
+/**
+ * Logs the result of a bond repair attempt.
+ * @param address address of the remote device
+ * @param state the resulting bond state
+ */
+void LogBondRepairComplete(hci::Address address, bt_bond_state_t state);
 
 }  // namespace bluetooth::metrics
