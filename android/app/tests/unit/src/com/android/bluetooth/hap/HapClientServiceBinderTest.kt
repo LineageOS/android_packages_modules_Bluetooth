@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,290 +14,278 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hap;
+package com.android.bluetooth.hap
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.IBluetoothHapClientCallback
+import android.content.AttributionSource
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.FlagsWrapper
+import com.android.tests.bluetooth.MockitoRule
+import java.util.function.Consumer
+import java.util.function.Function
+import org.junit.Assert.assertThrows
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doCallRealMethod
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4
+import platform.test.runner.parameterized.Parameters
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.IBluetoothHapClientCallback;
-import android.content.AttributionSource;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.flags.Flags;
-import com.android.tests.bluetooth.FlagsWrapper;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
-import platform.test.runner.parameterized.Parameters;
-
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-/** Test cases for {@link HapClientServiceBinder}. */
+/** Test cases for [HapClientServiceBinder]. */
 @SmallTest
-@RunWith(ParameterizedAndroidJunit4.class)
-public class HapClientServiceBinderTest {
-    @Rule public final SetFlagsRule mSetFlagsRule;
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(ParameterizedAndroidJunit4::class)
+class HapClientServiceBinderTest(flags: FlagsWrapper) {
+    @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
-    @Mock private AttributionSource mSource;
-    @Mock private HapClientService mService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: HapClientService
 
-    private final BluetoothDevice mDevice = getTestDevice(0);
+    private val device: BluetoothDevice = getTestDevice(0)
 
-    private HapClientServiceBinder mBinder;
-
-    @Parameters(name = "{0}")
-    public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_HAP_ON_MAIN_LOOPER);
-    }
-
-    public HapClientServiceBinderTest(FlagsWrapper flags) {
-        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
-    }
+    private lateinit var binder: HapClientServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        doCallRealMethod().when(mService).syncPost(any());
-        doAnswer(
-                        inv -> {
-                            ((Consumer) inv.getArgument(0)).accept(mService);
-                            return null;
-                        })
-                .when(mService)
-                .post(any());
-        doAnswer(
-                        inv -> {
-                            return ((Function) inv.getArgument(0)).apply(mService);
-                        })
-                .when(mService)
-                .syncPost(any(), any());
-        mBinder = new HapClientServiceBinder(mService);
+    fun setUp() {
+        doCallRealMethod().whenever(service).syncPost(any())
+        doAnswer { inv ->
+                inv.getArgument<Consumer<HapClientService>>(0).accept(service)
+                null
+            }
+            .whenever(service)
+            .post(any())
+        doAnswer { inv -> inv.getArgument<Function<HapClientService, Any>>(0).apply(service) }
+            .whenever(service)
+            .syncPost(any<Function<HapClientService, Any>>(), anyOrNull())
+        binder = HapClientServiceBinder(service)
     }
 
     @Test
-    public void getConnectedDevices() {
-        assertThrows(NullPointerException.class, () -> mBinder.getConnectedDevices(null));
-        mBinder.getConnectedDevices(mSource);
-        verify(mService).getConnectedDevices();
+    fun getConnectedDevices() {
+        assertThrows(NullPointerException::class.java) { binder.getConnectedDevices(null) }
+        binder.getConnectedDevices(source)
+        verify(service).connectedDevices
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getDevicesMatchingConnectionStates(null, null));
-        mBinder.getDevicesMatchingConnectionStates(null, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(any());
+    fun getDevicesMatchingConnectionStates() {
+        assertThrows(NullPointerException::class.java) {
+            binder.getDevicesMatchingConnectionStates(null, null)
+        }
+        binder.getDevicesMatchingConnectionStates(null, source)
+        verify(service).getDevicesMatchingConnectionStates(anyOrNull())
     }
 
     @Test
-    public void getConnectionState() {
-        assertThrows(NullPointerException.class, () -> mBinder.getConnectionState(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getConnectionState(null, mSource));
+    fun getConnectionState() {
+        assertThrows(NullPointerException::class.java) { binder.getConnectionState(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getConnectionState(null, source) }
 
-        mBinder.getConnectionState(mDevice, mSource);
-        verify(mService).getConnectionState(eq(mDevice));
+        binder.getConnectionState(device, source)
+        verify(service).getConnectionState(eq(device))
     }
 
     @Test
-    public void setConnectionPolicy() {
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setConnectionPolicy(null, CONNECTION_POLICY_ALLOWED, mSource));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_UNKNOWN, mSource));
+    fun setConnectionPolicy() {
+        assertThrows(NullPointerException::class.java) {
+            binder.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED, null)
+        }
+        assertThrows(NullPointerException::class.java) {
+            binder.setConnectionPolicy(null, CONNECTION_POLICY_ALLOWED, source)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN, source)
+        }
 
-        mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mSource);
-        verify(mService).setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_ALLOWED));
+        binder.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED, source)
+        verify(service).setConnectionPolicy(eq(device), eq(CONNECTION_POLICY_ALLOWED))
     }
 
     @Test
-    public void getConnectionPolicy() {
-        assertThrows(NullPointerException.class, () -> mBinder.getConnectionPolicy(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getConnectionPolicy(null, mSource));
-        mBinder.getConnectionPolicy(mDevice, mSource);
-        verify(mService).getConnectionPolicy(eq(mDevice));
+    fun getConnectionPolicy() {
+        assertThrows(NullPointerException::class.java) { binder.getConnectionPolicy(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getConnectionPolicy(null, source) }
+        binder.getConnectionPolicy(device, source)
+        verify(service).getConnectionPolicy(eq(device))
     }
 
     @Test
-    public void getActivePresetIndex() {
-        assertThrows(NullPointerException.class, () -> mBinder.getActivePresetIndex(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getActivePresetIndex(null, mSource));
-        mBinder.getActivePresetIndex(mDevice, mSource);
-        verify(mService).getActivePresetIndex(eq(mDevice));
+    fun getActivePresetIndex() {
+        assertThrows(NullPointerException::class.java) { binder.getActivePresetIndex(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getActivePresetIndex(null, source) }
+        binder.getActivePresetIndex(device, source)
+        verify(service).getActivePresetIndex(eq(device))
     }
 
     @Test
-    public void getActivePresetInfo() {
-        assertThrows(NullPointerException.class, () -> mBinder.getActivePresetInfo(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getActivePresetInfo(null, mSource));
-        mBinder.getActivePresetInfo(mDevice, mSource);
-        verify(mService).getActivePresetInfo(eq(mDevice));
+    fun getActivePresetInfo() {
+        assertThrows(NullPointerException::class.java) { binder.getActivePresetInfo(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getActivePresetInfo(null, source) }
+        binder.getActivePresetInfo(device, source)
+        verify(service).getActivePresetInfo(eq(device))
     }
 
     @Test
-    public void getHapGroup() {
-        assertThrows(NullPointerException.class, () -> mBinder.getHapGroup(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getHapGroup(null, mSource));
-        mBinder.getHapGroup(mDevice, mSource);
-        verify(mService).getHapGroup(eq(mDevice));
+    fun getHapGroup() {
+        assertThrows(NullPointerException::class.java) { binder.getHapGroup(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getHapGroup(null, source) }
+        binder.getHapGroup(device, source)
+        verify(service).getHapGroup(eq(device))
     }
 
     @Test
-    public void selectPreset() {
-        int index = 42;
-        assertThrows(NullPointerException.class, () -> mBinder.selectPreset(mDevice, index, null));
-        assertThrows(NullPointerException.class, () -> mBinder.selectPreset(null, index, mSource));
-        mBinder.selectPreset(mDevice, index, mSource);
-        verify(mService).selectPreset(eq(mDevice), eq(index));
+    fun selectPreset() {
+        val index = 42
+        assertThrows(NullPointerException::class.java) { binder.selectPreset(device, index, null) }
+        assertThrows(NullPointerException::class.java) { binder.selectPreset(null, index, source) }
+        binder.selectPreset(device, index, source)
+        verify(service).selectPreset(eq(device), eq(index))
     }
 
     @Test
-    public void selectPresetForGroup() {
-        int index = 42;
-        int groupId = 4242;
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.selectPresetForGroup(groupId, index, null));
-        mBinder.selectPresetForGroup(groupId, index, mSource);
-        verify(mService).selectPresetForGroup(eq(groupId), eq(index));
+    fun selectPresetForGroup() {
+        val index = 42
+        val groupId = 4242
+        assertThrows(NullPointerException::class.java) {
+            binder.selectPresetForGroup(groupId, index, null)
+        }
+        binder.selectPresetForGroup(groupId, index, source)
+        verify(service).selectPresetForGroup(eq(groupId), eq(index))
     }
 
     @Test
-    public void switchToNextPreset() {
-        assertThrows(NullPointerException.class, () -> mBinder.switchToNextPreset(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.switchToNextPreset(null, mSource));
-        mBinder.switchToNextPreset(mDevice, mSource);
-        verify(mService).switchToNextPreset(eq(mDevice));
+    fun switchToNextPreset() {
+        assertThrows(NullPointerException::class.java) { binder.switchToNextPreset(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.switchToNextPreset(null, source) }
+        binder.switchToNextPreset(device, source)
+        verify(service).switchToNextPreset(eq(device))
     }
 
     @Test
-    public void switchToNextPresetForGroup() {
-        int groupId = 4242;
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.switchToNextPresetForGroup(groupId, null));
-        mBinder.switchToNextPresetForGroup(groupId, mSource);
-        verify(mService).switchToNextPresetForGroup(eq(groupId));
+    fun switchToNextPresetForGroup() {
+        val groupId = 4242
+        assertThrows(NullPointerException::class.java) {
+            binder.switchToNextPresetForGroup(groupId, null)
+        }
+        binder.switchToNextPresetForGroup(groupId, source)
+        verify(service).switchToNextPresetForGroup(eq(groupId))
     }
 
     @Test
-    public void switchToPreviousPreset() {
-        assertThrows(
-                NullPointerException.class, () -> mBinder.switchToPreviousPreset(mDevice, null));
-        assertThrows(
-                NullPointerException.class, () -> mBinder.switchToPreviousPreset(null, mSource));
-        mBinder.switchToPreviousPreset(mDevice, mSource);
-        verify(mService).switchToPreviousPreset(eq(mDevice));
+    fun switchToPreviousPreset() {
+        assertThrows(NullPointerException::class.java) {
+            binder.switchToPreviousPreset(device, null)
+        }
+        assertThrows(NullPointerException::class.java) {
+            binder.switchToPreviousPreset(null, source)
+        }
+        binder.switchToPreviousPreset(device, source)
+        verify(service).switchToPreviousPreset(eq(device))
     }
 
     @Test
-    public void switchToPreviousPresetForGroup() {
-        int groupId = 4242;
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.switchToPreviousPresetForGroup(groupId, null));
-        mBinder.switchToPreviousPresetForGroup(groupId, mSource);
-        verify(mService).switchToPreviousPresetForGroup(eq(groupId));
+    fun switchToPreviousPresetForGroup() {
+        val groupId = 4242
+        assertThrows(NullPointerException::class.java) {
+            binder.switchToPreviousPresetForGroup(groupId, null)
+        }
+        binder.switchToPreviousPresetForGroup(groupId, source)
+        verify(service).switchToPreviousPresetForGroup(eq(groupId))
     }
 
     @Test
-    public void getPresetInfo() {
-        int index = 42;
-        assertThrows(NullPointerException.class, () -> mBinder.getPresetInfo(mDevice, index, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getPresetInfo(null, index, mSource));
-        mBinder.getPresetInfo(mDevice, index, mSource);
-        verify(mService).getPresetInfo(eq(mDevice), eq(index));
+    fun getPresetInfo() {
+        val index = 42
+        assertThrows(NullPointerException::class.java) { binder.getPresetInfo(device, index, null) }
+        assertThrows(NullPointerException::class.java) { binder.getPresetInfo(null, index, source) }
+        binder.getPresetInfo(device, index, source)
+        verify(service).getPresetInfo(eq(device), eq(index))
     }
 
     @Test
-    public void getAllPresetInfo() {
-        assertThrows(NullPointerException.class, () -> mBinder.getAllPresetInfo(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getAllPresetInfo(null, mSource));
-        mBinder.getAllPresetInfo(mDevice, mSource);
-        verify(mService).getAllPresetInfo(eq(mDevice));
+    fun getAllPresetInfo() {
+        assertThrows(NullPointerException::class.java) { binder.getAllPresetInfo(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getAllPresetInfo(null, source) }
+        binder.getAllPresetInfo(device, source)
+        verify(service).getAllPresetInfo(eq(device))
     }
 
     @Test
-    public void getFeatures() {
-        assertThrows(NullPointerException.class, () -> mBinder.getFeatures(mDevice, null));
-        assertThrows(NullPointerException.class, () -> mBinder.getFeatures(null, mSource));
-        mBinder.getFeatures(mDevice, mSource);
-        verify(mService).getFeatures(eq(mDevice));
+    fun getFeatures() {
+        assertThrows(NullPointerException::class.java) { binder.getFeatures(device, null) }
+        assertThrows(NullPointerException::class.java) { binder.getFeatures(null, source) }
+        binder.getFeatures(device, source)
+        verify(service).getFeatures(eq(device))
     }
 
     @Test
-    public void setPresetName() {
-        String name = "This is a preset name";
-        int index = 42;
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setPresetName(null, index, name, mSource));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setPresetName(mDevice, index, null, mSource));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setPresetName(mDevice, index, name, null));
-        mBinder.setPresetName(mDevice, index, name, mSource);
-        verify(mService).setPresetName(eq(mDevice), eq(index), eq(name));
+    fun setPresetName() {
+        val name = "This is a preset name"
+        val index = 42
+        assertThrows(NullPointerException::class.java) {
+            binder.setPresetName(null, index, name, source)
+        }
+        assertThrows(NullPointerException::class.java) {
+            binder.setPresetName(device, index, null, source)
+        }
+        assertThrows(NullPointerException::class.java) {
+            binder.setPresetName(device, index, name, null)
+        }
+        binder.setPresetName(device, index, name, source)
+        verify(service).setPresetName(eq(device), eq(index), eq(name))
     }
 
     @Test
-    public void setPresetNameForGroup() {
-        String name = "This is a preset name";
-        int index = 42;
-        int groupId = 4242;
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setPresetNameForGroup(groupId, index, null, mSource));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.setPresetNameForGroup(groupId, index, name, null));
-        mBinder.setPresetNameForGroup(groupId, index, name, mSource);
-        verify(mService).setPresetNameForGroup(eq(groupId), eq(index), eq(name));
+    fun setPresetNameForGroup() {
+        val name = "This is a preset name"
+        val index = 42
+        val groupId = 4242
+        assertThrows(NullPointerException::class.java) {
+            binder.setPresetNameForGroup(groupId, index, null, source)
+        }
+        assertThrows(NullPointerException::class.java) {
+            binder.setPresetNameForGroup(groupId, index, name, null)
+        }
+        binder.setPresetNameForGroup(groupId, index, name, source)
+        verify(service).setPresetNameForGroup(eq(groupId), eq(index), eq(name))
     }
 
     @Test
-    public void registerCallback() {
-        IBluetoothHapClientCallback callback = Mockito.mock(IBluetoothHapClientCallback.class);
-        assertThrows(NullPointerException.class, () -> mBinder.registerCallback(null, mSource));
-        assertThrows(NullPointerException.class, () -> mBinder.registerCallback(callback, null));
-        mBinder.registerCallback(callback, mSource);
-        verify(mService).registerCallback(eq(callback));
+    fun registerCallback() {
+        val callback = mock<IBluetoothHapClientCallback>()
+        assertThrows(NullPointerException::class.java) { binder.registerCallback(null, source) }
+        assertThrows(NullPointerException::class.java) { binder.registerCallback(callback, null) }
+        binder.registerCallback(callback, source)
+        verify(service).registerCallback(eq(callback))
     }
 
     @Test
-    public void unregisterCallback() {
-        IBluetoothHapClientCallback callback = Mockito.mock(IBluetoothHapClientCallback.class);
-        assertThrows(NullPointerException.class, () -> mBinder.unregisterCallback(null, mSource));
-        assertThrows(NullPointerException.class, () -> mBinder.unregisterCallback(callback, null));
-        mBinder.unregisterCallback(callback, mSource);
-        verify(mService).unregisterCallback(eq(callback));
+    fun unregisterCallback() {
+        val callback = mock<IBluetoothHapClientCallback>()
+        assertThrows(NullPointerException::class.java) { binder.unregisterCallback(null, source) }
+        assertThrows(NullPointerException::class.java) { binder.unregisterCallback(callback, null) }
+        binder.unregisterCallback(callback, source)
+        verify(service).unregisterCallback(eq(callback))
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams() = FlagsWrapper.progressionOf(Flags.FLAG_HAP_ON_MAIN_LOOPER)
     }
 }
