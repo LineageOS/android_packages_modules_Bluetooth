@@ -26,7 +26,6 @@
 #include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
-#include "mock_hcic_layer.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/bt_hdr.h"
@@ -34,6 +33,7 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
+#include "stack/mock/mock_stack_hcic_layer.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_main_shim_hci_layer.h"
 

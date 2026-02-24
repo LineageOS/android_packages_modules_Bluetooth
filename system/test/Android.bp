@@ -358,13 +358,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockLegacyHciInterface",
-    srcs: [
-        "mock/mock_legacy_hci_interface.cc",
-    ],
-}
-
-filegroup {
     name: "TestFakeOsi",
     srcs: [
         ":TestMockOsi",
