@@ -38,7 +38,7 @@ public:
   tBT_DEVICE_TYPE remname_dev_type{
           BT_DEVICE_TYPE_UNKNOWN}; /* Whether it's LE or BREDR name request */
 #define BTM_SEC_MAX_RMT_NAME_CALLBACKS 2
-  tBTM_RMT_NAME_CALLBACK* p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS]{nullptr, nullptr};
+  BtmRemoteNameCallback* p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS]{nullptr, nullptr};
 };
 
 }  // namespace rnr
@@ -58,7 +58,7 @@ public:
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
+bool BTM_SecAddRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback);
 
 /*******************************************************************************
  *
@@ -73,7 +73,7 @@ bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
  * Returns          true if unregistered OK, else false
  *
  ******************************************************************************/
-bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
+bool BTM_SecDeleteRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback);
 
 /*******************************************************************************
  *
@@ -162,8 +162,8 @@ class Impl : public bluetooth::stack::rnr::Interface {
 public:
   Impl() = default;
 
-  [[nodiscard]] bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) override;
-  [[nodiscard]] bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
+  [[nodiscard]] bool BTM_SecAddRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback) override;
+  [[nodiscard]] bool BTM_SecDeleteRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback);
   [[nodiscard]] bool BTM_IsRemoteNameKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport);
   [[nodiscard]] tBTM_STATUS BTM_ReadRemoteDeviceName(const RawAddress& remote_bda,
                                                      tBTM_NAME_CMPL_CB* p_cb,

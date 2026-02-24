@@ -31,7 +31,7 @@
 
 using namespace bluetooth;
 
-bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
+bool BTM_SecAddRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback) {
   int i;
 
   for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
@@ -44,7 +44,7 @@ bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
   return false;
 }
 
-bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
+bool BTM_SecDeleteRmtNameNotifyCallback(BtmRemoteNameCallback* p_callback) {
   int i;
 
   for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
@@ -316,12 +316,12 @@ tBTM_STATUS BTM_CancelRemoteDeviceName(void) {
 }
 
 bool bluetooth::stack::rnr::Impl::BTM_SecAddRmtNameNotifyCallback(
-        tBTM_RMT_NAME_CALLBACK* p_callback) {
+        BtmRemoteNameCallback* p_callback) {
   return ::BTM_SecAddRmtNameNotifyCallback(p_callback);
 }
 
 bool bluetooth::stack::rnr::Impl::BTM_SecDeleteRmtNameNotifyCallback(
-        tBTM_RMT_NAME_CALLBACK* p_callback) {
+        BtmRemoteNameCallback* p_callback) {
   return ::BTM_SecDeleteRmtNameNotifyCallback(p_callback);
 }
 

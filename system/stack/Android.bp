@@ -1694,6 +1694,7 @@ cc_test {
         "btm/hfp_lc3_encoder.cc",
         "btm/hfp_msbc_decoder.cc",
         "btm/hfp_msbc_encoder.cc",
+        "test/btm/btm_sec_rmt_name_request_complete_test.cc",
         "test/btm/peer_packet_types_test.cc",
         "test/btm/sco_hci_test.cc",
         "test/btm/sco_pkt_status_test.cc",
