@@ -2471,10 +2471,7 @@ void BTIF_dm_enable(const std::string local_name) {
 }
 
 void BTIF_dm_disable() {
-  get_stack_rnr_interface().BTM_SecDeleteRmtNameNotifyCallback(&btif_on_name_read_from_btm);
-
-  /* for each of the enabled services in the mask, trigger the profile
-   * disable */
+  /* For each of the enabled services in the mask, trigger the profile disable */
   tBTA_SERVICE_MASK service_mask = btif_get_enabled_services_mask();
   for (uint32_t i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
     if (service_mask & (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {

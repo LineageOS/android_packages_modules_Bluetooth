@@ -2097,12 +2097,12 @@ static tBTM_STATUS btm_sec_dd_create_conn(BtmDevice* p_device) {
  *
  ******************************************************************************/
 static void call_registered_rmt_name_callbacks(const RawAddress& bd_addr, const BD_NAME& bd_name) {
-  /* Notify all clients waiting for name to be resolved even if not found so clients can continue */
-  for (int i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
-    if (btm_cb.rnr.p_rmt_name_callback[i]) {
-      (*btm_cb.rnr.p_rmt_name_callback[i])(bd_addr, bd_name);
-    }
+  if (btm_cb.rnr.p_rmt_name_callback == nullptr) {
+    log::error("No RNR callback registered!");
+    return;
   }
+
+  (*btm_cb.rnr.p_rmt_name_callback)(bd_addr, bd_name);
 }
 
 /*******************************************************************************

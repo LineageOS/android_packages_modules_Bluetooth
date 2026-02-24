@@ -252,7 +252,7 @@ void BTM_RMT_NAME_CALLBACK(const RawAddress& bd_addr, const BD_NAME& bd_name) {
 }  // namespace
 
 TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
-  btm_cb.rnr.p_rmt_name_callback[0] = BTM_RMT_NAME_CALLBACK;
+  btm_cb.rnr.p_rmt_name_callback = BTM_RMT_NAME_CALLBACK;
 
   RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint8_t* p_bd_name = (const uint8_t*)"MyTestName";
