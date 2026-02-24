@@ -19,6 +19,7 @@ package com.android.bluetooth.hap
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.IBluetoothHapClientCallback
 import android.content.AttributionSource
 import android.platform.test.flag.junit.SetFlagsRule
@@ -84,11 +85,12 @@ class HapClientServiceBinderTest(flags: FlagsWrapper) {
 
     @Test
     fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(STATE_CONNECTED)
         assertThrows(NullPointerException::class.java) {
-            binder.getDevicesMatchingConnectionStates(null, null)
+            binder.getDevicesMatchingConnectionStates(states, null)
         }
-        binder.getDevicesMatchingConnectionStates(null, source)
-        verify(service).getDevicesMatchingConnectionStates(anyOrNull())
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(any())
     }
 
     @Test
