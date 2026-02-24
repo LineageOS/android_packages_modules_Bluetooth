@@ -21,7 +21,7 @@
  *  Name:          btm_acl.cc
  *
  *  Description:   This file contains functions that handle ACL connections.
- *                 This includes operations such as hold and sniff modes,
+ *                 This includes operations such as active and sniff modes,
  *                 supported packet types.
  *
  *                 This module contains both internal and external (API)
@@ -653,10 +653,6 @@ static void sanitize_link_policy(LinkPolicy& link_policy) {
   if (link_policy.role_switch && (!bluetooth::shim::GetController()->SupportsRoleSwitch())) {
     link_policy.role_switch = false;
     log::info("Role switch not supported (link policy: {})", link_policy);
-  }
-  if (link_policy.hold_mode) {
-    link_policy.hold_mode = false;
-    log::info("Hold mode not supported (link policy: {})", link_policy);
   }
   if (link_policy.sniff_mode && (!bluetooth::shim::GetController()->SupportsSniffMode())) {
     link_policy.sniff_mode = false;

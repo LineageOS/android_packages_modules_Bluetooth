@@ -198,14 +198,6 @@
 #define HCI_REJECT_ESCO_BDADDR_OFF 0
 #define HCI_REJECT_ESCO_REASON_OFF 6
 
-/* Hold Mode */
-#define HCIC_PARAM_SIZE_HOLD_MODE 6
-
-#define HCI_HOLD_MODE_HANDLE_OFF 0
-#define HCI_HOLD_MODE_MAX_PER_OFF 2
-#define HCI_HOLD_MODE_MIN_PER_OFF 4
-/* Hold Mode */
-
 /* Sniff Mode */
 #define HCIC_PARAM_SIZE_SNIFF_MODE 10
 
@@ -746,23 +738,6 @@ void btsnd_hcic_reject_esco_conn(const RawAddress& bd_addr, uint8_t reason) {
 
   BDADDR_TO_STREAM(pp, bd_addr);
   UINT8_TO_STREAM(pp, reason);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-void btsnd_hcic_hold_mode(uint16_t handle, uint16_t max_hold_period, uint16_t min_hold_period) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_HOLD_MODE;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_HOLD_MODE);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_HOLD_MODE);
-
-  UINT16_TO_STREAM(pp, handle);
-  UINT16_TO_STREAM(pp, max_hold_period);
-  UINT16_TO_STREAM(pp, min_hold_period);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }

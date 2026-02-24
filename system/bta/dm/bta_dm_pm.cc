@@ -1050,15 +1050,6 @@ static void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS statu
       }
       break;
 
-    case BTM_PM_STS_HOLD:
-      /* save the previous low power mode - for SSR.
-       * SSR parameters are sent to controller on "conn open".
-       * the numbers stay good until hold/detach */
-      if (p_link->is_ssr_active()) {
-        p_link->prev_low = status;
-      }
-      break;
-
     case BTM_PM_STS_SSR:
       if (hci_status != 0) {
         log::warn("Received error when attempting to set sniff subrating mode");

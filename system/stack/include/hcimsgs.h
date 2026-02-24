@@ -98,10 +98,6 @@ void btsnd_hcic_accept_esco_conn(const RawAddress& bd_addr, uint32_t transmit_ba
                                  uint16_t packet_types);
 
 void btsnd_hcic_reject_esco_conn(const RawAddress& bd_addr, uint8_t reason);
-/* Hold Mode */
-void btsnd_hcic_hold_mode(uint16_t handle, uint16_t max_hold_period, uint16_t min_hold_period);
-
-/* Hold Mode */
 
 /* Sniff Mode */
 void btsnd_hcic_sniff_mode(uint16_t handle, uint16_t max_sniff_period, uint16_t min_sniff_period,

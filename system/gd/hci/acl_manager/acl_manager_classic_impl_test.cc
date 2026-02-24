@@ -475,21 +475,6 @@ TEST_F(AclManagerClassicWithConnectionTest, send_read_clock_offset) {
   sync_client_handler();
 }
 
-TEST_F(AclManagerClassicWithConnectionTest, send_hold_mode) {
-  connection_->HoldMode(0x0500, 0x0020);
-  auto packet = GetConnectionManagementCommand(OpCode::HOLD_MODE);
-  auto command_view = HoldModeView::Create(packet);
-  ASSERT_TRUE(command_view.IsValid());
-  ASSERT_EQ(command_view.GetHoldModeMaxInterval(), 0x0500);
-  ASSERT_EQ(command_view.GetHoldModeMinInterval(), 0x0020);
-
-  EXPECT_CALL(mock_connection_management_callbacks_,
-              OnModeChange(ErrorCode::SUCCESS, Mode::HOLD, 0x0020));
-  test_hci_layer_->IncomingEvent(
-          ModeChangeBuilder::Create(ErrorCode::SUCCESS, handle_, Mode::HOLD, 0x0020));
-  sync_client_handler();
-}
-
 TEST_F(AclManagerClassicWithConnectionTest, send_sniff_mode) {
   connection_->SniffMode(0x0500, 0x0020, 0x0040, 0x0014);
   auto packet = GetConnectionManagementCommand(OpCode::SNIFF_MODE);

@@ -136,19 +136,6 @@ struct btsnd_hcic_exit_sniff_mode {
 };
 extern struct btsnd_hcic_exit_sniff_mode btsnd_hcic_exit_sniff_mode;
 
-// Name: btsnd_hcic_hold_mode
-// Params: uint16_t handle, uint16_t max_hold_period, uint16_t min_hold_period
-// Return: void
-struct btsnd_hcic_hold_mode {
-  std::function<void(uint16_t handle, uint16_t max_hold_period, uint16_t min_hold_period)> body{
-          [](uint16_t /* handle */, uint16_t /* max_hold_period */,
-             uint16_t /* min_hold_period */) {}};
-  void operator()(uint16_t handle, uint16_t max_hold_period, uint16_t min_hold_period) {
-    body(handle, max_hold_period, min_hold_period);
-  }
-};
-extern struct btsnd_hcic_hold_mode btsnd_hcic_hold_mode;
-
 // Name: btsnd_hcic_io_cap_req_neg_reply
 // Params: const RawAddress& bd_addr, uint8_t err_code
 // Return: void
