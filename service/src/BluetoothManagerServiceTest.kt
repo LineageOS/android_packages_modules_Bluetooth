@@ -38,6 +38,7 @@ import org.robolectric.shadows.ShadowSystemProperties
 
 @RunWith(RobolectricTestRunner::class)
 @ExperimentalCoroutinesApi
+@kotlin.time.ExperimentalTime
 class BluetoothManagerServiceTest {
     private val context = ApplicationProvider.getApplicationContext<Application>()
     private val looper = Looper.getMainLooper()

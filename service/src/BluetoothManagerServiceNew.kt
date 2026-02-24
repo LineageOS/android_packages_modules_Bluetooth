@@ -22,6 +22,7 @@ import android.bluetooth.IBluetoothManager.ACTION_LOCAL_NAME_CHANGED
 import android.bluetooth.IBluetoothManager.EXTRA_LOCAL_NAME
 import android.bluetooth.IBluetoothManagerCallback
 import android.bluetooth.State
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
@@ -33,13 +34,16 @@ import android.os.UserHandle
 import android.provider.Settings.Global
 import android.provider.Settings.Secure
 import com.android.bluetooth.util.truncateUtf8String
+import com.android.server.bluetooth.airplane.AirplaneModeController
 import java.io.FileDescriptor
 import java.io.PrintWriter
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 // Must match android.provider.Settings.Secure.BLUETOOTH_NAME but cannot depend on the variable
 const val BLUETOOTH_NAME = "bluetooth_name"
 
+@kotlin.time.ExperimentalTime
 class BluetoothManagerServiceNew(
     private val context: Context,
     private val looper: Looper,
@@ -49,10 +53,20 @@ class BluetoothManagerServiceNew(
 ) {
     private val contentResolver = context.contentResolver
     private val state = BluetoothAdapterState()
+    private val airplaneController: AirplaneModeController
 
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
 
     init {
+        airplaneController =
+            AirplaneModeController(
+                context,
+                state,
+                this::onAirplaneModeChanged,
+                this::sendToggleNotification,
+                TimeSource.Monotonic,
+            )
+
         Log.i(
             TAG,
             "Starting for user $userHandle (boot completed=$isBootCompleted) Name=$localName",
@@ -69,6 +83,23 @@ class BluetoothManagerServiceNew(
 
     fun onBluetoothDisallowed() {
         Log.i(TAG, "onBluetoothDisallowed")
+    }
+
+    /** Send Intent to the Notification Service in the Bluetooth app */
+    fun sendToggleNotification(reason: String) {
+        val targetComponent =
+            ComponentName(
+                bluetoothComponent.packageName,
+                "com.android.bluetooth.notification.NotificationHelperService",
+            )
+
+        context.startService(
+            Intent().apply {
+                setAction("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION")
+                setComponent(targetComponent)
+                putExtra("android.bluetooth.notification.extra.NOTIFICATION_REASON", reason)
+            }
+        )
     }
 
     fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {
