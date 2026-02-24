@@ -70,9 +70,9 @@ public class AvrcpNativeInterface {
         setBipClientStatusNative(identityAddress, connected);
     }
 
-    Metadata getCurrentSongInfo() {
-        d("getCurrentSongInfo");
-        return mAvrcpService.getCurrentSongInfo();
+    Metadata getSongInfo(String mediaId) {
+        d("getSongInfo: mediaId=" + mediaId);
+        return mAvrcpService.getSongInfo(mediaId);
     }
 
     PlayStatus getPlayStatus() {

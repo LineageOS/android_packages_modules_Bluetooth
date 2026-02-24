@@ -66,7 +66,7 @@ static std::shared_timed_mutex callbacks_mutex;
 // Forward Declarations
 static void sendMediaKeyEvent(const RawAddress& address, int, KeyState);
 static std::string getCurrentMediaId();
-static SongInfo getSongInfo();
+static SongInfo getSongInfo(std::string media_id);
 static PlayStatus getCurrentPlayStatus();
 static std::vector<SongInfo> getNowPlayingList();
 static uint16_t getCurrentPlayerId();
@@ -135,8 +135,8 @@ public:
     sendMediaKeyEvent(bdaddr, key, state);
   }
 
-  void GetSongInfo(SongInfoCallback cb) override {
-    auto info = getSongInfo();
+  void GetSongInfo(std::string media_id, SongInfoCallback cb) override {
+    auto info = getSongInfo(media_id);
     std::move(cb).Run(info);
   }
 
@@ -227,7 +227,7 @@ public:
 };
 static PlayerSettingsInterfaceImpl mPlayerSettingsInterface;
 
-static jmethodID method_getCurrentSongInfo;
+static jmethodID method_getSongInfo;
 static jmethodID method_getPlaybackStatus;
 static jmethodID method_sendMediaKeyEvent;
 
@@ -527,7 +527,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
   return info;
 }
 
-static SongInfo getSongInfo() {
+static SongInfo getSongInfo(std::string media_id) {
   log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
@@ -535,7 +535,8 @@ static SongInfo getSongInfo() {
     return SongInfo();
   }
 
-  jobject metadata = sCallbackEnv->CallObjectMethod(mJavaInterface, method_getCurrentSongInfo);
+  jstring j_media_id = sCallbackEnv->NewStringUTF(media_id.c_str());
+  jobject metadata = sCallbackEnv->CallObjectMethod(mJavaInterface, method_getSongInfo, j_media_id);
   SongInfo info = getSongInfoFromJavaObj(sCallbackEnv.get(), metadata);
   sCallbackEnv->DeleteLocalRef(metadata);
   return info;
@@ -1179,8 +1180,8 @@ int register_com_android_bluetooth_avrcp_target(JNIEnv* env) {
   }
 
   const JNIJavaMethod javaMethods[] = {
-          {"getCurrentSongInfo", "()Lcom/android/bluetooth/audio_util/Metadata;",
-           &method_getCurrentSongInfo},
+          {"getSongInfo", "(Ljava/lang/String;)Lcom/android/bluetooth/audio_util/Metadata;",
+           &method_getSongInfo},
           {"getPlayStatus", "()Lcom/android/bluetooth/audio_util/PlayStatus;",
            &method_getPlaybackStatus},
           {"sendMediaKeyEvent", "(Ljava/lang/String;IZ)V", &method_sendMediaKeyEvent},

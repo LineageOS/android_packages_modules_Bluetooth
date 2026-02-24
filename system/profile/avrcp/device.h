@@ -226,16 +226,13 @@ public:
   virtual void GetTotalNumberOfItemsMediaPlayersResponse(uint8_t label, uint16_t curr_player,
                                                          std::vector<MediaPlayerInfo> list);
   virtual void GetTotalNumberOfItemsVFSResponse(uint8_t label, std::vector<ListItem> items);
-  virtual void GetTotalNumberOfItemsNowPlayingResponse(uint8_t label, std::string curr_song_id,
-                                                       std::vector<SongInfo> song_list);
 
   // GET ITEM ATTRIBUTES
   virtual void HandleGetItemAttributes(uint8_t label,
                                        std::shared_ptr<GetItemAttributesRequest> request);
   virtual void GetItemAttributesNowPlayingResponse(uint8_t label,
                                                    std::shared_ptr<GetItemAttributesRequest> pkt,
-                                                   std::string curr_media_id,
-                                                   std::vector<SongInfo> song_list);
+                                                   SongInfo info);
   virtual void GetItemAttributesVFSResponse(uint8_t label,
                                             std::shared_ptr<GetItemAttributesRequest> pkt,
                                             std::vector<ListItem> item_list);

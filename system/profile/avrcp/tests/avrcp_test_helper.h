@@ -39,7 +39,7 @@ using TestBrowsePacket = TestPacketType<BrowsePacket>;
 class MockMediaInterface : public MediaInterface {
 public:
   MOCK_METHOD3(SendKeyEvent, void(const RawAddress&, uint8_t, KeyState));
-  MOCK_METHOD1(GetSongInfo, void(MediaInterface::SongInfoCallback));
+  MOCK_METHOD2(GetSongInfo, void(std::string, MediaInterface::SongInfoCallback));
   MOCK_METHOD1(GetPlayStatus, void(MediaInterface::PlayStatusCallback));
   MOCK_METHOD1(GetNowPlayingList, void(MediaInterface::NowPlayingCallback));
   MOCK_METHOD1(GetMediaPlayerList, void(MediaInterface::MediaListCallback));

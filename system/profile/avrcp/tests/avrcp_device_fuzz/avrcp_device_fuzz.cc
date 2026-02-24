@@ -66,7 +66,7 @@ public:
   FakeMediaInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
   void SendKeyEvent(const RawAddress&, uint8_t /* key */, KeyState /* state */) override { return; }
   using SongInfoCallback = base::OnceCallback<void(SongInfo)>;
-  void GetSongInfo(SongInfoCallback info_cb) override {
+  void GetSongInfo(std::string /* media_id */, SongInfoCallback info_cb) override {
     SongInfo sInfo;
     sInfo.media_id = mFdp->ConsumeRandomLengthString(kMaxLen);
     sInfo.attributes.insert(AttributeEntry(
