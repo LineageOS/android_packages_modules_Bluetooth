@@ -4270,6 +4270,10 @@ static void btm_sec_pairing_timeout(void* /* data */) {
             btm_pair_state_descr(BtmSecurity::Get().pairing_state_),
             BtmSecurity::Get().pairing_flags_, BtmSecurity::Get().link_spec_);
 
+  bluetooth::metrics::LogBluetoothEvent(BtmSecurity::Get().link_spec_.addrt.bda,
+                                        bluetooth::metrics::EventType::BONDING,
+                                        bluetooth::metrics::State::TIMEOUT);
+
   if (is_autonomous_repairing_supported() &&
       btm_is_bond_lost(BtmSecurity::Get().link_spec_.addrt.bda)) {
     bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_LOCAL_TIMEOUT);

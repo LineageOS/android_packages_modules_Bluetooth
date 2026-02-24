@@ -12,9 +12,9 @@ flag {
 }
 
 flag {
-    name: "adm_iterate_devices_on_fallback"
+    name: "adm_fix_fallback_device_search"
     namespace: "bluetooth"
-    description: "Iterate over recently connected devices to find fallback"
+    description: "Fallback device must be different from recently inactivated one"
     bug: "440528457"
     metadata {
         purpose: PURPOSE_BUGFIX

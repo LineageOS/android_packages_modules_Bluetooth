@@ -103,6 +103,14 @@ struct VcsServer::service_impl {
             service_descriptor.initial_volume_setting_persisted;
     change_counter_ = 0;
 
+    log::info(
+            "Registering VCS: initial_volume={}, initial_mute_state={}, "
+            "initial_volume_setting_persisted={}, step_size={}",
+            service_descriptor_.initial_volume,
+            static_cast<int>(service_descriptor_.initial_mute_state),
+            static_cast<int>(service_descriptor_.initial_volume_setting_persisted),
+            service_descriptor_.step_size);
+
     BTA_GATTS_AppRegister(
             uuid::kVolumeControlServiceUuid,
             [](tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
@@ -421,7 +429,7 @@ struct VcsServer::service_impl {
   }
 
   void Dump(std::stringstream& stream) const {
-    stream << "  Volume Control Service (VCS):\n";
+    stream << "  Volume Control Service (VCS) Server:\n";
     stream << "    server_if: " << +server_if_ << "\n";
     stream << "    callbacks: " << (callbacks_ == nullptr ? "NOT SET" : "SET") << "\n";
     stream << "    service_handle: 0x" << std::hex << service_handle_ << "\n";
@@ -433,9 +441,9 @@ struct VcsServer::service_impl {
     stream << "    volume_flags_cccd_handle: 0x" << std::hex << volume_flags_cccd_handle_ << "\n";
     stream << "    volume_setting: " << std::dec << +volume_setting_ << "\n";
     stream << "    mute_state: " << static_cast<int>(mute_state_) << "\n";
-    stream << "    change_counter: " << +change_counter_ << "\n";
+    stream << "    change_counter: " << std::dec << +change_counter_ << "\n";
     stream << "    volume_flags.raw: 0x" << std::hex << +volume_flags_.raw << "\n";
-    stream << "    step_size: " << +service_descriptor_.step_size << "\n";
+    stream << "    step_size: " << std::dec << +service_descriptor_.step_size << "\n";
 
     device_tracker_.Dump(stream, "    ",
                          [](std::stringstream& /* stream */, const std::monostate& /* device */) {
