@@ -1130,8 +1130,9 @@ public class AdapterService extends Service {
                             && SystemProperties.getBoolean(
                                     AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
             var pauseAdvertisement =
-                    SystemProperties.getBoolean(
-                            AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
+                    Flags.adapterSuspendAdvertisement()
+                            && SystemProperties.getBoolean(
+                                    AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
             if (disconnectAcl || scanModeNone || stopLeScan || pauseAdvertisement) {
                 mAdapterSuspend =
                         Optional.of(

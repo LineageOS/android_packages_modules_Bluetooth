@@ -23,24 +23,20 @@ import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.AdapterSuspend
 import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
-import java.util.Optional
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 /** Test cases for [AdvertiseSuspendManager]. */
 @SmallTest
@@ -49,7 +45,6 @@ class AdvertiseSuspendManagerTest {
     @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val setFlagsRule = SetFlagsRule()
 
-    @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var adapterSuspend: AdapterSuspend
     @Mock private lateinit var advertiseManager: AdvertiseManager
     @Mock private lateinit var source: AttributionSource
@@ -58,8 +53,7 @@ class AdvertiseSuspendManagerTest {
 
     @Before
     fun setUp() {
-        advertiseSuspendManager = AdvertiseSuspendManager(advertiseManager, adapterService)
-        doReturn(Optional.of(adapterSuspend)).whenever(adapterService).adapterSuspend
+        advertiseSuspendManager = AdvertiseSuspendManager(advertiseManager, adapterSuspend)
     }
 
     @Test

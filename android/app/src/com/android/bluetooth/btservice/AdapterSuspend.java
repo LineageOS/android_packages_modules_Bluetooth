@@ -183,6 +183,10 @@ public class AdapterSuspend {
         mSuspendStateMachine.dispatchMessage(isScreenOn ? MSG_SCREEN_ON : MSG_SCREEN_OFF);
     }
 
+    public boolean isPauseAdvertisementEnabled() {
+        return mPauseAdvertisementOnSuspend;
+    }
+
     void aclDisconnected(BluetoothDevice device, int transport) {
         if (!mDelayedSuspendTasks.contains(SuspendTasks.ACL_DISCONNECTION)) {
             return;
@@ -274,7 +278,7 @@ public class AdapterSuspend {
             }
         }
 
-        if (mPauseAdvertisementOnSuspend && Flags.adapterSuspendAdvertisement()) {
+        if (mPauseAdvertisementOnSuspend) {
             mAdapterService
                     .getGattService()
                     .ifPresent(
@@ -331,7 +335,7 @@ public class AdapterSuspend {
             }
         }
 
-        if (mPauseAdvertisementOnSuspend && Flags.adapterSuspendAdvertisement()) {
+        if (mPauseAdvertisementOnSuspend) {
             mAdapterService
                     .getGattService()
                     .ifPresent(gatt -> gatt.getAdvertiseManager().exitSuspend());
