@@ -32,6 +32,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_fix_qos_reconfiguration"
+    namespace: "bluetooth"
+    description: "Fix reconfiguration when one device is in QoS Configured state"
+    bug: "487260881"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_fix_reporting_csis_members"
     namespace: "bluetooth"
     description: "Fix reporting available set members to Application"
