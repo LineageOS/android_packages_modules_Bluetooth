@@ -122,6 +122,10 @@ constructor(
         }
     }
 
+    fun getActiveDevices(): List<BluetoothDevice> {
+        return listOfNotNull(policyManager.activeSinkDevice, policyManager.activeSourceDevice)
+    }
+
     fun getConnectedDevices(): List<BluetoothDevice> {
         return emptyList()
     }

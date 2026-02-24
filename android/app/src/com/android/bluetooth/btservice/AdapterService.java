@@ -3805,6 +3805,16 @@ public class AdapterService extends Service {
                                 + (" Lead[" + activeDevices.get(0) + "] -")
                                 + (" member_1[" + activeDevices.get(1) + "]"));
             }
+            case BluetoothProfile.LE_AUDIO_PERIPHERAL -> {
+                final var leAudioPeripheral = getLeAudioPeripheralService();
+                if (!leAudioPeripheral.isPresent()) {
+                    Log.e(TAG, "getActiveDevices: LeAudioPeripheralService is null");
+                    break;
+                }
+
+                activeDevices = leAudioPeripheral.get().getActiveDevices();
+                Log.i(TAG, "getActiveDevices: LeAudioPeripheral: " + activeDevices);
+            }
             default -> Log.e(TAG, "getActiveDevices: profile value is not valid");
         }
         return activeDevices;
