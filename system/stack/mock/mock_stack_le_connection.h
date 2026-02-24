@@ -124,6 +124,23 @@ struct leConnectionSubrateRequest {
 };
 extern struct leConnectionSubrateRequest leConnectionSubrateRequest;
 
+// Name: leConnectionUpdate
+// Params: const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
+//         uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len
+// Return: void
+struct leConnectionUpdate {
+  std::function<void(const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
+                     uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len)>
+          body{[](const RawAddress& /* bd_addr */, uint16_t /* min_interval */,
+                  uint16_t /* max_interval */, uint16_t /* latency */, uint16_t /* timeout */,
+                  uint16_t /* min_ce_len */, uint16_t /* max_ce_len */) {}};
+  void operator()(const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
+                  uint16_t latency, uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len) {
+    body(bd_addr, min_interval, max_interval, latency, timeout, min_ce_len, max_ce_len);
+  }
+};
+extern struct leConnectionUpdate leConnectionUpdate;
+
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test

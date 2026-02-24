@@ -629,24 +629,9 @@ BtStatus btif_gattc_conn_parameter_update(const RawAddress& bd_addr, int min_int
                                           int max_interval, int latency, int timeout,
                                           uint16_t min_ce_len, uint16_t max_ce_len) {
   CHECK_BTGATT_INIT();
-  do_in_main_thread(BindOnce(
-          [](const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval, int latency,
-             int timeout, uint16_t min_ce_len, uint16_t max_ce_len) {
-            stack::l2cap::get_interface().L2CA_AdjustConnectionIntervals(
-                    &min_interval, &max_interval, BTM_BLE_CONN_INT_MIN);
-
-            if (BTA_DmGetConnectionState(bd_addr)) {
-              if (!stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
-                          bd_addr, min_interval, max_interval, latency, timeout, min_ce_len,
-                          max_ce_len)) {
-                log::error("Update connection parameters failed!");
-              }
-            } else {
-              get_btm_client_interface().ble.BTM_BleSetPrefConnParams(
-                      bd_addr, min_interval, max_interval, latency, timeout);
-            }
-          },
-          bd_addr, min_interval, max_interval, latency, timeout, min_ce_len, max_ce_len));
+  do_in_main_thread(BindOnce(&stack::leConnectionUpdate, bd_addr, (uint16_t)min_interval,
+                             (uint16_t)max_interval, (uint16_t)latency, (uint16_t)timeout,
+                             min_ce_len, max_ce_len));
   return BtifStatus();
 }
 
