@@ -489,3 +489,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_source_channel_map_classification_improvement"
+    namespace: "bluetooth"
+    description: "Improve broadcast channel classification"
+    bug: "487242521"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
