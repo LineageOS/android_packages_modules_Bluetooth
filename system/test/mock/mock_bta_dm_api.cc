@@ -52,7 +52,6 @@ struct BTA_DmBleRequestMaxTxDataLength BTA_DmBleRequestMaxTxDataLength;
 struct BTA_DmBleResetId BTA_DmBleResetId;
 struct BTA_DmBleScan BTA_DmBleScan;
 struct BTA_DmBleSecurityGrant BTA_DmBleSecurityGrant;
-struct BTA_DmBleSubrateRequest BTA_DmBleSubrateRequest;
 struct BTA_DmBond BTA_DmBond;
 struct BTA_DmBondCancel BTA_DmBondCancel;
 struct BTA_DmCheckLeAudioCapable BTA_DmCheckLeAudioCapable;
@@ -156,12 +155,6 @@ void BTA_DmBleScan(bool start, uint8_t duration_sec) {
 void BTA_DmBleSecurityGrant(const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmBleSecurityGrant(bd_addr, res);
-}
-void BTA_DmBleSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min, uint16_t subrate_max,
-                             uint16_t max_latency, uint16_t cont_num, uint16_t timeout) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleSubrateRequest(bd_addr, subrate_min, subrate_max, max_latency,
-                                                  cont_num, timeout);
 }
 void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);

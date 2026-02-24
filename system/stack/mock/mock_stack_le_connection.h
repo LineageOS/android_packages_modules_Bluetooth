@@ -110,6 +110,20 @@ struct leConnectionConnect {
   }
 };
 extern struct leConnectionConnect leConnectionConnect;
+
+struct leConnectionSubrateRequest {
+  std::function<void(const RawAddress& bd_addr, uint16_t subrate_min, uint16_t subrate_max,
+                     uint16_t max_latency, uint16_t cont_num, uint16_t timeout)>
+          body{[](const RawAddress& /* bd_addr */, uint16_t /* subrate_min */,
+                  uint16_t /* subrate_max */, uint16_t /* max_latency */, uint16_t /* cont_num */,
+                  uint16_t /* timeout */) {}};
+  void operator()(const RawAddress& bd_addr, uint16_t subrate_min, uint16_t subrate_max,
+                  uint16_t max_latency, uint16_t cont_num, uint16_t timeout) {
+    body(bd_addr, subrate_min, subrate_max, max_latency, cont_num, timeout);
+  }
+};
+extern struct leConnectionSubrateRequest leConnectionSubrateRequest;
+
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test

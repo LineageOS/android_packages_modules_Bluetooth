@@ -335,29 +335,6 @@ void BTA_DmBleResetId(void) {
   do_in_main_thread(base::BindOnce(bta_dm_ble_reset_id));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_DmBleSubrateRequest
- *
- * Description      subrate request, can only be used when connection is up.
- *
- * Parameters:      bd_addr       - BD address of the peer
- *                  subrate_min   - subrate factor minimum, [0x0001 - 0x01F4]
- *                  subrate_max   - subrate factor maximum, [0x0001 - 0x01F4]
- *                  max_latency   - max peripheral latency [0x0000 - 01F3]
- *                  cont_num      - continuation number [0x0000 - 01F3]
- *                  timeout       - supervision timeout [0x000a - 0xc80]
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBleSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min, uint16_t subrate_max,
-                             uint16_t max_latency, uint16_t cont_num, uint16_t timeout) {
-  log::verbose("");
-  do_in_main_thread(base::BindOnce(bta_dm_ble_subrate_request, bd_addr, subrate_min, subrate_max,
-                                   max_latency, cont_num, timeout));
-}
-
 bool BTA_DmCheckLeAudioCapable(const RawAddress& address) {
   for (tBTM_INQ_INFO* inq_ent = get_btm_client_interface().db.BTM_InqDbFirst(); inq_ent != nullptr;
        inq_ent = get_btm_client_interface().db.BTM_InqDbNext(inq_ent)) {
