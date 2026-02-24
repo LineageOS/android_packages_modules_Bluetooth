@@ -32,6 +32,7 @@ import kotlinx.coroutines.runBlocking
 private const val SERVICE_NAME = "bluetooth_manager"
 private const val TAG = "BluetoothService"
 
+@kotlin.time.ExperimentalTime
 class BluetoothService(context: Context) : SystemService(context) {
     private val looper = HandlerThread("BluetoothSystemServer").apply { start() }.looper
     private val serviceDispatcher = Handler(looper).asCoroutineDispatcher()

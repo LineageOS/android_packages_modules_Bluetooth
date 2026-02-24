@@ -54,6 +54,7 @@ class BluetoothManagerServiceNew(
     private val contentResolver = context.contentResolver
     private val state = BluetoothAdapterState()
     private val airplaneController: AirplaneModeController
+    private val autoOn: AutoOn? // Null when config doesn't allow
 
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
 
@@ -67,9 +68,21 @@ class BluetoothManagerServiceNew(
                 TimeSource.Monotonic,
             )
 
+        autoOn =
+            if (SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false)) {
+                AutoOn(
+                    looper,
+                    context,
+                    userHandle,
+                    state,
+                    this::enableFromAutoOn,
+                    airplaneController,
+                )
+            } else null
+
         Log.i(
             TAG,
-            "Starting for user $userHandle (boot completed=$isBootCompleted) Name=$localName",
+            "Starting for user $userHandle (boot completed=$isBootCompleted) Name=$localName AutoOnEnabled=${autoOn != null}",
         )
     }
 
@@ -189,17 +202,29 @@ class BluetoothManagerServiceNew(
 
     fun enableNoAutoConnect(packageName: String): Boolean = false
 
+    fun enableFromAutoOn() {
+        throw NotImplementedError("enableFromAutoOn") // TODO
+        // if (!BluetoothRestriction.isBluetoothAllowed()) {
+        //     Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn")
+        //     return
+        // }
+        // sendToggleNotification("auto_on_bt_enabled_notification")
+        // enable(ENABLE_DISABLE_REASON_AUTO_ON, mContext.packageName)
+    }
+
     fun disable(packageName: String, persist: Boolean): Boolean = false
 
     fun disableBle(packageName: String, token: IBinder): Boolean = false
 
     fun factoryReset(): Boolean = false
 
-    fun isAutoOnSupported(): Boolean = false
+    fun isAutoOnSupported() = autoOn?.isSupported() ?: false
 
-    fun isAutoOnEnabled(): Boolean = false
+    fun isAutoOnEnabled() =
+        checkNotNull(autoOn) { "AutoOn is not supported in current config" }.isEnabled()
 
-    fun setAutoOnEnabled(status: Boolean) {}
+    fun setAutoOnEnabled(status: Boolean) =
+        checkNotNull(autoOn) { "AutoOn is not supported in current config" }.setEnabled(status)
 
     fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<String?>?) {
         writer?.println("$TAG for $userHandle")
