@@ -2489,9 +2489,11 @@ private:
         break;
       }
       case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        log::verbose("Reconfiguring from QoS to Codec Configured group_id: {}", group->group_id_);
+        log::verbose("Reconfiguring ase {} from QoS to Codec Configured group_id: {}", ase->id,
+                     group->group_id_);
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
         group->PrintDebugState();
+
         FALLTHROUGH_INTENDED;
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED: {
         /* Received Configured in Configured state. This could be done
@@ -2558,7 +2560,14 @@ private:
              * Also it can happen, when second set member is adding while the other is in
              * Streaming or QoS Configured state.
              */
-            if (!PrepareAndSendConfigQos(group, leAudioDevice)) {
+            bool qos_succeed = false;
+            if (com_android_bluetooth_flags_leaudio_fix_qos_reconfiguration()) {
+              qos_succeed = PrepareAndSendQoSToTheGroup(group);
+            } else {
+              qos_succeed = PrepareAndSendConfigQos(group, leAudioDevice);
+            }
+
+            if (!qos_succeed) {
               log::warn("Could not trigger QoS configured state for group_id: {} device: {}",
                         group->group_id_, leAudioDevice->address_);
               return;
