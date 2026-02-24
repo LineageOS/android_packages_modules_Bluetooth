@@ -235,7 +235,7 @@ static tA2DP_STATUS A2DP_ParseInfoSbc(tA2DP_SBC_CIE* p_ie, const uint8_t* p_code
   p_ie->min_bitpool = *p_codec_info++;
   p_ie->max_bitpool = *p_codec_info++;
 
-  if (com::android::bluetooth::flags::a2dp_adjust_sbc_bitpool()) {
+  if (com_android_bluetooth_flags_a2dp_adjust_sbc_bitpool()) {
     A2DP_AdjustBitpool(p_ie);
   }
 
@@ -1287,7 +1287,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
     result_config_cie.max_bitpool = peer_info_cie.max_bitpool;
   }
 
-  if (com::android::bluetooth::flags::a2dp_adjust_sbc_bitpool()) {
+  if (com_android_bluetooth_flags_a2dp_adjust_sbc_bitpool()) {
     A2DP_AdjustBitpool(&result_config_cie);
   }
 

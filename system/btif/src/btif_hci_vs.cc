@@ -83,7 +83,7 @@ class BluetoothHciVendorSpecificInterfaceImpl
     shim::GetHciLayer()->RegisterDefaultVendorSpecificEventHandler(
             get_main()->Bind(EventCallback, callbacks_));
 
-    if (com::android::bluetooth::flags::report_vendor_events_from_acl()) {
+    if (com_android_bluetooth_flags_report_vendor_events_from_acl()) {
       auto* controller = shim::GetController();
       auto vendor_capabilities = controller->GetVendorCapabilities();
       if (vendor_capabilities.vendor_connection_handle_min_ > 0) {

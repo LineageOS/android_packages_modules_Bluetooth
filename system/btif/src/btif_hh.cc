@@ -479,7 +479,7 @@ static void reject_incoming_connection(uint8_t handle) {
 
 static void btif_hh_incoming_connection_timeout(void* data) {
   uint8_t handle = reinterpret_cast<size_t>(data) & 0xFF;
-  if (!com::android::bluetooth::flags::hid_connection_timeout_in_jni_thread()) {
+  if (!com_android_bluetooth_flags_hid_connection_timeout_in_jni_thread()) {
     reject_incoming_connection(handle);
     return;
   }
@@ -807,8 +807,7 @@ static void hh_get_idle_handler(tBTA_HH_HSDATA& hs_data) {
 
   log::verbose("Handle = {}, status = {}, rate = {}", hs_data.handle, hs_data.status,
                hs_data.rsp_data.idle_rate);
-  if (!com::android::bluetooth::flags::hid_propagate_idle_handshake() ||
-      hs_data.status == BTHH_OK) {
+  if (!com_android_bluetooth_flags_hid_propagate_idle_handshake() || hs_data.status == BTHH_OK) {
     HAL_CBACK(bt_hh_callbacks, idle_time_cb, p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status,
               hs_data.rsp_data.idle_rate);
@@ -820,7 +819,7 @@ static void hh_get_idle_handler(tBTA_HH_HSDATA& hs_data) {
 }
 
 static void hh_set_idle_handler(tBTA_HH_CBDATA& dev_status) {
-  if (!com::android::bluetooth::flags::hid_propagate_idle_handshake()) {
+  if (!com_android_bluetooth_flags_hid_propagate_idle_handshake()) {
     log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
     return;
   }
@@ -928,7 +927,7 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
 
   // Remove the HID device
   btif_hh_remove_device(p_dev->link_spec);
-  if (com::android::bluetooth::flags::hid_always_unbond_on_virtual_unplug() || p_dev->local_vup ||
+  if (com_android_bluetooth_flags_hid_always_unbond_on_virtual_unplug() || p_dev->local_vup ||
       btif_check_cod_hid(p_dev->link_spec.addrt.bda)) {
     // Remove the bond if locally initiated or remote device has major class HID
     p_dev->local_vup = false;
@@ -1027,7 +1026,7 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
   while ((p_dev = btif_hh_find_dev_by_link_spec(link_spec)) != nullptr) {
     announce_vup = true;
     // Notify service of disconnection to avoid state mismatch
-    if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+    if (com_android_bluetooth_flags_hidh_close_in_jni_thread()) {
       BTHH_STATE_UPDATE(p_dev->link_spec, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
     } else {
       do_in_jni_thread(base::BindOnce(
@@ -1059,7 +1058,7 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
     return;
   }
 
-  if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+  if (com_android_bluetooth_flags_hidh_close_in_jni_thread()) {
     RawAddress bd_addr = link_spec.addrt.bda;
     HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, bd_addr, link_spec.addrt.type,
               link_spec.transport, BTHH_OK);
@@ -1083,7 +1082,7 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
  ** Returns          void
  ******************************************************************************/
 void btif_hh_remove_device(const AclLinkSpec& link_spec) {
-  if (!com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+  if (!com_android_bluetooth_flags_hidh_close_in_jni_thread()) {
     btif_hh_remove_device_in_jni_thread(link_spec);
     return;
   }
@@ -2234,7 +2233,7 @@ static void cleanup_in_jni_thread(void) {
  *
  ******************************************************************************/
 static void cleanup(void) {
-  if (!com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+  if (!com_android_bluetooth_flags_hidh_close_in_jni_thread()) {
     cleanup_in_jni_thread();
     return;
   }

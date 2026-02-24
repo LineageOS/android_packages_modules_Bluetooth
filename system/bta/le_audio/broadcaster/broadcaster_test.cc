@@ -234,11 +234,10 @@ public:
 class BroadcasterTest : public Test {
 protected:
   void SetUp() override {
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_
-            ->leaudio_use_game_sonification_as_regular_sonification(true);
-    com::android::bluetooth::flags::provider_->leaudio_broadcast_extend_audio_active_state(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_stream_confirm_datapath_race(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_use_game_sonification_as_regular_sonification(true);
+    set_com_android_bluetooth_flags_leaudio_broadcast_extend_audio_active_state(true);
+    set_com_android_bluetooth_flags_leaudio_fix_stream_confirm_datapath_race(true);
 
     test::mock::osi_alarm::alarm_free.body = [](alarm_t* alarm) {
       if (alarm) {
@@ -466,7 +465,7 @@ TEST_F(BroadcasterTest, CreateAudioBroadcast) {
   auto& instance_config = MockBroadcastStateMachine::GetLastInstance()->cfg;
   ASSERT_EQ(instance_config.broadcast_code, default_code);
   std::vector<uint8_t> expected_metadata(default_metadata);
-  if (com::android::bluetooth::flags::leaudio_broadcast_extend_audio_active_state()) {
+  if (com_android_bluetooth_flags_leaudio_broadcast_extend_audio_active_state()) {
     expected_metadata.insert(expected_metadata.end(), audio_active_state_false.begin(),
                              audio_active_state_false.end());
   }
@@ -525,7 +524,7 @@ TEST_F(BroadcasterTest, CreateAudioBroadcastMultiGroups) {
   ASSERT_EQ(instance_config.broadcast_code, default_code);
   ASSERT_EQ(instance_config.announcement.subgroup_configs.size(), (uint8_t)2);
   std::vector<uint8_t> expected_metadata(default_metadata);
-  if (com::android::bluetooth::flags::leaudio_broadcast_extend_audio_active_state()) {
+  if (com_android_bluetooth_flags_leaudio_broadcast_extend_audio_active_state()) {
     expected_metadata.insert(expected_metadata.end(), audio_active_state_false.begin(),
                              audio_active_state_false.end());
   }
@@ -1028,7 +1027,7 @@ TEST_F(BroadcasterTest, QueuedBroadcast) {
   auto& instance_config = MockBroadcastStateMachine::GetLastInstance()->cfg;
   ASSERT_EQ(instance_config.broadcast_code, default_code);
   std::vector<uint8_t> expected_metadata(default_metadata);
-  if (com::android::bluetooth::flags::leaudio_broadcast_extend_audio_active_state()) {
+  if (com_android_bluetooth_flags_leaudio_broadcast_extend_audio_active_state()) {
     expected_metadata.insert(expected_metadata.end(), audio_active_state_false.begin(),
                              audio_active_state_false.end());
   }

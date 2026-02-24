@@ -704,7 +704,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     // On-resume flag should always be reset if there is an explicit start/stop call.
     scan_on_resume_ = false;
     if (start) {
-      if (com::android::bluetooth::flags::migrate_btm_scan_to_gd()) {
+      if (com_android_bluetooth_flags_migrate_btm_scan_to_gd()) {
         // Only start scan if we need to
         if (update_start_scan(callerType)) {
           start_scan();
@@ -715,8 +715,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         start_scan();
       }
     } else {
-      if (!com::android::bluetooth::flags::migrate_btm_scan_to_gd() ||
-          update_stop_scan(callerType)) {
+      if (!com_android_bluetooth_flags_migrate_btm_scan_to_gd() || update_stop_scan(callerType)) {
         if (address_manager_registered_) {
           le_address_manager_->Unregister(this);
           address_manager_registered_ = false;
@@ -871,7 +870,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   bool is_bonded(Address target_address) {
-    if (com::android::bluetooth::flags::irk_scanning_bond_check_update()) {
+    if (com_android_bluetooth_flags_irk_scanning_bond_check_update()) {
       return get_btm_client_interface().security.BTM_IsBonded(RawAddress(target_address.address),
                                                               BT_TRANSPORT_LE);
     } else {

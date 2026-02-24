@@ -136,7 +136,7 @@ static void l2cble_on_certainly_connected(tL2C_LCB* p_lcb) {
   /* send callback */
   l2cu_process_fixed_chnl_resp(p_lcb);
 
-  if (com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+  if (com_android_bluetooth_flags_move_conn_mgr_callbacks()) {
     /* Remove the direct connection */
     connection_manager::on_connection_complete(p_lcb->remote_bd_addr);
   }

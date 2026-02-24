@@ -185,7 +185,7 @@ static void btif_a2dp_sink_init_delayed() {
   log::info("");
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_RUNNING;
 
-  if (com::android::bluetooth::flags::a2dp_sink_offload()) {
+  if (com_android_bluetooth_flags_a2dp_sink_offload()) {
     bluetooth::audio::a2dp::init_decoder(&a2dp_sink_stream_callbacks,
                                          btif_av_is_a2dp_offload_enabled());
   }

@@ -47,7 +47,7 @@ protected:
   virtual ~GattApiTest() = default;
 
   void SetUp() override {
-    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
       BtmSecurity::Get().sec_dev_rec_ = list_new(osi_free);
     } else {
       ::BtmSecurity::Get().Init(BTM_SEC_MODE_SC);  // Initialize the CB
@@ -58,7 +58,7 @@ protected:
   }
 
   void TearDown() override {
-    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
       list_free(BtmSecurity::Get().sec_dev_rec_);
     } else {
       ::BtmSecurity::Get().Free();  // Free the CB

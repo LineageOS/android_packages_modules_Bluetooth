@@ -299,7 +299,6 @@ bool is_autonomous_repairing_supported() {
 }
 
 void set_autonomous_repairing_supported(bool platform_support_autonomous_repairing_initiation) {
-  autonomous_repairing_initiation =
-          com::android::bluetooth::flags::autonomous_repairing_initiation() &&
-          platform_support_autonomous_repairing_initiation;
+  autonomous_repairing_initiation = com_android_bluetooth_flags_autonomous_repairing_initiation() &&
+                                    platform_support_autonomous_repairing_initiation;
 }

@@ -1226,7 +1226,7 @@ TEST_F(DistanceMeasurementManagerTest, duplicated_requesting_session) {
 
   cs_requester_.sync_client_handler();
 
-  if (com::android::bluetooth::flags::channel_sounding_26q1_fix()) {
+  if (com_android_bluetooth_flags_channel_sounding_26q1_fix()) {
     // Verify that LE_CS_SECURITY_ENABLE is sent upon restart
     command_view = cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
     auto security_enable_view =
@@ -1806,7 +1806,7 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
   int8_t rssi_drop_off_at_1m = 41;
   double pow_value = (transmit_power_level - rssi - rssi_drop_off_at_1m) / 20.0;
   double distance = pow(10.0, pow_value);
-  if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
+  if (com_android_bluetooth_flags_include_power_and_rssi_in_distance_measurement_result()) {
     EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
                 OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100,
                                             _, _, _, _, _, transmit_power_level, rssi, _, _, _, _,

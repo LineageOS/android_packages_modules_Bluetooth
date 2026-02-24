@@ -870,7 +870,7 @@ static int restore_filter_accept_list() {
   // connections that have `is_direct=False`. Currently, we only restore LE hid
   // devices.
   std::vector<std::pair<RawAddress, uint8_t>> le_hid_addrs;
-  if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+  if (!com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
     le_hid_addrs = btif_storage_get_le_hid_devices();
   }
   if (com_android_bluetooth_flags_clean_up_posting_on_main_thread()) {
@@ -886,7 +886,7 @@ static int allow_wake_by_hid() {
     return BT_STATUS_NOT_READY;
   }
   std::vector<std::pair<RawAddress, uint8_t>> le_hid_addrs;
-  if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+  if (!com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
     le_hid_addrs = btif_storage_get_le_hid_devices();
   }
   auto classic_hid_addrs = btif_storage_get_wake_capable_classic_hid_devices();
@@ -942,7 +942,7 @@ static void dump(int fd, const char** /*arguments*/) {
   btif_sock_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
   gatt_tcb_dump(fd);
-  if (com::android::bluetooth::flags::gatt_offload_api()) {
+  if (com_android_bluetooth_flags_gatt_offload_api()) {
     gatt_offload_sessions_dump(fd);
   }
   bta_gatt_client_dump(fd);
@@ -1546,7 +1546,7 @@ void invoke_switch_buffer_size_cb(bool is_low_latency_buffer_size) {
 }
 
 void invoke_switch_codec_cb(bool is_low_latency_buffer_size) {
-  log::assert_that(!com::android::bluetooth::flags::a2dp_handle_sa_reconfig_in_native(),
+  log::assert_that(!com_android_bluetooth_flags_a2dp_handle_sa_reconfig_in_native(),
                    "Reconfig is in native");
   do_in_jni_thread(base::BindOnce(
           [](bool is_low_latency_buffer_size) {

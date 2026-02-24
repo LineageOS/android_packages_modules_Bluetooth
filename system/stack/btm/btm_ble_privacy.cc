@@ -272,7 +272,7 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
 
     log::verbose("resolving_list_avail_size={}", btm_cb.ble_ctr_cb.resolving_list_avail_size);
 
-    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
       list_foreach(BtmSecurity::Get().sec_dev_rec_, clear_resolving_list_bit, NULL);
     } else {
       BtmSecurity::Get().for_each_dev_rec(clear_resolving_list_bit, NULL);
@@ -611,7 +611,7 @@ void btm_ble_resolving_list_load_dev(BtmDevice& device) {
   }
 
   uint16_t count = 1; /* we use 1 entry for local controller */
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_foreach(BtmSecurity::Get().sec_dev_rec_, count_resolving_list_entries, &count);
   } else {
     count += std::count_if(BtmSecurity::Get().device_records_.begin(),

@@ -300,11 +300,10 @@ protected:
 
   virtual void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
-            true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config(true);
+    set_com_android_bluetooth_flags_leaudio_fix_allocation_in_codec_config(true);
+    set_com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();

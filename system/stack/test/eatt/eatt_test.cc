@@ -248,7 +248,7 @@ protected:
   }
 
   void TearDown() override {
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_DeregisterLECoc(BT_PSM_EATT)).Times(1);
 

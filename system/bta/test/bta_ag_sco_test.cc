@@ -164,7 +164,7 @@ protected:
       return key == kPropHfpSoftwarePathEnabled ? prop_hfp_software_path_enabled_return_
                                                 : default_value;
     };
-    com::android::bluetooth::flags::provider_->sco_managed_by_audio_remove_hfp_hal(true);
+    set_com_android_bluetooth_flags_sco_managed_by_audio_remove_hfp_hal(true);
 
     sco_managed_by_audio_params = {};
     mock_btm_client_interface.sco.BTM_SetEScoMode = [](enh_esco_params_t* p_params) -> tBTM_STATUS {
@@ -183,7 +183,7 @@ protected:
     mock_offload_.reset();
 
     test::mock::osi_properties::osi_property_get_bool = {};
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     reset_mock_btm_client_interface();
   }

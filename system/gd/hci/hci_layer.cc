@@ -668,7 +668,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
             std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
     auto acl_view = AclView::Create(packet);
 
-    if (com::android::bluetooth::flags::report_vendor_events_from_acl() &&
+    if (com_android_bluetooth_flags_report_vendor_events_from_acl() &&
         module_.impl_->vendor_connection_handle_min_ > 0) {
       log::assert_that(acl_view.IsValid(), "invalid acl packet");
       uint16_t handle = acl_view.GetHandle();

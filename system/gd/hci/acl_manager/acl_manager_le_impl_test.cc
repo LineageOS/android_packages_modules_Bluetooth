@@ -769,7 +769,7 @@ TEST_F(AclManagerTest, acl_packet_dropped_after_timeout) {
   // when flag is disabled the alarm would get postponed and will fire at
   // t=2200ms at which test would have completed execution.
 
-  //we fake the time of 1000ms using fake timerfd.
+  // we fake the time of 1000ms using fake timerfd.
 
   uint16_t handle = 0x123;
   int total_packets = 8, sent_packets = 0;
@@ -832,7 +832,7 @@ TEST_F(AclManagerTest, acl_packet_dropped_after_timeout) {
     received_count++;
   }
 
-  if (com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+  if (com_android_bluetooth_flags_discard_unknown_acl_packet()) {
     ASSERT_EQ(received_count, total_packets - 1);
   } else {
     // No packets are rejected because just alarm is rescheduled as per old behaviour and when after

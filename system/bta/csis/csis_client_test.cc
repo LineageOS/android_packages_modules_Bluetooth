@@ -419,10 +419,9 @@ protected:
   void SetUp(void) override {
     reset_mock_function_count_map();
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->csis_quirk_for_single_device_with_sirk_all_zeros(
-            true);
-    com::android::bluetooth::flags::provider_->leaudio_csis_handle_misconfigured_sets(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_csis_quirk_for_single_device_with_sirk_all_zeros(true);
+    set_com_android_bluetooth_flags_leaudio_csis_handle_misconfigured_sets(true);
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     dm::SetMockBtaDmInterface(&dm_interface);
     gatt::SetMockBtaGattInterface(&gatt_interface);

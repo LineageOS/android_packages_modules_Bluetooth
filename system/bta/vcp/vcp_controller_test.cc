@@ -442,9 +442,9 @@ protected:
 
   void SetUp(void) override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
-    com::android::bluetooth::flags::provider_->vcp_skip_redundant_operation_writes(true);
+    set_com_android_bluetooth_flags_vcp_skip_redundant_operation_writes(true);
 
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     MockDeviceGroups::SetMockInstanceForTesting(&mock_groups_module_);

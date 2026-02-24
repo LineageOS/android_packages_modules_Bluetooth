@@ -321,7 +321,7 @@ protected:
   }
 
   void TearDown() override {
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
     iso_manager_->Stop();
     mock_iso_manager_ = nullptr;
     Mock::VerifyAndClearExpectations(sm_callbacks_.get());

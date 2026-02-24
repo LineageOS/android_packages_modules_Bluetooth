@@ -819,7 +819,7 @@ struct shim::Acl::impl {
     }
 
 #ifndef TARGET_FLOSS
-    if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+    if (!com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
       // Since this is a suspend disconnect, we immediately also call
       // |OnClassicSuspendInitiatedDisconnect| without waiting for it to happen.
       // We want the stack to clean up ahead of the link layer (since we will mask
@@ -855,7 +855,7 @@ struct shim::Acl::impl {
     }
 
 #ifndef TARGET_FLOSS
-    if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+    if (!com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
       // Since this is a suspend disconnect, we immediately also call
       // |OnLeSuspendInitiatedDisconnect| without waiting for it to happen. We
       // want the stack to clean up ahead of the link layer (since we will mask

@@ -266,7 +266,7 @@ static void sdp_update_service_db_state() {
   uint8_t db_state_buf[4] = {};
   uint8_t* db_state_ptr = db_state_buf;
 
-  if (!com::android::bluetooth::flags::enable_service_discovery_server() ||
+  if (!com_android_bluetooth_flags_enable_service_discovery_server() ||
       !sdp_cb.server_db.service_disc_server_info.has_value()) {
     return;
   }
@@ -434,7 +434,7 @@ bool SDP_DeleteRecord(uint32_t handle) {
     /* require new DI record to be created in SDP_SetLocalDiRecord */
     sdp_cb.server_db.di_primary_handle = 0;
 
-    if (com::android::bluetooth::flags::enable_service_discovery_server()) {
+    if (com_android_bluetooth_flags_enable_service_discovery_server()) {
       sdp_cb.server_db.service_disc_server_info.reset();
     }
 
@@ -466,7 +466,7 @@ bool SDP_DeleteRecord(uint32_t handle) {
       sdp_cb.server_db.di_primary_handle = 0;
     }
 
-    if (com::android::bluetooth::flags::enable_service_discovery_server()) {
+    if (com_android_bluetooth_flags_enable_service_discovery_server()) {
       // Check if the record being removed is the service discovery server record itself.
       if (sdp_cb.server_db.service_disc_server_info.has_value() &&
           sdp_cb.server_db.service_disc_server_info->handle == handle) {

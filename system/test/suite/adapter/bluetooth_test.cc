@@ -102,7 +102,7 @@ static bt_callbacks_t callbacks = {
 };
 
 void BluetoothTest::SetUp() {
-  com::android::bluetooth::flags::provider_->reset_flags();
+  com_android_bluetooth_flags_reset_flags();
   android::ProcessState::self()->startThreadPool();
   state_ = BT_STATE_OFF;
   properties_changed_count_ = 0;

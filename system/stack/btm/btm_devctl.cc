@@ -133,7 +133,7 @@ void BTM_reset_complete() {
   l2cu_device_reset();
 
   /* Clear current security state */
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_foreach(BtmSecurity::Get().sec_dev_rec_, set_sec_state_idle, NULL);
   } else {
     BtmSecurity::Get().for_each_dev_rec(set_sec_state_idle, NULL);

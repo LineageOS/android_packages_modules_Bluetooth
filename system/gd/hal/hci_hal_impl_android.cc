@@ -82,7 +82,7 @@ public:
   }
 
   void waitForInitialization() {
-    if (!com::android::bluetooth::flags::threading_remove_management_thread()) {
+    if (!com_android_bluetooth_flags_threading_remove_management_thread()) {
       init_promise_.get_future().wait();
       return;
     }

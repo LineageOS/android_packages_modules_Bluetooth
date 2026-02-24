@@ -205,7 +205,7 @@ static bool is_sec_state_equal(void* data, void* context) {
  *
  ******************************************************************************/
 static BtmDevice* btm_sec_find_dev_by_sec_state(tSECURITY_STATE state) {
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_node_t* n = list_foreach(BtmSecurity::Get().sec_dev_rec_, is_sec_state_equal, &state);
     if (n) {
       return static_cast<BtmDevice*>(list_node(n));
@@ -982,7 +982,7 @@ tBTM_STATUS btm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transpor
   tSECURITY_STATE& state = (transport == BT_TRANSPORT_LE) ? p_device->sec_rec.le_link
                                                           : p_device->sec_rec.classic_link;
 
-  if (com::android::bluetooth::flags::force_encryption_post_successful_pairing()) {
+  if (com_android_bluetooth_flags_force_encryption_post_successful_pairing()) {
     // Always push the encryption request, so that .callback and .ref will be used while processing
     // btm_sec_check_pending_enc_req() when encryption is completed.
     btm_sec_queue_encrypt_request(bd_addr, transport, sec_act, p_callback, p_ref_data);
@@ -1043,7 +1043,7 @@ tBTM_STATUS btm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transpor
       if (p_callback) {
         log::debug("Executing encryption callback peer:{} transport:{}", bd_addr,
                    bt_transport_text(transport));
-        if (com::android::bluetooth::flags::force_encryption_post_successful_pairing()) {
+        if (com_android_bluetooth_flags_force_encryption_post_successful_pairing()) {
           do_in_main_thread(base::BindOnce(p_callback, bd_addr, transport, p_ref_data, rc));
           break;
         }
@@ -4399,7 +4399,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
   }
   if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
       !p_device->sec_rec.is_device_encrypted() &&
-      com::android::bluetooth::flags::detect_bondloss_legacy_bredr_pairing()) {
+      com_android_bluetooth_flags_detect_bondloss_legacy_bredr_pairing()) {
     log::warn(
             "Remote device is already bonded but it is initiating legacy pairing, marking bond "
             "as lost");

@@ -179,7 +179,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     switch (code) {
       case SubeventCode::CONNECTION_COMPLETE:
       case SubeventCode::ENHANCED_CONNECTION_COMPLETE:
-        if (com::android::bluetooth::flags::resolve_collision_conn_discon()) {
+        if (com_android_bluetooth_flags_resolve_collision_conn_discon()) {
           uint16_t handle = kIllegalConnectionHandle;
           if (code == SubeventCode::CONNECTION_COMPLETE) {
             auto connection_complete = LeConnectionCompleteView::Create(event_packet);
@@ -596,7 +596,7 @@ public:
                                                 common::Unretained(le_client_callbacks_),
                                                 remote_address, std::move(connection)));
     }
-    if (com::android::bluetooth::flags::rotate_address_when_connected() &&
+    if (com_android_bluetooth_flags_rotate_address_when_connected() &&
         le_address_manager_->RotatingAddress() && !controller_.IsRpaGenerationSupported() &&
         role == hci::Role::CENTRAL) {
       le_address_manager_->PrepareToRotateAddress();
@@ -661,7 +661,7 @@ public:
     }
 
     // Check & process if there is any pending connection_complete event for this handle.
-    if (com::android::bluetooth::flags::resolve_collision_conn_discon()) {
+    if (com_android_bluetooth_flags_resolve_collision_conn_discon()) {
       auto it = pending_connection_complete_events_.find(handle);
       if (it != pending_connection_complete_events_.end()) {
         LeMetaEventView event_view = std::move(it->second);
@@ -809,7 +809,7 @@ public:
     }
     direct_connections_.insert(address_with_type);
 
-    if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    if (!com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
       auto emplace_result = create_connection_timeout_alarms_.emplace(
               std::piecewise_construct,
               std::forward_as_tuple(address_with_type.GetAddress(),
@@ -826,7 +826,7 @@ public:
 
   void direct_connect_remove(AddressWithType address_with_type) {
     log::debug("{}", address_with_type);
-    if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    if (!com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
       auto it = create_connection_timeout_alarms_.find(address_with_type);
       if (it != create_connection_timeout_alarms_.end()) {
         it->second.Cancel();
@@ -836,7 +836,7 @@ public:
     direct_connections_.erase(address_with_type);
     relaxed_direct_connections_.erase(address_with_type);
 
-    if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+    if (com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
       if (background_connections_.contains(address_with_type)) {
         disarm_connectability();
       } else {
@@ -1469,7 +1469,7 @@ public:
   }
 
   void set_system_suspend_state(bool suspended, std::promise<void> promise) {
-    if (!com::android::bluetooth::flags::resolve_collision_conn_discon()) {
+    if (!com_android_bluetooth_flags_resolve_collision_conn_discon()) {
       system_suspend_ = suspended;
       promise.set_value();
       return;
