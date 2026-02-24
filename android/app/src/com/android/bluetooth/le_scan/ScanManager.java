@@ -577,9 +577,7 @@ public class ScanManager {
             return;
         }
 
-        if (Flags.adapterSuspendMgmt()
-                && Flags.stopLeScanSystemSuspend()
-                && mScanController.isSystemSuspended()) {
+        if (mScanController.isSystemSuspended()) {
             Log.w(
                     TAG,
                     "Cannot start LE scan in system-suspend."

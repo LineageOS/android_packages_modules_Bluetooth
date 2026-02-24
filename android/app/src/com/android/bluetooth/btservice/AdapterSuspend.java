@@ -242,7 +242,7 @@ public class AdapterSuspend {
             }
         }
 
-        if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
+        if (mStopLeScanOnSuspend) {
             final var scanController = mAdapterService.getBluetoothScanController();
             if (scanController != null) {
                 scanController.doOnScanThread(
@@ -315,7 +315,7 @@ public class AdapterSuspend {
             }
         }
 
-        if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
+        if (mStopLeScanOnSuspend) {
             final var scanController = mAdapterService.getBluetoothScanController();
             if (scanController != null) {
                 scanController.doOnScanThread(
