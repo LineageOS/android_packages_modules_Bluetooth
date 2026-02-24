@@ -151,8 +151,6 @@ class BluetoothManagerServiceNew(
 
     fun isBleScanAvailable(): Boolean = false
 
-    fun isHearingAidProfileSupported(): Boolean = false
-
     fun enable(reason: Int, packageName: String): Boolean = false
 
     fun enableBle(packageName: String, token: IBinder): Boolean = false

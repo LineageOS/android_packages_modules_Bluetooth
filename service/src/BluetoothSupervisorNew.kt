@@ -169,9 +169,6 @@ class BluetoothSupervisorNew(
 
         override fun isBleScanAvailable(): Boolean = withBms(false) { isBleScanAvailable() }
 
-        override fun isHearingAidProfileSupported(): Boolean =
-            withBms(false) { isHearingAidProfileSupported() }
-
         override fun enable(reason: Int, packageName: String): Boolean =
             withBms(false) { enable(reason, packageName) }
 
