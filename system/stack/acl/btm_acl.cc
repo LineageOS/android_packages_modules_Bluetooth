@@ -557,7 +557,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
   };
 
-  if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
+  if (pwr_mode == BTM_PM_MD_SNIFF) {
     if (!BTM_SetLinkPolicyActiveMode(p_acl->link_spec.addrt.bda)) {
       log::warn("Unable to set link policy active before attempting switch");
       return tBTM_STATUS::BTM_WRONG_MODE;
@@ -661,10 +661,6 @@ static void sanitize_link_policy(LinkPolicy& link_policy) {
   if (link_policy.sniff_mode && (!bluetooth::shim::GetController()->SupportsSniffMode())) {
     link_policy.sniff_mode = false;
     log::info("Sniff not supported (link policy: {})", link_policy);
-  }
-  if (link_policy.park_mode) {
-    link_policy.park_mode = false;
-    log::info("Park mode is deprecated (link policy: {})", link_policy);
   }
 }
 

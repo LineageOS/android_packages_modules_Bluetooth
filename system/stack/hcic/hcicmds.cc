@@ -216,14 +216,6 @@
 #define HCI_SNIFF_MODE_TIMEOUT_OFF 8
 /* Sniff Mode */
 
-/* Park Mode */
-#define HCIC_PARAM_SIZE_PARK_MODE 6
-
-#define HCI_PARK_MODE_HANDLE_OFF 0
-#define HCI_PARK_MODE_MAX_PER_OFF 2
-#define HCI_PARK_MODE_MIN_PER_OFF 4
-/* Park Mode */
-
 /* QoS Setup */
 #define HCIC_PARAM_SIZE_QOS_SETUP 20
 
@@ -803,39 +795,6 @@ void btsnd_hcic_exit_sniff_mode(uint16_t handle) {
   p->offset = 0;
 
   UINT16_TO_STREAM(pp, HCI_EXIT_SNIFF_MODE);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CMD_HANDLE);
-
-  UINT16_TO_STREAM(pp, handle);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-void btsnd_hcic_park_mode(uint16_t handle, uint16_t beacon_max_interval,
-                          uint16_t beacon_min_interval) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_PARK_MODE;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_PARK_MODE);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_PARK_MODE);
-
-  UINT16_TO_STREAM(pp, handle);
-  UINT16_TO_STREAM(pp, beacon_max_interval);
-  UINT16_TO_STREAM(pp, beacon_min_interval);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-void btsnd_hcic_exit_park_mode(uint16_t handle) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_CMD_HANDLE;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_EXIT_PARK_MODE);
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CMD_HANDLE);
 
   UINT16_TO_STREAM(pp, handle);

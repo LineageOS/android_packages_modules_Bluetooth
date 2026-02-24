@@ -292,7 +292,7 @@ TEST_F(StackBtmTest, sco_state_text) {
           std::make_pair(SCO_ST_CONNECTING, "SCO_ST_CONNECTING"),
           std::make_pair(SCO_ST_CONNECTED, "SCO_ST_CONNECTED"),
           std::make_pair(SCO_ST_DISCONNECTING, "SCO_ST_DISCONNECTING"),
-          std::make_pair(SCO_ST_PEND_UNPARK, "SCO_ST_PEND_UNPARK"),
+          std::make_pair(SCO_ST_PEND_UNSNIFF, "SCO_ST_PEND_UNSNIFF"),
           std::make_pair(SCO_ST_PEND_ROLECHANGE, "SCO_ST_PEND_ROLECHANGE"),
           std::make_pair(SCO_ST_PEND_MODECHANGE, "SCO_ST_PEND_MODECHANGE"),
   };

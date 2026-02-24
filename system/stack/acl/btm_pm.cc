@@ -19,8 +19,7 @@
 /*****************************************************************************
  *
  *  This file contains functions that manages ACL link modes.
- *  This includes operations such as active, hold,
- *  park and sniff modes.
+ *  This includes operations such as active, hold and sniff modes.
  *
  *  This module contains both internal and external (API)
  *  functions. External (API) functions are distinguishable
@@ -78,18 +77,16 @@ constexpr char kBtmLogTag[] = "ACL";
 /*****************************************************************************/
 /*      to handle different modes                                            */
 /*****************************************************************************/
-#define BTM_PM_NUM_SET_MODES 3 /* only hold, sniff & park */
+#define BTM_PM_NUM_SET_MODES 2 /* only hold & sniff */
 
 #define BTM_PM_GET_MD1 1
 #define BTM_PM_GET_MD2 2
 #define BTM_PM_GET_COMP 3
 
 const uint8_t btm_pm_md_comp_matrix[BTM_PM_NUM_SET_MODES * BTM_PM_NUM_SET_MODES] = {
-        BTM_PM_GET_COMP, BTM_PM_GET_MD2,  BTM_PM_GET_MD2,
+        BTM_PM_GET_COMP, BTM_PM_GET_MD2,
 
-        BTM_PM_GET_MD1,  BTM_PM_GET_COMP, BTM_PM_GET_MD1,
-
-        BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
+        BTM_PM_GET_MD1, BTM_PM_GET_COMP};
 
 static void send_sniff_subrating(uint16_t handle, const RawAddress& addr, uint16_t max_lat,
                                  uint16_t min_rmt_to, uint16_t min_loc_to) {
@@ -210,7 +207,6 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     auto controller = bluetooth::shim::GetController();
     if ((mode == BTM_PM_MD_HOLD && !controller->SupportsHoldMode()) ||
         (mode == BTM_PM_MD_SNIFF && !controller->SupportsSniffMode()) ||
-        (mode == BTM_PM_MD_PARK && !controller->SupportsParkMode()) ||
         interop_match_addr(INTEROP_DISABLE_SNIFF, remote_bda)) {
       log::error("pm_id {} mode {} is not supported for {}", pm_id, mode, remote_bda);
       return tBTM_STATUS::BTM_MODE_UNSUPPORTED;
@@ -560,10 +556,6 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id, int link_in
           btsnd_hcic_exit_sniff_mode(handle);
           pm_pend_link = handle;
           break;
-        case BTM_PM_MD_PARK:
-          btsnd_hcic_exit_park_mode(handle);
-          pm_pend_link = handle;
-          break;
         default:
           /* Failure pm_pend_link = MAX_L2CAP_LINKS */
           break;
@@ -580,10 +572,6 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id, int link_in
       pm_pend_link = handle;
       break;
 
-    case BTM_PM_MD_PARK:
-      btsnd_hcic_park_mode(handle, md_res.max, md_res.min);
-      pm_pend_link = handle;
-      break;
     default:
       /* Failure pm_pend_link = MAX_L2CAP_LINKS */
       break;
@@ -671,8 +659,7 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
  *
  * Input Parms      hci_status - status of the event (HCI_SUCCESS if no errors)
  *                  hci_handle - connection handle associated with the change
- *                  mode - HCI_MODE_ACTIVE, HCI_MODE_HOLD, HCI_MODE_SNIFF, or
- *                         HCI_MODE_PARK
+ *                  mode - HCI_MODE_ACTIVE, HCI_MODE_HOLD, HCI_MODE_SNIFF
  *                  interval - number of baseband slots (meaning depends on
  *                                                       mode)
  *
@@ -877,6 +864,6 @@ uint32_t BTM_PM_ReadBleScanDutyCycle(void) {
 
 void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle, tHCI_MODE current_mode,
                            uint16_t interval) {
-  btm_sco_chk_pend_unpark(status, handle);
+  btm_sco_chk_pend_unsniff(status, handle);
   btm_pm_proc_mode_change(status, handle, current_mode, interval);
 }

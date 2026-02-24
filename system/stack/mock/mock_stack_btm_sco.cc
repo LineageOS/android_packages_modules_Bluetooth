@@ -58,7 +58,7 @@ void BTM_EScoConnRsp(uint16_t /* sco_inx */, tHCI_STATUS /* hci_status */,
 void BTM_RemoveScoByBdaddr(const RawAddress& /* bd_addr */) { inc_func_call_count(__func__); }
 void btm_sco_acl_removed(const RawAddress* /* bda */) { inc_func_call_count(__func__); }
 void btm_sco_chk_pend_rolechange(uint16_t /* hci_handle */) { inc_func_call_count(__func__); }
-void btm_sco_chk_pend_unpark(tHCI_STATUS /* hci_status */, uint16_t /* hci_handle */) {
+void btm_sco_chk_pend_unsniff(tHCI_STATUS /* hci_status */, uint16_t /* hci_handle */) {
   inc_func_call_count(__func__);
 }
 void btm_sco_conn_req(const RawAddress& /* bda */, const DEV_CLASS& /* dev_class */,
