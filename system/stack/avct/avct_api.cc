@@ -37,7 +37,6 @@
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/avct/avct_int.h"
-#include "stack/include/avct_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_interface.h"
@@ -141,49 +140,51 @@ void AVCT_Deregister(void) {
  *
  ******************************************************************************/
 uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc, const RawAddress& peer_addr) {
-  uint16_t result = AVCT_SUCCESS;
-  tAVCT_CCB* p_ccb;
-  tAVCT_LCB* p_lcb;
+  if (p_handle == nullptr || p_cc == nullptr) {
+    return AVCT_RESULT_FAIL;
+  }
 
-  log::verbose("AVCT_CreateConn:{}, control:0x{:x}", avct_role_text(p_cc->role), p_cc->control);
+  log::verbose("AVCT_CreateConn:{}, control:0x{:x} peer:{}", avct_role_text(p_cc->role),
+               p_cc->control, peer_addr);
 
   /* Allocate ccb; if no ccbs, return failure */
-  p_ccb = avct_ccb_alloc(p_cc);
-  if (p_ccb == NULL) {
-    result = AVCT_NO_RESOURCES;
-  } else {
-    /* get handle */
-    *p_handle = avct_ccb_to_idx(p_ccb);
-
-    /* if initiator connection */
-    if (p_cc->role == AVCT_ROLE_INITIATOR) {
-      /* find link; if none allocate a new one */
-      p_lcb = avct_lcb_by_bd(peer_addr);
-      if (p_lcb == NULL) {
-        p_lcb = avct_lcb_alloc(peer_addr);
-        if (p_lcb == NULL) {
-          /* no link resources; free ccb as well */
-          avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, NULL);
-          result = AVCT_NO_RESOURCES;
-        }
-      } else if (avct_lcb_has_pid(p_lcb, p_cc->pid)) {
-        /* check if PID already in use */
-        avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, NULL);
-        result = AVCT_PID_IN_USE;
-      }
-
-      if (result == AVCT_SUCCESS) {
-        /* bind lcb to ccb */
-        p_ccb->p_lcb = p_lcb;
-        log::verbose("ch_state:{}", avct_ch_state_text(p_lcb->ch_state));
-        tAVCT_LCB_EVT avct_lcb_evt = {
-                .p_ccb = p_ccb,
-        };
-        avct_lcb_event(p_lcb, AVCT_LCB_UL_BIND_EVT, &avct_lcb_evt);
-      }
-    }
+  tAVCT_CCB* p_ccb = avct_ccb_alloc(p_cc);
+  if (p_ccb == nullptr) {
+    return AVCT_NO_RESOURCES;
   }
-  return result;
+
+  /* get handle */
+  *p_handle = avct_ccb_to_idx(p_ccb);
+
+  /* if acceptor connection, we are done */
+  if (p_cc->role != AVCT_ROLE_INITIATOR) {
+    return AVCT_SUCCESS;
+  }
+
+  /* find link; if none allocate a new one */
+  tAVCT_LCB* p_lcb = avct_lcb_by_bd(peer_addr);
+  if (p_lcb == nullptr) {
+    p_lcb = avct_lcb_alloc(peer_addr);
+    if (p_lcb == nullptr) {
+      /* no link resources; free ccb as well */
+      avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, nullptr);
+      return AVCT_NO_RESOURCES;
+    }
+  } else if (avct_lcb_has_pid(p_lcb, p_cc->pid)) {
+    /* check if PID already in use */
+    avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, nullptr);
+    return AVCT_PID_IN_USE;
+  }
+
+  /* bind lcb to ccb */
+  p_ccb->p_lcb = p_lcb;
+  log::verbose("ch_state:{}", avct_ch_state_text(p_lcb->ch_state));
+  tAVCT_LCB_EVT avct_lcb_evt = {
+          .p_ccb = p_ccb,
+  };
+  avct_lcb_event(p_lcb, AVCT_LCB_UL_BIND_EVT, &avct_lcb_evt);
+
+  return AVCT_SUCCESS;
 }
 
 /*******************************************************************************
