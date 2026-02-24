@@ -141,6 +141,21 @@ struct leConnectionUpdate {
 };
 extern struct leConnectionUpdate leConnectionUpdate;
 
+// Name: leConnectionSetPhy
+// Params: const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys, uint16_t phy_options
+// Return: void
+struct leConnectionSetPhy {
+  std::function<void(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                     uint16_t phy_options)>
+          body{[](const RawAddress& /* bd_addr */, uint8_t /* tx_phys */, uint8_t /* rx_phys */,
+                  uint16_t /* phy_options */) {}};
+  void operator()(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                  uint16_t phy_options) {
+    body(bd_addr, tx_phys, rx_phys, phy_options);
+  }
+};
+extern struct leConnectionSetPhy leConnectionSetPhy;
+
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test

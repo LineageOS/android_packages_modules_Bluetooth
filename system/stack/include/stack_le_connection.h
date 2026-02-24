@@ -141,4 +141,15 @@ void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16
                         uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
                         uint16_t max_ce_len);
 
+/**
+ * To set PHY preferences for specified LE connection
+ *
+ * @param bd_addr remote device address
+ * @param tx_phys preferred transmit PHYs
+ * @param rx_phys preferred receive PHYs
+ * @param phy_options PHY options
+ */
+void leConnectionSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                        uint16_t phy_options);
+
 }  // namespace bluetooth::stack

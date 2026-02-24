@@ -26,16 +26,22 @@
 
 #include <string>
 
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
+#include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "stack/arbiter/acl_arbiter.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/acl_api.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btu_hcif.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_interface.h"
 
 using namespace bluetooth;
@@ -289,6 +295,52 @@ void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16
     get_btm_client_interface().ble.BTM_BleSetPrefConnParams(bd_addr, min_interval, max_interval,
                                                             latency, timeout);
   }
+}
+
+void leConnectionSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                        uint16_t phy_options) {
+  if (!get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+    log::info(
+            "Unable to set phy preferences because no le acl is connected to "
+            "device");
+    return;
+  }
+
+  uint8_t all_phys = 0;
+  if (tx_phys == 0) {
+    all_phys &= 0x01;
+  }
+  if (rx_phys == 0) {
+    all_phys &= 0x02;
+  }
+
+  uint16_t handle = get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
+
+  // checking if local controller supports it!
+  if (!bluetooth::shim::GetController()->SupportsBle2mPhy() &&
+      !bluetooth::shim::GetController()->SupportsBleCodedPhy()) {
+    log::info("Local controller unable to support setting of le phy parameters");
+    gatt_notify_phy_updated(static_cast<tHCI_STATUS>(GATT_REQ_NOT_SUPPORTED), handle, tx_phys,
+                            rx_phys);
+    return;
+  }
+
+  if (!acl_peer_supports_ble_2m_phy(handle) && !acl_peer_supports_ble_coded_phy(handle)) {
+    log::info("Remote device unable to support setting of le phy parameter");
+    gatt_notify_phy_updated(static_cast<tHCI_STATUS>(GATT_REQ_NOT_SUPPORTED), handle, tx_phys,
+                            rx_phys);
+    return;
+  }
+
+  constexpr uint8_t kLen = HCIC_PARAM_SIZE_BLE_SET_PHY;
+  uint8_t data[kLen];
+  uint8_t* pp = data;
+  UINT16_TO_STREAM(pp, handle);
+  UINT8_TO_STREAM(pp, all_phys);
+  UINT8_TO_STREAM(pp, tx_phys);
+  UINT8_TO_STREAM(pp, rx_phys);
+  UINT16_TO_STREAM(pp, phy_options);
+  btu_hcif_send_cmd_with_cb(HCI_BLE_SET_PHY, data, kLen, base::BindOnce([](uint8_t*, uint16_t) {}));
 }
 
 }  // namespace bluetooth::stack

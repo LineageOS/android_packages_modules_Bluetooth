@@ -80,6 +80,7 @@
 #include "stack/include/l2cap_types.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/profiles_api.h"
+#include "stack/include/stack_le_connection.h"
 
 namespace bluetooth::asha {
 
@@ -585,7 +586,7 @@ public:
 
     if (bluetooth::shim::GetController()->SupportsBle2mPhy()) {
       log::info("{} set preferred 2M PHY", address);
-      get_btm_client_interface().ble.BTM_BleSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
+      stack::leConnectionSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
     }
 
     // Set data length
@@ -768,7 +769,7 @@ public:
               "phy update successful with unexpected phys, retrying:"
               " conn_id={:#x} tx_phy=0x{:x} rx_phy=0x{:x}",
               conn_id, tx_phys, rx_phys);
-      get_btm_client_interface().ble.BTM_BleSetPhy(hearingDevice->address, PHY_LE_2M, PHY_LE_2M, 0);
+      stack::leConnectionSetPhy(hearingDevice->address, PHY_LE_2M, PHY_LE_2M, 0);
       hearingDevice->phy_update_retry_remain--;
     } else {
       log::warn(

@@ -329,19 +329,6 @@ void BTM_BleReadPhy(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_BleSetPhy
- *
- * Description      To set PHY preferences for specified LE connection
- *
- *
- * Returns          tBTM_STATUS::BTM_SUCCESS if success; otherwise failed.
- *
- ******************************************************************************/
-void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
-                   uint16_t phy_options);
-
-/*******************************************************************************
- *
  * Function         btm_ble_get_acl_remote_addr
  *
  * Description      This function reads the active remote address used for the

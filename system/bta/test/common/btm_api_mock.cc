@@ -52,10 +52,6 @@ void bluetooth::manager::SetMockBtmInterface(MockBtmInterface* mock_btm_interfac
                                                          tBT_TRANSPORT transport) {
     btm_interface->RequestPeerSCA(bd_addr, transport);
   };
-  mock_btm_client_interface.ble.BTM_BleSetPhy = [](const RawAddress& bd_addr, uint8_t tx_phys,
-                                                   uint8_t rx_phys, uint16_t phy_options) {
-    btm_interface->BleSetPhy(bd_addr, tx_phys, rx_phys, phy_options);
-  };
   mock_btm_client_interface.peer.BTM_IsAclConnectionUp = [](const RawAddress& remote_bda,
                                                             tBT_TRANSPORT transport) {
     return btm_interface->BTM_IsAclConnectionUp(remote_bda, transport);
