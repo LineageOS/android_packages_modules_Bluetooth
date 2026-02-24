@@ -47,7 +47,7 @@ class BluetoothManagerServiceNew(
     private var isBootCompleted: Boolean,
 ) {
     private val contentResolver = context.contentResolver
-    private val state = State.OFF
+    private val state = BluetoothAdapterState()
 
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
 
@@ -92,7 +92,7 @@ class BluetoothManagerServiceNew(
     }
 
     // API Delegate methods
-    fun getState(): Int = state
+    fun getState(): Int = state.get()
 
     fun waitForState(state: Int): Boolean = false
 
@@ -109,7 +109,7 @@ class BluetoothManagerServiceNew(
         if (validatedName == localName) {
             return
         }
-        if (state != State.OFF) {
+        if (!state.oneOf(State.OFF)) {
             throw NotImplementedError("setName when Bluetooth is ON") // TODO
         }
         persistentStorageForLocalName(validatedName)

@@ -23,10 +23,13 @@ import android.os.UserHandle
 import android.provider.Settings.Global
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.truth.content.IntentSubject.assertThat
+import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.BluetoothManagerServiceNew
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -105,5 +108,19 @@ class BluetoothManagerServiceTest {
         // reboot
         m = BluetoothManagerServiceNew(userContext, looper, user, false)
         assertThat(m.getName()).isEqualTo(defaultName)
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            BluetoothAdapterState.disableCacheForTesting = true
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            BluetoothAdapterState.disableCacheForTesting = false
+        }
     }
 }

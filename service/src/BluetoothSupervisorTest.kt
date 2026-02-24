@@ -21,6 +21,7 @@ import android.app.Application
 import android.os.Looper
 import android.os.UserHandle
 import androidx.test.core.app.ApplicationProvider
+import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.BluetoothSupervisorNew
 import com.google.common.truth.Truth.assertThat
 import java.io.PrintWriter
@@ -28,7 +29,9 @@ import java.io.StringWriter
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -145,5 +148,19 @@ class BluetoothSupervisorTest {
         supervisor.onUserSwitching(user3)
 
         verifyActiveUser(user3)
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            BluetoothAdapterState.disableCacheForTesting = true
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            BluetoothAdapterState.disableCacheForTesting = false
+        }
     }
 }
