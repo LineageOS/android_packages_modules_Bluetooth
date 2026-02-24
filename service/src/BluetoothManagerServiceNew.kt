@@ -44,6 +44,7 @@ class BluetoothManagerServiceNew(
     private val context: Context,
     private val looper: Looper,
     private val userHandle: UserHandle,
+    private val bluetoothComponent: BluetoothComponent,
     private var isBootCompleted: Boolean,
 ) {
     private val contentResolver = context.contentResolver

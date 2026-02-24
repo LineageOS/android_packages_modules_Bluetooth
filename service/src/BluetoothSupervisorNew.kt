@@ -117,6 +117,7 @@ class BluetoothSupervisorNew(
                 context.createContextAsUser(pendingUser!!, 0),
                 looper,
                 pendingUser!!,
+                bluetoothComponent,
                 isBootCompleted,
             )
         currentUser = pendingUser

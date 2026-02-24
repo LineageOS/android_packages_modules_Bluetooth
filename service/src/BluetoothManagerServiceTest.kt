@@ -42,45 +42,47 @@ class BluetoothManagerServiceTest {
     private val context = ApplicationProvider.getApplicationContext<Application>()
     private val looper = Looper.getMainLooper()
 
-    private lateinit var managerService: BluetoothManagerServiceNew
     private val user = UserHandle.of(10)
     private val userContext = context.createContextAsUser(user, 0)
+
+    private fun createBms() =
+        BluetoothManagerServiceNew(userContext, looper, user, BluetoothComponentTest.setup(), false)
 
     @Test
     fun initialize_fetchProperName() = runTest {
         ShadowSystemProperties.override("ro.product.model", "")
-        var m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        var m = createBms()
         assertThat(m.getName()).isEqualTo("Android")
 
         ShadowSystemProperties.override("ro.product.model", "product_model")
-        m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        m = createBms()
         assertThat(m.getName()).isEqualTo("product_model")
 
         Global.putString(context.contentResolver, Global.DEVICE_NAME, "global_name")
-        m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        m = createBms()
         assertThat(m.getName()).isEqualTo("global_name")
 
         ShadowSystemProperties.override("bluetooth.device.default_name", "bluetooth_default_name")
-        m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        m = createBms()
         assertThat(m.getName()).isEqualTo("bluetooth_default_name")
     }
 
     @Test
     fun setName_thenReboot() = runTest {
         val name = "What a wonderful name"
-        var m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        var m = createBms()
         m.setName(name)
         assertThat(m.getName()).isEqualTo(name)
 
         // reboot
-        m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        m = createBms()
         assertThat(m.getName()).isEqualTo(name)
     }
 
     @Test
     fun setNameTwice_onlySentIntentOnce() = runTest {
         val name = "What a wonderful name"
-        var m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        var m = createBms()
         m.setName(name)
         m.setName(name)
         assertThat(m.getName()).isEqualTo(name)
@@ -97,7 +99,7 @@ class BluetoothManagerServiceTest {
     fun resetName_useDefault() = runTest {
         val defaultName = "bluetooth_default_name"
         val name = "What a wonderful name"
-        var m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        var m = createBms()
         m.setName(name)
         assertThat(m.getName()).isEqualTo(name)
 
@@ -106,7 +108,7 @@ class BluetoothManagerServiceTest {
         assertThat(m.getName()).isEqualTo(defaultName)
 
         // reboot
-        m = BluetoothManagerServiceNew(userContext, looper, user, false)
+        m = createBms()
         assertThat(m.getName()).isEqualTo(defaultName)
     }
 
