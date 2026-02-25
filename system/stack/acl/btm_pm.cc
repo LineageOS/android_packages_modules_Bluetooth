@@ -33,12 +33,14 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <unordered_map>
 
 #include "device/include/interop.h"
 #include "hci/controller.h"
+#include "hci/le_scanning_manager.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -855,20 +857,36 @@ uint8_t BTM_PM_ReadBleLinkCount(void) {
  *
  ******************************************************************************/
 uint32_t BTM_PM_ReadBleScanDutyCycle(void) {
-  if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) {
+  auto le_scanning_manager = bluetooth::shim::GetScanning();
+  if (!com_android_bluetooth_flags_migrate_btm_scan_to_gd() &&
+      !btm_cb.ble_ctr_cb.is_ble_scan_active()) {
+    return 0;
+  } else if (!le_scanning_manager->IsScanActive()) {
     return 0;
   }
   uint32_t duty_cycle_1m = 0;
   uint32_t duty_cycle_coded = 0;
-  if (btm_cb.ble_ctr_cb.inq_var.is_1m_phy_configured()) {
+  if (!com_android_bluetooth_flags_migrate_btm_scan_to_gd() &&
+      btm_cb.ble_ctr_cb.inq_var.is_1m_phy_configured()) {
     uint32_t scan_window = btm_cb.ble_ctr_cb.inq_var.scan_window_1m;
     uint32_t scan_interval = btm_cb.ble_ctr_cb.inq_var.scan_interval_1m;
     log::debug("LE 1m scan_window:{} scan interval:{}", scan_window, scan_interval);
     duty_cycle_1m = (scan_window * 100) / scan_interval;
+  } else if (le_scanning_manager->Is1mPhyConfigured()) {
+    uint32_t scan_window = le_scanning_manager->GetWindowMs1m();
+    uint32_t scan_interval = le_scanning_manager->GetIntervalMs1m();
+    log::debug("LE 1m scan_window:{} scan interval:{}", scan_window, scan_interval);
+    duty_cycle_1m = (scan_window * 100) / scan_interval;
   }
-  if (btm_cb.ble_ctr_cb.inq_var.is_coded_phy_configured()) {
+  if (!com_android_bluetooth_flags_migrate_btm_scan_to_gd() &&
+      btm_cb.ble_ctr_cb.inq_var.is_coded_phy_configured()) {
     uint32_t scan_window = btm_cb.ble_ctr_cb.inq_var.scan_window_coded;
     uint32_t scan_interval = btm_cb.ble_ctr_cb.inq_var.scan_interval_coded;
+    log::debug("LE coded scan_window:{} scan interval:{}", scan_window, scan_interval);
+    duty_cycle_coded = (scan_window * 100) / scan_interval;
+  } else if (le_scanning_manager->IsCodedPhyConfigured()) {
+    uint32_t scan_window = le_scanning_manager->GetWindowMsCoded();
+    uint32_t scan_interval = le_scanning_manager->GetIntervalMsCoded();
     log::debug("LE coded scan_window:{} scan interval:{}", scan_window, scan_interval);
     duty_cycle_coded = (scan_window * 100) / scan_interval;
   }
