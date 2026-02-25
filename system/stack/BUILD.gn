@@ -136,6 +136,8 @@ source_set("stack") {
     "gatt/gatt_sr.cc",
     "gatt/gatt_sr_hash.cc",
     "gatt/gatt_utils.cc",
+    "gatt/stack_app.cc",
+    "gatt/stack_le_connection.cc",
     "hcic/hciblecmds.cc",
     "hcic/hcicmds.cc",
     "hid/hidd_api.cc",
