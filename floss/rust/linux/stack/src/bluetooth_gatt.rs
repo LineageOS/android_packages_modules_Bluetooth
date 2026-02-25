@@ -3681,9 +3681,6 @@ pub(crate) trait BtifGattScannerCallbacks {
 
 #[btif_callbacks_dispatcher(dispatch_le_scanner_inband_callbacks, GattScannerInbandCallbacks)]
 pub(crate) trait BtifGattScannerInbandCallbacks {
-    #[btif_callback(RegisterCallback)]
-    fn inband_register_callback(&mut self, app_uuid: Uuid, scanner_id: u8, btm_status: u8);
-
     #[btif_callback(StatusCallback)]
     fn inband_status_callback(&mut self, scanner_id: u8, btm_status: u8);
 
@@ -3749,14 +3746,6 @@ pub(crate) trait BtifGattScannerInbandCallbacks {
 }
 
 impl BtifGattScannerInbandCallbacks for BluetoothGatt {
-    #[log_cb_args]
-    fn inband_register_callback(&mut self, app_uuid: Uuid, scanner_id: u8, btm_status: u8) {
-        log::debug!(
-            "Callback received: {:#?}",
-            GattScannerInbandCallbacks::RegisterCallback(app_uuid, scanner_id, btm_status)
-        );
-    }
-
     #[log_cb_args]
     fn inband_status_callback(&mut self, scanner_id: u8, btm_status: u8) {
         log::debug!(
