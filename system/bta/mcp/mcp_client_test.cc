@@ -15,6 +15,8 @@
  */
 
 #include <base/functional/bind.h>
+#include <com_android_bluetooth_flags.h>
+#include <flag_macros.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -30,6 +32,8 @@
 #include "test/common/bta_gatt_queue_mock.h"
 #include "test/common/btm_api_mock.h"
 #include "test/common/mock_functions.h"
+
+#define TEST_BT com::android::bluetooth::flags
 
 using namespace bluetooth;
 using namespace bluetooth::mcp;
@@ -71,6 +75,9 @@ public:
 class McpClientTest : public ::testing::Test {
 public:
   void SetUp() override {
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->leaudio_peripheral_mcp_link_abstraction_layer(true);
+
     reset_mock_function_count_map();
     mock_callbacks_ = std::make_unique<NiceMock<MockMcpClientCallbacks>>();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
@@ -243,7 +250,7 @@ TEST_F(McpClientTest, connect_and_discover_flow) {
 
   EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
   EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
-          .WillOnce(Return(true));
+          .WillRepeatedly(Return(true));
   EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
   SimulateGattConnect(kTestAddress, kTestConnId);
 
@@ -253,6 +260,8 @@ TEST_F(McpClientTest, connect_and_discover_flow) {
 TEST_F(McpClientTest, play_command) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -266,6 +275,8 @@ TEST_F(McpClientTest, play_command) {
 TEST_F(McpClientTest, media_state_notification) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -287,6 +298,8 @@ TEST_F(McpClientTest, media_state_notification) {
 TEST_F(McpClientTest, media_control_point_indication) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -312,6 +325,8 @@ TEST_F(McpClientTest, media_control_point_indication) {
 TEST_F(McpClientTest, playing_order_command) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -325,6 +340,8 @@ TEST_F(McpClientTest, playing_order_command) {
 TEST_F(McpClientTest, playing_order_notification) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -386,6 +403,8 @@ TEST_F(McpClientTest, validation_failed_missing_mandatory_characteristic) {
 TEST_F(McpClientTest, optional_characteristics_missing_success) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
 
@@ -563,6 +582,8 @@ TEST_F(McpClientTest, multiple_services_discovery_and_operation) {
 TEST_F(McpClientTest, playback_speed_command) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -576,6 +597,8 @@ TEST_F(McpClientTest, playback_speed_command) {
 TEST_F(McpClientTest, playback_speed_notification) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -597,6 +620,8 @@ TEST_F(McpClientTest, playback_speed_notification) {
 TEST_F(McpClientTest, seeking_speed_notification) {
   EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
   mcp_client_->Connect(kTestAddress);
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -613,4 +638,75 @@ TEST_F(McpClientTest, seeking_speed_notification) {
   std::copy(value.begin(), value.end(), notify_data.value);
   tBTA_GATTC p_data = {.notify = notify_data};
   (*gatt_callback_)(BTA_GATTC_NOTIF_EVT, &p_data);
+}
+
+TEST_F(McpClientTest, connect_cached_services_before_encryption) {
+  EXPECT_CALL(mock_btm_security_, BTM_IsBonded(kTestAddress, BT_TRANSPORT_LE))
+          .WillOnce(Return(true));
+  mcp_client_->Connect(kTestAddress);
+
+  EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(false));
+  EXPECT_CALL(mock_btm_security_, BTM_SetEncryption(kTestAddress, BT_TRANSPORT_LE, _, _, _))
+          .WillOnce(Return(tBTM_STATUS::BTM_CMD_STARTED));
+
+  SimulateGattConnect(kTestAddress, kTestConnId);
+
+  tBTA_GATTC_SEARCH_CMPL search_cmpl_data;
+  search_cmpl_data.conn_id = kTestConnId;
+  search_cmpl_data.status = GATT_SUCCESS;
+  tBTA_GATTC p_data_search_cmpl = {.search_cmpl = search_cmpl_data};
+
+  fake_services_ = BuildServices({});
+  EXPECT_CALL(gatt_client_interface_, GetServices(kTestConnId)).WillOnce(Return(&fake_services_));
+
+  EXPECT_CALL(*mock_callbacks_, OnDiscovered(kTestAddress));
+  EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, _, _)).Times(0);
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(_, _, _, _)).Times(0);
+
+  (*gatt_callback_)(BTA_GATTC_SEARCH_CMPL_EVT, &p_data_search_cmpl);
+
+  Mock::VerifyAndClearExpectations(&gatt_client_interface_);
+  Mock::VerifyAndClearExpectations(&gatt_queue_mock_);
+
+  EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
+          .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, kTestAddress, kMediaStateHandle));
+  EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, kTestAddress, kMcpHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kTrackChangedHandle));
+  EXPECT_CALL(gatt_client_interface_, RegisterForNotifications(_, kTestAddress, kTrackTitleHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kMediaPlayerNameHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kTrackDurationHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kTrackPositionHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kPlayingOrderHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kOpcodesSupportedHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kPlaybackSpeedHandle));
+  EXPECT_CALL(gatt_client_interface_,
+              RegisterForNotifications(_, kTestAddress, kSeekingSpeedHandle));
+
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kMediaPlayerNameHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kMediaStateHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kOpcodesSupportedHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kTrackTitleHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kTrackDurationHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kTrackPositionHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_,
+              ReadCharacteristic(kTestConnId, kPlayingOrdersSupportedHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kPlayingOrderHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kPlaybackSpeedHandle, _, _));
+  EXPECT_CALL(gatt_queue_mock_, ReadCharacteristic(kTestConnId, kSeekingSpeedHandle, _, _));
+
+  tBTA_GATTC_ENC_CMPL_CB enc_cmpl_data;
+  enc_cmpl_data.remote_bda = kTestAddress;
+  tBTA_GATTC p_data_enc_cmpl = {.enc_cmpl = enc_cmpl_data};
+  (*gatt_callback_)(BTA_GATTC_ENC_CMPL_CB_EVT, &p_data_enc_cmpl);
 }
