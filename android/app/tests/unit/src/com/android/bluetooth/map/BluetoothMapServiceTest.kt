@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,86 +14,79 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.app.AlarmManager
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.telephony.TelephonyManager
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.storage.DatabaseManager
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mockGetSystemService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.Mockito.doReturn;
-
-import android.app.AlarmManager;
-import android.bluetooth.BluetoothDevice;
-import android.content.Context;
-import android.telephony.TelephonyManager;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link BluetoothMapService}. */
+/** Test cases for [BluetoothMapService]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothMapServiceTest {
-    private BluetoothMapService mService = null;
-    private final BluetoothDevice mDevice = getTestDevice(32);
-    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+@RunWith(AndroidJUnit4::class)
+class BluetoothMapServiceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var databaseManager: DatabaseManager
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
+    private val device = getTestDevice(32)
+    private val context = InstrumentationRegistry.getInstrumentation().context
+
+    private lateinit var service: BluetoothMapService
 
     @Before
-    public void setUp() {
-        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mContext.getResources()).when(mAdapterService).getResources();
+    fun setUp() {
+        doReturn(context.packageName).whenever(adapterService).packageName
+        doReturn(context.packageManager).whenever(adapterService).packageManager
+        doReturn(context.resources).whenever(adapterService).resources
 
-        mockGetSystemService(mAdapterService, TelephonyManager.class);
-        mockGetSystemService(mAdapterService, AlarmManager.class);
+        adapterService.mockGetSystemService<TelephonyManager>()
+        adapterService.mockGetSystemService<AlarmManager>()
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
-        mService = new BluetoothMapService(mAdapterService);
-        mService.setAvailable(true);
+        doReturn(databaseManager).whenever(adapterService).databaseManager
+        service = BluetoothMapService(adapterService)
+        service.isAvailable = true
     }
 
     @After
-    public void tearDown() {
-        mService.cleanup();
+    fun tearDown() {
+        service.cleanup()
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates_whenNoDeviceIsConnected_returnsEmptyList() {
-        doReturn(new BluetoothDevice[] {mDevice}).when(mAdapterService).getBondedDevices();
+    fun getDevicesMatchingConnectionStates_whenNoDeviceIsConnected_returnsEmptyList() {
+        doReturn(arrayOf(device)).whenever(adapterService).bondedDevices
 
-        assertThat(mService.getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTED}))
-                .isEmpty();
+        assertThat(service.getDevicesMatchingConnectionStates(intArrayOf(STATE_CONNECTED)))
+            .isEmpty()
     }
 
     @Test
-    public void getNextMasId_isInRange() {
-        int masId = mService.getNextMasId();
-        assertThat(masId).isAtMost(0xff);
-        assertThat(masId).isAtLeast(1);
+    fun getNextMasId_isInRange() {
+        val masId = service.nextMasId
+        assertThat(masId).isAtMost(0xff)
+        assertThat(masId).isAtLeast(1)
     }
 
     @Test
-    public void testDumpDoesNotCrash() {
-        mService.dump(new StringBuilder());
+    fun testDumpDoesNotCrash() {
+        service.dump(StringBuilder())
     }
 }
