@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.13.0-alpha04" type="baseline" client="" dependencies="true" name="" variant="all" version="8.13.0-alpha04">
-
+<issues
+    format="6"
+    by="lint 8.13.0-alpha04"
+    type="baseline"
+    client=""
+    dependencies="true"
+    name=""
+    variant="all"
+    version="8.13.0-alpha04">
     <issue
         id="GestureBackNavigation"
         message="If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
@@ -741,7 +748,7 @@
     <issue
         id="IncorrectRequiresPermissionPropagation"
         message="Method `BluetoothGattServerProxy.getConnectedDevices` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
-        errorLine1="        public List&lt;BluetoothDevice> getConnectedDevices() {"
+        errorLine1="        public List&lt;BluetoothDevice&gt; getConnectedDevices() {"
         errorLine2="                                     ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/mcp/MediaControlGattService.java"
@@ -818,7 +825,7 @@
     <issue
         id="ExportedReceiver"
         message="Exported receiver does not require permission"
-        errorLine1="        &lt;receiver android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.opp.BluetoothOppReceiver&quot; android:exported=&quot;true&quot; android:enabled=&quot;false&quot;>"
+        errorLine1="        &lt;receiver android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.opp.BluetoothOppReceiver&quot; android:exported=&quot;true&quot; android:enabled=&quot;false&quot;&gt;"
         errorLine2="         ~~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/BluetoothLib/android_common_apex36/manifest_fixer/AndroidManifest.xml"
@@ -829,7 +836,7 @@
     <issue
         id="ExportedService"
         message="Exported service does not require permission"
-        errorLine1="        &lt;service android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService&quot; android:enabled=&quot;true&quot; android:exported=&quot;true&quot; android:label=&quot;@string/bluetooth_media_audio_app_name&quot;>"
+        errorLine1="        &lt;service android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService&quot; android:enabled=&quot;true&quot; android:exported=&quot;true&quot; android:label=&quot;@string/bluetooth_media_audio_app_name&quot;&gt;"
         errorLine2="         ~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/BluetoothLib/android_common_apex36/manifest_fixer/AndroidManifest.xml"
@@ -840,7 +847,7 @@
     <issue
         id="ExportedService"
         message="Exported service does not require permission"
-        errorLine1="        &lt;service android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.pbapclient.PbapClientAccountAuthenticatorService&quot; android:enabled=&quot;false&quot; android:exported=&quot;true&quot;>"
+        errorLine1="        &lt;service android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.pbapclient.PbapClientAccountAuthenticatorService&quot; android:enabled=&quot;false&quot; android:exported=&quot;true&quot;&gt;"
         errorLine2="         ~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/BluetoothLib/android_common_apex36/manifest_fixer/AndroidManifest.xml"
@@ -851,7 +858,7 @@
     <issue
         id="ExpiredTargetSdkVersion"
         message="Google Play requires that apps target API level 33 or higher."
-        errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;36&quot; android:targetSdkVersion=&quot;16&quot;/>"
+        errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;36&quot; android:targetSdkVersion=&quot;16&quot;/&gt;"
         errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/BluetoothLib/android_common_apex36/manifest_fixer/AndroidManifest.xml"
@@ -950,7 +957,7 @@
     <issue
         id="StaticFieldLeak"
         message="This `AsyncTask` class should be static or leaks might occur (anonymous android.os.AsyncTask)"
-        errorLine1="        new AsyncTask&lt;Void, Void, Void>() {"
+        errorLine1="        new AsyncTask&lt;Void, Void, Void&gt;() {"
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
@@ -1060,7 +1067,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;جارٍ استلام الملف...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;جارٍ استلام الملف...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
@@ -1071,7 +1078,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Fayl qəbulu edilir...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Fayl qəbulu edilir...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
@@ -1082,7 +1089,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Primanje datoteke...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Primanje datoteke...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-b+sr+Latn/strings.xml"
@@ -1093,7 +1100,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Атрыманне файла...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Атрыманне файла...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
@@ -1104,7 +1111,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Файлът се получава...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Файлът се получава...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
@@ -1115,7 +1122,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;S\&apos;està rebent un fitxer...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;S\&apos;està rebent un fitxer...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
@@ -1126,7 +1133,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Přijímání souboru...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Přijímání souboru...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
@@ -1137,7 +1144,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Datei wird heruntergeladen...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Datei wird heruntergeladen...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
@@ -1148,7 +1155,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Λήψη αρχείου...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Λήψη αρχείου...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
@@ -1159,7 +1166,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Recibiendo archivo...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Recibiendo archivo...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
@@ -1170,7 +1177,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Faili vastuvõtmine ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Faili vastuvõtmine ...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
@@ -1181,7 +1188,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Recibindo ficheiro...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Recibindo ficheiro...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
@@ -1192,7 +1199,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;ફાઇલ પ્રાપ્ત થઈ રહી છે ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;ફાઇલ પ્રાપ્ત થઈ રહી છે ...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gu/strings.xml"
@@ -1203,7 +1210,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Primanje datoteke...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Primanje datoteke...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
@@ -1214,7 +1221,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Fájl fogadása...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Fájl fogadása...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
@@ -1225,7 +1232,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Ֆայլի ստացում...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Ֆայլի ստացում...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
@@ -1236,7 +1243,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;ファイルを受信中...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;ファイルを受信中...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
@@ -1247,7 +1254,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;파일을 수신하는 중...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;파일을 수신하는 중...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
@@ -1258,7 +1265,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;ກຳລັງຮັບເອົາໄຟລ໌...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;ກຳລັງຮັບເອົາໄຟລ໌...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
@@ -1269,7 +1276,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Gaunamas failas...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Gaunamas failas...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
@@ -1280,7 +1287,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Notiek faila saņemšana...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Notiek faila saņemšana...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
@@ -1291,7 +1298,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Примање датотеки...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Примање датотеки...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
@@ -1302,7 +1309,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;फाइल प्राप्त करत आहे...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;फाइल प्राप्त करत आहे...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mr/strings.xml"
@@ -1313,7 +1320,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Menerima fail...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Menerima fail...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
@@ -1324,7 +1331,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Mottar fil ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Mottar fil ...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
@@ -1335,7 +1342,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;फाइल प्राप्त गर्दै...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;फाइल प्राप्त गर्दै...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
@@ -1346,7 +1353,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;A receber ficheiro...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;A receber ficheiro...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
@@ -1357,7 +1364,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Se primește fișierul...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Se primește fișierul...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
@@ -1368,7 +1375,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Получение файла...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Получение файла...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
@@ -1379,7 +1386,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Prebieha prijímanie súboru...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Prebieha prijímanie súboru...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
@@ -1390,7 +1397,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Prejemanje datoteke ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Prejemanje datoteke ...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
@@ -1401,7 +1408,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Примање датотеке...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Примање датотеке...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sr/strings.xml"
@@ -1412,7 +1419,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Tar emot fil ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Tar emot fil ...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
@@ -1423,7 +1430,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Inapokea faili...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Inapokea faili...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
@@ -1434,7 +1441,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;กำลังรับไฟล์...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;กำลังรับไฟล์...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
@@ -1445,7 +1452,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Dosya alınıyor...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Dosya alınıyor...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
@@ -1456,7 +1463,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Отримання файлу...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Отримання файлу...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
@@ -1467,7 +1474,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;正在接收文件...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;正在接收文件...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
@@ -1478,7 +1485,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;>&quot;Yamukela ifayela...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;download_line5&quot; msgid=&quot;4124272066218470715&quot;&gt;&quot;Yamukela ifayela...&quot;&lt;/string&gt;"
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
@@ -1489,7 +1496,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;ፋይል በመላክ ላይ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;ፋይል በመላክ ላይ...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-am/strings.xml"
@@ -1500,7 +1507,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;جارٍ إرسال الملف...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;جارٍ إرسال الملف...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
@@ -1511,7 +1518,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Fayl göndərilir...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Fayl göndərilir...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
@@ -1522,7 +1529,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Slanje datoteke...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Slanje datoteke...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-b+sr+Latn/strings.xml"
@@ -1533,7 +1540,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Адпраўка файла...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Адпраўка файла...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
@@ -1544,7 +1551,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Файлът се изпраща...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Файлът се изпраща...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
@@ -1555,7 +1562,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;ফাইল পাঠানো হচ্ছে...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;ফাইল পাঠানো হচ্ছে...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
@@ -1566,7 +1573,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;S\&apos;està enviant el fitxer...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;S\&apos;està enviant el fitxer...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
@@ -1577,7 +1584,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Odesílání souboru...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Odesílání souboru...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
@@ -1588,7 +1595,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Datei wird gesendet...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Datei wird gesendet...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
@@ -1599,7 +1606,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Αποστολή αρχείου...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Αποστολή αρχείου...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
@@ -1610,7 +1617,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Enviando archivo...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Enviando archivo...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
@@ -1621,7 +1628,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Faili saatmine ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Faili saatmine ...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
@@ -1632,7 +1639,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Envoi de fichier en cours...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Envoi de fichier en cours...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
@@ -1643,7 +1650,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Enviando ficheiro...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Enviando ficheiro...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
@@ -1654,7 +1661,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Slanje datoteke...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Slanje datoteke...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
@@ -1665,7 +1672,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Fájl küldése...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Fájl küldése...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
@@ -1676,7 +1683,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Ֆայլն ուղարկվում է...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Ֆայլն ուղարկվում է...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
@@ -1687,7 +1694,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;ファイルを送信中...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;ファイルを送信中...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
@@ -1698,7 +1705,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;파일을 보내는 중...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;파일을 보내는 중...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
@@ -1709,7 +1716,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;ກຳລັງສົ່ງໄຟລ໌...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;ກຳລັງສົ່ງໄຟລ໌...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
@@ -1720,7 +1727,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Siunčiamas failas...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Siunčiamas failas...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
@@ -1731,7 +1738,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Notiek faila sūtīšana...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Notiek faila sūtīšana...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
@@ -1742,7 +1749,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Испраќање датотека...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Испраќање датотека...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
@@ -1753,7 +1760,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Menghantar fail...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Menghantar fail...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
@@ -1764,7 +1771,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Sender filen ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Sender filen ...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
@@ -1775,7 +1782,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;फाइल पठाउँदै...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;फाइल पठाउँदै...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
@@ -1786,7 +1793,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;A enviar ficheiro...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;A enviar ficheiro...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
@@ -1797,7 +1804,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Se trimite fișierul...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Se trimite fișierul...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
@@ -1808,7 +1815,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Отправка файла...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Отправка файла...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
@@ -1819,7 +1826,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Odosielanie súboru...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Odosielanie súboru...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
@@ -1830,7 +1837,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Pošiljanje datoteke ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Pošiljanje datoteke ...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
@@ -1841,7 +1848,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Слање датотеке...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Слање датотеке...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sr/strings.xml"
@@ -1852,7 +1859,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Skickar fil ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Skickar fil ...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
@@ -1863,7 +1870,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Inatuma faili...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Inatuma faili...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
@@ -1874,7 +1881,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;กำลังส่งไฟล์...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;กำลังส่งไฟล์...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
@@ -1885,7 +1892,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Nagpapadala ng file...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Nagpapadala ng file...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tl/strings.xml"
@@ -1896,7 +1903,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Dosya gönderiliyor...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Dosya gönderiliyor...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
@@ -1907,7 +1914,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Надсил-ня файлу...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Надсил-ня файлу...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
@@ -1918,7 +1925,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;正在发送文件...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;正在发送文件...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
@@ -1929,7 +1936,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;>&quot;Ithumela ifayela...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;upload_line5&quot; msgid=&quot;3477751464103201364&quot;&gt;&quot;Ithumela ifayela...&quot;&lt;/string&gt;"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
@@ -1940,7 +1947,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Lütfən, gözləyin...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Lütfən, gözləyin...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
@@ -1951,7 +1958,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Чакайце...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Чакайце...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
@@ -1962,7 +1969,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;দয়া করে অপেক্ষা করুন...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;দয়া করে অপেক্ষা করুন...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
@@ -1973,7 +1980,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Čekejte prosím...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Čekejte prosím...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
@@ -1984,7 +1991,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Vent...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Vent...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
@@ -1995,7 +2002,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Bitte warten...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Bitte warten...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
@@ -2006,7 +2013,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Περιμένετε...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Περιμένετε...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
@@ -2017,7 +2024,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Por favor, espera...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Por favor, espera...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
@@ -2028,7 +2035,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Por favor, espera...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Por favor, espera...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
@@ -2039,7 +2046,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Veuillez patienter...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Veuillez patienter...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
@@ -2050,7 +2057,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Agarda...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Agarda...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
@@ -2061,7 +2068,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;કૃપા કરીને રાહ જુઓ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;કૃપા કરીને રાહ જુઓ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gu/strings.xml"
@@ -2072,7 +2079,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;कृपया इंतज़ार करें...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;कृपया इंतज़ार करें...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hi/strings.xml"
@@ -2083,7 +2090,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Kérjük, várjon...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Kérjük, várjon...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
@@ -2094,7 +2101,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Խնդրում ենք սպասել...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Խնդրում ենք սպասել...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
@@ -2105,7 +2112,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;יש להמתין...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;יש להמתין...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-iw/strings.xml"
@@ -2116,7 +2123,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;お待ちください...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;お待ちください...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
@@ -2127,7 +2134,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;გთხოვთ, მოითმინოთ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;გთხოვთ, მოითმინოთ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ka/strings.xml"
@@ -2138,7 +2145,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;សូម​រង់ចាំ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;សូម​រង់ចាំ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-km/strings.xml"
@@ -2149,7 +2156,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;ກະລຸນາລໍຖ້າ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;ກະລຸນາລໍຖ້າ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
@@ -2160,7 +2167,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Palaukite...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Palaukite...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
@@ -2171,7 +2178,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Почекајте...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Почекајте...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
@@ -2182,7 +2189,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Түр хүлээнэ үү...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Түр хүлээнэ үү...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mn/strings.xml"
@@ -2193,7 +2200,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;कृपया प्रतीक्षा करा...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;कृपया प्रतीक्षा करा...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mr/strings.xml"
@@ -2204,7 +2211,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Sila tunggu...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Sila tunggu...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
@@ -2215,7 +2222,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Vent litt ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Vent litt ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
@@ -2226,7 +2233,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;कृपया प्रतीक्षा गर्नुहोस्...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;कृपया प्रतीक्षा गर्नुहोस्...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
@@ -2237,7 +2244,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Een ogenblik geduld...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Een ogenblik geduld...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nl/strings.xml"
@@ -2248,7 +2255,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;ਕਿਰਪਾ ਕਰਕੇ ਠਹਿਰੋ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;ਕਿਰਪਾ ਕਰਕੇ ਠਹਿਰੋ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pa/strings.xml"
@@ -2259,7 +2266,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Aguarde...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Aguarde...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
@@ -2270,7 +2277,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Aguarde...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Aguarde...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
@@ -2281,7 +2288,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Așteaptă...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Așteaptă...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
@@ -2292,7 +2299,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Подождите...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Подождите...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
@@ -2303,7 +2310,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;කරුණාකර රැඳී සිටින්න...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;කරුණාකර රැඳී සිටින්න...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-si/strings.xml"
@@ -2314,7 +2321,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Čakajte...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Čakajte...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
@@ -2325,7 +2332,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Počakajte ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Počakajte ...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
@@ -2336,7 +2343,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Qëndro në pritje...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Qëndro në pritje...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sq/strings.xml"
@@ -2347,7 +2354,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;దయచేసి వేచి ఉండండి...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;దయచేసి వేచి ఉండండి...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-te/strings.xml"
@@ -2358,7 +2365,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;โปรดรอสักครู่...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;โปรดรอสักครู่...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
@@ -2369,7 +2376,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Lütfen bekleyin...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Lütfen bekleyin...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
@@ -2380,7 +2387,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Vui lòng đợi...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Vui lòng đợi...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-vi/strings.xml"
@@ -2391,7 +2398,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;请稍候...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;请稍候...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
@@ -2402,7 +2409,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Sicela ulinde...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;&gt;&quot;Sicela ulinde...&quot;&lt;/string&gt;"
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
@@ -2413,7 +2420,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;ብሉቱዝ በማብራት ላይ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;ብሉቱዝ በማብራት ላይ...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-am/strings.xml"
@@ -2424,7 +2431,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;جارٍ تفعيل البلوتوث...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;جارٍ تفعيل البلوتوث...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
@@ -2435,7 +2442,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetooth yandırılır...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetooth yandırılır...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
@@ -2446,7 +2453,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Уключэнне Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Уключэнне Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
@@ -2457,7 +2464,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetooth се включва...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetooth се включва...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
@@ -2468,7 +2475,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;ব্লুটুথ চালু করা হচ্ছে...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;ব্লুটুথ চালু করা হচ্ছে...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
@@ -2479,7 +2486,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;S\&apos;està activant el Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;S\&apos;està activant el Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
@@ -2490,7 +2497,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Aktiverer Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Aktiverer Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
@@ -2501,7 +2508,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetooth wird aktiviert...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetooth wird aktiviert...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
@@ -2512,7 +2519,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Activando Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Activando Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
@@ -2523,7 +2530,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Activando Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Activando Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
@@ -2534,7 +2541,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetoothi sisselülitamine ...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetoothi sisselülitamine ...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
@@ -2545,7 +2552,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Otetaan Bluetooth käyttöön...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Otetaan Bluetooth käyttöön...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fi/strings.xml"
@@ -2556,7 +2563,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetooth bekapcsolása...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetooth bekapcsolása...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
@@ -2567,7 +2574,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetooth-ը միանում է...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetooth-ը միանում է...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
@@ -2578,7 +2585,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Menghidupkan Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Menghidupkan Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-in/strings.xml"
@@ -2589,7 +2596,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;BluetoothをONにしています...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;BluetoothをONにしています...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
@@ -2600,7 +2607,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;블루투스 켜는 중...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;블루투스 켜는 중...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
@@ -2611,7 +2618,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;ກຳລັງເປີດ Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;ກຳລັງເປີດ Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
@@ -2622,7 +2629,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Tiek ieslēgts Bluetooth savienojums...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Tiek ieslēgts Bluetooth savienojums...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
@@ -2633,7 +2640,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Вклучување Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Вклучување Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
@@ -2644,7 +2651,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Menghidupkan Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Menghidupkan Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
@@ -2655,7 +2662,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;ब्लुटुथलाई सक्रिय पार्दै...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;ब्लुटुथलाई सक्रिय पार्दै...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
@@ -2666,7 +2673,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Ativando Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Ativando Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
@@ -2677,7 +2684,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Se activează Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Se activează Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
@@ -2688,7 +2695,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Включение Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Включение Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
@@ -2699,7 +2706,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Prebieha zapínanie rozhrania Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Prebieha zapínanie rozhrania Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
@@ -2710,7 +2717,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Inawasha Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Inawasha Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
@@ -2721,7 +2728,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Bluetooth açılıyor...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Bluetooth açılıyor...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
@@ -2732,7 +2739,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Увімкнення Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Увімкнення Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
@@ -2743,7 +2750,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;正在打开蓝牙...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;正在打开蓝牙...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
@@ -2754,7 +2761,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;正在開啟藍牙...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;正在開啟藍牙...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rHK/strings.xml"
@@ -2765,7 +2772,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;>&quot;Ivula i-Bluetooth...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;enabling_progress_content&quot; msgid=&quot;685427201206684584&quot;&gt;&quot;Ivula i-Bluetooth...&quot;&lt;/string&gt;"
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
@@ -2776,7 +2783,7 @@
     <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;bt_toast_4&quot; msgid=&quot;480365991944956695&quot;>&quot;Datei wird an „&lt;xliff:g id=&quot;RECIPIENT&quot;>%1$s&lt;/xliff:g>“ gesendet...&quot;&lt;/string>"
+        errorLine1="    &lt;string name=&quot;bt_toast_4&quot; msgid=&quot;480365991944956695&quot;&gt;&quot;Datei wird an „&lt;xliff:g id=&quot;RECIPIENT&quot;&gt;%1$s&lt;/xliff:g&gt;“ gesendet...&quot;&lt;/string&gt;"
         errorLine2="                                                                                                 ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
@@ -2787,7 +2794,7 @@
     <issue
         id="MonochromeLauncherIcon"
         message="The application adaptive icon is missing a monochrome tag"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;"
         errorLine2="^">
         <location
             file="packages/modules/Bluetooth/android/app/res/mipmap-anydpi/bt_share.xml"
@@ -2837,6 +2844,61 @@
             file="packages/modules/Bluetooth/android/app/res/layout/bluetooth_transfer_item.xml"
             line="61"
             column="9"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.telephony.SmsManager#sendStoredTextMessage`"
+        errorLine1="                    smsMng.sendStoredTextMessage("
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapContentObserver.java"
+            line="3654"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.telephony.SmsManager#sendStoredMultipartTextMessage`"
+        errorLine1="                    smsMng.sendStoredMultipartTextMessage("
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapContentObserver.java"
+            line="3666"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.os.Trace#asyncTraceForTrackBegin`"
+        errorLine1="        Trace.asyncTraceForTrackBegin(tag, methodName, cookie);"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/util/BluetoothTrace.java"
+            line="37"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.os.Trace#asyncTraceForTrackEnd`"
+        errorLine1="        Trace.asyncTraceForTrackEnd(tag, cookie);"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/util/BluetoothTrace.java"
+            line="51"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.media.AudioManager#handleBluetoothHfpAudioDisconnected`"
+        errorLine1="                        .handleBluetoothHfpAudioDisconnected(device, reason);"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
+            line="2494"
+            column="26"/>
     </issue>
 
 </issues>
