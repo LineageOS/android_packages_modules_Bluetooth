@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,452 +14,448 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
+import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.IBluetoothActivityEnergyInfoListener
+import android.bluetooth.IBluetoothHciVendorSpecificCallback
+import android.bluetooth.IBluetoothOobDataCallback
+import android.content.AttributionSource
+import android.content.Context
+import android.os.Bundle
+import android.os.ParcelUuid
+import android.os.RemoteException
+import android.os.UserManager
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.TestUtils.mockGetSystemService
+import com.android.bluetooth.mockGetSystemService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.io.FileDescriptor
+import org.junit.Assert.assertThrows
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.IBluetoothActivityEnergyInfoListener;
-import android.bluetooth.IBluetoothHciVendorSpecificCallback;
-import android.bluetooth.IBluetoothOobDataCallback;
-import android.content.AttributionSource;
-import android.content.Context;
-import android.os.Bundle;
-import android.os.ParcelUuid;
-import android.os.RemoteException;
-import android.os.UserManager;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.io.FileDescriptor;
-import java.util.Set;
-
-/** Test cases for {@link AdapterServiceBinder}. */
+/** Test cases for [AdapterServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class AdapterServiceBinderTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class AdapterServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private AdapterService mService;
-    @Mock private AdapterProperties mAdapterProperties;
-    @Mock private BluetoothDevice mDevice;
-    @Mock private RemoteDevices mRemoteDevices;
-    @Mock private UserManager mUserManager;
-    @Mock private BluetoothHciVendorSpecificDispatcher mDispatcher;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var service: AdapterService
+    @Mock private lateinit var adapterProperties: AdapterProperties
+    @Mock private lateinit var device: BluetoothDevice
+    @Mock private lateinit var remoteDevices: RemoteDevices
+    @Mock private lateinit var userManager: UserManager
+    @Mock private lateinit var dispatcher: BluetoothHciVendorSpecificDispatcher
 
-    private AdapterServiceBinder mBinder;
-
-    // Transport constants from BluetoothDevice
-    private static final int INVALID_TRANSPORT_NEGATIVE = -1;
-    private static final int INVALID_TRANSPORT_POSITIVE = 3;
+    private lateinit var binder: AdapterServiceBinder
 
     @Before
-    public void setUp() {
-        doReturn(mAdapterProperties).when(mService).getAdapterProperties();
-        doReturn(mRemoteDevices).when(mService).getRemoteDevices();
-        doReturn(mDispatcher).when(mService).getBluetoothHciVendorSpecificDispatcher();
-        doReturn(true).when(mService).isAvailable();
+    fun setUp() {
+        doReturn(adapterProperties).whenever(service).adapterProperties
+        doReturn(remoteDevices).whenever(service).remoteDevices
+        doReturn(dispatcher).whenever(service).bluetoothHciVendorSpecificDispatcher
+        doReturn(true).whenever(service).isAvailable
         // Default for other permission checks if any
-        doNothing().when(mService).enforceCallingOrSelfPermission(any(), any());
+        doNothing().whenever(service).enforceCallingOrSelfPermission(any(), any())
 
-        // Setup mock UserManager to be returned by mService
-        doReturn(mUserManager).when(mService).getSystemService(Context.USER_SERVICE);
-        mockGetSystemService(mService, UserManager.class, mUserManager);
+        // Setup mock UserManager to be returned by service
+        doReturn(userManager).whenever(service).getSystemService(Context.USER_SERVICE)
+        service.mockGetSystemService<UserManager>(userManager)
         // Default: Simulate caller is system/active
-        mockCallerIsSystemOrActive(true);
+        mockCallerIsSystemOrActive(true)
 
-        mBinder = new AdapterServiceBinder(mService);
+        binder = AdapterServiceBinder(service)
     }
 
-    private void mockCallerIsSystemOrActive(boolean isSystemOrActive) {
+    private fun mockCallerIsSystemOrActive(isSystemOrActive: Boolean) {
         // This is an approximation. The real static method is more complex.
-        doReturn(isSystemOrActive).when(mUserManager).isSystemUser();
+        doReturn(isSystemOrActive).whenever(userManager).isSystemUser
     }
 
     @Test
-    public void cancelDiscovery_whenServiceNotAvailable_returnsFalse() {
+    fun cancelDiscovery_whenServiceNotAvailable_returnsFalse() {
         // Setup: Simulate the service being unavailable.
-        doReturn(false).when(mService).isAvailable();
+        doReturn(false).whenever(service).isAvailable
 
-        boolean result = mBinder.cancelDiscovery(mSource);
+        val result = binder.cancelDiscovery(source)
 
-        assertThat(result).isFalse();
-        verify(mService, never()).cancelDiscovery(any());
+        assertThat(result).isFalse()
+        verify(service, never()).cancelDiscovery(any())
     }
 
     @Test
-    public void dump() {
-        FileDescriptor fd = new FileDescriptor();
-        String[] args = new String[] {};
-        mBinder.dump(fd, args);
-        verify(mService).dump(any(), any(), any());
+    fun dump() {
+        val fd = FileDescriptor()
+        val args = arrayOf<String>()
+        binder.dump(fd, args)
+        verify(service).dump(any(), any(), any())
     }
 
     @Test
-    public void dumpWhenNotAvailable() {
-        FileDescriptor fd = new FileDescriptor();
-        String[] args = new String[] {};
-        doReturn(false).when(mService).isAvailable();
+    fun dumpWhenNotAvailable() {
+        val fd = FileDescriptor()
+        val args = arrayOf<String>()
+        doReturn(false).whenever(service).isAvailable
 
-        mBinder.dump(fd, args);
+        binder.dump(fd, args)
 
-        verify(mService, never()).dump(any(), any(), any());
+        verify(service, never()).dump(any(), any(), any())
     }
 
     @Test
-    public void generateLocalOobData() {
-        int transport = 0;
-        IBluetoothOobDataCallback cb = Mockito.mock(IBluetoothOobDataCallback.class);
+    fun generateLocalOobData() {
+        val transport = 0
+        val cb = mock<IBluetoothOobDataCallback>()
 
-        mBinder.generateLocalOobData(transport, cb, mSource);
+        binder.generateLocalOobData(transport, cb, source)
 
-        verify(mService).generateLocalOobData(transport, cb);
+        verify(service).generateLocalOobData(transport, cb)
     }
 
     @Test
-    public void generateLocalOobDataWhenNotAvailable() {
-        int transport = 0;
-        IBluetoothOobDataCallback cb = Mockito.mock(IBluetoothOobDataCallback.class);
-        doReturn(false).when(mService).isAvailable();
+    fun generateLocalOobDataWhenNotAvailable() {
+        val transport = 0
+        val cb = mock<IBluetoothOobDataCallback>()
+        doReturn(false).whenever(service).isAvailable
 
-        mBinder.generateLocalOobData(transport, cb, mSource);
+        binder.generateLocalOobData(transport, cb, source)
 
-        verify(mService, never()).generateLocalOobData(transport, cb);
+        verify(service, never()).generateLocalOobData(transport, cb)
     }
 
     @Test
-    public void getLeMaximumAdvertisingDataLength() {
-        mBinder.getLeMaximumAdvertisingDataLength();
-        verify(mService).getLeMaximumAdvertisingDataLength();
+    fun getLeMaximumAdvertisingDataLength() {
+        binder.leMaximumAdvertisingDataLength
+        verify(service).leMaximumAdvertisingDataLength
     }
 
     @Test
-    public void getScanMode() {
-        mBinder.getScanMode(mSource);
-        verify(mService).getScanMode();
+    fun getScanMode() {
+        binder.getScanMode(source)
+        verify(service).scanMode
     }
 
     @Test
-    public void isActivityAndEnergyReportingSupported() {
-        mBinder.isActivityAndEnergyReportingSupported();
-        verify(mAdapterProperties).isActivityAndEnergyReportingSupported();
+    fun isActivityAndEnergyReportingSupported() {
+        binder.isActivityAndEnergyReportingSupported
+        verify(adapterProperties).isActivityAndEnergyReportingSupported
     }
 
     @Test
-    public void isLe2MPhySupported() {
-        mBinder.isLe2MPhySupported();
-        verify(mService).isLe2MPhySupported();
+    fun isLe2MPhySupported() {
+        binder.isLe2MPhySupported
+        verify(service).isLe2MPhySupported
     }
 
     @Test
-    public void isLeCodedPhySupported() {
-        mBinder.isLeCodedPhySupported();
-        verify(mService).isLeCodedPhySupported();
+    fun isLeCodedPhySupported() {
+        binder.isLeCodedPhySupported
+        verify(service).isLeCodedPhySupported
     }
 
     @Test
-    public void isLeExtendedAdvertisingSupported() {
-        mBinder.isLeExtendedAdvertisingSupported();
-        verify(mService).isLeExtendedAdvertisingSupported();
+    fun isLeExtendedAdvertisingSupported() {
+        binder.isLeExtendedAdvertisingSupported
+        verify(service).isLeExtendedAdvertisingSupported
     }
 
     @Test
-    public void removeActiveDevice() {
-        int profiles = BluetoothAdapter.ACTIVE_DEVICE_ALL;
-        mBinder.removeActiveDevice(profiles, mSource);
-        verify(mService).setActiveDevice(null, profiles);
+    fun removeActiveDevice() {
+        val profiles = BluetoothAdapter.ACTIVE_DEVICE_ALL
+        binder.removeActiveDevice(profiles, source)
+        verify(service).setActiveDevice(null, profiles)
     }
 
     @Test
-    public void requestActivityInfo() throws RemoteException {
-        var listener = mock(IBluetoothActivityEnergyInfoListener.class);
-        mBinder.requestActivityInfo(listener, mSource);
-        verify(mService).requestActivityInfo();
-        verify(listener).onBluetoothActivityEnergyInfoAvailable(any());
+    @Throws(RemoteException::class)
+    fun requestActivityInfo() {
+        val listener = mock<IBluetoothActivityEnergyInfoListener>()
+        binder.requestActivityInfo(listener, source)
+        verify(service).requestActivityInfo()
+        verify(listener).onBluetoothActivityEnergyInfoAvailable(anyOrNull())
     }
 
     @Test
-    public void retrievePendingSocketForServiceRecord() {
-        ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
-        mBinder.retrievePendingSocketForServiceRecord(uuid, mSource);
-        verify(mService).retrievePendingSocketForServiceRecord(uuid, mSource);
+    fun retrievePendingSocketForServiceRecord() {
+        val uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB")
+        binder.retrievePendingSocketForServiceRecord(uuid, source)
+        verify(service).retrievePendingSocketForServiceRecord(uuid, source)
     }
 
     @Test
-    public void stopRfcommListener() {
-        ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
-        mBinder.stopRfcommListener(uuid, mSource);
-        verify(mService).stopRfcommListener(uuid, mSource);
+    fun stopRfcommListener() {
+        val uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB")
+        binder.stopRfcommListener(uuid, source)
+        verify(service).stopRfcommListener(uuid, source)
     }
 
     @Test
-    public void setPreferredAudioProfiles_deviceNotBonded_returnsError() {
-        doReturn(BluetoothDevice.BOND_NONE).when(mService).getBondState(mDevice);
+    fun setPreferredAudioProfiles_deviceNotBonded_returnsError() {
+        doReturn(BluetoothDevice.BOND_NONE).whenever(service).getBondState(device)
 
-        int result = mBinder.setPreferredAudioProfiles(mDevice, new Bundle(), mSource);
+        val result = binder.setPreferredAudioProfiles(device, Bundle(), source)
 
-        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
-        verify(mService, never()).setPreferredAudioProfiles(any(), any());
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED)
+        verify(service, never()).setPreferredAudioProfiles(any(), any())
     }
 
     @Test
-    public void setPreferredAudioProfiles_deviceBonded_callsService() {
-        doReturn(BluetoothDevice.BOND_BONDED).when(mService).getBondState(mDevice);
-        Bundle bundle = new Bundle();
+    fun setPreferredAudioProfiles_deviceBonded_callsService() {
+        doReturn(BluetoothDevice.BOND_BONDED).whenever(service).getBondState(device)
+        val bundle = Bundle()
 
-        mBinder.setPreferredAudioProfiles(mDevice, bundle, mSource);
+        binder.setPreferredAudioProfiles(device, bundle, source)
 
-        verify(mService).setPreferredAudioProfiles(mDevice, bundle);
+        verify(service).setPreferredAudioProfiles(device, bundle)
     }
 
     @Test
-    public void getPreferredAudioProfiles_deviceNotBonded_returnsEmptyBundle() {
-        doReturn(BluetoothDevice.BOND_NONE).when(mService).getBondState(mDevice);
+    fun getPreferredAudioProfiles_deviceNotBonded_returnsEmptyBundle() {
+        doReturn(BluetoothDevice.BOND_NONE).whenever(service).getBondState(device)
 
-        Bundle result = mBinder.getPreferredAudioProfiles(mDevice, mSource);
+        val result = binder.getPreferredAudioProfiles(device, source)
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(Bundle.EMPTY);
-        verify(mService, never()).getPreferredAudioProfiles(any());
+        assertThat(result).isNotNull()
+        assertThat(result).isEqualTo(Bundle.EMPTY)
+        verify(service, never()).getPreferredAudioProfiles(any())
     }
 
     @Test
-    public void getPreferredAudioProfiles_deviceBonded_callsService() {
-        doReturn(BluetoothDevice.BOND_BONDED).when(mService).getBondState(mDevice);
+    fun getPreferredAudioProfiles_deviceBonded_callsService() {
+        doReturn(BluetoothDevice.BOND_BONDED).whenever(service).getBondState(device)
 
-        mBinder.getPreferredAudioProfiles(mDevice, mSource);
+        binder.getPreferredAudioProfiles(device, source)
 
-        verify(mService).getPreferredAudioProfiles(mDevice);
+        verify(service).getPreferredAudioProfiles(device)
     }
 
     @Test
-    public void notifyActiveDeviceChangeApplied_deviceNotBonded_returnsError() {
-        doReturn(BluetoothDevice.BOND_NONE).when(mService).getBondState(mDevice);
+    fun notifyActiveDeviceChangeApplied_deviceNotBonded_returnsError() {
+        doReturn(BluetoothDevice.BOND_NONE).whenever(service).getBondState(device)
 
-        int result = mBinder.notifyActiveDeviceChangeApplied(mDevice, mSource);
+        val result = binder.notifyActiveDeviceChangeApplied(device, source)
 
-        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
-        verify(mService, never()).notifyActiveDeviceChangeApplied(any());
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED)
+        verify(service, never()).notifyActiveDeviceChangeApplied(any())
     }
 
     @Test
-    public void notifyActiveDeviceChangeApplied_deviceBonded_callsService() {
-        doReturn(BluetoothDevice.BOND_BONDED).when(mService).getBondState(mDevice);
+    fun notifyActiveDeviceChangeApplied_deviceBonded_callsService() {
+        doReturn(BluetoothDevice.BOND_BONDED).whenever(service).getBondState(device)
 
-        mBinder.notifyActiveDeviceChangeApplied(mDevice, mSource);
+        binder.notifyActiveDeviceChangeApplied(device, source)
 
-        verify(mService).notifyActiveDeviceChangeApplied(mDevice);
+        verify(service).notifyActiveDeviceChangeApplied(device)
     }
 
     @Test
-    public void connectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
+    fun connectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
         // The service is not available
-        doReturn(false).when(mService).isAvailable();
+        doReturn(false).whenever(service).isAvailable
 
         // Call the method and verify that it returns an error and doesn't proceed
-        int result = mBinder.connectAllEnabledProfiles(mDevice, mSource);
-        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
-        verify(mService, never()).connectAllEnabledProfiles(any());
+        val result = binder.connectAllEnabledProfiles(device, source)
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED)
+        verify(service, never()).connectAllEnabledProfiles(any())
     }
 
     @Test
-    public void connectAllEnabledProfiles_whenServiceNotEnabled_returnsError() {
+    fun connectAllEnabledProfiles_whenServiceNotEnabled_returnsError() {
         // The service is available but not enabled
-        doReturn(false).when(mService).isEnabled();
+        doReturn(false).whenever(service).isEnabled
 
         // Call the method and verify that it returns an error and doesn't proceed
-        int result = mBinder.connectAllEnabledProfiles(mDevice, mSource);
-        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
-        verify(mService, never()).connectAllEnabledProfiles(any());
+        val result = binder.connectAllEnabledProfiles(device, source)
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED)
+        verify(service, never()).connectAllEnabledProfiles(any())
     }
 
     @Test
-    public void connectAllEnabledProfiles_whenServiceEnabled_callsService() {
+    fun connectAllEnabledProfiles_whenServiceEnabled_callsService() {
         // The service is available and enabled
-        doReturn(true).when(mService).isEnabled();
+        doReturn(true).whenever(service).isEnabled
 
         // Call the method and verify that the underlying service method is called
-        mBinder.connectAllEnabledProfiles(mDevice, mSource);
-        verify(mService).connectAllEnabledProfiles(mDevice);
+        binder.connectAllEnabledProfiles(device, source)
+        verify(service).connectAllEnabledProfiles(device)
     }
 
     @Test
-    public void disconnectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
+    fun disconnectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
         // The service is not available
-        doReturn(false).when(mService).isAvailable();
+        doReturn(false).whenever(service).isAvailable
 
         // Call the method and verify that it returns an error and doesn't proceed
-        int result = mBinder.disconnectAllEnabledProfiles(mDevice, mSource);
-        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
-        verify(mService, never()).disconnectAllEnabledProfiles(any(), anyInt());
+        val result = binder.disconnectAllEnabledProfiles(device, source)
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED)
+        verify(service, never()).disconnectAllEnabledProfiles(any(), anyInt())
     }
 
     @Test
-    public void disconnectAllEnabledProfiles_whenServiceAvailable_callsService() {
+    fun disconnectAllEnabledProfiles_whenServiceAvailable_callsService() {
         // The service is available
         // Call the method and verify that the underlying service method is called
-        mBinder.disconnectAllEnabledProfiles(mDevice, mSource);
-        verify(mService)
-                .disconnectAllEnabledProfiles(
-                        mDevice, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_USER_REQUEST);
+        binder.disconnectAllEnabledProfiles(device, source)
+        verify(service)
+            .disconnectAllEnabledProfiles(
+                device,
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_USER_REQUEST,
+            )
     }
 
-    @Test(expected = NullPointerException.class)
-    public void fetchRemoteUuidsWithSdp_nullDevice_throwsNullPointerException() {
-        mBinder.fetchRemoteUuidsWithSdp(null, TRANSPORT_AUTO, mSource);
-    }
-
-    @Test
-    public void fetchRemoteUuidsWithSdp_serviceUnavailable_returnsFalse() {
-        doReturn(false).when(mService).isAvailable();
-        assertThat(mBinder.fetchRemoteUuidsWithSdp(mDevice, TRANSPORT_AUTO, mSource)).isFalse();
-        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+    @Test(expected = NullPointerException::class)
+    fun fetchRemoteUuidsWithSdp_nullDevice_throwsNullPointerException() {
+        binder.fetchRemoteUuidsWithSdp(null, TRANSPORT_AUTO, source)
     }
 
     @Test
-    public void
-            fetchRemoteUuidsWithSdp_transportNotAuto_noPrivilegedPerm_throwsSecurityException() {
-        doThrow(new SecurityException("BT PRIVILEGED permission required"))
-                .when(mService)
-                .enforceCallingOrSelfPermission(eq(BLUETOOTH_PRIVILEGED), any());
-        assertThrows(
-                SecurityException.class,
-                () -> mBinder.fetchRemoteUuidsWithSdp(mDevice, TRANSPORT_BREDR, mSource));
-        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void fetchRemoteUuids_nullDevice_throwsNullPointerException() {
-        mBinder.fetchRemoteUuids(null, TRANSPORT_AUTO, mSource);
+    fun fetchRemoteUuidsWithSdp_serviceUnavailable_returnsFalse() {
+        doReturn(false).whenever(service).isAvailable
+        assertThat(binder.fetchRemoteUuidsWithSdp(device, TRANSPORT_AUTO, source)).isFalse()
+        verify(remoteDevices, never()).fetchUuids(any(), anyInt())
     }
 
     @Test
-    public void fetchRemoteUuids_serviceUnavailable_returnsFalse() {
-        doReturn(false).when(mService).isAvailable();
-        assertThat(mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mSource)).isFalse();
-        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+    fun fetchRemoteUuidsWithSdp_transportNotAuto_noPrivilegedPerm_throwsSecurityException() {
+        doThrow(SecurityException("BT PRIVILEGED permission required"))
+            .whenever(service)
+            .enforceCallingOrSelfPermission(eq(BLUETOOTH_PRIVILEGED), anyOrNull())
+        assertThrows(SecurityException::class.java) {
+            binder.fetchRemoteUuidsWithSdp(device, TRANSPORT_BREDR, source)
+        }
+        verify(remoteDevices, never()).fetchUuids(any(), anyInt())
+    }
+
+    @Test(expected = NullPointerException::class)
+    fun fetchRemoteUuids_nullDevice_throwsNullPointerException() {
+        binder.fetchRemoteUuids(null, TRANSPORT_AUTO, source)
     }
 
     @Test
-    public void fetchRemoteUuids_invalidTransport_throwsIllegalArgumentException() {
+    fun fetchRemoteUuids_serviceUnavailable_returnsFalse() {
+        doReturn(false).whenever(service).isAvailable
+        assertThat(binder.fetchRemoteUuids(device, TRANSPORT_AUTO, source)).isFalse()
+        verify(remoteDevices, never()).fetchUuids(any(), anyInt())
+    }
+
+    @Test
+    fun fetchRemoteUuids_invalidTransport_throwsIllegalArgumentException() {
         // Test with a negative invalid value
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> mBinder.fetchRemoteUuids(mDevice, INVALID_TRANSPORT_NEGATIVE, mSource));
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.fetchRemoteUuids(device, INVALID_TRANSPORT_NEGATIVE, source)
+        }
 
         // Test with a positive out-of-range value
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> mBinder.fetchRemoteUuids(mDevice, INVALID_TRANSPORT_POSITIVE, mSource));
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.fetchRemoteUuids(device, INVALID_TRANSPORT_POSITIVE, source)
+        }
 
         // Verify that the call does not reach the RemoteDevices
-        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+        verify(remoteDevices, never()).fetchUuids(any(), anyInt())
     }
 
     @Test
-    public void fetchRemoteUuids_validTransports_doesNotThrowIllegalArgumentException() {
+    fun fetchRemoteUuids_validTransports_doesNotThrowIllegalArgumentException() {
         // This test ensures that for valid transport types, no IllegalArgumentException is thrown.
 
         // Call with TRANSPORT_AUTO
-        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mSource);
-        verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_AUTO));
-        Mockito.reset(mRemoteDevices);
+        binder.fetchRemoteUuids(device, TRANSPORT_AUTO, source)
+        verify(remoteDevices).fetchUuids(eq(device), eq(TRANSPORT_AUTO))
+        Mockito.reset(remoteDevices)
 
         // Call with TRANSPORT_BREDR
-        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_BREDR, mSource);
-        verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_BREDR));
-        Mockito.reset(mRemoteDevices);
+        binder.fetchRemoteUuids(device, TRANSPORT_BREDR, source)
+        verify(remoteDevices).fetchUuids(eq(device), eq(TRANSPORT_BREDR))
+        Mockito.reset(remoteDevices)
 
         // Call with TRANSPORT_LE
-        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_LE, mSource);
-        verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_LE));
-        Mockito.reset(mRemoteDevices);
+        binder.fetchRemoteUuids(device, TRANSPORT_LE, source)
+        verify(remoteDevices).fetchUuids(eq(device), eq(TRANSPORT_LE))
+        Mockito.reset(remoteDevices)
     }
 
     @Test
-    public void registerHciVendorSpecificCallback_nullAclHandles_throwsNullPointerException() {
-        IBluetoothHciVendorSpecificCallback callback =
-                mock(IBluetoothHciVendorSpecificCallback.class);
-        int[] eventCodes = new int[] {0x01};
+    fun registerHciVendorSpecificCallback_nullAclHandles_throwsNullPointerException() {
+        val callback = mock<IBluetoothHciVendorSpecificCallback>()
+        val eventCodes = intArrayOf(0x01)
 
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.registerHciVendorSpecificCallback(callback, eventCodes, null));
+        assertThrows(NullPointerException::class.java) {
+            binder.registerHciVendorSpecificCallback(callback, eventCodes, null)
+        }
     }
 
     @Test
-    public void
-            registerHciVendorSpecificCallback_invalidAclHandle_throwsIllegalArgumentException() {
-        IBluetoothHciVendorSpecificCallback callback =
-                mock(IBluetoothHciVendorSpecificCallback.class);
-        int[] eventCodes = new int[] {0x01};
+    fun registerHciVendorSpecificCallback_invalidAclHandle_throwsIllegalArgumentException() {
+        val callback = mock<IBluetoothHciVendorSpecificCallback>()
+        val eventCodes = intArrayOf(0x01)
 
         // Test with handle <= 0
-        int[] invalidAclHandlesZero = new int[] {0x01, 0};
-        assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                        mBinder.registerHciVendorSpecificCallback(
-                                callback, eventCodes, invalidAclHandlesZero));
+        val invalidAclHandlesZero = intArrayOf(0x01, 0)
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.registerHciVendorSpecificCallback(callback, eventCodes, invalidAclHandlesZero)
+        }
 
-        int[] invalidAclHandlesNegative = new int[] {0x01, -1};
-        assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                        mBinder.registerHciVendorSpecificCallback(
-                                callback, eventCodes, invalidAclHandlesNegative));
+        val invalidAclHandlesNegative = intArrayOf(0x01, -1)
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.registerHciVendorSpecificCallback(
+                callback,
+                eventCodes,
+                invalidAclHandlesNegative,
+            )
+        }
 
         // Test with handle > 0xfff
-        int[] invalidAclHandlesTooLarge = new int[] {0x01, 0x1000};
-        assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                        mBinder.registerHciVendorSpecificCallback(
-                                callback, eventCodes, invalidAclHandlesTooLarge));
+        val invalidAclHandlesTooLarge = intArrayOf(0x01, 0x1000)
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.registerHciVendorSpecificCallback(
+                callback,
+                eventCodes,
+                invalidAclHandlesTooLarge,
+            )
+        }
     }
 
     @Test
-    public void registerHciVendorSpecificCallback_validArgs_callsDispatcherRegister() {
-        IBluetoothHciVendorSpecificCallback callback =
-                mock(IBluetoothHciVendorSpecificCallback.class);
-        int[] eventCodes = new int[] {0x01, 0x02};
-        int[] aclHandles = new int[] {0x01, 0x02};
+    fun registerHciVendorSpecificCallback_validArgs_callsDispatcherRegister() {
+        val callback = mock<IBluetoothHciVendorSpecificCallback>()
+        val eventCodes = intArrayOf(0x01, 0x02)
+        val aclHandles = intArrayOf(0x01, 0x02)
 
-        mBinder.registerHciVendorSpecificCallback(callback, eventCodes, aclHandles);
+        binder.registerHciVendorSpecificCallback(callback, eventCodes, aclHandles)
 
-        Set<Integer> expectedEventCodes = Set.of(0x01, 0x02);
-        Set<Integer> expectedAclHandles = Set.of(0x01, 0x02);
-        verify(mDispatcher).register(eq(callback), eq(expectedEventCodes), eq(expectedAclHandles));
+        val expectedEventCodes = setOf(0x01, 0x02)
+        val expectedAclHandles = setOf(0x01, 0x02)
+        verify(dispatcher).register(eq(callback), eq(expectedEventCodes), eq(expectedAclHandles))
+    }
+
+    companion object {
+        // Transport constants from BluetoothDevice
+        private const val INVALID_TRANSPORT_NEGATIVE = -1
+        private const val INVALID_TRANSPORT_POSITIVE = 3
     }
 }
