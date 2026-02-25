@@ -162,4 +162,8 @@ public class McpService extends ProfileService {
             int ccid, BluetoothDevice device, ParcelUuid charUuid, boolean doNotify) {
         mGmcs.setNotificationSubscription(ccid, device, charUuid, doNotify);
     }
+
+    public void playRequest() {
+        mGmcs.onMediaControlRequest(new Request(Request.Opcodes.PLAY, 0));
+    }
 }
