@@ -761,8 +761,8 @@ public:
 };
 
 TEST_F(MainShimTest, BleScannerInterfaceImpl_MultiClient_PeriodicSync_Routing) {
-  com::android::bluetooth::flags::provider_->reset_flags();
-  com::android::bluetooth::flags::provider_->support_native_pa_callback(true);
+  com_android_bluetooth_flags_reset_flags();
+  set_com_android_bluetooth_flags_support_native_pa_callback(true);
 
   auto* ble = static_cast<bluetooth::shim::BleScannerInterfaceImpl*>(
           bluetooth::shim::get_ble_scanner_instance());

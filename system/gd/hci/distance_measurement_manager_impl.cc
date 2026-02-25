@@ -341,7 +341,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               ranging_result.confidence_level_, elapsedRealtimeNanos);
 
     int reflector_rssi = kInvalidRssi;
-    if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
+    if (com_android_bluetooth_flags_include_power_and_rssi_in_distance_measurement_result()) {
       int rssi_count = cs_requester_trackers_[connection_handle].reflector_rssi_count;
       if (rssi_count > 0) {
         reflector_rssi = cs_requester_trackers_[connection_handle].reflector_rssi_sum / rssi_count;
@@ -568,7 +568,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               connection_handle, cs_requester_trackers_[connection_handle].used_config_id,
               cs_requester_trackers_[connection_handle].remote_num_antennas_supported_,
               cs_requester_trackers_[connection_handle].remote_max_antenna_paths_supported_);
-    } else if (com::android::bluetooth::flags::channel_sounding_26q1_fix() &&
+    } else if (com_android_bluetooth_flags_channel_sounding_26q1_fix() &&
                cs_requester_trackers_[connection_handle].local_hci_role == hci::Role::CENTRAL) {
       cs_requester_trackers_[connection_handle].state = CsTrackerState::WAIT_FOR_SECURITY_ENABLED;
       send_le_cs_security_enable(connection_handle, true);
@@ -948,7 +948,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
    */
   uint8_t get_tone_antenna_config_selection(uint8_t remote_num_antennas_supported,
                                             uint8_t max_antenna_paths_supported) {
-    if (com::android::bluetooth::flags::channel_sounding_26q1_fix()) {
+    if (com_android_bluetooth_flags_channel_sounding_26q1_fix()) {
       return cs_tone_antenna_config_mapping_table_[num_antennas_supported_ - 1]
                                                   [remote_num_antennas_supported - 1];
     }
@@ -2568,7 +2568,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               live_tracker->procedure_sequence_after_enable;
     }
 
-    if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
+    if (com_android_bluetooth_flags_include_power_and_rssi_in_distance_measurement_result()) {
       for (size_t i = 0; i < procedure_data->rssi_reflector.size(); i++) {
         live_tracker->reflector_rssi_sum += procedure_data->rssi_reflector[i];
       }

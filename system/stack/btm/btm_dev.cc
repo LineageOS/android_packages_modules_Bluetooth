@@ -65,7 +65,7 @@ static void wipe_secrets_and_remove(BtmDevice* p_device) {
   }
   p_device->sec_rec.link_key.fill(0);
   memset(&p_device->sec_rec.ble_keys, 0, sizeof(tBTM_SEC_BLE_KEYS));
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_remove(BtmSecurity::Get().sec_dev_rec_, p_device);
   } else {
     // As p_device is a pointer to element of BtmSecurity::Get().device_records_, we don't
@@ -404,7 +404,7 @@ static BtmDevice* btm_find_dev_by_handle_(uint16_t handle) {
     return nullptr;
   }
 
-  if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     // Get the security device record with matching handle, and return directly.
     if (!BtmSecurity::Get().IsSecCBInitialized()) {
       return nullptr;
@@ -428,7 +428,7 @@ static BtmDevice* btm_find_dev_by_handle_(uint16_t handle) {
 const BtmDevice* btm_find_dev_by_handle(uint16_t handle) { return btm_find_dev_by_handle_(handle); }
 
 BtmDevice* btm_get_dev_by_handle(uint16_t handle) {
-  if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+  if (!com_android_bluetooth_flags_fix_sec_dev_rec_access()) {
     return btm_find_dev_by_handle_(handle);  // non-const return
   }
 
@@ -495,7 +495,7 @@ static BtmDevice* find_dev_from_list(const RawAddress& bd_addr) {
 }
 
 static BtmDevice* find_dev(const RawAddress& bd_addr) {
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     return find_dev_from_list(bd_addr);  // finds device from sec_dev_rec list
   }
 
@@ -520,7 +520,7 @@ static BtmDevice* find_dev(const RawAddress& bd_addr) {
 const BtmDevice* btm_find_dev(const RawAddress& bd_addr) { return find_dev(bd_addr); }
 
 BtmDevice* btm_get_dev(const RawAddress& bd_addr) {
-  if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+  if (!com_android_bluetooth_flags_fix_sec_dev_rec_access()) {
     return find_dev(bd_addr);
   }
 
@@ -547,7 +547,7 @@ static bool has_lenc_and_address_is_equal(void* data, void* context) {
  *
  ******************************************************************************/
 static BtmDevice* find_dev_with_lenc(const RawAddress& bd_addr) {
-  if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     if (!BtmSecurity::Get().IsSecCBInitialized()) {
       return nullptr;
     }
@@ -573,7 +573,7 @@ const BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
 }
 
 BtmDevice* btm_get_dev_with_lenc(const RawAddress& bd_addr) {
-  if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+  if (!com_android_bluetooth_flags_fix_sec_dev_rec_access()) {
     return find_dev_with_lenc(bd_addr);
   }
 
@@ -629,7 +629,7 @@ static void consolidate_dev(BtmDevice* p_target, BtmDevice* p_device) {
 }
 
 void btm_consolidate_dev(BtmDevice* p_target) {
-  if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     for (BtmDevice& device : BtmSecurity::Get().device_records_) {
       if (device.IsInitialized() && (p_target != &device)) {
         consolidate_dev(p_target, &device);
@@ -714,7 +714,7 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
 
   log::info("{}", bd_addr);
 
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_node_t* end = list_end(BtmSecurity::Get().sec_dev_rec_);
     list_node_t* node = list_begin(BtmSecurity::Get().sec_dev_rec_);
     while (node != end) {
@@ -778,7 +778,7 @@ static BtmDevice* btm_find_oldest_dev_rec_(void) {
     }
   };
 
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_node_t* end = list_end(BtmSecurity::Get().sec_dev_rec_);
     for (list_node_t* node = list_begin(BtmSecurity::Get().sec_dev_rec_); node != end;
          node = list_next(node)) {
@@ -838,7 +838,7 @@ static BtmDevice* btm_find_oldest_dev_rec(void) {
     }
   };
 
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     list_node_t* end = list_end(BtmSecurity::Get().sec_dev_rec_);
     for (list_node_t* node = list_begin(BtmSecurity::Get().sec_dev_rec_); node != end;
          node = list_next(node)) {
@@ -888,7 +888,7 @@ BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& bd_addr) {
   }
   BtmDevice* p_device = nullptr;
 
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     if (BtmSecurity::Get().sec_dev_rec_ == nullptr) {
       log::warn("Unable to allocate device record with destructed device record list");
       return nullptr;
@@ -991,7 +991,7 @@ bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type) 
 std::vector<BtmDevice*> btm_get_sec_dev_rec() {
   std::vector<BtmDevice*> result{};
 
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     if (BtmSecurity::Get().sec_dev_rec_ != nullptr) {
       list_node_t* end = list_end(BtmSecurity::Get().sec_dev_rec_);
       for (list_node_t* node = list_begin(BtmSecurity::Get().sec_dev_rec_); node != end;
@@ -1112,7 +1112,7 @@ static void DumpsysRecord_(int fd) {
 }
 
 void DumpsysRecord(int fd) {
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     DumpsysRecord_(fd);
     return;
   }

@@ -236,7 +236,7 @@ public:
 class LeAudioClientAudioTest : public ::testing::Test {
 protected:
   void SetUp(void) override {
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     init_message_loop_thread();
     bluetooth::audio::le_audio::interface_mock = &mock_client_interface_;

@@ -570,8 +570,8 @@ protected:
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSourceAcquired());
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSinkAcquired());
     }
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_software_bt_request_lock_fix(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix(true);
   }
 
   virtual void TearDown() override {

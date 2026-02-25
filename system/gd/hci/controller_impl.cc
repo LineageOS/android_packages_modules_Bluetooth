@@ -62,7 +62,7 @@ struct ControllerImpl::impl {
 
     set_event_mask(kDefaultEventMask);
 
-    if (!com::android::bluetooth::flags::check_set_event_mask_p2_support_before_writing()) {
+    if (!com_android_bluetooth_flags_check_set_event_mask_p2_support_before_writing()) {
       set_event_mask_page_2(kDefaultEventMaskPage2);
     }
 
@@ -349,7 +349,7 @@ struct ControllerImpl::impl {
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     local_supported_commands_ = complete_view.GetSupportedCommands();
 
-    if (com::android::bluetooth::flags::check_set_event_mask_p2_support_before_writing()) {
+    if (com_android_bluetooth_flags_check_set_event_mask_p2_support_before_writing()) {
       if (is_supported(OpCode::SET_EVENT_MASK_PAGE_2)) {
         set_event_mask_page_2(kDefaultEventMaskPage2);
       }
@@ -709,7 +709,7 @@ struct ControllerImpl::impl {
     }
 
     // v1.06
-    if (com::android::bluetooth::flags::report_vendor_events_from_acl()) {
+    if (com_android_bluetooth_flags_report_vendor_events_from_acl()) {
       auto v106 = LeGetVendorCapabilitiesComplete106View::Create(v105);
       if (!v106.IsValid()) {
         log::info("invalid data for hci requirements v1.06");

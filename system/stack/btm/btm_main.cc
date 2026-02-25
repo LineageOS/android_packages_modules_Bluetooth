@@ -69,7 +69,7 @@ static void btm_free_internal() {
 }
 
 void btm_free() {
-  if (com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+  if (com_android_bluetooth_flags_fix_sec_dev_rec_access()) {
     get_main_thread()->DoInThreadSynchronously(&btm_free_internal);
     return;
   }

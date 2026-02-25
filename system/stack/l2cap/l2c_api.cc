@@ -227,7 +227,7 @@ uint16_t L2CA_AllocateLePSM(int lecoc_fixed_psm_slots) {
   uint8_t le_dynamic_psm_end = LE_DYNAMIC_PSM_END;
   uint8_t le_dynamic_psm_slots = LE_DYNAMIC_PSM_RANGE;
 
-  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+  if (com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
     le_dynamic_psm_end = le_dynamic_psm_end - lecoc_fixed_psm_slots;
     le_dynamic_psm_slots = le_dynamic_psm_slots - lecoc_fixed_psm_slots;
   }
@@ -410,7 +410,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, uin
   tL2C_RCB* p_rcb;
   uint16_t vpsm = psm;
   log::verbose("psm: 0x{:04x}", psm);
-  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+  if (com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
     log::verbose("fixed_psm_slots: 0x{:04x}, lecoc_assigned_psm: 0x{:04x}",
                  cfg.lecoc_fixed_psm_slots, cfg.lecoc_assigned_psm);
     /*
@@ -545,7 +545,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_
 
   /* First, see if we already have a le link to the remote */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
-  if (p_lcb == nullptr && com::android::bluetooth::flags::add_address_mapping_for_lecoc()) {
+  if (p_lcb == nullptr && com_android_bluetooth_flags_add_address_mapping_for_lecoc()) {
     RawAddress le_addr = p_bd_addr;
     // Try "pseudo" address
     tBLE_ADDR_TYPE le_addr_type = BLE_ADDR_PUBLIC;

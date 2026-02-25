@@ -1664,7 +1664,7 @@ void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length) {
       return;
     }
 
-    if (com::android::bluetooth::flags::le_subrate_manager()) {
+    if (com_android_bluetooth_flags_le_subrate_manager()) {
       const BtmDevice* p_device = btm_find_dev_by_handle(handle);
       if (p_device) {
           // init when acl connected & remote_feature received

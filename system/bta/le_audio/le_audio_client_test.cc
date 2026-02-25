@@ -1683,19 +1683,17 @@ protected:
 
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_
-            ->leaudio_use_game_sonification_as_regular_sonification(true);
-    com::android::bluetooth::flags::provider_->leaudio_improve_switching_le_audio_devices(true);
-    com::android::bluetooth::flags::provider_->leaudio_improve_unicast_monitor(true);
-    com::android::bluetooth::flags::provider_->leaudio_improve_state_machine_invalid_status(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_stop_stream_race(true);
-    com::android::bluetooth::flags::provider_->csis_quirk_for_single_device_with_sirk_all_zeros(
-            true);
-    com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
-    com::android::bluetooth::flags::provider_->leaudio_codec_id_support(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_use_game_sonification_as_regular_sonification(true);
+    set_com_android_bluetooth_flags_leaudio_improve_switching_le_audio_devices(true);
+    set_com_android_bluetooth_flags_leaudio_improve_unicast_monitor(true);
+    set_com_android_bluetooth_flags_leaudio_improve_state_machine_invalid_status(true);
+    set_com_android_bluetooth_flags_leaudio_fix_allocation_in_codec_config(true);
+    set_com_android_bluetooth_flags_leaudio_fix_stop_stream_race(true);
+    set_com_android_bluetooth_flags_csis_quirk_for_single_device_with_sirk_all_zeros(true);
+    set_com_android_bluetooth_flags_leaudio_game_detector(true);
+    set_com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig(true);
+    set_com_android_bluetooth_flags_leaudio_codec_id_support(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
@@ -14532,7 +14530,7 @@ TEST_F(UnicastTestHandoverModeCsis, SetSinkMonitorModeWhileUnicastIsActive) {
   uint8_t cis_count_in = 2;
   TestAudioDataTransfer(group_id_1_, cis_count_out, cis_count_in, 1920, 40);
 
-  if (com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+  if (com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
     // Stop streaming and expect Service to be informed about streaming
     EXPECT_CALL(mock_audio_hal_client_callbacks_,
                 OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
@@ -14755,7 +14753,7 @@ TEST_F(UnicastTestHandoverModeCsis,
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
-  if (!com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+  if (!com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
     // Expect no streaming request on stream resume when group is already active
     EXPECT_CALL(mock_audio_hal_client_callbacks_,
                 OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
@@ -14841,7 +14839,7 @@ TEST_F(UnicastTestHandoverModeCsis, ClearSinkMonitorModeWhileUnicastIsActive) {
                                          UnicastMonitorModeStatus::STREAMING_REQUESTED))
           .Times(0);
 
-  if (com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+  if (com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
     EXPECT_CALL(mock_audio_hal_client_callbacks_,
                 OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
                                            UnicastMonitorModeStatus::STREAMING))
@@ -15079,7 +15077,7 @@ TEST_F(UnicastTestHandoverModeCsis, SetSourceMonitorModeWhileUnicastIsActive) {
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
                                          UnicastMonitorModeStatus::STREAMING_REQUESTED))
           .Times(1);
-  if (com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+  if (com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
     EXPECT_CALL(mock_audio_hal_client_callbacks_,
                 OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
                                            UnicastMonitorModeStatus::STREAMING))
@@ -15694,7 +15692,7 @@ TEST_F(UnicastTest, HandleConfigureStreamFailure) {
 
 TEST_F(UnicastTest, OnLocalAudioSourceResumeWithInvalidGroupCancelsStreamRequest) {
   // Enable the feature flag
-  com::android::bluetooth::flags::provider_->leaudio_cancel_stream_request_when_invalid_group(true);
+  set_com_android_bluetooth_flags_leaudio_cancel_stream_request_when_invalid_group(true);
 
   // 1. Setup device and group
   const RawAddress test_address0 = GetTestAddress(0);
@@ -15723,8 +15721,7 @@ TEST_F(UnicastTest, OnLocalAudioSourceResumeWithInvalidGroupCancelsStreamRequest
 
 TEST_F(UnicastTest, OnLocalAudioSourceResumeWithInvalidGroupFlagDisabledDoesNotCancel) {
   // Disable the feature flag (default state)
-  com::android::bluetooth::flags::provider_->leaudio_cancel_stream_request_when_invalid_group(
-          false);
+  set_com_android_bluetooth_flags_leaudio_cancel_stream_request_when_invalid_group(false);
 
   // 1. Setup device and group
   const RawAddress test_address0 = GetTestAddress(0);
@@ -15755,9 +15752,9 @@ class UnicastTestGmap : public UnicastTest {
 protected:
   void SetUp() override {
     UnicastTest::SetUp();
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_game_detector(true);
+    set_com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig(true);
     GmapClient::UpdateGmapOffloaderSupport(true);
     GmapServer::UpdateGmapOffloaderSupport(true);
   }
@@ -15765,7 +15762,7 @@ protected:
   void TearDown() override {
     UnicastTest::TearDown();
     osi_property_set_bool(kPropGmapEnabled, false);
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
   }
 };
 
@@ -15773,9 +15770,9 @@ class UnicastTestGmapCsis : public UnicastTestCsis {
 protected:
   void SetUp() override {
     UnicastTestCsis::SetUp();
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
-    com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_game_detector(true);
+    set_com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig(true);
     GmapClient::UpdateGmapOffloaderSupport(true);
     GmapServer::UpdateGmapOffloaderSupport(true);
   }
@@ -15783,7 +15780,7 @@ protected:
   void TearDown() override {
     UnicastTestCsis::TearDown();
     osi_property_set_bool(kPropGmapEnabled, false);
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
   }
 };
 

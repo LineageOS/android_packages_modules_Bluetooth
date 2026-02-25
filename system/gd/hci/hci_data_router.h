@@ -99,7 +99,7 @@ private:
   }
 
   void retry_unknown_acl(bool timed_out) {
-    if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+    if (!com_android_bluetooth_flags_discard_unknown_acl_packet()) {
       retry_unknown_acl_packets_(timed_out);
       return;
     }
@@ -131,7 +131,7 @@ private:
     });
 
     if (waiting_packets_.empty()) {
-      if (!com::android::bluetooth::flags::fix_module_shutdown_sync_with_stack()) {
+      if (!com_android_bluetooth_flags_fix_module_shutdown_sync_with_stack()) {
         unknown_acl_alarm_.reset();
       } else {
         // Do not reset the alarm, instead just cancel it.
@@ -149,8 +149,8 @@ private:
   void on_unknown_acl_timer() {
     log::info("Timer fired!");
     retry_unknown_acl(/* timed_out = */ true);
-    if (!com::android::bluetooth::flags::discard_unknown_acl_packet() &&
-        !com::android::bluetooth::flags::fix_module_shutdown_sync_with_stack()) {
+    if (!com_android_bluetooth_flags_discard_unknown_acl_packet() &&
+        !com_android_bluetooth_flags_fix_module_shutdown_sync_with_stack()) {
       // Do not reset the alarm if the work is done as we are now waiting for the reactable to
       // finished which will overlap with this and never succeed.
       // Instead re-use this object as that will be rescheduled again in
@@ -189,14 +189,14 @@ private:
       return;
     }
     if (unknown_acl_alarm_ == nullptr) {
-      if (com::android::bluetooth::flags::fix_module_shutdown_sync_with_stack()) {
+      if (com_android_bluetooth_flags_fix_module_shutdown_sync_with_stack()) {
         // Do a blocking wait for `kHandlerStopTimeout` before destructing the alarm. This prevents
         // the HciDataRouter destruction while the alarm's task is still running.
         unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread(), kHandlerStopTimeout));
       } else {
         unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread()));
       }
-      if (com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+      if (com_android_bluetooth_flags_discard_unknown_acl_packet()) {
         unknown_acl_alarm_->Schedule(
                 common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
                 kWaitBeforeDroppingUnknownAcl);
@@ -211,7 +211,7 @@ private:
 #endif
     log::info("Saving packet of size {} to unknown connection 0x{:x}", packet->size(),
               packet->GetHandle());
-    if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+    if (!com_android_bluetooth_flags_discard_unknown_acl_packet()) {
       unknown_acl_alarm_->Schedule(
               common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
               kWaitBeforeDroppingUnknownAcl);

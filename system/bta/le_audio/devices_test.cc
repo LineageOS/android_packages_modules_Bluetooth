@@ -106,8 +106,8 @@ class LeAudioDevicesTest : public Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_fix_allocation_in_codec_config(true);
     devices_ = new LeAudioDevices();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
@@ -2731,7 +2731,7 @@ TEST_F(LeAudioDeviceSubrateTest, startConnSubrateControllerNotSupport) {
 }
 
 TEST_F(LeAudioDeviceSubrateTest, startConnSubrateMgrRegisterFail) {
-  com::android::bluetooth::flags::provider_->le_subrate_manager(true);
+  set_com_android_bluetooth_flags_le_subrate_manager(true);
   ON_CALL(mock_stack_l2cap_interface_, L2CA_GetBleConnInterval(_))
           .WillByDefault(Return(LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()));
   ON_CALL(gatt_interface_, SubrateModeRequest(_, _, _))
@@ -2747,7 +2747,7 @@ TEST_F(LeAudioDeviceSubrateTest, startConnSubrateMgrRegisterFail) {
 }
 
 TEST_F(LeAudioDeviceSubrateTest, startConnSubrateMgerRegisterFailAfterConnParamsUpdateComplete) {
-  com::android::bluetooth::flags::provider_->le_subrate_manager(true);
+  set_com_android_bluetooth_flags_le_subrate_manager(true);
   device_->SetSubrateState(SubrateState::PENDING_ENABLING_CONN_UPDATE_COMPLETE);
   ON_CALL(mock_stack_l2cap_interface_, L2CA_GetBleConnInterval(_))
           .WillByDefault(Return(LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()));
@@ -2764,7 +2764,7 @@ TEST_F(LeAudioDeviceSubrateTest, startConnSubrateMgerRegisterFailAfterConnParams
 }
 
 TEST_F(LeAudioDeviceSubrateTest, startConnSubrateMgrRegisterSuccess) {
-  com::android::bluetooth::flags::provider_->le_subrate_manager(true);
+  set_com_android_bluetooth_flags_le_subrate_manager(true);
   ON_CALL(mock_stack_l2cap_interface_, L2CA_GetBleConnInterval(_))
           .WillByDefault(Return(LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()));
   ON_CALL(gatt_interface_, SubrateModeRequest(_, _, _))

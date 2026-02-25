@@ -110,7 +110,7 @@ static bool property_equals(const bt_property_t* p1, const bt_property_t* p2) {
 }
 
 TEST_F(BluetoothTest, AdapterSetGetName) {
-  com::android::bluetooth::flags::provider_->set_name_in_system_server(false);
+  set_com_android_bluetooth_flags_set_name_in_system_server(false);
   bt_property_t* new_name = property_new_name("BluetoothTestName1");
 
   bluetooth_enable("test_name");

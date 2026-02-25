@@ -31,7 +31,7 @@ class StackBtuTest : public ::testing::Test {
 protected:
   void SetUp() override {
     reset_mock_function_count_map();
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
   }
 };
 

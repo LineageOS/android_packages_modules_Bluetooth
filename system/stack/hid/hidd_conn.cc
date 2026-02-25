@@ -774,7 +774,7 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type, uint8_t param
 
   // send data only when connected
   bool send_data = hd_cb.device.state == HIDD_DEV_CONNECTED;
-  if (com::android::bluetooth::flags::hidd_handle_set_protocol_before_interrupt_connected()) {
+  if (com_android_bluetooth_flags_hidd_handle_set_protocol_before_interrupt_connected()) {
     if (msg_type == HID_TRANS_HANDSHAKE &&
         hd_cb.device.conn.conn_state == HID_CONN_STATE_CONNECTING_INTR) {
       // Host might send SET_PROTOCOL before establishing the INTR channel. We reply in this case.

@@ -58,7 +58,7 @@ class VolumeControllerDevicesTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     devices_ = new VolumeControllerDevices();
     gatt::SetMockBtaGattInterface(&gatt_interface);
@@ -220,7 +220,7 @@ class VolumeControllerDeviceTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     device = new VolumeControllerDevice(GetTestAddress(1), true);
     gatt::SetMockBtaGattInterface(&gatt_interface);

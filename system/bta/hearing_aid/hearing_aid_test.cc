@@ -791,7 +791,7 @@ TEST_F(HearingAidTest, conn_update_after_service_changed_gatt_omitted_after_svc_
 
 /* Test that if second of two devices fails to reconnect, reconnection is attempted */
 TEST_F(HearingAidTest, reconnect_first_success_second_fail) {
-  com::android::bluetooth::flags::provider_->asha_retry_reconnect_when_in_set(true);
+  set_com_android_bluetooth_flags_asha_retry_reconnect_when_in_set(true);
   const RawAddress test_address1 = GetTestAddress(1);
   const RawAddress test_address2 = GetTestAddress(2);
   const uint16_t conn_id1 = GetTestConnId(test_address1);
@@ -885,7 +885,7 @@ TEST_F(HearingAidTest, reconnect_first_success_second_fail) {
 /* Test that if first of two devices fails to reconnect, reconnection is attempted after
  * the second one connects successfully */
 TEST_F(HearingAidTest, reconnect_first_fail_second_success) {
-  com::android::bluetooth::flags::provider_->asha_retry_reconnect_when_in_set(true);
+  set_com_android_bluetooth_flags_asha_retry_reconnect_when_in_set(true);
   const RawAddress test_address1 = GetTestAddress(1);
   const RawAddress test_address2 = GetTestAddress(2);
   const uint16_t conn_id1 = GetTestConnId(test_address1);

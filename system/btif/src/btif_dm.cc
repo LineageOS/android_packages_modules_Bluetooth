@@ -1021,7 +1021,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
     cod = COD_UNCLASSIFIED;
   }
 
-  if (!com::android::bluetooth::flags::btsec_disable_legacy_auto_pair()) {
+  if (!com_android_bluetooth_flags_btsec_disable_legacy_auto_pair()) {
     /* check for auto pair possibility only if bond was initiated by local device
      */
     if (!(is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) &&
@@ -1952,7 +1952,7 @@ bool btif_is_interesting_le_service(const bluetooth::Uuid& uuid) {
   return uuid.As16Bit() == UUID_SERVCLASS_LE_HID || uuid == UUID_HEARING_AID || uuid == UUID_VC ||
          uuid == UUID_CSIS ||
          (uuid == UUID_GMCS &&
-          com::android::bluetooth::flags::leaudio_peripheral_mcp_link_abstraction_layer()) ||
+          com_android_bluetooth_flags_leaudio_peripheral_mcp_link_abstraction_layer()) ||
          uuid == UUID_LE_AUDIO || uuid == UUID_LE_MIDI || uuid == UUID_HAS || uuid == UUID_BASS ||
          uuid == UUID_BATTERY || uuid == ANDROID_HEADTRACKER_SERVICE_UUID || uuid == UUID_GMAP;
 }
@@ -3047,7 +3047,7 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
 void btif_dm_remove_bond(const RawAddress bd_addr) {
   log::verbose("bd_addr={}", bd_addr);
 
-  if (com::android::bluetooth::flags::cancel_pairing_while_remove_bond()) {
+  if (com_android_bluetooth_flags_cancel_pairing_while_remove_bond()) {
     if (is_bonding_or_sdp() && pairing_cb.bd_addr == bd_addr) {
       log::warn("Ongoing pairing/sdp detected, cancelling it first before removing bond.");
       btif_dm_cancel_bond(bd_addr);
@@ -3919,7 +3919,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   // Disconnect the link only when the device didn't recover from bond-loss as repairing failed.
   // TODO (b/481170402): Replace the `fail_reason` with just the `state` check while removing
   // bugfix_autonomous_repairing.
-  bool disconnect = com::android::bluetooth::flags::bugfix_autonomous_repairing()
+  bool disconnect = com_android_bluetooth_flags_bugfix_autonomous_repairing()
                             ? state == BT_BOND_STATE_NONE
                             : p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND;
   if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr) && disconnect) {

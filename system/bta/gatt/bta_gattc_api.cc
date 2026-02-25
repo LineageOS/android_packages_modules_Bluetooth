@@ -744,7 +744,7 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if, const RawAdd
   } else {
     log::error("client_if={} Not Registered", client_if);
   }
-  if (com::android::bluetooth::flags::gatt_offload_api() && status == GATT_SUCCESS) {
+  if (com_android_bluetooth_flags_gatt_offload_api() && status == GATT_SUCCESS) {
     GATTC_InformNotificationHandle(bda, handle);
   }
 

@@ -54,7 +54,7 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
     btm_sec_disconnect(handle, HCI_ERR_PEER_USER, "stack::acl::ble_acl fail");
     log::warn("Unable to complete l2cap connection");
 
-    if (com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+    if (com_android_bluetooth_flags_move_conn_mgr_callbacks()) {
       connection_manager::on_connection_failed(address_with_type.bda);
     }
     return false;

@@ -352,7 +352,7 @@ protected:
   }
 
   void TearDown() override {
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     // We cannot teardown our structure without unregistering
     // from our own structure we created.
@@ -633,7 +633,7 @@ TEST_F(LeImplTest, connection_complete_with_central_role) {
 
 TEST_F(LeImplTest, connection_complete_with_central_role__ADDRESS_ROTATION) {
   ON_CALL(*controller_, IsRpaGenerationSupported()).WillByDefault(Return(false));
-  com::android::bluetooth::flags::provider_->rotate_address_when_connected(true);
+  set_com_android_bluetooth_flags_rotate_address_when_connected(true);
 
   set_resolvable_address_policy();
 
@@ -706,7 +706,7 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_central_role) {
 
 TEST_F(LeImplTest, enhanced_connection_complete_with_central_role__ADDRESS_ROTATION) {
   ON_CALL(*controller_, IsRpaGenerationSupported()).WillByDefault(Return(false));
-  com::android::bluetooth::flags::provider_->rotate_address_when_connected(true);
+  set_com_android_bluetooth_flags_rotate_address_when_connected(true);
 
   set_resolvable_address_policy();
 
@@ -1400,7 +1400,7 @@ TEST_F(LeImplTest, on_le_connection_canceled_on_pause) {
 
 // TODO: delete with gd_conn_mgr_one_timeout
 TEST_F(LeImplTest, on_create_connection_timeout) {
-  if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+  if (com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
     GTEST_SKIP() << "Skipping test because gd_conn_mgr_one_timeout flag is enabled.";
   }
 
@@ -1587,7 +1587,7 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
   ASSERT_EQ(ConnectabilityState::ARMED, le_impl_->connectability_state_);
 
   // Simulate upper layer timeout on direct connect. Verify background connect is still in place
-  if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+  if (!com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
     EXPECT_CALL(mock_le_connection_callbacks_,
                 OnLeConnectFail(_, ErrorCode::CONNECTION_ACCEPT_TIMEOUT))
             .Times(1);
@@ -1657,7 +1657,7 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
 
   log::info("Simulate timeout");
 
-  if (!com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+  if (!com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
     EXPECT_CALL(mock_le_connection_callbacks_,
                 OnLeConnectFail(_, ErrorCode::CONNECTION_ACCEPT_TIMEOUT))
             .Times(1);

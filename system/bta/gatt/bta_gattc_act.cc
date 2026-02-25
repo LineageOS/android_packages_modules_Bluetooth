@@ -539,7 +539,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
     p_clcb->p_srcb->mtu = GATT_DEF_BLE_MTU_SIZE;
   }
 
-  if (com::android::bluetooth::flags::gatt_conn_settings()) {
+  if (com_android_bluetooth_flags_gatt_conn_settings()) {
     if (p_clcb->p_srcb->mtu == GATT_DEF_BLE_MTU_SIZE) {
       // Set the default based on the APP's preference
       log::verbose("bd_addr: {}", p_clcb->bda);
@@ -674,7 +674,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
                   },
   };
 
-  if (com::android::bluetooth::flags::le_subrate_manager()) {
+  if (com_android_bluetooth_flags_le_subrate_manager()) {
     bta_gattc_subrate_mode_request(p_clcb->p_rcb->client_if, p_clcb->bda,
                                    GATT_SUBRATE_MODE_OFF, 0, 0, 0);
   }
@@ -1255,7 +1255,7 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_
     }
   }
 
-  if (com::android::bluetooth::flags::gatt_conn_settings() && p_data->p_cmpl &&
+  if (com_android_bluetooth_flags_gatt_conn_settings() && p_data->p_cmpl &&
       p_data->status == GATT_SUCCESS) {
     p_clcb->p_srcb->mtu = p_data->p_cmpl->mtu;
   }
@@ -1271,7 +1271,7 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_
 void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_q_cmd == NULL) {
     if (p_data->op_cmpl.op_code == GATTC_OPTYPE_CONFIG) {
-      if (!com::android::bluetooth::flags::gatt_conn_settings()) {
+      if (!com_android_bluetooth_flags_gatt_conn_settings()) {
         bta_gattc_cfg_mtu_cmpl(p_clcb, &p_data->op_cmpl);
       } else {
         if (p_data->op_cmpl.status != GATT_SUCCESS) {
@@ -1595,7 +1595,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   log::info("{} service changed s_handle=0x{:x}, e_handle=0x{:x}", p_srcb->server_bda, s_handle,
             e_handle);
 
-  if (com::android::bluetooth::flags::ignore_service_change_indication()) {
+  if (com_android_bluetooth_flags_ignore_service_change_indication()) {
     char remote_name[BD_NAME_LEN] = "";
     btif_storage_get_stored_remote_name(p_srcb->server_bda, remote_name);
     if (interop_match_name(INTEROP_IGNORE_SERVICE_CHANGED_IND, remote_name)) {
@@ -1609,7 +1609,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
     }
   }
 
-  if (com::android::bluetooth::flags::gatt_offload_api()) {
+  if (com_android_bluetooth_flags_gatt_offload_api()) {
     GATTC_InformServiceChangedIndication(p_srcb->server_bda);
   }
 

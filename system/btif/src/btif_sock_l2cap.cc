@@ -840,7 +840,7 @@ static bool is_psm_in_fixed_range(int psm, int lecoc_fixed_psm_slots) {
 static void btsock_l2cap_server_listen(l2cap_socket* sock, bool is_assigned_psm) {
   tBTA_JV_CONN_TYPE connection_type =
           sock->is_le_coc ? tBTA_JV_CONN_TYPE::L2CAP_LE : tBTA_JV_CONN_TYPE::L2CAP;
-  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+  if (com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
     log::info("fixed psm range : {}", sock->lecoc_fixed_psm_slots);
     if (sock->is_le_coc) {
       if (sock->channel <= 0) {
@@ -883,7 +883,7 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock, bool is_assigned_psm)
     cfg->init_credit = 0;
   }
 
-  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+  if (com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
     cfg->lecoc_fixed_psm_slots = sock->lecoc_fixed_psm_slots;
     cfg->lecoc_assigned_psm = is_assigned_psm;
   }
@@ -938,7 +938,7 @@ static BtStatus btsock_l2cap_listen_or_connect(const char* name, const RawAddres
   if (is_le_coc) {
     if (listen) {
       if (flags & BTSOCK_FLAG_NO_SDP) {
-        if (!com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+        if (!com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
           /* For LE COC server; set channel to zero so that it will be assigned */
           channel = 0;
         }
@@ -968,7 +968,7 @@ static BtStatus btsock_l2cap_listen_or_connect(const char* name, const RawAddres
   sock->channel = channel;
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
-  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+  if (com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
     sock->lecoc_fixed_psm_slots =
             android::sysprop::bluetooth::Ble::lecoc_fixed_psm_slots().value_or(
                     LECOC_FIXED_PSM_SLOTS_DEFAULT);

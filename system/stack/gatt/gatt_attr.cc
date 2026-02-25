@@ -268,7 +268,7 @@ static tGATT_STATUS read_attr_value(tCONN_ID conn_id, uint16_t handle, tGATT_VAL
     return GATT_READ_NOT_PERMIT;
   }
 
-  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed() &&
+  if (com_android_bluetooth_flags_gatt_add_cccd_on_service_changed() &&
       handle == gatt_cb.handle_of_srv_changed_cccd) {
     /* GATT_UUID_GATT_SRV_CHGD CCCD*/
     log::verbose("Read: cccd of service changed");
@@ -314,7 +314,7 @@ static tGATT_STATUS proc_write_req(tCONN_ID conn_id, tGATTS_REQ_TYPE, tGATT_WRIT
     return GATT_WRITE_NOT_PERMIT;
   }
 
-  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed() &&
+  if (com_android_bluetooth_flags_gatt_add_cccd_on_service_changed() &&
       handle == gatt_cb.handle_of_srv_changed_cccd) {
     /* GATT_UUID_GATT_SRV_CHGD CCCD*/
     log::verbose("Write: cccd of service changed");
@@ -454,7 +454,7 @@ void gatt_profile_db_init(void) {
   service_changed_char.permissions = 0;
   service.push_back(service_changed_char);
 
-  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed()) {
+  if (com_android_bluetooth_flags_gatt_add_cccd_on_service_changed()) {
     btgatt_db_element_t service_changed_desc;
     service_changed_desc.uuid = srv_changed_desc_cccd_uuid;
     service_changed_desc.type = BTGATT_DB_DESCRIPTOR;
@@ -488,7 +488,7 @@ void gatt_profile_db_init(void) {
   }
 
   gatt_cb.handle_of_h_r = service[1].attribute_handle;
-  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed()) {
+  if (com_android_bluetooth_flags_gatt_add_cccd_on_service_changed()) {
     gatt_cb.handle_of_srv_changed_cccd = service[2].attribute_handle;
     gatt_cb.handle_sr_supported_feat = service[3].attribute_handle;
     gatt_cb.handle_cl_supported_feat = service[4].attribute_handle;
@@ -822,7 +822,7 @@ void GATT_LE_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool /* enable
   /* hold the link here */
   if (!stack::leConnectionConnect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_PUBLIC,
                                   BTM_BLE_DIRECT_CONNECTION, true, 0, false,
-                                  com::android::bluetooth::flags::gatt_conn_settings())) {
+                                  com_android_bluetooth_flags_gatt_conn_settings())) {
     log::warn(
             "Unable to connect GATT client gatt_if:{} peer:{} transport:{} "
             "connection_tyoe:{} opporunistic:{}",

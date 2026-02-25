@@ -151,7 +151,7 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
  * matched to.
  */
 BtmDevice* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     if (BtmSecurity::Get().sec_dev_rec_ == nullptr) {
       return nullptr;
     }
@@ -207,7 +207,7 @@ static BtmDevice* btm_find_dev_by_identity_addr_(const RawAddress& bd_addr, uint
 }
 
 static BtmDevice* btm_find_dev_by_identity_addr(const RawAddress& bd_addr, uint8_t addr_type) {
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     return btm_find_dev_by_identity_addr_(bd_addr, addr_type);
   }
 

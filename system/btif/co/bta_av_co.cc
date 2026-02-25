@@ -506,7 +506,7 @@ void BtaAvCo::ProcessSetConfig(tBTA_AV_HNDL bta_av_handle, const RawAddress& pee
     if (t_local_sep == AVDT_TSEP_SNK) {
       log::verbose("peer {} is A2DP Source", p_peer->addr);
 
-      if (com::android::bluetooth::flags::a2dp_sink_offload() &&
+      if (com_android_bluetooth_flags_a2dp_sink_offload() &&
           ::bluetooth::audio::a2dp::provider::supports_codec(A2DP_SinkCodecIndex(p_codec_info))) {
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> a2dp_remote_caps;
         btav_a2dp_codec_config_t codec_config{};

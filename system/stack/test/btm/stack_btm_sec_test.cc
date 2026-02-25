@@ -189,7 +189,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
   const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
 
   // Fill up the records
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
       ASSERT_EQ(i, list_length(::BtmSecurity::Get().sec_dev_rec_));
       p_devices[i] = btm_sec_allocate_dev_rec(bd_addr);
@@ -202,7 +202,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
   }
 
   // Second pass up the records
-  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
       ASSERT_EQ(kBtmSecMaxDeviceRecords, list_length(::BtmSecurity::Get().sec_dev_rec_));
       p_devices[i] = btm_sec_allocate_dev_rec(bd_addr);
