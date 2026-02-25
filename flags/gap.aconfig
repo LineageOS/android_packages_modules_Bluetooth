@@ -213,3 +213,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "convert_pseudo_address_to_identity"
+    namespace: "bluetooth"
+    description: "Convert pseudo address to identity address when used for APCF filters"
+    bug: "486698443"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
