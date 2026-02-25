@@ -105,7 +105,7 @@ public:
           base::OnceCallback<void(bool /* enable */, uint8_t /* status */)>;
 
   /** Registers a scanner with the stack */
-  virtual void RegisterScanner(const bluetooth::Uuid& app_uuid, RegisterCallback) = 0;
+  virtual void RegisterScanner(const bluetooth::Uuid& app_uuid) = 0;
 
   /** Unregister a scanner from the stack */
   virtual void Unregister(int scanner_id) = 0;
