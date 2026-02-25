@@ -145,6 +145,8 @@ class HostService(HostServicer):
         if self.device.keystore is not None:
             await self.device.keystore.delete_all()
 
+        async with asyncio.timeout(5.0):
+            await self.device.host.flush()
         # trigger gRCP server stop then return
         asyncio.create_task(self.grpc_server.stop(None))
         return empty_pb2.Empty()
