@@ -557,7 +557,6 @@ pub mod ffi {
         unsafe fn gdscan_on_batch_scan_threshold_crossed(client_if: i32);
 
         // Static cb_variant! callbacks using base::Callback
-        unsafe fn gdscan_register_callback(uuid: Uuid, scanner_id: u8, btm_status: u8);
         unsafe fn gdscan_status_callback(scanner_id: u8, btm_status: u8);
         unsafe fn gdscan_enable_callback(action: u8, btm_status: u8);
         unsafe fn gdscan_filter_param_setup_callback(
@@ -1207,9 +1206,6 @@ cb_variant!(GDScannerCb, gdscan_on_batch_scan_threshold_crossed -> GattScannerCa
 /// identifier for the callback instead (such as scanner id or Uuid).
 #[derive(Debug)]
 pub enum GattScannerInbandCallbacks {
-    /// Params: App Uuid, Scanner Id, BTM Status
-    RegisterCallback(Uuid, u8, u8),
-
     /// Params: Scanner Id, BTM Status
     StatusCallback(u8, u8),
 
@@ -1258,9 +1254,6 @@ impl Debug for GattScannerInbandCallbacksDispatcher {
 }
 
 type GDScannerInbandCb = Arc<Mutex<GattScannerInbandCallbacksDispatcher>>;
-
-cb_variant!(GDScannerInbandCb, gdscan_register_callback -> GattScannerInbandCallbacks::RegisterCallback,
-    Uuid, u8, u8);
 
 cb_variant!(GDScannerInbandCb, gdscan_status_callback -> GattScannerInbandCallbacks::StatusCallback, u8, u8);
 cb_variant!(GDScannerInbandCb, gdscan_enable_callback -> GattScannerInbandCallbacks::EnableCallback, u8, u8);
