@@ -316,19 +316,6 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_leng
 
 /*******************************************************************************
  *
- * Function         BTM_BleReadPhy
- *
- * Description      To read the current PHYs for specified LE connection
- *
- *
- * Returns          tBTM_STATUS::BTM_SUCCESS if success; otherwise failed.
- *
- ******************************************************************************/
-void BTM_BleReadPhy(const RawAddress& bd_addr,
-                    base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
-
-/*******************************************************************************
- *
  * Function         btm_ble_get_acl_remote_addr
  *
  * Description      This function reads the active remote address used for the

@@ -46,7 +46,6 @@ struct BTM_BleDataSignature BTM_BleDataSignature;
 struct BTM_BleLoadLocalKeys BTM_BleLoadLocalKeys;
 struct BTM_BleOobDataReply BTM_BleOobDataReply;
 struct BTM_BlePasskeyReply BTM_BlePasskeyReply;
-struct BTM_BleReadPhy BTM_BleReadPhy;
 struct BTM_BleReceiverTest BTM_BleReceiverTest;
 struct BTM_BleSecureConnectionOobDataReply BTM_BleSecureConnectionOobDataReply;
 struct BTM_BleTestEnd BTM_BleTestEnd;
@@ -133,11 +132,6 @@ void btm_ble_oob_data_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t 
 void btm_ble_passkey_reply(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t passkey) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble::BTM_BlePasskeyReply(bd_addr, res, passkey);
-}
-void BTM_BleReadPhy(const RawAddress& bd_addr,
-                    base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::BTM_BleReadPhy(bd_addr, std::move(cb));
 }
 void BTM_BleReceiverTest(uint8_t rx_freq, tBTM_CMPL_CB* p_cmd_cmpl_cback) {
   inc_func_call_count(__func__);

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <base/functional/callback_forward.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
@@ -151,5 +152,12 @@ void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16
  */
 void leConnectionSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
                         uint16_t phy_options);
+
+/**
+ * To read the current PHYs for specified LE connection
+ */
+void leConnectionReadPhy(
+        const RawAddress& bd_addr,
+        base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
 
 }  // namespace bluetooth::stack

@@ -21,6 +21,7 @@
  *
  *  mockcify.pl ver 0.5.0
  */
+#include <base/functional/callback.h>
 
 #include <cstdint>
 #include <functional>
@@ -156,6 +157,23 @@ struct leConnectionSetPhy {
 };
 extern struct leConnectionSetPhy leConnectionSetPhy;
 
+// Name: leConnectionReadPhy
+// Params: const RawAddress& bd_addr, base::OnceCallback<void(uint8_t tx_phy,
+// uint8_t rx_phy, uint8_t status Return: void
+struct leConnectionReadPhy {
+  std::function<void(
+          const RawAddress& bd_addr,
+          base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> callback)>
+          body{[](const RawAddress& /* bd_addr */,
+                  base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)>
+                  /* callback */) {}};
+  void operator()(
+          const RawAddress& bd_addr,
+          base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> callback) {
+    body(bd_addr, std::move(callback));
+  }
+};
+extern struct leConnectionReadPhy leConnectionReadPhy;
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test

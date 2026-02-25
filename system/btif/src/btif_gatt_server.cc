@@ -45,7 +45,6 @@
 #include "btif_status.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_uuid16.h"
-#include "stack/include/btm_client_interface.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/stack_le_connection.h"
 
@@ -455,7 +454,8 @@ static BtStatus btif_gatts_read_phy(
         const RawAddress& bd_addr,
         base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
-  do_in_main_thread(BindOnce(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(std::move(cb))));
+  do_in_main_thread(
+          BindOnce(&stack::leConnectionReadPhy, bd_addr, jni_thread_wrapper(std::move(cb))));
   return BtifStatus();
 }
 
