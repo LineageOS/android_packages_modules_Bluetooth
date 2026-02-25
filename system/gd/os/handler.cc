@@ -50,17 +50,18 @@ Handler::~Handler() {
   event_->Close();
 }
 
-void Handler::Post(base::OnceClosure closure) {
+std::optional<base::OnceClosure> Handler::Post(base::OnceClosure closure) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (was_cleared()) {
       log::warn("Posting to a handler which has been cleared, thread: {}",
                 thread_->GetThreadName());
-      return;
+      return std::move(closure);
     }
     tasks_->emplace(std::move(closure));
   }
   event_->Notify();
+  return std::nullopt;
 }
 
 void Handler::Clear() {
@@ -133,10 +134,10 @@ std::future<void> Handler::NotifyWhenIdle() {
   return future;
 }
 
-bool Handler::PostWithDelay(base::OnceClosure closure, std::chrono::milliseconds delay) {
+std::optional<base::OnceClosure> Handler::PostWithDelay(base::OnceClosure closure,
+                                                        std::chrono::milliseconds delay) {
   if (delay == std::chrono::milliseconds::zero()) {
-    Post(std::move(closure));
-    return true;
+    return Post(std::move(closure));
   }
 
   bool reschedule = false;
@@ -145,7 +146,7 @@ bool Handler::PostWithDelay(base::OnceClosure closure, std::chrono::milliseconds
     if (was_cleared()) {
       log::warn("Posting to a handler which has been cleared, thread: {}",
                 thread_->GetThreadName());
-      return false;
+      return std::move(closure);
     }
 
     auto time_to_run = boottime_clock::now() + delay;
@@ -160,7 +161,7 @@ bool Handler::PostWithDelay(base::OnceClosure closure, std::chrono::milliseconds
   if (reschedule) {
     reschedule_delayed_tasks();
   }
-  return true;
+  return std::nullopt;
 }
 
 void Handler::handle_delayed_event() {

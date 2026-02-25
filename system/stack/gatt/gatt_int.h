@@ -39,6 +39,7 @@
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 #define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
@@ -192,7 +193,7 @@ typedef struct {
 
 typedef struct {
   bluetooth::Uuid app_uuid128;
-  tGATT_CBACK app_cb{};
+  bluetooth::stack::tGATT_CBACK app_cb{};
   tGATT_IF gatt_if{0}; /* one based */
   bool in_use{false};
   uint8_t listening{0}; /* if adv for all has been enabled */

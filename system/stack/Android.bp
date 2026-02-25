@@ -170,6 +170,8 @@ cc_library_static {
         "gatt/gatt_sr_hash.cc",
         "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
+        "gatt/stack_app.cc",
+        "gatt/stack_le_connection.cc",
         "hcic/hciblecmds.cc",
         "hcic/hcicmds.cc",
         "hid/hidd_api.cc",
@@ -1692,6 +1694,7 @@ cc_test {
         "btm/hfp_lc3_encoder.cc",
         "btm/hfp_msbc_decoder.cc",
         "btm/hfp_msbc_encoder.cc",
+        "test/btm/btm_sec_rmt_name_request_complete_test.cc",
         "test/btm/peer_packet_types_test.cc",
         "test/btm/sco_hci_test.cc",
         "test/btm/sco_pkt_status_test.cc",
@@ -2004,6 +2007,8 @@ cc_test {
         "gatt/gatt_sr_hash.cc",
         "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
+        "gatt/stack_app.cc",
+        "gatt/stack_le_connection.cc",
         "test/gatt/stack_gatt_test.cc",
     ],
     static_libs: [
@@ -2102,6 +2107,8 @@ cc_test {
         "gatt/gatt_sr_hash.cc",
         "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
+        "gatt/stack_app.cc",
+        "gatt/stack_le_connection.cc",
         "test/common/mock_eatt.cc",
         "test/gatt/gatt_offload_test.cc",
     ],
@@ -2190,6 +2197,8 @@ cc_test {
         "gatt/gatt_sr_hash.cc",
         "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
+        "gatt/stack_app.cc",
+        "gatt/stack_le_connection.cc",
         "test/gatt/gatt_subrate_manager_test.cc",
     ],
     static_libs: [
@@ -2737,7 +2746,9 @@ filegroup {
 filegroup {
     name: "TestMockStackGatt",
     srcs: [
+        "mock/mock_stack_app.cc",
         "mock/mock_stack_gatt*.cc",
+        "mock/mock_stack_le_connection.cc",
     ],
 }
 

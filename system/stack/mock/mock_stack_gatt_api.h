@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,51 +266,6 @@ struct GATTS_StopService {
 };
 extern struct GATTS_StopService GATTS_StopService;
 
-// Name: GATT_UpdateSubrateConfig
-// Params: GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
-//         uint16_t subrate_min, uint16_t cont_num
-// Return: void
-struct GATT_UpdateSubrateConfig {
-  std::function<void(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max, uint16_t subrate_min,
-                     uint16_t cont_num)>
-          body{[](tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
-                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) {}};
-  void operator()(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max, uint16_t subrate_min,
-                  uint16_t cont_num) {
-    body(subrate_mode, subrate_max, subrate_min, cont_num);
-  }
-};
-extern struct GATT_UpdateSubrateConfig GATT_UpdateSubrateConfig;
-
-// Name: GATT_SubrateRequest
-// Params: tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode
-// Return: bool
-struct GATT_SubrateRequest {
-  static bool return_value;
-  std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode)>
-          body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
-                  tGATT_SUBRATE_MODE /* subrate_mode */) { return return_value; }};
-  bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode) {
-    return body(gatt_if, bd_addr, subrate_mode);
-  }
-};
-extern struct GATT_SubrateRequest GATT_SubrateRequest;
-
-// Name: GATT_CancelConnect
-// Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct
-// Return: bool
-struct GATT_CancelConnect {
-  static bool return_value;
-  std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct)> body{
-          [](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */, bool /* is_direct */) {
-            return return_value;
-          }};
-  bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct) {
-    return body(gatt_if, bd_addr, is_direct);
-  }
-};
-extern struct GATT_CancelConnect GATT_CancelConnect;
-
 // Name: GATT_BR_Connect
 // Params: tGATT_IF gatt_if, const RawAddress& bd_addr
 // bool auto_mtu_enabled Return: bool
@@ -321,37 +276,6 @@ struct GATT_BR_Connect {
   bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr) { return body(gatt_if, bd_addr); }
 };
 extern struct GATT_BR_Connect GATT_BR_Connect;
-
-// Name: GATT_LE_Connect
-// Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
-// bool opportunistic, uint16_t preferred_mtu, bool prefer_relax_mode,
-// bool auto_mtu_enabled Return: bool
-struct GATT_LE_Connect {
-  static bool return_value;
-  std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                     bool is_direct, bool opportunistic, uint16_t preferred_mtu,
-                     bool prefer_relax_mode, bool auto_mtu_enabled)>
-          body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
-                  tBLE_ADDR_TYPE /* addr_type */, bool /* is_direct */, bool /* opportunistic */,
-                  uint16_t /* preferred_mtu */, bool /* prefer_relax_mode */,
-                  bool /* auto_mtu_enabled */) { return return_value; }};
-  bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                  bool is_direct, bool opportunistic, uint16_t preferred_mtu,
-                  bool prefer_relax_mode, bool auto_mtu_enabled) {
-    return body(gatt_if, bd_addr, addr_type, is_direct, opportunistic, preferred_mtu,
-                prefer_relax_mode, auto_mtu_enabled);
-  }
-};
-extern struct GATT_LE_Connect GATT_LE_Connect;
-
-// Name: GATT_Deregister
-// Params: tGATT_IF gatt_if
-// Return: void
-struct GATT_Deregister {
-  std::function<void(tGATT_IF gatt_if)> body{[](tGATT_IF /* gatt_if */) {}};
-  void operator()(tGATT_IF gatt_if) { body(gatt_if); }
-};
-extern struct GATT_Deregister GATT_Deregister;
 
 // Name: GATT_Disconnect
 // Params: uint16_t conn_id
@@ -396,31 +320,6 @@ struct GATT_GetConnectionInfor {
   }
 };
 extern struct GATT_GetConnectionInfor GATT_GetConnectionInfor;
-
-// Name: GATT_Register
-// Params: const Uuid& app_uuid128, std::string name, tGATT_CBACK* p_cb_info,
-// bool eatt_support Return: tGATT_IF
-struct GATT_Register {
-  static tGATT_IF return_value;
-  std::function<tGATT_IF(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                         bool eatt_support)>
-          body{[](const Uuid& /* app_uuid128 */, const std::string& /* name */,
-                  tGATT_CBACK* /* p_cb_info */, bool /* eatt_support */) { return return_value; }};
-  tGATT_IF operator()(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
-                      bool eatt_support) {
-    return body(app_uuid128, name, p_cb_info, eatt_support);
-  }
-};
-extern struct GATT_Register GATT_Register;
-
-// Name: GATT_StartIf
-// Params: tGATT_IF gatt_if
-// Return: void
-struct GATT_StartIf {
-  std::function<void(tGATT_IF gatt_if)> body{[](tGATT_IF /* gatt_if */) {}};
-  void operator()(tGATT_IF gatt_if) { body(gatt_if); }
-};
-extern struct GATT_StartIf GATT_StartIf;
 
 // Name: GATTC_OffloadCharacteristics
 // Params: tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count, uint64_t

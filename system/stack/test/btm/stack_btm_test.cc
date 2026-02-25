@@ -241,20 +241,18 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
 
 struct {
   RawAddress bd_addr;
-  DEV_CLASS dc;
   BD_NAME bd_name;
 } btm_test;
 
 namespace {
-void BTM_RMT_NAME_CALLBACK(const RawAddress& bd_addr, DEV_CLASS dc, BD_NAME bd_name) {
+void BTM_RMT_NAME_CALLBACK(const RawAddress& bd_addr, const BD_NAME& bd_name) {
   btm_test.bd_addr = bd_addr;
-  btm_test.dc = dc;
   memcpy(btm_test.bd_name, bd_name, BD_NAME_LEN);
 }
 }  // namespace
 
 TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
-  btm_cb.rnr.p_rmt_name_callback[0] = BTM_RMT_NAME_CALLBACK;
+  btm_cb.rnr.p_rmt_name_callback = BTM_RMT_NAME_CALLBACK;
 
   RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint8_t* p_bd_name = (const uint8_t*)"MyTestName";
@@ -263,15 +261,13 @@ TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
   btm_sec_rmt_name_request_complete(&bd_addr, p_bd_name, HCI_SUCCESS);
 
   ASSERT_THAT(btm_test.bd_name, Each(Eq(0)));
-  ASSERT_THAT(btm_test.dc, Each(Eq(0)));
-  ASSERT_EQ(bd_addr, btm_test.bd_addr);
+  ASSERT_EQ(btm_test.bd_addr, RawAddress::kEmpty);
 
   btm_test = {};
   ASSERT_TRUE(btm_find_or_alloc_dev(bd_addr) != nullptr);
   btm_sec_rmt_name_request_complete(&bd_addr, p_bd_name, HCI_SUCCESS);
 
   ASSERT_STREQ((const char*)p_bd_name, (const char*)btm_test.bd_name);
-  ASSERT_THAT(btm_test.dc, Each(Eq(0)));
   ASSERT_EQ(bd_addr, btm_test.bd_addr);
 }
 

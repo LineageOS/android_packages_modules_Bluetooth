@@ -27,6 +27,7 @@
 #include <format>
 #include <future>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -100,43 +101,51 @@ void MessageLoopThread::StartUp() {
 }
 
 bool MessageLoopThread::DoInThread(base::OnceClosure task) {
+  return DoInThreadElseReturn(std::move(task)) == std::nullopt;
+}
+
+bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::microseconds delay) {
+  return DoInThreadDelayedElseReturn(std::move(task), delay) == std::nullopt;
+}
+
+std::optional<base::OnceClosure> MessageLoopThread::DoInThreadElseReturn(base::OnceClosure task) {
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
     if (handler_ == nullptr) {
       log::error("handler is null for thread {}", *this);
-      return false;
+      return std::move(task);
     }
 
-    handler_->Post(std::move(task));
-    return true;
+    return handler_->Post(std::move(task));
   }
 
-  return DoInThreadDelayed(std::move(task), std::chrono::microseconds(0));
+  return DoInThreadDelayedElseReturn(std::move(task), std::chrono::microseconds(0));
 }
 
-bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::microseconds delay) {
+std::optional<base::OnceClosure> MessageLoopThread::DoInThreadDelayedElseReturn(
+        base::OnceClosure task, std::chrono::microseconds delay) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     if (handler_ == nullptr) {
       log::error("handler is null for thread {}", *this);
-      return false;
+      return std::move(task);
     }
 
-    handler_->PostWithDelay(std::move(task),
-                            std::chrono::duration_cast<std::chrono::milliseconds>(delay));
-    return true;
+    return handler_->PostWithDelay(std::move(task),
+                                   std::chrono::duration_cast<std::chrono::milliseconds>(delay));
   }
 
   if (message_loop_ == nullptr) {
     log::error("message loop is null for thread {}", *this);
-    return false;
+    return std::move(task);
   }
   if (!message_loop_->task_runner()->PostDelayedTask(FROM_HERE, std::move(task),
                                                      timeDeltaFromMicroseconds(delay))) {
     log::error("failed to post task to message loop for thread {}", *this);
-    return false;
+    return std::nullopt;  // this part of function is getting phased out, so returning nullopt
+                          // instead of move(task), as its libchrome dependent.
   }
-  return true;
+  return std::nullopt;
 }
 
 void MessageLoopThread::Suspend(os::Handler* caller_handler) {
@@ -388,7 +397,9 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
   }
 }
 
-void MessageLoopThread::Post(base::OnceClosure closure) { DoInThread(std::move(closure)); }
+std::optional<base::OnceClosure> MessageLoopThread::Post(base::OnceClosure closure) {
+  return DoInThreadElseReturn(std::move(closure));
+}
 
 PostableContext* MessageLoopThread::Postable() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);

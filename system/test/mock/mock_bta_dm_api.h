@@ -200,23 +200,6 @@ struct BTA_DmBleSecurityGrant {
 };
 extern struct BTA_DmBleSecurityGrant BTA_DmBleSecurityGrant;
 
-// Name: BTA_DmBleSubrateRequest
-// Params: const RawAddress& bd_addr, uint16_t subrate_min, uint16_t
-// subrate_max, uint16_t max_latency, uint16_t cont_num, uint16_t timeout
-// Return: void
-struct BTA_DmBleSubrateRequest {
-  std::function<void(const RawAddress& bd_addr, uint16_t subrate_min, uint16_t subrate_max,
-                     uint16_t max_latency, uint16_t cont_num, uint16_t timeout)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* subrate_min */,
-                  uint16_t /* subrate_max */, uint16_t /* max_latency */, uint16_t /* cont_num */,
-                  uint16_t /* timeout */) {}};
-  void operator()(const RawAddress& bd_addr, uint16_t subrate_min, uint16_t subrate_max,
-                  uint16_t max_latency, uint16_t cont_num, uint16_t timeout) {
-    body(bd_addr, subrate_min, subrate_max, max_latency, cont_num, timeout);
-  }
-};
-extern struct BTA_DmBleSubrateRequest BTA_DmBleSubrateRequest;
-
 // Name: BTA_DmBond
 // Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport
 // Return: void

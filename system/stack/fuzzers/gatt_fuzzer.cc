@@ -27,6 +27,8 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
+#include "stack/include/stack_le_connection.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
 #include "stack/mock/mock_stack_l2cap_api.h"
@@ -38,6 +40,8 @@
 using bluetooth::Uuid;
 using ::testing::NiceMock;
 using ::testing::Unused;
+
+using namespace bluetooth;
 
 BtStatus do_in_main_thread(base::OnceCallback<void()>) {
   // this is not properly mocked, so we use abort to catch if this is used in
@@ -154,7 +158,7 @@ static void GattInit() {
   tmp.fill(0x82);
   Uuid app_uuid = Uuid::From128BitBE(tmp);
 
-  tGATT_CBACK gap_cback = {
+  stack::tGATT_CBACK gap_cback = {
           .p_conn_cb = [](tGATT_IF, const RawAddress&, uint16_t conn_id, bool connected,
                           tGATT_DISCONN_REASON, tBT_TRANSPORT) { s_ConnId = conn_id; },
           .p_cmpl_cb = [](uint16_t, tGATTC_OPTYPE, tGATT_STATUS, tGATT_CL_COMPLETE*) {},
@@ -169,8 +173,8 @@ static void GattInit() {
           .p_subrate_chg_cb = nullptr,
   };
 
-  s_AppIf = GATT_Register(app_uuid, "Gap", &gap_cback, false);
-  GATT_StartIf(s_AppIf);
+  s_AppIf = stack::appRegister(app_uuid, "Gap", &gap_cback, false);
+  stack::appStartIf(s_AppIf);
 }
 
 static void ServerInit() {
@@ -210,7 +214,7 @@ static void ServerInit() {
 }
 
 static void ServerCleanup() {
-  GATT_Deregister(s_AppIf);
+  stack::appDeregister(s_AppIf);
   gatt_free();
 }
 
@@ -232,12 +236,12 @@ static void FuzzAsServer(FuzzedDataProvider& fdp) {
 
 static void ClientInit() {
   GattInit();
-  (void)GATT_LE_Connect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, false);
+  (void)stack::leConnectionConnect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, false);
 }
 
 static void ClientCleanup() {
-  (void)GATT_CancelConnect(s_AppIf, kDummyAddr, true);
-  GATT_Deregister(s_AppIf);
+  (void)stack::leConnectionCancelConnect(s_AppIf, kDummyAddr, true);
+  stack::appDeregister(s_AppIf);
   gatt_free();
 }
 

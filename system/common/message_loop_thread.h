@@ -115,6 +115,16 @@ public:
   bool DoInThread(base::OnceClosure task);
 
   /**
+   * Post a task to run on this thread. If the task cannot be posted, it will be returned to the
+   * caller.
+   *
+   * @param task task created through base::Bind()
+   * @return std::nullopt if the task is successfully posted, otherwise the
+   * task is returned to the caller.
+   */
+  std::optional<base::OnceClosure> DoInThreadElseReturn(base::OnceClosure task);
+
+  /**
    * Suspend the current thread blocking the execution of new tasks on the thread.
    * ShutDown must be called after this to clean up the resources.
    *
@@ -224,10 +234,23 @@ public:
    * scheduled
    */
   bool DoInThreadDelayed(base::OnceClosure task, std::chrono::microseconds delay);
+
+  /**
+   * Post a task to run on this thread after a specified delay. If the task cannot be posted, it
+   * will be returned to the caller.
+   *
+   * @param task task created through base::Bind()
+   * @param delay delay for the task to be executed
+   * @return std::nullopt if the task is successfully posted, otherwise the task is returned to the
+   * caller.
+   */
+  std::optional<base::OnceClosure> DoInThreadDelayedElseReturn(base::OnceClosure task,
+                                                               std::chrono::microseconds delay);
+
   /**
    * Wrapper around DoInThread without a location.
    */
-  void Post(base::OnceClosure closure) override;
+  std::optional<base::OnceClosure> Post(base::OnceClosure closure) override;
 
   /**
    * Returns a postable object
@@ -274,23 +297,24 @@ public:
         blocked_threads_.testAndBlock(caller_thread_id);
         log::info("Blocked current_thread id: {}, on the target thread: {}({}), for task#: {}",
                   caller_thread_id, target_thread_id, thread_name_, sync_task_posted_count_);
-        bool able_to_post = DoInThread(
+        std::optional<base::OnceClosure> posted_task = DoInThreadElseReturn(
                 base::BindOnce(task, std::forward<Functor>(func_ptr), std::move(promise), this,
                                sync_task_posted_count_, std::forward<Args>(args)...));
-        if (able_to_post) {
+        if (!posted_task.has_value()) {
           auto result = future.wait_for(kHandlerStopTimeout);
           blocked_threads_.unblock(caller_thread_id);  // unblock current thread
           log::assert_that(result == std::future_status::ready,
                            "assert failed: Thread: {}, is not idle after waiting for: {} ms",
                            thread_name_, kHandlerStopTimeout.count());
-          return future.get();
         } else {
           blocked_threads_.unblock(caller_thread_id);  // unblock current thread
           log::warn(
                   "Failed to post task#: {} on thread: {}, executing task on current thread "
                   "instead.",
                   sync_task_posted_count_, thread_name_);
+          std::move(posted_task.value()).Run();  // execute the task on current thread
         }
+        return future.get();
       }
     } else {
       log::warn("Target thread: {}(tid: {}) is blocked, executing task on current thread",

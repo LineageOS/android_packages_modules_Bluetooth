@@ -352,6 +352,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_auto_switch_announcement"
+    namespace: "bluetooth"
+    description: "Automatic switching to broadcast audio upon announcement detection"
+    bug: "486932415"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_cancel_stream_request_when_invalid_group"
     namespace: "bluetooth"
     description: "Cancel stream request when active group is invalid"
@@ -475,6 +485,16 @@ flag {
     namespace: "bluetooth"
     description: "Refactor LE Audio allowlist to increase device capacity"
     bug: "477447231"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_source_channel_map_classification_improvement"
+    namespace: "bluetooth"
+    description: "Improve broadcast channel classification"
+    bug: "487242521"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

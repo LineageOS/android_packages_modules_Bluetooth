@@ -495,41 +495,34 @@ void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16
 
 /** Callback used to notify layer above about a connection */
 void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
-  tCONN_ID conn_id;
+  if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+    std::set<tGATT_IF> apps = connection_manager::get_apps_connecting_to(p_tcb->peer_bda);
+    for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
+      if (!p_reg->in_use || !apps.contains(p_reg->gatt_if)) {
+        continue;
+      }
 
-  std::set<tGATT_IF> apps = connection_manager::get_apps_connecting_to(p_tcb->peer_bda);
-
-  /* notifying all applications for the connection up event */
-
-  for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
-    if (!p_reg->in_use) {
-      continue;
-    }
-
-    if (apps.find(p_reg->gatt_if) != apps.end()) {
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
     }
 
-    if (p_reg->app_cb.p_conn_cb) {
-      conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
-      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id, kGattConnected,
-                                 GATT_CONN_OK, p_tcb->transport);
+    if (!com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+      /* Remove the direct connection */
+      connection_manager::on_connection_complete(p_tcb->peer_bda);
     }
+
+    bool is_active = !p_tcb->app_hold_link.empty();
+    gatt_set_idle_timeout(p_tcb->peer_bda, is_active);
   }
 
-  if (!com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
-    /* Remove the direct connection */
-    connection_manager::on_connection_complete(p_tcb->peer_bda);
-  }
-
-  if (p_tcb->att_lcid == L2CAP_ATT_CID) {
-    if (!p_tcb->app_hold_link.empty()) {
-      /* disable idle timeout if one or more clients are holding the link
-       * disable the idle timer */
-      gatt_set_idle_timeout(p_tcb->peer_bda, true /* is_active */);
-    } else {
-      gatt_set_idle_timeout(p_tcb->peer_bda, false /* is_active */);
+  /* notifying all applications for the connection up event */
+  for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
+    if (!p_reg->in_use || !p_reg->app_cb.p_conn_cb) {
+      continue;
     }
+
+    tCONN_ID conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
+    (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id, kGattConnected,
+                               GATT_CONN_OK, p_tcb->transport);
   }
 }
 

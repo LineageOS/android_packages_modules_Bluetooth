@@ -73,6 +73,7 @@
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
+#include "stack/include/stack_le_connection.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -487,8 +488,9 @@ void bta_dm_remove_device(const RawAddress& target) {
   bool& bredr_connected = conn_info.bredr_connected;
 
   // Remove from LE allowlist
-  if (!GATT_CancelConnect(0, pseudo_addr, false)) {
-    if (identity_addr != pseudo_addr && !GATT_CancelConnect(0, identity_addr, false)) {
+  if (!stack::leConnectionCancelConnect(0, pseudo_addr, false)) {
+    if (identity_addr != pseudo_addr &&
+        !stack::leConnectionCancelConnect(0, identity_addr, false)) {
       log::warn("Unable to cancel GATT connect peer:{}", pseudo_addr);
     }
   }
@@ -1799,25 +1801,6 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result) {
     }
   } else {
     log::error("Ctrl BLE feature read failed: status :{}", result);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_ble_subrate_request
- *
- * Description      This function requests BLE subrate procedure.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
-                                uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
-                                uint16_t timeout) {
-  // Logging done in l2c_ble.cc
-  if (!stack::l2cap::get_interface().L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max,
-                                                         max_latency, cont_num, timeout)) {
-    log::warn("Unable to set L2CAP ble subrating peer:{}", bd_addr);
   }
 }
 

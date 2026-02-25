@@ -519,7 +519,13 @@ public final class BluetoothAdapter {
     @Hide @SystemApi public static final int ACTIVE_DEVICE_ALL = 2;
 
     @Hide
-    @IntDef({BluetoothProfile.HEADSET, BluetoothProfile.A2DP, BluetoothProfile.HEARING_AID})
+    @IntDef({
+        BluetoothProfile.HEADSET,
+        BluetoothProfile.A2DP,
+        BluetoothProfile.HEARING_AID,
+        BluetoothProfile.LE_AUDIO,
+        BluetoothProfile.LE_AUDIO_PERIPHERAL
+    })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ActiveDeviceProfile {}
 
@@ -2007,9 +2013,7 @@ public final class BluetoothAdapter {
     /**
      * Get the active devices for the BluetoothProfile specified
      *
-     * @param profile is the profile from which we want the active devices. Possible values are:
-     *     {@link BluetoothProfile#HEADSET}, {@link BluetoothProfile#A2DP}, {@link
-     *     BluetoothProfile#HEARING_AID} {@link BluetoothProfile#LE_AUDIO}
+     * @param profile is the profile from which we want the active devices.
      * @return A list of active bluetooth devices
      * @throws IllegalArgumentException If profile is not one of {@link ActiveDeviceProfile}
      */
@@ -2018,17 +2022,34 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @NonNull List<BluetoothDevice> getActiveDevices(@ActiveDeviceProfile int profile) {
-        if (profile != BluetoothProfile.HEADSET
-                && profile != BluetoothProfile.A2DP
-                && profile != BluetoothProfile.HEARING_AID
-                && profile != BluetoothProfile.LE_AUDIO) {
-            Log.e(TAG, "Invalid profile param value in getActiveDevices");
-            throw new IllegalArgumentException(
-                    "Profiles must be one of "
-                            + "BluetoothProfile.A2DP, "
-                            + "BluetoothProfile.HEADSET, "
-                            + "BluetoothProfile.HEARING_AID, or "
-                            + "BluetoothProfile.LE_AUDIO");
+        if (Flags.leaudioPeripheralFeature()) {
+            if (profile != BluetoothProfile.HEADSET
+                    && profile != BluetoothProfile.A2DP
+                    && profile != BluetoothProfile.HEARING_AID
+                    && profile != BluetoothProfile.LE_AUDIO
+                    && profile != BluetoothProfile.LE_AUDIO_PERIPHERAL) {
+                Log.e(TAG, "Invalid profile param value in getActiveDevices");
+                throw new IllegalArgumentException(
+                        "Profiles must be one of "
+                                + "BluetoothProfile.A2DP, "
+                                + "BluetoothProfile.HEADSET, "
+                                + "BluetoothProfile.HEARING_AID, or "
+                                + "BluetoothProfile.LE_AUDIO, or "
+                                + "BluetoothProfile.LE_AUDIO_PERIPHERAL");
+            }
+        } else {
+            if (profile != BluetoothProfile.HEADSET
+                    && profile != BluetoothProfile.A2DP
+                    && profile != BluetoothProfile.HEARING_AID
+                    && profile != BluetoothProfile.LE_AUDIO) {
+                Log.e(TAG, "Invalid profile param value in getActiveDevices");
+                throw new IllegalArgumentException(
+                        "Profiles must be one of "
+                                + "BluetoothProfile.A2DP, "
+                                + "BluetoothProfile.HEADSET, "
+                                + "BluetoothProfile.HEARING_AID, or "
+                                + "BluetoothProfile.LE_AUDIO");
+            }
         }
         return callServiceIfEnabled(
                 s -> s.getActiveDevices(profile, mAttributionSource), Collections.emptyList());

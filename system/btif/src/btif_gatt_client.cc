@@ -56,6 +56,7 @@
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
+#include "stack/include/stack_le_connection.h"
 #include "storage/config_keys.h"
 
 using base::BindOnce;
@@ -677,13 +678,6 @@ static int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   return 0;
 }
 
-static void btif_gattc_subrate_request_impl(RawAddress addr, int subrate_min, int subrate_max,
-                                            int max_latency, int cont_num, int sup_timeout) {
-  if (BTA_DmGetConnectionState(addr)) {
-    BTA_DmBleSubrateRequest(addr, subrate_min, subrate_max, max_latency, cont_num, sup_timeout);
-  }
-}
-
 static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrate_min,
                                            int subrate_max, int max_latency, int cont_num,
                                            int sup_timeout) {
@@ -695,8 +689,8 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
         return BtifStatus(UNSUPPORTED);;
     }
   }
-  return do_in_jni_thread(BindOnce(base::IgnoreResult(&btif_gattc_subrate_request_impl), bd_addr,
-                                   subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
+  return do_in_main_thread(BindOnce(base::IgnoreResult(&stack::leConnectionSubrateRequest), bd_addr,
+                                    subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
 
 static void btif_gattc_subrate_mode_request_impl(int client_if, const RawAddress& addr,

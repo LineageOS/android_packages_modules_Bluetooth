@@ -37,8 +37,7 @@ public:
   bool remname_active{false}; /* State of a remote name request by external API */
   tBT_DEVICE_TYPE remname_dev_type{
           BT_DEVICE_TYPE_UNKNOWN}; /* Whether it's LE or BREDR name request */
-#define BTM_SEC_MAX_RMT_NAME_CALLBACKS 2
-  tBTM_RMT_NAME_CALLBACK* p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS]{nullptr, nullptr};
+  BtmRemoteNameCallback* p_rmt_name_callback{nullptr};
 };
 
 }  // namespace rnr
@@ -49,31 +48,14 @@ public:
  *
  * Function         BTM_SecAddRmtNameNotifyCallback
  *
- * Description      Any profile can register to be notified when name of the
- *                  remote device is resolved.
+ * Description      Register a callback to be called when remote name is read.
  *
- * Parameters:      p_callback: Callback to add after each remote name
- *                  request has completed or timed out.
+ * Parameters:      callback: Callback to return remote name.
  *
- * Returns          true if registered OK, else false
+ * Returns          void
  *
  ******************************************************************************/
-bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
-
-/*******************************************************************************
- *
- * Function         BTM_SecDeleteRmtNameNotifyCallback
- *
- * Description      Any profile can deregister notification when a new Link Key
- *                  is generated per connection.
- *
- * Parameters:      p_callback: Callback to remove after each remote name
- *                  request has completed or timed out.
- *
- * Returns          true if unregistered OK, else false
- *
- ******************************************************************************/
-bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
+void BTM_SecAddRmtNameNotifyCallback(BtmRemoteNameCallback& callback);
 
 /*******************************************************************************
  *
@@ -162,8 +144,7 @@ class Impl : public bluetooth::stack::rnr::Interface {
 public:
   Impl() = default;
 
-  [[nodiscard]] bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) override;
-  [[nodiscard]] bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback);
+  void BTM_SecAddRmtNameNotifyCallback(BtmRemoteNameCallback& callback) override;
   [[nodiscard]] bool BTM_IsRemoteNameKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport);
   [[nodiscard]] tBTM_STATUS BTM_ReadRemoteDeviceName(const RawAddress& remote_bda,
                                                      tBTM_NAME_CMPL_CB* p_cb,

@@ -41,8 +41,8 @@
  *              Flag indicating the minimum pin code length to be 16 digits
  *              Pairing Algorithm being used
  */
-typedef tBTM_STATUS(BtmPinCallback)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                    const BD_NAME bd_name, bool min_16_digit,
+typedef tBTM_STATUS(BtmPinCallback)(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                                    const BD_NAME& bd_name, bool min_16_digit,
                                     PairingAlgorithm pairing_algorithm);
 
 /* New Link Key for the connection.  Parameters are
@@ -50,9 +50,8 @@ typedef tBTM_STATUS(BtmPinCallback)(const RawAddress& bd_addr, DEV_CLASS dev_cla
  *              Link Key
  *              Key Type: Combination, Local Unit, or Remote Unit
  */
-typedef tBTM_STATUS(BtmLinkKeyCallback)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                        BD_NAME bd_name, const LinkKey& key, uint8_t key_type,
-                                        bool is_ctkd);
+typedef tBTM_STATUS(BtmLinkKeyCallback)(const RawAddress& bd_addr, const BD_NAME& bd_name,
+                                        const LinkKey& key, uint8_t key_type, bool is_ctkd);
 
 /* Authentication complete for the connection.  Parameters are
  *              BD Address of remote
@@ -60,8 +59,8 @@ typedef tBTM_STATUS(BtmLinkKeyCallback)(const RawAddress& bd_addr, DEV_CLASS dev
  *              BD Name of remote
  *
  */
-typedef void(BtmAuthCompleteCallback)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                      BD_NAME bd_name, tHCI_REASON reason);
+typedef void(BtmAuthCompleteCallback)(const RawAddress& bd_addr, const BD_NAME& bd_name,
+                                      tHCI_REASON reason);
 
 /* Bond Cancel complete. Parameters are
  *              Result of the cancel operation
@@ -92,7 +91,7 @@ typedef tBTM_STATUS(BtmSirkVerificationCallback)(const RawAddress& bd_addr);
  *              BD Address of remote
  *              BD Name of remote
  */
-typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc, BD_NAME bd_name);
+typedef void(BtmRemoteNameCallback)(const RawAddress& bd_addr, const BD_NAME& bd_name);
 
 struct BtmAppReg {
   BtmPinCallback& pin_callback;
