@@ -1997,7 +1997,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     auto const& ase_confs = audio_set_conf->confs.get(direction);
     if (ase_confs.empty()) {
       if (direction == types::kLeAudioDirectionSource &&
-          requirements.source_requirements->size() > 0) {
+          (requirements.source_requirements.has_value() &&
+           requirements.source_requirements->size() > 0)) {
         log::debug("No configurations for Source direction but the requirement was found.");
         return false;
       }
@@ -2006,13 +2007,16 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     }
 
     // Verify the direction requirements.
-    if (direction == types::kLeAudioDirectionSink && requirements.sink_requirements->size() == 0) {
+    if (direction == types::kLeAudioDirectionSink &&
+        (!requirements.sink_requirements.has_value() ||
+         requirements.sink_requirements->size() == 0)) {
       log::debug("There is no requirement for Sink direction.");
       return false;
     }
 
     if (direction == types::kLeAudioDirectionSource &&
-        requirements.source_requirements->size() == 0) {
+        (!requirements.source_requirements.has_value() ||
+         requirements.source_requirements->size() == 0)) {
       log::debug("There is no requirement for source direction.");
       return false;
     }
