@@ -9381,4 +9381,109 @@ public class BassClientServiceTest {
         injectDeviceDisconnection(mCurrentDevice);
         assertThat(mBassClientService.isEncrypted(mCurrentDevice)).isFalse();
     }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_BROADCAST_AUTO_SWITCH_ANNOUNCEMENT,
+        Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS
+    })
+    public void testResumeSynchronization_SpecificBroadcast_BigInfoReport() {
+        prepareConnectedDeviceGroup();
+
+        // Set maximum source capacity to 2
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            doReturn(2).when(sm).getMaximumSourceCapacity();
+        }
+
+        // Add source 1
+        prepareSyncToSourceAndVerify();
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        // Add source 2
+        onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
+        onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        addSourceAndVerify(mBroadcastMetadata2);
+
+        // For metadata 2, inject with correct source IDs (TEST_SOURCE_ID + 2/3)
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            int sourceId =
+                    sm.getDevice().equals(mCurrentDevice) ? TEST_SOURCE_ID + 2 : TEST_SOURCE_ID + 3;
+            injectRemoteSourceStateSourceAdded(
+                    sm,
+                    mBroadcastMetadata2,
+                    sourceId,
+                    BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                    BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                    null,
+                    1L);
+        }
+
+        // Simulate loss of sync for both to trigger BIG_MONITORING
+        // Source 1 lost
+        injectRemoteSourceStateChanged(
+                mStateMachines.get(mCurrentDevice),
+                mBroadcastMetadata1,
+                TEST_SOURCE_ID,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                null,
+                0L);
+        injectRemoteSourceStateChanged(
+                mStateMachines.get(mCurrentDevice1),
+                mBroadcastMetadata1,
+                TEST_SOURCE_ID + 1,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                null,
+                0L);
+
+        // Source 2 lost
+        injectRemoteSourceStateChanged(
+                mStateMachines.get(mCurrentDevice),
+                mBroadcastMetadata2,
+                TEST_SOURCE_ID + 2,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                null,
+                0L);
+        injectRemoteSourceStateChanged(
+                mStateMachines.get(mCurrentDevice1),
+                mBroadcastMetadata2,
+                TEST_SOURCE_ID + 3,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                null,
+                0L);
+
+        // Clear invocations
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            clearInvocations(sm);
+        }
+
+        // Trigger BIG Info report for Source 1
+        onPeriodicAdvertisingReport();
+        onBigInfoAdvertisingReport();
+
+        // Verify Source 1 resumed
+        verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
+
+        // Verify Source 2 NOT resumed
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(0)).sendMessage(messageCaptor.capture());
+            for (Message msg : messageCaptor.getAllValues()) {
+                if (msg.what == BassClientStateMachine.ADD_BCAST_SOURCE
+                        || msg.what == BassClientStateMachine.UPDATE_BCAST_SOURCE) {
+                    if (msg.obj instanceof BluetoothLeBroadcastMetadata) {
+                        BluetoothLeBroadcastMetadata meta = (BluetoothLeBroadcastMetadata) msg.obj;
+                        if (meta.getBroadcastId() == TEST_BROADCAST_ID_2) {
+                            throw new AssertionError("Should not resume Broadcast 2");
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
