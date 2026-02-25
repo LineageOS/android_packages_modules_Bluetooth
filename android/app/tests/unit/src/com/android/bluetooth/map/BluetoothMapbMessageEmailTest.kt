@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,75 +14,70 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.map.BluetoothMapUtils.TYPE
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayInputStream
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
-/** Test cases for {@link BluetoothMapbMessageEmail}. */
+/** Test cases for [BluetoothMapbMessageEmail]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothMapbMessageEmailTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class BluetoothMapbMessageEmailTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private BluetoothMapService mMapService;
-
-    public static final String TEST_EMAIL_BODY = "test_email_body";
+    @Mock private lateinit var mapService: BluetoothMapService
 
     @Test
-    public void setAndGetEmailBody() {
-        BluetoothMapbMessageEmail messageEmail = new BluetoothMapbMessageEmail();
-        messageEmail.setEmailBody(TEST_EMAIL_BODY);
-        assertThat(messageEmail.getEmailBody()).isEqualTo(TEST_EMAIL_BODY);
+    fun setAndGetEmailBody() {
+        val messageEmail = BluetoothMapbMessageEmail()
+        messageEmail.emailBody = TEST_EMAIL_BODY
+        assertThat(messageEmail.emailBody).isEqualTo(TEST_EMAIL_BODY)
     }
 
     @Test
-    public void encodeToByteArray_thenCreateByParsing() throws Exception {
-        BluetoothMapbMessageEmail messageEmailToEncode = new BluetoothMapbMessageEmail();
-        messageEmailToEncode.setType(TYPE.EMAIL);
-        messageEmailToEncode.setFolder("placeholder");
-        messageEmailToEncode.setStatus(true);
-        messageEmailToEncode.setEmailBody(TEST_EMAIL_BODY);
+    fun encodeToByteArray_thenCreateByParsing() {
+        val messageEmailToEncode = BluetoothMapbMessageEmail()
+        messageEmailToEncode.setType(TYPE.EMAIL)
+        messageEmailToEncode.setFolder("placeholder")
+        messageEmailToEncode.setStatus(true)
+        messageEmailToEncode.setEmailBody(TEST_EMAIL_BODY)
 
-        byte[] encodedMessageEmail = messageEmailToEncode.encode();
-        InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
+        val encodedMessageEmail = messageEmailToEncode.encode()
+        val inputStream = ByteArrayInputStream(encodedMessageEmail)
 
-        BluetoothMapbMessage messageParsed =
-                BluetoothMapbMessage.parse(
-                        mMapService, inputStream, BluetoothMapAppParams.CHARSET_UTF8);
-        assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail.class);
-        BluetoothMapbMessageEmail messageEmailParsed = (BluetoothMapbMessageEmail) messageParsed;
-        assertThat(messageEmailParsed.getEmailBody()).isEqualTo(TEST_EMAIL_BODY);
+        val messageParsed =
+            BluetoothMapbMessage.parse(mapService, inputStream, BluetoothMapAppParams.CHARSET_UTF8)
+        assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail::class.java)
+        val messageEmailParsed = messageParsed as BluetoothMapbMessageEmail
+        assertThat(messageEmailParsed.emailBody).isEqualTo(TEST_EMAIL_BODY)
     }
 
     @Test
-    public void encodeToByteArray_withEmptyBody_thenCreateByParsing() throws Exception {
-        BluetoothMapbMessageEmail messageEmailToEncode = new BluetoothMapbMessageEmail();
-        messageEmailToEncode.setType(TYPE.EMAIL);
-        messageEmailToEncode.setFolder("placeholder");
-        messageEmailToEncode.setStatus(true);
+    fun encodeToByteArray_withEmptyBody_thenCreateByParsing() {
+        val messageEmailToEncode = BluetoothMapbMessageEmail()
+        messageEmailToEncode.setType(TYPE.EMAIL)
+        messageEmailToEncode.setFolder("placeholder")
+        messageEmailToEncode.setStatus(true)
 
-        byte[] encodedMessageEmail = messageEmailToEncode.encode();
-        InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
+        val encodedMessageEmail = messageEmailToEncode.encode()
+        val inputStream = ByteArrayInputStream(encodedMessageEmail)
 
-        BluetoothMapbMessage messageParsed =
-                BluetoothMapbMessage.parse(
-                        mMapService, inputStream, BluetoothMapAppParams.CHARSET_UTF8);
-        assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail.class);
-        BluetoothMapbMessageEmail messageEmailParsed = (BluetoothMapbMessageEmail) messageParsed;
-        assertThat(messageEmailParsed.getEmailBody()).isEqualTo("");
+        val messageParsed =
+            BluetoothMapbMessage.parse(mapService, inputStream, BluetoothMapAppParams.CHARSET_UTF8)
+        assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail::class.java)
+        val messageEmailParsed = messageParsed as BluetoothMapbMessageEmail
+        assertThat(messageEmailParsed.emailBody).isEqualTo("")
+    }
+
+    companion object {
+        const val TEST_EMAIL_BODY = "test_email_body"
     }
 }
