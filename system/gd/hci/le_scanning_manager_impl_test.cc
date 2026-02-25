@@ -903,6 +903,38 @@ TEST_F(LeScanningManagerExtendedTest, on_pause_on_resume_test) {
           LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 }
 
+TEST_F(LeScanningManagerExtendedTest, on_pause_already_paused_test) {
+  // Enable scan
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Pause scan (first time)
+  test_le_address_manager_->client_->OnPause();
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Pause scan (second time) - should be ignored and scan_on_resume should remain true
+  test_le_address_manager_->client_->OnPause();
+  test_hci_layer_->AssertNoQueuedCommand();
+
+  // Ensure scan is resumed (enabled)
+  test_le_address_manager_->client_->OnResume();
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+}
+
 TEST_F(LeScanningManagerExtendedTest, ignore_on_pause_on_resume_after_unregistered) {
   test_le_address_manager_->ignore_unregister_for_testing = true;
 
