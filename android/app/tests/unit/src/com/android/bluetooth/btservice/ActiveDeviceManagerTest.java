@@ -45,7 +45,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.os.Handler;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
@@ -71,6 +74,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -129,6 +133,8 @@ public class ActiveDeviceManagerTest {
     private boolean mOriginalDualModeAudioState;
     private TestLooper mTestLooper;
 
+    private AudioDeviceCallback mAudioDeviceCallback;
+
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
@@ -175,6 +181,13 @@ public class ActiveDeviceManagerTest {
 
         mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mStorage);
         mActiveDeviceManager.start();
+        // Capture the Audio Manager callback
+        if (Flags.admCentralizeActiveDeviceHandling()) {
+            ArgumentCaptor<AudioDeviceCallback> captor =
+                    ArgumentCaptor.forClass(AudioDeviceCallback.class);
+            verify(mAudioManager).registerAudioDeviceCallback(captor.capture(), any(Handler.class));
+            mAudioDeviceCallback = captor.getValue();
+        }
 
         // Get devices for testing
         mDeviceConnectionStack = new ArrayList<>();
@@ -3187,6 +3200,179 @@ public class ActiveDeviceManagerTest {
         // Verify that we tried to set LE Audio active but it failed.
         verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
         assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
+     * Test that {@link AudioManager.AudioDeviceCallback} for A2DP device type is handled correctly.
+     *
+     * <pre>.
+     * Steps:
+     * 1.  Simulate adding an A2DP audio device.
+     * 2.  Verify {@link A2dpService#handleAudioDeviceAdded} is called.
+     * 3.  Simulate removing the A2DP audio device.
+     * 4.  Verify {@link A2dpService#handleAudioDeviceRemoved} is called.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void testAudioManagerCallback_a2dp() {
+        // Prepare AudioDeviceInfo
+        AudioDeviceInfo deviceInfo = Mockito.mock(AudioDeviceInfo.class);
+        doReturn("00:11:22:33:44:55").when(deviceInfo).getAddress();
+        doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_A2DP).when(deviceInfo).getType();
+
+        doReturn(mA2dpDevice).when(mAdapterService).getDeviceFromByte(any());
+        doReturn(true).when(mAdapterService).isAvailable();
+
+        mAudioDeviceCallback.onAudioDevicesAdded(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).handleAudioDeviceAdded(mA2dpDevice);
+
+        mAudioDeviceCallback.onAudioDevicesRemoved(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).handleAudioDeviceRemoved();
+    }
+
+    /**
+     * Test that {@link AudioManager.AudioDeviceCallback} for Headset (SCO) device type is handled
+     * correctly.
+     *
+     * <pre>
+     * Steps:
+     * 1.  Simulate adding a SCO audio device.
+     * 2.  Verify {@link HeadsetService#handleAudioDeviceAdded} is called.
+     * 3.  Simulate removing the SCO audio device.
+     * 4.  Verify {@link HeadsetService#handleAudioDeviceRemoved} is called.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void testAudioManagerCallback_headset() {
+        // Prepare AudioDeviceInfo
+        AudioDeviceInfo deviceInfo = Mockito.mock(AudioDeviceInfo.class);
+        doReturn("00:11:22:33:44:55").when(deviceInfo).getAddress();
+        doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(deviceInfo).getType();
+
+        doReturn(mA2dpDevice).when(mAdapterService).getDeviceFromByte(any());
+        doReturn(true).when(mAdapterService).isAvailable();
+
+        mAudioDeviceCallback.onAudioDevicesAdded(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).handleAudioDeviceAdded(mA2dpDevice);
+
+        mAudioDeviceCallback.onAudioDevicesRemoved(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).handleAudioDeviceRemoved(mA2dpDevice);
+    }
+
+    /**
+     * Test that {@link AudioManager.AudioDeviceCallback} for Hearing Aid device type is handled
+     * correctly.
+     *
+     * <pre>
+     * Steps:
+     * 1.  Simulate adding a Hearing Aid audio device.
+     * 2.  Verify {@link HearingAidService#handleAudioDeviceAdded} is called.
+     * 3.  Simulate removing the Hearing Aid audio device.
+     * 4.  Verify {@link HearingAidService#handleAudioDeviceRemoved} is called.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void testAudioManagerCallback_hearingAid() {
+        // Prepare AudioDeviceInfo
+        AudioDeviceInfo deviceInfo = Mockito.mock(AudioDeviceInfo.class);
+        doReturn("00:11:22:33:44:55").when(deviceInfo).getAddress();
+        doReturn(AudioDeviceInfo.TYPE_HEARING_AID).when(deviceInfo).getType();
+
+        doReturn(mHearingAidDevice).when(mAdapterService).getDeviceFromByte(any());
+        doReturn(true).when(mAdapterService).isAvailable();
+
+        mAudioDeviceCallback.onAudioDevicesAdded(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).handleAudioDeviceAdded();
+
+        mAudioDeviceCallback.onAudioDevicesRemoved(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).handleAudioDeviceRemoved();
+    }
+
+    /**
+     * Test that {@link AudioManager.AudioDeviceCallback} for BLE Headset device type is handled
+     * correctly.
+     *
+     * <pre>
+     * Steps:
+     * 1.  Simulate adding a BLE Headset audio device.
+     * 2.  Verify {@link LeAudioService#handleAudioDeviceAdded} is called with sink and source true.
+     * 3.  Simulate removing the BLE Headset audio device.
+     * 4.  Verify {@link LeAudioService#handleAudioDeviceRemoved} is called with sink and source
+     *     true.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void testAudioManagerCallback_leAudioHeadset() {
+        // Prepare AudioDeviceInfo
+        AudioDeviceInfo deviceInfo = Mockito.mock(AudioDeviceInfo.class);
+        doReturn("00:11:22:33:44:55").when(deviceInfo).getAddress();
+        doReturn(AudioDeviceInfo.TYPE_BLE_HEADSET).when(deviceInfo).getType();
+        doReturn(true).when(deviceInfo).isSink();
+        doReturn(true).when(deviceInfo).isSource();
+
+        doReturn(mLeAudioDevice).when(mAdapterService).getDeviceFromByte(any());
+        doReturn(true).when(mAdapterService).isAvailable();
+
+        mAudioDeviceCallback.onAudioDevicesAdded(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService)
+                .handleAudioDeviceAdded(
+                        mLeAudioDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, true);
+
+        mAudioDeviceCallback.onAudioDevicesRemoved(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService)
+                .handleAudioDeviceRemoved(
+                        mLeAudioDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, true);
+    }
+
+    /**
+     * Test that {@link AudioManager.AudioDeviceCallback} for BLE Speaker device type is handled
+     * correctly.
+     *
+     * <pre>
+     * Steps:
+     * 1.  Simulate adding a BLE Speaker audio device.
+     * 2.  Verify {@link LeAudioService#handleAudioDeviceAdded} is called with sink and source true.
+     * 3.  Simulate removing the BLE Speaker audio device.
+     * 4.  Verify {@link LeAudioService#handleAudioDeviceRemoved} is called with sink and source
+     *     true.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void testAudioManagerCallback_leAudioSpeaker() {
+        // Prepare AudioDeviceInfo
+        AudioDeviceInfo deviceInfo = Mockito.mock(AudioDeviceInfo.class);
+        doReturn("00:11:22:33:44:55").when(deviceInfo).getAddress();
+        doReturn(AudioDeviceInfo.TYPE_BLE_SPEAKER).when(deviceInfo).getType();
+        doReturn(true).when(deviceInfo).isSink();
+        doReturn(true).when(deviceInfo).isSource();
+
+        doReturn(mLeAudioDevice).when(mAdapterService).getDeviceFromByte(any());
+        doReturn(true).when(mAdapterService).isAvailable();
+
+        mAudioDeviceCallback.onAudioDevicesAdded(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService)
+                .handleAudioDeviceAdded(
+                        mLeAudioDevice, AudioDeviceInfo.TYPE_BLE_SPEAKER, true, true);
+
+        mAudioDeviceCallback.onAudioDevicesRemoved(new AudioDeviceInfo[] {deviceInfo});
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService)
+                .handleAudioDeviceRemoved(
+                        mLeAudioDevice, AudioDeviceInfo.TYPE_BLE_SPEAKER, true, true);
     }
 
     /**
