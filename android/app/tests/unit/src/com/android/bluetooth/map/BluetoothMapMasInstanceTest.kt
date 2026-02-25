@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,83 +14,74 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.map;
+package com.android.bluetooth.map
 
-import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
+import android.graphics.drawable.ColorDrawable
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.mockBluetoothManager
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.Mockito.mock;
-
-import android.graphics.drawable.ColorDrawable;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link BluetoothMapMasInstance}. */
+/** Test cases for [BluetoothMapMasInstance]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothMapMasInstanceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class BluetoothMapMasInstanceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private BluetoothMapService mMapService;
-
-    private static final int TEST_MAS_ID = 1;
-    private static final boolean TEST_ENABLE_SMS_MMS = true;
-    private static final String TEST_NAME = "test_name";
-    private static final String TEST_PACKAGE_NAME = "test.package.name";
-    private static final String TEST_ID = "1111";
-    private static final String TEST_PROVIDER_AUTHORITY = "test.project.provider";
-    private static final BluetoothMapUtils.TYPE TEST_TYPE = BluetoothMapUtils.TYPE.EMAIL;
-    private static final String TEST_UCI = "uci";
-    private static final String TEST_UCI_PREFIX = "uci_prefix";
-
-    private BluetoothMapAccountItem mAccountItem;
+    private lateinit var accountItem: BluetoothMapAccountItem
 
     @Before
-    public void setUp() {
-        ColorDrawable colorDrawable = mock(ColorDrawable.class);
-        mAccountItem =
-                BluetoothMapAccountItem.create(
-                        TEST_ID,
-                        TEST_NAME,
-                        TEST_PACKAGE_NAME,
-                        TEST_PROVIDER_AUTHORITY,
-                        colorDrawable,
-                        TEST_TYPE,
-                        TEST_UCI,
-                        TEST_UCI_PREFIX);
+    fun setUp() {
+        val colorDrawable = mock<ColorDrawable>()
+        accountItem =
+            BluetoothMapAccountItem.create(
+                TEST_ID,
+                TEST_NAME,
+                TEST_PACKAGE_NAME,
+                TEST_PROVIDER_AUTHORITY,
+                colorDrawable,
+                TEST_TYPE,
+                TEST_UCI,
+                TEST_UCI_PREFIX,
+            )
     }
 
     @Test
-    public void toString_returnsInfo() {
-        mockGetBluetoothManager(mAdapterService);
+    fun toString_returnsInfo() {
+        val adapterService = mock<AdapterService>()
+        val mapService = mock<BluetoothMapService>()
+        adapterService.mockBluetoothManager()
 
-        BluetoothMapMasInstance instance =
-                new BluetoothMapMasInstance(
-                        mAdapterService,
-                        mMapService,
-                        mAccountItem,
-                        TEST_MAS_ID,
-                        TEST_ENABLE_SMS_MMS);
+        val instance =
+            BluetoothMapMasInstance(
+                adapterService,
+                mapService,
+                accountItem,
+                TEST_MAS_ID,
+                TEST_ENABLE_SMS_MMS,
+            )
 
-        String expected =
-                "MasId: "
-                        + TEST_MAS_ID
-                        + " Uri:"
-                        + mAccountItem.mBase_uri
-                        + " SMS/MMS:"
-                        + TEST_ENABLE_SMS_MMS;
-        assertThat(instance.toString()).isEqualTo(expected);
+        val expected =
+            "MasId: $TEST_MAS_ID Uri:${accountItem.mBase_uri} SMS/MMS:$TEST_ENABLE_SMS_MMS"
+        assertThat(instance.toString()).isEqualTo(expected)
+    }
+
+    companion object {
+        private const val TEST_MAS_ID = 1
+        private const val TEST_ENABLE_SMS_MMS = true
+        private const val TEST_NAME = "test_name"
+        private const val TEST_PACKAGE_NAME = "test.package.name"
+        private const val TEST_ID = "1111"
+        private const val TEST_PROVIDER_AUTHORITY = "test.project.provider"
+        private val TEST_TYPE = BluetoothMapUtils.TYPE.EMAIL
+        private const val TEST_UCI = "uci"
+        private const val TEST_UCI_PREFIX = "uci_prefix"
     }
 }
