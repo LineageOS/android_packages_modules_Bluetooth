@@ -31,7 +31,6 @@
 #include "stack/include/stack_le_connection.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
-#include "stack/mock/mock_stack_l2cap_api.h"
 #include "stack/mock/mock_stack_l2cap_ble.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
 #include "test/fake/fake_osi.h"

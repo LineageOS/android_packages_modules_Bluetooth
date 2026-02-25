@@ -28,7 +28,6 @@
 #include "stack/include/smp_api.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
-#include "stack/mock/mock_stack_l2cap_api.h"
 #include "stack/mock/mock_stack_l2cap_ble.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/smp/smp_int.h"
