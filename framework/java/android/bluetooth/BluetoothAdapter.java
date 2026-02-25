@@ -2343,20 +2343,6 @@ public final class BluetoothAdapter {
     }
 
     /**
-     * Return true if Hearing Aid Profile is supported.
-     *
-     * @return true if phone supports Hearing Aid Profile
-     */
-    @RequiresNoPermission
-    private boolean isHearingAidProfileSupported() {
-        try {
-            return mManagerService.isHearingAidProfileSupported();
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-    }
-
-    /**
      * Get the maximum number of connected devices per audio profile for this device.
      *
      * @return the number of allowed simultaneous connected devices for each audio profile for this
@@ -2509,10 +2495,6 @@ public final class BluetoothAdapter {
             logRemoteException(TAG, e);
         } finally {
             mServiceLock.readLock().unlock();
-        }
-        // Bluetooth is disabled. Just fill in known supported Profiles
-        if (isHearingAidProfileSupported()) {
-            return List.of(BluetoothProfile.HEARING_AID);
         }
         return List.of();
     }
@@ -3138,11 +3120,6 @@ public final class BluetoothAdapter {
 
         if (profile == BluetoothProfile.HEALTH) {
             Log.e(TAG, "getProfileProxy(): BluetoothHealth is deprecated");
-            return false;
-        }
-
-        if (profile == BluetoothProfile.HEARING_AID && !isHearingAidProfileSupported()) {
-            Log.e(TAG, "getProfileProxy(): BluetoothHearingAid is not supported");
             return false;
         }
 

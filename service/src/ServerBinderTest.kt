@@ -169,11 +169,6 @@ class ServerBinderTest(private val flags: FlagsWrapper) {
     }
 
     @Test
-    fun isHearingAidProfileSupported() {
-        binder.isHearingAidProfileSupported()
-    }
-
-    @Test
     fun setGetBtHciSnoopLogMode() {
         assertFailsWith<SecurityException> { binder.setBtHciSnoopLogMode(BT_SNOOP_LOG_MODE_FULL) }
         assertFailsWith<SecurityException> { binder.getBtHciSnoopLogMode() }
