@@ -454,7 +454,9 @@ bool LeAudioDevice::ConfigureAses(const types::AudioSetConfiguration* audio_set_
      * Nothing more to do is needed here.
      */
     if (ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-      if (ase->state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED) {
+      if (ase->state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED ||
+          (com_android_bluetooth_flags_leaudio_fix_qos_reconfiguration() &&
+           ase->state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED)) {
         ase->reconfigure = true;
       }
 
@@ -911,7 +913,10 @@ bool LeAudioDevice::HaveAnyUnconfiguredAses(void) {
     }
 
     if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_IDLE ||
-        ((ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED) && ase.reconfigure)) {
+        ((ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED ||
+          (com_android_bluetooth_flags_leaudio_fix_qos_reconfiguration() &&
+           ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED)) &&
+         ase.reconfigure)) {
       return true;
     }
 
