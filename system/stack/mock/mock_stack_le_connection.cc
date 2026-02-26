@@ -65,11 +65,12 @@ bool leConnectionConnect::return_value = false;
 
 namespace bluetooth::stack {
 // Mocked functions, if any
-void leConnectionUpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                                     uint16_t subrate_min, uint16_t cont_num) {
+tGATT_STATUS leConnectionUpdateSubrateConfig(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                             tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                                             uint16_t subrate_min, uint16_t cont_num) {
   inc_func_call_count(__func__);
-  test::mock::stack_le_connection::leConnectionUpdateSubrateConfig(subrate_mode, subrate_max,
-                                                                   subrate_min, cont_num);
+  return test::mock::stack_le_connection::leConnectionUpdateSubrateConfig(
+          gatt_if, bd_addr, subrate_mode, subrate_max, subrate_min, cont_num);
 }
 bool leConnectionSubrateModeRequest(tGATT_IF gatt_if, const RawAddress& bd_addr,
                                     tGATT_SUBRATE_MODE subrate_mode) {

@@ -55,10 +55,6 @@ public:
   virtual tGATT_STATUS DeregisterForNotifications(tGATT_IF client_if, const RawAddress& remote_bda,
                                                   uint16_t handle) = 0;
   virtual void ConfigureMTU(tCONN_ID conn_id, uint16_t mtu) = 0;
-  virtual tGATT_STATUS SubrateModeRequest(tGATT_IF client_if, const RawAddress& remote_bda,
-                                          tGATT_SUBRATE_MODE subrate_mode) = 0;
-  virtual void UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                                   uint16_t subrate_min, uint16_t cont_num) = 0;
   virtual ~BtaGattInterface() = default;
 };
 
@@ -99,11 +95,6 @@ public:
   MOCK_METHOD((tGATT_STATUS), DeregisterForNotifications,
               (tGATT_IF client_if, const RawAddress& remote_bda, uint16_t handle));
   MOCK_METHOD((void), ConfigureMTU, (tCONN_ID conn_id, uint16_t mtu));
-  MOCK_METHOD((tGATT_STATUS), SubrateModeRequest,
-              (tGATT_IF client_if, const RawAddress& remote_bda, tGATT_SUBRATE_MODE subrate_mode));
-  MOCK_METHOD((void), UpdateSubrateConfig,
-              (tGATT_SUBRATE_MODE subrate_mode,
-               uint16_t subrate_max, uint16_t subrate_min, uint16_t cont_num));
 };
 
 /**

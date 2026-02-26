@@ -675,8 +675,8 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   };
 
   if (com_android_bluetooth_flags_le_subrate_manager()) {
-    bta_gattc_subrate_mode_request(p_clcb->p_rcb->client_if, p_clcb->bda,
-                                   GATT_SUBRATE_MODE_OFF, 0, 0, 0);
+    stack::leConnectionUpdateSubrateConfig(p_clcb->p_rcb->client_if, p_clcb->bda,
+                                           GATT_SUBRATE_MODE_OFF, 0, 0, 0);
   }
   if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
     bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
@@ -1532,31 +1532,6 @@ void bta_gattc_process_api_refresh(tGATT_IF client_if, const RawAddress& remote_
 
   /* used to reset cache in application */
   bta_gattc_cache_reset(remote_bda);
-}
-
-tGATT_STATUS bta_gattc_subrate_mode_request(tGATT_IF client_if, const RawAddress& bd_addr,
-                                            tGATT_SUBRATE_MODE subrate_mode,
-                                            uint16_t subrate_max, uint16_t subrate_min,
-                                            uint16_t cont_num) {
-  log::info("client_if:{} addr:{}, subrate_mode:{}", client_if, bd_addr, subrate_mode);
-
-  tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_cif(client_if, bd_addr, BT_TRANSPORT_LE);
-  if (p_clcb == NULL) {
-    return GATT_ERROR;
-  }
-
-  log::verbose("client_if:{} addr:{}, state:{}", client_if, bd_addr, p_clcb->state);
-  if (p_clcb->state == BTA_GATTC_IDLE_ST || p_clcb->state == BTA_GATTC_W4_CONN_ST) {
-    return GATT_ERROR;
-  }
-  if (subrate_max != 0 || subrate_min != 0 || cont_num != 0) {
-    log::info("update subrate parameters: {} {} {}", subrate_max, subrate_min, cont_num);
-    stack::leConnectionUpdateSubrateConfig(subrate_mode, subrate_max, subrate_min, cont_num);
-  }
-  if (!stack::leConnectionSubrateModeRequest(client_if, bd_addr, subrate_mode)) {
-    return GATT_ERROR;
-  }
-  return GATT_SUCCESS;
 }
 
 /** process service change indication */
