@@ -2041,6 +2041,10 @@ public class ActiveDeviceManagerTest {
     public void leAudioSetConnectedThenActiveOneDisconnected_noFallback() {
         doReturn(AudioManager.MODE_NORMAL).when(mAudioManager).getMode();
         doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(any());
+        doReturn(List.of(mLeAudioDevice, mLeAudioDevice2))
+                .when(mLeAudioService)
+                .getGroupDevices(mLeAudioDevice);
+        doReturn(1).when(mLeAudioService).getGroupId(any());
 
         leAudioConnected(mLeAudioDevice);
         mTestLooper.dispatchAll();
@@ -2076,6 +2080,9 @@ public class ActiveDeviceManagerTest {
         doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice2);
         doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice2);
         doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice);
+        doReturn(List.of(mLeAudioDevice, mLeAudioDevice2))
+                .when(mLeAudioService)
+                .getGroupDevices(mLeAudioDevice);
 
         InOrder order = inOrder(mLeAudioService);
 
@@ -2753,7 +2760,7 @@ public class ActiveDeviceManagerTest {
      * </pre>
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_CLEAR_ACTIVE_DEVICE_ON_DISCONNECT)
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
     public void leAudioDeviceConnected_clearActiveWhenDisconnected() {
         leAudioConnected(mLeAudioDevice);
         mTestLooper.dispatchAll();
@@ -2764,7 +2771,6 @@ public class ActiveDeviceManagerTest {
 
         leAudioDisconnected(mLeAudioDevice);
         mTestLooper.dispatchAll();
-        verify(mLeAudioService).removeActiveDevice(false);
         assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
     }
 
@@ -2774,15 +2780,16 @@ public class ActiveDeviceManagerTest {
      * <pre>
      * Steps:
      * 1. Two LE Audio devices are connected and lead device becomes active.
-     * 2. Lead device disconnects.
+     * 2. Secondary device disconnects.
      * 3. Assert that device is still active.
-     * 4. Secondary device disconnects.
+     * 4. Lead device disconnects.
      * 5. Active device is set to null
      * </pre>
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_CLEAR_ACTIVE_DEVICE_ON_DISCONNECT)
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
     public void leAudioGroupConnected_clearActiveDeviceWhenAllDisconnected() {
+        doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice2);
         leAudioConnected(mLeAudioDevice);
         leAudioConnected(mLeAudioDevice2);
         mTestLooper.dispatchAll();
@@ -2791,7 +2798,7 @@ public class ActiveDeviceManagerTest {
         leAudioActiveDeviceChanged(mLeAudioDevice);
         mTestLooper.dispatchAll();
 
-        leAudioDisconnected(mLeAudioDevice);
+        leAudioDisconnected(mLeAudioDevice2);
         mTestLooper.dispatchAll();
 
         verify(mLeAudioService, never()).setActiveDevice(null);
@@ -2799,10 +2806,165 @@ public class ActiveDeviceManagerTest {
 
         Mockito.clearInvocations(mLeAudioService);
 
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
+     * Test that when LE Audio set disconnects with primary device disconnecting first, fallback
+     * will be found after secondary device disconnects.
+     *
+     * <pre>
+     * Steps:
+     * 1. A2DP and two LE Audio devices are connected and lead LE Audio device becomes active.
+     * 2. Lead device disconnects.
+     * 3. Assert that device is still active.
+     * 4. Secondary device disconnects.
+     * 5. Active Device is removed.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void leAudioPrimaryDeviceDisconnectedFirst_fallbackToA2dp() {
+        doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice2);
+        doReturn(List.of(mLeAudioDevice, mLeAudioDevice2))
+                .when(mLeAudioService)
+                .getGroupDevices(mLeAudioDevice);
+        a2dpConnected(mA2dpDevice, false);
+        leAudioConnected(mLeAudioDevice);
+        leAudioConnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService, mA2dpService);
+
+        leAudioActiveDeviceChanged(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        a2dpActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+
+        Mockito.clearInvocations(mLeAudioService, mHearingAidService);
+
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService, never()).setActiveDevice(null);
+        verify(mA2dpService, never()).setActiveDevice(mA2dpDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService, mA2dpService);
+        doReturn(mA2dpDevice).when(mA2dpService).getFallbackDevice();
+
         leAudioDisconnected(mLeAudioDevice2);
         mTestLooper.dispatchAll();
-        verify(mLeAudioService).removeActiveDevice(false);
-        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+        verify(mLeAudioService).removeActiveDevice(true);
+        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+    }
+
+    /**
+     * Test that when LE Audio set disconnects with primary device disconnecting first, fallback
+     * will be found after secondary device disconnects.
+     *
+     * <pre>
+     * Steps:
+     * 1. A2DP and two LE Audio devices are connected and lead LE Audio device becomes active.
+     * 2. Lead device disconnects.
+     * 3. Assert that device is still active.
+     * 4. Secondary device disconnects.
+     * 5. Active Device is removed.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void leAudioPrimaryDeviceDisconnectedFirst_fallbackToAsha() {
+        doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice2);
+        doReturn(List.of(mLeAudioDevice, mLeAudioDevice2))
+                .when(mLeAudioService)
+                .getGroupDevices(mLeAudioDevice);
+        hearingAidConnected(mHearingAidDevice);
+        leAudioConnected(mLeAudioDevice);
+        leAudioConnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+
+        Mockito.clearInvocations(mLeAudioService, mHearingAidService);
+
+        leAudioActiveDeviceChanged(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        hearingAidActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+
+        Mockito.clearInvocations(mLeAudioService, mHearingAidService);
+
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService, never()).setActiveDevice(null);
+        verify(mHearingAidService, never()).setActiveDevice(mHearingAidDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService, mA2dpService);
+
+        leAudioDisconnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).removeActiveDevice(true);
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+    }
+
+    /**
+     * Test that when LE Audio set disconnects with primary device disconnecting first, fallback
+     * will be found after secondary device disconnects.
+     *
+     * <pre>
+     * Steps:
+     * 1. A2DP and two LE Audio devices are connected and lead LE Audio device becomes active.
+     * 2. Lead device disconnects.
+     * 3. Assert that device is still active.
+     * 4. Secondary device disconnects.
+     * 5. Active Device is removed.
+     * </pre>
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void leAudioPrimaryDeviceDisconnectedFirst_fallbackToLeAudio() {
+        doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice2);
+        doReturn(List.of(mLeAudioDevice, mLeAudioDevice2))
+                .when(mLeAudioService)
+                .getGroupDevices(mLeAudioDevice);
+        leAudioConnected(mLeAudioDevice);
+        leAudioConnected(mLeAudioDevice2);
+        leAudioConnected(mLeAudioDevice3);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+
+        leAudioActiveDeviceChanged(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        Mockito.clearInvocations(mLeAudioService);
+        doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice);
+        doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice2);
+        doReturn(2).when(mLeAudioService).getGroupId(mLeAudioDevice3);
+
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService, never()).setActiveDevice(null);
+        verify(mLeAudioService, never()).setActiveDevice(mLeAudioDevice3);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+
+        doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice);
+        doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice2);
+        doReturn(2).when(mLeAudioService).getGroupId(mLeAudioDevice3);
+
+        leAudioDisconnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice3);
     }
 
     /**
