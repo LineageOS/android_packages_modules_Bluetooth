@@ -369,3 +369,13 @@ BtmDevice* BtmSecurity::for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context) 
   }
   return nullptr;
 }
+
+bool BtmSecurity::ResetLinkKeyRequestTimer() {
+  if (lk_req_timer_ != nullptr) {
+    log::debug("Resetting Link Key Request Timer");
+    alarm_free(lk_req_timer_);
+    lk_req_timer_ = nullptr;
+    return true;
+  }
+  return false;
+}
