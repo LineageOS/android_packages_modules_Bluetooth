@@ -455,7 +455,7 @@ def parse_command_packet(packet, timestamp):
         cis_count, packet = unpack_data(packet, 1, False)
         for i in range(cis_count):
             cis_handle, packet = unpack_data(packet, 2, False)
-            cis_handle &= 0x0EFF
+            cis_handle &= 0x0FFF
             acl_handle, packet = unpack_data(packet, 2, False)
             connection_map[acl_handle].cis_handle = cis_handle
             cis_acl_map[cis_handle] = acl_handle
@@ -754,14 +754,18 @@ def parse_acl_packet(packet, flags, timestamp):
 
 def parse_iso_packet(packet, flags):
     iso_handle, packet = unpack_data(packet, 2, False)
-    iso_handle &= 0x0EFF
+    ts_flag = (iso_handle & 0xc000) >> 14
+    iso_handle &= 0x0FFF
     iso_data_load_length, packet = unpack_data(packet, 2, False)
     if iso_data_load_length != len(packet):
         debug_print("Invalid iso data load length")
         return
 
     # Ignore timestamp, sequence number
-    packet = unpack_data(packet, 6, True)
+    if ts_flag == 0:
+        packet = unpack_data(packet, 2, True)
+    else:
+        packet = unpack_data(packet, 6, True)
     iso_sdu_length, packet = unpack_data(packet, 2, False)
     if len(packet) == 0:
         debug_print("The iso data is empty")
