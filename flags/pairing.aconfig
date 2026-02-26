@@ -261,3 +261,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "link_key_request_timer"
+    namespace: "bluetooth"
+    description: "Wait for CTKD to complete when Link Key is requested"
+    bug: "488024640"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
