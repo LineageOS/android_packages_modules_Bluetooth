@@ -329,31 +329,25 @@ public class BassClientService extends ConnectableProfile {
                                     .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                                     .setLegacy(false)
                                     .build();
-                    mScanController.doOnScanThread(
+                    runOnScanThread(
                             () ->
                                     mScanController.registerAndStartScanInternal(
                                             this, source, settings, mBaasUuidFilters));
                     return;
                 }
 
-                mScanController.doOnScanThread(
-                        () -> mScanController.registerScannerInternal(this, null, source));
+                runOnScanThread(() -> mScanController.registerScannerInternal(this, null, source));
             }
         }
 
         void stopScanAndUnregister() {
             synchronized (this) {
                 final var scannerIdToStop = mScannerId;
-                if (mScanController.isOnScanThread()) {
-                    mScanController.stopScan(scannerIdToStop);
-                    mScanController.unregisterScanner(scannerIdToStop);
-                } else {
-                    mScanController.doOnScanThread(
-                            () -> {
-                                mScanController.stopScan(scannerIdToStop);
-                                mScanController.unregisterScanner(scannerIdToStop);
-                            });
-                }
+                runOnScanThread(
+                        () -> {
+                            mScanController.stopScan(scannerIdToStop);
+                            mScanController.unregisterScanner(scannerIdToStop);
+                        });
                 mBaasUuidFilters.clear();
                 mScannerId = SCANNER_ID_NOT_INITIALIZED;
             }
@@ -403,7 +397,10 @@ public class BassClientService extends ConnectableProfile {
                                 .setLegacy(false)
                                 .build();
 
-                mScanController.startScanInternal(scannerId, settings, mBaasUuidFilters);
+                runOnScanThread(
+                        () ->
+                                mScanController.startScanInternal(
+                                        scannerId, settings, mBaasUuidFilters));
                 if (mIsForegroundScan) {
                     mCallbacks.notifySearchStarted(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                 }
@@ -743,6 +740,14 @@ public class BassClientService extends ConnectableProfile {
 
     private record AddSourceData(
             BluetoothDevice sink, BluetoothLeBroadcastMetadata sourceMetadata, boolean isGroupOp) {}
+
+    private void runOnScanThread(Runnable action) {
+        if (mScanController.isOnScanThread()) {
+            action.run();
+        } else {
+            mScanController.doOnScanThread(action);
+        }
+    }
 
     void updatePeriodicAdvertisementResultMap(
             BluetoothDevice device,
@@ -3765,13 +3770,8 @@ public class BassClientService extends ConnectableProfile {
         synchronized (mSourceSyncRequestsQueue) {
             if (Flags.leaudioBroadcastImproveSourceOperations()) {
                 if (mPeriodicAdvCallbacksMap.containsKey(syncHandle)) {
-                    var periodicAdvertisingCallback = mPeriodicAdvCallbacksMap.get(syncHandle);
-                    if (mScanController.isOnScanThread()) {
-                        mScanController.unregisterSync(periodicAdvertisingCallback);
-                    } else {
-                        mScanController.doOnScanThread(
-                                () -> mScanController.unregisterSync(periodicAdvertisingCallback));
-                    }
+                    var callback = mPeriodicAdvCallbacksMap.get(syncHandle);
+                    runOnScanThread(() -> mScanController.unregisterSync(callback));
                 } else {
                     Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
                 }
@@ -3779,12 +3779,7 @@ public class BassClientService extends ConnectableProfile {
                 if (mPeriodicAdvCallbacksMapObsolete.containsKey(syncHandle)) {
                     try {
                         var callback = mPeriodicAdvCallbacksMapObsolete.get(syncHandle);
-                        if (mScanController.isOnScanThread()) {
-                            mPeriodicAdvertisingManager.unregisterSync(callback);
-                        } else {
-                            mScanController.doOnScanThread(
-                                    () -> mPeriodicAdvertisingManager.unregisterSync(callback));
-                        }
+                        runOnScanThread(() -> mPeriodicAdvertisingManager.unregisterSync(callback));
                     } catch (IllegalArgumentException ex) {
                         Log.e(TAG, "unregisterSync:IllegalArgumentException");
                         return false;
@@ -4092,39 +4087,25 @@ public class BassClientService extends ConnectableProfile {
             }
 
             if (Flags.leaudioBroadcastImproveSourceOperations()) {
-                if (mScanController.isOnScanThread()) {
-                    mScanController.registerSync(
-                            paResult.getDevice(),
-                            paResult.getAdvSid(),
-                            0,
-                            BassConstants.PSYNC_TIMEOUT,
-                            paCb);
-                } else {
-                    mScanController.doOnScanThread(
-                            () ->
-                                    mScanController.registerSync(
-                                            paResult.getDevice(),
-                                            paResult.getAdvSid(),
-                                            0,
-                                            BassConstants.PSYNC_TIMEOUT,
-                                            paCb));
-                }
+                runOnScanThread(
+                        () ->
+                                mScanController.registerSync(
+                                        paResult.getDevice(),
+                                        paResult.getAdvSid(),
+                                        0,
+                                        BassConstants.PSYNC_TIMEOUT,
+                                        paCb));
             } else {
                 try {
-                    if (mScanController.isOnScanThread()) {
-                        mPeriodicAdvertisingManager.registerSync(
-                                scanRes, 0, BassConstants.PSYNC_TIMEOUT, paCbObsolete, null);
-                    } else {
-                        var scanResFinal = scanRes;
-                        mScanController.doOnScanThread(
-                                () ->
-                                        mPeriodicAdvertisingManager.registerSync(
-                                                scanResFinal,
-                                                0,
-                                                BassConstants.PSYNC_TIMEOUT,
-                                                paCbObsolete,
-                                                null));
-                    }
+                    var scanResFinal = scanRes;
+                    runOnScanThread(
+                            () ->
+                                    mPeriodicAdvertisingManager.registerSync(
+                                            scanResFinal,
+                                            0,
+                                            BassConstants.PSYNC_TIMEOUT,
+                                            paCbObsolete,
+                                            null));
                 } catch (IllegalArgumentException ex) {
                     Log.e(TAG, "registerSync:IllegalArgumentException");
                     clearAllDataForSyncHandle(BassConstants.PENDING_SYNC_HANDLE);
