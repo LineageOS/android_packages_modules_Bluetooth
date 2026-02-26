@@ -436,4 +436,136 @@ TEST_F(BleConnectionManager, test_re_add_to_allow_list_after_timeout_with_multip
   Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
+TEST_F(BleConnectionManager, test_direct_connection_add_remove_from_multiple_clients) {
+  alarm_callback_t alarm_callback1 = nullptr;
+  void* alarm_data1 = nullptr;
+  alarm_callback_t alarm_callback2 = nullptr;
+  void* alarm_data2 = nullptr;
+
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, true, false)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+
+  EXPECT_CALL(*AlarmMock::Get(), AlarmNew(_)).Times(1);
+  EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _))
+          .WillOnce(DoAll(SaveArg<2>(&alarm_callback1), SaveArg<3>(&alarm_data1)));
+
+  // Client 1 connects
+  EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  Mock::VerifyAndClearExpectations(AlarmMock::Get());
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+    EXPECT_CALL(*AlarmMock::Get(), AlarmNew(_)).Times(1);
+    EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _))
+            .WillOnce(DoAll(SaveArg<2>(&alarm_callback2), SaveArg<3>(&alarm_data2)));
+  }
+
+  // Expect NO CreateLeConnection call as one is already pending to same address
+  // This is same expectation without the flag as it was merging the 2nd req with first one
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, true, false)).Times(0);
+
+  // Client 2 connects to same address
+  // Should NOT call CreateLeConnection again
+  EXPECT_TRUE(direct_connect_add(CLIENT2, address1, /* prefer_relax_mode */ false));
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  Mock::VerifyAndClearExpectations(AlarmMock::Get());
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+    // Crucial check: Should NOT cancel connection because Client 2 is still waiting
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+  } else {
+    // with previous implementation, cancelLeConnect was called on remove from 1st client
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
+  }
+
+  // Now remove client1 & ensure no LE cancel connection called
+  EXPECT_TRUE(direct_connect_remove(CLIENT1, address1));
+
+  // try to remove the same client again & expect FALSE
+  EXPECT_FALSE(direct_connect_remove(CLIENT1, address1));
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+    // Now remove conn req from client2 & expect the LE cancel connection
+    Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
+    EXPECT_TRUE(direct_connect_remove(CLIENT2, address1));
+  } else {
+    // with previous implementation there was nothing added to queue
+    // and hence no pending thing to remove
+    EXPECT_FALSE(direct_connect_remove(CLIENT2, address1));
+  }
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+}
+
+TEST_F(BleConnectionManager, test_direct_connection_multiple_clients_timeout) {
+  alarm_callback_t alarm_callback1 = nullptr;
+  void* alarm_data1 = nullptr;
+  alarm_callback_t alarm_callback2 = nullptr;
+  void* alarm_data2 = nullptr;
+
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, true, false)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+
+  EXPECT_CALL(*AlarmMock::Get(), AlarmNew(_)).Times(1);
+  EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _))
+          .WillOnce(DoAll(SaveArg<2>(&alarm_callback1), SaveArg<3>(&alarm_data1)));
+
+  // Client 1 connects
+  EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  Mock::VerifyAndClearExpectations(AlarmMock::Get());
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+    EXPECT_CALL(*AlarmMock::Get(), AlarmNew(_)).Times(1);
+    EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _))
+            .WillOnce(DoAll(SaveArg<2>(&alarm_callback2), SaveArg<3>(&alarm_data2)));
+  }
+
+  // Expect NO CreateLeConnection call as one is already pending to same address
+  // This is same expectation without the flag as it was merging the 2nd req with first one
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, true, false)).Times(0);
+
+  // Client 2 connects to same address
+  // Should NOT call CreateLeConnection again
+  EXPECT_TRUE(direct_connect_add(CLIENT2, address1, /* prefer_relax_mode */ false));
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  Mock::VerifyAndClearExpectations(AlarmMock::Get());
+
+  // Client 1 times out
+  EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT1, address1)).Times(1);
+  EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+    // Crucial check: Should NOT cancel connection because Client 2 is still waiting
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+  } else {
+    // with previous implementation, connection was released after the 1st client cancels it
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
+  }
+
+  alarm_callback1(alarm_data1);
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  Mock::VerifyAndClearExpectations(localConnTimeoutMock.get());
+  Mock::VerifyAndClearExpectations(AlarmMock::Get());
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+    // Client 2 times out
+    EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT2, address1)).Times(1);
+    EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
+    EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
+
+    alarm_callback2(alarm_data2);
+
+    Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  } else {
+    // with previous implementation, connection was released after the 1st client cancels it
+    // and there was no entry penging in the queue
+  }
+}
 }  // namespace connection_manager
