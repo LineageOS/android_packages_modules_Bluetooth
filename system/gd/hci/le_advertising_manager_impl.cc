@@ -164,7 +164,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     } else if (controller_->IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
       advertising_api_type_ = AdvertisingApiType::ANDROID_HCI;
       num_instances_ = controller_->GetVendorCapabilities().max_advt_instances_;
-      if (!com::android::bluetooth::flags::multi_adv_index()) {
+      if (!com_android_bluetooth_flags_multi_adv_index()) {
         // number of LE_MULTI_ADVT start from 1
         num_instances_ += 1;
       }
@@ -304,7 +304,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     if (!advertising_sets_.contains(advertiser_id)) {
       log::warn("Unknown advertiser id {}", advertiser_id);
 
-      if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list() &&
+      if (com_android_bluetooth_flags_ensure_acl_connection_is_removed_from_pending_list() &&
           removed_advertising_sets_.contains(advertiser_id)) {
         log::info("Found advertiser id {} in removed advertisers.", advertiser_id);
         AddressWithType advertiser_address =
@@ -401,7 +401,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
 
   AdvertiserId allocate_advertiser() {
     AdvertiserId id;
-    if (com::android::bluetooth::flags::multi_adv_index()) {
+    if (com_android_bluetooth_flags_multi_adv_index()) {
       id = 0;
     } else {
       // number of LE_MULTI_ADVT start from 1
@@ -418,7 +418,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     advertising_sets_[id].in_use = true;
     num_advertisers_in_use_++;
 
-    if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list() &&
+    if (com_android_bluetooth_flags_ensure_acl_connection_is_removed_from_pending_list() &&
         removed_advertising_sets_.contains(id)) {
       log::info("Removing advertiser id {} from removed advertisers.", id);
       removed_advertising_sets_.erase(id);
@@ -460,7 +460,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       }
     }
 
-    if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list()) {
+    if (com_android_bluetooth_flags_ensure_acl_connection_is_removed_from_pending_list()) {
       removed_advertising_sets_[advertiser_id] =
               RemovedAdvertiser(advertising_sets_[advertiser_id].current_address,
                                 advertising_sets_[advertiser_id].discoverable);

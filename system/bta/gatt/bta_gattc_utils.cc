@@ -689,7 +689,7 @@ void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
 
     (*p_clreg->p_cback)(BTA_GATTC_OPEN_EVT, &cb_data);
 
-    if (com::android::bluetooth::flags::gatt_conn_settings()) {
+    if (com_android_bluetooth_flags_gatt_conn_settings()) {
       if (GATT_DEF_BLE_MTU_SIZE != cb_data.open.mtu && cb_data.open.mtu) {
         tBTA_GATTC mtu_cb_data;
         mtu_cb_data.cfg_mtu.conn_id = conn_id;

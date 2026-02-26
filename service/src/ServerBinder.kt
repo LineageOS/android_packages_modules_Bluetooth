@@ -129,10 +129,6 @@ class ServerBinder(
 
     override fun isBleScanAvailable() = runOnServerThread { api.isBleScanAvailable() }
 
-    override fun isHearingAidProfileSupported() = runOnServerThread {
-        api.isHearingAidProfileSupported()
-    }
-
     override fun enable(source: AttributionSource): Boolean {
         return try {
             checker.enableAllowed(source, foregroundRequired = true)

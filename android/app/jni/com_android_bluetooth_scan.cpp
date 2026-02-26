@@ -325,16 +325,6 @@ public:
  * Native Client functions
  */
 
-static void on_scanner_registered_cb(const Uuid& app_uuid, uint8_t scannerId, uint8_t status) {
-  std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mScanCallbacksObj) {
-    return;
-  }
-  sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onScannerRegistered, status, scannerId,
-                               UUID_PARAMS(app_uuid));
-}
-
 static void registerScannerNative(JNIEnv* /* env */, jobject /* object */, jlong app_uuid_lsb,
                                   jlong app_uuid_msb) {
   if (!sScanner) {
@@ -342,7 +332,7 @@ static void registerScannerNative(JNIEnv* /* env */, jobject /* object */, jlong
   }
 
   Uuid uuid = from_java_uuid(app_uuid_msb, app_uuid_lsb);
-  sScanner->RegisterScanner(uuid, base::Bind(&on_scanner_registered_cb, uuid));
+  sScanner->RegisterScanner(uuid);
 }
 
 static void unregisterScannerNative(JNIEnv* /* env */, jobject /* object */, jint scanner_id) {

@@ -349,7 +349,9 @@ public class LeAudioService extends ConnectableProfile {
         mLeAudioInbandRingtoneSupportedByPlatform =
                 BluetoothProperties.isLeAudioInbandRingtoneSupported().orElse(true);
 
-        mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
+        }
 
         if (!Flags.leaudioBroadcastCreationTimeoutFix()) {
             // Mark service as started
@@ -921,7 +923,9 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         mHandler.removeCallbacksAndMessages(null);
-        mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
+        }
     }
 
     @VisibleForTesting
@@ -2399,8 +2403,15 @@ public class LeAudioService extends ConnectableProfile {
         public void onScanManagerErrorCallback(int errorCode) {}
     }
 
-    @VisibleForTesting
-    boolean handleAudioDeviceAdded(
+    /**
+     * Handle when AudioManager adds audio device.
+     *
+     * @param device added audio device
+     * @param isSink if device is sink
+     * @param isSource if device is source
+     * @return true if the exposed active device changed, otherwise false
+     */
+    public boolean handleAudioDeviceAdded(
             BluetoothDevice device, int type, boolean isSink, boolean isSource) {
         mEventLogger.logd(
                 TAG,
@@ -2434,8 +2445,15 @@ public class LeAudioService extends ConnectableProfile {
         return true;
     }
 
-    @VisibleForTesting
-    void handleAudioDeviceRemoved(
+    /**
+     * Handle when AudioManager removes audio device.
+     *
+     * @param device added audio device
+     * @param type of device
+     * @param isSink if device is sink
+     * @param isSource if device is source
+     */
+    public void handleAudioDeviceRemoved(
             BluetoothDevice device, int type, boolean isSink, boolean isSource) {
         mEventLogger.logd(
                 TAG,
@@ -2483,6 +2501,9 @@ public class LeAudioService extends ConnectableProfile {
     private class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
             if (!isAvailable()) {
                 Log.e(TAG, "Callback called when LeAudioService is stopped");
                 return;
@@ -2511,6 +2532,9 @@ public class LeAudioService extends ConnectableProfile {
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+            if (Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
             if (!isAvailable()) {
                 Log.e(TAG, "Callback called when LeAudioService is stopped");
                 return;

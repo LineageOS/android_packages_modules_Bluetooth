@@ -64,7 +64,7 @@ tBTM_STATUS bluetooth::shim::BTM_SetEventFilterConnectionSetupAllDevices() {
 tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
         std::vector<RawAddress> classic_hid_devices,
         std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices) {
-  if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+  if (!com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
     // First set ACL to suspended state.
     Stack::GetInstance()->GetAcl()->SetSystemSuspendState(/*suspended=*/true);
   }
@@ -74,7 +74,7 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
     controller->SetEventFilterConnectionSetupAddress(device, hci::AutoAcceptFlag::AUTO_ACCEPT_OFF);
   }
 
-  if (com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+  if (com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
     return tBTM_STATUS::BTM_SUCCESS;
   }
   // Allow BLE HID
@@ -90,7 +90,7 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
 
 tBTM_STATUS bluetooth::shim::BTM_RestoreFilterAcceptList(
         std::vector<std::pair<RawAddress, uint8_t>> le_devices) {
-  if (!com::android::bluetooth::flags::le_hid_connection_policy_suspend()) {
+  if (!com_android_bluetooth_flags_le_hid_connection_policy_suspend()) {
     // First, mark ACL as no longer suspended.
     Stack::GetInstance()->GetAcl()->SetSystemSuspendState(/*suspended=*/false);
   }

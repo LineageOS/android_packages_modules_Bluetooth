@@ -1130,8 +1130,9 @@ public class AdapterService extends Service {
                             && SystemProperties.getBoolean(
                                     AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
             var pauseAdvertisement =
-                    SystemProperties.getBoolean(
-                            AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
+                    Flags.adapterSuspendAdvertisement()
+                            && SystemProperties.getBoolean(
+                                    AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
             if (disconnectAcl || scanModeNone || stopLeScan || pauseAdvertisement) {
                 mAdapterSuspend =
                         Optional.of(
@@ -4615,7 +4616,9 @@ public class AdapterService extends Service {
 
     /** Handle Bluetooth app state when active device changes for a given {@code profile}. */
     public void handleActiveDeviceChange(int profile, BluetoothDevice device) {
-        mActiveDeviceManager.profileActiveDeviceChanged(profile, device);
+        if (!Flags.admCentralizeActiveDeviceHandling()) {
+            mActiveDeviceManager.profileActiveDeviceChanged(profile, device);
+        }
         mSilenceDeviceManager.profileActiveDeviceChanged(profile, device);
         mPhonePolicy.ifPresent(policy -> policy.profileActiveDeviceChanged(profile, device));
     }

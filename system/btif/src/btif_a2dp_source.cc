@@ -361,7 +361,7 @@ class A2dpStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {
 
     // TODO: Remove the entire invoke_switch_codec_cb code path (Native -> JNI -> Java)
     //  when removing the flag a2dp_handle_sa_reconfig_in_native
-    if (com::android::bluetooth::flags::a2dp_handle_sa_reconfig_in_native()) {
+    if (com_android_bluetooth_flags_a2dp_handle_sa_reconfig_in_native()) {
       btif_av_source_set_low_latency_codec(low_latency);
     } else {
       // Check if codec needs to be switched prior to stream start.
@@ -533,7 +533,7 @@ static void btif_a2dp_source_start_session_delayed(const RawAddress& peer_addres
   encoder_interface->encoder_init(&peer_params, a2dp_codec_config, btif_a2dp_source_read_callback,
                                   btif_a2dp_source_enqueue_callback);
 
-  if (com::android::bluetooth::flags::ldac_rate_control()) {
+  if (com_android_bluetooth_flags_ldac_rate_control()) {
     stack::l2cap::get_interface().L2CA_SetRateControlEnabled(
             peer_address, get_rate_control_enabled(a2dp_codec_config));
   }

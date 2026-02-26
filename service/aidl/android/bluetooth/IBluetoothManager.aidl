@@ -61,8 +61,6 @@ interface IBluetoothManager {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     String getName(in AttributionSource source);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    boolean isHearingAidProfileSupported();
-    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isBleScanAvailable();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

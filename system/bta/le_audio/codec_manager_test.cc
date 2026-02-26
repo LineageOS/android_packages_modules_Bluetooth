@@ -363,8 +363,8 @@ class CodecManagerTestBase : public Test {
 public:
   virtual void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_codec_id_support(true);
+    com_android_bluetooth_flags_reset_flags();
+    set_com_android_bluetooth_flags_leaudio_codec_id_support(true);
     set_mock_offload_capabilities(offload_capabilities_none);
 
     bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);

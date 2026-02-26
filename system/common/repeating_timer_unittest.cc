@@ -234,7 +234,7 @@ TEST_F(RepeatingTimerTest, message_loop_thread_down_cancel_scheduled_periodic_ta
                                                base::Unretained(this), num_tasks, promise_),
                            std::chrono::milliseconds(delay_ms));
   future.wait();
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     /**
      * Need to cancel the timer, as previously we were using weak_ptr, hence the internal checks
      * were working fine even when the thread is stopped. But with the change to GD handler, we now

@@ -1196,7 +1196,7 @@ TEST_F(HasClientTestBase, test_app_registration) {
 
 class HasClientTest : public HasClientTestBase {
   void SetUp(void) override {
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
     HasClientTestBase::SetUp();
     TestAppRegister();
   }
@@ -1268,7 +1268,7 @@ TEST_F(HasClientTest, test_disconnect_connected) {
 }
 
 TEST_F(HasClientTest, test_disconnect_connected_keep_bonded_dev_in_ram) {
-  com::android::bluetooth::flags::provider_->hap_keep_bonded_dev_in_ram(true);
+  set_com_android_bluetooth_flags_hap_keep_bonded_dev_in_ram(true);
   const RawAddress test_address = GetTestAddress(1);
   /* Minimal possible HA device (only feature flags) */
   SetSampleDatabaseHasNoPresetChange(test_address,
@@ -1286,7 +1286,7 @@ TEST_F(HasClientTest, test_disconnect_connected_keep_bonded_dev_in_ram) {
 }
 
 TEST_F(HasClientTest, test_remove_connected) {
-  com::android::bluetooth::flags::provider_->hap_keep_bonded_dev_in_ram(true);
+  set_com_android_bluetooth_flags_hap_keep_bonded_dev_in_ram(true);
   const RawAddress test_address = GetTestAddress(1);
   /* Minimal possible HA device (only feature flags) */
   SetSampleDatabaseHasNoPresetChange(test_address,

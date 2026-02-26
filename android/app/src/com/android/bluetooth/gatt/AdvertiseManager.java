@@ -45,6 +45,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +66,7 @@ public class AdvertiseManager {
     private final AdvertiserMap mAdvertiserMap;
     private final ActivityManager mActivityManager;
     private final Handler mHandler;
-    private final AdvertiseSuspendManager mAdvertiseSuspendManager;
+    private final Optional<AdvertiseSuspendManager> mAdvertiseSuspendManager;
 
     private volatile boolean mIsAvailable = true;
     @VisibleForTesting int mTempRegistrationId = -1;
@@ -97,17 +98,21 @@ public class AdvertiseManager {
         mNativeInterface.init();
         mHandler = new Handler(advertiseLooper);
         mAdvertiseBinder = new AdvertiseBinder(mAdapterService, mGattService, this);
-        mAdvertiseSuspendManager = new AdvertiseSuspendManager(this, adapterService);
+        mAdvertiseSuspendManager =
+                mAdapterService
+                        .getAdapterSuspend()
+                        .filter(adapterSuspend -> adapterSuspend.isPauseAdvertisementEnabled())
+                        .map(adapterSuspend -> new AdvertiseSuspendManager(this, adapterSuspend));
     }
 
     /** Called by AdapterSuspend. We need to prepare for suspend by pausing all advertisements. */
     public void enterSuspend() {
-        doOnAdvertiseThread(mAdvertiseSuspendManager::enterSuspend);
+        mAdvertiseSuspendManager.ifPresent(manager -> doOnAdvertiseThread(manager::enterSuspend));
     }
 
     /** Called by AdapterSuspend. We should re-enable paused advertisements. */
     public void exitSuspend() {
-        doOnAdvertiseThread(mAdvertiseSuspendManager::exitSuspend);
+        mAdvertiseSuspendManager.ifPresent(manager -> doOnAdvertiseThread(manager::exitSuspend));
     }
 
     void cleanup() {
@@ -121,7 +126,7 @@ public class AdvertiseManager {
             mAdvertiseBinder.cleanup();
             mNativeInterface.cleanup();
             mAdvertisers.clear();
-            mAdvertiseSuspendManager.cleanup();
+            mAdvertiseSuspendManager.ifPresent(AdvertiseSuspendManager::cleanup);
         } else {
             mIsAvailable = false;
             mHandler.removeCallbacksAndMessages(null);
@@ -131,7 +136,7 @@ public class AdvertiseManager {
                         mAdvertiseBinder.cleanup();
                         mNativeInterface.cleanup();
                         mAdvertisers.clear();
-                        mAdvertiseSuspendManager.cleanup();
+                        mAdvertiseSuspendManager.ifPresent(AdvertiseSuspendManager::cleanup);
                     });
         }
     }
@@ -167,8 +172,11 @@ public class AdvertiseManager {
         if (entry == null) {
             Log.i(TAG, "onAdvertisingSetStarted(): No callback found for regId " + regId);
             // Advertising set was stopped before it was properly registered.
-            mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
-            mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
+            mAdvertiseSuspendManager.ifPresent(
+                    manager -> {
+                        manager.onAdvertisingSetStarted(regId, advertiserId, status);
+                        manager.onStopAdvertisingSet(advertiserId);
+                    });
             mNativeInterface.stopAdvertisingSet(advertiserId);
             return;
         }
@@ -193,7 +201,8 @@ public class AdvertiseManager {
             mAdvertiserMap.removeAppAdvertiseStats(regId);
         }
 
-        mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
+        mAdvertiseSuspendManager.ifPresent(
+                manager -> manager.onAdvertisingSetStarted(regId, advertiserId, status));
 
         callbackToApp(() -> callback.onAdvertisingSetStarted(advertiserId, txPower, status));
     }
@@ -220,11 +229,14 @@ public class AdvertiseManager {
             }
         }
 
-        mAdvertiseSuspendManager.onAdvertisingEnabled(advertiserId, enable, status);
-        if (!mAdvertiseSuspendManager.shouldSkipCallback()) {
-            final var callback = entry.getValue().callback;
-            callbackToApp(() -> callback.onAdvertisingEnabled(advertiserId, enable, status));
-        }
+        mAdvertiseSuspendManager.ifPresent(
+                manager -> {
+                    if (manager.onAdvertisingEnabled(advertiserId, enable, status)) {
+                        final var callback = entry.getValue().callback;
+                        callbackToApp(
+                                () -> callback.onAdvertisingEnabled(advertiserId, enable, status));
+                    }
+                });
     }
 
     private void fetchAppForegroundState(int uid, int id) {
@@ -246,6 +258,16 @@ public class AdvertiseManager {
         }
     }
 
+    private boolean shouldQueueCommand(String cmdName) {
+        if (mAdvertiseSuspendManager
+                .filter(AdvertiseSuspendManager::shouldQueueCommand)
+                .isPresent()) {
+            Log.i(TAG, "Suspending! Queue command [" + cmdName + "] and return early.");
+            return true;
+        }
+        return false;
+    }
+
     void startAdvertisingSet(
             AdvertisingSetParameters parameters,
             AdvertiseData advertiseData,
@@ -259,19 +281,20 @@ public class AdvertiseManager {
             AttributionSource source) {
         enforceThread();
 
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueStartAdvertisingSet(
-                    parameters,
-                    advertiseData,
-                    scanResponse,
-                    periodicParameters,
-                    periodicData,
-                    duration,
-                    maxExtAdvEvents,
-                    gattServerCallback,
-                    callback,
-                    source);
+        if (shouldQueueCommand("startAdvertisingSet")) {
+            mAdvertiseSuspendManager
+                    .get()
+                    .queueStartAdvertisingSet(
+                            parameters,
+                            advertiseData,
+                            scanResponse,
+                            periodicParameters,
+                            periodicData,
+                            duration,
+                            maxExtAdvEvents,
+                            gattServerCallback,
+                            callback,
+                            source);
             return;
         }
 
@@ -318,7 +341,9 @@ public class AdvertiseManager {
 
             final int cbId = --mTempRegistrationId;
             mAdvertisers.put(binder, new AdvertiserInfo(cbId, deathRecipient, callback));
-            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents, source);
+            mAdvertiseSuspendManager.ifPresent(
+                    manager ->
+                            manager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents, source));
 
             Log.d(TAG, "startAdvertisingSet(): reg_id=" + cbId + ", callback: " + binder);
 
@@ -401,9 +426,8 @@ public class AdvertiseManager {
 
     void getOwnAddress(int advertiserId) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueGetOwnAddress(advertiserId);
+        if (shouldQueueCommand("getOwnAddress")) {
+            mAdvertiseSuspendManager.get().queueGetOwnAddress(advertiserId);
             return;
         }
 
@@ -417,9 +441,8 @@ public class AdvertiseManager {
 
     void stopAdvertisingSet(IAdvertisingSetCallback callback) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueStopAdvertisingSet(callback);
+        if (shouldQueueCommand("stopAdvertisingSet")) {
+            mAdvertiseSuspendManager.get().queueStopAdvertisingSet(callback);
             return;
         }
 
@@ -441,7 +464,7 @@ public class AdvertiseManager {
             return;
         }
 
-        mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
+        mAdvertiseSuspendManager.ifPresent(manager -> manager.onStopAdvertisingSet(advertiserId));
         mNativeInterface.stopAdvertisingSet(advertiserId);
 
         try {
@@ -460,10 +483,11 @@ public class AdvertiseManager {
             int maxExtAdvEvents,
             AttributionSource source) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueEnableAdvertisingSet(
-                    advertiserId, enable, duration, maxExtAdvEvents, source);
+        if (shouldQueueCommand("enableAdvertisingSet")) {
+            mAdvertiseSuspendManager
+                    .get()
+                    .queueEnableAdvertisingSet(
+                            advertiserId, enable, duration, maxExtAdvEvents, source);
             return;
         }
 
@@ -473,7 +497,7 @@ public class AdvertiseManager {
             return;
         }
 
-        mAdvertiseSuspendManager.onEnableAdvertisingSet(advertiserId);
+        mAdvertiseSuspendManager.ifPresent(manager -> manager.onEnableAdvertisingSet(advertiserId));
 
         int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
         fetchAppForegroundState(uid, advertiserId);
@@ -483,9 +507,8 @@ public class AdvertiseManager {
 
     void setAdvertisingData(int advertiserId, AdvertiseData data) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueSetAdvertisingData(advertiserId, data);
+        if (shouldQueueCommand("setAdvertisingData")) {
+            mAdvertiseSuspendManager.get().queueSetAdvertisingData(advertiserId, data);
             return;
         }
 
@@ -511,9 +534,8 @@ public class AdvertiseManager {
 
     void setScanResponseData(int advertiserId, AdvertiseData data) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueSetScanResponseData(advertiserId, data);
+        if (shouldQueueCommand("setScanResponseData")) {
+            mAdvertiseSuspendManager.get().queueSetScanResponseData(advertiserId, data);
             return;
         }
 
@@ -539,9 +561,8 @@ public class AdvertiseManager {
 
     void setAdvertisingParameters(int advertiserId, AdvertisingSetParameters parameters) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueSetAdvertisingParameters(advertiserId, parameters);
+        if (shouldQueueCommand("setAdvertisingParameters")) {
+            mAdvertiseSuspendManager.get().queueSetAdvertisingParameters(advertiserId, parameters);
             return;
         }
 
@@ -558,10 +579,10 @@ public class AdvertiseManager {
     void setPeriodicAdvertisingParameters(
             int advertiserId, PeriodicAdvertisingParameters parameters) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueSetPeriodicAdvertisingParameters(
-                    advertiserId, parameters);
+        if (shouldQueueCommand("setPeriodicAdvertisingParameters")) {
+            mAdvertiseSuspendManager
+                    .get()
+                    .queueSetPeriodicAdvertisingParameters(advertiserId, parameters);
             return;
         }
 
@@ -576,9 +597,8 @@ public class AdvertiseManager {
 
     void setPeriodicAdvertisingData(int advertiserId, AdvertiseData data) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueSetPeriodicAdvertisingData(advertiserId, data);
+        if (shouldQueueCommand("setPeriodicAdvertisingData")) {
+            mAdvertiseSuspendManager.get().queueSetPeriodicAdvertisingData(advertiserId, data);
             return;
         }
 
@@ -604,9 +624,8 @@ public class AdvertiseManager {
 
     void setPeriodicAdvertisingEnable(int advertiserId, boolean enable) {
         enforceThread();
-        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
-            Log.i(TAG, "Suspending! Queue command and return early.");
-            mAdvertiseSuspendManager.queueSetPeriodicAdvertisingEnable(advertiserId, enable);
+        if (shouldQueueCommand("setPeriodicAdvertisingEnable")) {
+            mAdvertiseSuspendManager.get().queueSetPeriodicAdvertisingEnable(advertiserId, enable);
             return;
         }
 

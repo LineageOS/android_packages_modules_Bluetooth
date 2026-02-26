@@ -29,6 +29,8 @@ import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.State;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -123,6 +125,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
     private final List<BluetoothDevice> mLeHearingAidConnectedDevices = new ArrayList<>();
 
     @GuardedBy("mLock")
+    private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
+            new AudioManagerAudioDeviceCallback();
+
     private final List<BluetoothDevice> mPendingLeHearingAidActiveDevice = new ArrayList<>();
 
     @GuardedBy("mLock")
@@ -1146,12 +1151,18 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         mHandler = new Handler(mp.handlerThreadGetLooper(mHandlerThread));
 
         mAdapterService.registerBluetoothStateCallback((command) -> mHandler.post(command), this);
+        if (Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
+        }
     }
 
     void cleanup() {
         Log.i(TAG, "cleanup()");
 
         mAdapterService.unregisterBluetoothStateCallback(this);
+        if (Flags.admCentralizeActiveDeviceHandling()) {
+            mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
+        }
         if (mHandlerThread != null) {
             mHandlerThread.quitSafely();
             try {
@@ -1162,6 +1173,166 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             mHandlerThread = null;
         }
         resetState();
+    }
+
+    private class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
+        @Override
+        public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+            if (!Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
+            if (!mAdapterService.isAvailable()) {
+                Log.e(TAG, "Callback called when AdapterService is stopped");
+                return;
+            }
+
+            for (AudioDeviceInfo deviceInfo : addedDevices) {
+                String address = deviceInfo.getAddress();
+                if (address == null || address.equals("00:00:00:00:00:00")) {
+                    continue;
+                }
+
+                if (!isDeviceTypeSupported(deviceInfo.getType())) {
+                    Log.v(TAG, "Unknown device type: " + deviceInfo.getType());
+                    continue;
+                }
+
+                byte[] addressBytes = Utils.getBytesFromAddress(address);
+                BluetoothDevice device = mAdapterService.getDeviceFromByte(addressBytes);
+
+                Log.i(
+                        TAG,
+                        "onAudioDevicesAdded: "
+                                + "type: "
+                                + Integer.toString(deviceInfo.getType())
+                                + ", device: "
+                                + device);
+
+                switch (deviceInfo.getType()) {
+                    case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> {
+                        mAdapterService
+                                .getA2dpService()
+                                .ifPresent(
+                                        s -> {
+                                            if (s.handleAudioDeviceAdded(device)) {
+                                                handleA2dpActiveDeviceChanged(device);
+                                            }
+                                        });
+                    }
+                    case AudioDeviceInfo.TYPE_HEARING_AID -> {
+                        mAdapterService
+                                .getHearingAidService()
+                                .ifPresent(
+                                        s -> {
+                                            if (s.handleAudioDeviceAdded()) {
+                                                profileActiveDeviceChanged(
+                                                        BluetoothProfile.HEARING_AID, device);
+                                            }
+                                        });
+                    }
+                    case AudioDeviceInfo.TYPE_BLE_HEADSET, AudioDeviceInfo.TYPE_BLE_SPEAKER -> {
+                        mAdapterService
+                                .getLeAudioService()
+                                .ifPresent(
+                                        s -> {
+                                            if (s.handleAudioDeviceAdded(
+                                                    device,
+                                                    deviceInfo.getType(),
+                                                    deviceInfo.isSink(),
+                                                    deviceInfo.isSource())) {
+                                                handleLeAudioActiveDeviceChanged(device);
+                                            }
+                                        });
+                    }
+                    case AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
+                        mAdapterService
+                                .getHeadsetService()
+                                .ifPresent(
+                                        s -> {
+                                            if (s.handleAudioDeviceAdded(device)) {
+                                                handleHfpActiveDeviceChanged(device);
+                                            }
+                                        });
+                    }
+                    default -> {
+                        // Do nothing
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+            if (!Flags.admCentralizeActiveDeviceHandling()) {
+                throw new IllegalStateException("admCentralizeActiveDeviceHandling");
+            }
+            if (!mAdapterService.isAvailable()) {
+                Log.e(TAG, "Callback called when AdapterService is stopped");
+                return;
+            }
+
+            for (AudioDeviceInfo deviceInfo : removedDevices) {
+                String address = deviceInfo.getAddress();
+                if (address == null || address.equals("00:00:00:00:00:00")) {
+                    continue;
+                }
+
+                if (!isDeviceTypeSupported(deviceInfo.getType())) {
+                    Log.v(TAG, "Unknown device type: " + deviceInfo.getType());
+                    continue;
+                }
+
+                byte[] addressBytes = Utils.getBytesFromAddress(address);
+                BluetoothDevice device = mAdapterService.getDeviceFromByte(addressBytes);
+
+                Log.i(
+                        TAG,
+                        "onAudioDevicesRemoved: "
+                                + "type: "
+                                + Integer.toString(deviceInfo.getType())
+                                + ", device: "
+                                + device);
+
+                switch (deviceInfo.getType()) {
+                    case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> {
+                        mAdapterService
+                                .getA2dpService()
+                                .ifPresent(s -> s.handleAudioDeviceRemoved());
+                    }
+                    case AudioDeviceInfo.TYPE_HEARING_AID -> {
+                        mAdapterService
+                                .getHearingAidService()
+                                .ifPresent(
+                                        s -> {
+                                            if (s.handleAudioDeviceRemoved()) {
+                                                handleHearingAidActiveDeviceChanged(
+                                                        s.getActiveDevice());
+                                            }
+                                        });
+                    }
+                    case AudioDeviceInfo.TYPE_BLE_HEADSET, AudioDeviceInfo.TYPE_BLE_SPEAKER -> {
+                        mAdapterService
+                                .getLeAudioService()
+                                .ifPresent(
+                                        s ->
+                                                s.handleAudioDeviceRemoved(
+                                                        device,
+                                                        deviceInfo.getType(),
+                                                        deviceInfo.isSink(),
+                                                        deviceInfo.isSource()));
+                    }
+                    case AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
+                        profileActiveDeviceChanged(BluetoothProfile.HEADSET, null);
+                        mAdapterService
+                                .getHeadsetService()
+                                .ifPresent(s -> s.handleAudioDeviceRemoved(device));
+                    }
+                    default -> {
+                        // Do nothing
+                    }
+                }
+            }
+        }
     }
 
     private boolean setA2dpActiveDevice(@Nullable BluetoothDevice device, boolean stopAudio) {
@@ -1705,6 +1876,26 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
         Log.d(TAG, "isBroadcastingAudio: true");
         return true;
+    }
+
+    /**
+     * Checks if device type is supported by ActiveDeviceManager
+     *
+     * @return {@code true} if type is known, {@code false} otherwise
+     */
+    private static boolean isDeviceTypeSupported(int type) {
+        switch (type) {
+            case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                    AudioDeviceInfo.TYPE_HEARING_AID,
+                    AudioDeviceInfo.TYPE_BLE_HEADSET,
+                    AudioDeviceInfo.TYPE_BLE_SPEAKER,
+                    AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
     }
 
     private void getDevicesInfo(

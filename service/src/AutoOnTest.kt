@@ -525,14 +525,12 @@ class AutoOnTest {
         @JvmStatic
         fun beforeClass() {
             BluetoothAdapterState.disableCacheForTesting = true
-            // IpcDataCache.setTestMode(true)
         }
 
         @AfterClass
         @JvmStatic
         fun afterClass() {
             BluetoothAdapterState.disableCacheForTesting = false
-            // IpcDataCache.setTestMode(false)
         }
     }
 }

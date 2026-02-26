@@ -93,11 +93,4 @@ class A2dpSinkServiceBinderTest {
         binder.isA2dpPlaying(device, source)
         verify(service).isA2dpPlaying(device)
     }
-
-    @Test
-    fun getAudioConfig() {
-        val device = getTestDevice(0)
-        binder.getAudioConfig(device, source)
-        verify(service).getAudioConfig(device)
-    }
 }

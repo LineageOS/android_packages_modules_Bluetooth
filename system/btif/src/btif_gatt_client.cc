@@ -194,7 +194,7 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
                 p_data->open.status, p_data->open.client_if,
                 to_java_transport(p_data->open.transport), p_data->open.remote_bda);
 
-      if (!com::android::bluetooth::flags::gatt_conn_settings()) {
+      if (!com_android_bluetooth_flags_gatt_conn_settings()) {
         if (GATT_DEF_BLE_MTU_SIZE != p_data->open.mtu && p_data->open.mtu) {
           HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
                     p_data->open.status, p_data->open.mtu);
@@ -554,7 +554,7 @@ static void btif_gattc_reg_for_notification_impl(tGATT_IF client_if, const RawAd
                                                  uint16_t handle) {
   tGATT_STATUS status = BTA_GATTC_RegisterForNotifications(client_if, bda, handle);
   // TODO: conn_id is currently unused
-  if (com::android::bluetooth::flags::gatt_reg_notification_on_jni_thread()) {
+  if (com_android_bluetooth_flags_gatt_reg_notification_on_jni_thread()) {
     do_in_jni_thread(BindOnce(
         [](tGATT_STATUS status, uint16_t handle) {
           auto callbacks = bt_gatt_callbacks;
@@ -581,7 +581,7 @@ static void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if, const Raw
                                                    uint16_t handle) {
   tGATT_STATUS status = BTA_GATTC_DeregisterForNotifications(client_if, bda, handle);
   // TODO: conn_id is currently unused
-  if (com::android::bluetooth::flags::gatt_reg_notification_on_jni_thread()) {
+  if (com_android_bluetooth_flags_gatt_reg_notification_on_jni_thread()) {
     do_in_jni_thread(BindOnce(
         [](tGATT_STATUS status, uint16_t handle) {
           auto callbacks = bt_gatt_callbacks;
@@ -682,7 +682,7 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
                                            int subrate_max, int max_latency, int cont_num,
                                            int sup_timeout) {
   CHECK_BTGATT_INIT();
-  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+  if (com_android_bluetooth_flags_gatt_return_unsupported_when_not_support_subrating()) {
     if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
         !acl_peer_supports_ble_connection_subrating(bd_addr) ||
         !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {

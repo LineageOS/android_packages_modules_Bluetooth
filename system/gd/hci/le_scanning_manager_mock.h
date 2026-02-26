@@ -84,6 +84,13 @@ public:
   MOCK_METHOD(void, SyncTxParameters, (const Address&, uint8_t, uint16_t, uint16_t, int),
               (override));
   MOCK_METHOD(bool, IsAdTypeFilterSupported, (), (const override));
+  MOCK_METHOD(bool, Is1mPhyConfigured, (), (const override));
+  MOCK_METHOD(bool, IsCodedPhyConfigured, (), (const override));
+  MOCK_METHOD(bool, IsScanActive, (), (const override));
+  MOCK_METHOD(uint32_t, GetIntervalMs1m, (), (const override));
+  MOCK_METHOD(uint16_t, GetWindowMs1m, (), (const override));
+  MOCK_METHOD(uint32_t, GetIntervalMsCoded, (), (const override));
+  MOCK_METHOD(uint16_t, GetWindowMsCoded, (), (const override));
   MOCK_METHOD(void, StartDiscovery, (uint8_t), (override));
   MOCK_METHOD(void, StopDiscovery, (), (override));
 };

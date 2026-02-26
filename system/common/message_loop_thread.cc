@@ -415,7 +415,7 @@ pid_t MessageLoopThread::GetLinuxThreadId(MessageLoopThread* context) {
     return static_cast<pid_t>(syscall(SYS_gettid));
   }
 
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     // If handler_thread_ is stopped, return -1 (invalid tid)
     return (context->handler_thread_ == nullptr) ? -1 : context->handler_thread_->GetLinuxTid();
   }

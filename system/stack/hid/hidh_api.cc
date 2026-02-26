@@ -437,7 +437,7 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
   } else if (hh_cb.devices[dev_handle].state == HIDH_DEV_NO_CONN) {
     hh_cb.devices[dev_handle].state = HIDH_DEV_UNUSED;
     log::verbose("set handle {} state to UNUSED", dev_handle);
-    if (com::android::bluetooth::flags::reset_state_when_removing_non_connected_hid_device()) {
+    if (com_android_bluetooth_flags_reset_state_when_removing_non_connected_hid_device()) {
       // It's possible for us to be in the NO_CONN state while initiating an outgoing connection,
       // threfore having nonzero CID. In this awkward state let's try our best to disconnect those
       // CIDs and clean the state.

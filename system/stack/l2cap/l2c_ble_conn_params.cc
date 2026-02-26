@@ -334,7 +334,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
       // If we find timeout for connection update config smaller than lower bound because of current
       // subrate factor, reset the subrate first
-      if (com::android::bluetooth::flags::le_subrate_manager()) {
+      if (com_android_bluetooth_flags_le_subrate_manager()) {
         if (p_lcb->SubrateFactor() > 1) {
           uint16_t timeout_bond =
               (1 + p_lcb->latency) * p_lcb->SubrateFactor() * p_lcb->max_interval * 1.25 * 2;

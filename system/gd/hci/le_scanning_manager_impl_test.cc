@@ -327,7 +327,7 @@ class LeScanningManagerExtendedTest : public LeScanningManagerTest {
 protected:
   void SetUp() override {
     LeScanningManagerTest::SetUp();
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
     test_controller_->AddSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS);
     test_controller_->AddSupported(OpCode::LE_SET_EXTENDED_SCAN_ENABLE);
     test_controller_->SetBleExtendedAdvertisingSupport(true);
@@ -457,7 +457,7 @@ TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
 
 // Test for 'update_start_scan' when we have Java scan start request while no scan is ongoing
 TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_java_scan) {
-  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  set_com_android_bluetooth_flags_migrate_btm_scan_to_gd(true);
 
   // Set Java scan parameters and enable Java scan
   le_scanning_manager->SetScanParameters(TEST_JAVA_SCAN_TYPE, TEST_JAVA_SCANNER_ID,
@@ -485,7 +485,7 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_java_scan) {
 
 // Test for 'update_start_scan' when we have discovery start request while no scan is ongoing
 TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_discovery) {
-  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  set_com_android_bluetooth_flags_migrate_btm_scan_to_gd(true);
 
   // Start discovery
   le_scanning_manager->StartDiscovery(TEST_DISCOVERY_DURATION);
@@ -505,7 +505,7 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_start_discovery) {
 
 // Test for 'update_stop_scan' when we have Java scan stop request while only Java scan is ongoing
 TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_java_scan) {
-  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  set_com_android_bluetooth_flags_migrate_btm_scan_to_gd(true);
   // Enable Java scan
   le_scanning_manager->Scan(true);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
@@ -526,7 +526,7 @@ TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_java_scan) {
 
 // Test for 'update_stop_scan' when we hava discovery stop request while only discovery is ongoing
 TEST_F(LeScanningManagerExtendedTest, scan_multiplexing_stop_discovery) {
-  com::android::bluetooth::flags::provider_->migrate_btm_scan_to_gd(true);
+  set_com_android_bluetooth_flags_migrate_btm_scan_to_gd(true);
   // Start discovery
   le_scanning_manager->StartDiscovery(TEST_DISCOVERY_DURATION);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());

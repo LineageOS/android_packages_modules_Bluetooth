@@ -18,9 +18,10 @@ cc_defaults {
         "include",
     ],
     srcs: [
-        ":TestMockStackA2dp",
-        ":TestMockStackBtm",
         "fuzzer_validation_test.cc",
+    ],
+    static_libs: [
+        "libbt-stack-mock",
     ],
     strip: {
         none: true,

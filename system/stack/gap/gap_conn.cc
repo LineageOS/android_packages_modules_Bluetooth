@@ -267,7 +267,7 @@ uint16_t GAP_ConnOpen(const char* /* p_serv_name */, uint8_t service_id, bool is
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+    if (com_android_bluetooth_flags_lecoc_with_fixed_psm()) {
       p_ccb->local_coc_cfg.lecoc_fixed_psm_slots = p_cfg->lecoc_fixed_psm_slots;
       p_ccb->local_coc_cfg.lecoc_assigned_psm = p_cfg->lecoc_assigned_psm;
     } else {

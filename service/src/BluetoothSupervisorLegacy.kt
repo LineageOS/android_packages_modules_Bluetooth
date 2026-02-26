@@ -175,8 +175,6 @@ class BluetoothSupervisorLegacy(
 
         override fun isBleScanAvailable() = bms().isBleScanAvailable()
 
-        override fun isHearingAidProfileSupported() = bms().isHearingAidProfileSupported
-
         override fun enable(reason: Int, packageName: String) = bms().enable(reason, packageName)
 
         override fun enableBle(packageName: String, token: IBinder) =

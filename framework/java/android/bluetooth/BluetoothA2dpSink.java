@@ -31,7 +31,6 @@ import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
-import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.IBinder;
@@ -184,34 +183,6 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
             }
         }
         return STATE_DISCONNECTED;
-    }
-
-    /**
-     * Get the current audio configuration for the A2DP source device, or null if the device has no
-     * audio configuration
-     *
-     * @param device Remote bluetooth device.
-     * @return audio configuration for the device, or null
-     * @see BluetoothAudioConfig
-     */
-    @Hide
-    @RequiresLegacyBluetoothPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public BluetoothAudioConfig getAudioConfig(BluetoothDevice device) {
-        if (VDBG) log("getAudioConfig(" + device + ")");
-        final IBluetoothA2dpSink service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled() && isValidDevice(device)) {
-            try {
-                return service.getAudioConfig(device, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return null;
     }
 
     /**

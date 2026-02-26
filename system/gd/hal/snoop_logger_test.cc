@@ -161,7 +161,7 @@ protected:
     thread_->Stop();
     delete thread_;
 
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
     DeleteSnoopLogFiles();
     fake_timerfd_reset();
 

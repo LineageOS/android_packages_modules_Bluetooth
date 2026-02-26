@@ -521,7 +521,7 @@ void on_connection_failed(const RawAddress& address) {
   log::info("Connection failed {}", address);
   on_connection_timed_out(0x00, address);
 
-  if (com::android::bluetooth::flags::move_conn_mgr_callbacks()) {
+  if (com_android_bluetooth_flags_move_conn_mgr_callbacks()) {
     remove_all_clients_with_pending_connections(address);
   }
 }
@@ -546,7 +546,7 @@ static void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& addre
   // Notify others about timeout
   on_connection_timed_out(app_id, address);
 
-  if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+  if (com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
     // Temporary mapping the error code to PAGE_TIMEOUT
     bluetooth::metrics::LogLeAclCompletionEvent(address, bluetooth::hci::ErrorCode::PAGE_TIMEOUT,
                                                 true /* is locally initiated */);
@@ -670,7 +670,7 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
   if (is_anyone_interested_to_use_accept_list(it)) {
     log::debug("There is somebody interested in accept list for {}", address);
     if (connection_timeout) {
-      if (com::android::bluetooth::flags::gd_conn_mgr_one_timeout()) {
+      if (com_android_bluetooth_flags_gd_conn_mgr_one_timeout()) {
         /* Cancel direct connect. Any pending background connect will be preserved. */
         ACL_CancelDirectConnect(BTM_Sec_GetAddressWithType(address));
       } else {

@@ -357,7 +357,7 @@ public:
     if (device->IsConnected()) {
       BTA_GATTC_Close(device->conn_id);
     } else {
-      if (com::android::bluetooth::flags::leaudio_cancel_open_with_direct_flag_when_connecting()) {
+      if (com_android_bluetooth_flags_leaudio_cancel_open_with_direct_flag_when_connecting()) {
         BTA_GATTC_CancelOpen(gatt_if_, addr, true);
       } else {
         BTA_GATTC_CancelOpen(gatt_if_, addr, false);

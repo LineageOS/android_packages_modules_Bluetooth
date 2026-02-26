@@ -807,7 +807,7 @@ void Device::PlaybackPosNotificationResponse(uint8_t label, bool interim, PlaySt
     log::verbose("Queue next play position update");
     play_pos_update_cb_.Reset(
             base::Bind(&Device::HandlePlayPosUpdate, weak_ptr_factory_.GetWeakPtr()));
-    if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
       /**
        * The `replace_message_loop_thread_with_gd_handler` flag converts libchrome `base::Thread`
        * usage to `GdThread`. This makes `btbase::AbstractMessageLoop::current_task_runner()` return

@@ -23,8 +23,7 @@ import android.bluetooth.le.IAdvertisingSetCallback
 import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.content.AttributionSource
 import android.util.Log
-import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.btservice.AdapterSuspend
 
 private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseSuspendManager"
 
@@ -36,7 +35,7 @@ private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseSuspendManager"
  */
 class AdvertiseSuspendManager(
     private val advertiseManager: AdvertiseManager,
-    private val adapterService: AdapterService,
+    private val adapterSuspend: AdapterSuspend,
 ) {
 
     enum class SuspendState {
@@ -69,9 +68,6 @@ class AdvertiseSuspendManager(
     private var suspendAdvCounter = 0
     // To skip the shouldQueue check - used when en/disabling advertisements internally
     private var forceNoQueue = false
-    // Indicates whether onAdvertisingEnabled callback should be skipped. We should skip it if the
-    // enablement event is purely due to suspend activity.
-    private var skipCallback = false
 
     sealed interface PendingAdvertiseCommand
 
@@ -166,9 +162,7 @@ class AdvertiseSuspendManager(
         }
 
     /** Returns whether advertising commands should be queued, which is true during suspend. */
-    fun shouldQueueCommand(): Boolean {
-        return suspendState != SuspendState.NORMAL && !forceNoQueue
-    }
+    fun shouldQueueCommand() = suspendState != SuspendState.NORMAL && !forceNoQueue
 
     /** Queue a Start Advertising Set command (during suspend). */
     fun queueStartAdvertisingSet(
@@ -291,14 +285,8 @@ class AdvertiseSuspendManager(
         // Wait for all ongoing start/enable/disable operations to complete before proceeding to
         // pause the advertisements.
         suspendState = SuspendState.RESOLVING
-        suspendAdvCounter = 0
 
-        for (entry in suspendInfoMap.entries) {
-            val suspendInfo = entry.value
-            if (suspendInfo.numOfOngoingOperations > 0) {
-                suspendAdvCounter += 1
-            }
-        }
+        suspendAdvCounter = suspendInfoMap.values.count { it.numOfOngoingOperations > 0 }
 
         if (suspendAdvCounter == 0) {
             pauseAdvertisements()
@@ -330,7 +318,7 @@ class AdvertiseSuspendManager(
 
     private fun finalizeSuspend() {
         suspendState = SuspendState.SUSPENDED
-        adapterService.adapterSuspend.orElse(null)?.advertiseSuspendReady()
+        adapterSuspend.advertiseSuspendReady()
     }
 
     /** Initiates resume sequence. Enable all paused advertisements. */
@@ -364,9 +352,7 @@ class AdvertiseSuspendManager(
     private fun finalizeResume() {
         suspendState = SuspendState.NORMAL
 
-        for (command in pendingCommands) {
-            runPendingCommand(command)
-        }
+        pendingCommands.forEach(::runPendingCommand)
         pendingCommands.clear()
     }
 
@@ -377,25 +363,16 @@ class AdvertiseSuspendManager(
         maxExtAdvEvents: Int,
         source: AttributionSource,
     ) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         suspendInfoMap[regId] = AdvertiserSuspendInfo(duration, maxExtAdvEvents, source)
     }
 
     /** To be called from AdvertiseManager when stopping an advertising set. */
     fun onStopAdvertisingSet(advertiserId: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         suspendInfoMap.remove(advertiserId)
     }
 
     /** To be called from AdvertiseManager when enabling an advertising set. */
     fun onEnableAdvertisingSet(advertiserId: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         val suspendInfo = suspendInfoMap[advertiserId]
         if (suspendInfo == null) {
             Log.wtf(TAG, "onEnableAdvertisingSet: suspendInfo is null for id $advertiserId")
@@ -406,9 +383,6 @@ class AdvertiseSuspendManager(
 
     /** To be called from AdvertiseManager when an advertising set is started. */
     fun onAdvertisingSetStarted(regId: Int, advertiserId: Int, status: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
         val suspendInfo = suspendInfoMap.remove(regId)
         if (suspendInfo == null) {
             Log.wtf(TAG, "onAdvertisingSetStarted: suspendInfo is null for id $regId")
@@ -428,25 +402,25 @@ class AdvertiseSuspendManager(
         }
     }
 
-    /** To be called from AdvertiseManager when an advertising set is enabled. */
-    fun onAdvertisingEnabled(advertiserId: Int, enable: Boolean, status: Int) {
-        if (!Flags.adapterSuspendAdvertisement()) {
-            return
-        }
-
+    /**
+     * To be called from AdvertiseManager when an advertising set is enabled.
+     *
+     * @return true if the callback of AdvertiseManager's onAdvertisingEnabled should be called
+     */
+    fun onAdvertisingEnabled(advertiserId: Int, enable: Boolean, status: Int): Boolean {
         val suspendInfo = suspendInfoMap[advertiserId]
         if (suspendInfo == null) {
             Log.wtf(TAG, "onAdvertisingEnabled: suspendInfo is null for id $advertiserId")
-            return
+            return false
         }
         val wasEnabled = suspendInfo.currentlyEnabled
-        var skipCallbackForThisEvent = false
+        var shouldCallCallback = true
 
         if (suspendState == SuspendState.PAUSING) {
             if (wasEnabled && !enable) {
                 // Normal disablement - don't invoke callback
                 suspendAdvCounter -= 1
-                skipCallbackForThisEvent = true
+                shouldCallCallback = false
                 if (suspendAdvCounter == 0) {
                     finalizeSuspend()
                 }
@@ -459,7 +433,7 @@ class AdvertiseSuspendManager(
                 // Normal re-enablement - don't invoke callback.
                 suspendAdvCounter -= 1
                 suspendInfo.needEnableOnResume = false
-                skipCallbackForThisEvent = true
+                shouldCallCallback = false
             } else if (!wasEnabled && !enable && status != 0 && needEnable) {
                 // Re-enablement failed! Let's invoke callback to let the app know.
                 suspendAdvCounter -= 1
@@ -485,12 +459,7 @@ class AdvertiseSuspendManager(
             }
         }
 
-        skipCallback = skipCallbackForThisEvent
-    }
-
-    /** Returns whether we should call the callback of AdvertiseManager's onAdvertisingEnabled. */
-    fun shouldSkipCallback(): Boolean {
-        return skipCallback
+        return shouldCallCallback
     }
 
     /** Frees structures. */

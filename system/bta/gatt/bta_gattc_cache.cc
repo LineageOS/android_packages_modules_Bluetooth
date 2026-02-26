@@ -340,7 +340,7 @@ void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATT
    * this enables pushing the callback to application when MTU response arrives
    * while GATT discovery is in progress
    */
-  if (com::android::bluetooth::flags::gatt_conn_settings() && p_clcb->p_q_cmd == NULL) {
+  if (com_android_bluetooth_flags_gatt_conn_settings() && p_clcb->p_q_cmd == NULL) {
     if (p_data->op_cmpl.op_code == GATTC_OPTYPE_CONFIG) {
       bta_gattc_op_cmpl(p_clcb, p_data);
     }

@@ -449,7 +449,7 @@ void sdp_init(void) {
     log::error("SDP Registration failed");
   }
 
-  if (com::android::bluetooth::flags::enable_service_discovery_server()) {
+  if (com_android_bluetooth_flags_enable_service_discovery_server()) {
     sdp_register_sdp_discovery_server_records();
   }
 }

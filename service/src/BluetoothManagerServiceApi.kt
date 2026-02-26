@@ -46,8 +46,6 @@ interface BluetoothManagerServiceApi {
 
     fun isBleScanAvailable(): Boolean
 
-    fun isHearingAidProfileSupported(): Boolean
-
     fun enable(reason: Int, packageName: String): Boolean
 
     fun enableBle(packageName: String, token: IBinder): Boolean

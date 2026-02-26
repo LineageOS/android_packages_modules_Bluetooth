@@ -1332,7 +1332,7 @@ static int gattSubrateRequestNative(JNIEnv* env, jobject /* object */, jint /* c
     return 1;  // BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
   }
   // TODO does BtStatus align with BluetoothStatusCodes ?
-  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+  if (com_android_bluetooth_flags_gatt_return_unsupported_when_not_support_subrating()) {
     BtStatus status = sGattIf->client->subrate_request(str2addr(env, address), subrate_min,
                                                         subrate_max, max_latency, cont_num,
                                                         sup_timeout);
@@ -1351,7 +1351,7 @@ static int gattSubrateModeRequestNative(JNIEnv* env, jobject /* object */, jint 
     return 1;  // BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
   }
   // TODO does bt_status_t align with BluetoothStatusCodes ?
-  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+  if (com_android_bluetooth_flags_gatt_return_unsupported_when_not_support_subrating()) {
     BtStatus status = sGattIf->client->subrate_mode_request(
         client_if, str2addr(env, address), subrate_mode);
     // BluetoothStatusCodes.FEATURE_NOT_SUPPORTED

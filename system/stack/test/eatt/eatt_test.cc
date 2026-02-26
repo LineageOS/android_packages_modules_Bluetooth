@@ -33,7 +33,6 @@
 #include "stack/mock/mock_stack_security_client_interface.h"
 #include "stack/test/common/mock_eatt.h"
 #include "stack/test/common/mock_gatt_layer.h"
-#include "stack/test/common/mock_l2cap_layer.h"
 #include "test/mock/mock_main_shim_entry.h"
 
 using testing::_;
@@ -223,7 +222,6 @@ protected:
             std::make_unique<bluetooth::hci::testing::MockController>();
     EXPECT_CALL(*bluetooth::hci::testing::mock_controller_, GetLeBufferSize)
             .WillRepeatedly(Return(le_buffer_size_));
-    bluetooth::l2cap::SetMockInterface(&l2cap_interface_);
     bluetooth::gatt::SetMockGattInterface(&gatt_interface_);
     set_security_client_interface(mock_btm_security_);
     set_mock_btm_client_interface_security(mock_btm_security_);
@@ -236,8 +234,6 @@ protected:
 
     hci_role_ = HCI_ROLE_CENTRAL;
 
-    EXPECT_CALL(l2cap_interface_, LeCreditDefault()).WillRepeatedly(DoAll(Return(0xfff)));
-
     EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_GetBleConnRole(_))
             .WillRepeatedly(DoAll(Return(hci_role_)));
 
@@ -248,7 +244,7 @@ protected:
   }
 
   void TearDown() override {
-    com::android::bluetooth::flags::provider_->reset_flags();
+    com_android_bluetooth_flags_reset_flags();
 
     EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_DeregisterLECoc(BT_PSM_EATT)).Times(1);
 
@@ -258,7 +254,6 @@ protected:
     connected_cids_.clear();
 
     bluetooth::gatt::SetMockGattInterface(nullptr);
-    bluetooth::l2cap::SetMockInterface(nullptr);
     bluetooth::testing::stack::l2cap::reset_interface();
     bluetooth::hci::testing::mock_controller_.reset();
     reset_mock_btm_client_interface();
@@ -268,7 +263,6 @@ protected:
 
   tL2CAP_APPL_INFO reg_info_;
 
-  bluetooth::l2cap::MockL2capInterface l2cap_interface_;
   bluetooth::testing::stack::l2cap::Mock mock_stack_l2cap_interface_;
   bluetooth::gatt::MockGattInterface gatt_interface_;
   NiceMock<MockSecurityClientInterface> mock_btm_security_;

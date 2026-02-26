@@ -45,7 +45,7 @@ public:
   void Init();
 
   // ::BleScannerInterface
-  void RegisterScanner(const bluetooth::Uuid& uuid, RegisterCallback) override;
+  void RegisterScanner(const bluetooth::Uuid& uuid) override;
   void Unregister(int scanner_id) override;
   void Scan(bool start) override;
   void ScanFilterParamSetup(uint8_t client_if, uint8_t action, uint8_t filter_index,

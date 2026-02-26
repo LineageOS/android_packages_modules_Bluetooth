@@ -704,7 +704,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     // On-resume flag should always be reset if there is an explicit start/stop call.
     scan_on_resume_ = false;
     if (start) {
-      if (com::android::bluetooth::flags::migrate_btm_scan_to_gd()) {
+      if (com_android_bluetooth_flags_migrate_btm_scan_to_gd()) {
         // Only start scan if we need to
         if (update_start_scan(callerType)) {
           start_scan();
@@ -715,8 +715,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         start_scan();
       }
     } else {
-      if (!com::android::bluetooth::flags::migrate_btm_scan_to_gd() ||
-          update_stop_scan(callerType)) {
+      if (!com_android_bluetooth_flags_migrate_btm_scan_to_gd() || update_stop_scan(callerType)) {
         if (address_manager_registered_) {
           le_address_manager_->Unregister(this);
           address_manager_registered_ = false;
@@ -871,7 +870,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   bool is_bonded(Address target_address) {
-    if (com::android::bluetooth::flags::irk_scanning_bond_check_update()) {
+    if (com_android_bluetooth_flags_irk_scanning_bond_check_update()) {
       return get_btm_client_interface().security.BTM_IsBonded(RawAddress(target_address.address),
                                                               BT_TRANSPORT_LE);
     } else {
@@ -2008,6 +2007,22 @@ void LeScanningManagerImpl::RegisterScanningCallback(ScanningCallback* scanning_
 bool LeScanningManagerImpl::IsAdTypeFilterSupported() const {
   return pimpl_->is_ad_type_filter_supported();
 }
+
+bool LeScanningManagerImpl::Is1mPhyConfigured() const { return pimpl_->is_1m_phy_configured(); }
+
+bool LeScanningManagerImpl::IsCodedPhyConfigured() const {
+  return pimpl_->is_coded_phy_configured();
+}
+
+bool LeScanningManagerImpl::IsScanActive() const { return pimpl_->is_scan_active(); }
+
+uint32_t LeScanningManagerImpl::GetIntervalMs1m() const { return pimpl_->interval_ms_1m_; }
+
+uint16_t LeScanningManagerImpl::GetWindowMs1m() const { return pimpl_->window_ms_1m_; }
+
+uint32_t LeScanningManagerImpl::GetIntervalMsCoded() const { return pimpl_->interval_ms_coded_; }
+
+uint16_t LeScanningManagerImpl::GetWindowMsCoded() const { return pimpl_->window_ms_coded_; }
 
 void LeScanningManagerImpl::StartDiscovery(uint8_t duration) {
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_discovery, duration);

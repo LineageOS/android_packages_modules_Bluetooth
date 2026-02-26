@@ -30,6 +30,7 @@ import java.io.PrintWriter
 
 private const val TAG = "BluetoothSupervisorNew"
 
+@kotlin.time.ExperimentalTime
 class BluetoothSupervisorNew(
     private val context: Context,
     private val looper: Looper,
@@ -117,6 +118,7 @@ class BluetoothSupervisorNew(
                 context.createContextAsUser(pendingUser!!, 0),
                 looper,
                 pendingUser!!,
+                bluetoothComponent,
                 isBootCompleted,
             )
         currentUser = pendingUser
@@ -168,9 +170,6 @@ class BluetoothSupervisorNew(
         override fun getName(): String? = withBms(null) { getName() }
 
         override fun isBleScanAvailable(): Boolean = withBms(false) { isBleScanAvailable() }
-
-        override fun isHearingAidProfileSupported(): Boolean =
-            withBms(false) { isHearingAidProfileSupported() }
 
         override fun enable(reason: Int, packageName: String): Boolean =
             withBms(false) { enable(reason, packageName) }

@@ -414,7 +414,7 @@ static bool accept_client_operation(const RawAddress& peer_bda, uint16_t uuid,
 
   if (!stack::leConnectionConnect(gatt_if, p_clcb->bda, BLE_ADDR_PUBLIC, BTM_BLE_DIRECT_CONNECTION,
                                   true, 0, false,
-                                  com::android::bluetooth::flags::gatt_conn_settings())) {
+                                  com_android_bluetooth_flags_gatt_conn_settings())) {
     return false;
   }
 

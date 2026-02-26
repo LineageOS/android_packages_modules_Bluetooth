@@ -342,15 +342,16 @@ cc_defaults {
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
-        ":TestMockStackA2dp",
-        ":TestMockStackL2cap",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
         "libbluetooth_hci_pdl",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
+        "libbt-stack-mock",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -398,14 +399,6 @@ cc_defaults {
         ":TestMockDevice",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockSrvcDis",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackArbiter",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
     ],
     shared_libs: [
         "server_configurable_flags",
@@ -417,9 +410,10 @@ cc_defaults {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
     ],
 }
 
@@ -464,15 +458,6 @@ cc_defaults {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockSrvcDis",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackArbiter",
-        ":TestMockStackBtm",
-        ":TestMockStackConnMgr",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -486,9 +471,10 @@ cc_defaults {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
 }
@@ -530,11 +516,6 @@ cc_defaults {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -547,8 +528,10 @@ cc_defaults {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libevent",
     ],
 }
@@ -590,16 +573,13 @@ cc_defaults {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
     ],
     static_libs: [
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
+        "libbt-stack-mock",
     ],
 }
 
@@ -641,12 +621,6 @@ cc_defaults {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -657,7 +631,9 @@ cc_defaults {
         "libbase",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
+        "libbt-stack-mock",
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
 }
@@ -698,18 +674,16 @@ cc_defaults {
         ":TestMockDevice",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
     shared_libs: [
@@ -865,11 +839,7 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
-        ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackBtm",
-        ":TestMockStackL2capInterface",
-        ":TestMockStackRfcommMetrics",
         "rfcomm/port_api.cc",
         "rfcomm/port_rfc.cc",
         "rfcomm/port_utils.cc",
@@ -880,7 +850,6 @@ cc_test {
         "rfcomm/rfc_ts_frames.cc",
         "rfcomm/rfc_utils.cc",
         "test/common/mock_btm_layer.cc",
-        "test/common/mock_l2cap_layer.cc",
         "test/common/stack_test_packet_utils.cc",
         "test/rfcomm/stack_rfcomm_test.cc",
         "test/rfcomm/stack_rfcomm_test_main.cc",
@@ -900,9 +869,11 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -952,13 +923,7 @@ cc_test {
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
-        ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
         "smp/p_256_curvepara.cc",
         "smp/p_256_ecc_pp.cc",
         "smp/p_256_multprecision.cc",
@@ -985,10 +950,12 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1006,18 +973,17 @@ cc_test {
         "mts_defaults",
     ],
     test_suites: ["general-tests"],
+    host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     include_dirs: [
         "packages/modules/Bluetooth/system",
     ],
     srcs: [
         "test/ad_parser_unittest.cc",
     ],
-    shared_libs: [
-        "libbinder_ndk",
-        "libcrypto",
-    ],
     static_libs: [
-        "android.system.suspend.control-V1-ndk",
         "libbluetooth_log",
         "libbluetooth_types",
         "libgmock",
@@ -1049,7 +1015,6 @@ cc_test {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackBtm",
         "connection_manager/connection_manager.cc",
         "test/connection_manager_test.cc",
     ],
@@ -1065,12 +1030,14 @@ cc_test {
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1121,12 +1088,6 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
-        ":TestMockStackArbiter",
-        ":TestMockStackBtm",
-        ":TestMockStackConnMgr",
-        ":TestMockStackGattOffload",
-        ":TestMockStackSdp",
-        ":TestMockStackSecurityClientInterface",
         "gatt/gatt_utils.cc",
         "test/common/mock_eatt.cc",
         "test/common/mock_gatt_layer.cc",
@@ -1143,11 +1104,13 @@ cc_test {
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1185,9 +1148,6 @@ cc_test {
         ":TestMockBta",
         ":TestMockBtif",
         ":TestMockDevice",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackL2cap",
         "avct/avct_api.cc",
         "avct/avct_bcb_act.cc",
         "avct/avct_ccb.cc",
@@ -1209,9 +1169,12 @@ cc_test {
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1248,9 +1211,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockBta",
         ":TestMockDevice",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackL2cap",
         "avdt/avdt_ad.cc",
         "avdt/avdt_api.cc",
         "avdt/avdt_ccb.cc",
@@ -1273,10 +1233,13 @@ cc_test {
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1346,8 +1309,6 @@ cc_test {
         ":TestMockAudioHalInterface",
         ":TestMockBta",
         ":TestMockBtif",
-        ":TestMockStackA2dpApi",
-        ":TestMockStackAvdt",
         "a2dp/a2dp_aac.cc",
         "a2dp/a2dp_aac_decoder.cc",
         "a2dp/a2dp_aac_encoder.cc",
@@ -1393,11 +1354,14 @@ cc_test {
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-common",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libgmock",
@@ -1445,11 +1409,6 @@ cc_test {
         ":TestMockDevice",
         ":TestMockMainShim",
         ":TestMockMainShim",
-        ":TestMockStackA2dp",
-        ":TestMockStackBtm",
-        ":TestMockStackConnMgr",
-        ":TestMockStackGattOffload",
-        ":TestMockStackL2cap",
         "gatt/gatt_db.cc",
         "gatt/gatt_sr_hash.cc",
         "gatt/gatt_utils.cc",
@@ -1473,10 +1432,11 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1581,14 +1541,10 @@ cc_test {
         ":TestCommonSyncMainHandler",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackBtmInterface",
-        ":TestMockStackL2capInterface",
-        ":TestMockStackSecurityClientInterface",
         ":TestStubOsi",
         "eatt/eatt.cc",
         "test/common/mock_btm_api_layer.cc",
         "test/common/mock_gatt_layer.cc",
-        "test/common/mock_l2cap_layer.cc",
         "test/eatt/eatt_test.cc",
         "test/gatt/mock_gatt_utils_ref.cc",
     ],
@@ -1603,9 +1559,11 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1655,15 +1613,6 @@ cc_test {
         ":TestMockLegacyHciInterface",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackBtu",
-        ":TestMockStackConnMgr",
-        ":TestMockStackGap",
-        ":TestMockStackGatt",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackRnr",
-        ":TestMockStackSmp",
         ":TestMockUdrv",
         "acl/acl.cc",
         "acl/ble_acl.cc",
@@ -1714,14 +1663,16 @@ cc_test {
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
-        "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -1838,9 +1789,6 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
-        ":TestMockStackBtm",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
         "hid/hidd_api.cc",
         "hid/hidd_conn.cc",
         "hid/hidh_api.cc",
@@ -1858,6 +1806,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libbte",
         "libchrome",
@@ -1908,12 +1857,6 @@ cc_test {
         ":TestMockBtif",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackSmp",
         "btu/btu_hcif.cc",
         "btu/main_thread.cc",
         "test/stack_btu_test.cc",
@@ -1929,6 +1872,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -1982,14 +1926,6 @@ cc_test {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockSrvcDis",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackGattOffload",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
-        ":TestMockStackSmp",
         "ais/ais_ble.cc",
         "arbiter/acl_arbiter.cc",
         "connection_manager/connection_manager.cc",
@@ -2023,6 +1959,7 @@ cc_test {
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -2082,14 +2019,6 @@ cc_test {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockSrvcDis",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
-        ":TestMockStackSecurityClientInterface",
-        ":TestMockStackSmp",
         "ais/ais_ble.cc",
         "arbiter/acl_arbiter.cc",
         "connection_manager/connection_manager.cc",
@@ -2130,6 +2059,7 @@ cc_test {
         "libbluetooth_private_gatt_rs_bridge",
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -2172,14 +2102,6 @@ cc_test {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockSrvcDis",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackGattOffload",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
-        ":TestMockStackSmp",
         "ais/ais_ble.cc",
         "arbiter/acl_arbiter.cc",
         "connection_manager/connection_manager.cc",
@@ -2213,6 +2135,7 @@ cc_test {
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -2271,13 +2194,6 @@ cc_test {
         ":TestMockJni",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackAcl",
-        ":TestMockStackBtm",
-        ":TestMockStackConnMgr",
-        ":TestMockStackHcic",
-        ":TestMockStackSdp",
-        ":TestMockStackSmp",
         "l2cap/l2c_api.cc",
         "l2cap/l2c_ble.cc",
         "l2cap/l2c_ble_conn_params.cc",
@@ -2298,6 +2214,7 @@ cc_test {
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -2367,15 +2284,6 @@ cc_test {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackBtm",
-        ":TestMockStackBtu",
-        ":TestMockStackConnMgr",
-        ":TestMockStackGatt",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackSdp",
-        ":TestMockStackSmp",
         "acl/*.cc",
         "btm/btm_iot_config.cc",
         "test/stack_acl_test.cc",
@@ -2391,6 +2299,7 @@ cc_test {
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -2454,14 +2363,6 @@ cc_test {
         ":TestMockLegacyHciInterface",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackA2dp",
-        ":TestMockStackBtm",
-        ":TestMockStackBtu",
-        ":TestMockStackGap",
-        ":TestMockStackGatt",
-        ":TestMockStackHcic",
-        ":TestMockStackL2cap",
-        ":TestMockStackSmp",
         ":TestMockUdrv",
         "rnr/remote_name_request.cc",
         "test/stack_rnr_test.cc",
@@ -2480,6 +2381,7 @@ cc_test {
         "libbt-common",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
+        "libbt-stack-mock",
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -2542,9 +2444,6 @@ cc_test {
         ":TestMockBta",
         ":TestMockBtif",
         ":TestMockMainShim",
-        ":TestMockStackA2dp",
-        ":TestMockStackBtm",
-        ":TestMockStackL2cap",
         "test/sdp/stack_sdp_api_test.cc",
         "test/sdp/stack_sdp_db_test.cc",
         "test/sdp/stack_sdp_parse_test.cc",
@@ -2561,6 +2460,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_types",
         "libbt-common",
+        "libbt-stack-mock",
         "libchrome",
         "libflagtest",
         "libgmock",
@@ -2575,207 +2475,52 @@ cc_test {
     header_libs: ["libbluetooth_headers"],
 }
 
-filegroup {
-    name: "TestMockStackA2dp",
-    srcs: [
-        "mock/mock_stack_a2dp_*.cc",
+cc_library_static {
+    name: "libbt-stack-mock",
+    defaults: ["fluoride_defaults"],
+    host_supported: true,
+    local_include_dirs: [
+        "ais",
+        "avct",
+        "avdt",
+        "avrc",
+        "bnep",
+        "btm",
+        "eatt",
+        "gap",
+        "gatt",
+        "hid",
+        "include",
+        "l2cap",
+        "pan",
+        "sdp",
+        "smp",
+        "srvc",
     ],
-}
-
-filegroup {
-    name: "TestMockStackA2dpApi",
-    srcs: [
-        "mock/mock_stack_a2dp_api.cc",
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/bta/ag",
+        "packages/modules/Bluetooth/system/bta/include",
+        "packages/modules/Bluetooth/system/bta/sys",
+        "packages/modules/Bluetooth/system/btif/include",
+        "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/gd/hal",
+        "packages/modules/Bluetooth/system/udrv/include",
     ],
-}
-
-filegroup {
-    name: "TestMockStackArbiter",
-    srcs: [
-        "mock/mock_stack_arbiter_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackAvct",
-    srcs: [
-        "mock/mock_stack_avct_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackAvdt",
-    srcs: [
-        "mock/mock_stack_avdt_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackAvrc",
-    srcs: [
-        "mock/mock_stack_avrc_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackL2cap",
-    srcs: [
-        "mock/mock_stack_l2cap_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackL2capInterface",
-    srcs: [
-        "mock/mock_stack_l2cap_interface.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackRfcomm",
-    srcs: [
-        "mock/mock_stack_rfcomm*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackRfcommMetrics",
-    srcs: [
-        "mock/mock_stack_rfcomm_metrics.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackRnr",
-    srcs: [
-        "mock/mock_stack_rnr_interface.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStack",
     srcs: [
         "mock/mock_stack_*.cc",
     ],
-}
-
-filegroup {
-    name: "TestMockStackHid",
-    srcs: [
-        "mock/mock_stack_hid*.cc",
+    static_libs: [
+        "libbluetooth_hci_pdl", // TODO: remove this dependency
+        "libbluetooth_log",
+        "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
+        "libbluetooth_types",
+        "libchrome",
+        "libgmock",
     ],
-}
-
-filegroup {
-    name: "TestMockStackPan",
-    srcs: [
-        "mock/mock_stack_pan*.cc",
+    header_libs: [
+        "libbluetooth_headers",
     ],
-}
-
-filegroup {
-    name: "TestMockStackSdp",
-    srcs: [
-        "mock/mock_stack_sdp*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackBtm",
-    srcs: [
-        "mock/mock_stack_btm*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackBtmInterface",
-    srcs: [
-        "mock/mock_stack_btm_interface.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackSecurityClientInterface",
-    srcs: [
-        "mock/mock_stack_security_client_interface.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackBtmIso",
-    srcs: [
-        "mock/mock_stack_btm_iso.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackAcl",
-    srcs: [
-        "mock/mock_stack_acl*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackSmp",
-    srcs: [
-        "mock/mock_stack_smp*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackGap",
-    srcs: [
-        "mock/mock_stack_gap*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackGapConnInterface",
-    srcs: [
-        "mock/mock_stack_gap_conn_interface.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackConnMgr",
-    srcs: [
-        "mock/mock_stack_connection_manager.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackGatt",
-    srcs: [
-        "mock/mock_stack_app.cc",
-        "mock/mock_stack_gatt*.cc",
-        "mock/mock_stack_le_connection.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackGattOffload",
-    srcs: [
-        "mock/mock_stack_gatt_offload.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackBtu",
-    srcs: [
-        "mock/mock_stack_btu*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockStackHcic",
-    srcs: [
-        "mock/mock_stack_hcic*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockSrvcDis",
-    srcs: [
-        "mock/mock_stack_srvc_dis.cc",
-    ],
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "36",
 }

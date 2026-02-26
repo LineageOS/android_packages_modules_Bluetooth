@@ -22,6 +22,7 @@ import android.bluetooth.IBluetoothManager.ACTION_LOCAL_NAME_CHANGED
 import android.bluetooth.IBluetoothManager.EXTRA_LOCAL_NAME
 import android.bluetooth.IBluetoothManagerCallback
 import android.bluetooth.State
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
@@ -33,28 +34,55 @@ import android.os.UserHandle
 import android.provider.Settings.Global
 import android.provider.Settings.Secure
 import com.android.bluetooth.util.truncateUtf8String
+import com.android.server.bluetooth.airplane.AirplaneModeController
 import java.io.FileDescriptor
 import java.io.PrintWriter
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 // Must match android.provider.Settings.Secure.BLUETOOTH_NAME but cannot depend on the variable
 const val BLUETOOTH_NAME = "bluetooth_name"
 
+@kotlin.time.ExperimentalTime
 class BluetoothManagerServiceNew(
     private val context: Context,
     private val looper: Looper,
     private val userHandle: UserHandle,
+    private val bluetoothComponent: BluetoothComponent,
     private var isBootCompleted: Boolean,
 ) {
     private val contentResolver = context.contentResolver
-    private val state = State.OFF
+    private val state = BluetoothAdapterState()
+    private val airplaneController: AirplaneModeController
+    private val autoOn: AutoOn? // Null when config doesn't allow
 
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
 
     init {
+        airplaneController =
+            AirplaneModeController(
+                context,
+                state,
+                this::onAirplaneModeChanged,
+                this::sendToggleNotification,
+                TimeSource.Monotonic,
+            )
+
+        autoOn =
+            if (SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false)) {
+                AutoOn(
+                    looper,
+                    context,
+                    userHandle,
+                    state,
+                    this::enableFromAutoOn,
+                    airplaneController,
+                )
+            } else null
+
         Log.i(
             TAG,
-            "Starting for user $userHandle (boot completed=$isBootCompleted) Name=$localName",
+            "Starting for user $userHandle (boot completed=$isBootCompleted) Name=$localName AutoOnEnabled=${autoOn != null}",
         )
     }
 
@@ -68,6 +96,23 @@ class BluetoothManagerServiceNew(
 
     fun onBluetoothDisallowed() {
         Log.i(TAG, "onBluetoothDisallowed")
+    }
+
+    /** Send Intent to the Notification Service in the Bluetooth app */
+    fun sendToggleNotification(reason: String) {
+        val targetComponent =
+            ComponentName(
+                bluetoothComponent.packageName,
+                "com.android.bluetooth.notification.NotificationHelperService",
+            )
+
+        context.startService(
+            Intent().apply {
+                setAction("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION")
+                setComponent(targetComponent)
+                putExtra("android.bluetooth.notification.extra.NOTIFICATION_REASON", reason)
+            }
+        )
     }
 
     fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {
@@ -92,7 +137,7 @@ class BluetoothManagerServiceNew(
     }
 
     // API Delegate methods
-    fun getState(): Int = state
+    fun getState(): Int = state.get()
 
     fun waitForState(state: Int): Boolean = false
 
@@ -109,7 +154,7 @@ class BluetoothManagerServiceNew(
         if (validatedName == localName) {
             return
         }
-        if (state != State.OFF) {
+        if (!state.oneOf(State.OFF)) {
             throw NotImplementedError("setName when Bluetooth is ON") // TODO
         }
         persistentStorageForLocalName(validatedName)
@@ -151,13 +196,21 @@ class BluetoothManagerServiceNew(
 
     fun isBleScanAvailable(): Boolean = false
 
-    fun isHearingAidProfileSupported(): Boolean = false
-
     fun enable(reason: Int, packageName: String): Boolean = false
 
     fun enableBle(packageName: String, token: IBinder): Boolean = false
 
     fun enableNoAutoConnect(packageName: String): Boolean = false
+
+    fun enableFromAutoOn() {
+        throw NotImplementedError("enableFromAutoOn") // TODO
+        // if (!BluetoothRestriction.isBluetoothAllowed()) {
+        //     Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn")
+        //     return
+        // }
+        // sendToggleNotification("auto_on_bt_enabled_notification")
+        // enable(ENABLE_DISABLE_REASON_AUTO_ON, mContext.packageName)
+    }
 
     fun disable(packageName: String, persist: Boolean): Boolean = false
 
@@ -165,11 +218,13 @@ class BluetoothManagerServiceNew(
 
     fun factoryReset(): Boolean = false
 
-    fun isAutoOnSupported(): Boolean = false
+    fun isAutoOnSupported() = autoOn?.isSupported() ?: false
 
-    fun isAutoOnEnabled(): Boolean = false
+    fun isAutoOnEnabled() =
+        checkNotNull(autoOn) { "AutoOn is not supported in current config" }.isEnabled()
 
-    fun setAutoOnEnabled(status: Boolean) {}
+    fun setAutoOnEnabled(status: Boolean) =
+        checkNotNull(autoOn) { "AutoOn is not supported in current config" }.setEnabled(status)
 
     fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<String?>?) {
         writer?.println("$TAG for $userHandle")
