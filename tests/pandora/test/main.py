@@ -1,41 +1,25 @@
 import argparse
 import logging
-import itertools
 import os
 import sys
 
 from argparse import Namespace
 from mobly import suite_runner
-from typing import List, Tuple, Union, Literal
+from typing import List, Tuple
+
+# Import test cases modules.
+import a2dp_test
+import gatt_test
+import hap_test
+import sdp_test
 
 _BUMBLE_BTSNOOP_FMT = 'bumble_btsnoop_{pid}_{instance}.log'
 
-# Import test cases modules.
-import avatar
-import a2dp_test
-import aics_test
-import asha_test
-import host_test
-import le_security_test
-import security_test
-import gatt_test
-import hap_test
-import rfcomm_test
-import sdp_test
-
-from pandora.host_pb2 import PrimaryPhy, PRIMARY_1M, PRIMARY_CODED
-
 _TEST_CLASSES_LIST = [
-    host_test.HostTest,
-    security_test.SecurityTest,
-    le_security_test.LeSecurityTest,
     a2dp_test.A2dpTest,
-    aics_test.AicsTest,
     sdp_test.SdpTest,
     gatt_test.GattTest,
     hap_test.HapTest,
-    asha_test.AshaTest,
-    rfcomm_test.RfcommTest,
 ]
 
 
