@@ -2618,7 +2618,9 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
    * Do not process this RSP and return, REQ will handle generation of
    * key missing event and disconnect.*/
   if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
-      !p_device->sec_rec.is_device_encrypted()) {
+      !p_device->sec_rec.is_device_encrypted() &&
+      !(com::android::bluetooth::flags::process_iocap_rsp_while_repairing() &&
+        is_autonomous_repairing_supported() && p_device->bond_lost)) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     return;
   }
