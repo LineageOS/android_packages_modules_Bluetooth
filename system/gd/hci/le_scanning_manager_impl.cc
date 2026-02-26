@@ -465,7 +465,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     std::vector<PhyScanParameters> parameter_vector;
 
     // The Host shall not issue set scan parameter command when scanning is enabled
-    stop_scan();
+    stop_scan(__func__);
 
     if (le_address_manager_->GetAddressPolicy() != LeAddressManager::USE_PUBLIC_ADDRESS) {
       if (controller_->IsRpaGenerationSupported()) {
@@ -721,7 +721,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
           address_manager_registered_ = false;
           paused_ = false;
         }
-        stop_scan();
+        stop_scan(__func__);
       }
     }
   }
@@ -761,9 +761,9 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     }
   }
 
-  void stop_scan() {
+  void stop_scan(std::string caller) {
     if (!is_scanning_) {
-      log::info("Scanning already stopped, return!");
+      log::info("Scanning already stopped, return. caller={}", caller);
       return;
     }
     is_scanning_ = false;
@@ -1773,7 +1773,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     }
     paused_ = true;
     scan_on_resume_ = is_scanning_;
-    stop_scan();
+    stop_scan(__func__);
     ack_pause();
   }
 
