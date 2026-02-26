@@ -159,14 +159,16 @@ class Connection:
         self.start_time = 0xFFFFFFFF
 
     def dump(self):
-        print("start_time: " + str(self.start_time))
+        print("start_time: " + convert_time_str(self.start_time))
         print("ase_handle: " + str(self.ase_handle))
         print("context type: " + str(self.context))
         print("number_of_ases:  " + str(self.number_of_ases))
         print("cis_handle:  " + str(self.cis_handle))
+        print("")
         for id, ase_stream in self.ase.items():
             print("ase id: " + str(id))
             ase_stream.dump()
+        print("")
 
 
 class AseStream:
@@ -182,6 +184,7 @@ class AseStream:
         print("frame_duration: " + str(self.frame_duration))
         print("channel_allocation: " + str(self.channel_allocation))
         print("octets_per_frame: " + str(self.octets_per_frame))
+        print("")
 
 
 class Broadcast:
@@ -295,19 +298,20 @@ def parse_att_read_by_type_rsp(packet, connection_handle):
         #ignore the packet, we're only interested in this packet for the characteristic type UUID
         return
 
-    if length > len(packet):
-        debug_print("Invalid att packet length")
-        return
+    while (len(packet) != 0):
+        if length > len(packet):
+            debug_print("Invalid att packet length")
+            return
 
-    attribute_handle, packet = unpack_data(packet, 2, False)
-    if debug_enable:
-        debug_print("attribute_handle - " + str(attribute_handle))
-    packet = unpack_data(packet, 1, True)
-    value_handle, packet = unpack_data(packet, 2, False)
-    characteristic_uuid, packet = unpack_data(packet, 2, False)
-    if characteristic_uuid == UUID_ASE_CONTROL_POINT:
-        debug_print("ASE Control point found!")
-        connection_map[connection_handle].ase_handle = value_handle
+        attribute_handle, packet = unpack_data(packet, 2, False)
+        if debug_enable:
+            debug_print("attribute_handle - " + str(attribute_handle))
+        packet = unpack_data(packet, 1, True)
+        value_handle, packet = unpack_data(packet, 2, False)
+        characteristic_uuid, packet = unpack_data(packet, 2, False)
+        if characteristic_uuid == UUID_ASE_CONTROL_POINT:
+            debug_print("ASE Control point found!")
+            connection_map[connection_handle].ase_handle = value_handle
 
 
 def parse_att_write_cmd(packet, connection_handle, timestamp):
@@ -475,7 +479,6 @@ def parse_command_packet(packet, timestamp):
         if iso_handle in cis_acl_map:
             acl_handle = cis_acl_map[iso_handle]
             dump_cis_audio_data_to_file(acl_handle)
-        # To Do: BIS stream
         elif iso_handle in bis_stream_map:
             dump_bis_audio_data_to_file(iso_handle)
     elif opcode == OPCODE_LE_SET_PERIODIC_ADVERTISING_DATA:
@@ -620,7 +623,7 @@ def dump_cis_audio_data_to_file(acl_handle):
         break
 
     if connection_map[acl_handle].input_dump != []:
-        debug_print("Dump unicast input...")
+        debug_print("Dump unicast input..." + str(file_name))
         f = open(file_name + "_input.bin", 'wb')
         if add_header == True:
             generate_header(f, connection_map[acl_handle], True)
@@ -630,7 +633,7 @@ def dump_cis_audio_data_to_file(acl_handle):
         connection_map[acl_handle].input_dump = []
 
     if connection_map[acl_handle].output_dump != []:
-        debug_print("Dump unicast output...")
+        debug_print("Dump unicast output..." + str(file_name))
         f = open(file_name + "_output.bin", 'wb')
         if add_header == True:
             generate_header(f, connection_map[acl_handle], True)
