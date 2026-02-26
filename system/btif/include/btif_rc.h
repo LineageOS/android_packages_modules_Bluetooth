@@ -230,3 +230,177 @@ bool btif_rc_is_connected_peer(const RawAddress& peer_addr);
 void btif_rc_check_pending_cmd(const RawAddress& peer_addr);
 void btif_rc_get_addr_by_handle(uint8_t handle, RawAddress& rc_addr);
 void btif_debug_rc_dump(int fd);
+
+namespace bluetooth {
+namespace testing {
+namespace avrc {
+
+struct btif_rc_interface {
+  /*************************************************************************
+   * Group 1: Command Transmission & Infrastructure
+   * Focus: Low-level command construction, transmission logic, and
+   * upstream response routing.
+   * Parameters like tAVRC_COMMAND and btif_rc_device_cb_t are central
+   * for state-aware transmission.
+   *************************************************************************/
+  [[nodiscard]] BtStatus (*build_and_send_browsing_cmd)(tAVRC_COMMAND* avrc_cmd,
+                                                        btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*build_and_send_vendor_cmd)(tAVRC_COMMAND* avrc_cmd,
+                                                      tBTA_AV_CODE cmd_code,
+                                                      btif_rc_device_cb_t* p_dev);
+  void (*btif_rc_ctrl_upstreams_rsp_cmd)(uint8_t event, tAVRC_COMMAND* pavrc_cmd, uint8_t label,
+                                         btif_rc_device_cb_t* p_dev);
+  void (*send_reject_response)(uint8_t rc_handle, uint8_t label, uint8_t pdu, uint8_t status,
+                               uint8_t opcode);
+
+  /*************************************************************************
+   * Group 2: Player Metadata & Status Tracking
+   * Focus: Retrieval and handling of track metadata, playback status,
+   * and player application settings.
+   * Usage of attribute IDs and response structures is weighted heavily
+   * for processing incoming media info.
+   *************************************************************************/
+  [[nodiscard]] BtStatus (*volume_change_notification_rsp)(const RawAddress& bd_addr,
+                                                           btrc_notification_type_t type,
+                                                           uint8_t volume, uint8_t label);
+  [[nodiscard]] BtStatus (*set_volume_rsp)(const RawAddress& bd_addr, uint8_t abs_vol,
+                                           uint8_t label);
+  [[nodiscard]] BtStatus (*get_element_attribute_cmd)(uint8_t num_attribute,
+                                                      const uint32_t* p_attr_ids,
+                                                      btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*get_metadata_attribute_cmd)(uint8_t num_attribute,
+                                                       const uint32_t* p_attr_ids,
+                                                       btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*get_play_status_cmd)(btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*get_player_app_setting_attr_text_cmd)(uint8_t* attrs, uint8_t num_attrs,
+                                                                 btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*get_player_app_setting_cmd)(uint8_t num_attrib, uint8_t* attrib_ids,
+                                                       btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*get_player_app_setting_value_text_cmd)(uint8_t* vals, uint8_t num_vals,
+                                                                  btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*list_player_app_setting_attrib_cmd)(btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*list_player_app_setting_value_cmd)(uint8_t attrib_id,
+                                                              btif_rc_device_cb_t* p_dev);
+  void (*handle_app_attr_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_LIST_APP_ATTR_RSP* p_rsp);
+  void (*handle_app_attr_txt_response)(tBTA_AV_META_MSG* pmeta_msg,
+                                       tAVRC_GET_APP_ATTR_TXT_RSP* p_rsp);
+  void (*handle_app_attr_val_txt_response)(tBTA_AV_META_MSG* pmeta_msg,
+                                           tAVRC_GET_APP_ATTR_TXT_RSP* p_rsp);
+  void (*handle_app_cur_val_response)(tBTA_AV_META_MSG* pmeta_msg,
+                                      tAVRC_GET_CUR_APP_VALUE_RSP* p_rsp);
+  void (*handle_app_val_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_LIST_APP_VALUES_RSP* p_rsp);
+  void (*handle_get_metadata_attr_response)(tBTA_AV_META_MSG* pmeta_msg,
+                                            tAVRC_GET_ATTRS_RSP* p_rsp);
+  void (*handle_get_playstatus_response)(tBTA_AV_META_MSG* pmeta_msg,
+                                         tAVRC_GET_PLAY_STATUS_RSP* p_rsp);
+  void (*handle_set_app_attr_val_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_RSP* p_rsp);
+  void (*cleanup_app_attr_val_txt_response)(btif_rc_player_app_settings_t* p_app_settings);
+  [[nodiscard]] bool (*rc_is_track_id_valid)(tAVRC_UID uid);
+
+  /*************************************************************************
+   * Group 3: Player & Feature Discovery
+   * Focus: Discovery of peer features, capabilities, and management of
+   * connection-level metadata.
+   *************************************************************************/
+  [[nodiscard]] BtStatus (*getcapabilities_cmd)(uint8_t cap_id, btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*init_ctrl)(btrc_ctrl_callbacks_t* callbacks);
+  [[nodiscard]] BtStatus (*send_groupnavigation_cmd)(const RawAddress& bd_addr, uint8_t key_code,
+                                                     uint8_t key_state);
+  [[nodiscard]] BtStatus (*send_passthrough_cmd)(const RawAddress& bd_addr, uint8_t key_code,
+                                                 uint8_t key_state);
+  [[nodiscard]] BtStatus (*change_folder_path_cmd)(const RawAddress& bd_addr, uint8_t direction,
+                                                   uint8_t* uid);
+  [[nodiscard]] BtStatus (*set_addressed_player_cmd)(const RawAddress& bd_addr, uint16_t id);
+  [[nodiscard]] BtStatus (*set_browsed_player_cmd)(const RawAddress& bd_addr, uint16_t id);
+  [[nodiscard]] BtStatus (*get_current_metadata_cmd)(const RawAddress& bd_addr);
+  [[nodiscard]] BtStatus (*get_playback_state_cmd)(const RawAddress& bd_addr);
+  [[nodiscard]] BtStatus (*get_now_playing_list_cmd)(const RawAddress& bd_addr, uint32_t start_item,
+                                                     uint32_t end_item);
+  [[nodiscard]] BtStatus (*get_folder_list_cmd)(const RawAddress& bd_addr, uint32_t start_item,
+                                                uint32_t end_item);
+  void (*handle_get_capability_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_GET_CAPS_RSP* p_rsp);
+  void (*handle_rc_browse_connect)(tBTA_AV_RC_BROWSE_OPEN* p_rc_br_open);
+  void (*handle_rc_connect)(tBTA_AV_RC_OPEN* p_rc_open);
+  void (*handle_rc_ctrl_features)(btif_rc_device_cb_t* p_dev);
+  void (*handle_rc_ctrl_features_all)(btif_rc_device_cb_t* p_dev);
+  void (*handle_rc_ctrl_psm)(btif_rc_device_cb_t* p_dev);
+  void (*handle_rc_disconnect)(tBTA_AV_RC_CLOSE* p_rc_close);
+  void (*handle_set_addressed_player_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_RSP* p_rsp);
+  void (*handle_set_browsed_player_response)(tBTA_AV_META_MSG* pmeta_msg,
+                                             tAVRC_SET_BR_PLAYER_RSP* p_rsp);
+  [[nodiscard]] std::string (*dump_peer_features)(const uint16_t feats);
+  [[nodiscard]] uint8_t (*get_requested_attributes_list_size)(btif_rc_device_cb_t* p_dev);
+
+  /*************************************************************************
+   * Group 4: Device & Transaction Management
+   * Focus: Lifecycle management of device control blocks and AVRCP
+   * transaction state. Heavy usage of label and RawAddress parameters.
+   *************************************************************************/
+  [[nodiscard]] btif_rc_device_cb_t* (*alloc_device)();
+  [[nodiscard]] btif_rc_device_cb_t* (*btif_rc_get_device_by_bda)(const RawAddress& bd_addr);
+  [[nodiscard]] btif_rc_device_cb_t* (*btif_rc_get_device_by_handle)(uint8_t handle);
+  [[nodiscard]] btif_rc_device_cb_t* (*get_connected_device)(int index);
+  [[nodiscard]] BtStatus (*get_transaction)(btif_rc_device_cb_t* p_dev,
+                                            rc_transaction_context_t& context,
+                                            rc_transaction_t** ptransaction);
+  [[nodiscard]] rc_transaction_t* (*get_transaction_by_lbl)(btif_rc_device_cb_t* p_dev,
+                                                            uint8_t label);
+  void (*initialize_device)(btif_rc_device_cb_t* p_dev);
+  void (*init_all_transactions)(btif_rc_device_cb_t* p_dev);
+  void (*initialize_transaction)(btif_rc_device_cb_t* p_dev, uint8_t lbl);
+  void (*release_transaction)(btif_rc_device_cb_t* p_dev, uint8_t label);
+  [[nodiscard]] std::string (*dump_transaction)(const rc_transaction_t* const transaction);
+
+  /*************************************************************************
+   * Group 5: Browsing & Content Navigation
+   * Focus: Interaction with the media database, folder structures, and
+   * track navigation.
+   *************************************************************************/
+  [[nodiscard]] BtStatus (*get_folder_items_cmd)(const RawAddress& bd_addr, uint8_t scope,
+                                                 uint32_t start_item, uint32_t end_item);
+  [[nodiscard]] BtStatus (*get_item_attribute_cmd)(uint64_t uid, int scope, uint8_t num_attribute,
+                                                   const uint32_t* p_attr_ids,
+                                                   btif_rc_device_cb_t* p_dev);
+  [[nodiscard]] BtStatus (*play_item_cmd)(const RawAddress& bd_addr, uint8_t scope, uint8_t* uid,
+                                          uint16_t uid_counter);
+  void (*handle_change_path_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_CHG_PATH_RSP* p_rsp);
+  void (*handle_get_folder_items_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_GET_ITEMS_RSP* p_rsp);
+  void (*get_folder_item_type_folder)(const tAVRC_ITEM* avrc_item, btrc_folder_items_t* btrc_item);
+  void (*get_folder_item_type_media)(const tAVRC_ITEM* avrc_item, btrc_folder_items_t* btrc_item);
+  void (*get_folder_item_type_player)(const tAVRC_ITEM* avrc_item, btrc_folder_items_t* btrc_item);
+  void (*cleanup_btrc_folder_items)(btrc_folder_items_t* btrc_items, uint8_t item_count);
+
+  /*************************************************************************
+   * Group 6: Event Notification & Timeout Handling
+   * Focus: Management of asynchronous status updates and error recovery
+   * for timed-out transactions.
+   *************************************************************************/
+  [[nodiscard]] BtStatus (*register_notification_cmd)(uint8_t event_id, uint32_t event_value,
+                                                      btif_rc_device_cb_t* p_dev);
+  void (*register_for_event_notification)(btif_rc_supported_event_t* p_event,
+                                          btif_rc_device_cb_t* p_dev);
+  void (*handle_notification_response)(tBTA_AV_META_MSG* pmeta_msg, tAVRC_REG_NOTIF_RSP* p_rsp);
+  [[nodiscard]] bool (*iterate_supported_event_list_for_interim_rsp)(void* data, void* cb_data);
+  void (*rc_notification_interim_timeout)(btif_rc_device_cb_t* p_dev, uint8_t event_id);
+  void (*rc_ctrl_procedure_complete)(btif_rc_device_cb_t* p_dev);
+  void (*start_transaction_timer)(btif_rc_device_cb_t* p_dev, uint8_t label, uint64_t timeout_ms);
+  void (*clear_cmd_timeout)(btif_rc_device_cb_t* p_dev, uint8_t label);
+  void (*passthru_cmd_timeout_handler)(btif_rc_device_cb_t* p_dev, uint8_t label,
+                                       rc_passthru_context_t* p_context);
+  void (*vendor_cmd_timeout_handler)(btif_rc_device_cb_t* p_dev, uint8_t label,
+                                     rc_vendor_context_t* p_context);
+  void (*browse_cmd_timeout_handler)(btif_rc_device_cb_t* p_dev, uint8_t label,
+                                     rc_browse_context_t* p_context);
+  void (*btif_rc_transaction_timer_timeout)(void* data);
+  void (*btif_rc_transaction_timeout_handler)(uint16_t /* event */, char* data);
+  void (*handle_rc_passthrough_rsp)(tBTA_AV_REMOTE_RSP* p_remote_rsp);
+  void (*handle_rc_vendorunique_rsp)(tBTA_AV_REMOTE_RSP* p_remote_rsp);
+  void (*handle_avk_rc_metamsg_cmd)(tBTA_AV_META_MSG* pmeta_msg);
+  void (*handle_avk_rc_metamsg_rsp)(tBTA_AV_META_MSG* pmeta_msg);
+};
+
+btif_rc_interface* btif_rc_ctrl_get_interface();
+
+}  // namespace avrc
+}  // namespace testing
+}  // namespace bluetooth
