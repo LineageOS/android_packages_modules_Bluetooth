@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <future>
+#include <shared_mutex>
 
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_common.h"
@@ -104,9 +105,17 @@ bool btif_av_peer_is_sink(const RawAddress& /*peer_address*/) { return false; }
 bool btif_av_peer_is_source(const RawAddress& /*peer_address*/) { return true; }
 bool btif_av_both_enable(void) { return true; }
 
-static bluetooth::common::MessageLoopThread jni_thread("bt_jni_thread");
+static std::shared_mutex g_jni_shared_mutex;
+static bluetooth::common::MessageLoopThread* g_jni_thread{nullptr};
+static void set_thread(bluetooth::common::MessageLoopThread* thread) {
+  std::unique_lock<std::shared_mutex> lock(g_jni_shared_mutex);
+  g_jni_thread = thread;
+}
+static void release_thread() { set_thread(nullptr); }
+
 BtStatus do_in_jni_thread(base::OnceClosure task) {
-  if (!jni_thread.DoInThread(std::move(task))) {
+  std::shared_lock<std::shared_mutex> lock(g_jni_shared_mutex);
+  if (g_jni_thread && !g_jni_thread->DoInThread(std::move(task))) {
     log::error("Post task to task runner failed!");
     return BtifStatus(JNI_THREAD_ATTACH_ERROR);
   }
@@ -119,9 +128,17 @@ bool interop_match_addr(const interop_feature_t /*feature*/, RawAddress /*addr*/
  * Test class to test selected functionality in hci/src/hci_layer.cc
  */
 class BtifRcTest : public ::testing::Test {
+public:
+  BtifRcTest() : jni_thread("bt_test_jni_thread") {}
+
 protected:
-  void SetUp() override { reset_mock_function_count_map(); }
-  void TearDown() override {}
+  void SetUp() override {
+    reset_mock_function_count_map();
+    set_thread(&jni_thread);
+  }
+  void TearDown() override { release_thread(); }
+
+  bluetooth::common::MessageLoopThread jni_thread;
 };
 
 TEST_F(BtifRcTest, btif_rc_get_addr_by_handle) {
@@ -237,7 +254,7 @@ protected:
   }
 
   void TearDown() override {
-    jni_thread.ShutDown();
+    jni_thread.Suspend();
     bt_rc_ctrl_callbacks->getrcfeatures_cb = [](const RawAddress& /*bd_addr*/, int /*features*/) {};
     btrc_ctrl_callbacks = default_btrc_ctrl_callbacks;
     set_btif_av_src_sink_coexist_enabled(true);
@@ -844,7 +861,7 @@ protected:
   }
 
   void TearDown() override {
-    jni_thread.ShutDown();
+    jni_thread.Suspend();
     bt_rc_ctrl_callbacks->connection_state_cb = [](bool /*rc_state*/, bool /*bt_state*/,
                                                    const RawAddress& /*bd_addr*/) {};
     BtifRcTest::TearDown();
@@ -994,7 +1011,7 @@ protected:
   }
 
   void TearDown() override {
-    jni_thread.ShutDown();
+    jni_thread.Suspend();
     btrc_ctrl_callbacks.track_changed_cb = [](const RawAddress& /*bd_addr*/, uint8_t /*num_attr*/,
                                               btrc_element_attr_val_t* /*p_attrs*/) {};
     BtifRcTest::TearDown();
