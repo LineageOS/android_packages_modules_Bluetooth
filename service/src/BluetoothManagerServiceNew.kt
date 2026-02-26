@@ -37,11 +37,19 @@ import com.android.bluetooth.util.truncateUtf8String
 import com.android.server.bluetooth.airplane.AirplaneModeController
 import java.io.FileDescriptor
 import java.io.PrintWriter
+import kotlin.text.Regex
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 // Must match android.provider.Settings.Secure.BLUETOOTH_NAME but cannot depend on the variable
 const val BLUETOOTH_NAME = "bluetooth_name"
+
+// Must match android.provider.Settings.Secure.BLUETOOTH_ADDRESS but cannot depend on the variable
+const val BLUETOOTH_ADDRESS = "bluetooth_address"
+
+// Regex used for address matching: XX:XX:XX:XX:XX:XX
+private const val HEX_PAIR = "[0-9A-F]{2}"
+private val ADDRESS_PATTERN = Regex("^($HEX_PAIR:){5}$HEX_PAIR$")
 
 @kotlin.time.ExperimentalTime
 class BluetoothManagerServiceNew(
@@ -56,6 +64,7 @@ class BluetoothManagerServiceNew(
     private val airplaneController: AirplaneModeController
     private val autoOn: AutoOn? // Null when config doesn't allow
 
+    private var localAddress = readLocalAddress()
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
 
     init {
@@ -145,7 +154,16 @@ class BluetoothManagerServiceNew(
 
     fun unregisterAdapter(callback: IBluetoothManagerCallback) {}
 
-    fun getAddress(): String? = null
+    fun getAddress() = localAddress
+
+    private fun readLocalAddress() =
+        Secure.getString(contentResolver, BLUETOOTH_ADDRESS)?.takeIf { it.matches(ADDRESS_PATTERN) }
+
+    private fun persistentStorageForLocalAddress(address: String) {
+        Secure.putString(contentResolver, BLUETOOTH_ADDRESS, address)
+        Log.v(TAG, "Local address updated: ${Log.address(localAddress)} -> ${Log.address(address)}")
+        localAddress = address
+    }
 
     fun getName() = localName
 
@@ -190,7 +208,7 @@ class BluetoothManagerServiceNew(
             BLUETOOTH_CONNECT,
             getTempAllowlistBroadcastOptions(),
         )
-        Log.v(TAG, "persistentStorageForLocalName($name): Name updated $localName -> $name")
+        Log.v(TAG, "Local name updated: $localName -> $name")
         localName = name
     }
 
