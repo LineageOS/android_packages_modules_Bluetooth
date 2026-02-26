@@ -82,7 +82,7 @@ public:
                                                              Address type is ignored currently */
   alarm_t* pairing_timer_{nullptr};                       /* Timer for pairing process    */
   alarm_t* lk_req_timer_{nullptr}; /* To wait for CTKD to complete when Link Key is requested */
-  alarm_t* execution_wait_timer_{nullptr};                /* To avoid concurrent auth request */
+
   // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
   list_t* sec_dev_rec_{nullptr}; /* list of BtmDevice */
   std::array<BtmDevice, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records_ = {};
