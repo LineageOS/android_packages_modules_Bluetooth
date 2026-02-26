@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <base/functional/callback_forward.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
@@ -140,5 +141,23 @@ void leConnectionSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
 void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
                         uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
                         uint16_t max_ce_len);
+
+/**
+ * To set PHY preferences for specified LE connection
+ *
+ * @param bd_addr remote device address
+ * @param tx_phys preferred transmit PHYs
+ * @param rx_phys preferred receive PHYs
+ * @param phy_options PHY options
+ */
+void leConnectionSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                        uint16_t phy_options);
+
+/**
+ * To read the current PHYs for specified LE connection
+ */
+void leConnectionReadPhy(
+        const RawAddress& bd_addr,
+        base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
 
 }  // namespace bluetooth::stack

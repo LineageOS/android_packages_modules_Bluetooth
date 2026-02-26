@@ -63,6 +63,7 @@
 #include "stack/mock/mock_stack_btm_iso.h"
 #include "stack/mock/mock_stack_gatt_api.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
+#include "stack/mock/mock_stack_le_connection.h"
 #include "stack/mock/mock_stack_security_client_interface.h"
 #include "storage_helper.h"
 #include "test/common/mock_functions.h"
@@ -129,6 +130,9 @@ bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_t
 std::vector<base::OnceClosure> pending_tasks_;
 std::vector<base::OnceClosure> pending_delayed_tasks_;
 bool hold_delayed_tasks = false;
+testing::MockFunction<void(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                           uint16_t phy_options)>
+        leConnectionSetPhyMock;
 
 void init_message_loop_thread();
 void cleanup_message_loop_thread();
@@ -1714,6 +1718,11 @@ protected:
     bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
     bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
 
+    test::mock::stack_le_connection::leConnectionSetPhy.body =
+            [](const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys, uint16_t phy_options) {
+              leConnectionSetPhyMock.Call(bd_addr, tx_phys, rx_phys, phy_options);
+            };
+
     iso_manager_ = bluetooth::hci::IsoManager::GetInstance();
     ASSERT_NE(iso_manager_, nullptr);
     iso_manager_->Start();
@@ -1817,6 +1826,9 @@ protected:
     // drop unique pointers to mocks we have raw pointer for and we want to
     // verify them all.
     Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+
+    Mock::VerifyAndClearExpectations(&leConnectionSetPhyMock);
+    test::mock::stack_le_connection::leConnectionSetPhy.body = {};
 
     if (LeAudioClient::IsLeAudioClientRunning()) {
       EXPECT_CALL(mock_gatt_interface_, AppDeregister(gatt_if)).Times(1);
@@ -3723,11 +3735,11 @@ TEST_F(UnicastTest, ConnectAndSetupPhy) {
                                 true,                                /*add_pacs*/
                                 default_ase_cnt /*add_ascs*/);
 
-  EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
+  EXPECT_CALL(leConnectionSetPhyMock, Call(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
   ConnectLeAudio(test_address0, false);
   Mock::VerifyAndClearExpectations(&mock_btm_interface_);
 
-  EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
+  EXPECT_CALL(leConnectionSetPhyMock, Call(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
   InjectPhyChangedEvent(conn_id, 0, 0, GATT_REQ_NOT_SUPPORTED);
   SyncOnMainLoop();
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
@@ -3741,7 +3753,7 @@ TEST_F(UnicastTest, ConnectAndSetupPhy) {
   InjectDisconnectedEvent(conn_id);
   SyncOnMainLoop();
 
-  EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
+  EXPECT_CALL(leConnectionSetPhyMock, Call(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
 
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _))
           .WillByDefault(DoAll(Return(false)));
@@ -3749,7 +3761,7 @@ TEST_F(UnicastTest, ConnectAndSetupPhy) {
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_btm_interface_);
 
-  EXPECT_CALL(mock_btm_interface_, BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
+  EXPECT_CALL(leConnectionSetPhyMock, Call(test_address0, PHY_LE_2M, PHY_LE_2M, 0)).Times(1);
   InjectPhyChangedEvent(conn_id, 0, 0, GATT_REQ_NOT_SUPPORTED);
   SyncOnMainLoop();
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));

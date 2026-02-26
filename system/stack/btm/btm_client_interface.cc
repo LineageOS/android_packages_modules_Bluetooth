@@ -81,7 +81,6 @@ static struct btm_client_interface_t btm_client_interface = {
                         .BTM_BleObserve = ::BTM_BleObserve,
                         .BTM_SetBleDataLength = ::BTM_SetBleDataLength,
                         .BTM_BleReadControllerFeatures = ::BTM_BleReadControllerFeatures,
-                        .BTM_BleSetPhy = ::BTM_BleSetPhy,
                         .BTM_BleSetPrefConnParams = ::BTM_BleSetPrefConnParams,
                         .BTM_UseLeLink = ::BTM_UseLeLink,
                         .BTM_IsRemoteVersionReceived = ::BTM_IsRemoteVersionReceived,
