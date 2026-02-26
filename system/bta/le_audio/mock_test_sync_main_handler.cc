@@ -32,21 +32,30 @@ std::atomic<int> num_async_tasks;
 std::vector<base::OnceClosure> pending_tasks_;
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
+std::mutex sync_mtx;
+std::condition_variable sync_cv;
 
 BtStatus do_in_main_thread(base::OnceClosure task) {
+  num_async_tasks++;
+
   // Wrap the task with a counter. This counter is incremented when the task is posted
   // and decremented when the task is executed. This allows `SyncOnMainLoop` to
   // wait until all tasks posted to the main thread have completed.
   if (!message_loop_thread.DoInThread(base::BindOnce(
-              [](base::OnceClosure task, std::atomic<int>& num_async_tasks) {
+              [](base::OnceClosure task) {
                 std::move(task).Run();
-                num_async_tasks--;
+
+                if (--num_async_tasks == 0) {
+                  std::lock_guard<std::mutex> lock(sync_mtx);
+                  sync_cv.notify_all();
+                }
               },
-              std::move(task), std::ref(num_async_tasks)))) {
+              std::move(task)))) {
+    num_async_tasks--;
     bluetooth::log::error("failed to post task to task runner!");
     return BtifStatus(FAIL);
   }
-  num_async_tasks++;
+
   return BtifStatus();
 }
 
@@ -71,9 +80,10 @@ void SyncOnMainLoop() {
   // this ensures that the entire queue of pending asynchronous tasks is empty.
   // WARNING: Not tested with Timers pushing periodic tasks to the main loop
   if (message_loop_thread.IsRunningOnSameThread()) {
-    bluetooth::log::warn("Tried syncing on the main loop from inside the main loop thread.");
+    bluetooth::log::warn("Tried syncing on the main loop from the main loop thread.");
     return;
   }
-  while (num_async_tasks > 0) {
-  }
+
+  std::unique_lock<std::mutex> lock(sync_mtx);
+  sync_cv.wait(lock, [] { return num_async_tasks == 0; });
 }
