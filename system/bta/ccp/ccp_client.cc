@@ -112,7 +112,7 @@ public:
       log::warn("Connect requested for already tracked device {}", address);
       return;
     }
-    if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (!get_security_client_interface().BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       log::error("Connecting {} when not bonded", address);
       callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
       return;
@@ -191,7 +191,7 @@ public:
         break;
       case BTA_GATTC_ENC_CMPL_CB_EVT:
         OnEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                             get_btm_client_interface().security.BTM_IsEncrypted(
+                             get_security_client_interface().BTM_IsEncrypted(
                                      p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
         break;
       case BTA_GATTC_SRVC_CHG_EVT:
@@ -236,10 +236,10 @@ private:
     }
     callbacks_->OnConnectionState(evt.remote_bda, ConnectionState::CONNECTED);
 
-    if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       OnEncryptionComplete(device->addr, true);
     } else {
-      tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+      tBTM_STATUS result = get_security_client_interface().BTM_SetEncryption(
               device->addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
 
       log::info("Encryption required for {}. Request result: 0x{:02x}", device->addr, result);

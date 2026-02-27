@@ -32,6 +32,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/gatt_api.h"
 
@@ -102,7 +103,7 @@ public:
       log::warn("Connect requested for already tracked device {}", address);
       return;
     }
-    if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (!get_security_client_interface().BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       log::error("Connecting {} when not bonded", address);
       callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
       return;
@@ -245,7 +246,7 @@ public:
         break;
       case BTA_GATTC_ENC_CMPL_CB_EVT:
         OnEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                             get_btm_client_interface().security.BTM_IsEncrypted(
+                             get_security_client_interface().BTM_IsEncrypted(
                                      p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
         break;
       case BTA_GATTC_SRVC_CHG_EVT:
@@ -328,10 +329,10 @@ private:
     }
     callbacks_->OnConnectionState(evt.remote_bda, ConnectionState::CONNECTED);
 
-    if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       OnEncryptionComplete(device->addr, true);
     } else {
-      tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+      tBTM_STATUS result = get_security_client_interface().BTM_SetEncryption(
               device->addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
 
       if (result == tBTM_STATUS::BTM_ERR_KEY_MISSING) {
@@ -526,7 +527,7 @@ private:
       device->service_found = true;
 
       /* Initial state would be read after encryption complete */
-      if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+      if (get_security_client_interface().BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
         RegisterForNotifications(device);
         ReadInitialState(device);
       }

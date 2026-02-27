@@ -72,8 +72,6 @@ static struct btm_client_interface_t btm_client_interface = {
                         .BTM_ReadRSSI = ::BTM_ReadRSSI,
                 },
 
-        .security = get_security_client_interface(),
-
         .ble =
                 {
                         .BTM_BleGetEnergyInfo = ::BTM_BleGetEnergyInfo,

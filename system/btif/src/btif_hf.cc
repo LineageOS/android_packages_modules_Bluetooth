@@ -506,7 +506,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
 
         bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HFP_SELF_INITIATED_AG_FAILED);
         btif_queue_advance();
-        if (get_btm_client_interface().security.BTM_IsBonded(connected_bda, BT_TRANSPORT_AUTO)) {
+        if (get_security_client_interface().BTM_IsBonded(connected_bda, BT_TRANSPORT_AUTO)) {
           DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(connected_bda, IOT_CONF_KEY_HFP_SLC_CONN_FAIL_COUNT);
         }
       }

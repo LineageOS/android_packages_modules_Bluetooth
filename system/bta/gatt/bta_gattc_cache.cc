@@ -300,7 +300,7 @@ static void bta_gattc_explore_srvc_finished(tCONN_ID conn_id, tBTA_GATTC_SERV* p
 
   // If the device is trusted, link the addr file to hash file
   if (success &&
-      get_btm_client_interface().security.BTM_IsBonded(p_srvc_cb->server_bda, BT_TRANSPORT_AUTO)) {
+      get_security_client_interface().BTM_IsBonded(p_srvc_cb->server_bda, BT_TRANSPORT_AUTO)) {
     log::debug("Linking db hash to address {}",
                p_clcb->p_srcb->server_bda.ToRedactedStringForLogging());
     bta_gattc_cache_link(p_clcb->p_srcb->server_bda, hash);
@@ -676,7 +676,7 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATT
           found = true;
         }
         // If the device is trusted, link addr file to correct hash file
-        if (found && get_btm_client_interface().security.BTM_IsBonded(p_clcb->p_srcb->server_bda,
+        if (found && get_security_client_interface().BTM_IsBonded(p_clcb->p_srcb->server_bda,
                                                                       BT_TRANSPORT_AUTO)) {
           bta_gattc_cache_link(p_clcb->p_srcb->server_bda, remote_hash);
         }
@@ -685,7 +685,7 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATT
   } else {
     // Only load cache for trusted device if no database hash on server side.
     // If is_svc_chg is true, do not read the existing cache.
-    bool is_a_bonded_dev = get_btm_client_interface().security.BTM_IsBonded(
+    bool is_a_bonded_dev = get_security_client_interface().BTM_IsBonded(
             p_clcb->p_srcb->server_bda, BT_TRANSPORT_AUTO);
     if (!is_svc_chg && is_a_bonded_dev) {
       gatt::Database db = bta_gattc_cache_load(p_clcb->p_srcb->server_bda);
@@ -966,7 +966,7 @@ void bta_gattc_link_cache_for_bonded_device(const RawAddress& bd_addr) {
     return;
   }
 
-  if (get_btm_client_interface().security.BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
+  if (get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
     Octet16 hash = p_srcb->gatt_database.Hash();
 
     log::debug("Linking db hash to bonded device {}",

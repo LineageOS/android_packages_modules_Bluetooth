@@ -35,8 +35,6 @@ uint8_t hci_feature_bytes_per_page[HCI_FEATURE_BYTES_PER_PAGE] = {};
 
 namespace {
 
-static Octet16 dummy_octet16;
-
 struct btm_client_interface_t default_btm_client_interface = {
         .lifecycle = {
                 .BTM_PmRegister = [](uint8_t /* mask */, uint8_t* /* p_pm_id */,
@@ -110,139 +108,6 @@ struct btm_client_interface_t default_btm_client_interface = {
                 },
                 .BTM_ReadRSSI = [](const RawAddress& /* remote_bda */, tBTM_CMPL_CB* /* p_cb */)
                         -> tBTM_STATUS { return tBTM_STATUS::BTM_SUCCESS; },
-        },
-        .security = {
-                .BTM_Sec_Init = []() {},
-                .BTM_Sec_Free = []() {},
-                .BTM_SetPinType = [](uint8_t /* pin_type */, PinCode /* pin_code */,
-                                     uint8_t /* pin_code_len */) {},
-                .BTM_SecGetDeviceLinkKeyType = [](const RawAddress& /* bd_addr */)
-                        -> tBTM_LINK_KEY_TYPE { return BTM_LKEY_TYPE_IGNORE; },
-                .BTM_ConfirmReqReply = [](tBTM_STATUS /* res */,
-                                          const RawAddress& /* bd_addr */) {},
-                .BTM_PasskeyReqReply = [](tBTM_STATUS /* res */, const RawAddress& /* bd_addr */,
-                                          uint32_t /* passkey */) {},
-                .BTM_ReadLocalOobData = []() {},
-                .BTM_PeerSupportsSecureConnections = [](const RawAddress& /* bd_addr */) -> bool {
-                  return false;
-                },
-                .BTM_SecRegister = [](const BtmAppReg& /* app_reg */) -> bool { return false; },
-                .BTM_BleLoadLocalKeys = [](uint8_t /* key_type */,
-                                           tBTM_BLE_LOCAL_KEYS* /* p_key */) {},
-                .BTM_SecAddDevice =
-                        [](const RawAddress& /* bd_addr */, const DEV_CLASS& /* dev_class */,
-                           const PairingType& /* pairing_type */, const LinkKey& /* link_key */,
-                           uint8_t /* key_type */, uint8_t /* pin_length */) {},
-                .BTM_SecAddBleDevice = [](const RawAddress& /* bd_addr */,
-                                          tBT_DEVICE_TYPE /* dev_type */,
-                                          tBLE_ADDR_TYPE /* addr_type */) {},
-                .BTM_SecDeleteDevice = [](const RawAddress& /* bd_addr */) -> bool { return true; },
-                .BTM_SecAddBleKey = [](const RawAddress& /* bd_addr */,
-                                       tBTM_LE_KEY_TYPE /* key_type */,
-                                       const tBTM_LE_KEY_VALUE& /* key */) {},
-                .BTM_SecClearSecurityFlags = [](const RawAddress& /* bd_addr */) {},
-                .BTM_SetEncryption = [](const RawAddress& /* bd_addr */,
-                                        tBT_TRANSPORT /* transport */,
-                                        tBTM_SEC_CALLBACK* /* p_callback */, void* /* p_ref_data */,
-                                        tBTM_BLE_SEC_ACT /* sec_act */) -> tBTM_STATUS {
-                  return tBTM_STATUS::BTM_SUCCESS;
-                },
-                .BTM_IsEncrypted = [](const RawAddress& /* bd_addr */,
-                                      tBT_TRANSPORT /* transport */) -> bool { return false; },
-                .BTM_SecIsLeSecurityPending = [](const RawAddress& /* bd_addr */) -> bool {
-                  return false;
-                },
-                .BTM_IsBonded = [](const RawAddress& /* bd_addr */,
-                                   tBT_TRANSPORT /* transport */) -> bool { return false; },
-                .BTM_SetSecurityLevel = [](bool /* outgoing */, const char* /*p_name */,
-                                           uint8_t /* service_id */, uint16_t /* sec_level */,
-                                           uint16_t /* psm */, uint32_t /* mx_proto_id */,
-                                           uint32_t /* mx_chan_id */) -> bool { return false; },
-                .BTM_SecClrService = [](uint8_t /* service_id */) -> uint8_t { return 0; },
-                .BTM_SecClrServiceByPsm = [](uint16_t /* psm */) -> uint8_t { return 0; },
-                .BTM_SecBond = [](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-                                  tBT_TRANSPORT /* transport */) -> tBTM_STATUS {
-                  return tBTM_STATUS::BTM_SUCCESS;
-                },
-                .BTM_SecBondCancel = [](const RawAddress& /* bd_addr */) -> tBTM_STATUS {
-                  return tBTM_STATUS::BTM_SUCCESS;
-                },
-                .BTM_RemoteOobDataReply = [](tBTM_STATUS /* res */, const RawAddress& /* bd_addr */,
-                                             const Octet16& /* c */, const Octet16& /* r */) {},
-                .BTM_PINCodeReply = [](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */,
-                                       uint8_t /* pin_len */, PinCode /* pin_code */) {},
-                .BTM_SecConfirmReqReply = [](tBTM_STATUS /* res */, tBT_TRANSPORT /* transport */,
-                                             const RawAddress /* bd_addr */) {},
-                .BTM_BleSirkConfirmDeviceReply = [](const RawAddress& /* bd_addr */,
-                                                    tBTM_STATUS /* res */) {},
-                .BTM_BlePasskeyReply = [](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */,
-                                          uint32_t /* passkey */) {},
-                .BTM_BleReadSecKeySize = [](const RawAddress& /* bd_addr */) -> uint8_t {
-                  return 0;
-                },
-                .BTM_SecHciDeleteStoredLinkKey = [](const RawAddress& /* bd_addr */) {},
-                .BTM_GetSecurityMode = []() -> uint8_t { return 0; },
-                .BTM_SecReadDevName = [](const RawAddress& /* bd_addr */) -> const char* {
-                  return nullptr;
-                },
-                .BTM_SecReadDevClass = [](const RawAddress& /* bd_addr */) -> DEV_CLASS {
-                  return kDevClassEmpty;
-                },
-                .BTM_SecReportBondLoss = [](const RawAddress& /* bd_addr */,
-                                            tBT_TRANSPORT /* transport */) -> tBTM_STATUS {
-                  return tBTM_STATUS::BTM_SUCCESS;
-                },
-                .BTM_GetDeviceEncRoot = []() -> const Octet16& { return dummy_octet16; },
-                .BTM_GetDeviceIDRoot = []() -> const Octet16& { return dummy_octet16; },
-                .BTM_GetDeviceDHK = []() -> const Octet16& { return dummy_octet16; },
-                .BTM_SecurityGrant = [](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */) {},
-                .BTM_BleConfirmReply = [](const RawAddress& /* bd_addr */,
-                                          tBTM_STATUS /* res */) {},
-                .BTM_BleOobDataReply = [](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */,
-                                          uint8_t /* len */, uint8_t* /* p_data */) {},
-                .BTM_BleSecureConnectionOobDataReply = [](const RawAddress& /* bd_addr */,
-                                                          uint8_t* /* p_c */,
-                                                          uint8_t* /* p_r */) {},
-                .BTM_BleDataSignature = [](const RawAddress& /* bd_addr */, uint8_t* /* p_text */,
-                                           uint16_t /* len */,
-                                           BLE_SIGNATURE /* signature */) -> bool { return false; },
-                .BTM_BleVerifySignature = [](const RawAddress& /* bd_addr */, uint8_t* /* p_orig */,
-                                             uint16_t /* len */, uint32_t /* counter */,
-                                             uint8_t* /* p_comp */) -> bool { return false; },
-                .BTM_BleGetPeerLTK = [](const RawAddress /* address */) -> std::optional<Octet16> {
-                  return std::nullopt;
-                },
-                .BTM_BleGetPeerIRK = [](const RawAddress /* address */) -> std::optional<Octet16> {
-                  return std::nullopt;
-                },
-                .BTM_BleGetIdentityAddress = [](const RawAddress /* address */)
-                        -> std::optional<tBLE_BD_ADDR> { return std::nullopt; },
-                .BTM_BleLinkSecCheck = [](const RawAddress& /* bd_addr */,
-                                          tBTM_LE_AUTH_REQ /* auth_req */) -> tBTM_BLE_SEC_REQ_ACT {
-                  return BTM_BLE_SEC_REQ_ACT_NONE;
-                },
-                .BTM_BleLtkRequestReply = [](const RawAddress& /* bda */, bool /* use_stk */,
-                                             const Octet16& /* stk */) {},
-                .BTM_BleStartEncrypt = [](const RawAddress& /* bda */, bool /* use_stk */,
-                                          Octet16* /* p_stk */) -> tBTM_STATUS {
-                  return tBTM_STATUS::BTM_SUCCESS;
-                },
-                .BTM_BleStartSecCheck = [](const RawAddress& /* bd_addr */, uint16_t /* psm */,
-                                           bool /* outgoing */, tBTM_SEC_CALLBACK* /* p_callback */,
-                                           void* /* p_ref_data */) -> tBTM_STATUS {
-                  return tBTM_STATUS::BTM_SUCCESS;
-                },
-                .BTM_GetLocalDiv = [](const RawAddress& /* bd_addr */,
-                                      uint16_t* /* p_div */) -> bool { return false; },
-                .BTM_BleGetEncKeyType = [](const RawAddress& /* bd_addr */,
-                                           uint8_t* /* p_key_types */) -> bool { return false; },
-                .BTM_SecSaveLeKey = [](const RawAddress& /* bd_addr */,
-                                       tBTM_LE_KEY_TYPE /* key_type */,
-                                       const tBTM_LE_KEY_VALUE& /* p_keys */,
-                                       bool /* pass_to_application */) {},
-                .BTM_BleUpdateSecKeySize = [](const RawAddress& /* bd_addr */,
-                                              uint8_t /* enc_key_size */) {},
-                .BTM_BleResetId = []() {},
         },
         .ble = {
                 .BTM_BleGetEnergyInfo = [](tBTM_BLE_ENERGY_INFO_CBACK* /* p_ener_cback */)
@@ -357,10 +222,6 @@ struct btm_client_interface_t mock_btm_client_interface = default_btm_client_int
 
 // Reset the working btm client interface to the default
 void reset_mock_btm_client_interface() { mock_btm_client_interface = default_btm_client_interface; }
-
-void set_mock_btm_client_interface_security(SecurityClientInterface& security) {
-  mock_btm_client_interface.security = security;
-}
 
 // Serve the working btm client interface
 struct btm_client_interface_t& get_btm_client_interface() { return mock_btm_client_interface; }

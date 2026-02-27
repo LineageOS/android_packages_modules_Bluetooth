@@ -631,7 +631,6 @@ protected:
     gatt::SetMockBtaGattQueue(&gatt_queue);
 
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     encryption_result = true;
 

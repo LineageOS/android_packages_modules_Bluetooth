@@ -179,7 +179,7 @@ static void smp_compute_csrk(uint16_t div, tSMP_CB* p_cb) {
   p_cb->div = div;
 
   log::verbose("div=0x{:x}", p_cb->div);
-  const Octet16& er = get_btm_client_interface().security.BTM_GetDeviceEncRoot();
+  const Octet16& er = get_security_client_interface().BTM_GetDeviceEncRoot();
   /* CSRK = d1(ER, DIV, 1) */
   UINT16_TO_STREAM(p, p_cb->div);
   UINT16_TO_STREAM(p, r);
@@ -196,7 +196,7 @@ void smp_generate_csrk(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
 
   log::verbose("addr:{}", p_cb->pairing_bda);
 
-  div_status = get_btm_client_interface().security.BTM_GetLocalDiv(p_cb->pairing_bda, &p_cb->div);
+  div_status = get_security_client_interface().BTM_GetLocalDiv(p_cb->pairing_bda, &p_cb->div);
   if (div_status) {
     smp_compute_csrk(p_cb->div, p_cb);
   } else {
@@ -487,7 +487,7 @@ static void smp_process_ediv(tSMP_CB* p_cb, Octet16& p) {
 static void smp_generate_y(tSMP_CB* p_cb, uint64_t rand) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
-  const Octet16& dhk = get_btm_client_interface().security.BTM_GetDeviceDHK();
+  const Octet16& dhk = get_security_client_interface().BTM_GetDeviceDHK();
 
   memcpy(p_cb->enc_rand.data(), (uint8_t*)&rand, sizeof(uint64_t));
   Octet16 rand16{};
@@ -503,7 +503,7 @@ static void smp_generate_ltk_cont(uint16_t div, tSMP_CB* p_cb) {
   p_cb->div = div;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
-  const Octet16& er = get_btm_client_interface().security.BTM_GetDeviceEncRoot();
+  const Octet16& er = get_security_client_interface().BTM_GetDeviceEncRoot();
 
   /* LTK = d1(ER, DIV, 0)= e(ER, DIV)*/
   Octet16 div16{};
@@ -545,7 +545,7 @@ void smp_generate_ltk(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   }
 
   bool div_status =
-          get_btm_client_interface().security.BTM_GetLocalDiv(p_cb->pairing_bda, &p_cb->div);
+          get_security_client_interface().BTM_GetLocalDiv(p_cb->pairing_bda, &p_cb->div);
 
   if (div_status) {
     smp_generate_ltk_cont(p_cb->div, p_cb);
@@ -1010,7 +1010,7 @@ bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
 
   uint8_t br_link_key_type;
   br_link_key_type =
-          get_btm_client_interface().security.BTM_SecGetDeviceLinkKeyType(p_cb->pairing_bda);
+          get_security_client_interface().BTM_SecGetDeviceLinkKeyType(p_cb->pairing_bda);
   if (br_link_key_type == BTM_LKEY_TYPE_IGNORE) {
     log::error("failed to retrieve BR link type");
     return false;

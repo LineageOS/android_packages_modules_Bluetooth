@@ -179,7 +179,7 @@ void stack_enable(ProfileStartCallback startProfiles, const std::string local_na
   l2c_init();
   sdp_init();
   gatt_init();
-  SMP_Init(get_btm_client_interface().security.BTM_GetSecurityMode());
+  SMP_Init(get_security_client_interface().BTM_GetSecurityMode());
   get_btm_client_interface().lifecycle.btm_ble_init();
 
   RFCOMM_Init();

@@ -871,8 +871,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
   bool is_bonded(Address target_address) {
     if (com_android_bluetooth_flags_irk_scanning_bond_check_update()) {
-      return get_btm_client_interface().security.BTM_IsBonded(RawAddress(target_address.address),
-                                                              BT_TRANSPORT_LE);
+      return get_security_client_interface().BTM_IsBonded(RawAddress(target_address.address),
+                                                          BT_TRANSPORT_LE);
     } else {
       for (auto device : storage_module_->GetBondedDevices()) {
         if (device.GetAddress() == target_address) {

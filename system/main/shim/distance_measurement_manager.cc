@@ -88,7 +88,7 @@ public:
     auto distance_measurement_location_type =
             static_cast<DistanceMeasurementLocationType>(location_type);
     hci::Role local_hci_role;
-    if (!get_btm_client_interface().security.BTM_IsEncrypted(identity_addr, BT_TRANSPORT_LE) &&
+    if (!get_security_client_interface().BTM_IsEncrypted(identity_addr, BT_TRANSPORT_LE) &&
         distance_measurement_method == DistanceMeasurementMethod::METHOD_CS) {
       if (retries < kMaxRetryCount) {
         log::info("Connection is not encrypted, retrying in {} ms", kRetryIntervalMs);

@@ -694,11 +694,11 @@ bool VolumeControllerDevice::ExtAudioInControlPointOperation(uint8_t ext_input_i
 }
 
 bool VolumeControllerDevice::IsEncryptionEnabled() {
-  return get_btm_client_interface().security.BTM_IsEncrypted(address, BT_TRANSPORT_LE);
+  return get_security_client_interface().BTM_IsEncrypted(address, BT_TRANSPORT_LE);
 }
 
 bool VolumeControllerDevice::EnableEncryption() {
-  tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+  tBTM_STATUS result = get_security_client_interface().BTM_SetEncryption(
           address, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
   log::info("{}: result=0x{:02x}", address, result);
 

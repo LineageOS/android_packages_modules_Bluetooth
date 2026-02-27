@@ -87,7 +87,7 @@ void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len, uin
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmLocalOob(void) { get_btm_client_interface().security.BTM_ReadLocalOobData(); }
+void BTA_DmLocalOob(void) { get_security_client_interface().BTM_ReadLocalOobData(); }
 
 /*******************************************************************************
  *
@@ -114,7 +114,7 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) { bta_dm_confirm(bd_a
 void BTA_DmAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
                      const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
                      uint8_t pin_length) {
-  get_btm_client_interface().security.BTM_SecAddDevice(bd_addr, dev_class, pairing_type, link_key,
+  get_security_client_interface().BTM_SecAddDevice(bd_addr, dev_class, pairing_type, link_key,
                                                        key_type, pin_length);
 }
 
@@ -236,7 +236,7 @@ void BTA_DmBleSecurityGrant(const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res
     }
   }(res);
 
-  get_btm_client_interface().security.BTM_SecurityGrant(bd_addr, btm_status);
+  get_security_client_interface().BTM_SecurityGrant(bd_addr, btm_status);
 }
 
 /*******************************************************************************
