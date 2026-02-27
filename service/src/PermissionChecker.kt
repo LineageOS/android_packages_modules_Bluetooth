@@ -171,6 +171,23 @@ internal class PermissionChecker(
     }
 
     private fun enforceCallerIsForegroundUser(uid: Int) {
+        val callingAppId = UserHandle.getAppId(uid)
+        if (Flags.systemServerNoLongerProvideProcessExemption()) {
+            if (callingAppId == SYSTEM_UID) {
+                // TODO: Remove this hack
+                // Allows testing to be performed on HSUM (Headless System User Mode) devices.
+                return
+            }
+        }
+        if (callingAppId == systemUiUid) {
+            // TODO: Remove this hack
+            // SystemUi is running as User 0 and caches the BluetoothAdapter between users.
+            // From Bluetooth we have no way to know if the request is about user 0/10/20 etc...
+            // Until SystemUi code is properly fixed with `createContextAsUser`, we must endure this
+            // hack.
+            // Note: since Bluetooth is mainline, removing this hack will require an sdk check
+            return
+        }
         val callingUser = UserHandle.getUserHandleForUid(uid)
 
         // TODO: b/280890575 - replace with the current user the service is switched to
@@ -188,13 +205,7 @@ internal class PermissionChecker(
             Binder.restoreCallingIdentity(callingIdentity)
         }
 
-        val callingAppId = UserHandle.getAppId(uid)
-
-        if (
-            callingUser != foregroundUser &&
-                parentUser != foregroundUser &&
-                callingAppId != systemUiUid // TODO remove foreground bypass
-        ) {
+        if (callingUser != foregroundUser && parentUser != foregroundUser) {
             throw BluetoothPermissionException(
                 "Not allowed for non-active and non system user." +
                     " callingUser=$callingUser" +
