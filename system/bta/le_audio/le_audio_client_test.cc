@@ -1705,6 +1705,7 @@ protected:
     set_com_android_bluetooth_flags_leaudio_game_detector(true);
     set_com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig(true);
     set_com_android_bluetooth_flags_leaudio_codec_id_support(true);
+    set_com_android_bluetooth_flags_leaudio_improve_configuration_caching(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();

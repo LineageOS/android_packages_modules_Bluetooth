@@ -5981,12 +5981,17 @@ public:
     auto const is_missing_source_ase_context =
             remote_contexts.source.none() && has_source_ase_config;
 
-    is_configuration_changed = is_configuration_changed || is_missing_sink_ase_config ||
-                               is_missing_source_ase_config || is_missing_sink_ase_context ||
-                               is_missing_source_ase_context;
+    bool direction_misalignment = is_missing_sink_ase_config || is_missing_source_ase_config ||
+                                   is_missing_sink_ase_context || is_missing_source_ase_context;
+
+    is_configuration_changed = is_configuration_changed || direction_misalignment;
 
     // Clear DSA configuration cache when DSA mode has changed
-    if (is_configuration_changed || is_dsa_reconfig_needed) {
+    if ((!com_android_bluetooth_flags_leaudio_improve_configuration_caching() &&
+         is_configuration_changed) ||
+        (com_android_bluetooth_flags_leaudio_improve_configuration_caching() &&
+         direction_misalignment) ||
+        is_dsa_reconfig_needed) {
       group->InvalidateCachedConfigurations(new_configuration_context);
     }
 
