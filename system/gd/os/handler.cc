@@ -60,7 +60,9 @@ std::optional<base::OnceClosure> Handler::Post(base::OnceClosure closure) {
     }
     tasks_->emplace(std::move(closure));
   }
-  event_->Notify();
+  if (!thread_->IsSameThread()) {
+    event_->Notify();
+  }
   return std::nullopt;
 }
 
@@ -103,23 +105,21 @@ void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
 }
 
 void Handler::handle_next_event() {
-  base::OnceClosure closure;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    bool has_data = event_->Read();
+  event_->Read();
+  while (true) {
+    base::OnceClosure closure;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (was_cleared() || tasks_->empty()) {
+        return;
+      }
 
-    if (was_cleared()) {
-      return;
+      closure = std::move(tasks_->front());
+      tasks_->pop();
+      notify_promise_if_idle();
     }
-    log::assert_that(has_data, "Notified for work but no work available, thread: {}",
-                     thread_->GetThreadName());
-
-    closure = std::move(tasks_->front());
-    tasks_->pop();
-    notify_promise_if_idle();
+    std::move(closure).Run();
   }
-
-  std::move(closure).Run();
 }
 
 std::future<void> Handler::NotifyWhenIdle() {

@@ -277,8 +277,7 @@ std::unique_ptr<AclBuilder> RoundRobinScheduler::handle_enqueue_next_fragment() 
     if (enqueue_registered_.exchange(false)) {
       hci_queue_end_->UnregisterEnqueue();
     }
-    handler_->Post(
-            common::BindOnce(&RoundRobinScheduler::start_round_robin, common::Unretained(this)));
+    start_round_robin();
   } else {
     ConnectionType next_connection_type = fragments_to_send_.front().connection_type_;
     bool classic_buffer_full =
