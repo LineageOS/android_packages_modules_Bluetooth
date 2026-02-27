@@ -207,6 +207,7 @@ cc_defaults {
         "os/linux_generic/reactor.cc",
         "os/linux_generic/repeating_alarm.cc",
         "os/linux_generic/thread.cc",
+        "os/linux_generic/timed_mutex.cc",
         "os/linux_generic/wakelock_manager.cc",
     ],
     static_libs: [
@@ -325,6 +326,7 @@ cc_test {
         "os/linux_generic/reactor.cc",
         "os/linux_generic/repeating_alarm.cc",
         "os/linux_generic/thread.cc",
+        "os/linux_generic/timed_mutex.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
@@ -417,6 +419,7 @@ cc_test {
                 "os/linux_generic/reactor_unittest.cc",
                 "os/linux_generic/repeating_alarm_unittest.cc",
                 "os/linux_generic/thread_unittest.cc",
+                "os/linux_generic/timed_mutex_unittest.cc",
                 "os/linux_generic/wakelock_manager_unittest.cc",
             ],
         },
