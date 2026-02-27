@@ -28,7 +28,6 @@
 /* BTM Power manager status codes */
 enum : uint8_t {
   BTM_PM_STS_ACTIVE = HCI_MODE_ACTIVE,  // 0x00
-  BTM_PM_STS_HOLD = HCI_MODE_HOLD,      // 0x01
   BTM_PM_STS_SNIFF = HCI_MODE_SNIFF,    // 0x02
   BTM_PM_STS_SSR,                       /* report the SSR parameters in HCI_SNIFF_SUB_RATE_EVT */
   BTM_PM_STS_PENDING,                   /* when waiting for status from controller */
@@ -40,8 +39,6 @@ inline std::string power_mode_status_text(tBTM_PM_STATUS status) {
   switch (status) {
     case BTM_PM_STS_ACTIVE:
       return std::string("active");
-    case BTM_PM_STS_HOLD:
-      return std::string("hold");
     case BTM_PM_STS_SNIFF:
       return std::string("sniff");
     case BTM_PM_STS_SSR:
@@ -58,7 +55,6 @@ inline std::string power_mode_status_text(tBTM_PM_STATUS status) {
 /* BTM Power manager modes */
 enum : uint8_t {
   BTM_PM_MD_ACTIVE = HCI_MODE_ACTIVE,  // 0x00
-  BTM_PM_MD_HOLD = HCI_MODE_HOLD,      // 0x01
   BTM_PM_MD_SNIFF = HCI_MODE_SNIFF,    // 0x02
   BTM_PM_MD_FORCE = 0x10,              /* OR this to force ACL link to a certain mode */
   BTM_PM_MD_UNKNOWN = 0xEF,
@@ -70,7 +66,6 @@ typedef uint8_t tBTM_PM_MODE;
 inline bool is_legal_power_mode(tBTM_PM_MODE mode) {
   switch (mode & ~BTM_PM_MD_FORCE) {
     case BTM_PM_MD_ACTIVE:
-    case BTM_PM_MD_HOLD:
     case BTM_PM_MD_SNIFF:
       return true;
     default:
@@ -83,8 +78,6 @@ inline std::string power_mode_text(tBTM_PM_MODE mode) {
   switch (mode & ~BTM_PM_MD_FORCE) {
     case BTM_PM_MD_ACTIVE:
       return s + std::string("active");
-    case BTM_PM_MD_HOLD:
-      return s + std::string("hold");
     case BTM_PM_MD_SNIFF:
       return s + std::string("sniff");
     default:

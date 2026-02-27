@@ -49,28 +49,25 @@ enum class BtmAclSwitchKeyState : uint8_t {
 };
 
 struct LinkPolicy {
+  // Hold mode is not supported in Android
+  // Park mode is deprecated in the Bluetooth spec
   bool role_switch;
-  bool hold_mode;  // Not supported in Android
   bool sniff_mode;
 
 public:
-  constexpr uint16_t toUint16() const {
-    return (role_switch << 0) | (hold_mode << 1) | (sniff_mode << 2);
-  }
+  constexpr uint16_t toUint16() const { return (role_switch << 0) | (sniff_mode << 2); }
   constexpr operator uint16_t() const { return toUint16(); }
 };
 
 inline std::string link_policy_text(const LinkPolicy& policy) {
   std::ostringstream os;
   os << "role_switch: " << (policy.role_switch == 0 ? "disabled" : "enabled") << ", ";
-  os << "hold_mode: " << (policy.hold_mode == 0 ? "disabled" : "enabled") << ", ";
   os << "sniff_mode: " << (policy.sniff_mode == 0 ? "disabled" : "enabled");
   return os.str();
 }
 
 constexpr LinkPolicy kLinkPolicyDefault = {
         .role_switch = true,
-        .hold_mode = false,
         .sniff_mode = true,
 };
 
@@ -78,7 +75,6 @@ constexpr LinkPolicy kLinkPolicyDefault = {
 // Used as both value and bitmask
 enum : uint8_t {
   BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
-  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
   BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
   BTM_PM_ST_UNUSED,                        // 0x04
   BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
@@ -92,8 +88,6 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   switch (state & ~BTM_PM_STORED_MASK) {
     case BTM_PM_ST_ACTIVE:
       return s + std::string("active");
-    case BTM_PM_ST_HOLD:
-      return s + std::string("hold");
     case BTM_PM_ST_SNIFF:
       return s + std::string("sniff");
     case BTM_PM_ST_UNUSED:
