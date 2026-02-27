@@ -76,6 +76,7 @@ UUID_ASE_CONTROL_POINT = 0x2BC6
 
 # opcode for ase control
 OPCODE_CONFIG_CODEC = 0x01
+OPCODE_CONFIG_QOS = 0x02
 OPCODE_ENABLE = 0x03
 OPCODE_UPDATE_METADATA = 0x07
 OPCODE_RELEASE = 0x08
@@ -153,9 +154,6 @@ class Connection:
         self.number_of_ases = 0
         self.ase = defaultdict(AseStream)
         self.context = 0xFFFF
-        self.cis_handle = 0xFFFF
-        self.input_dump = []
-        self.output_dump = []
         self.start_time = 0xFFFFFFFF
 
     def dump(self):
@@ -163,8 +161,8 @@ class Connection:
         print("ase_handle: " + str(self.ase_handle))
         print("context type: " + str(self.context))
         print("number_of_ases:  " + str(self.number_of_ases))
-        print("cis_handle:  " + str(self.cis_handle))
         print("")
+
         for id, ase_stream in self.ase.items():
             print("ase id: " + str(id))
             ase_stream.dump()
@@ -178,8 +176,14 @@ class AseStream:
         self.frame_duration = 0xFF
         self.channel_allocation = 0xFFFFFFFF
         self.octets_per_frame = 0xFFFF
+        self.cis_id = 0xFF
+        self.cis_handle = 0xFFFF
+        self.input_dump = []
+        self.output_dump = []
 
     def dump(self):
+        print("cis_id: " + str(self.cis_id))
+        print("cis_handle: " + str(self.cis_handle))
         print("sampling_frequencies: " + str(self.sampling_frequencies))
         print("frame_duration: " + str(self.frame_duration))
         print("channel_allocation: " + str(self.channel_allocation))
@@ -333,6 +337,17 @@ def parse_att_write_cmd(packet, connection_handle, timestamp):
                 # ignore target_latency, target_phy, codec_id
                 packet = unpack_data(packet, 7, True)
                 packet = parse_codec_information(connection_handle, ase_id, packet)
+        elif opcode == OPCODE_CONFIG_QOS:
+            debug_print("config_qos")
+            number_of_ases, packet = unpack_data(packet, 1, False)
+            for i in range(number_of_ases):
+                ase_id, packet = unpack_data(packet, 1, False)
+                # cig_id
+                packet = unpack_data(packet, 1, True)
+                cis_id, packet = unpack_data(packet, 1, False)
+                connection_map[connection_handle].ase[ase_id].cis_id = cis_id
+                # Skip the remain parameters
+                packet = unpack_data(packet, 13, True)
         elif opcode == OPCODE_ENABLE or opcode == OPCODE_UPDATE_METADATA:
             if debug_enable:
                 debug_print("enable or update metadata")
@@ -461,7 +476,10 @@ def parse_command_packet(packet, timestamp):
             cis_handle, packet = unpack_data(packet, 2, False)
             cis_handle &= 0x0FFF
             acl_handle, packet = unpack_data(packet, 2, False)
-            connection_map[acl_handle].cis_handle = cis_handle
+            for ase in connection_map[acl_handle].ase.values():
+                if ase.cis_id == i:
+                    ase.cis_handle = cis_handle
+                    break
             cis_acl_map[cis_handle] = acl_handle
 
         if debug_enable:
@@ -542,27 +560,25 @@ def parse_event_packet(packet):
         return
 
     subevent_code, packet = unpack_data(packet, 1, False)
-    if subevent_code != SUBEVENT_CODE_LE_CREATE_BIG_COMPLETE:
-        return
+    if subevent_code == SUBEVENT_CODE_LE_CREATE_BIG_COMPLETE:
+        status, packet = unpack_data(packet, 1, False)
+        if status != 0x00:
+            debug_print("Create_BIG failed")
+            return
 
-    status, packet = unpack_data(packet, 1, False)
-    if status != 0x00:
-        debug_print("Create_BIG failed")
-        return
-
-    big_handle, packet = unpack_data(packet, 1, False)
-    if big_handle not in big_adv_map:
-        print("Invalid BIG handle")
-        return
-    adv_handle = big_adv_map[big_handle]
-    # Ignore, we don't care these parameter
-    packet = unpack_data(packet, 15, True)
-    num_of_bis, packet = unpack_data(packet, 1, False)
-    for count in range(num_of_bis):
-        bis_handle, packet = unpack_data(packet, 2, False)
-        bis_index = broadcast_map[adv_handle].bis_index_list[count]
-        broadcast_map[adv_handle].bis_index_handle_map[bis_index] = bis_handle
-        bis_stream_map[bis_handle] = broadcast_map[adv_handle].bis[bis_index]
+        big_handle, packet = unpack_data(packet, 1, False)
+        if big_handle not in big_adv_map:
+            print("Invalid BIG handle")
+            return
+        adv_handle = big_adv_map[big_handle]
+        # Ignore, we don't care these parameter
+        packet = unpack_data(packet, 15, True)
+        num_of_bis, packet = unpack_data(packet, 1, False)
+        for count in range(num_of_bis):
+            bis_handle, packet = unpack_data(packet, 2, False)
+            bis_index = broadcast_map[adv_handle].bis_index_list[count]
+            broadcast_map[adv_handle].bis_index_handle_map[bis_index] = bis_handle
+            bis_stream_map[bis_handle] = broadcast_map[adv_handle].bis[bis_index]
 
 
 def convert_time_str(timestamp):
@@ -581,18 +597,20 @@ def convert_time_str(timestamp):
 def dump_cis_audio_data_to_file(acl_handle):
     if debug_enable:
         connection_map[acl_handle].dump()
-    file_name = ""
-    context_case = {
-        CONTEXT_TYPE_UNSPECIFIED: "Unspecified",
-        CONTEXT_TYPE_CONVERSATIONAL: "Conversational",
-        CONTEXT_TYPE_MEDIA: "Media",
-        CONTEXT_TYPE_GAME: "Game",
-        CONTEXT_TYPE_VOICEASSISTANTS: "VoiceAssistants",
-        CONTEXT_TYPE_LIVE: "Live",
-        CONTEXT_TYPE_RINGTONE: "Ringtone"
-    }
-    file_name += context_case.get(connection_map[acl_handle].context, "Unknown")
     for ase in connection_map[acl_handle].ase.values():
+        file_name = ""
+        context_case = {
+            CONTEXT_TYPE_UNSPECIFIED: "Unspecified",
+            CONTEXT_TYPE_CONVERSATIONAL: "Conversational",
+            CONTEXT_TYPE_MEDIA: "Media",
+            CONTEXT_TYPE_GAME: "Game",
+            CONTEXT_TYPE_VOICEASSISTANTS: "VoiceAssistants",
+            CONTEXT_TYPE_LIVE: "Live",
+            CONTEXT_TYPE_RINGTONE: "Ringtone"
+        }
+        for key, value in context_case.items():
+            if connection_map[acl_handle].context & key != 0:
+                file_name += value
         sf_case = {
             SAMPLE_FREQUENCY_8000: "8000",
             SAMPLE_FREQUENCY_11025: "11025",
@@ -620,27 +638,26 @@ def dump_cis_audio_data_to_file(acl_handle):
         file_name += ("_" + al_case[ase.channel_allocation])
         file_name += ("_frame" + str(ase.octets_per_frame))
         file_name += ("_" + convert_time_str(connection_map[acl_handle].start_time))
-        break
 
-    if connection_map[acl_handle].input_dump != []:
-        debug_print("Dump unicast input..." + str(file_name))
-        f = open(file_name + "_input.bin", 'wb')
-        if add_header == True:
-            generate_header(f, connection_map[acl_handle], True)
-        arr = bytearray(connection_map[acl_handle].input_dump)
-        f.write(arr)
-        f.close()
-        connection_map[acl_handle].input_dump = []
+        if ase.input_dump != []:
+            debug_print("Dump unicast input..." + str(file_name))
+            f = open(file_name + "_input.bin", 'wb')
+            if add_header == True:
+                generate_header(f, connection_map[acl_handle], True)
+            arr = bytearray(ase.input_dump)
+            f.write(arr)
+            f.close()
+            ase.input_dump = []
 
-    if connection_map[acl_handle].output_dump != []:
-        debug_print("Dump unicast output..." + str(file_name))
-        f = open(file_name + "_output.bin", 'wb')
-        if add_header == True:
-            generate_header(f, connection_map[acl_handle], True)
-        arr = bytearray(connection_map[acl_handle].output_dump)
-        f.write(arr)
-        f.close()
-        connection_map[acl_handle].output_dump = []
+        if ase.output_dump != []:
+            debug_print("Dump unicast output..." + str(file_name))
+            f = open(file_name + "_output.bin", 'wb')
+            if add_header == True:
+                generate_header(f, connection_map[acl_handle], True)
+            arr = bytearray(ase.output_dump)
+            f.write(arr)
+            f.close()
+            ase.output_dump = []
 
     return
 
@@ -779,12 +796,15 @@ def parse_iso_packet(packet, flags):
     # CIS stream
     if iso_handle in cis_acl_map:
         acl_handle = cis_acl_map[iso_handle]
-        if flags == SENT:
-            connection_map[acl_handle].output_dump.extend(struct.pack("<H", len(packet)))
-            connection_map[acl_handle].output_dump.extend(list(packet))
-        elif flags == RECEIVED:
-            connection_map[acl_handle].input_dump.extend(struct.pack("<H", len(packet)))
-            connection_map[acl_handle].input_dump.extend(list(packet))
+        for ase_stream in connection_map[acl_handle].ase.values():
+            if ase_stream.cis_handle != iso_handle:
+                continue
+            if flags == SENT:
+                ase_stream.output_dump.extend(struct.pack("<H", len(packet)))
+                ase_stream.output_dump.extend(list(packet))
+            elif flags == RECEIVED:
+                ase_stream.input_dump.extend(struct.pack("<H", len(packet)))
+                ase_stream.input_dump.extend(list(packet))
     elif iso_handle in bis_stream_map:
         bis_stream_map[iso_handle].output_dump.extend(struct.pack("<H", len(packet)))
         bis_stream_map[iso_handle].output_dump.extend(list(packet))
