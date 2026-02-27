@@ -29,6 +29,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerExemptionManager.REASON_BLUETOOTH_BROADCAST
 import android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED
+import android.os.RemoteCallbackList
 import android.os.SystemProperties
 import android.os.UserHandle
 import android.provider.Settings.Global
@@ -37,11 +38,19 @@ import com.android.bluetooth.util.truncateUtf8String
 import com.android.server.bluetooth.airplane.AirplaneModeController
 import java.io.FileDescriptor
 import java.io.PrintWriter
+import kotlin.text.Regex
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 // Must match android.provider.Settings.Secure.BLUETOOTH_NAME but cannot depend on the variable
 const val BLUETOOTH_NAME = "bluetooth_name"
+
+// Must match android.provider.Settings.Secure.BLUETOOTH_ADDRESS but cannot depend on the variable
+const val BLUETOOTH_ADDRESS = "bluetooth_address"
+
+// Regex used for address matching: XX:XX:XX:XX:XX:XX
+private const val HEX_PAIR = "[0-9A-F]{2}"
+private val ADDRESS_PATTERN = Regex("^($HEX_PAIR:){5}$HEX_PAIR$")
 
 @kotlin.time.ExperimentalTime
 class BluetoothManagerServiceNew(
@@ -56,7 +65,9 @@ class BluetoothManagerServiceNew(
     private val airplaneController: AirplaneModeController
     private val autoOn: AutoOn? // Null when config doesn't allow
 
+    private var localAddress = readLocalAddress()
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
+    private val callbacks = RemoteCallbackList<IBluetoothManagerCallback>()
 
     init {
         airplaneController =
@@ -141,11 +152,32 @@ class BluetoothManagerServiceNew(
 
     fun waitForState(state: Int): Boolean = false
 
-    fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? = null
+    // TODO Flags.systemServerMigrateBmsToKotlin() -> move to oneway binder without return value
+    fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? {
+        callbacks.register(callback)
+        // TODO when adapter is implemented:
+        // if (adapter is bound) {
+        //     callback.onBluetoothServiceUp(adapterBinder)
+        // }
+        // TODO implement global broadcast using new API:
+        // callbacks.broadcast { it.onBluetoothServiceUp(adapterBinder) }
+        return null
+    }
 
-    fun unregisterAdapter(callback: IBluetoothManagerCallback) {}
+    fun unregisterAdapter(callback: IBluetoothManagerCallback) {
+        callbacks.unregister(callback)
+    }
 
-    fun getAddress(): String? = null
+    fun getAddress() = localAddress
+
+    private fun readLocalAddress() =
+        Secure.getString(contentResolver, BLUETOOTH_ADDRESS)?.takeIf { it.matches(ADDRESS_PATTERN) }
+
+    private fun persistentStorageForLocalAddress(address: String) {
+        Secure.putString(contentResolver, BLUETOOTH_ADDRESS, address)
+        Log.v(TAG, "Local address updated: ${Log.address(localAddress)} -> ${Log.address(address)}")
+        localAddress = address
+    }
 
     fun getName() = localName
 
@@ -190,7 +222,7 @@ class BluetoothManagerServiceNew(
             BLUETOOTH_CONNECT,
             getTempAllowlistBroadcastOptions(),
         )
-        Log.v(TAG, "persistentStorageForLocalName($name): Name updated $localName -> $name")
+        Log.v(TAG, "Local name updated: $localName -> $name")
         localName = name
     }
 
