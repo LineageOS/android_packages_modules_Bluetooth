@@ -34,6 +34,7 @@
 #include "ascs_types.h"
 #include "ase_state_machine.h"
 #include "bta/le_audio/common/mock_iso_app_proxy.h"
+#include "bta/le_audio/le_audio_utils.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/mock/mock_stack_btm_dev.h"
@@ -309,7 +310,7 @@ public:
     ascs::AseStateCodecConfiguration configuration;
     configuration.codec_id = request.codec_id;
     configuration.codec_spec_conf = request.codec_spec_conf;
-    configuration.preferred_phy = request.target_phy;
+    configuration.preferred_phy = utils::GetPreferredPhyFromTargetPhy(request.target_phy);
 
     // WARNING: pres_delay_min == 0 (not set) will prevent the state machine from going
     //          back to CODEC_CONFIGURED on RELEASED (caching).
