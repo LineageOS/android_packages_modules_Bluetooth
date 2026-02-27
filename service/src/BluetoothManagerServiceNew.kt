@@ -29,6 +29,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerExemptionManager.REASON_BLUETOOTH_BROADCAST
 import android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED
+import android.os.RemoteCallbackList
 import android.os.SystemProperties
 import android.os.UserHandle
 import android.provider.Settings.Global
@@ -66,6 +67,7 @@ class BluetoothManagerServiceNew(
 
     private var localAddress = readLocalAddress()
     private var localName = validateLocalName(Secure.getString(contentResolver, BLUETOOTH_NAME))
+    private val callbacks = RemoteCallbackList<IBluetoothManagerCallback>()
 
     init {
         airplaneController =
@@ -150,9 +152,21 @@ class BluetoothManagerServiceNew(
 
     fun waitForState(state: Int): Boolean = false
 
-    fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? = null
+    // TODO Flags.systemServerMigrateBmsToKotlin() -> move to oneway binder without return value
+    fun registerAdapter(callback: IBluetoothManagerCallback): IBinder? {
+        callbacks.register(callback)
+        // TODO when adapter is implemented:
+        // if (adapter is bound) {
+        //     callback.onBluetoothServiceUp(adapterBinder)
+        // }
+        // TODO implement global broadcast using new API:
+        // callbacks.broadcast { it.onBluetoothServiceUp(adapterBinder) }
+        return null
+    }
 
-    fun unregisterAdapter(callback: IBluetoothManagerCallback) {}
+    fun unregisterAdapter(callback: IBluetoothManagerCallback) {
+        callbacks.unregister(callback)
+    }
 
     fun getAddress() = localAddress
 
