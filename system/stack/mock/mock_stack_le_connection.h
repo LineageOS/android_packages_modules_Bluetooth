@@ -45,17 +45,21 @@ namespace mock {
 namespace stack_le_connection {
 
 // Name: leConnectionUpdateSubrateConfig
-// Params: GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
+// Params: tGATT_IF gatt_if, const RawAddress& bd_addr,
+//         GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
 //         uint16_t subrate_min, uint16_t cont_num
-// Return: void
+// Return: tGATT_STATUS
 struct leConnectionUpdateSubrateConfig {
-  std::function<void(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max, uint16_t subrate_min,
-                     uint16_t cont_num)>
-          body{[](tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
-                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) {}};
-  void operator()(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max, uint16_t subrate_min,
-                  uint16_t cont_num) {
-    body(subrate_mode, subrate_max, subrate_min, cont_num);
+  std::function<tGATT_STATUS(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                             tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                             uint16_t subrate_min, uint16_t cont_num)>
+          body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
+                  tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
+                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) { return GATT_SUCCESS; }};
+  tGATT_STATUS operator()(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                          tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                          uint16_t subrate_min, uint16_t cont_num) {
+    return body(gatt_if, bd_addr, subrate_mode, subrate_max, subrate_min, cont_num);
   }
 };
 extern struct leConnectionUpdateSubrateConfig leConnectionUpdateSubrateConfig;

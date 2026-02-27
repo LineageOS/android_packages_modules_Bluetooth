@@ -143,13 +143,6 @@ void BTA_GATTC_Refresh(tGATT_IF /*client_if*/, const RawAddress& /* remote_bda *
 void BTA_GATTC_SendIndConfirm(uint16_t /* conn_id */, uint16_t /* cid */) {
   inc_func_call_count(__func__);
 }
-tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF /*client_if*/, const RawAddress& /*bd_addr*/,
-                                          tGATT_SUBRATE_MODE /*subrate_mode*/,
-                                          uint16_t /*subrate_max*/, uint16_t /*subrate_min*/,
-                                          uint16_t /*cont_num*/) {
-  inc_func_call_count(__func__);
-  return GATT_SUCCESS;
-}
 void BTA_GATTC_ServiceSearchAllRequest(uint16_t /* conn_id */) { inc_func_call_count(__func__); }
 void BTA_GATTC_ServiceSearchRequest(uint16_t /* conn_id */, bluetooth::Uuid /* p_srvc_uuid */) {
   inc_func_call_count(__func__);

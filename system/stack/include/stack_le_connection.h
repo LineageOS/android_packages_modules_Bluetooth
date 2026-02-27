@@ -95,8 +95,10 @@ bool leConnectionSubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_add
  *                  Subrate parameters
  *
  ******************************************************************************/
-void leConnectionUpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                                     uint16_t subrate_min, uint16_t cont_num);
+tGATT_STATUS leConnectionUpdateSubrateConfig(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                             tGATT_SUBRATE_MODE subrate_mode,
+                                             uint16_t subrate_max = 0, uint16_t subrate_min = 0,
+                                             uint16_t cont_num = 0);
 
 /*******************************************************************************
  *
