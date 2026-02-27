@@ -175,7 +175,7 @@ public:
                                     bdaddr, key, state));
   }
 
-  void GetSongInfo(SongInfoCallback info_cb) override {
+  void GetSongInfo(std::string media_id, SongInfoCallback info_cb) override {
     auto cb_lambda = [](SongInfoCallback cb, SongInfo data) {
       do_in_main_thread(base::BindOnce(std::move(cb), data));
     };
@@ -183,7 +183,7 @@ public:
     auto bound_cb = base::BindOnce(cb_lambda, std::move(info_cb));
 
     do_in_jni_thread(base::BindOnce(&MediaInterface::GetSongInfo, base::Unretained(wrapped_),
-                                    std::move(bound_cb)));
+                                    media_id, std::move(bound_cb)));
   }
 
   void GetPlayStatus(PlayStatusCallback status_cb) override {
