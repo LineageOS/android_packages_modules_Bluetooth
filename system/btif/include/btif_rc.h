@@ -95,31 +95,31 @@ class RawAddress;
  *  Type definitions
  *****************************************************************************/
 
-typedef struct {
+struct btif_rc_reg_notifications_t {
   uint8_t bNotify;
   uint8_t label;
-} btif_rc_reg_notifications_t;
+};
 
-typedef struct {
+struct btif_rc_cmd_ctxt_t {
   uint8_t label;
   uint8_t ctype;
   bool is_rsp_pending;
-} btif_rc_cmd_ctxt_t;
+};
 
 /* 2 second timeout to get command response, then we free label */
 #define BTIF_RC_TIMEOUT_MS (2 * 1000)
 
 typedef enum { eNOT_REGISTERED, eREGISTERED, eINTERIM } btif_rc_nfn_reg_status_t;
 
-typedef struct {
+struct btif_rc_supported_event_t {
   uint8_t event_id;
   uint8_t label;
   btif_rc_nfn_reg_status_t status;
-} btif_rc_supported_event_t;
+};
 
 #define BTIF_RC_STS_TIMEOUT 0xFE
 
-typedef struct {
+struct btif_rc_player_app_settings_t {
   bool query_started;
   uint8_t num_attrs;
   uint8_t num_ext_attrs;
@@ -129,25 +129,25 @@ typedef struct {
   uint8_t ext_val_index;
   btrc_player_app_attr_t attrs[AVRC_MAX_APP_ATTR_SIZE];
   btrc_player_app_ext_attr_t ext_attrs[AVRC_MAX_APP_ATTR_SIZE];
-} btif_rc_player_app_settings_t;
+};
 
 // The context associated with a passthru command
-typedef struct {
+struct rc_passthru_context_t {
   uint8_t rc_id;
   uint8_t key_state;
   uint8_t custom_id;
-} rc_passthru_context_t;
+};
 
 // The context associated with a vendor command
-typedef struct {
+struct rc_vendor_context_t {
   uint8_t pdu_id;
   uint8_t event_id;
-} rc_vendor_context_t;
+};
 
 // The context associated with a browsing command
-typedef struct {
+struct rc_browse_context_t {
   uint8_t pdu_id;
-} rc_browse_context_t;
+};
 
 typedef union {
   rc_vendor_context_t vendor;
@@ -158,28 +158,28 @@ typedef union {
 // The context associated with any command transaction requiring a label.
 // The opcode determines how to determine the data in the union. Context is
 // used to track which requests have which labels
-typedef struct {
+struct rc_transaction_context_t {
   RawAddress rc_addr;
   uint8_t label;
   uint8_t opcode;
   rc_command_context_t command;
-} rc_transaction_context_t;
+};
 
-typedef struct {
+struct rc_transaction_t {
   bool in_use;
   uint8_t label;
   rc_transaction_context_t context;
   alarm_t* timer;
-} rc_transaction_t;
+};
 
-typedef struct {
+struct rc_transaction_set_t {
   std::recursive_mutex label_lock;
   rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
-} rc_transaction_set_t;
+};
 
 /* TODO : Merge btif_rc_reg_notifications_t and btif_rc_cmd_ctxt_t to a single
  * struct */
-typedef struct {
+struct btif_rc_device_cb_t {
   bool rc_connected;
   bool br_connected;  // Browsing channel.
   uint8_t rc_handle;
@@ -201,20 +201,20 @@ typedef struct {
   tBTA_AV_FEAT peer_ct_features;
   tBTA_AV_FEAT peer_tg_features;
   uint8_t launch_cmd_pending; /* true: getcap/regvolume */
-} btif_rc_device_cb_t;
+};
 
 #define RC_PENDING_ACT_GET_CAP (1 << 0)
 #define RC_PENDING_ACT_REG_VOL (1 << 1)
 #define RC_PENDING_ACT_REPORT_CONN (1 << 2)
 
-typedef struct {
+struct rc_cb_t {
   std::mutex lock;
   btif_rc_device_cb_t rc_multi_cb[BTIF_RC_NUM_CONN];
-} rc_cb_t;
+};
 
-typedef struct {
+struct btif_rc_handle_t {
   uint8_t handle;
-} btif_rc_handle_t;
+};
 
 #define BTIF_STS_GEN_ERROR 0x06
 
