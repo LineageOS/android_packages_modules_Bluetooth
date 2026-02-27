@@ -129,10 +129,10 @@ public:
       return;
     }
     auto response = trackers_[ble_bd_addr.bda].pending_write_response_;
-    tGATTS_RSP p_msg;
-    p_msg.attr_value.handle = response.write_req_handle_;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->attr_value.handle = response.write_req_handle_;
     GattStatus status = success ? GATT_SUCCESS : GATT_ERROR;
-    BTA_GATTS_SendRsp(response.conn_id_, response.trans_id_, status, &p_msg);
+    BTA_GATTS_SendRsp(response.conn_id_, response.trans_id_, status, std::move(p_msg));
   }
 
   void PushProcedureData(RawAddress address, uint16_t procedure_counter, bool is_last,
@@ -389,12 +389,12 @@ public:
     uint16_t read_req_handle = p_data->req_data.p_data->read_req.handle;
     log::info("read_req_handle: 0x{:04x},", read_req_handle);
 
-    tGATTS_RSP p_msg;
-    p_msg.attr_value.handle = read_req_handle;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->attr_value.handle = read_req_handle;
     if (characteristics_.find(read_req_handle) == characteristics_.end()) {
       log::error("Invalid handle 0x{:04x}", read_req_handle);
       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                        &p_msg);
+                        std::move(p_msg));
       return;
     }
 
@@ -402,17 +402,18 @@ public:
     auto vendor_specific_characteristic = GetVendorSpecificCharacteristic(uuid);
     if (vendor_specific_characteristic != nullptr) {
       log::debug("Read vendor_specific_characteristic uuid {}", uuid);
-      p_msg.attr_value.len = vendor_specific_characteristic->value_.size();
+      p_msg->attr_value.len = vendor_specific_characteristic->value_.size();
       std::copy(vendor_specific_characteristic->value_.begin(),
-                vendor_specific_characteristic->value_.end(), p_msg.attr_value.value);
-      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+                vendor_specific_characteristic->value_.end(), p_msg->attr_value.value);
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                        std::move(p_msg));
       return;
     }
     log::info("Read uuid, {}", getUuidName(uuid));
     if (trackers_.find(p_data->req_data.remote_bda) == trackers_.end()) {
       log::warn("Can't find tracker for {}", p_data->req_data.remote_bda);
       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
-                        &p_msg);
+                        std::move(p_msg));
       return;
     }
     ClientTracker* tracker = &trackers_[p_data->req_data.remote_bda];
@@ -420,26 +421,27 @@ public:
     // Check Characteristic UUID
     switch (uuid.As16Bit()) {
       case kRasFeaturesCharacteristic16bit: {
-        p_msg.attr_value.len = kFeatureSize;
-        memcpy(p_msg.attr_value.value, &kSupportedFeatures, sizeof(uint32_t));
+        p_msg->attr_value.len = kFeatureSize;
+        memcpy(p_msg->attr_value.value, &kSupportedFeatures, sizeof(uint32_t));
       } break;
       case kRasRangingDataReadyCharacteristic16bit: {
-        p_msg.attr_value.len = kRingingCounterSize;
-        p_msg.attr_value.value[0] = (tracker->last_ready_procedure_ & 0xFF);
-        p_msg.attr_value.value[1] = (tracker->last_ready_procedure_ >> 8) & 0xFF;
+        p_msg->attr_value.len = kRingingCounterSize;
+        p_msg->attr_value.value[0] = (tracker->last_ready_procedure_ & 0xFF);
+        p_msg->attr_value.value[1] = (tracker->last_ready_procedure_ >> 8) & 0xFF;
       } break;
       case kRasRangingDataOverWrittenCharacteristic16bit: {
-        p_msg.attr_value.len = kRingingCounterSize;
-        p_msg.attr_value.value[0] = (tracker->last_overwritten_procedure_ & 0xFF);
-        p_msg.attr_value.value[1] = (tracker->last_overwritten_procedure_ >> 8) & 0xFF;
+        p_msg->attr_value.len = kRingingCounterSize;
+        p_msg->attr_value.value[0] = (tracker->last_overwritten_procedure_ & 0xFF);
+        p_msg->attr_value.value[1] = (tracker->last_overwritten_procedure_ >> 8) & 0xFF;
       } break;
       default:
         log::warn("Unhandled uuid {}", uuid.ToString());
         BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          GATT_ILLEGAL_PARAMETER, &p_msg);
+                          GATT_ILLEGAL_PARAMETER, std::move(p_msg));
         return;
     }
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                      std::move(p_msg));
   }
 
   void OnReadDescriptor(tBTA_GATTS* p_data) {
@@ -448,14 +450,14 @@ public:
     RawAddress remote_bda = p_data->req_data.remote_bda;
     log::info("conn_id:{}, read_req_handle:0x{:04x}", conn_id, read_req_handle);
 
-    tGATTS_RSP p_msg;
-    p_msg.attr_value.handle = read_req_handle;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->attr_value.handle = read_req_handle;
 
     // Only Client Characteristic Configuration (CCC) descriptor is expected
     RasCharacteristic* characteristic = GetCharacteristicByCccHandle(read_req_handle);
     if (characteristic == nullptr) {
       log::warn("Can't find Characteristic for CCC Descriptor, handle 0x{:04x}", read_req_handle);
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, &p_msg);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, std::move(p_msg));
       return;
     }
     log::info("Read CCC for uuid, {}", getUuidName(characteristic->uuid_));
@@ -464,11 +466,11 @@ public:
       ccc_value = trackers_[remote_bda].ccc_values_[characteristic->uuid_];
     }
 
-    p_msg.attr_value.len = kCccValueSize;
-    memcpy(p_msg.attr_value.value, &ccc_value, sizeof(uint16_t));
+    p_msg->attr_value.len = kCccValueSize;
+    memcpy(p_msg->attr_value.value, &ccc_value, sizeof(uint16_t));
 
     log::info("Send response for CCC value 0x{:04x}", ccc_value);
-    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
   }
 
   void OnWriteCharacteristic(tBTA_GATTS* p_data) {
@@ -479,19 +481,19 @@ public:
     log::info("conn_id:{}, write_req_handle:0x{:04x}, need_rsp{}, len:{}", conn_id,
               write_req_handle, need_rsp, len);
 
-    tGATTS_RSP p_msg;
-    p_msg.handle = write_req_handle;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->handle = write_req_handle;
     if (characteristics_.find(write_req_handle) == characteristics_.end()) {
       log::error("Invalid handle {}", write_req_handle);
       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                        &p_msg);
+                        std::move(p_msg));
       return;
     }
 
     auto uuid = characteristics_[write_req_handle].uuid_;
     auto vendor_specific_characteristic = GetVendorSpecificCharacteristic(uuid);
     if (vendor_specific_characteristic != nullptr) {
-      WriteVendorSpecificCharacteristic(vendor_specific_characteristic, p_data, p_msg);
+      WriteVendorSpecificCharacteristic(vendor_specific_characteristic, p_data, std::move(p_msg));
       return;
     }
     log::info("Write uuid, {}", getUuidName(uuid));
@@ -501,33 +503,34 @@ public:
       case kRasControlPointCharacteristic16bit: {
         if (trackers_.find(p_data->req_data.remote_bda) == trackers_.end()) {
           log::warn("Can't find trackers for {}", p_data->req_data.remote_bda);
-          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER, &p_msg);
+          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
+                            std::move(p_msg));
           return;
         }
         ClientTracker* tracker = &trackers_[p_data->req_data.remote_bda];
         if (need_rsp) {
-          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
         }
         HandleControlPoint(tracker, &p_data->req_data.p_data->write_req);
       } break;
       default:
         log::warn("Unhandled uuid {}", uuid.ToString());
         BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          GATT_ILLEGAL_PARAMETER, &p_msg);
+                          GATT_ILLEGAL_PARAMETER, std::move(p_msg));
         return;
     }
   }
 
   void WriteVendorSpecificCharacteristic(
           VendorSpecificCharacteristic* vendor_specific_characteristic, tBTA_GATTS* p_data,
-          tGATTS_RSP& p_msg) {
+          std::unique_ptr<tGATTS_RSP> p_msg) {
     log::debug("uuid {}", vendor_specific_characteristic->characteristicUuid_);
     uint16_t len = p_data->req_data.p_data->write_req.len;
     RawAddress remote_bda = p_data->req_data.remote_bda;
 
     if (trackers_.find(remote_bda) == trackers_.end()) {
       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                        &p_msg);
+                        std::move(p_msg));
       log::warn("Can't find tracker for remote_bda {}", remote_bda);
       return;
     }
@@ -549,10 +552,11 @@ public:
       tracker.vendor_specific_reply_counter_ = 0;
       tracker.pending_write_response_.conn_id_ = p_data->req_data.conn_id;
       tracker.pending_write_response_.trans_id_ = p_data->req_data.trans_id;
-      tracker.pending_write_response_.write_req_handle_ = p_msg.handle;
+      tracker.pending_write_response_.write_req_handle_ = p_msg->handle;
       callbacks_->OnVendorSpecificReply(ble_bd_addr.bda, vendor_specific_characteristics_);
     } else {
-      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                        std::move(p_msg));
     }
   }
 
@@ -563,20 +567,21 @@ public:
     RawAddress remote_bda = p_data->req_data.remote_bda;
     log::info("conn_id:{}, write_req_handle:0x{:04x}, len:{}", conn_id, write_req_handle, len);
 
-    tGATTS_RSP p_msg;
-    p_msg.handle = write_req_handle;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->handle = write_req_handle;
 
     // Only Client Characteristic Configuration (CCC) descriptor is expected
     RasCharacteristic* characteristic = GetCharacteristicByCccHandle(write_req_handle);
     if (characteristic == nullptr) {
       log::warn("Can't find Characteristic for CCC Descriptor, handle 0x{:04x}", write_req_handle);
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, &p_msg);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, std::move(p_msg));
       return;
     }
 
     if (trackers_.find(remote_bda) == trackers_.end()) {
       log::warn("Can't find tracker for remote_bda {}", remote_bda);
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER, &p_msg);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
+                        std::move(p_msg));
       return;
     }
     ClientTracker* tracker = &trackers_[p_data->req_data.remote_bda];
@@ -594,14 +599,14 @@ public:
     }
     if (ccc_real_time_temp != GATT_CLT_CONFIG_NONE && ccc_on_demand_temp != GATT_CLT_CONFIG_NONE) {
       log::warn("Client Characteristic Configuration Descriptor Improperly Configured");
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_CCC_CFG_ERR, &p_msg);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_CCC_CFG_ERR, std::move(p_msg));
       return;
     }
 
     trackers_[remote_bda].ccc_values_[characteristic->uuid_] = ccc_value;
     log::info("Write CCC for {}, conn_id:{}, value:0x{:04x}", getUuidName(characteristic->uuid_),
               conn_id, ccc_value);
-    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
   }
 
   void HandleControlPoint(ClientTracker* tracker, tGATT_WRITE_REQ* write_req) {

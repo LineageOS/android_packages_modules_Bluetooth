@@ -1042,12 +1042,13 @@ void BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id, std::ve
  * Parameters       conn_id - connection identifier.
  *                  trans_id - transaction ID.
  *                  status - response status
- *                  p_msg - response data.
+ *                  rsp - response data.
  *
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status, tGATTS_RSP* p_msg);
+void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status,
+                       std::unique_ptr<tGATTS_RSP> rsp);
 
 /*******************************************************************************
  *

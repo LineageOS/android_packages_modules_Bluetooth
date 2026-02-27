@@ -430,10 +430,11 @@ struct Ascs::service_impl {
 
     asc_device->data.last_notified_ase_state_by_ase_id[ase_id] = ase_state;
 
-    tGATTS_RSP p_msg;
-    auto status = FillGattReadReqRspValue(p_msg.attr_value, read_req.handle, read_req.offset,
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    auto status = FillGattReadReqRspValue(p_msg->attr_value, read_req.handle, read_req.offset,
                                           ase_state_data);
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status, &p_msg);
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status,
+                      std::move(p_msg));
   }
 
   void OnGattReadCharacteristic(tBTA_GATTS* p_data) {

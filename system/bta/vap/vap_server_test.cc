@@ -430,12 +430,10 @@ TEST_F(VapServerTest, on_read_descriptor_ccc_val) {
   SyncOnMainLoop();
 
   // Now, read it back
-  tGATTS_RSP* captured_rsp = nullptr;
+  std::unique_ptr<tGATTS_RSP> captured_rsp = nullptr;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, 2, GATT_SUCCESS, _))
-          .WillOnce(Invoke([&](tCONN_ID, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
-            captured_rsp = new tGATTS_RSP();
-            *captured_rsp = *p_msg;
-          }));
+          .WillOnce(Invoke([&](tCONN_ID, uint32_t, tGATT_STATUS,
+                               std::unique_ptr<tGATTS_RSP> p_msg) { captured_rsp.swap(p_msg); }));
 
   auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = ccc_handle, .offset = 0}};
   auto* p_data_read = new tBTA_GATTS;
@@ -451,19 +449,16 @@ TEST_F(VapServerTest, on_read_descriptor_ccc_val) {
   const uint8_t* value_ptr = captured_rsp->attr_value.value;
   STREAM_TO_UINT16(read_value, value_ptr);
   EXPECT_EQ(read_value, 0x0001);
-  delete captured_rsp;
 }
 
 TEST_F(VapServerTest, on_read_descriptor_unknown_client) {
   RawAddress unknown_address = RawAddress::FromString("00:11:22:33:44:55").value();
   uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
 
-  tGATTS_RSP* captured_rsp = nullptr;
+  std::unique_ptr<tGATTS_RSP> captured_rsp = nullptr;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(2, 1, GATT_SUCCESS, _))
-          .WillOnce(Invoke([&](tCONN_ID, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
-            captured_rsp = new tGATTS_RSP();
-            *captured_rsp = *p_msg;
-          }));
+          .WillOnce(Invoke([&](tCONN_ID, uint32_t, tGATT_STATUS,
+                               std::unique_ptr<tGATTS_RSP> p_msg) { captured_rsp.swap(p_msg); }));
 
   auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = ccc_handle, .offset = 0}};
   auto* p_data_read = new tBTA_GATTS;
@@ -479,7 +474,6 @@ TEST_F(VapServerTest, on_read_descriptor_unknown_client) {
   const uint8_t* value_ptr = captured_rsp->attr_value.value;
   STREAM_TO_UINT16(read_value, value_ptr);
   EXPECT_EQ(read_value, 0x0000);
-  delete captured_rsp;
 }
 
 }  // namespace bluetooth::vap

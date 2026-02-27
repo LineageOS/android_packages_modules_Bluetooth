@@ -123,7 +123,7 @@ public:
   virtual void HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
                                      std::vector<uint8_t> /* value */, bool /* need_confirm */) = 0;
   virtual void SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,
-                       tGATTS_RSP* /* p_msg */) = 0;
+                       std::unique_ptr<tGATTS_RSP> /* p_msg */) = 0;
   virtual void StopService(uint16_t /* service_id */) = 0;
   virtual void InitBonded() = 0;
   virtual ~BtaGattServerInterface() = default;
@@ -150,8 +150,9 @@ public:
   MOCK_METHOD((void), HandleValueIndication,
               (uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value, bool need_confirm));
 
-  MOCK_METHOD((void), SendRsp,
-              (uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status, tGATTS_RSP* p_msg));
+  MOCK_METHOD(void, SendRsp,
+              (uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+               std::unique_ptr<tGATTS_RSP> p_msg));
   MOCK_METHOD((void), StopService, (uint16_t service_id));
   MOCK_METHOD((void), InitBonded, ());
 };

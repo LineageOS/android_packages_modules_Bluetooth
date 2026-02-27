@@ -552,12 +552,12 @@ public:
      uint16_t offset = p_data->req_data.p_data->read_req.offset;
      log::info("read_req_handle: 0x{:04x}, offset: 0x{:04x}", read_req_handle, offset);
 
-     tGATTS_RSP p_msg;
-     p_msg.attr_value.handle = read_req_handle;
+     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+     p_msg->attr_value.handle = read_req_handle;
      if (characteristics_.find(read_req_handle) == characteristics_.end()) {
        log::error("Invalid handle 0x{:04x}", read_req_handle);
-       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                         GATT_INVALID_HANDLE, &p_msg);
+       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
+                         std::move(p_msg));
        return;
      }
 
@@ -566,8 +566,7 @@ public:
      if (remote_clients_.find(p_data->req_data.remote_bda) == remote_clients_.end()) {
        log::warn("Can't find remote_client for {}", p_data->req_data.remote_bda);
        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                         GATT_ILLEGAL_PARAMETER,
-                         &p_msg);
+                         GATT_ILLEGAL_PARAMETER, std::move(p_msg));
        return;
      }
      RemoteClient* remote_client = &remote_clients_[p_data->req_data.remote_bda];
@@ -583,37 +582,38 @@ public:
         size_t copy_len = 0;
         if (offset < svc_name.size()) {
           copy_len = std::min((size_t)(svc_name.size() - offset), (size_t)remote_client->mtu_);
-          memcpy(p_msg.attr_value.value, svc_name.data() + offset, copy_len);
+          memcpy(p_msg->attr_value.value, svc_name.data() + offset, copy_len);
         }
-        p_msg.attr_value.len = copy_len;
+        p_msg->attr_value.len = copy_len;
       } break;
        case kVaUuidCharacteristic16bit: {
          // Use VA name as VA UUID
          std::string va_uuid_str = va_name_.substr(0, kVaUuidSize);
          std::vector<uint8_t> va_uuid(va_uuid_str.begin(), va_uuid_str.end());
 
-         p_msg.attr_value.len = kVaUuidSize;
-         memcpy(p_msg.attr_value.value, va_uuid.data(), kVaUuidSize);
+         p_msg->attr_value.len = kVaUuidSize;
+         memcpy(p_msg->attr_value.value, va_uuid.data(), kVaUuidSize);
        } break;
        case kVaCcidCharacteristic16bit: {
-         p_msg.attr_value.len = 1;
-         memcpy(p_msg.attr_value.value, &kVapCcid, sizeof(uint8_t));
+         p_msg->attr_value.len = 1;
+         memcpy(p_msg->attr_value.value, &kVapCcid, sizeof(uint8_t));
        } break;
        case kVaSessionStateCharacteristic16bit: {
-         p_msg.attr_value.len = 1;
-         memcpy(p_msg.attr_value.value, &va_session_state_, sizeof(uint8_t));
+         p_msg->attr_value.len = 1;
+         memcpy(p_msg->attr_value.value, &va_session_state_, sizeof(uint8_t));
        } break;
        case kVaSupportedFeaturesCharacteristic16bit: {
-         p_msg.attr_value.len = 1;
-         memcpy(p_msg.attr_value.value, &kVaSupportedFeatures, sizeof(uint8_t));
+         p_msg->attr_value.len = 1;
+         memcpy(p_msg->attr_value.value, &kVaSupportedFeatures, sizeof(uint8_t));
        } break;
        default:
          log::warn("Unhandled uuid {}", uuid.ToString());
          BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                           GATT_ILLEGAL_PARAMETER, &p_msg);
+                           GATT_ILLEGAL_PARAMETER, std::move(p_msg));
          return;
      }
-     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                       std::move(p_msg));
    }
 
    void OnReadDescriptor(tBTA_GATTS* p_data) {
@@ -622,14 +622,14 @@ public:
      RawAddress remote_bda = p_data->req_data.remote_bda;
      log::info("conn_id:{}, read_req_handle:0x{:04x}", conn_id, read_req_handle);
 
-     tGATTS_RSP p_msg;
-     p_msg.attr_value.handle = read_req_handle;
+     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+     p_msg->attr_value.handle = read_req_handle;
 
      // Only Client Characteristic Configuration (CCC) descriptor is expected
      VapCharacteristic* characteristic = GetCharacteristicByCccHandle(read_req_handle);
      if (characteristic == nullptr) {
        log::warn("Can't find Characteristic for CCC Descriptor, handle 0x{:04x}", read_req_handle);
-       BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, &p_msg);
+       BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, std::move(p_msg));
        return;
      }
      log::info("Read CCC for uuid, {}", getUuidName(characteristic->uuid_));
@@ -638,11 +638,11 @@ public:
        ccc_value = remote_clients_[remote_bda].ccc_values_[characteristic->uuid_];
      }
 
-     p_msg.attr_value.len = kCccValueSize;
-     memcpy(p_msg.attr_value.value, &ccc_value, sizeof(uint16_t));
+     p_msg->attr_value.len = kCccValueSize;
+     memcpy(p_msg->attr_value.value, &ccc_value, sizeof(uint16_t));
 
      log::info("Send response for CCC value 0x{:04x}", ccc_value);
-     BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+     BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
    }
 
    void OnWriteCharacteristic(tBTA_GATTS* p_data) {
@@ -653,12 +653,12 @@ public:
      log::info("conn_id:{}, write_req_handle:0x{:04x}, need_rsp{}, len:{}", conn_id,
                write_req_handle, need_rsp, len);
 
-     tGATTS_RSP p_msg;
-     p_msg.handle = write_req_handle;
+     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+     p_msg->handle = write_req_handle;
      if (characteristics_.find(write_req_handle) == characteristics_.end()) {
        log::error("Invalid handle {}", write_req_handle);
        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                         &p_msg);
+                         std::move(p_msg));
        return;
      }
 
@@ -670,12 +670,13 @@ public:
        case kVasControlPointCharacteristic16bit: {
          if (remote_clients_.find(p_data->req_data.remote_bda) == remote_clients_.end()) {
            log::warn("Can't find remote_clients for {}", p_data->req_data.remote_bda);
-           BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER, &p_msg);
+           BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
+                             std::move(p_msg));
            return;
          }
          RemoteClient* remote_client = &remote_clients_[p_data->req_data.remote_bda];
          if (need_rsp) {
-           BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+           BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
          }
          HandleControlPoint(p_data->req_data.remote_bda, remote_client,
                             &p_data->req_data.p_data->write_req);
@@ -683,7 +684,7 @@ public:
        default:
          log::warn("Unhandled uuid {}", uuid.ToString());
          BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                           GATT_ILLEGAL_PARAMETER, &p_msg);
+                           GATT_ILLEGAL_PARAMETER, std::move(p_msg));
          return;
      }
    }
@@ -695,20 +696,21 @@ public:
      RawAddress remote_bda = p_data->req_data.remote_bda;
      log::info("conn_id:{}, write_req_handle:0x{:04x}, len:{}", conn_id, write_req_handle, len);
 
-     tGATTS_RSP p_msg;
-     p_msg.handle = write_req_handle;
+     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+     p_msg->handle = write_req_handle;
 
      // Only Client Characteristic Configuration (CCC) descriptor is expected
      VapCharacteristic* characteristic = GetCharacteristicByCccHandle(write_req_handle);
      if (characteristic == nullptr) {
        log::warn("Can't find Characteristic for CCC Descriptor, handle 0x{:04x}", write_req_handle);
-       BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, &p_msg);
+       BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE, std::move(p_msg));
        return;
      }
 
      if (remote_clients_.find(remote_bda) == remote_clients_.end()) {
        log::warn("Can't find remote_client for remote_bda {}", remote_bda);
-       BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER, &p_msg);
+       BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
+                         std::move(p_msg));
        return;
      }
      const uint8_t* value = p_data->req_data.p_data->write_req.value;
@@ -718,7 +720,7 @@ public:
      remote_clients_[remote_bda].ccc_values_[characteristic->uuid_] = ccc_value;
      log::info("Write CCC for {}, conn_id:{}, value:0x{:04x}", getUuidName(characteristic->uuid_),
                conn_id, ccc_value);
-     BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+     BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
    }
 
    void DebugDump(int fd) {

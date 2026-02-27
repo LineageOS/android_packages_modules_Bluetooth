@@ -105,16 +105,16 @@ public:
 
     log::info("conn_id:{}, read_req.handle:0x{:04x}", conn_id, read_req.handle);
 
-    tGATTS_RSP p_msg;
-    p_msg.attr_value.handle = read_req.handle;
-    p_msg.attr_value.offset = read_req.offset;
-    p_msg.attr_value.len = 0;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->attr_value.handle = read_req.handle;
+    p_msg->attr_value.offset = read_req.offset;
+    p_msg->attr_value.len = 0;
 
     auto device = FindConnectedDevice(conn_id);
     if (!device || device->is_stale) {
       log::error("Device unavailable for conn_id:{}, att_handle:{}, has_device_data_block:{}",
                  conn_id, read_req.handle, device.get() != nullptr);
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INTERNAL_ERROR, &p_msg);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INTERNAL_ERROR, std::move(p_msg));
       return;
     }
 
@@ -123,24 +123,25 @@ public:
       auto const& descriptor_value = device->descriptor_value_by_handle_.at(read_req.handle);
 
       if (read_req.offset > descriptor_value.size()) {
-        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_OFFSET, &p_msg);
+        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_OFFSET,
+                          std::move(p_msg));
         return;
       }
 
-      p_msg.attr_value.len =
-              std::min(descriptor_value.size() - read_req.offset, sizeof(p_msg.attr_value.value));
+      p_msg->attr_value.len =
+              std::min(descriptor_value.size() - read_req.offset, sizeof(p_msg->attr_value.value));
       std::copy(descriptor_value.begin() + read_req.offset,
-                descriptor_value.begin() + read_req.offset + p_msg.attr_value.len,
-                p_msg.attr_value.value);
+                descriptor_value.begin() + read_req.offset + p_msg->attr_value.len,
+                p_msg->attr_value.value);
     } else {
-      p_msg.attr_value.len = 2;
-      p_msg.attr_value.value[0] = 0;
-      p_msg.attr_value.value[1] = 0;
+      p_msg->attr_value.len = 2;
+      p_msg->attr_value.value[0] = 0;
+      p_msg->attr_value.value[1] = 0;
     }
 
     log::verbose("Send response with value {}",
-                 base::HexEncode(p_msg.attr_value.value, p_msg.attr_value.len));
-    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+                 base::HexEncode(p_msg->attr_value.value, p_msg->attr_value.len));
+    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
   }
 
   /**
@@ -157,15 +158,16 @@ public:
     log::info("conn_id:{}, write_req.handle:0x{:04x}, len:{}", conn_id, write_req.handle,
               write_req.len);
 
-    tGATTS_RSP p_msg;
-    p_msg.handle = write_req.handle;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->handle = write_req.handle;
 
     auto device = FindConnectedDevice(conn_id);
     if (!device || device->is_stale) {
       log::error("Device unavailable for conn_id:{}, has_device_data_block:{}", conn_id,
                  device.get() != nullptr);
       if (write_req.need_rsp) {
-        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INTERNAL_ERROR, &p_msg);
+        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INTERNAL_ERROR,
+                          std::move(p_msg));
       }
       return;
     }
@@ -182,7 +184,7 @@ public:
     log::info("offset: {}, value: {}", write_req.offset,
               base::HexEncode(write_req.value + write_req.offset, write_req.len));
     if (write_req.need_rsp) {
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
     }
   }
 

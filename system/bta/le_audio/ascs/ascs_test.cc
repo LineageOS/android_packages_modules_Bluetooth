@@ -407,7 +407,7 @@ public:
     ON_CALL(asc_callbacks_, OnGetAseState(_, _)).WillByDefault([&]() { return state; });
     ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
             .WillByDefault([&](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                               tGATTS_RSP* p_msg) {
+                               std::unique_ptr<tGATTS_RSP> p_msg) {
               ASSERT_EQ(GATT_SUCCESS, status);
 
               // Detects response to CCC descriptor write request

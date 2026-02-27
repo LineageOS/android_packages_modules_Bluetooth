@@ -41,83 +41,23 @@
 
 using namespace bluetooth;
 
-/*****************************************************************************
- *  Constants
- ****************************************************************************/
-
-static const tBTA_SYS_REG bta_gatts_reg = {bta_gatts_hdl_event, BTA_GATTS_Disable};
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Disable
- *
- * Description      This function is called to disable GATTS module
- *
- * Parameters       None.
- *
- * Returns          None
- *
- ******************************************************************************/
 void BTA_GATTS_Disable(void) {
   if (!bta_sys_is_register(BTA_ID_GATTS)) {
     log::warn("GATTS Module not enabled/already disabled");
     return;
   }
 
-  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
-  p_buf->event = BTA_GATTS_API_DISABLE_EVT;
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_api_disable));
   bta_sys_deregister(BTA_ID_GATTS);
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_AppRegister
- *
- * Description      This function is called to register application callbacks
- *                    with BTA GATTS module.
- *
- * Parameters       p_app_uuid - application UUID
- *                  p_cback - pointer to the application callback function.
- *
- * Returns          None
- *
- ******************************************************************************/
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, tBTA_GATTS_CBACK* p_cback,
                            bool eatt_support) {
-  tBTA_GATTS_API_REG* p_buf = (tBTA_GATTS_API_REG*)osi_malloc(sizeof(tBTA_GATTS_API_REG));
-
-  /* register with BTA system manager */
-  if (!bta_sys_is_register(BTA_ID_GATTS)) {
-    bta_sys_register(BTA_ID_GATTS, &bta_gatts_reg);
-  }
-
-  p_buf->hdr.event = BTA_GATTS_API_REG_EVT;
-  p_buf->app_uuid = app_uuid;
-  p_buf->p_cback = p_cback;
-  p_buf->eatt_support = eatt_support;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_register, app_uuid, p_cback, eatt_support));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_AppDeregister
- *
- * Description      De-register with GATT Server.
- *
- * Parameters       app_id: applicatino ID.
- *
- * Returns          void
- *
- ******************************************************************************/
 void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
-  tBTA_GATTS_API_DEREG* p_buf = (tBTA_GATTS_API_DEREG*)osi_malloc(sizeof(tBTA_GATTS_API_DEREG));
-
-  p_buf->hdr.event = BTA_GATTS_API_DEREG_EVT;
-  p_buf->server_if = server_if;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_deregister, server_if));
 }
 
 static void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
@@ -155,241 +95,54 @@ static void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db
   return;
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_AddService
- *
- * Description      Add the given |service| and all included elements to the
- *                  GATT database. a |BTA_GATTS_ADD_SRVC_EVT| is triggered to
- *                  report the status and attribute handles.
- *
- * Parameters       server_if: server interface.
- *                  service: pointer vector describing service.
- *
- * Returns          Returns |GATT_SUCCESS| on success or |GATT_ERROR| if the
- *                  service cannot be added.
- *
- ******************************************************************************/
 void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
                           BTA_GATTS_AddServiceCb cb) {
   do_in_main_thread(base::BindOnce(&bta_gatts_add_service_impl, server_if, std::move(service),
                                    std::move(cb)));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_DeleteService
- *
- * Description      This function is called to delete a service. When this is
- *                  done, a callback event BTA_GATTS_DELETE_EVT is report with
- *                  the status.
- *
- * Parameters       service_id: service_id to be deleted.
- *
- * Returns          returns none.
- *
- ******************************************************************************/
 void BTA_GATTS_DeleteService(uint16_t service_id) {
-  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
-
-  p_buf->event = BTA_GATTS_API_DEL_SRVC_EVT;
-  p_buf->layer_specific = service_id;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_delete_service, service_id));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_StopService
- *
- * Description      This function is called to stop a service.
- *
- * Parameters       service_id - service to be topped.
- *
- * Returns          None
- *
- ******************************************************************************/
 void BTA_GATTS_StopService(uint16_t service_id) {
-  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
-
-  p_buf->event = BTA_GATTS_API_STOP_SRVC_EVT;
-  p_buf->layer_specific = service_id;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_stop_service, service_id));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_HandleValueIndication
- *
- * Description      This function is called to read a characteristics
- *                  descriptor.
- *
- * Parameters       bda - remote device bd address to indicate.
- *                  attr_id - attribute ID to indicate.
- *                  value - data to indicate.
- *                  need_confirm - if this indication expects a confirmation or
- *                                 not.
- *
- * Returns          None
- *
- ******************************************************************************/
 void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
                                      bool need_confirm) {
-  if (value.size() > sizeof(tBTA_GATTS_API_INDICATION::value)) {
+  if (value.size() > GATT_MAX_ATTR_LEN) {
     log::error("data to indicate is too long");
     return;
   }
-
-  tBTA_GATTS_API_INDICATION* p_buf =
-          (tBTA_GATTS_API_INDICATION*)osi_calloc(sizeof(tBTA_GATTS_API_INDICATION));
-
-  p_buf->hdr.event = BTA_GATTS_API_INDICATION_EVT;
-  p_buf->hdr.layer_specific = conn_id;
-  p_buf->attr_id = attr_id;
-  p_buf->need_confirm = need_confirm;
-  if (value.size() > 0) {
-    p_buf->len = value.size();
-    memcpy(p_buf->value, value.data(), value.size());
-  }
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(
+          base::BindOnce(&bta_gatts_indicate_handle, conn_id, attr_id, value, need_confirm));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_SendRsp
- *
- * Description      This function is called to send a response to a request.
- *
- * Parameters       conn_id - connection identifier.
- *                  trans_id - transaction ID.
- *                  status - response status
- *                  p_msg - response data.
- *
- * Returns          None
- *
- ******************************************************************************/
 void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                       tGATTS_RSP* p_msg) {
-  const size_t len = sizeof(tBTA_GATTS_API_RSP) + sizeof(tGATTS_RSP);
-  tBTA_GATTS_API_RSP* p_buf = (tBTA_GATTS_API_RSP*)osi_calloc(len);
-
-  p_buf->hdr.event = BTA_GATTS_API_RSP_EVT;
-  p_buf->hdr.layer_specific = conn_id;
-  p_buf->trans_id = trans_id;
-  p_buf->status = status;
-  if (p_msg != NULL) {
-    p_buf->p_rsp = (tGATTS_RSP*)(p_buf + 1);
-    memcpy(p_buf->p_rsp, p_msg, sizeof(tGATTS_RSP));
-  }
-
-  bta_sys_sendmsg(p_buf);
+                       std::unique_ptr<tGATTS_RSP> rsp) {
+  do_in_main_thread(base::BindOnce(&bta_gatts_send_rsp, conn_id, trans_id, status, std::move(rsp)));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Open
- *
- * Description      Open a direct open connection or add a background auto
- *                  connection bd address
- *
- * Parameters       server_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  is_direct: direct connection or background auto connection
- *                  transport : Transport on which GATT connection to be opened
- *                              (BR/EDR or LE)
- *
- * Returns          void
- *
- ******************************************************************************/
 void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     bool is_direct, tBT_TRANSPORT transport) {
-  tBTA_GATTS_API_OPEN* p_buf = (tBTA_GATTS_API_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_OPEN));
-
-  p_buf->hdr.event = BTA_GATTS_API_OPEN_EVT;
-  p_buf->server_if = server_if;
-  if (is_direct) {
-    p_buf->connection_type = BTM_BLE_DIRECT_CONNECTION;
-  } else {
-    p_buf->connection_type = BTM_BLE_BKG_CONNECT_ALLOW_LIST;
-  }
-  p_buf->transport = transport;
-  p_buf->remote_bda = remote_bda;
-  p_buf->remote_addr_type = addr_type;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(
+          base::BindOnce(&bta_gatts_open, server_if, remote_bda, addr_type, is_direct, transport));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_CancelOpen
- *
- * Description      Cancel a direct open connection or remove a background auto
- *                  connection bd address
- *
- * Parameters       server_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  is_direct: direct connection or background auto connection
- *
- * Returns          void
- *
- ******************************************************************************/
 void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
-  tBTA_GATTS_API_CANCEL_OPEN* p_buf =
-          (tBTA_GATTS_API_CANCEL_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_CANCEL_OPEN));
-
-  p_buf->hdr.event = BTA_GATTS_API_CANCEL_OPEN_EVT;
-  p_buf->server_if = server_if;
-  p_buf->is_direct = is_direct;
-  p_buf->remote_bda = remote_bda;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_cancel_open, server_if, remote_bda, is_direct));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Close
- *
- * Description      Close a connection  a remote device.
- *
- * Parameters       conn_id: connection ID to be closed.
- *
- * Returns          void
- *
- ******************************************************************************/
 void BTA_GATTS_Close(uint16_t conn_id) {
-  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
-
-  p_buf->event = BTA_GATTS_API_CLOSE_EVT;
-  p_buf->layer_specific = conn_id;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&bta_gatts_close, conn_id));
 }
 
 void BTA_GATTS_InitBonded(void) {
   log::info("");
-
-  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
-  p_buf->event = BTA_GATTS_API_INIT_BONDED_EVT;
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(base::BindOnce(&gatt_load_bonded));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_OffloadCharacteristics
- *
- * Description      This function is called to offload a service.
- *
- * Parameters       conn_id - connection ID.
- *                  service - vector describing service.
- *                  endpoint_id - ID of the hub end point.
- *                  hub_id - ID of the hub to which the end point belongs.
- *                  uid - The UID of the application.
- *                  attribution_tag - The attribution tag.
- *                  promise - object used to signal the completion status.
- *
- ******************************************************************************/
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
                                       uint64_t endpoint_id, uint64_t hub_id, int uid,
                                       std::string attribution_tag,
@@ -400,16 +153,6 @@ void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_el
                                std::move(attribution_tag), std::move(promise));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_UnoffloadCharacteristics
- *
- * Description      This function is called to unoffload a session.
- *
- * Parameters       conn_id - connection ID.
- *                  session_id - session ID.
- *
- ******************************************************************************/
 void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id) {
   do_in_main_thread(base::BindOnce(&GATTS_UnoffloadCharacteristics, conn_id, session_id));
 }

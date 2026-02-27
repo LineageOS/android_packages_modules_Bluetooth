@@ -257,13 +257,13 @@ void GmapServer::OnReadCharacteristic(tBTA_GATTS *p_data) {
   uint16_t read_req_handle = p_data->req_data.p_data->read_req.handle;
   log::info("read_req_handle: 0x{:04x},", read_req_handle);
 
-  tGATTS_RSP p_msg;
-  p_msg.attr_value.handle = read_req_handle;
+  std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+  p_msg->attr_value.handle = read_req_handle;
   auto it = characteristics_.find(read_req_handle);
   if (it == characteristics_.end()) {
     log::error("Invalid handle 0x{:04x}", read_req_handle);
     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                      &p_msg);
+                      std::move(p_msg));
     return;
   }
 
@@ -272,19 +272,20 @@ void GmapServer::OnReadCharacteristic(tBTA_GATTS *p_data) {
   log::info("Read uuid, 0x{:04x}", uuid.As16Bit());
   // Check Characteristic UUID
   if (bluetooth::le_audio::uuid::kRoleCharacteristicUuid == uuid) {
-    p_msg.attr_value.len = GmapServer::kGmapRoleLen;
+    p_msg->attr_value.len = GmapServer::kGmapRoleLen;
     auto role = GmapServer::GetRole();
-    p_msg.attr_value.value[0] = static_cast<uint8_t>(role.to_ulong());
+    p_msg->attr_value.value[0] = static_cast<uint8_t>(role.to_ulong());
   } else if (bluetooth::le_audio::uuid::kUnicastGameGatewayCharacteristicUuid == uuid) {
-    p_msg.attr_value.len = GmapServer::kGmapUGGFeatureLen;
+    p_msg->attr_value.len = GmapServer::kGmapUGGFeatureLen;
     auto UGGFeature = GmapServer::GetUGGFeature();
-    p_msg.attr_value.value[0] = static_cast<uint8_t>(UGGFeature.to_ulong());
+    p_msg->attr_value.value[0] = static_cast<uint8_t>(UGGFeature.to_ulong());
   } else {
     log::warn("Unhandled uuid {}", uuid.ToString());
     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
-                      &p_msg);
+                      std::move(p_msg));
     return;
   }
 
-  BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+  BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                    std::move(p_msg));
 }

@@ -163,9 +163,9 @@ void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_
   gatt_server_interface->Open(server_if, remote_bda, addr_type, is_direct, transport);
 }
 void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                       tGATTS_RSP* p_msg) {
+                       std::unique_ptr<tGATTS_RSP> p_msg) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->SendRsp(conn_id, trans_id, status, p_msg);
+  gatt_server_interface->SendRsp(conn_id, trans_id, status, std::move(p_msg));
 }
 void BTA_GATTS_StopService(uint16_t service_id) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");

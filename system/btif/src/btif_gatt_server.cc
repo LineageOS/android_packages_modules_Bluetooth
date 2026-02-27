@@ -426,14 +426,15 @@ static BtStatus btif_gatts_send_indication(int /* server_if */, int attribute_ha
 
 static void btif_gatts_send_response_impl(int conn_id, int trans_id, int status,
                                           btgatt_response_t response) {
-  tGATTS_RSP rsp_struct;
-  btif_to_bta_response(&rsp_struct, &response);
+  std::unique_ptr<tGATTS_RSP> rsp_struct = std::make_unique<tGATTS_RSP>();
+  btif_to_bta_response(rsp_struct.get(), &response);
 
+  uint16_t handle = rsp_struct->attr_value.handle;
   BTA_GATTS_SendRsp(static_cast<tCONN_ID>(conn_id), trans_id, static_cast<tGATT_STATUS>(status),
-                    &rsp_struct);
+                    std::move(rsp_struct));
 
   auto callbacks = bt_gatt_callbacks;
-  HAL_CBACK(callbacks, server->response_confirmation_cb, 0, rsp_struct.attr_value.handle);
+  HAL_CBACK(callbacks, server->response_confirmation_cb, 0, handle);
 }
 
 static BtStatus btif_gatts_send_response(int conn_id, int trans_id, int status,
