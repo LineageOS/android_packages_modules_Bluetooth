@@ -436,6 +436,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_improve_configuration_caching"
+    namespace: "bluetooth"
+    description: "Improve configuration caching"
+    bug: "488302272"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_over_hdt_phy_api"
     is_exported: true
     namespace: "bluetooth"
