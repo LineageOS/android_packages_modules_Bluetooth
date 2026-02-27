@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,399 +14,408 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.hid;
+package com.android.bluetooth.hid
 
-import static android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC;
-import static android.bluetooth.BluetoothDevice.BOND_BONDED;
-import static android.bluetooth.BluetoothDevice.BOND_BONDING;
-import static android.bluetooth.BluetoothDevice.BOND_NONE;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_BONDING
+import android.bluetooth.BluetoothDevice.BOND_NONE
+import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothUuid
+import android.os.ParcelUuid
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.TestUtils
+import com.android.bluetooth.Utils
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.AdapterSuspend.AWAKE
+import com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP
+import com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.hid.HidHostService.RECONNECT_ALLOWED
+import com.android.bluetooth.hid.HidHostService.RECONNECT_NOT_ALLOWED
+import com.android.bluetooth.hid.HidHostService.RECONNECT_NOT_ALLOWED_TEMPORARY
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.InOrder
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.btservice.AdapterSuspend.AWAKE;
-import static com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP;
-import static com.android.bluetooth.btservice.AdapterSuspend.SHALLOW_SLEEP;
-import static com.android.bluetooth.hid.HidHostService.RECONNECT_ALLOWED;
-import static com.android.bluetooth.hid.HidHostService.RECONNECT_NOT_ALLOWED;
-import static com.android.bluetooth.hid.HidHostService.RECONNECT_NOT_ALLOWED_TEMPORARY;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothUuid;
-import android.os.ParcelUuid;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-
-import java.util.List;
-
-/** Test cases for {@link HidHostService}. */
+/** Test cases for [HidHostService]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class HidHostServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class HidHostServiceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private HidHostNativeInterface mNativeInterface;
-    @Mock private BluetoothDevice mBluetoothDevice;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var nativeInterface: HidHostNativeInterface
+    @Mock private lateinit var bluetoothDevice: BluetoothDevice
 
-    private final BluetoothDevice mDevice = getTestDevice(0);
+    private val device = getTestDevice(0)
 
-    private HidHostService mService;
-    private TestLooper mLooper;
+    private lateinit var service: HidHostService
+    private lateinit var looper: TestLooper
 
     @Before
-    public void setUp() throws Exception {
-        mLooper = new TestLooper();
-        mService = new HidHostService(mAdapterService, mNativeInterface, mLooper.getLooper());
-        mService.setAvailable(true);
+    fun setUp() {
+        looper = TestLooper()
+        service = HidHostService(adapterService, nativeInterface, looper.looper)
+        service.isAvailable = true
     }
 
     @After
-    public void tearDown() throws Exception {
-        mService.cleanup();
+    fun tearDown() {
+        service.cleanup()
     }
 
     @Test
-    public void okToConnect_whenInvalidBonded_returnFalse() {
-        int badPolicyValue = 1024;
-        int badBondState = 42;
-        doReturn(badBondState).when(mAdapterService).getBondState(any());
-        for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isFalse();
+    fun okToConnect_whenInvalidBonded_returnFalse() {
+        val badPolicyValue = 1024
+        val badBondState = 42
+        doReturn(badBondState).whenever(adapterService).getBondState(any())
+        for (policy in listOf(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any())
+            assertThat(service.okToConnect(device)).isFalse()
         }
     }
 
     @Test
-    public void okToConnect_whenNotBonded_returnTrue() {
+    fun okToConnect_whenNotBonded_returnTrue() {
         // allow connect Due to desync between BondStateMachine and AdapterProperties
-        for (int bondState : List.of(BOND_NONE, BOND_BONDING)) {
-            doReturn(bondState).when(mAdapterService).getBondState(any());
-            for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mDevice)).isTrue();
+        for (bondState in listOf(BOND_NONE, BOND_BONDING)) {
+            doReturn(bondState).whenever(adapterService).getBondState(any())
+            for (policy in listOf(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
+                doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any())
+                assertThat(service.okToConnect(device)).isTrue()
             }
         }
     }
 
     @Test
-    public void canConnect_whenBonded() {
-        int badPolicyValue = 1024;
-        doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
+    fun canConnect_whenBonded() {
+        val badPolicyValue = 1024
+        doReturn(BOND_BONDED).whenever(adapterService).getBondState(any())
 
-        for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isFalse();
+        for (policy in listOf(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any())
+            assertThat(service.okToConnect(device)).isFalse()
         }
-        for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isTrue();
+        for (policy in listOf(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
+            doReturn(policy).whenever(adapterService).getProfileConnectionPolicy(any(), any())
+            assertThat(service.okToConnect(device)).isTrue()
         }
     }
 
     @Test
-    public void testDumpDoesNotCrash() {
-        mService.dump(new StringBuilder());
+    fun testDumpDoesNotCrash() {
+        service.dump(StringBuilder())
     }
 
-    private void setupPeerWithUuids(ParcelUuid... uuids) {
-        String address = "11:22:33:44:55:66";
+    private fun setupPeerWithUuids(vararg uuids: ParcelUuid) {
+        val address = "11:22:33:44:55:66"
 
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(any(), anyInt());
-        doReturn(uuids).when(mAdapterService).getRemoteUuids(any());
-        doReturn(mBluetoothDevice).when(mAdapterService).getDeviceFromByte(any());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(any(), any())
+        doReturn(uuids).whenever(adapterService).getRemoteUuids(any())
+        doReturn(bluetoothDevice).whenever(adapterService).getDeviceFromByte(any())
 
-        doReturn(address).when(mBluetoothDevice).getAddress();
-        doReturn(ADDRESS_TYPE_PUBLIC).when(mBluetoothDevice).getAddressType();
+        doReturn(address).whenever(bluetoothDevice).address
+        doReturn(ADDRESS_TYPE_PUBLIC).whenever(bluetoothDevice).addressType
     }
 
-    private void connectDevice(InOrder order, int transport) {
-        mService.connect(mBluetoothDevice);
-        TestUtils.syncHandler(mLooper, 1);
-        order.verify(mNativeInterface).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+    private fun connectDevice(order: InOrder, transport: Int) {
+        service.connect(bluetoothDevice)
+        TestUtils.syncHandler(looper, 1)
+        order.verify(nativeInterface).connectHid(any(), any(), any(), any())
 
-        mService.onConnectStateChanged(
-                Utils.getByteAddress(mBluetoothDevice),
-                ADDRESS_TYPE_PUBLIC,
-                transport,
-                STATE_CONNECTED,
-                0);
-        TestUtils.syncHandler(mLooper, 3);
+        service.onConnectStateChanged(
+            Utils.getByteAddress(bluetoothDevice),
+            ADDRESS_TYPE_PUBLIC,
+            transport,
+            STATE_CONNECTED,
+            0,
+        )
+        TestUtils.syncHandler(looper, 3)
     }
 
-    private void disconnectDevice(InOrder order, int transport) {
-        mService.disconnect(mBluetoothDevice);
-        TestUtils.syncHandler(mLooper, 2);
-        order.verify(mNativeInterface)
-                .disconnectHid(any(), anyInt(), anyInt(), eq(RECONNECT_ALLOWED));
+    private fun disconnectDevice(order: InOrder, transport: Int) {
+        service.disconnect(bluetoothDevice)
+        TestUtils.syncHandler(looper, 2)
+        order.verify(nativeInterface).disconnectHid(any(), any(), any(), eq(RECONNECT_ALLOWED))
 
-        mService.onConnectStateChanged(
-                Utils.getByteAddress(mBluetoothDevice),
-                ADDRESS_TYPE_PUBLIC,
-                transport,
-                STATE_DISCONNECTED,
-                0);
-        TestUtils.syncHandler(mLooper, 3);
+        service.onConnectStateChanged(
+            Utils.getByteAddress(bluetoothDevice),
+            ADDRESS_TYPE_PUBLIC,
+            transport,
+            STATE_DISCONNECTED,
+            0,
+        )
+        TestUtils.syncHandler(looper, 3)
     }
 
     @Test
-    public void suspend_shallowSleepConnected() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_shallowSleepConnected() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_LE);
-        mService.onSuspendStateChange(SHALLOW_SLEEP);
+        connectDevice(order, TRANSPORT_LE)
+        service.onSuspendStateChange(SHALLOW_SLEEP)
 
         // Disconnect and allow reconnection
-        order.verify(mNativeInterface)
-                .disconnectHid(
-                        eq(Utils.getByteAddress(mBluetoothDevice)),
-                        anyInt(),
-                        eq(TRANSPORT_LE),
-                        eq(RECONNECT_ALLOWED));
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        order
+            .verify(nativeInterface)
+            .disconnectHid(
+                eq(Utils.getByteAddress(bluetoothDevice)),
+                any(),
+                eq(TRANSPORT_LE),
+                eq(RECONNECT_ALLOWED),
+            )
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_shallowSleepDisconnected() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_shallowSleepDisconnected() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_LE);
-        disconnectDevice(order, TRANSPORT_LE);
-        mService.onSuspendStateChange(SHALLOW_SLEEP);
+        connectDevice(order, TRANSPORT_LE)
+        disconnectDevice(order, TRANSPORT_LE)
+        service.onSuspendStateChange(SHALLOW_SLEEP)
 
         // No-op for connection/disconnection.
-        order.verify(mNativeInterface, never()).disconnectHid(any(), anyInt(), anyInt(), anyInt());
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        order.verify(nativeInterface, never()).disconnectHid(any(), any(), any(), any())
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_deepSleepConnected() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_deepSleepConnected() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_LE);
-        mService.onSuspendStateChange(DEEP_SLEEP);
+        connectDevice(order, TRANSPORT_LE)
+        service.onSuspendStateChange(DEEP_SLEEP)
 
         // Just disconnect and not rearm the connection
-        order.verify(mNativeInterface)
-                .disconnectHid(
-                        eq(Utils.getByteAddress(mBluetoothDevice)),
-                        anyInt(),
-                        eq(TRANSPORT_LE),
-                        eq(RECONNECT_NOT_ALLOWED_TEMPORARY));
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        order
+            .verify(nativeInterface)
+            .disconnectHid(
+                eq(Utils.getByteAddress(bluetoothDevice)),
+                any(),
+                eq(TRANSPORT_LE),
+                eq(RECONNECT_NOT_ALLOWED_TEMPORARY),
+            )
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_deepSleepDisconnected() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_deepSleepDisconnected() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_LE);
-        disconnectDevice(order, TRANSPORT_LE);
-        mService.onSuspendStateChange(DEEP_SLEEP);
+        connectDevice(order, TRANSPORT_LE)
+        disconnectDevice(order, TRANSPORT_LE)
+        service.onSuspendStateChange(DEEP_SLEEP)
 
         // Disconnect to remove the accept list, and not rearm the connection
-        order.verify(mNativeInterface)
-                .disconnectHid(
-                        eq(Utils.getByteAddress(mBluetoothDevice)),
-                        anyInt(),
-                        eq(TRANSPORT_LE),
-                        eq(RECONNECT_NOT_ALLOWED_TEMPORARY));
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        order
+            .verify(nativeInterface)
+            .disconnectHid(
+                eq(Utils.getByteAddress(bluetoothDevice)),
+                any(),
+                eq(TRANSPORT_LE),
+                eq(RECONNECT_NOT_ALLOWED_TEMPORARY),
+            )
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_awakeConnected() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_awakeConnected() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_LE);
-        mService.onSuspendStateChange(AWAKE);
+        connectDevice(order, TRANSPORT_LE)
+        service.onSuspendStateChange(AWAKE)
 
         // Already connected - No-op
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
-        order.verify(mNativeInterface, never()).disconnectHid(any(), anyInt(), anyInt(), anyInt());
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
+        order.verify(nativeInterface, never()).disconnectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_awakeDisconnected() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_awakeDisconnected() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_LE);
-        disconnectDevice(order, TRANSPORT_LE);
-        mService.onSuspendStateChange(AWAKE);
+        connectDevice(order, TRANSPORT_LE)
+        disconnectDevice(order, TRANSPORT_LE)
+        service.onSuspendStateChange(AWAKE)
 
         // Initiate background connection
-        order.verify(mNativeInterface)
-                .connectHid(
-                        eq(Utils.getByteAddress(mBluetoothDevice)),
-                        anyInt(),
-                        eq(TRANSPORT_LE),
-                        eq(false));
-        order.verify(mNativeInterface, never()).disconnectHid(any(), anyInt(), anyInt(), anyInt());
+        order
+            .verify(nativeInterface)
+            .connectHid(
+                eq(Utils.getByteAddress(bluetoothDevice)),
+                any(),
+                eq(TRANSPORT_LE),
+                eq(false),
+            )
+        order.verify(nativeInterface, never()).disconnectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_connectedBredr() {
-        setupPeerWithUuids(BluetoothUuid.HID);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_connectedBredr() {
+        setupPeerWithUuids(BluetoothUuid.HID)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_BREDR);
-        mService.onSuspendStateChange(SHALLOW_SLEEP);
-        mService.onSuspendStateChange(AWAKE);
+        connectDevice(order, TRANSPORT_BREDR)
+        service.onSuspendStateChange(SHALLOW_SLEEP)
+        service.onSuspendStateChange(AWAKE)
 
         // Don't manage BREDR connection
-        order.verify(mNativeInterface, never()).disconnectHid(any(), anyInt(), anyInt(), anyInt());
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        order.verify(nativeInterface, never()).disconnectHid(any(), any(), any(), any())
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void suspend_disconnectedBredr() {
-        setupPeerWithUuids(BluetoothUuid.HID);
-        InOrder order = inOrder(mNativeInterface);
+    fun suspend_disconnectedBredr() {
+        setupPeerWithUuids(BluetoothUuid.HID)
+        val order = inOrder(nativeInterface)
 
-        connectDevice(order, TRANSPORT_BREDR);
-        disconnectDevice(order, TRANSPORT_BREDR);
-        mService.onSuspendStateChange(SHALLOW_SLEEP);
-        mService.onSuspendStateChange(AWAKE);
+        connectDevice(order, TRANSPORT_BREDR)
+        disconnectDevice(order, TRANSPORT_BREDR)
+        service.onSuspendStateChange(SHALLOW_SLEEP)
+        service.onSuspendStateChange(AWAKE)
 
         // Don't manage BREDR connection
-        order.verify(mNativeInterface, never()).disconnectHid(any(), anyInt(), anyInt(), anyInt());
-        order.verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        order.verify(nativeInterface, never()).disconnectHid(any(), any(), any(), any())
+        order.verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 
     @Test
-    public void disconnect_withConnectionPolicyAllowed_reconnectAllowed() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
-        connectDevice(order, TRANSPORT_LE);
+    fun disconnect_withConnectionPolicyAllowed_reconnectAllowed() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
+        connectDevice(order, TRANSPORT_LE)
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(mBluetoothDevice, mService.getProfileId());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(bluetoothDevice, service.profileId)
 
-        mService.disconnect(mBluetoothDevice);
-        TestUtils.syncHandler(mLooper, 2 /* MESSAGE_DISCONNECT */);
+        service.disconnect(bluetoothDevice)
+        TestUtils.syncHandler(looper, 2 /* MESSAGE_DISCONNECT */)
 
-        order.verify(mNativeInterface)
-                .disconnectHid(
-                        eq(Utils.getByteAddress(mBluetoothDevice)),
-                        anyInt(),
-                        eq(TRANSPORT_LE),
-                        eq(RECONNECT_ALLOWED));
+        order
+            .verify(nativeInterface)
+            .disconnectHid(
+                eq(Utils.getByteAddress(bluetoothDevice)),
+                any(),
+                eq(TRANSPORT_LE),
+                eq(RECONNECT_ALLOWED),
+            )
     }
 
     @Test
-    public void disconnect_withConnectionPolicyForbidden_reconnectNotAllowed() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        InOrder order = inOrder(mNativeInterface);
-        connectDevice(order, TRANSPORT_LE);
+    fun disconnect_withConnectionPolicyForbidden_reconnectNotAllowed() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val order = inOrder(nativeInterface)
+        connectDevice(order, TRANSPORT_LE)
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(mBluetoothDevice, mService.getProfileId());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(bluetoothDevice, service.profileId)
 
-        mService.disconnect(mBluetoothDevice);
-        TestUtils.syncHandler(mLooper, 2 /* MESSAGE_DISCONNECT */);
+        service.disconnect(bluetoothDevice)
+        TestUtils.syncHandler(looper, 2 /* MESSAGE_DISCONNECT */)
 
-        order.verify(mNativeInterface)
-                .disconnectHid(
-                        eq(Utils.getByteAddress(mBluetoothDevice)),
-                        anyInt(),
-                        eq(TRANSPORT_LE),
-                        eq(RECONNECT_NOT_ALLOWED));
+        order
+            .verify(nativeInterface)
+            .disconnectHid(
+                eq(Utils.getByteAddress(bluetoothDevice)),
+                any(),
+                eq(TRANSPORT_LE),
+                eq(RECONNECT_NOT_ALLOWED),
+            )
     }
 
     @Test
-    public void setPreferredTransport_switchesTransportAndDisconnectsOldOne() {
+    fun setPreferredTransport_switchesTransportAndDisconnectsOldOne() {
         // Setup device that supports both transports
-        setupPeerWithUuids(BluetoothUuid.HOGP, BluetoothUuid.HID);
-        doReturn(BOND_BONDED).when(mAdapterService).getBondState(mBluetoothDevice);
+        setupPeerWithUuids(BluetoothUuid.HOGP, BluetoothUuid.HID)
+        doReturn(BOND_BONDED).whenever(adapterService).getBondState(bluetoothDevice)
 
         // Connect with TRANSPORT_BREDR first
-        mService.setPreferredTransport(mBluetoothDevice, TRANSPORT_BREDR);
-        TestUtils.syncHandler(mLooper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */);
-        verify(mNativeInterface).connectHid(any(), anyInt(), eq(TRANSPORT_BREDR), eq(true));
-        mService.onConnectStateChanged(
-                Utils.getByteAddress(mBluetoothDevice),
-                ADDRESS_TYPE_PUBLIC,
-                TRANSPORT_BREDR,
-                STATE_CONNECTED,
-                0);
-        TestUtils.syncHandler(mLooper, 3 /* MESSAGE_CONNECT_STATE_CHANGED */);
-        assertThat(mService.getConnectionState(mBluetoothDevice)).isEqualTo(STATE_CONNECTED);
+        service.setPreferredTransport(bluetoothDevice, TRANSPORT_BREDR)
+        TestUtils.syncHandler(looper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */)
+        verify(nativeInterface).connectHid(any(), any(), eq(TRANSPORT_BREDR), eq(true))
+        service.onConnectStateChanged(
+            Utils.getByteAddress(bluetoothDevice),
+            ADDRESS_TYPE_PUBLIC,
+            TRANSPORT_BREDR,
+            STATE_CONNECTED,
+            0,
+        )
+        TestUtils.syncHandler(looper, 3 /* MESSAGE_CONNECT_STATE_CHANGED */)
+        assertThat(service.getConnectionState(bluetoothDevice)).isEqualTo(STATE_CONNECTED)
 
         // Now switch to LE
-        mService.setPreferredTransport(mBluetoothDevice, TRANSPORT_LE);
-        TestUtils.syncHandler(mLooper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */);
+        service.setPreferredTransport(bluetoothDevice, TRANSPORT_LE)
+        TestUtils.syncHandler(looper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */)
 
         // Should disconnect BREDR and connect LE
-        InOrder inOrder = inOrder(mNativeInterface);
-        inOrder.verify(mNativeInterface)
-                .disconnectHid(any(), anyInt(), eq(TRANSPORT_BREDR), eq(RECONNECT_NOT_ALLOWED));
-        inOrder.verify(mNativeInterface).connectHid(any(), anyInt(), eq(TRANSPORT_LE), eq(true));
+        val inOrder = inOrder(nativeInterface)
+        inOrder
+            .verify(nativeInterface)
+            .disconnectHid(any(), any(), eq(TRANSPORT_BREDR), eq(RECONNECT_NOT_ALLOWED))
+        inOrder.verify(nativeInterface).connectHid(any(), any(), eq(TRANSPORT_LE), eq(true))
     }
 
     @Test
-    public void onConnectStateChanged_forUnknownDeviceAndNotAccepting_disconnects() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
-        byte[] byteAddress = Utils.getByteAddress(mBluetoothDevice);
+    fun onConnectStateChanged_forUnknownDeviceAndNotAccepting_disconnects() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
+        val byteAddress = Utils.getByteAddress(bluetoothDevice)
 
         // Send a connect state changed for a device that the service does not know about
-        mService.onConnectStateChanged(
-                byteAddress, ADDRESS_TYPE_PUBLIC, TRANSPORT_LE, STATE_CONNECTED, 0);
-        TestUtils.syncHandler(mLooper, 3 /* MESSAGE_CONNECT_STATE_CHANGED */);
+        service.onConnectStateChanged(
+            byteAddress,
+            ADDRESS_TYPE_PUBLIC,
+            TRANSPORT_LE,
+            STATE_CONNECTED,
+            0,
+        )
+        TestUtils.syncHandler(looper, 3 /* MESSAGE_CONNECT_STATE_CHANGED */)
 
         // Service should try to disconnect it
-        verify(mNativeInterface)
-                .disconnectHid(
-                        eq(byteAddress), anyInt(), eq(TRANSPORT_LE), eq(RECONNECT_NOT_ALLOWED));
+        verify(nativeInterface)
+            .disconnectHid(eq(byteAddress), any(), eq(TRANSPORT_LE), eq(RECONNECT_NOT_ALLOWED))
     }
 
     @Test
-    public void connect_connectedWithPolicyForbidden_doesNotConnectHid() {
-        setupPeerWithUuids(BluetoothUuid.HOGP);
+    fun connect_connectedWithPolicyForbidden_doesNotConnectHid() {
+        setupPeerWithUuids(BluetoothUuid.HOGP)
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(mBluetoothDevice, mService.getProfileId());
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(bluetoothDevice, service.profileId)
 
-        mService.connect(mBluetoothDevice);
+        service.connect(bluetoothDevice)
 
-        verify(mNativeInterface, never()).connectHid(any(), anyInt(), anyInt(), anyBoolean());
+        verify(nativeInterface, never()).connectHid(any(), any(), any(), any())
     }
 }
