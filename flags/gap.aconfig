@@ -223,3 +223,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "pause_clients_before_resolving_list_modification"
+    namespace: "bluetooth"
+    description: "Pause clients before adding or removing device from the resolving list"
+    bug: "488175554"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
