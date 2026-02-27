@@ -77,7 +77,6 @@ struct btm_client_interface_t {
     [[nodiscard]] tBTM_STATUS (*BTM_SwitchRoleToCentral)(const RawAddress& remote_bd_addr);
     void (*BTM_block_role_switch_for)(const RawAddress& peer_addr);
     void (*BTM_block_sniff_mode_for)(const RawAddress& peer_addr);
-    void (*BTM_default_unblock_role_switch)();
     void (*BTM_unblock_role_switch_for)(const RawAddress& peer_addr);
     void (*BTM_unblock_sniff_mode_for)(const RawAddress& peer_addr);
     void (*BTM_WritePageTimeout)(uint16_t timeout);

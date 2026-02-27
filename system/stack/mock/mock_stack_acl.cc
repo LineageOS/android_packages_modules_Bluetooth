@@ -50,7 +50,6 @@ struct BTM_IsAclConnectionUp BTM_IsAclConnectionUp;
 struct BTM_IsBleConnection BTM_IsBleConnection;
 struct BTM_ReadRemoteConnectionAddr BTM_ReadRemoteConnectionAddr;
 struct BTM_is_sniff_allowed_for BTM_is_sniff_allowed_for;
-struct acl_is_role_switch_allowed acl_is_role_switch_allowed;
 struct acl_is_switch_role_idle acl_is_switch_role_idle;
 struct acl_link_is_disconnecting acl_link_is_disconnecting;
 struct acl_peer_supports_ble_2m_phy acl_peer_supports_ble_2m_phy;
@@ -131,10 +130,6 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr, RawAddress& con
 bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_is_sniff_allowed_for(peer_addr);
-}
-bool acl_is_role_switch_allowed() {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::acl_is_role_switch_allowed();
 }
 bool acl_is_switch_role_idle(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
