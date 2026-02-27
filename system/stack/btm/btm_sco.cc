@@ -719,7 +719,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig, uint16_t p
     /* If any SCO is being established to the remote BD address, refuse this */
     for (auto& link : btm_cb.sco_cb.sco_db) {
       if ((link.state == SCO_ST_CONNECTING || link.state == SCO_ST_LISTENING ||
-           link.state == SCO_ST_PEND_UNPARK) &&
+           link.state == SCO_ST_PEND_UNSNIFF) &&
           link.esco.data.bd_addr == *remote_bda) {
         log::error("a sco connection is already going on for {}, at state {}", *remote_bda,
                    unsigned(link.state));
@@ -742,15 +742,15 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig, uint16_t p
     if (link.state == SCO_ST_UNUSED) {
       if (remote_bda) {
         if (is_orig) {
-          // can not create SCO link if in park mode
+          // can not create SCO link if in sniff mode
           tBTM_PM_STATE state;
           if (BTM_ReadPowerMode(*remote_bda, &state)) {
-            if (state == BTM_PM_ST_SNIFF || state == BTM_PM_ST_PARK || state == BTM_PM_ST_PENDING) {
-              log::info("{} in sniff, park or pending mode {}", *remote_bda, unsigned(state));
+            if (state == BTM_PM_ST_SNIFF || state == BTM_PM_ST_PENDING) {
+              log::info("{} in sniff or pending mode {}", *remote_bda, unsigned(state));
               if (!BTM_SetLinkPolicyActiveMode(*remote_bda)) {
                 log::warn("Unable to set link policy active");
               }
-              link.state = SCO_ST_PEND_UNPARK;
+              link.state = SCO_ST_PEND_UNSNIFF;
             }
           } else {
             log::error("failed to read power mode for {}", *remote_bda);
@@ -780,7 +780,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig, uint16_t p
       link.hci_handle = HCI_INVALID_HANDLE;
       link.is_orig = is_orig;
 
-      if (link.state != SCO_ST_PEND_UNPARK) {
+      if (link.state != SCO_ST_PEND_UNSNIFF) {
         if (is_orig) {
           /* If role change is in progress, do not proceed with SCO setup
            * Wait till role change is complete */
@@ -791,7 +791,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig, uint16_t p
         }
       }
 
-      if (link.state != SCO_ST_PEND_UNPARK && link.state != SCO_ST_PEND_ROLECHANGE) {
+      if (link.state != SCO_ST_PEND_UNSNIFF && link.state != SCO_ST_PEND_ROLECHANGE) {
         if (is_orig) {
           log::debug("Initiating (e)SCO link for ACL handle:0x{:04x}", acl_handle);
 
@@ -823,22 +823,22 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig, uint16_t p
 
 /*******************************************************************************
  *
- * Function         btm_sco_chk_pend_unpark
+ * Function         btm_sco_chk_pend_unsniff
  *
  * Description      This function is called by BTIF when there is a mode change
  *                  event to see if there are SCO commands waiting for the
- *                  unpark.
+ *                  unsniff.
  *
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status, uint16_t hci_handle) {
+void btm_sco_chk_pend_unsniff(tHCI_STATUS hci_status, uint16_t hci_handle) {
   for (auto& link : btm_cb.sco_cb.sco_db) {
     uint16_t acl_handle = get_btm_client_interface().peer.BTM_GetHCIConnHandle(
             link.esco.data.bd_addr, BT_TRANSPORT_BR_EDR);
-    if (link.state == SCO_ST_PEND_UNPARK && acl_handle == hci_handle) {
+    if (link.state == SCO_ST_PEND_UNSNIFF && acl_handle == hci_handle) {
       log::info(
-              "{} unparked, sending connection request, acl_handle={}, "
+              "{} unsniffed, sending connection request, acl_handle={}, "
               "hci_status={}",
               link.esco.data.bd_addr, unsigned(acl_handle), unsigned(hci_status));
       if (btm_send_connect_request(acl_handle, &link.esco.setup) == tBTM_STATUS::BTM_CMD_STARTED) {
@@ -1170,7 +1170,7 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   }
 
   /* If no HCI handle, simply drop the connection and return */
-  if (p->hci_handle == HCI_INVALID_HANDLE || p->state == SCO_ST_PEND_UNPARK) {
+  if (p->hci_handle == HCI_INVALID_HANDLE || p->state == SCO_ST_PEND_UNSNIFF) {
     p->hci_handle = HCI_INVALID_HANDLE;
     p->state = SCO_ST_UNUSED;
     p->esco.p_esco_cback = NULL; /* Deregister the eSCO event callback */
@@ -1562,7 +1562,7 @@ uint8_t BTM_GetNumScoLinks(void) {
       case SCO_ST_CONNECTING:
       case SCO_ST_CONNECTED:
       case SCO_ST_DISCONNECTING:
-      case SCO_ST_PEND_UNPARK:
+      case SCO_ST_PEND_UNSNIFF:
         num_scos++;
         break;
       default:

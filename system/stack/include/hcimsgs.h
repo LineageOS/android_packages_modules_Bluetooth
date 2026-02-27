@@ -110,13 +110,6 @@ void btsnd_hcic_sniff_mode(uint16_t handle, uint16_t max_sniff_period, uint16_t 
 /* Exit Sniff Mode */
 void btsnd_hcic_exit_sniff_mode(uint16_t handle);
 
-/* Park Mode */
-void btsnd_hcic_park_mode(uint16_t handle, uint16_t beacon_max_interval,
-                          uint16_t beacon_min_interval);
-
-/* Exit Park Mode */
-void btsnd_hcic_exit_park_mode(uint16_t handle);
-
 /* Write Policy Settings */
 void btsnd_hcic_write_policy_set(uint16_t handle, uint16_t settings);
 

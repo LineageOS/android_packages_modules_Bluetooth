@@ -43,14 +43,12 @@ struct btsnd_hcic_enhanced_accept_synchronous_connection
         btsnd_hcic_enhanced_accept_synchronous_connection;
 struct btsnd_hcic_enhanced_set_up_synchronous_connection
         btsnd_hcic_enhanced_set_up_synchronous_connection;
-struct btsnd_hcic_exit_park_mode btsnd_hcic_exit_park_mode;
 struct btsnd_hcic_exit_sniff_mode btsnd_hcic_exit_sniff_mode;
 struct btsnd_hcic_hold_mode btsnd_hcic_hold_mode;
 struct btsnd_hcic_io_cap_req_neg_reply btsnd_hcic_io_cap_req_neg_reply;
 struct btsnd_hcic_io_cap_req_reply btsnd_hcic_io_cap_req_reply;
 struct btsnd_hcic_link_key_neg_reply btsnd_hcic_link_key_neg_reply;
 struct btsnd_hcic_link_key_req_reply btsnd_hcic_link_key_req_reply;
-struct btsnd_hcic_park_mode btsnd_hcic_park_mode;
 struct btsnd_hcic_pin_code_neg_reply btsnd_hcic_pin_code_neg_reply;
 struct btsnd_hcic_pin_code_req_reply btsnd_hcic_pin_code_req_reply;
 struct btsnd_hcic_read_encryption_key_size btsnd_hcic_read_encryption_key_size;
@@ -132,10 +130,6 @@ void btsnd_hcic_enhanced_set_up_synchronous_connection(uint16_t conn_handle,
   test::mock::stack_hcic_hcicmds::btsnd_hcic_enhanced_set_up_synchronous_connection(conn_handle,
                                                                                     p_params);
 }
-void btsnd_hcic_exit_park_mode(uint16_t handle) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_exit_park_mode(handle);
-}
 void btsnd_hcic_exit_sniff_mode(uint16_t handle) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_exit_sniff_mode(handle);
@@ -161,12 +155,6 @@ void btsnd_hcic_link_key_neg_reply(const RawAddress& bd_addr) {
 void btsnd_hcic_link_key_req_reply(const RawAddress& bd_addr, const LinkKey& link_key) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_link_key_req_reply(bd_addr, link_key);
-}
-void btsnd_hcic_park_mode(uint16_t handle, uint16_t beacon_max_interval,
-                          uint16_t beacon_min_interval) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_park_mode(handle, beacon_max_interval,
-                                                       beacon_min_interval);
 }
 void btsnd_hcic_pin_code_neg_reply(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);

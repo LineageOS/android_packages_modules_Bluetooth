@@ -127,15 +127,6 @@ struct btsnd_hcic_enhanced_set_up_synchronous_connection {
 extern struct btsnd_hcic_enhanced_set_up_synchronous_connection
         btsnd_hcic_enhanced_set_up_synchronous_connection;
 
-// Name: btsnd_hcic_exit_park_mode
-// Params: uint16_t handle
-// Return: void
-struct btsnd_hcic_exit_park_mode {
-  std::function<void(uint16_t handle)> body{[](uint16_t /* handle */) {}};
-  void operator()(uint16_t handle) { body(handle); }
-};
-extern struct btsnd_hcic_exit_park_mode btsnd_hcic_exit_park_mode;
-
 // Name: btsnd_hcic_exit_sniff_mode
 // Params: uint16_t handle
 // Return: void
@@ -201,19 +192,6 @@ struct btsnd_hcic_link_key_req_reply {
   void operator()(const RawAddress& bd_addr, const LinkKey& link_key) { body(bd_addr, link_key); }
 };
 extern struct btsnd_hcic_link_key_req_reply btsnd_hcic_link_key_req_reply;
-
-// Name: btsnd_hcic_park_mode
-// Params: uint16_t handle, uint16_t beacon_max_interval, uint16_t
-// beacon_min_interval Return: void
-struct btsnd_hcic_park_mode {
-  std::function<void(uint16_t handle, uint16_t beacon_max_interval, uint16_t beacon_min_interval)>
-          body{[](uint16_t /* handle */, uint16_t /* beacon_max_interval */,
-                  uint16_t /* beacon_min_interval */) {}};
-  void operator()(uint16_t handle, uint16_t beacon_max_interval, uint16_t beacon_min_interval) {
-    body(handle, beacon_max_interval, beacon_min_interval);
-  }
-};
-extern struct btsnd_hcic_park_mode btsnd_hcic_park_mode;
 
 // Name: btsnd_hcic_pin_code_neg_reply
 // Params: const RawAddress& bd_addr
