@@ -1771,6 +1771,11 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       log::warn("Unregistered!");
       return;
     }
+    if (paused_) {
+      log::info("Already paused");
+      ack_pause();
+      return;
+    }
     paused_ = true;
     scan_on_resume_ = is_scanning_;
     stop_scan(__func__);
