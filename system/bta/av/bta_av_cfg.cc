@@ -45,11 +45,19 @@ const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
 
 /* AVRCP supported categories */
 #define BTA_AV_RC_SUPF_CT (AVRC_SUPF_CT_CAT2)
-#define BTA_AVK_RC_SUPF_CT                                                           \
-  (AVRC_SUPF_CT_CAT1 | AVRC_SUPF_CT_BROWSE | AVRC_SUPF_CT_COVER_ART_GET_IMAGE_PROP | \
-   AVRC_SUPF_CT_COVER_ART_GET_IMAGE)
 
 #define BTA_AVK_RC_SUPF_TG (AVRC_SUPF_TG_CAT2)
+
+static uint16_t get_bta_avk_rc_supf_ct() {
+  uint16_t controller_sup_features = AVRC_SUPF_CT_CAT1;
+  controller_sup_features |= AVRC_SUPF_CT_BROWSE;
+
+  if (avrcp_controller_cover_art_enabled()) {
+    controller_sup_features |= AVRC_SUPF_CT_COVER_ART_GET_IMAGE;
+    controller_sup_features |= AVRC_SUPF_CT_COVER_ART_GET_IMAGE_PROP;
+  }
+  return controller_sup_features;
+}
 
 /* AVRCP Controller and Target default name */
 #ifndef BTA_AV_RC_CT_NAME
@@ -139,12 +147,12 @@ extern const tBTA_AV_CFG bta_av_cfg = {
 
 const tBTA_AV_CFG* get_bta_avk_cfg() {
   static const tBTA_AV_CFG bta_avk_cfg = {
-          AVRC_CO_METADATA,   /* AVRCP Company ID */
-          BTA_AVK_RC_SUPF_CT, /* AVRCP controller categories */
-          BTA_AVK_RC_SUPF_TG, /* AVRCP target categories */
-          6,                  /* AVDTP audio channel max data queue size */
-          false,              /* true, to accept AVRC 1.3 group nevigation command */
-          2,                  /* company id count in p_meta_co_ids */
+          AVRC_CO_METADATA,         /* AVRCP Company ID */
+          get_bta_avk_rc_supf_ct(), /* AVRCP controller categories */
+          BTA_AVK_RC_SUPF_TG,       /* AVRCP target categories */
+          6,                        /* AVDTP audio channel max data queue size */
+          false,                    /* true, to accept AVRC 1.3 group nevigation command */
+          2,                        /* company id count in p_meta_co_ids */
           (uint8_t)(avrcp_absolute_volume_is_enabled() ? 1
                                                        : 0), /* event id count in p_meta_evt_ids */
           BTA_AV_RC_PASS_RSP_CODE,                           /* the default response code for pass
