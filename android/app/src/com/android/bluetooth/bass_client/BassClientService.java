@@ -5224,27 +5224,6 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    public void stopBroadcastMonitoring() {
-        Log.d(TAG, "stopBroadcastMonitoring");
-        mPausedBroadcastSinks.clear();
-        mSinksToRestoreFromPeer.clear();
-
-        Iterator<Integer> iterator = mPausedBroadcastIds.keySet().iterator();
-        while (iterator.hasNext()) {
-            int pausedBroadcastId = iterator.next();
-            mTimeoutHandler.stop(pausedBroadcastId, MESSAGE_BIG_MONITOR_TIMEOUT);
-            mTimeoutHandler.stop(pausedBroadcastId, MESSAGE_OOR_MONITOR_TIMEOUT);
-            iterator.remove();
-            synchronized (mSearchScanCallbackLock) {
-                // when searching is stopped then stop active sync
-                if (!isAnySearchInProgress()) {
-                    cancelActiveSync(getSyncHandleForBroadcastId(pausedBroadcastId));
-                }
-            }
-        }
-        logPausedBroadcastsAndSinks();
-    }
-
     private void checkAndStopBroadcastMonitoring() {
         Log.d(TAG, "checkAndStopBroadcastMonitoring");
         Iterator<Integer> iterator = mPausedBroadcastIds.keySet().iterator();
@@ -5259,10 +5238,14 @@ public class BassClientService extends ConnectableProfile {
                                 && mPausedBroadcastSinks.isEmpty())) {
                     iterator.remove();
                 }
-                synchronized (mSearchScanCallbackLock) {
-                    // when searching is stopped then stop active sync
-                    if (!isAnySearchInProgress()) {
-                        cancelActiveSync(getSyncHandleForBroadcastId(pausedBroadcastId));
+                if (!Flags.leaudioBroadcastAlwaysUseBackgroundScanner()
+                        || !Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+                    // No need to cancelActiveSync as stopBackgroundSearching is called after that
+                    synchronized (mSearchScanCallbackLock) {
+                        // when searching is stopped then stop active sync
+                        if (!isAnySearchInProgress()) {
+                            cancelActiveSync(getSyncHandleForBroadcastId(pausedBroadcastId));
+                        }
                     }
                 }
                 logPausedBroadcastsAndSinks();
@@ -5292,6 +5275,12 @@ public class BassClientService extends ConnectableProfile {
     }
 
     private void stopActiveSync(int broadcastId) {
+        if (Flags.leaudioBroadcastAlwaysUseBackgroundScanner()
+                && Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+            // No need to use stopActiveSync as stopBackgroundSearching is always called before that
+            return;
+        }
+
         synchronized (mSearchScanCallbackLock) {
             // when searching is stopped then stop active sync
             if (!isAnySearchInProgress()
