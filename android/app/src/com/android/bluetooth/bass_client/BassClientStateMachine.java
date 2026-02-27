@@ -1473,7 +1473,7 @@ class BassClientStateMachine extends StateMachine {
         }
 
         byte[] res = stream.toByteArray();
-        BassUtils.printByteArray(res);
+        Log.d(TAG, "BASS bytes dump, ADD_BCAST_SOURCE: " + BassUtils.byteArrayToHexString(res));
         return res;
     }
 
@@ -1558,8 +1558,7 @@ class BassClientStateMachine extends StateMachine {
             res[offset++] = 0;
         }
 
-        Log.d(TAG, "UPDATE_BCAST_SOURCE in Bytes");
-        BassUtils.printByteArray(res);
+        Log.d(TAG, "BASS bytes dump, UPDATE_BCAST_SOURCE: " + BassUtils.byteArrayToHexString(res));
         return res;
     }
 
@@ -1592,8 +1591,7 @@ class BassClientStateMachine extends StateMachine {
             // This effectively adds padding zeros to MSB positions when the broadcast code
             // is shorter than 16 octets, skip the first 2 bytes for opcode and source_id.
             System.arraycopy(actualPIN, 0, res, 2, actualPIN.length);
-            Log.d(TAG, "SET_BCAST_PIN in Bytes");
-            BassUtils.printByteArray(res);
+            Log.d(TAG, "BASS bytes dump, SET_BCAST_PIN: " + BassUtils.byteArrayToHexString(res));
         }
         return res;
     }

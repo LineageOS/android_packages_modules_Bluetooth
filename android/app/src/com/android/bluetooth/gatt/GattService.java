@@ -54,6 +54,7 @@ import android.bluetooth.IBluetoothGattServerCallback;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -1122,13 +1123,15 @@ public class GattService extends ProfileService {
                 if (Flags.gattThread()) {
                     disableLeAudio =
                             CompatChanges.isChangeEnabled(
-                                    DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid());
+                                            DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid())
+                                    && (Build.VERSION.SDK_INT >= 37);
                 } else {
                     final long token = Binder.clearCallingIdentity();
                     try {
                         disableLeAudio =
                                 CompatChanges.isChangeEnabled(
-                                        DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid());
+                                                DONOT_STEAL_AUDIO_ON_GATT_CONN, source.getUid())
+                                        && (Build.VERSION.SDK_INT >= 37);
                     } finally {
                         Binder.restoreCallingIdentity(token);
                     }

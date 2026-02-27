@@ -42,6 +42,7 @@ struct leConnectionSubrateModeRequest leConnectionSubrateModeRequest;
 struct leConnectionCancelConnect leConnectionCancelConnect;
 struct leConnectionConnect leConnectionConnect;
 struct leConnectionSubrateRequest leConnectionSubrateRequest;
+struct leConnectionUpdate leConnectionUpdate;
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test
@@ -98,6 +99,14 @@ void leConnectionSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
   inc_func_call_count(__func__);
   return test::mock::stack_le_connection::leConnectionSubrateRequest(
           bd_addr, subrate_min, subrate_max, max_latency, cont_num, timeout);
+}
+
+void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
+                        uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
+                        uint16_t max_ce_len) {
+  inc_func_call_count(__func__);
+  test::mock::stack_le_connection::leConnectionUpdate(bd_addr, min_interval, max_interval, latency,
+                                                      timeout, min_ce_len, max_ce_len);
 }
 }  // namespace bluetooth::stack
 

@@ -251,3 +251,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "process_iocap_rsp_while_repairing"
+    namespace: "bluetooth"
+    description: "Process HCI IO capability response when received for repairing."
+    bug: "487510188"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

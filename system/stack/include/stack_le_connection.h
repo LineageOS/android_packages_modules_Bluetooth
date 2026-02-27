@@ -120,4 +120,25 @@ void leConnectionSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
                                 uint16_t timeout);
 
+/*******************************************************************************
+ *
+ * Function         leConnectionUpdate
+ *
+ * Description      Update connection parameters.
+ *
+ * Parameters:      bd_addr       - BD address of the peer
+ *                  min_interval  - minimum connection interval
+ *                  max_interval  - maximum connection interval
+ *                  latency       - peripheral latency
+ *                  timeout       - supervision timeout
+ *                  min_ce_len    - minimum connection event length
+ *                  max_ce_len    - maximum connection event length
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
+                        uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
+                        uint16_t max_ce_len);
+
 }  // namespace bluetooth::stack

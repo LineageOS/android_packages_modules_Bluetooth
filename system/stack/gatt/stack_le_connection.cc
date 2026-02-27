@@ -274,4 +274,21 @@ void leConnectionSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
   }
 }
 
+void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16_t max_interval,
+                        uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
+                        uint16_t max_ce_len) {
+  stack::l2cap::get_interface().L2CA_AdjustConnectionIntervals(&min_interval, &max_interval,
+                                                               BTM_BLE_CONN_INT_MIN);
+
+  if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+    if (!stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
+                bd_addr, min_interval, max_interval, latency, timeout, min_ce_len, max_ce_len)) {
+      log::error("Update connection parameters failed!");
+    }
+  } else {
+    get_btm_client_interface().ble.BTM_BleSetPrefConnParams(bd_addr, min_interval, max_interval,
+                                                            latency, timeout);
+  }
+}
+
 }  // namespace bluetooth::stack
