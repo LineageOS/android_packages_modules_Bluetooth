@@ -654,7 +654,7 @@ static void sanitize_link_policy(LinkPolicy& link_policy) {
     link_policy.role_switch = false;
     log::info("Role switch not supported (link policy: {})", link_policy);
   }
-  if (link_policy.hold_mode && (!bluetooth::shim::GetController()->SupportsHoldMode())) {
+  if (link_policy.hold_mode) {
     link_policy.hold_mode = false;
     log::info("Hold mode not supported (link policy: {})", link_policy);
   }
