@@ -375,6 +375,7 @@ class HidHostServiceTest {
             .getProfileConnectionPolicy(any(), any())
         doReturn(uuids).whenever(adapterService).getRemoteUuids(any())
         doReturn(device).whenever(adapterService).getDeviceFromByte(any())
+        doReturn(Utils.getByteAddress(device)).whenever(adapterService).getByteBrEdrAddress(device)
     }
 
     private fun connectDevice(order: InOrder, transport: Int) {
