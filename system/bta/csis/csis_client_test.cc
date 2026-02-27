@@ -518,7 +518,7 @@ protected:
 
   void TestNoConnection(const RawAddress& address) {
     // by default indicate link as encrypted
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, _, _)).Times(0);
+    EXPECT_CALL(gatt_interface, Open(gatt_if, address, _)).Times(0);
     CsisClient::Get()->Connect(address);
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }
@@ -527,8 +527,11 @@ protected:
     // by default indicate link as encrypted
     ON_CALL(btm_interface, GetSecurityFlagsByTransport(address, NotNull(), _))
             .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(encrypted)));
-
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, opportunistic));
+    if (opportunistic) {
+      EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_OPPORTUNISTIC));
+    } else {
+      EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION));
+    }
     CsisClient::Get()->Connect(address);
     Mock::VerifyAndClearExpectations(&gatt_interface);
     Mock::VerifyAndClearExpectations(&btm_interface);
@@ -550,9 +553,9 @@ protected:
     EXPECT_CALL(*callbacks, OnConnectionState(address, ConnectionState::CONNECTED)).Times(1);
     EXPECT_CALL(*callbacks, OnDeviceAvailable(address, _, _, _, _)).Times(AtLeast(1));
 
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true))
+    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_OPPORTUNISTIC))
             .WillOnce(Invoke([this, conn_id](tGATT_IF /*client_if*/, const RawAddress& remote_bda,
-                                             bool /*is_direct*/, bool /*opportunistic*/) {
+                                             tBTM_BLE_CONN_TYPE /*connection_type */) {
               InjectConnectedEvent(remote_bda, conn_id);
               GetSearchCompleteEvent(conn_id);
             }));
@@ -746,8 +749,7 @@ TEST_F(CsisClientTest, test_verify_opportunistic_connect_active_after_connect_ti
   TestConnect(test_address, true, false);
 
   EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, test_address, _)).Times(0);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, true))
-          .Times(1);
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_OPPORTUNISTIC)).Times(1);
 
   InjectConnectedEvent(test_address, 0, GATT_ERROR);
   Mock::VerifyAndClearExpectations(&gatt_interface);

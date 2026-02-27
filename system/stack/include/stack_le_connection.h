@@ -39,20 +39,17 @@ namespace bluetooth::stack {
  *                  connection_type: connection type
  *                  transport : Physical transport for GATT connection
  *                              (BR/EDR or LE)
- *                  opportunistic: will not keep device connected if other apps
- *                      disconnect, will not update connected apps counter, when
- *                      disconnected won't cause physical disconnection.
  *
  * Returns          true if connection started; else false
  *
  ******************************************************************************/
 [[nodiscard]] bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                                        tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
-                                       bool opportunistic, uint16_t preferred_mtu,
-                                       bool prefer_relax_mode, bool auto_mtu_enabled);
+                                       uint16_t preferred_mtu, bool prefer_relax_mode,
+                                       bool auto_mtu_enabled);
 
 [[nodiscard]] bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                                       tBTM_BLE_CONN_TYPE connection_type, bool opportunistic);
+                                       tBTM_BLE_CONN_TYPE connection_type);
 
 /*******************************************************************************
  *

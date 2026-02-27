@@ -160,12 +160,11 @@ public:
     auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
     if (device == devices_.end()) {
       devices_.emplace_back(address, true);
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
-
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
     } else {
       device->is_connecting_actively = true;
       if (!device->IsConnected()) {
-        BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+        BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
       }
     }
   }
@@ -183,7 +182,7 @@ public:
       }
 
       /* Connect in background */
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     }
   }
 
@@ -2005,7 +2004,7 @@ private:
 
     /* Connect in background - is this ok? */
     if (peer_disconnected) {
-      BTA_GATTC_Open(gatt_if_, device->addr, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if_, device->addr, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     }
   }
 

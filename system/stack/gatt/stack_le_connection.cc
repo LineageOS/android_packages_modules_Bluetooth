@@ -65,8 +65,8 @@ namespace bluetooth::stack {
  *
  ******************************************************************************/
 bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
-                         uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
+                         tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
+                         bool prefer_relax_mode, bool auto_mtu_enabled) {
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -81,7 +81,7 @@ bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_
     return false;
   }
 
-  if (opportunistic) {
+  if (connection_type == BTM_BLE_OPPORTUNISTIC) {
     log::info("Registered for opportunistic connection gatt_if={}", gatt_if);
     return true;
   }
@@ -162,9 +162,8 @@ bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_
 }
 
 bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
-  return leConnectionConnect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, opportunistic, 0,
-                             false, false);
+                         tBTM_BLE_CONN_TYPE connection_type) {
+  return leConnectionConnect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, 0, false, false);
 }
 
 /*******************************************************************************

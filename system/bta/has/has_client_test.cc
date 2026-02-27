@@ -707,9 +707,9 @@ protected:
             }));
 
     /* by default connect only direct connection requests */
-    ON_CALL(gatt_interface, Open(_, _, _, _))
+    ON_CALL(gatt_interface, Open(_, _, _))
             .WillByDefault(Invoke([&](tGATT_IF /*client_if*/, const RawAddress& remote_bda,
-                                      tBTM_BLE_CONN_TYPE connection_type, bool /*opportunistic*/) {
+                                      tBTM_BLE_CONN_TYPE connection_type) {
               if (connection_type == BTM_BLE_DIRECT_CONNECTION) {
                 InjectConnectedEvent(remote_bda, GetTestConnId(remote_bda));
               }
@@ -756,7 +756,7 @@ protected:
     ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _))
             .WillByDefault(DoAll(Return(encryption_result)));
 
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, _));
+    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION));
     HasClient::Get()->Connect(address);
 
     Mock::VerifyAndClearExpectations(&callbacks);
@@ -788,13 +788,13 @@ protected:
 
   void TestAddFromStorage(const RawAddress& address, uint8_t features, bool auto_connect) {
     if (auto_connect) {
-      EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _));
+      EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST));
       HasClient::Get()->AddFromStorage(address, features, auto_connect);
 
       /* Inject connected event for autoconnect/background connection */
       InjectConnectedEvent(address, GetTestConnId(address));
     } else {
-      EXPECT_CALL(gatt_interface, Open(gatt_if, address, _, _)).Times(0);
+      EXPECT_CALL(gatt_interface, Open(gatt_if, address, _)).Times(0);
       HasClient::Get()->AddFromStorage(address, features, auto_connect);
     }
 
@@ -1216,7 +1216,7 @@ TEST_F(HasClientTest, test_connect_after_remove) {
   const RawAddress test_address = GetTestAddress(1);
 
   /* Override the default action to prevent us sendind the connected event */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _))
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION))
           .WillOnce(Return());
   HasClient::Get()->Connect(test_address);
   TestDisconnect(test_address, GATT_INVALID_CONN_ID);
@@ -1234,7 +1234,7 @@ TEST_F(HasClientTest, test_disconnect_non_connected) {
   const RawAddress test_address = GetTestAddress(1);
 
   /* Override the default action to prevent us sendind the connected event */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _))
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION))
           .WillOnce(Return());
   HasClient::Get()->Connect(test_address);
   TestDisconnect(test_address, GATT_INVALID_CONN_ID);

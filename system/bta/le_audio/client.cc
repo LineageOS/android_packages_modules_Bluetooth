@@ -2127,7 +2127,7 @@ public:
               bluetooth::le_audio::ConnectionStatus::SUCCESS);
     }
 
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
   }
 
   std::vector<RawAddress> GetGroupDevices(const int group_id) override {
@@ -2693,10 +2693,10 @@ public:
     if (group->IsAnyDeviceConnected()) {
       log::info("Group {} in connected state. Adding {} to allow list", leAudioDevice->group_id_,
                 address);
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     } else {
       log::info("Adding {} to background connect", address);
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS);
     }
   }
 
@@ -2853,7 +2853,7 @@ public:
      * for other applications which are using background connect.
      */
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS);
 
     if (bluetooth::shim::GetController()->SupportsBle2mPhy()) {
       log::info("{} set preferred PHY to 2M", address);
@@ -3127,7 +3127,7 @@ public:
 
     if (group != nullptr) {
       leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
     } else {
       leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTED);
     }
@@ -3263,7 +3263,7 @@ public:
       leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
 
       /* If timeout try to reconnect for 30 sec.*/
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
       return;
     }
 

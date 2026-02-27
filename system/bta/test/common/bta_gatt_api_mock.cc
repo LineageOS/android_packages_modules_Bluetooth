@@ -42,9 +42,9 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+                    tBTM_BLE_CONN_TYPE connection_type) {
   log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  gatt_interface->Open(client_if, remote_bda, connection_type, opportunistic);
+  gatt_interface->Open(client_if, remote_bda, connection_type);
 }
 
 void BTA_GATTC_CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {

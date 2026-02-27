@@ -90,14 +90,13 @@ static gatt_interface_t default_gatt_interface = {
                 },
         .BTA_GATTC_Open =
                 [](tGATT_IF client_if, const RawAddress& remote_bda,
-                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                   tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                    bool prefer_relax_mode) {
-                  gatt_history_.Push(std::format(
-                          "{:<32s} bd_addr:{} client_if:{} type:0x{:x} opportunistic:{:c}",
-                          "GATTC_Open", remote_bda, client_if, connection_type,
-                          opportunistic ? 'T' : 'F'));
+                  gatt_history_.Push(std::format("{:<32s} bd_addr:{} client_if:{} type:0x{:x}",
+                                                 "GATTC_Open", remote_bda, client_if,
+                                                 connection_type));
                   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type,
-                                 BT_TRANSPORT_LE, opportunistic, preferred_mtu, prefer_relax_mode);
+                                 BT_TRANSPORT_LE, preferred_mtu, prefer_relax_mode);
                 },
 };
 

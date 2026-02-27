@@ -585,7 +585,7 @@ protected:
     // by default indicate link as encrypted
     ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(true)));
 
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true));
+    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_OPPORTUNISTIC));
     VolumeController::Get()->Connect(address);
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }
@@ -615,7 +615,7 @@ protected:
     // by default indicate link as encrypted
     ON_CALL(mock_btm_security_, BTM_IsEncrypted(address, _)).WillByDefault(DoAll(Return(true)));
 
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true));
+    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_OPPORTUNISTIC));
     VolumeController::Get()->AddFromStorage(address);
   }
 
@@ -895,7 +895,7 @@ TEST_F(VolumeControlTest, test_verify_opportunistic_connect_active_after_connect
   TestConnect(address);
 
   EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, address, _)).Times(0);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true)).Times(1);
+  EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_OPPORTUNISTIC)).Times(1);
 
   GetConnectedEvent(address, 1, GATT_ERROR);
   Mock::VerifyAndClearExpectations(&callbacks);

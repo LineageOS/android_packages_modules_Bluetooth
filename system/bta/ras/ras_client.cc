@@ -203,7 +203,7 @@ public:
                               tracker->vendor_specific_characteristics_, tracker->conn_interval_);
       return;
     }
-    BTA_GATTC_Open(gatt_if_, ble_bd_addr.bda, BTM_BLE_DIRECT_CONNECTION, true);
+    BTA_GATTC_Open(gatt_if_, ble_bd_addr.bda, BTM_BLE_OPPORTUNISTIC);
   }
 
   void SendVendorSpecificReply(

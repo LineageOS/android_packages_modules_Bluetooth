@@ -91,23 +91,22 @@ extern struct leConnectionCancelConnect leConnectionCancelConnect;
 
 // Name: leConnectionConnect
 // Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
-// bool opportunistic, uint16_t preferred_mtu, bool prefer_relax_mode,
+// uint16_t preferred_mtu, bool prefer_relax_mode,
 // bool auto_mtu_enabled Return: bool
 struct leConnectionConnect {
   static bool return_value;
   std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                     tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                      bool prefer_relax_mode, bool auto_mtu_enabled)>
           body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
                   tBLE_ADDR_TYPE /* addr_type */, tBTM_BLE_CONN_TYPE /* connection_type */,
-                  bool /* opportunistic */, uint16_t /* preferred_mtu */,
-                  bool /* prefer_relax_mode */,
+                  uint16_t /* preferred_mtu */, bool /* prefer_relax_mode */,
                   bool /* auto_mtu_enabled */) { return return_value; }};
   bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                  tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                  tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                   bool prefer_relax_mode, bool auto_mtu_enabled) {
-    return body(gatt_if, bd_addr, addr_type, connection_type, opportunistic, preferred_mtu,
-                prefer_relax_mode, auto_mtu_enabled);
+    return body(gatt_if, bd_addr, addr_type, connection_type, preferred_mtu, prefer_relax_mode,
+                auto_mtu_enabled);
   }
 };
 extern struct leConnectionConnect leConnectionConnect;

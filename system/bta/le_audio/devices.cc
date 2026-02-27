@@ -1715,7 +1715,7 @@ void LeAudioDevices::SetInitialGroupAutoconnectState(int group_id, int gatt_if,
       dev->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
       dev->autoconnect_flag_ = true;
       btif_storage_set_leaudio_autoconnect(dev->address_, true);
-      BTA_GATTC_Open(gatt_if, dev->address_, BTM_BLE_DIRECT_CONNECTION, false);
+      BTA_GATTC_Open(gatt_if, dev->address_, BTM_BLE_DIRECT_CONNECTION);
     }
   }
 }

@@ -289,7 +289,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, bool direct) {
     return;
   }
 
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_DIRECT_CONNECTION, false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_DIRECT_CONNECTION);
 }
 
 /*******************************************************************************
@@ -2137,8 +2137,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb) {
   }
 
   /* Add device into BG connection to accept remote initiated connection */
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_BKG_CONNECT_ALLOW_LIST,
-                 false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
   p_cb->in_bg_conn = true;
 }
 

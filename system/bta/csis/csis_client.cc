@@ -316,7 +316,7 @@ public:
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
-    bool use_opportunistic_connect = false;
+    auto mode = BTM_BLE_DIRECT_CONNECTION;
 
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
@@ -336,11 +336,10 @@ public:
        * Non opportunistic one is needed only after bonding to make sure the device is not
        * disconnected in case leAudio is not enabled by default.
        */
-      use_opportunistic_connect = true;
+      mode = BTM_BLE_OPPORTUNISTIC;
       device->connecting_actively = true;
     }
-
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunistic_connect);
+    BTA_GATTC_Open(gatt_if_, address, mode);
   }
 
   void Disconnect(const RawAddress& addr) override {
@@ -779,11 +778,8 @@ public:
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
-    /* Opportunistic works only for direct connect,
-     * but in fact this is background connect
-     */
     log::info(": {}", address);
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, true);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
   }
 
   void AddFromStorage(const RawAddress& addr, const std::vector<uint8_t>& in) {

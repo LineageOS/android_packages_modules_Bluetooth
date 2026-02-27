@@ -31,10 +31,10 @@ public:
                            BtaAppRegisterCallback cb, bool eatt_support) = 0;
   virtual void AppDeregister(tGATT_IF client_if) = 0;
   virtual void Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     bool auto_mtu_enabled) = 0;
   virtual void Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) = 0;
+                    tBTM_BLE_CONN_TYPE connection_type) = 0;
   virtual void CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) = 0;
   virtual void Close(uint16_t conn_id) = 0;
   virtual void ServiceSearchRequest(uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) = 0;
@@ -71,13 +71,13 @@ public:
   MOCK_METHOD((void), AppDeregister, (tGATT_IF client_if), (override));
   MOCK_METHOD((void), Open,
               (tGATT_IF client_if, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE connection_type,
-               tBT_TRANSPORT transport, bool opportunistic, bool auto_mtu_enabled),
+               tBT_TRANSPORT transport, bool auto_mtu_enabled),
               (override));
   MOCK_METHOD((void), Open,
-              (tGATT_IF client_if, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE connection_type,
-               bool opportunistic));
-  MOCK_METHOD((void), CancelOpen,
-              (tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct));
+              (tGATT_IF client_if, const RawAddress& remote_bda,
+               tBTM_BLE_CONN_TYPE connection_type));
+  MOCK_METHOD((void), CancelOpen, (tGATT_IF client_if, const RawAddress& remote_bda,
+               bool is_direct));
   MOCK_METHOD((void), Close, (uint16_t conn_id));
   MOCK_METHOD((void), ServiceSearchRequest, (uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid));
   MOCK_METHOD((void), SendIndConfirm, (uint16_t conn_id, uint16_t cid), (override));
