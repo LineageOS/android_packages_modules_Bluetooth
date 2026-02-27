@@ -51,7 +51,6 @@ void BtmSecurity::Init(uint8_t initial_security_mode) {
   connecting_dc_ = kDevClassEmpty;
   sec_collision_timer_ = alarm_new("btm.sec_collision_timer_");
   pairing_timer_ = alarm_new("btm.pairing_timer_");
-  execution_wait_timer_ = alarm_new("btm.execution_wait_timer_");
   security_mode_ = initial_security_mode;
   link_spec_.addrt.bda = RawAddress::kAny;
   if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
@@ -81,9 +80,6 @@ void BtmSecurity::Free() {
 
   alarm_free(pairing_timer_);
   pairing_timer_ = nullptr;
-
-  alarm_free(execution_wait_timer_);
-  execution_wait_timer_ = nullptr;
 }
 
 /*******************************************************************************
