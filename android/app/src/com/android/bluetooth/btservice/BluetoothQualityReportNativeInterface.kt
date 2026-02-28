@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,23 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import static java.util.Objects.requireNonNull;
-
-import com.android.bluetooth.profile.NativeInterface;
+import com.android.bluetooth.profile.NativeInterface
 
 /** Native interface to BQR */
-public class BluetoothQualityReportNativeInterface
-        extends NativeInterface<BluetoothQualityReportNativeCallback> {
-    BluetoothQualityReportNativeInterface(BluetoothQualityReportNativeCallback nativeCallback) {
-        super(requireNonNull(nativeCallback));
+class BluetoothQualityReportNativeInterface(nativeCallback: BluetoothQualityReportNativeCallback) :
+    NativeInterface<BluetoothQualityReportNativeCallback>(nativeCallback) {
+
+    fun init() {
+        initNative()
     }
 
-    void init() {
-        initNative();
+    override fun cleanup() {
+        cleanupNative()
     }
 
-    @Override
-    public void cleanup() {
-        cleanupNative();
-    }
+    private external fun initNative()
 
-    private native void initNative();
-
-    private native void cleanupNative();
+    private external fun cleanupNative()
 }
