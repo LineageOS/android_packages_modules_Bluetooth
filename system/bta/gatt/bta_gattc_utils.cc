@@ -288,7 +288,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
   p_clcb->auto_update = 0;
   p_clcb->disc_active = 0;
   p_clcb->in_use = 0;
-  p_clcb->state = BTA_GATTC_IDLE_ST;
+  p_clcb->state = BTA_GATTC_CONN_ST;
   p_clcb->status = GATT_SUCCESS;
   p_clcb->reported_mtu = 0;
   // in bta_gattc_sm_execute(), p_clcb is accessed again so we dealloc clcb later.
