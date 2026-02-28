@@ -55,7 +55,6 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr, tBTA_DM_PM_ACTION pm
 static void bta_dm_pm_timer_cback(void* data);
 static void bta_dm_pm_btm_cback(const RawAddress& bd_addr, tBTM_PM_STATUS status, uint16_t value,
                                 tHCI_STATUS hci_status);
-static bool bta_dm_pm_park(const RawAddress& peer_addr);
 static void bta_dm_pm_sniff(BtaDmLink* p_link, uint8_t index);
 static void bta_dm_sniff_cback(uint8_t id, uint8_t app_id, const RawAddress& peer_addr);
 static int bta_dm_get_sco_index();
@@ -212,8 +211,6 @@ static void bta_dm_pm_stop_timer(const RawAddress& peer_addr) {
 static uint8_t bta_pm_action_to_timer_idx(uint8_t pm_action) {
   if (pm_action == BTA_DM_PM_SUSPEND) {
     return BTA_DM_PM_SUSPEND_TIMER_IDX;
-  } else if (pm_action == BTA_DM_PM_PARK) {
-    return BTA_DM_PM_PARK_TIMER_IDX;
   } else if ((pm_action & BTA_DM_PM_SNIFF) == BTA_DM_PM_SNIFF) {
     return BTA_DM_PM_SNIFF_TIMER_IDX;
   }
@@ -655,12 +652,12 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr, tBTA_DM_PM_ACTION pm
     }
   }
 
-  if (pm_action & (BTA_DM_PM_PARK | BTA_DM_PM_SNIFF)) {
+  if (pm_action & BTA_DM_PM_SNIFF) {
     /* some service don't like the mode */
     if (!(allowed_modes & pm_action)) {
       /* select the other mode if its allowed and preferred, otherwise 0 which
        * is BTA_DM_PM_NO_ACTION */
-      pm_action = (allowed_modes & (BTA_DM_PM_PARK | BTA_DM_PM_SNIFF) & pref_modes);
+      pm_action = (allowed_modes & BTA_DM_PM_SNIFF & pref_modes);
 
       /* no timeout needed if no action is required */
       if (pm_action == BTA_DM_PM_NO_ACTION) {
@@ -719,11 +716,8 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr, tBTA_DM_PM_ACTION pm
     log::error("Ignore the power mode request: {}", pm_request);
     return;
   }
-  if (pm_action == BTA_DM_PM_PARK) {
-    p_link->pm_mode_attempted = BTA_DM_PM_PARK;
-    bta_dm_pm_park(peer_addr);
-    log::warn("DEPRECATED Setting link to park mode peer:{}", peer_addr);
-  } else if (pm_action & BTA_DM_PM_SNIFF) {
+
+  if (pm_action & BTA_DM_PM_SNIFF) {
     /* dont initiate SNIFF, if link_policy has it disabled */
     if (BTM_is_sniff_allowed_for(peer_addr)) {
       log::verbose("Link policy allows sniff mode so setting mode peer:{}", peer_addr);
@@ -737,34 +731,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr, tBTA_DM_PM_ACTION pm
     bta_dm_pm_active(peer_addr);
   }
 }
-/*******************************************************************************
- *
- * Function         bta_ag_pm_park
- *
- * Description      Switch to park mode.
- *
- *
- * Returns          true if park attempted, false otherwise.
- *
- ******************************************************************************/
-static bool bta_dm_pm_park(const RawAddress& peer_addr) {
-  tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
 
-  /* if not in park mode, switch to park */
-  if (!BTM_ReadPowerMode(peer_addr, &mode)) {
-    log::warn("Unable to read power mode for peer:{}", peer_addr);
-  }
-
-  if (mode != BTM_PM_MD_PARK) {
-    tBTM_STATUS status = get_btm_client_interface().link_policy.BTM_SetPowerMode(
-            bta_dm_cb.pm_id, peer_addr, &p_bta_dm_pm_md[BTA_DM_PM_PARK_IDX]);
-    if (status == tBTM_STATUS::BTM_CMD_STORED || status == tBTM_STATUS::BTM_CMD_STARTED) {
-      return true;
-    }
-    log::warn("Unable to set park power mode");
-  }
-  return true;
-}
 /*******************************************************************************
  *
  * Function         bta_dm_pm_get_sniff_entry
@@ -776,16 +743,17 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
  * Returns          tBTM_PM_PWR_MD with specified |index|.
  *
  ******************************************************************************/
+#define BTA_DM_PM_NUM_ENTRIES 7
 tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index) {
   static std::vector<tBTM_PM_PWR_MD> pwr_mds_cache;
-  if (pwr_mds_cache.size() == BTA_DM_PM_PARK_IDX) {
-    if (index >= BTA_DM_PM_PARK_IDX) {
+  if (pwr_mds_cache.size() == BTA_DM_PM_NUM_ENTRIES) {
+    if (index >= BTA_DM_PM_NUM_ENTRIES) {
       return pwr_mds_cache[0];
     }
     return pwr_mds_cache[index];
   }
 
-  std::vector<uint32_t> invalid_list(BTA_DM_PM_PARK_IDX, 0);
+  std::vector<uint32_t> invalid_list(BTA_DM_PM_NUM_ENTRIES, 0);
   std::vector<uint32_t> max = osi_property_get_uintlist(kPropertySniffMaxIntervals, invalid_list);
   std::vector<uint32_t> min = osi_property_get_uintlist(kPropertySniffMinIntervals, invalid_list);
   std::vector<uint32_t> attempt = osi_property_get_uintlist(kPropertySniffAttempts, invalid_list);
@@ -793,12 +761,12 @@ tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index) {
 
   // If any of the sysprops are malformed or don't exist, use default table
   // value
-  bool use_defaults = (max.size() < BTA_DM_PM_PARK_IDX || max == invalid_list ||
-                       min.size() < BTA_DM_PM_PARK_IDX || min == invalid_list ||
-                       attempt.size() < BTA_DM_PM_PARK_IDX || attempt == invalid_list ||
-                       timeout.size() < BTA_DM_PM_PARK_IDX || timeout == invalid_list);
+  bool use_defaults = (max.size() < BTA_DM_PM_NUM_ENTRIES || max == invalid_list ||
+                       min.size() < BTA_DM_PM_NUM_ENTRIES || min == invalid_list ||
+                       attempt.size() < BTA_DM_PM_NUM_ENTRIES || attempt == invalid_list ||
+                       timeout.size() < BTA_DM_PM_NUM_ENTRIES || timeout == invalid_list);
 
-  for (auto i = 0; i < BTA_DM_PM_PARK_IDX; i++) {
+  for (auto i = 0; i < BTA_DM_PM_NUM_ENTRIES; i++) {
     if (use_defaults) {
       pwr_mds_cache.push_back(p_bta_dm_pm_md[i]);
     } else {
@@ -809,7 +777,7 @@ tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index) {
     }
   }
 
-  if (index >= BTA_DM_PM_PARK_IDX) {
+  if (index >= BTA_DM_PM_NUM_ENTRIES) {
     return pwr_mds_cache[0];
   }
   return pwr_mds_cache[index];
@@ -1060,15 +1028,12 @@ static void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS statu
   /* check new mode */
   switch (status) {
     case BTM_PM_STS_ACTIVE:
-      /* if our sniff or park attempt failed
-      we should not try it again*/
-      if (hci_status != 0) {
+      if (hci_status != 0) {  // Don't retry sniff if the previous attempt failed
         log::error("hci_status={}", hci_status);
         p_link->reset_sniff_flags();
 
-        if (p_link->pm_mode_attempted & (BTA_DM_PM_PARK | BTA_DM_PM_SNIFF)) {
-          p_link->pm_mode_failed |=
-                  ((BTA_DM_PM_PARK | BTA_DM_PM_SNIFF) & p_link->pm_mode_attempted);
+        if (p_link->pm_mode_attempted & BTA_DM_PM_SNIFF) {
+          p_link->pm_mode_failed |= (BTA_DM_PM_SNIFF & p_link->pm_mode_attempted);
           bta_dm_pm_stop_timer_by_mode(bd_addr, p_link->pm_mode_attempted);
           bta_dm_pm_set_mode(bd_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
         }
@@ -1082,16 +1047,6 @@ static void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS statu
          * mode if needed */
         bta_dm_pm_stop_timer(bd_addr);
         bta_dm_pm_set_mode(bd_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
-      }
-      break;
-
-    case BTM_PM_STS_PARK:
-    case BTM_PM_STS_HOLD:
-      /* save the previous low power mode - for SSR.
-       * SSR parameters are sent to controller on "conn open".
-       * the numbers stay good until park/hold/detach */
-      if (p_link->is_ssr_active()) {
-        p_link->prev_low = status;
       }
       break;
 

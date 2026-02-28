@@ -3234,7 +3234,7 @@ public class BassClientService extends ConnectableProfile {
                 }
             }
             if (isBigMonitoringPauseReason(broadcastId)) {
-                resumeReceiversSourceSynchronization();
+                resumeReceiversSourceSynchronization(broadcastId);
             }
         }
     }
@@ -3604,7 +3604,7 @@ public class BassClientService extends ConnectableProfile {
                 }
             }
             if (isBigMonitoringPauseReason(broadcastId)) {
-                resumeReceiversSourceSynchronization();
+                resumeReceiversSourceSynchronization(broadcastId);
             }
         }
 
@@ -5072,7 +5072,7 @@ public class BassClientService extends ConnectableProfile {
                             if (!isSuspendedByHostPauseReason(metadata.getBroadcastId())
                                     && !isBigMonitoringPauseReason(metadata.getBroadcastId())
                                     && !isOorMonitoringPauseReason(metadata.getBroadcastId())) {
-                                resumeReceiversSourceSynchronization();
+                                resumeReceiversSourceSynchronization(metadata.getBroadcastId());
                             }
                             return;
                         }
@@ -5118,7 +5118,7 @@ public class BassClientService extends ConnectableProfile {
             if (!isSuspendedByHostPauseReason(broadcastId)
                     && !isBigMonitoringPauseReason(broadcastId)
                     && !isOorMonitoringPauseReason(broadcastId)) {
-                resumeReceiversSourceSynchronization();
+                resumeReceiversSourceSynchronization(broadcastId);
             }
             return;
         }
@@ -5224,27 +5224,6 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    public void stopBroadcastMonitoring() {
-        Log.d(TAG, "stopBroadcastMonitoring");
-        mPausedBroadcastSinks.clear();
-        mSinksToRestoreFromPeer.clear();
-
-        Iterator<Integer> iterator = mPausedBroadcastIds.keySet().iterator();
-        while (iterator.hasNext()) {
-            int pausedBroadcastId = iterator.next();
-            mTimeoutHandler.stop(pausedBroadcastId, MESSAGE_BIG_MONITOR_TIMEOUT);
-            mTimeoutHandler.stop(pausedBroadcastId, MESSAGE_OOR_MONITOR_TIMEOUT);
-            iterator.remove();
-            synchronized (mSearchScanCallbackLock) {
-                // when searching is stopped then stop active sync
-                if (!isAnySearchInProgress()) {
-                    cancelActiveSync(getSyncHandleForBroadcastId(pausedBroadcastId));
-                }
-            }
-        }
-        logPausedBroadcastsAndSinks();
-    }
-
     private void checkAndStopBroadcastMonitoring() {
         Log.d(TAG, "checkAndStopBroadcastMonitoring");
         Iterator<Integer> iterator = mPausedBroadcastIds.keySet().iterator();
@@ -5259,10 +5238,14 @@ public class BassClientService extends ConnectableProfile {
                                 && mPausedBroadcastSinks.isEmpty())) {
                     iterator.remove();
                 }
-                synchronized (mSearchScanCallbackLock) {
-                    // when searching is stopped then stop active sync
-                    if (!isAnySearchInProgress()) {
-                        cancelActiveSync(getSyncHandleForBroadcastId(pausedBroadcastId));
+                if (!Flags.leaudioBroadcastAlwaysUseBackgroundScanner()
+                        || !Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+                    // No need to cancelActiveSync as stopBackgroundSearching is called after that
+                    synchronized (mSearchScanCallbackLock) {
+                        // when searching is stopped then stop active sync
+                        if (!isAnySearchInProgress()) {
+                            cancelActiveSync(getSyncHandleForBroadcastId(pausedBroadcastId));
+                        }
                     }
                 }
                 logPausedBroadcastsAndSinks();
@@ -5292,6 +5275,12 @@ public class BassClientService extends ConnectableProfile {
     }
 
     private void stopActiveSync(int broadcastId) {
+        if (Flags.leaudioBroadcastAlwaysUseBackgroundScanner()
+                && Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+            // No need to use stopActiveSync as stopBackgroundSearching is always called before that
+            return;
+        }
+
         synchronized (mSearchScanCallbackLock) {
             // when searching is stopped then stop active sync
             if (!isAnySearchInProgress()
@@ -5382,9 +5371,20 @@ public class BassClientService extends ConnectableProfile {
         return true;
     }
 
-    /** Request receivers to resume broadcast source synchronization */
+    /** Request receivers to resume all broadcast source synchronization */
     public void resumeReceiversSourceSynchronization() {
-        sEventLogger.logd(TAG, "Resume receivers source synchronization");
+        resumeReceiversSourceSynchronization(LeAudioConstants.INVALID_BROADCAST_ID);
+    }
+
+    private void resumeReceiversSourceSynchronization(int broadcastIdToResumeFlagged) {
+        final int broadcastIdToResume = (!Flags.leaudioBroadcastAutoSwitchAnnouncement())
+            ? LeAudioConstants.INVALID_BROADCAST_ID
+            : broadcastIdToResumeFlagged;
+
+        sEventLogger.logd(
+                TAG,
+                "Resume receivers source synchronization: broadcastIdToResume: "
+                        + broadcastIdToResume);
 
         HashSet<BluetoothDevice> pausedSinksToRemove = new HashSet<>();
         for (BluetoothDevice sink : mPausedBroadcastSinks) {
@@ -5404,14 +5404,28 @@ public class BassClientService extends ConnectableProfile {
                     continue;
                 }
 
+                int broadcastId = metadata.getBroadcastId();
+                Log.d(
+                        TAG,
+                        "resumeReceiversSourceSynchronization: "
+                                + ("sink: " + sink)
+                                + (", broadcastId: " + broadcastId));
+
+                if ((broadcastIdToResume != LeAudioConstants.INVALID_BROADCAST_ID)
+                        && (broadcastId != broadcastIdToResume)) {
+                    Log.d(
+                            TAG,
+                            "resumeReceiversSourceSynchronization: different broadcastIdToResume: "
+                                    + broadcastIdToResume);
+                    continue;
+                }
+
                 if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()
                         && !isAnyChannelSelected(metadata)
                         && !mSinksToRestoreFromPeer.contains(sink)) {
                     Log.d(TAG, "resumeReceiversSourceSynchronization: paused by user");
                     continue;
                 }
-
-                int broadcastId = metadata.getBroadcastId();
 
                 // For each device, find the source ID having this broadcast ID
                 BassClientStateMachine sm = mStateMachines.get(sink);
@@ -5703,7 +5717,7 @@ public class BassClientService extends ConnectableProfile {
                     logPausedBroadcastsAndSinks();
                     // If new paused sink, call resume in case that it is already in resume state
                     if (newPausedSinkAdded && isResumingPauseReason(broadcastId)) {
-                        resumeReceiversSourceSynchronization();
+                        resumeReceiversSourceSynchronization(broadcastId);
                     }
                 }
             }

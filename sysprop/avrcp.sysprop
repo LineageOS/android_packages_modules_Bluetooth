@@ -18,3 +18,11 @@ prop {
     prop_name: "bluetooth.avrcp.target.safe_media_volume.config"
 }
 
+# Is cover art feature for AVRCP controller enabled
+prop {
+    api_name: "isAvrcpControllerCoverArtEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.avrcp.controller.coverart.enabled"
+}

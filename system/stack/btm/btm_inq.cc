@@ -1210,15 +1210,20 @@ static void btm_process_inq_results_standard(EventView event) {
 
     p_i->inq_info.results.rssi = BTM_INQ_RES_IGNORE_RSSI;
 
+    p_cur = &p_i->inq_info.results;
+
+    // Always use the valid CoD from inquiry response in case it was previously derived from LE
+    // Appearance value
+    if (dc != kDevClassUnclassified && dc != kDevClassEmpty) {
+      p_cur->dev_class = dc;
+    }
+
     if (is_new) {
       /* Save the info */
-      p_cur = &p_i->inq_info.results;
       p_cur->page_scan_rep_mode = page_scan_rep_mode;
       p_cur->page_scan_per_mode = page_scan_per_mode;
       p_cur->page_scan_mode = page_scan_mode;
-      p_cur->dev_class[0] = dc[0];
-      p_cur->dev_class[1] = dc[1];
-      p_cur->dev_class[2] = dc[2];
+
       p_cur->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 
       p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
@@ -1354,15 +1359,19 @@ static void btm_process_inq_results_rssi(EventView event) {
     /* keep updating RSSI to have latest value */
     p_i->inq_info.results.rssi = (int8_t)rssi;
 
+    p_cur = &p_i->inq_info.results;
+
+    // Always use the valid CoD from inquiry response in case it was previously derived from LE
+    // Appearance value
+    if (dc != kDevClassUnclassified && dc != kDevClassEmpty) {
+      p_cur->dev_class = dc;
+    }
+
     if (is_new) {
       /* Save the info */
-      p_cur = &p_i->inq_info.results;
       p_cur->page_scan_rep_mode = page_scan_rep_mode;
       p_cur->page_scan_per_mode = page_scan_per_mode;
       p_cur->page_scan_mode = page_scan_mode;
-      p_cur->dev_class[0] = dc[0];
-      p_cur->dev_class[1] = dc[1];
-      p_cur->dev_class[2] = dc[2];
       p_cur->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 
       p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
@@ -1504,15 +1513,19 @@ static void btm_process_inq_results_extended(EventView event) {
     /* keep updating RSSI to have latest value */
     p_i->inq_info.results.rssi = (int8_t)rssi;
 
+    p_cur = &p_i->inq_info.results;
+
+    // Always use the valid CoD from inquiry response in case it was previously derived from LE
+    // Appearance value
+    if (dc != kDevClassUnclassified && dc != kDevClassEmpty) {
+      p_cur->dev_class = dc;
+    }
+
     if (is_new) {
       /* Save the info */
-      p_cur = &p_i->inq_info.results;
       p_cur->page_scan_rep_mode = page_scan_rep_mode;
       p_cur->page_scan_per_mode = page_scan_per_mode;
       p_cur->page_scan_mode = page_scan_mode;
-      p_cur->dev_class[0] = dc[0];
-      p_cur->dev_class[1] = dc[1];
-      p_cur->dev_class[2] = dc[2];
       p_cur->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 
       p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();

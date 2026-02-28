@@ -623,7 +623,7 @@ TEST_F(AvrcpDeviceTest, getElementAttributesTest) {
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
 
-  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
     std::move(cb).Run(info);
   }));
 
@@ -661,7 +661,7 @@ TEST_F(AvrcpDeviceTest, getElementAttributesWithCoverArtTest) {
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
 
-  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
     std::move(cb).Run(info);
   }));
   SetBipClientStatus(false);
@@ -708,7 +708,7 @@ TEST_F(AvrcpDeviceTest, getElementAttributesMtuTest) {
   device.RegisterInterfaces(&interface, &a2dp_interface, nullptr, nullptr);
 
   SongInfo info = {"test_id", {AttributeEntry(Attribute::TITLE, "1234truncated")}};
-  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
     std::move(cb).Run(info);
   }));
 
@@ -771,10 +771,6 @@ TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsNowPlayingTest) {
   std::vector<SongInfo> now_playing_list = {
           {"test_id1", {}}, {"test_id2", {}}, {"test_id3", {}}, {"test_id4", {}}, {"test_id5", {}},
   };
-
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
-    std::move(cb).Run("test_id1", now_playing_list);
-  }));
 
   auto expected_response =
           GetTotalNumberOfItemsResponseBuilder::MakeBuilder(Status::NO_AVAILABLE_PLAYERS, 0, 0);
@@ -1027,10 +1023,9 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
                     AttributeEntry(Attribute::GENRE, "Test Genre"),
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
-  std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
-    std::move(cb).Run("test_id", list);
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
+    std::move(cb).Run(info);
   }));
 
   SetBipClientStatus(false);
@@ -1065,10 +1060,9 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingWithCoverArtTest) {
                     AttributeEntry(Attribute::GENRE, "Test Genre"),
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
-  std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
-    std::move(cb).Run("test_id", list);
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
+    std::move(cb).Run(info);
   }));
 
   SetBipClientStatus(true);
@@ -1119,9 +1113,8 @@ TEST_F(AvrcpDeviceTest, getItemAttributesMtuTest) {
   device.RegisterInterfaces(&interface, &a2dp_interface, nullptr, nullptr);
 
   SongInfo info = {"test_id", {AttributeEntry(Attribute::TITLE, "1234truncated")}};
-  std::vector<SongInfo> list = {info};
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
-    std::move(cb).Run("test_id", list);
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
+    std::move(cb).Run(info);
   }));
 
   EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(truncated_packet)))).Times(1);
@@ -1502,10 +1495,9 @@ TEST_F(AvrcpDeviceTest, getInvalidItemAttributesTest) {
                     AttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2"),
                     AttributeEntry(Attribute::GENRE, "Test Genre"),
                     AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
-  std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
-    std::move(cb).Run("test_id", list);
+  EXPECT_CALL(interface, GetSongInfo(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
+    std::move(cb).Run(info);
   }));
 
   auto compare_to_full =

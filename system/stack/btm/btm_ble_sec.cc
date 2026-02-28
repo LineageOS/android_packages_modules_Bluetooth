@@ -1424,6 +1424,7 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
     BtmSecurity::Get().link_spec_ = {};
     BtmSecurity::Get().link_spec_.addrt.bda = RawAddress::kAny;
     BtmSecurity::Get().pairing_flags_ = 0;
+    BtmSecurity::Get().ResetLinkKeyRequestTimer();
   }
 
   p_device = btm_get_dev(bd_addr);  // BTM_LE_COMPLT_EVT event may have removed the device
@@ -1487,6 +1488,7 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
     BtmSecurity::Get().link_spec_.addrt.bda = RawAddress::kAny;
     BtmSecurity::Get().pairing_state_ = BTM_PAIR_STATE_IDLE;
     BtmSecurity::Get().pairing_flags_ = 0;
+    BtmSecurity::Get().ResetLinkKeyRequestTimer();
   }
 
   if (res == tBTM_STATUS::BTM_SUCCESS) {
@@ -1553,6 +1555,7 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
       BtmSecurity::Get().link_spec_ = {};
       BtmSecurity::Get().link_spec_.addrt.bda = RawAddress::kAny;
       BtmSecurity::Get().pairing_flags_ = 0;
+      BtmSecurity::Get().ResetLinkKeyRequestTimer();
     }
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
   }

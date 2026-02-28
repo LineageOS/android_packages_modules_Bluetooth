@@ -1108,7 +1108,11 @@ static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
       local_flag = *p_flag;
     }
 
-    p_cur->dev_class = btm_ble_get_appearance_as_cod(data);
+    // CoD received from inquiry response should not be overwritten by the appearance value. So
+    // update it only if it is not known.
+    if (p_cur->dev_class == kDevClassUnclassified || p_cur->dev_class == kDevClassEmpty) {
+      p_cur->dev_class = btm_ble_get_appearance_as_cod(data);
+    }
 
     const uint8_t* p_rsi = AdvertiseDataParser::GetFieldByType(data, BTM_BLE_AD_TYPE_RSI, &len);
     if (p_rsi != nullptr && len == 6) {

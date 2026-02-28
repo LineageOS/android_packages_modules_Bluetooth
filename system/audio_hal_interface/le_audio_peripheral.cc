@@ -19,6 +19,7 @@
 #include <bluetooth/log.h>
 
 #include "bta/le_audio/le_audio_types.h"
+#include "bta/le_audio/le_audio_utils.h"
 #include "le_audio_software.h"
 
 namespace bluetooth::audio::le_audio {
@@ -38,7 +39,8 @@ static void EndpointConfigResponseLegacyBuilder(const std::vector<endpoint_confi
     ase_configured.codec_spec_conf = request.codec_configuration.codec_spec_conf;
 
     // Use the client's preferred PHY
-    ase_configured.preferred_phy = request.codec_configuration.target_phy;
+    ase_configured.preferred_phy = bluetooth::le_audio::utils::GetPreferredPhyFromTargetPhy(
+            request.codec_configuration.target_phy);
 
     ase_configured.preferred_retrans_nb = 13;
     ase_configured.framing = 0x00;

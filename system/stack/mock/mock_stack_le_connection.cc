@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <string>
 
+#include "base/functional/bind.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -43,6 +44,8 @@ struct leConnectionCancelConnect leConnectionCancelConnect;
 struct leConnectionConnect leConnectionConnect;
 struct leConnectionSubrateRequest leConnectionSubrateRequest;
 struct leConnectionUpdate leConnectionUpdate;
+struct leConnectionSetPhy leConnectionSetPhy;
+struct leConnectionReadPhy leConnectionReadPhy;
 }  // namespace stack_le_connection
 }  // namespace mock
 }  // namespace test
@@ -107,6 +110,18 @@ void leConnectionUpdate(const RawAddress& bd_addr, uint16_t min_interval, uint16
   inc_func_call_count(__func__);
   test::mock::stack_le_connection::leConnectionUpdate(bd_addr, min_interval, max_interval, latency,
                                                       timeout, min_ce_len, max_ce_len);
+}
+
+void leConnectionSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                        uint16_t phy_options) {
+  inc_func_call_count(__func__);
+  test::mock::stack_le_connection::leConnectionSetPhy(bd_addr, tx_phys, rx_phys, phy_options);
+}
+void leConnectionReadPhy(
+        const RawAddress& bd_addr,
+        base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
+  inc_func_call_count(__func__);
+  test::mock::stack_le_connection::leConnectionReadPhy(bd_addr, std::move(cb));
 }
 }  // namespace bluetooth::stack
 

@@ -133,9 +133,7 @@ class BAPProxy(ProfileProxy):
         Description: Verify that the Implementation Under Test \(IUT\) can send
         Discover All Characteristics command.
         """
-
-        # Clear GATT cache to make sure discovery takes place.
-        self.gatt.ClearCache(connection=self.connection)
+        self.gatt.DiscoverServices(connection=self.connection, force=True)
         return "OK"
 
     @match_description

@@ -17,14 +17,21 @@
 package com.android.bluetooth.bass_client
 
 import android.util.Log
+import com.android.bluetooth.flags.Flags
 
 /**
  * Represents and parses Length-Type-Value (LTV) structured data from broadcast metadata.
  *
  * Use [LtvData.parse] to create an instance from a raw byte array.
  */
-class LtvData private constructor(val audioActiveState: AudioActiveState) {
-    override fun toString(): String = "LtvData: audioActiveState: $audioActiveState"
+class LtvData
+private constructor(val audioActiveState: AudioActiveState, val streamingAudioContexts: Int?) {
+    override fun toString(): String =
+        if (Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+            "LtvData: audioActiveState: $audioActiveState, streamingAudioContexts: $streamingAudioContexts"
+        } else {
+            "LtvData: audioActiveState: $audioActiveState"
+        }
 
     /** Represents the audio active state in the LTV data. */
     enum class AudioActiveState {
@@ -41,11 +48,15 @@ class LtvData private constructor(val audioActiveState: AudioActiveState) {
         private const val AUDIO_ACTIVE_STATE_LENGTH = 0x02
         private const val AUDIO_ACTIVE_STATE_TRUE = 0x01
 
+        private const val STREAMING_AUDIO_CONTEXTS_TYPE = 0x02
+        private const val STREAMING_AUDIO_CONTEXTS_LENGTH = 0x03
+
         @JvmStatic
         fun parse(metadata: ByteArray?): LtvData {
             var audioActiveState = AudioActiveState.NONE
+            var streamingAudioContexts: Int? = null
             if (metadata == null) {
-                return LtvData(audioActiveState)
+                return LtvData(audioActiveState, streamingAudioContexts)
             }
             var offset = 0
             while (offset + METADATA_LEN_MIN <= metadata.size) {
@@ -60,10 +71,18 @@ class LtvData private constructor(val audioActiveState: AudioActiveState) {
                     audioActiveState =
                         if (value == AUDIO_ACTIVE_STATE_TRUE) AudioActiveState.TRUE
                         else AudioActiveState.FALSE
+                } else if (
+                    Flags.leaudioBroadcastAutoSwitchAnnouncement() &&
+                        type == STREAMING_AUDIO_CONTEXTS_TYPE &&
+                        length == STREAMING_AUDIO_CONTEXTS_LENGTH
+                ) {
+                    streamingAudioContexts =
+                        (metadata[offset].toInt() and 0xFF) or
+                            ((metadata[offset + 1].toInt() and 0xFF) shl 8)
                 }
                 offset += length - 1
             }
-            return LtvData(audioActiveState)
+            return LtvData(audioActiveState, streamingAudioContexts)
         }
     }
 }

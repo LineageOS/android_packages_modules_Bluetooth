@@ -58,6 +58,8 @@ public:
     return uid;
   }
 
+  size_t size() { return media_id_to_uid_.size(); }
+
 private:
   std::map<std::string, uint64_t> media_id_to_uid_;
   std::map<uint64_t, std::string> uid_to_media_id_;

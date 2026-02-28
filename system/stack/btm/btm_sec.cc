@@ -95,6 +95,7 @@ using namespace bluetooth;
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 #define BTM_SEC_START_AUTH_DELAY (200)
+#define BTM_SEC_LK_REQ_TIMEOUT_MS 1000 /* 1 second */
 
 #define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm) & BTM_SM4_TRUE)))
 #define BTM_SEC_IS_SM4_LEGACY(sm) ((bool)(BTM_SM4_KNOWN == ((sm) & BTM_SM4_TRUE)))
@@ -112,6 +113,7 @@ static void btm_sec_collision_timeout(void* data);
 static void btm_restore_mode(void);
 static void btm_sec_pairing_timeout(void* data);
 static tBTM_STATUS btm_sec_dd_create_conn(BtmDevice* p_device);
+static void btm_sec_link_key_request_reply(const RawAddress& bda, const LinkKey& link_key);
 
 static void btm_sec_check_pending_reqs(void);
 static bool btm_sec_queue_service_access_request(const RawAddress& bd_addr, uint16_t psm,
@@ -2618,7 +2620,9 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
    * Do not process this RSP and return, REQ will handle generation of
    * key missing event and disconnect.*/
   if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
-      !p_device->sec_rec.is_device_encrypted()) {
+      !p_device->sec_rec.is_device_encrypted() &&
+      !(com::android::bluetooth::flags::process_iocap_rsp_while_repairing() &&
+        is_autonomous_repairing_supported() && p_device->bond_lost)) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     return;
   }
@@ -3901,6 +3905,11 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
     }
   }
 
+  // Reset link key request timer currently pairing device disconnected
+  if (BtmSecurity::Get().link_spec_.addrt.bda == p_device->bd_addr) {
+    BtmSecurity::Get().ResetLinkKeyRequestTimer();
+  }
+
   /* If we are in the process of bonding we need to tell client that auth failed
    */
   const uint8_t old_pairing_flags = BtmSecurity::Get().pairing_flags_;
@@ -4098,6 +4107,7 @@ void btm_sec_link_key_notification(const RawAddress& bda, const Octet16& link_ke
       (key_type <= BTM_LTK_DERIVED_LKEY_OFFSET + BTM_LKEY_TYPE_AUTH_COMB_P_256)) {
     ctkd = true;
     key_type -= BTM_LTK_DERIVED_LKEY_OFFSET;
+    btm_sec_link_key_request_reply(bda, link_key);
   }
 
   /* If connection was made to do bonding restore link security if changed */
@@ -4192,6 +4202,43 @@ void btm_sec_link_key_notification(const RawAddress& bda, const Octet16& link_ke
 
 /*******************************************************************************
  *
+ * Function         btm_sec_lk_req_timeout
+ *
+ * Description      This function is called when link key request timer expires
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void btm_sec_lk_req_timeout(void* /* data */) {
+  BtmSecurity::Get().ResetLinkKeyRequestTimer();
+
+  const RawAddress& bd_addr = BtmSecurity::Get().link_spec_.addrt.bda;
+  if (bd_addr.IsEmpty() || bd_addr == RawAddress::kAny) {
+    log::error("No ongoing pairing, aborting link key request timer");
+    return;
+  }
+
+  const BtmDevice* p_device = btm_find_dev(bd_addr);
+  if (p_device == nullptr) {
+    log::error("No device found for {}", bd_addr);
+    return;
+  }
+
+  // BtmSecurity::link_spec_ may have the pseudo address. If LE pairing concluded successfully,
+  // BtmDevice.bd_addr should have the identity address which is what we should use with the HCI
+  // commands here.
+  if (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN) {
+    log::warn("Sending link key reply for {} due to timeout", p_device->bd_addr);
+    btsnd_hcic_link_key_req_reply(p_device->bd_addr, p_device->sec_rec.link_key);
+    return;
+  }
+
+  log::warn("Sending link key negative reply for {} due to timeout", p_device->bd_addr);
+  btsnd_hcic_link_key_neg_reply(p_device->bd_addr);
+}
+
+/*******************************************************************************
+ *
  * Function         btm_sec_link_key_request
  *
  * Description      This function is called when controller requests link key
@@ -4212,16 +4259,16 @@ void btm_sec_link_key_request(const RawAddress bda) {
     p_device->sec_rec.classic_link = tSECURITY_STATE::AUTHENTICATING;
   }
 
-  if ((BtmSecurity::Get().pairing_state_ == BTM_PAIR_STATE_WAIT_PIN_REQ) &&
-      (BtmSecurity::Get().collision_start_time_ != 0) &&
-      (BtmSecurity::Get().p_collided_dev_ && BtmSecurity::Get().p_collided_dev_->bd_addr == bda)) {
-    log::verbose(
-            "btm_sec_link_key_request() rejecting link key req State: {} "
-            "START_TIMEOUT : {}",
-            BtmSecurity::Get().pairing_state_, BtmSecurity::Get().collision_start_time_);
+  BtmSecurity& btm_security = BtmSecurity::Get();
+  if (btm_security.pairing_state_ == BTM_PAIR_STATE_WAIT_PIN_REQ &&
+      btm_security.collision_start_time_ != 0 && btm_security.p_collided_dev_ &&
+      btm_security.p_collided_dev_->bd_addr == bda) {
+    log::verbose("Rejecting link key req State: {} Collision start time: {}",
+                 BtmSecurity::Get().pairing_state_, BtmSecurity::Get().collision_start_time_);
     btsnd_hcic_link_key_neg_reply(bda);
     return;
   }
+
   if (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN) {
     btsnd_hcic_link_key_req_reply(bda, p_device->sec_rec.link_key);
     return;
@@ -4230,8 +4277,33 @@ void btm_sec_link_key_request(const RawAddress bda) {
   /* Notify L2CAP to increase timeout */
   l2c_pin_code_request(bda);
 
+  // While pairing with a device over LE, it is possible that the local SMP has not completed
+  // generating the link key yet but the remote device has. This can happen due to delay in
+  // transmission of SMP key distribution packets.
+  // In that case, the remote device may request BR/EDR authentication request before the link key
+  // is available here.
+  if (com_android_bluetooth_flags_link_key_request_timer() &&
+      btm_security.link_spec_.addrt.bda == bda &&
+      btm_security.link_spec_.transport == BT_TRANSPORT_LE &&
+      btm_security.lk_req_timer_ == nullptr) {
+    log::debug("Waiting for CTKD to complete for device: {}", bda);
+    btm_security.lk_req_timer_ = alarm_new("btm_sec_lk_req_timer");
+    alarm_set_on_mloop(btm_security.lk_req_timer_, BTM_SEC_LK_REQ_TIMEOUT_MS,
+                       btm_sec_lk_req_timeout, nullptr);
+  }
+
   /* The link key is not in the database and it is not known to the manager */
   btsnd_hcic_link_key_neg_reply(bda);
+}
+
+static void btm_sec_link_key_request_reply(const RawAddress& bda, const LinkKey& link_key) {
+  if (!BtmSecurity::Get().ResetLinkKeyRequestTimer()) {
+    // No one is waiting for the link key reply, so we can return
+    return;
+  }
+
+  log::verbose("bda: {}", bda);
+  btsnd_hcic_link_key_req_reply(bda, link_key);
 }
 
 /*******************************************************************************
@@ -4860,6 +4932,7 @@ void BtmSecurity::change_pairing_state(tBTM_PAIRING_STATE new_state) {
 
     btm_restore_mode();
     btm_sec_check_pending_reqs();
+    BtmSecurity::Get().ResetLinkKeyRequestTimer();
 
     link_spec_ = {};
     link_spec_.addrt.bda = RawAddress::kAny;

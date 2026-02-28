@@ -107,7 +107,7 @@ public:
   virtual void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) = 0;
 
   using SongInfoCallback = base::OnceCallback<void(SongInfo)>;
-  virtual void GetSongInfo(SongInfoCallback info_cb) = 0;
+  virtual void GetSongInfo(std::string media_id, SongInfoCallback info_cb) = 0;
 
   using PlayStatusCallback = base::OnceCallback<void(PlayStatus)>;
   virtual void GetPlayStatus(PlayStatusCallback status_cb) = 0;

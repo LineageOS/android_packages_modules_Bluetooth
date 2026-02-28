@@ -437,10 +437,25 @@ public class MediaPlayerList {
 
     /**
      * Returns the active {@link android.media.session.MediaController}'s metadata, converted to
-     * {@link Metadata}.
+     * {@link Metadata} if no {@code mediaId} has been provided, otherwise retrieves the song info
+     * for provided {@code mediaId} in the queue.
      */
     @NonNull
-    public Metadata getCurrentSongInfo() {
+    public Metadata getSongInfo(String mediaId) {
+        if (mediaId != null && !mediaId.isEmpty() && !mediaId.equals(getCurrentMediaId())) {
+            Metadata songInfo = null;
+            for (Metadata meta : getNowPlayingList()) {
+                if (mediaId.equals(meta.mediaId)) {
+                    songInfo = meta;
+                    break;
+                }
+            }
+            if (songInfo != null) {
+                return songInfo;
+            }
+            // Failed to retrieve mediaId song info, fallback to retrieve current song info
+        }
+
         final MediaPlayerWrapper player = getActivePlayer();
         if (player == null) return Util.empty_data();
 
@@ -476,7 +491,7 @@ public class MediaPlayerList {
      *
      * <p>If there is no queue, returns a list containing only the active player's Metadata.
      *
-     * <p>See {@link #getCurrentSongInfo} and {@link #getCurrentMediaId}.
+     * <p>See {@link #getSongInfo} and {@link #getCurrentMediaId}.
      */
     @NonNull
     public List<Metadata> getNowPlayingList() {
@@ -484,7 +499,7 @@ public class MediaPlayerList {
         // |getCurrentMediaId()| for reasons why there might be no active song.
         if (getCurrentMediaId().equals("")) {
             List<Metadata> ret = new ArrayList<Metadata>();
-            Metadata data = getCurrentSongInfo();
+            Metadata data = getSongInfo("");
             data.mediaId = "";
             ret.add(data);
             return ret;

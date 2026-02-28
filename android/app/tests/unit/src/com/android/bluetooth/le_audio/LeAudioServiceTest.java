@@ -433,29 +433,24 @@ public class LeAudioServiceTest {
 
     private void assertTmapRole(int expectedMasks, int... supportedProfiles) {
         // revert the profile set
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST));
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL));
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.MCP_SERVER));
+        ExtendedMockito.doReturn(false).when(() -> Config.isProfileSupported(anyInt()));
         for (int profile : supportedProfiles) {
             ExtendedMockito.doReturn(true).when(() -> Config.isProfileSupported(profile));
         }
         int mask =
-                new LeAudioService(
-                                mAdapterService,
-                                mStorage,
-                                mNativeInterface,
-                                mLeAudioBroadcasterNativeInterface,
-                                mActiveDeviceManager,
-                                mScanController,
-                                mLooper.getLooper(),
-                                mActivityManager,
-                                mPackageManager)
-                        .getTmapRoleMask();
+                Flags.leaudioCentralizeTmap()
+                        ? LeAudioTmapService.calculateTmapRoleMask()
+                        : new LeAudioService(
+                                        mAdapterService,
+                                        mStorage,
+                                        mNativeInterface,
+                                        mLeAudioBroadcasterNativeInterface,
+                                        mActiveDeviceManager,
+                                        mScanController,
+                                        mLooper.getLooper(),
+                                        mActivityManager,
+                                        mPackageManager)
+                                .getTmapRoleMask();
         assertThat(mask).isEqualTo(expectedMasks);
     }
 

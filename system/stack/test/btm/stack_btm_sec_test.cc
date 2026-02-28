@@ -526,3 +526,148 @@ TEST_F(StackBtmSecSecurityUpgradeTest, MitmUpgradeNotPossible) {
   ASSERT_EQ(p_device_->sm4, initial_sm4);
   ASSERT_EQ(p_device_->sec_rec.sec_flags, initial_sec_flags);
 }
+
+// Must be global to resolve the symbol within the legacy stack
+struct alarm_t {
+  alarm_callback_t cb;
+  void* data;
+};
+
+static tBTM_STATUS dummy_pin_callback(const RawAddress&, const DEV_CLASS&, const BD_NAME&, bool,
+                                      PairingAlgorithm) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+static tBTM_STATUS dummy_link_key_callback(const RawAddress&, const BD_NAME&, const LinkKey&,
+                                           uint8_t, bool) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+static void dummy_auth_complete_callback(const RawAddress&, const BD_NAME&, tHCI_REASON) {}
+static void dummy_bond_cancel_cmpl_callback(tBTM_STATUS) {}
+static tBTM_STATUS dummy_sp_callback(tBTM_SP_EVT, tBTM_SP_EVT_DATA*) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+static tBTM_STATUS dummy_le_callback(tBTM_LE_EVT, const RawAddress&, tBTM_LE_EVT_DATA*) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+static void dummy_le_key_callback(uint8_t, tBTM_BLE_LOCAL_KEYS*) {}
+static tBTM_STATUS dummy_sirk_verification_callback(const RawAddress&) {
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
+static BtmAppReg dummy_app_reg = {dummy_pin_callback,
+                                  dummy_link_key_callback,
+                                  dummy_auth_complete_callback,
+                                  dummy_bond_cancel_cmpl_callback,
+                                  dummy_sp_callback,
+                                  dummy_le_callback,
+                                  dummy_le_key_callback,
+                                  dummy_sirk_verification_callback};
+
+// Test fixture for testing the Link Key Request Timer logic.
+class StackBtmSecLinkKeyRequestTest : public StackBtmSecWithInitFreeTest {
+protected:
+  void SetUp() override {
+    StackBtmSecWithInitFreeTest::SetUp();
+    btm_sec_register(dummy_app_reg);
+  }
+
+  void TearDown() override {
+    // Clean up timer if it exists to avoid leaks if Free doesn't handle it
+    BtmSecurity::Get().ResetLinkKeyRequestTimer();
+    StackBtmSecWithInitFreeTest::TearDown();
+  }
+};
+
+TEST_F(StackBtmSecLinkKeyRequestTest, LinkKeyRequest_TimerStarted) {
+  set_com_android_bluetooth_flags_link_key_request_timer(true);
+
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
+
+  // Allocate device record
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
+  ASSERT_NE(nullptr, p_device);
+
+  // Prepare conditions
+  BtmSecurity::Get().link_spec_.addrt.bda = bd_addr;
+  BtmSecurity::Get().link_spec_.transport = BT_TRANSPORT_LE;
+
+  // Act
+  btm_sec_link_key_request(bd_addr);
+
+  // Assert
+  ASSERT_NE(nullptr, BtmSecurity::Get().lk_req_timer_);
+  ASSERT_NE(nullptr, BtmSecurity::Get().lk_req_timer_->cb);
+
+  wipe_secrets_and_remove(p_device);
+}
+
+TEST_F(StackBtmSecLinkKeyRequestTest, LinkKeyRequest_Timeout) {
+  set_com_android_bluetooth_flags_link_key_request_timer(true);
+
+  // Allocate device record
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
+
+  BtmSecurity::Get().link_spec_.addrt.bda = bd_addr;
+  BtmSecurity::Get().link_spec_.transport = BT_TRANSPORT_LE;
+
+  btm_sec_link_key_request(bd_addr);
+  ASSERT_NE(nullptr, BtmSecurity::Get().lk_req_timer_);
+
+  // Trigger callback
+  alarm_callback_t cb = BtmSecurity::Get().lk_req_timer_->cb;
+  void* data = BtmSecurity::Get().lk_req_timer_->data;
+  cb(data);
+
+  // Verify timer is reset
+  ASSERT_EQ(nullptr, BtmSecurity::Get().lk_req_timer_);
+
+  wipe_secrets_and_remove(p_device);
+}
+
+TEST_F(StackBtmSecLinkKeyRequestTest, LinkKeyRequest_ReplyCancelsTimer) {
+  set_com_android_bluetooth_flags_link_key_request_timer(true);
+
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
+
+  BtmSecurity::Get().link_spec_.addrt.bda = bd_addr;
+  BtmSecurity::Get().link_spec_.transport = BT_TRANSPORT_LE;
+
+  btm_sec_link_key_request(bd_addr);
+  ASSERT_NE(nullptr, BtmSecurity::Get().lk_req_timer_);
+
+  // Act: Reply with link key (via notification)
+  LinkKey link_key;
+  // Key type for CTKD: BTM_LTK_DERIVED_LKEY_OFFSET + BTM_LKEY_TYPE_COMBINATION ...
+  uint8_t key_type = BTM_LTK_DERIVED_LKEY_OFFSET + BTM_LKEY_TYPE_AUTH_COMB_P_256;
+
+  btm_sec_link_key_notification(bd_addr, link_key, key_type);
+
+  // Assert
+  ASSERT_EQ(nullptr, BtmSecurity::Get().lk_req_timer_);
+
+  wipe_secrets_and_remove(p_device);
+}
+
+TEST_F(StackBtmSecLinkKeyRequestTest, LinkKeyRequest_DisconnectCancelsTimer) {
+  set_com_android_bluetooth_flags_link_key_request_timer(true);
+
+  RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
+  p_device->hci_handle = 0x1234;
+
+  BtmSecurity::Get().link_spec_.addrt.bda = bd_addr;
+  BtmSecurity::Get().link_spec_.transport = BT_TRANSPORT_LE;
+
+  btm_sec_link_key_request(bd_addr);
+  ASSERT_NE(nullptr, BtmSecurity::Get().lk_req_timer_);
+
+  // Act
+  btm_sec_disconnected(0x1234, HCI_ERR_CONN_CAUSE_LOCAL_HOST, "test");
+
+  // Assert
+  ASSERT_EQ(nullptr, BtmSecurity::Get().lk_req_timer_);
+
+  wipe_secrets_and_remove(p_device);
+}

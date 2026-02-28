@@ -99,14 +99,6 @@ struct acl_send_data_packet_br_edr {
   void operator()(const RawAddress& bd_addr, BT_HDR* p_buf) { return body(bd_addr, p_buf); }
 };
 extern struct acl_send_data_packet_br_edr acl_send_data_packet_br_edr;
-// Name: acl_is_role_switch_allowed
-// Params:
-// Returns: bool
-struct acl_is_role_switch_allowed {
-  std::function<bool()> body{[]() { return false; }};
-  bool operator()() { return body(); }
-};
-extern struct acl_is_role_switch_allowed acl_is_role_switch_allowed;
 // Name: acl_is_switch_role_idle
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Returns: bool

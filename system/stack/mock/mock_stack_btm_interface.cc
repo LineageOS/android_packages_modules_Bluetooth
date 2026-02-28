@@ -99,7 +99,6 @@ struct btm_client_interface_t default_btm_client_interface = {
                         -> tBTM_STATUS { return tBTM_STATUS::BTM_SUCCESS; },
                 .BTM_block_role_switch_for = [](const RawAddress& /* peer_addr */) {},
                 .BTM_block_sniff_mode_for = [](const RawAddress& /* peer_addr */) {},
-                .BTM_default_unblock_role_switch = []() {},
                 .BTM_unblock_role_switch_for = [](const RawAddress& /* peer_addr */) {},
                 .BTM_unblock_sniff_mode_for = [](const RawAddress& /* peer_addr */) {},
                 .BTM_WritePageTimeout = [](uint16_t /* timeout */) {},
@@ -260,8 +259,6 @@ struct btm_client_interface_t default_btm_client_interface = {
                 },
                 .BTM_BleReadControllerFeatures =
                         [](tBTM_BLE_CTRL_FEATURES_CBACK* /* p_vsc_cback */) {},
-                .BTM_BleSetPhy = [](const RawAddress& /* bd_addr */, uint8_t /* tx_phys */,
-                                    uint8_t /* rx_phys */, uint16_t /* phy_options */) {},
                 .BTM_BleSetPrefConnParams =
                         [](const RawAddress& /* bd_addr */, uint16_t /* min_conn_int */,
                            uint16_t /* max_conn_int */, uint16_t /* peripheral_latency */,

@@ -106,6 +106,19 @@ bool avrcp_absolute_volume_is_enabled() {
 
 /******************************************************************************
  *
+ * Function         avrcp_controller_cover_art_enabled
+ *
+ * Description      Check if Cover Art is enabled in config
+ *
+ * Returns          return true if Cover Art is enabled
+ *
+ *****************************************************************************/
+bool avrcp_controller_cover_art_enabled() {
+  return android::sysprop::bluetooth::Avrcp::isAvrcpControllerCoverArtEnabled().value_or(true);
+}
+
+/******************************************************************************
+ *
  * Function         avrc_ctrl_cback
  *
  * Description      This is the callback function used by AVCTP to report

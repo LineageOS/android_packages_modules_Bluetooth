@@ -22,9 +22,9 @@
 /* HCI mode defenitions */
 typedef enum : uint8_t {
   HCI_MODE_ACTIVE = 0x00,
-  HCI_MODE_HOLD = 0x01,
+  HCI_MODE_HOLD = 0x01,  // Not supported in Android
   HCI_MODE_SNIFF = 0x02,
-  HCI_MODE_PARK = 0x03,
+  HCI_MODE_PARK = 0x03,  // Deprecated in Bluetooth specification
 } tHCI_MODE;
 
 inline std::string hci_mode_text(const tHCI_MODE& mode) {

@@ -57,8 +57,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG mock_bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY 
 tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
   static tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
           /* AG : 0 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR2,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR2,    /* the SSR entry */
            {
                    {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
                     {BTA_DM_PM_NO_ACTION, 0}},                           /* conn open sniff  */
@@ -75,16 +75,16 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* CT, CG : 1 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR2,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR2,    /* the SSR entry */
            {
-                   {{BTA_DM_PM_PARK, 5000}, {BTA_DM_PM_NO_ACTION, 0}},   /* conn open  park */
+                   {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* conn open */
                    {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}},   /* conn close  */
                    {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* app open */
                    {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* app close */
                    {{BTA_DM_PM_SNIFF_A2DP_IDX, 5000},
                     {BTA_DM_PM_NO_ACTION, 0}},                           /* sco open sniff */
-                   {{BTA_DM_PM_PARK, 5000}, {BTA_DM_PM_NO_ACTION, 0}},   /* sco close  park */
+                   {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* sco close */
                    {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
                    {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* busy */
                    {{BTA_DM_PM_RETRY, 5000}, {BTA_DM_PM_NO_ACTION, 0}}   /* mode change retry */
@@ -106,8 +106,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* HD : 3 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR3,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR3,    /* the SSR entry */
            {
                    {{BTA_DM_PM_SNIFF_HD_ACTIVE_IDX, 5000},
                     {BTA_DM_PM_NO_ACTION, 0}},                           /* conn open sniff */
@@ -138,8 +138,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* HH for joysticks and gamepad : 5 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR1,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR1,    /* the SSR entry */
            {
                    {{BTA_DM_PM_SNIFF6, BTA_DM_PM_HH_OPEN_DELAY},
                     {BTA_DM_PM_NO_ACTION, 0}},                           /* conn open  sniff */
@@ -157,8 +157,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* HH : 6 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR1,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR1,    /* the SSR entry */
            {
                    {{BTA_DM_PM_SNIFF_HH_OPEN_IDX, BTA_DM_PM_HH_OPEN_DELAY},
                     {BTA_DM_PM_NO_ACTION, 0}},                           /* conn open  sniff */
@@ -255,8 +255,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* HS : 12 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR2,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR2,    /* the SSR entry */
            {
                    {{BTA_DM_PM_SNIFF, 7000}, {BTA_DM_PM_NO_ACTION, 0}},  /* conn open sniff  */
                    {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}},   /* conn close  */
@@ -285,8 +285,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* GATTC : 14 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR2,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR2,    /* the SSR entry */
            {
                    {{BTA_DM_PM_SNIFF_A2DP_IDX, 10000},
                     {BTA_DM_PM_NO_ACTION, 0}},                           /* conn open  active */
@@ -301,8 +301,8 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* mock_get_bta_dm_pm_spec() {
            }},
 
           /* GATTS : 15 */
-          {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
-           BTA_DM_PM_SSR2,                     /* the SSR entry */
+          {(BTA_DM_PM_SNIFF), /* allow sniff */
+           BTA_DM_PM_SSR2,    /* the SSR entry */
            {
                    {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
                    {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* conn close  */

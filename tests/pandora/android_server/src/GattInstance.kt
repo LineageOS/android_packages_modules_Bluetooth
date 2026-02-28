@@ -194,6 +194,10 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mServiceDiscovered.value
     }
 
+    public fun clearServicesDiscovered() {
+        mServiceDiscovered.value = false
+    }
+
     public suspend fun waitForOnCharacteristicChanged(
         characteristic: BluetoothGattCharacteristic
     ): Boolean {

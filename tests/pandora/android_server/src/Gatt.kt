@@ -185,6 +185,12 @@ class Gatt(private val context: Context) : GATTImplBase(), Closeable {
         grpcUnary<DiscoverServicesResponse>(mScope, responseObserver) {
             Log.i(TAG, "discoverServices")
             val gattInstance = GattInstance.get(request.connection.address)
+
+            if (request.force) {
+                tryDiscoverServices(gattInstance)
+                gattInstance.clearServicesDiscovered()
+                check(gattInstance.mGatt.refresh())
+            }
             check(gattInstance.mGatt.discoverServices())
             gattInstance.waitForDiscoveryEnd()
             DiscoverServicesResponse.newBuilder()

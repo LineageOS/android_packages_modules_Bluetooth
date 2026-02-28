@@ -60,10 +60,14 @@ public class BaseDataTest {
                     (byte) 0x02, // mCodecConfigLength
                     (byte) 0x01,
                     (byte) 'A', // mCodecConfigInfo
-                    (byte) 0x03, // mMetaDataLength
-                    (byte) 0x02,
-                    (byte) 0x08,
+                    (byte) 0x07, // mMetaDataLength
+                    (byte) 0x02, // Length
+                    (byte) 0x08, // Type: AUDIO_ACTIVE_STATE
                     (byte) 0x01, // mMetaData: Audio Active State = TRUE
+                    (byte) 0x03, // Length
+                    (byte) 0x02, // Type: STREAMING_AUDIO_CONTEXTS
+                    (byte) 0x04, // Value LSB (Media)
+                    (byte) 0x00, // Value MSB
                     // LEVEL 3
                     (byte) 0x04, // mIndex
                     (byte) 0x03, // mCodecConfigLength
@@ -82,11 +86,15 @@ public class BaseDataTest {
         assertThat(subgroup.mBises.size()).isEqualTo(1);
         assertThat(subgroup.mCodecId).isEqualTo(0);
         assertThat(subgroup.mCodecSpecificConfiguration.length).isEqualTo(2);
-        assertThat(subgroup.mMetadata.length).isEqualTo(3);
+        assertThat(subgroup.mMetadata.length).isEqualTo(7);
         if (Flags.leaudioBroadcastExtendAudioActiveState()) {
             assertThat(subgroup.mLtvData).isNotNull();
             assertThat(subgroup.mLtvData.getAudioActiveState())
                     .isEqualTo(LtvData.AudioActiveState.TRUE);
+        }
+        if (Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+            assertThat(subgroup.mLtvData).isNotNull();
+            assertThat(subgroup.mLtvData.getStreamingAudioContexts()).isEqualTo(4);
         }
 
         BaseData.BaseBis bis = subgroup.mBises.get(0);
@@ -238,6 +246,9 @@ public class BaseDataTest {
             assertThat(subgroup.mLtvData).isNotNull();
             assertThat(subgroup.mLtvData.getAudioActiveState())
                     .isEqualTo(LtvData.AudioActiveState.NONE);
+        }
+        if (Flags.leaudioBroadcastAutoSwitchAnnouncement()) {
+            assertThat(subgroup.mLtvData.getStreamingAudioContexts()).isNull();
         }
     }
 

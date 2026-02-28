@@ -48,45 +48,34 @@ enum class BtmAclSwitchKeyState : uint8_t {
   kInProgress,
 };
 
-/* Policy settings status */
-typedef enum : uint16_t {
-  HCI_DISABLE_ALL_LM_MODES = 0,
-  HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH = (1u << 0),
-  HCI_ENABLE_HOLD_MODE = (1u << 1),
-  HCI_ENABLE_SNIFF_MODE = (1u << 2),
-  HCI_ENABLE_PARK_MODE = (1u << 3),
-} tLINK_POLICY_BITMASK;
-typedef uint16_t tLINK_POLICY;
+struct LinkPolicy {
+  // Hold mode is not supported in Android
+  // Park mode is deprecated in the Bluetooth spec
+  bool role_switch;
+  bool sniff_mode;
 
-constexpr tLINK_POLICY kAllLinkPoliciesEnabled =
-        (HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE);
-
-static const char* link_policy_string[] = {
-        " role_switch ",
-        " hold_mode ",
-        " sniff_mode ",
-        " park_mode ",
+public:
+  constexpr uint16_t toUint16() const { return (role_switch << 0) | (sniff_mode << 2); }
+  constexpr operator uint16_t() const { return toUint16(); }
 };
 
-inline std::string link_policy_text(tLINK_POLICY policy) {
+inline std::string link_policy_text(const LinkPolicy& policy) {
   std::ostringstream os;
-  os << "0x" << loghex(static_cast<uint16_t>(policy)) << " :";
-  std::string s = os.str();
-  for (uint16_t i = 0; i < 4; i++) {
-    if (policy & (0x1 << i)) {
-      s += link_policy_string[i];
-    }
-  }
-  return s;
+  os << "role_switch: " << (policy.role_switch == 0 ? "disabled" : "enabled") << ", ";
+  os << "sniff_mode: " << (policy.sniff_mode == 0 ? "disabled" : "enabled");
+  return os.str();
 }
+
+constexpr LinkPolicy kLinkPolicyDefault = {
+        .role_switch = true,
+        .sniff_mode = true,
+};
 
 // Power mode states.
 // Used as both value and bitmask
 enum : uint8_t {
   BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
-  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
   BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
-  BTM_PM_ST_PARK = HCI_MODE_PARK,          // 0x03
   BTM_PM_ST_UNUSED,                        // 0x04
   BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
   BTM_PM_ST_INVALID = 0x7F,
@@ -99,12 +88,8 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   switch (state & ~BTM_PM_STORED_MASK) {
     case BTM_PM_ST_ACTIVE:
       return s + std::string("active");
-    case BTM_PM_ST_HOLD:
-      return s + std::string("hold");
     case BTM_PM_ST_SNIFF:
       return s + std::string("sniff");
-    case BTM_PM_ST_PARK:
-      return s + std::string("park");
     case BTM_PM_ST_UNUSED:
       return s + std::string("WARN:UNUSED");
     case BTM_PM_ST_PENDING:
@@ -193,7 +178,7 @@ public:
 
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
-  tLINK_POLICY link_policy;
+  LinkPolicy link_policy;
 
 public:
   uint16_t Handle() const { return hci_handle; }
@@ -257,7 +242,6 @@ private:
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
   uint16_t btm_acl_pkt_types_supported = kDefaultPacketTypeMask;
-  uint16_t btm_def_link_policy;
   tHCI_STATUS acl_disc_reason = HCI_ERR_UNDEFINED;
 
 public:
@@ -268,7 +252,6 @@ public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
   uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
-  uint16_t DefaultLinkPolicy() const { return btm_def_link_policy; }
 
   struct {
     std::vector<tBTM_PM_STATUS_CBACK*> clients;
@@ -288,3 +271,8 @@ public:
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status, uint8_t encr_enable);
+
+namespace std {
+template <>
+struct formatter<LinkPolicy> : string_formatter<LinkPolicy, link_policy_text> {};
+}  // namespace std

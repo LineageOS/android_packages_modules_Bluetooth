@@ -116,6 +116,7 @@ namespace sysprop {
 namespace bluetooth {
 namespace Avrcp {
 std::optional<bool> absolute_volume() { return true; }
+std::optional<bool> isAvrcpControllerCoverArtEnabled() { return true; }
 }  // namespace Avrcp
 
 namespace Bta {
