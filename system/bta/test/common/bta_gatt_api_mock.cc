@@ -42,9 +42,9 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+                    tBTM_BLE_CONN_TYPE connection_type) {
   log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  gatt_interface->Open(client_if, remote_bda, connection_type, opportunistic);
+  gatt_interface->Open(client_if, remote_bda, connection_type);
 }
 
 void BTA_GATTC_CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
@@ -122,16 +122,6 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu) {
   log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
   gatt_interface->ConfigureMTU(conn_id, mtu);
 }
-
-tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
-                                          tGATT_SUBRATE_MODE subrate_mode,
-                                          uint16_t subrate_max, uint16_t subrate_min,
-                                          uint16_t cont_num) {
-  log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  gatt_interface->UpdateSubrateConfig(subrate_mode, subrate_max, subrate_min, cont_num);
-  return gatt_interface->SubrateModeRequest(client_if, bd_addr, subrate_mode);
-}
-
 void BTA_GATTS_Disable(void) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->Disable();
@@ -173,9 +163,9 @@ void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_
   gatt_server_interface->Open(server_if, remote_bda, addr_type, is_direct, transport);
 }
 void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                       tGATTS_RSP* p_msg) {
+                       std::unique_ptr<tGATTS_RSP> p_msg) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->SendRsp(conn_id, trans_id, status, p_msg);
+  gatt_server_interface->SendRsp(conn_id, trans_id, status, std::move(p_msg));
 }
 void BTA_GATTS_StopService(uint16_t service_id) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");

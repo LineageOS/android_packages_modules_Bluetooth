@@ -138,11 +138,8 @@ public:
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
-    /* Oportunistic works only for direct connect,
-     * but in fact this is background connect
-     */
     bluetooth::log::info(": {}", address);
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, true);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
   }
 
   void Connect(const RawAddress& address) override {
@@ -150,7 +147,7 @@ public:
 
     auto device = volume_control_devices_.FindByAddress(address);
     if (!device) {
-      if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+      if (!get_security_client_interface().BTM_IsBonded(address, BT_TRANSPORT_LE)) {
         bluetooth::log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
         return;
@@ -1727,7 +1724,7 @@ private:
 
       case BTA_GATTC_ENC_CMPL_CB_EVT: {
         tBTM_STATUS encryption_status;
-        if (get_btm_client_interface().security.BTM_IsEncrypted(p_data->enc_cmpl.remote_bda,
+        if (get_security_client_interface().BTM_IsEncrypted(p_data->enc_cmpl.remote_bda,
                                                                 BT_TRANSPORT_LE)) {
           encryption_status = tBTM_STATUS::BTM_SUCCESS;
         } else {

@@ -266,29 +266,30 @@ struct VcsServer::service_impl {
 
   void OnGattReadCharacteristic(tBTA_GATTS* p_data) {
     uint16_t handle = p_data->req_data.p_data->read_req.handle;
-    tGATTS_RSP p_msg{};
-    p_msg.attr_value.handle = handle;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    p_msg->attr_value.handle = handle;
 
     if (handle == volume_state_handle_) {
-      p_msg.attr_value.len = kVolumeStateLen;
-      p_msg.attr_value.value[kVolumeStateSettingIndex] = volume_setting_;
-      p_msg.attr_value.value[kVolumeStateMuteIndex] = static_cast<uint8_t>(mute_state_);
-      p_msg.attr_value.value[kVolumeStateChangeCounterIndex] = change_counter_;
+      p_msg->attr_value.len = kVolumeStateLen;
+      p_msg->attr_value.value[kVolumeStateSettingIndex] = volume_setting_;
+      p_msg->attr_value.value[kVolumeStateMuteIndex] = static_cast<uint8_t>(mute_state_);
+      p_msg->attr_value.value[kVolumeStateChangeCounterIndex] = change_counter_;
       log::info("Reading Volume State: vol={}, mute={}, counter={}", volume_setting_,
                 static_cast<int>(mute_state_), change_counter_);
     } else if (handle == volume_flags_handle_) {
-      p_msg.attr_value.len = kVolumeFlagsLen;
-      p_msg.attr_value.value[kVolumeFlagsIndex] = volume_flags_.raw;
-      log::info("Reading Volume Flags: {}", (int)p_msg.attr_value.value[kVolumeFlagsIndex]);
+      p_msg->attr_value.len = kVolumeFlagsLen;
+      p_msg->attr_value.value[kVolumeFlagsIndex] = volume_flags_.raw;
+      log::info("Reading Volume Flags: {}", (int)p_msg->attr_value.value[kVolumeFlagsIndex]);
     } else {
       log::warn("Unhandled read request for invalid handle: 0x{:04x}", handle);
-      p_msg.attr_value.len = 0;
+      p_msg->attr_value.len = 0;
       BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                        &p_msg);
+                        std::move(p_msg));
       return;
     }
 
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                      std::move(p_msg));
   }
 
   void OnGattWriteCharacteristic(tBTA_GATTS* p_data) {

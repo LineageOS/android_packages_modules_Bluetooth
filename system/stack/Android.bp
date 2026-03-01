@@ -219,6 +219,7 @@ cc_library_static {
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
+        "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -242,7 +243,6 @@ cc_library_static {
         "liblhdcv5_encoder",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libcrypto",
     ],
     apex_available: ["com.android.bt"],
@@ -694,7 +694,7 @@ cc_defaults {
     ],
     target: {
         android: {
-            shared_libs: [
+            static_libs: [
                 "libPlatformProperties",
             ],
         },
@@ -734,7 +734,6 @@ cc_test {
         "test/stack_bnep_test.cc",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
@@ -758,6 +757,7 @@ cc_test {
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
         "libFraunhoferAAC",
+        "libPlatformProperties",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -2235,9 +2235,10 @@ cc_test {
     target: {
         android: {
             shared_libs: [
-                "libPlatformProperties",
+                "libstatssocket",
             ],
             static_libs: [
+                "libPlatformProperties",
                 "libperfetto_client_experimental",
             ],
         },

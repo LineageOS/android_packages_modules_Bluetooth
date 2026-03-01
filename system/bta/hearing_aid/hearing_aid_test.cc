@@ -302,7 +302,6 @@ protected:
     gatt::SetMockBtaGattQueue(&gatt_queue);
 
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     callbacks.reset(new MockHearingAidCallbacks());
     bluetooth::hci::testing::mock_controller_ =
@@ -336,9 +335,9 @@ protected:
                     Invoke([&](uint16_t gap_handle) { return &connected_devices[gap_handle]; }));
 
     /* by default connect only direct connection requests */
-    ON_CALL(gatt_interface, Open(_, _, _, _))
+    ON_CALL(gatt_interface, Open(_, _, _))
             .WillByDefault(Invoke([&](tGATT_IF /*client_if*/, const RawAddress& remote_bda,
-                                      tBTM_BLE_CONN_TYPE connection_type, bool /*opportunistic*/) {
+                                      tBTM_BLE_CONN_TYPE connection_type) {
               if (connection_type == BTM_BLE_DIRECT_CONNECTION) {
                 InjectConnectedEvent(remote_bda, GetTestConnId(remote_bda));
               }
@@ -541,7 +540,7 @@ TEST_F(HearingAidTestBase, initialize) {
 /* Test that connect cancellation works */
 TEST_F(HearingAidTest, disconnect_when_connecting) {
   /* Override the default action to prevent us sending the connected event */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _))
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION))
           .WillOnce(Return());
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(0);
   HearingAid::Connect(test_address);
@@ -557,7 +556,7 @@ TEST_F(HearingAidTest, disconnect_when_connecting) {
 TEST_F(HearingAidTest, connect) {
   set_sample_database(1);
 
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address));
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(Return(true));
@@ -595,7 +594,7 @@ TEST_F(HearingAidTest, load_from_storage) {
           .WillByDefault(Invoke([&](const HearingDevice* dev_info) { saved_dev = *dev_info; }));
 
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION));
   HearingAid::Connect(test_address);
   InjectGapOpen(1);
   InjectConnectionUpdateEvent(1);
@@ -621,12 +620,13 @@ TEST_F(HearingAidTest, load_from_storage) {
 
   Mock::VerifyAndClearExpectations(&gatt_interface);
 
-  ON_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _))
-          .WillByDefault(Invoke([&](tGATT_IF, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE,
-                                    bool) { InjectConnectedEvent(remote_bda, conn_id); }));
+  ON_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_BKG_CONNECT_ALLOW_LIST))
+          .WillByDefault(Invoke([&](tGATT_IF, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE) {
+            InjectConnectedEvent(remote_bda, conn_id);
+          }));
 
   EXPECT_CALL(gatt_interface, ServiceSearchRequest).Times(1);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_BKG_CONNECT_ALLOW_LIST));
   HearingAid::AddFromStorage(saved_dev, true);
 }
 
@@ -816,7 +816,7 @@ TEST_F(HearingAidTest, reconnect_first_success_second_fail) {
           }));
 
   /* First device connects successfully */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address1));
   HearingAid::Connect(test_address1);
@@ -824,7 +824,7 @@ TEST_F(HearingAidTest, reconnect_first_success_second_fail) {
   InjectConnectionUpdateEvent(1);
 
   /* Second device connects successfully */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address2));
   HearingAid::Connect(test_address2);
@@ -864,17 +864,15 @@ TEST_F(HearingAidTest, reconnect_first_success_second_fail) {
   Mock::VerifyAndClearExpectations(&btm_interface);
 
   /* Add both devices froms storage. Second device fails to connect. Verify connection retry. */
-  ON_CALL(gatt_interface, Open(gatt_if, _, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _))
-          .WillByDefault(Return());
-  ON_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION, _))
-          .WillByDefault(
-                  Invoke([&](tGATT_IF, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE, bool) {
-                    InjectConnectedEvent(remote_bda, conn_id2, GATT_ERROR);
-                  }));
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _));
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _))
+  ON_CALL(gatt_interface, Open(gatt_if, _, BTM_BLE_BKG_CONNECT_ALLOW_LIST)).WillByDefault(Return());
+  ON_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION))
+          .WillByDefault(Invoke([&](tGATT_IF, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE) {
+            InjectConnectedEvent(remote_bda, conn_id2, GATT_ERROR);
+          }));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_BKG_CONNECT_ALLOW_LIST));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_BKG_CONNECT_ALLOW_LIST))
           .Times(2);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION, false));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION));
 
   HearingAid::AddFromStorage(saved_dev1, true);
   HearingAid::AddFromStorage(saved_dev2, true);
@@ -910,7 +908,7 @@ TEST_F(HearingAidTest, reconnect_first_fail_second_success) {
           }));
 
   /* First device connects successfully */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address1));
   HearingAid::Connect(test_address1);
@@ -918,7 +916,7 @@ TEST_F(HearingAidTest, reconnect_first_fail_second_success) {
   InjectConnectionUpdateEvent(1);
 
   /* Second device connects successfully */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION, _));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_DIRECT_CONNECTION));
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address2));
   HearingAid::Connect(test_address2);
@@ -958,17 +956,15 @@ TEST_F(HearingAidTest, reconnect_first_fail_second_success) {
   Mock::VerifyAndClearExpectations(&btm_interface);
 
   /* Add both devices froms storage. Second device fails to connect. Verify connection retry. */
-  ON_CALL(gatt_interface, Open(gatt_if, _, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _))
-          .WillByDefault(Return());
-  ON_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, _))
-          .WillByDefault(
-                  Invoke([&](tGATT_IF, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE, bool) {
-                    InjectConnectedEvent(remote_bda, conn_id2, GATT_ERROR);
-                  }));
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _));
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _))
+  ON_CALL(gatt_interface, Open(gatt_if, _, BTM_BLE_BKG_CONNECT_ALLOW_LIST)).WillByDefault(Return());
+  ON_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION))
+          .WillByDefault(Invoke([&](tGATT_IF, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE) {
+            InjectConnectedEvent(remote_bda, conn_id2, GATT_ERROR);
+          }));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address2, BTM_BLE_BKG_CONNECT_ALLOW_LIST));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_BKG_CONNECT_ALLOW_LIST))
           .Times(2);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION, false));
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address1, BTM_BLE_DIRECT_CONNECTION));
 
   HearingAid::AddFromStorage(saved_dev1, true);
   HearingAid::AddFromStorage(saved_dev2, true);

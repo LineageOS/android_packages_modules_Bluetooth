@@ -1092,9 +1092,6 @@ void GATTC_UpdateUserAttMtuIfNeeded(const RawAddress& remote_bda, tBT_TRANSPORT 
  *                  connection_type: connection type
  *                  transport : Physical transport for GATT connection
  *                              (BR/EDR or LE)
- *                  opportunistic: will not keep device connected if other apps
- *                      disconnect, will not update connected apps counter, when
- *                      disconnected won't cause physical disconnection.
  *
  * Returns          true if connection started; else false
  *

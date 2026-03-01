@@ -280,7 +280,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, bool direct) {
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;  // Update index map
   if (!direct) {
     // don't reconnect unbonded device
-    if (!get_btm_client_interface().security.BTM_IsBonded(p_cb->link_spec.addrt.bda,
+    if (!get_security_client_interface().BTM_IsBonded(p_cb->link_spec.addrt.bda,
                                                           BT_TRANSPORT_LE)) {
       return;
     }
@@ -289,7 +289,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, bool direct) {
     return;
   }
 
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_DIRECT_CONNECTION, false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_DIRECT_CONNECTION);
 }
 
 /*******************************************************************************
@@ -1108,27 +1108,27 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */) {
-  if (get_btm_client_interface().security.BTM_IsEncrypted(p_cb->link_spec.addrt.bda,
+  if (get_security_client_interface().BTM_IsEncrypted(p_cb->link_spec.addrt.bda,
                                                           BT_TRANSPORT_LE)) {
     log::debug("{} is already encrypted", p_cb->link_spec);
     p_cb->status = BTHH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
-  } else if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(
+  } else if (get_security_client_interface().BTM_SecIsLeSecurityPending(
                      p_cb->link_spec.addrt.bda)) {
     log::warn("Some security procedure already pending for {}", p_cb->link_spec);
     p_cb->security_pending = true;  // Wait for encryption to complete
-  } else if (get_btm_client_interface().security.BTM_IsBonded(p_cb->link_spec.addrt.bda,
+  } else if (get_security_client_interface().BTM_IsBonded(p_cb->link_spec.addrt.bda,
                                                               BT_TRANSPORT_LE)) {
     log::info("{} is bonded, but not encrypted", p_cb->link_spec);
     p_cb->status = BTHH_ERR_AUTH_FAILED;
-    get_btm_client_interface().security.BTM_SetEncryption(p_cb->link_spec.addrt.bda,
+    get_security_client_interface().BTM_SetEncryption(p_cb->link_spec.addrt.bda,
                                                           BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
                                                           NULL, BTM_BLE_SEC_ENCRYPT);
   } else {
     log::error("{} is not bonded", p_cb->link_spec);
     p_cb->status = BTHH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
-    get_btm_client_interface().security.BTM_SetEncryption(p_cb->link_spec.addrt.bda,
+    get_security_client_interface().BTM_SetEncryption(p_cb->link_spec.addrt.bda,
                                                           BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
                                                           NULL, BTM_BLE_SEC_ENCRYPT_NO_MITM);
   }
@@ -2137,8 +2137,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb) {
   }
 
   /* Add device into BG connection to accept remote initiated connection */
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_BKG_CONNECT_ALLOW_LIST,
-                 false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
   p_cb->in_bg_conn = true;
 }
 

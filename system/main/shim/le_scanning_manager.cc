@@ -485,7 +485,7 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   btm_cb.neighbor.le_scan.results++;
 
   // Do not update device properties of already bonded devices.
-  if (!get_btm_client_interface().security.BTM_IsBonded(raw_address, BT_TRANSPORT_AUTO)) {
+  if (!get_security_client_interface().BTM_IsBonded(raw_address, BT_TRANSPORT_AUTO)) {
     // Prevent updating properties without scan response
     if (!(event_type & kScannableMask) || (event_type & kScanResponseMask) ||
         msft_adv_monitor_enabled_) {

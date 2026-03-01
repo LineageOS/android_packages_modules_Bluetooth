@@ -151,7 +151,7 @@ public:
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
-    if (!get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (!get_security_client_interface().BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       log::error("Connecting  {} when not bonded", address);
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
       return;
@@ -160,12 +160,11 @@ public:
     auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
     if (device == devices_.end()) {
       devices_.emplace_back(address, true);
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
-
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
     } else {
       device->is_connecting_actively = true;
       if (!device->IsConnected()) {
-        BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+        BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION);
       }
     }
   }
@@ -183,7 +182,7 @@ public:
       }
 
       /* Connect in background */
-      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     }
   }
 
@@ -1910,7 +1909,7 @@ private:
 
       case BTA_GATTC_ENC_CMPL_CB_EVT:
         OnLeEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                               get_btm_client_interface().security.BTM_IsEncrypted(
+                               get_security_client_interface().BTM_IsEncrypted(
                                        p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
         break;
 
@@ -1960,7 +1959,7 @@ private:
 
     device->conn_id = evt.conn_id;
     BtaGattQueue::Clean(evt.conn_id);
-    if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(device->addr)) {
+    if (get_security_client_interface().BTM_SecIsLeSecurityPending(device->addr)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT)
        */
@@ -1968,13 +1967,13 @@ private:
     }
 
     /* verify bond */
-    if (get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       /* if link has been encrypted */
       OnEncrypted(*device);
       return;
     }
 
-    tBTM_STATUS result = get_btm_client_interface().security.BTM_SetEncryption(
+    tBTM_STATUS result = get_security_client_interface().BTM_SetEncryption(
             device->addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
 
     log::info("Encryption required for {}. Request result: 0x{:02x}", device->addr, result);
@@ -2005,7 +2004,7 @@ private:
 
     /* Connect in background - is this ok? */
     if (peer_disconnected) {
-      BTA_GATTC_Open(gatt_if_, device->addr, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if_, device->addr, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     }
   }
 
@@ -2019,7 +2018,7 @@ private:
     log::debug("");
 
     /* verify link is encrypted */
-    if (!get_btm_client_interface().security.BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+    if (!get_security_client_interface().BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
       log::warn("Device not yet bonded - waiting for encryption");
       return;
     }

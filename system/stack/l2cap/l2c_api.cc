@@ -64,7 +64,7 @@ uint16_t L2CA_RegisterWithSecurity(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_in
                                    uint16_t sec_level) {
   auto ret = L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu, required_remote_mtu,
                            sec_level);
-  get_btm_client_interface().security.BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
+  get_security_client_interface().BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
   return ret;
 }
 
@@ -288,7 +288,7 @@ void L2CA_FreeLePSM(uint16_t psm) {
 
 uint16_t L2CA_ConnectReqWithSecurity(uint16_t psm, const RawAddress& p_bd_addr,
                                      uint16_t sec_level) {
-  get_btm_client_interface().security.BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
+  get_security_client_interface().BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
   return L2CA_ConnectReq(psm, p_bd_addr);
 }
 
@@ -388,7 +388,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, uin
   if (p_cb_info.pL2CA_ConnectInd_Cb != nullptr || psm < LE_DYNAMIC_PSM_START) {
     //  If we register LE COC for outgoing connection only, don't register with
     //  BTM_Sec, because it's handled by L2CA_ConnectLECocReq.
-    get_btm_client_interface().security.BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
+    get_security_client_interface().BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
   }
 
   /* Verify that the required callback info has been filled in
@@ -526,7 +526,7 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
  ******************************************************************************/
 uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_LE_CFG_INFO* p_cfg,
                               uint16_t sec_level) {
-  get_btm_client_interface().security.BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
+  get_security_client_interface().BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
 
   log::verbose("BDA: {} PSM: 0x{:04x}", p_bd_addr, psm);
 

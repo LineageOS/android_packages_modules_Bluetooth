@@ -918,10 +918,10 @@ uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr) {
   uint16_t rc = 0;
   if (BTA_DmGetConnectionState(bd_addr)) {
     rc = (uint16_t)true;
-    if (get_btm_client_interface().security.BTM_IsEncrypted(bd_addr, BT_TRANSPORT_BR_EDR)) {
+    if (get_security_client_interface().BTM_IsEncrypted(bd_addr, BT_TRANSPORT_BR_EDR)) {
       rc |= ENCRYPTED_BREDR;
     }
-    if (get_btm_client_interface().security.BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE)) {
       rc |= ENCRYPTED_LE;
     }
   } else {
@@ -935,11 +935,11 @@ static uint16_t btif_dm_get_resolved_connection_state(tBLE_BD_ADDR ble_bd_addr) 
   if (maybe_resolve_address(&ble_bd_addr.bda, &ble_bd_addr.type)) {
     if (BTA_DmGetConnectionState(ble_bd_addr.bda)) {
       rc = 0x0001;
-      if (get_btm_client_interface().security.BTM_IsEncrypted(ble_bd_addr.bda,
+      if (get_security_client_interface().BTM_IsEncrypted(ble_bd_addr.bda,
                                                               BT_TRANSPORT_BR_EDR)) {
         rc |= ENCRYPTED_BREDR;
       }
-      if (get_btm_client_interface().security.BTM_IsEncrypted(ble_bd_addr.bda, BT_TRANSPORT_LE)) {
+      if (get_security_client_interface().BTM_IsEncrypted(ble_bd_addr.bda, BT_TRANSPORT_LE)) {
         rc |= ENCRYPTED_LE;
       }
     }
@@ -1465,7 +1465,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
       }
 
       // Do not update device properties of already bonded devices.
-      if (get_btm_client_interface().security.BTM_IsBonded(bdaddr, BT_TRANSPORT_AUTO)) {
+      if (get_security_client_interface().BTM_IsBonded(bdaddr, BT_TRANSPORT_AUTO)) {
         log::debug("Ignore device properties from discovery results for the bonded device: {}[{}]",
                    bdaddr, AddressTypeText(addr_type));
 
@@ -2975,7 +2975,7 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, tBT_TRANSPORT tra
           break;
       }
       pairing_cb.is_local_initiated = true;
-      get_btm_client_interface().security.BTM_SecAddBleDevice(bd_addr, BT_DEVICE_TYPE_BLE,
+      get_security_client_interface().BTM_SecAddBleDevice(bd_addr, BT_DEVICE_TYPE_BLE,
                                                               address_type);
       BTA_DmBond(bd_addr, address_type, transport);
       break;
@@ -3052,7 +3052,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
       log::warn("Ongoing pairing/sdp detected, cancelling it first before removing bond.");
       btif_dm_cancel_bond(bd_addr);
     }
-    if (!get_btm_client_interface().security.BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
+    if (!get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
       log::warn("Device is not bonded on any transport, skipping remove bond!!");
       return;
     }
@@ -3469,7 +3469,7 @@ static void stop_oob_advertiser() {
 void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport) {
   log::debug("Transport {}", bt_transport_text(transport));
   if (transport == BT_TRANSPORT_BR_EDR) {
-    get_btm_client_interface().security.BTM_ReadLocalOobData();
+    get_security_client_interface().BTM_ReadLocalOobData();
   } else if (transport == BT_TRANSPORT_LE) {
     // Call create data first, so we don't have to hold on to the address for
     // the state machine lifecycle.  Rather, lets create the data, then start
@@ -3877,7 +3877,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
                 (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr);
 
         if (during_bonding || p_auth_cmpl->is_ctkd ||
-            !get_btm_client_interface().security.BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
+            !get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
           log::info("Removing ble bonding keys on SMP_CONN_TOUT during_bonding: {}, is_ctkd: {}",
                     during_bonding, p_auth_cmpl->is_ctkd);
           btif_dm_remove_ble_bonding_keys();
@@ -4196,7 +4196,7 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
 
   // TODO (b/268380987): Update the pairing algorithm in Java for OOB.
 
-  get_btm_client_interface().security.BTM_BleOobDataReply(
+  get_security_client_interface().BTM_BleOobDataReply(
           req_oob_type->bd_addr, tBTM_STATUS::BTM_SUCCESS, 16, oob_cb.p192_data.sm_tk);
 }
 
@@ -4250,7 +4250,7 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
 
   // TODO (b/268380987): Update the pairing algorithm to Java for OOB.
 
-  get_btm_client_interface().security.BTM_BleSecureConnectionOobDataReply(
+  get_security_client_interface().BTM_BleSecureConnectionOobDataReply(
           req_oob_type->bd_addr, oob_data_to_use.c, oob_data_to_use.r);
 }
 

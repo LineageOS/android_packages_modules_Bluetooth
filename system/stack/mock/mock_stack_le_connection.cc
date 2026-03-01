@@ -65,11 +65,12 @@ bool leConnectionConnect::return_value = false;
 
 namespace bluetooth::stack {
 // Mocked functions, if any
-void leConnectionUpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                                     uint16_t subrate_min, uint16_t cont_num) {
+tGATT_STATUS leConnectionUpdateSubrateConfig(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                             tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                                             uint16_t subrate_min, uint16_t cont_num) {
   inc_func_call_count(__func__);
-  test::mock::stack_le_connection::leConnectionUpdateSubrateConfig(subrate_mode, subrate_max,
-                                                                   subrate_min, cont_num);
+  return test::mock::stack_le_connection::leConnectionUpdateSubrateConfig(
+          gatt_if, bd_addr, subrate_mode, subrate_max, subrate_min, cont_num);
 }
 bool leConnectionSubrateModeRequest(tGATT_IF gatt_if, const RawAddress& bd_addr,
                                     tGATT_SUBRATE_MODE subrate_mode) {
@@ -82,18 +83,18 @@ bool leConnectionCancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool
   return test::mock::stack_le_connection::leConnectionCancelConnect(gatt_if, bd_addr, is_direct);
 }
 bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
-                         uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
+                         tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
+                         bool prefer_relax_mode, bool auto_mtu_enabled) {
   inc_func_call_count(__func__);
-  return test::mock::stack_le_connection::leConnectionConnect(
-          gatt_if, bd_addr, addr_type, connection_type, opportunistic, preferred_mtu,
-          prefer_relax_mode, auto_mtu_enabled);
+  return test::mock::stack_le_connection::leConnectionConnect(gatt_if, bd_addr, addr_type,
+                                                              connection_type, preferred_mtu,
+                                                              prefer_relax_mode, auto_mtu_enabled);
 }
 bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
+                         tBTM_BLE_CONN_TYPE connection_type) {
   inc_func_call_count(__func__);
   return test::mock::stack_le_connection::leConnectionConnect(gatt_if, bd_addr, 0, connection_type,
-                                                              opportunistic, 0, false, false);
+                                                              0, false, false);
 }
 
 void leConnectionSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,

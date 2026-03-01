@@ -62,6 +62,7 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/stack_le_connection.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
@@ -1539,7 +1540,8 @@ void LeAudioDevice::StartConnSubrate() {
 
   if (com_android_bluetooth_flags_le_subrate_manager()) {
     stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
-    tGATT_STATUS status = BTA_GATTC_SubrateModeRequest(client_if_, address_, GATT_SUBRATE_MODE_LEA);
+    tGATT_STATUS status =
+            stack::leConnectionUpdateSubrateConfig(client_if_, address_, GATT_SUBRATE_MODE_LEA);
 
     if (status != GATT_SUCCESS) {
       stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, false);
@@ -1567,7 +1569,7 @@ void LeAudioDevice::StopConnSubrate() {
   stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, false);
 
   if (com_android_bluetooth_flags_le_subrate_manager()) {
-    BTA_GATTC_SubrateModeRequest(client_if_, address_, GATT_SUBRATE_MODE_OFF);
+    stack::leConnectionUpdateSubrateConfig(client_if_, address_, GATT_SUBRATE_MODE_OFF);
   }
 
   SetSubrateState(SubrateState::DISABLED);
@@ -1715,7 +1717,7 @@ void LeAudioDevices::SetInitialGroupAutoconnectState(int group_id, int gatt_if,
       dev->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
       dev->autoconnect_flag_ = true;
       btif_storage_set_leaudio_autoconnect(dev->address_, true);
-      BTA_GATTC_Open(gatt_if, dev->address_, BTM_BLE_DIRECT_CONNECTION, false);
+      BTA_GATTC_Open(gatt_if, dev->address_, BTM_BLE_DIRECT_CONNECTION);
     }
   }
 }

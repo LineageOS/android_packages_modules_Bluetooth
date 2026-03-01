@@ -17,6 +17,9 @@
 package com.android.bluetooth.gatt;
 
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothGatt.GATT_CONNECTION_TIMEOUT;
+import static android.bluetooth.BluetoothGatt.GATT_FAILURE;
+import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -498,17 +501,31 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
-        final int disconnectStatus;
-        if (status == 0x16 // HCI_ERR_CONN_CAUSE_LOCAL_HOST
-                && getAdapterService().getKeyMissingCount(device) > 0) {
-            // Native stack disconnects the link on detecting the bond loss. Native GATT would
-            // return HCI_ERR_CONN_CAUSE_LOCAL_HOST in such case, but the apps should see
-            // HCI_ERR_AUTH_FAILURE.
-            Log.d(TAG, "onDisconnected(): disconnected due to bond loss for device=" + device);
-            disconnectStatus = 0x05 /* HCI_ERR_AUTH_FAILURE */;
-        } else {
-            disconnectStatus = status;
+        switch (status) {
+            case 0x00 -> { // HCI_SUCCESS
+                status = GATT_SUCCESS;
+            }
+            case 0x08 -> { // HCI_ERR_CONNECTION_TOUT
+                if (Flags.correctGattErrorCode()) {
+                    status = GATT_CONNECTION_TIMEOUT;
+                }
+            }
+            case 0x16 -> { // HCI_ERR_CONN_CAUSE_LOCAL_HOST
+                if (getAdapterService().getKeyMissingCount(device) > 0) {
+                    Log.d(
+                            TAG,
+                            "onDisconnected(): disconnected due to bond loss for device=" + device);
+                    status = 0x05 /* HCI_ERR_AUTH_FAILURE */;
+                }
+            }
+            default -> {
+                if (Flags.correctGattErrorCode()) {
+                    Log.w(TAG, "GATT disconnected reason=" + status);
+                    status = GATT_FAILURE;
+                }
+            }
         }
+        final int disconnectStatus = status;
         callbackToApp(
                 () -> app.getCallback().onClientConnectionState(disconnectStatus, false, device));
         mMetricsReporter.logDisconnectSuccess(device, app.getUid());

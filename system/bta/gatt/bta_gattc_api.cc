@@ -136,7 +136,7 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
   tBTA_GATTC_DATA data = {
           .api_conn =
@@ -149,7 +149,6 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
                           .client_if = client_if,
                           .connection_type = connection_type,
                           .transport = transport,
-                          .opportunistic = opportunistic,
                           .remote_addr_type = addr_type,
                           .preferred_mtu = preferred_mtu,
                           .prefer_relax_mode = prefer_relax_mode,
@@ -173,12 +172,10 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
  *                  transport: Transport to be used for GATT connection
  *                             (BREDR/LE)
  *                  initiating_phys: LE PHY to use, optional
- *                  opportunistic: whether the connection shall be
- *                  opportunistic, and don't impact the disconnection timer
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     uint16_t preferred_mtu, bool prefer_relax_mode) {
   tBTA_GATTC_DATA data = {
           .api_conn =
@@ -191,7 +188,6 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
                           .client_if = client_if,
                           .connection_type = connection_type,
                           .transport = transport,
-                          .opportunistic = opportunistic,
                           .remote_addr_type = addr_type,
                           .preferred_mtu = preferred_mtu,
                           .prefer_relax_mode = prefer_relax_mode,
@@ -202,9 +198,9 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
-  BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type, BT_TRANSPORT_LE,
-                 opportunistic, 0, false);
+                    tBTM_BLE_CONN_TYPE connection_type) {
+  BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type, BT_TRANSPORT_LE, 0,
+                 false);
 }
 
 /*******************************************************************************
@@ -284,29 +280,6 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu, GATT_CONFIGURE_MTU_O
   p_buf->mtu_cb_data = cb_data;
 
   bta_sys_sendmsg(p_buf);
-}
-
-/*******************************************************************************
- *
- * Function         BTA_GATTC_SubrateModeRequest
- *
- * Description      Update fixed subrate parameters of subrate mode in config.
- *                  Subrate mode request, can only be used when connection is up.
- *
- * Parameters:      client_if     - client interface.
- *                  bd_addr       - BD address of the peer
- *                  subrate_mode  - subrate mode [none/low/balanced/high/lea]
- *                  Subrate parameters
- *
- * Returns          tGATT_STATUS
- *
- ******************************************************************************/
-tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
-                                          tGATT_SUBRATE_MODE subrate_mode,
-                                          uint16_t subrate_max, uint16_t subrate_min,
-                                          uint16_t cont_num) {
-  return bta_gattc_subrate_mode_request(client_if, bd_addr, subrate_mode,
-                                        subrate_max, subrate_min, cont_num);
 }
 
 void BTA_GATTC_ServiceSearchAllRequest(tCONN_ID conn_id) {

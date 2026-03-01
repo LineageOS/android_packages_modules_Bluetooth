@@ -363,9 +363,16 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
   log::info("Transport={}, device type={}, address={}, address type={}, auto_mtu_enabled={}",
             bt_transport_text(transport), DeviceTypeText(device_type), address, addr_type,
             auto_mtu_enabled);
-  tBTM_BLE_CONN_TYPE type = is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
-  BTA_GATTC_Open(client_if, address, addr_type, type, transport, opportunistic, preferred_mtu,
-                 prefer_relax_mode, auto_mtu_enabled);
+
+  tBTM_BLE_CONN_TYPE type;
+  if (is_direct) {
+    type = opportunistic ? BTM_BLE_OPPORTUNISTIC : BTM_BLE_DIRECT_CONNECTION;
+  } else {
+    type = BTM_BLE_BKG_CONNECT_ALLOW_LIST;
+  }
+
+  BTA_GATTC_Open(client_if, address, addr_type, type, transport, preferred_mtu, prefer_relax_mode,
+                 auto_mtu_enabled);
 }
 
 static BtStatus btif_gattc_open(int client_if, const RawAddress& bd_addr, uint8_t addr_type,
@@ -675,14 +682,6 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
                                     subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
 
-static void btif_gattc_subrate_mode_request_impl(int client_if, const RawAddress& addr,
-                                                 tGATT_SUBRATE_MODE subrate_mode) {
-  if (BTA_DmGetConnectionState(addr)) {
-    log::info("client_if={}, bd_addr={}, subrate_mode={}", client_if, addr, subrate_mode);
-    BTA_GATTC_SubrateModeRequest(client_if, addr, subrate_mode);
-  }
-}
-
 static BtStatus btif_gattc_subrate_mode_request(int client_if, const RawAddress& bd_addr,
                                                 uint8_t subrate_mode) {
   CHECK_BTGATT_INIT();
@@ -691,9 +690,8 @@ static BtStatus btif_gattc_subrate_mode_request(int client_if, const RawAddress&
       !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
       return BtifStatus(UNSUPPORTED);
   }
-  tGATT_SUBRATE_MODE mode = (tGATT_SUBRATE_MODE) subrate_mode;
-  return do_in_jni_thread(BindOnce(base::IgnoreResult(&btif_gattc_subrate_mode_request_impl),
-                                   client_if, bd_addr, mode));
+  return do_in_main_thread(BindOnce(base::IgnoreResult(&stack::leConnectionUpdateSubrateConfig),
+                                    client_if, bd_addr, (tGATT_SUBRATE_MODE)subrate_mode, 0, 0, 0));
 }
 
 static BtStatus btif_gattc_offload_characteristics(int conn_id, btgatt_db_element_t* service,

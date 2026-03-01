@@ -390,7 +390,7 @@ static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda, tC
   log::verbose("from {} connected: {}, conn_id: 0x{:x}", bda, connected, conn_id);
 
   // if the device is not trusted, remove data when the link is disconnected
-  if (!connected && !get_btm_client_interface().security.BTM_IsBonded(bda, BT_TRANSPORT_AUTO)) {
+  if (!connected && !get_security_client_interface().BTM_IsBonded(bda, BT_TRANSPORT_AUTO)) {
     log::info("remove untrusted client status, bda={}", bda);
     btif_storage_remove_gatt_cl_supp_feat(bda);
     btif_storage_remove_gatt_cl_db_hash(bda);
@@ -821,13 +821,13 @@ void GATT_LE_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool /* enable
 
   /* hold the link here */
   if (!stack::leConnectionConnect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_PUBLIC,
-                                  BTM_BLE_DIRECT_CONNECTION, true, 0, false,
+                                  BTM_BLE_OPPORTUNISTIC, 0, false,
                                   com_android_bluetooth_flags_gatt_conn_settings())) {
     log::warn(
             "Unable to connect GATT client gatt_if:{} peer:{} transport:{} "
-            "connection_tyoe:{} opporunistic:{}",
+            "connection_type:{}",
             gatt_cb.gatt_if, remote_bda, bt_transport_text(BT_TRANSPORT_LE),
-            "BTM_BLE_DIRECT_CONNECTION", true);
+            "BTM_BLE_OPPORTUNISTIC");
   }
   p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
 

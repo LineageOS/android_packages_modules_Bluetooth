@@ -469,13 +469,13 @@ public:
   void Connect(const RawAddress& address) {
     log::info("bd_addr={}", address);
     hearingDevices.Add(HearingDevice(address, true));
-    BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, false);
+    BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION);
   }
 
   void AddToAcceptlist(const RawAddress& address) {
     log::info("bd_addr={}", address);
     hearingDevices.Add(HearingDevice(address, true));
-    BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+    BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
   }
 
   void AddFromStorage(const HearingDevice& dev_info, bool is_acceptlisted) {
@@ -495,7 +495,7 @@ public:
       // BTM_BleSetConnScanParams(2048, 1024);
 
       /* add device into BG connection to accept remote initiated connection */
-      BTA_GATTC_Open(gatt_if, dev_info.address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if, dev_info.address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     }
 
     callbacks->OnDeviceAvailable(dev_info.capabilities, dev_info.hi_sync_id, dev_info.address);
@@ -505,7 +505,7 @@ public:
 
   void HandleConnectionFailed(const HearingDevice* hearingDevice) {
     log::info("Device (addr={}) failed to connect. Use background connect", hearingDevice->address);
-    BTA_GATTC_Open(gatt_if, hearingDevice->address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     if (hearingDevice->connecting_actively) {
       callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
     }
@@ -536,7 +536,7 @@ public:
         if (hearingDevice->switch_to_background_connection_after_failure) {
           hearingDevice->connecting_actively = false;
           hearingDevice->switch_to_background_connection_after_failure = false;
-          BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+          BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
         } else {
           log::info("Failed to connect to Hearing Aid device, bda={}", address);
 
@@ -566,7 +566,7 @@ public:
             log::info("Connecting other device from set, bda={} using direct connect",
                       device.address);
             BTA_GATTC_Close(device.conn_id);
-            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION);
           }
         } else {
           if (device.hi_sync_id == hi_sync_id && device.conn_id == INVALID_CONN_ID &&
@@ -575,7 +575,7 @@ public:
                       device.address);
             device.connecting_actively = true;
             device.switch_to_background_connection_after_failure = true;
-            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION);
           }
         }
       }
@@ -596,22 +596,22 @@ public:
       log::warn("Unable to set BLE data length peer:{} size:{}", address, 167);
     }
 
-    if (get_btm_client_interface().security.BTM_SecIsLeSecurityPending(address)) {
+    if (get_security_client_interface().BTM_SecIsLeSecurityPending(address)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT) */
       return;
     }
 
     /* verify bond */
-    if (get_btm_client_interface().security.BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
       /* if link has been encrypted */
       OnEncryptionComplete(address, true);
       return;
     }
 
-    if (get_btm_client_interface().security.BTM_IsBonded(address, BT_TRANSPORT_LE)) {
+    if (get_security_client_interface().BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       /* if bonded and link not encrypted */
-      get_btm_client_interface().security.BTM_SetEncryption(
+      get_security_client_interface().BTM_SetEncryption(
               address, BT_TRANSPORT_LE, encryption_callback, nullptr, BTM_BLE_SEC_ENCRYPT);
       return;
     }
@@ -1077,7 +1077,7 @@ public:
     log::info("read PSM: bd_addr={} psm=0x{:x}", hearingDevice->address, psm);
 
     if (hearingDevice->gap_handle == GAP_INVALID_HANDLE &&
-        get_btm_client_interface().security.BTM_IsEncrypted(hearingDevice->address,
+        get_security_client_interface().BTM_IsEncrypted(hearingDevice->address,
                                                             BT_TRANSPORT_LE)) {
       ConnectSocket(hearingDevice, psm);
     }
@@ -1929,7 +1929,7 @@ public:
 
     // This is needed just for the first connection. After stack is restarted,
     // code that loads device will add them to acceptlist.
-    BTA_GATTC_Open(gatt_if, hearingDevice->address, connection_type, false);
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, connection_type);
 
     callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
 
@@ -2180,7 +2180,7 @@ static void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) 
         return;
       }
       instance->OnEncryptionComplete(p_data->enc_cmpl.remote_bda,
-                                     get_btm_client_interface().security.BTM_IsEncrypted(
+                                     get_security_client_interface().BTM_IsEncrypted(
                                              p_data->enc_cmpl.remote_bda, BT_TRANSPORT_LE));
       break;
 

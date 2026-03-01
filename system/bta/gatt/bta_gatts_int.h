@@ -40,100 +40,12 @@
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
-enum {
-  BTA_GATTS_API_REG_EVT = BTA_SYS_EVT_START(BTA_ID_GATTS),
-  BTA_GATTS_INT_START_IF_EVT,
-  BTA_GATTS_API_DEREG_EVT,
-  BTA_GATTS_API_INDICATION_EVT,
-
-  BTA_GATTS_API_DEL_SRVC_EVT,
-  BTA_GATTS_API_STOP_SRVC_EVT,
-  BTA_GATTS_API_RSP_EVT,
-  BTA_GATTS_API_OPEN_EVT,
-  BTA_GATTS_API_CANCEL_OPEN_EVT,
-  BTA_GATTS_API_CLOSE_EVT,
-  BTA_GATTS_API_DISABLE_EVT,
-
-  BTA_GATTS_API_INIT_BONDED_EVT,
-};
-typedef uint16_t tBTA_GATTS_INT_EVT;
 
 /* max number of application allowed on device */
 #define BTA_GATTS_MAX_APP_NUM GATT_MAX_SR_PROFILES
 
 /* max number of services allowed in the device */
 #define BTA_GATTS_MAX_SRVC_NUM GATT_MAX_SR_PROFILES
-
-/* internal strucutre for GATTC register API  */
-typedef struct {
-  BT_HDR_RIGID hdr;
-  bluetooth::Uuid app_uuid;
-  tBTA_GATTS_CBACK* p_cback;
-  bool eatt_support;
-} tBTA_GATTS_API_REG;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  tGATT_IF server_if;
-} tBTA_GATTS_INT_START_IF;
-
-typedef tBTA_GATTS_INT_START_IF tBTA_GATTS_API_DEREG;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  tGATT_IF server_if;
-  btgatt_db_element_t* service;
-  uint16_t count;
-} tBTA_GATTS_API_ADD_SERVICE;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  uint16_t attr_id;
-  uint16_t len;
-  bool need_confirm;
-  uint8_t value[GATT_MAX_ATTR_LEN];
-} tBTA_GATTS_API_INDICATION;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  uint32_t trans_id;
-  tGATT_STATUS status;
-  tGATTS_RSP* p_rsp;
-} tBTA_GATTS_API_RSP;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  tBT_TRANSPORT transport;
-} tBTA_GATTS_API_START;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  RawAddress remote_bda;
-  tGATT_IF server_if;
-  tBTM_BLE_CONN_TYPE connection_type;
-  tBT_TRANSPORT transport;
-  tBT_DEVICE_TYPE remote_addr_type;
-} tBTA_GATTS_API_OPEN;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  RawAddress remote_bda;
-  tGATT_IF server_if;
-  bool is_direct;
-  tBT_TRANSPORT transport;
-} tBTA_GATTS_API_CANCEL_OPEN;
-
-typedef union {
-  BT_HDR_RIGID hdr;
-  tBTA_GATTS_API_REG api_reg;
-  tBTA_GATTS_API_DEREG api_dereg;
-  tBTA_GATTS_API_ADD_SERVICE api_add_service;
-  tBTA_GATTS_API_INDICATION api_indicate;
-  tBTA_GATTS_API_RSP api_rsp;
-  tBTA_GATTS_API_OPEN api_open;
-  tBTA_GATTS_API_CANCEL_OPEN api_cancel_open;
-  tBTA_GATTS_INT_START_IF int_start_if;
-} tBTA_GATTS_DATA;
 
 /* application registration control block */
 typedef struct {
@@ -169,22 +81,23 @@ extern tBTA_GATTS_CB bta_gatts_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-bool bta_gatts_hdl_event(const BT_HDR_RIGID* p_msg);
+void bta_gatts_api_disable();
+void bta_gatts_register(const bluetooth::Uuid& app_uuid, tBTA_GATTS_CBACK* p_cback,
+                        bool eatt_support);
+void bta_gatts_start_if(tGATT_IF server_if);
+void bta_gatts_deregister(tGATT_IF server_if);
+void bta_gatts_delete_service(uint16_t service_id);
+void bta_gatts_stop_service(uint16_t service_id);
 
-void bta_gatts_api_disable(tBTA_GATTS_CB* p_cb);
-void bta_gatts_api_enable(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_data);
-void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_start_if(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_deregister(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB* p_srvc_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_stop_service(tBTA_GATTS_SRVC_CB* p_srvc_cb, tBTA_GATTS_DATA* p_msg);
+void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+                        std::unique_ptr<tGATTS_RSP> rsp);
+void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
+                               bool need_confirm);
 
-void bta_gatts_send_rsp(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-
-void bta_gatts_open(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_cancel_open(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
-void bta_gatts_close(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
+void bta_gatts_open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
+                    bool is_direct, tBT_TRANSPORT transport);
+void bta_gatts_cancel_open(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct);
+void bta_gatts_close(uint16_t conn_id);
 
 tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tGATT_IF server_if);
 uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb, tGATT_IF server_if);

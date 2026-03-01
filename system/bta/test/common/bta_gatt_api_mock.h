@@ -31,10 +31,10 @@ public:
                            BtaAppRegisterCallback cb, bool eatt_support) = 0;
   virtual void AppDeregister(tGATT_IF client_if) = 0;
   virtual void Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     bool auto_mtu_enabled) = 0;
   virtual void Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) = 0;
+                    tBTM_BLE_CONN_TYPE connection_type) = 0;
   virtual void CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) = 0;
   virtual void Close(uint16_t conn_id) = 0;
   virtual void ServiceSearchRequest(uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) = 0;
@@ -55,10 +55,6 @@ public:
   virtual tGATT_STATUS DeregisterForNotifications(tGATT_IF client_if, const RawAddress& remote_bda,
                                                   uint16_t handle) = 0;
   virtual void ConfigureMTU(tCONN_ID conn_id, uint16_t mtu) = 0;
-  virtual tGATT_STATUS SubrateModeRequest(tGATT_IF client_if, const RawAddress& remote_bda,
-                                          tGATT_SUBRATE_MODE subrate_mode) = 0;
-  virtual void UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                                   uint16_t subrate_min, uint16_t cont_num) = 0;
   virtual ~BtaGattInterface() = default;
 };
 
@@ -71,13 +67,13 @@ public:
   MOCK_METHOD((void), AppDeregister, (tGATT_IF client_if), (override));
   MOCK_METHOD((void), Open,
               (tGATT_IF client_if, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE connection_type,
-               tBT_TRANSPORT transport, bool opportunistic, bool auto_mtu_enabled),
+               tBT_TRANSPORT transport, bool auto_mtu_enabled),
               (override));
   MOCK_METHOD((void), Open,
-              (tGATT_IF client_if, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE connection_type,
-               bool opportunistic));
-  MOCK_METHOD((void), CancelOpen,
-              (tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct));
+              (tGATT_IF client_if, const RawAddress& remote_bda,
+               tBTM_BLE_CONN_TYPE connection_type));
+  MOCK_METHOD((void), CancelOpen, (tGATT_IF client_if, const RawAddress& remote_bda,
+               bool is_direct));
   MOCK_METHOD((void), Close, (uint16_t conn_id));
   MOCK_METHOD((void), ServiceSearchRequest, (uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid));
   MOCK_METHOD((void), SendIndConfirm, (uint16_t conn_id, uint16_t cid), (override));
@@ -99,11 +95,6 @@ public:
   MOCK_METHOD((tGATT_STATUS), DeregisterForNotifications,
               (tGATT_IF client_if, const RawAddress& remote_bda, uint16_t handle));
   MOCK_METHOD((void), ConfigureMTU, (tCONN_ID conn_id, uint16_t mtu));
-  MOCK_METHOD((tGATT_STATUS), SubrateModeRequest,
-              (tGATT_IF client_if, const RawAddress& remote_bda, tGATT_SUBRATE_MODE subrate_mode));
-  MOCK_METHOD((void), UpdateSubrateConfig,
-              (tGATT_SUBRATE_MODE subrate_mode,
-               uint16_t subrate_max, uint16_t subrate_min, uint16_t cont_num));
 };
 
 /**
@@ -132,7 +123,7 @@ public:
   virtual void HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
                                      std::vector<uint8_t> /* value */, bool /* need_confirm */) = 0;
   virtual void SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,
-                       tGATTS_RSP* /* p_msg */) = 0;
+                       std::unique_ptr<tGATTS_RSP> /* p_msg */) = 0;
   virtual void StopService(uint16_t /* service_id */) = 0;
   virtual void InitBonded() = 0;
   virtual ~BtaGattServerInterface() = default;
@@ -159,8 +150,9 @@ public:
   MOCK_METHOD((void), HandleValueIndication,
               (uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value, bool need_confirm));
 
-  MOCK_METHOD((void), SendRsp,
-              (uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status, tGATTS_RSP* p_msg));
+  MOCK_METHOD(void, SendRsp,
+              (uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+               std::unique_ptr<tGATTS_RSP> p_msg));
   MOCK_METHOD((void), StopService, (uint16_t service_id));
   MOCK_METHOD((void), InitBonded, ());
 };

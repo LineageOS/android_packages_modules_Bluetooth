@@ -107,7 +107,6 @@ typedef struct {
   tGATT_IF client_if;
   tBTM_BLE_CONN_TYPE connection_type;
   tBT_TRANSPORT transport;
-  bool opportunistic;
   tBT_DEVICE_TYPE remote_addr_type;
   uint16_t preferred_mtu;
   bool prefer_relax_mode;
@@ -121,7 +120,6 @@ typedef struct {
   bool is_direct;
   tBT_TRANSPORT transport;
   uint8_t initiating_phys;
-  bool opportunistic;
 } tBTA_GATTC_API_CANCEL_OPEN;
 
 typedef struct {
@@ -415,10 +413,6 @@ void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
                                tBT_TRANSPORT transport, uint16_t mtu);
 void bta_gattc_process_api_refresh(tGATT_IF client_if, const RawAddress& remote_bda);
 void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-tGATT_STATUS bta_gattc_subrate_mode_request(tGATT_IF client_if, const RawAddress& bd_addr,
-                                            tGATT_SUBRATE_MODE subrate_mode,
-                                            uint16_t subrate_max, uint16_t subrate_min,
-                                            uint16_t cont_num);
 void bta_gattc_listen(tBTA_GATTC_DATA* p_msg);
 void bta_gattc_broadcast(tBTA_GATTC_DATA* p_msg);
 

@@ -235,7 +235,7 @@ static void FuzzAsServer(FuzzedDataProvider& fdp) {
 
 static void ClientInit() {
   GattInit();
-  (void)stack::leConnectionConnect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, false);
+  (void)stack::leConnectionConnect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION);
 }
 
 static void ClientCleanup() {

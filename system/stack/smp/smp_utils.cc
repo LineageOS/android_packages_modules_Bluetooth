@@ -587,7 +587,7 @@ static BT_HDR* smp_build_identity_info_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
-  const Octet16& irk = get_btm_client_interface().security.BTM_GetDeviceIDRoot();
+  const Octet16& irk = get_security_client_interface().BTM_GetDeviceIDRoot();
 
   UINT8_TO_STREAM(p, SMP_OPCODE_IDENTITY_INFO);
   ARRAY_TO_STREAM(p, irk.data(), kOctet16Length);
@@ -1491,7 +1491,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
                   },
           .pairing_algorithm = PairingAlgorithm::SC,
   };
-  get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LENC, lle_key,
+  get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_LENC, lle_key,
                                                        true);
 
   tBTM_LE_KEY_VALUE ple_key = {
@@ -1505,7 +1505,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
           .pairing_algorithm = PairingAlgorithm::SC,
   };
   ple_key.penc_key.rand = ZERO_OCTET8;
-  get_btm_client_interface().security.BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PENC, ple_key,
+  get_security_client_interface().BTM_SecSaveLeKey(p_cb->pairing_bda, BTM_LE_KEY_PENC, ple_key,
                                                        true);
 }
 

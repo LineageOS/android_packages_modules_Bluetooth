@@ -58,7 +58,7 @@ void BTA_GATTS_Open(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,
-                       tGATTS_RSP* /* p_msg */) {
+                       std::unique_ptr<tGATTS_RSP> /* p_msg */) {
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_StopService(uint16_t /* service_id */) { inc_func_call_count(__func__); }

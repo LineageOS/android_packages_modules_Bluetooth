@@ -238,11 +238,11 @@ void BTA_dm_on_hw_on(const std::string local_name) {
   btif_dm_get_ble_local_keys(&key_mask, &er, &id_key);
 
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ER) {
-    get_btm_client_interface().security.BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ER,
+    get_security_client_interface().BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ER,
                                                              (tBTM_BLE_LOCAL_KEYS*)&er);
   }
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ID) {
-    get_btm_client_interface().security.BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID,
+    get_security_client_interface().BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID,
                                                              (tBTM_BLE_LOCAL_KEYS*)&id_key);
   }
 
@@ -454,7 +454,7 @@ void bta_dm_process_remove_device_no_callback(const RawAddress& bd_addr) {
   // need to remove all pending background connection before unpair
   bta_dm_disc_gatt_cancel_open(bd_addr);
 
-  get_btm_client_interface().security.BTM_SecDeleteDevice(bd_addr);
+  get_security_client_interface().BTM_SecDeleteDevice(bd_addr);
 
   // remove all cached GATT information
   bta_dm_disc_gatt_refresh(bd_addr);

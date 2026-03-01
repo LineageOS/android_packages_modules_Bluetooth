@@ -217,7 +217,6 @@ protected:
     bluetooth::testing::set_hal_cbacks(&callbacks);
 
     set_security_client_interface(mock_btm_security_);
-    set_mock_btm_client_interface_security(mock_btm_security_);
 
     auto promise = std::promise<void>();
     auto future = promise.get_future();

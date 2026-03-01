@@ -659,7 +659,7 @@ TEST_F(PacsTests, GetConnectionId) {
 TEST_F(PacsTests, RemoteReadSupportedContexts) {
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([this](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                tGATTS_RSP* p_msg) {
+                                std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             log::info("Verify the response against the service descriptor values");
@@ -692,7 +692,7 @@ TEST_F(PacsTests, RemoteReadSupportedContexts) {
 TEST_F(PacsTests, RemoteReadSinkAudioLocations) {
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([this](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                tGATTS_RSP* p_msg) {
+                                std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             log::info("Verify the response against the service descriptor values");
@@ -723,7 +723,7 @@ TEST_F(PacsTests, RemoteReadSinkAudioLocations) {
 TEST_F(PacsTests, RemoteReadSourceAudioLocations) {
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([this](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                tGATTS_RSP* p_msg) {
+                                std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             log::info("Verify the response against the service descriptor values");
@@ -850,7 +850,7 @@ TEST_F(PacsTests, RemoteReadSinkPacs) {
 
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([&, this](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                   tGATTS_RSP* p_msg) {
+                                   std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             log::info("Verify the response against the service descriptor values");
@@ -927,7 +927,7 @@ TEST_F(PacsTests, RemoteReadSourcePacs) {
 
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([&, this](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                   tGATTS_RSP* p_msg) {
+                                   std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             log::info("Verify the response against the service descriptor values");
@@ -1022,7 +1022,7 @@ TEST_F(PacsTests, RemoteReadAvailableContexts) {
           });
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([&, this](uint16_t conn_id, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                   tGATTS_RSP* p_msg) {
+                                   std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             auto value = std::make_shared<std::vector<uint8_t>>(
@@ -1072,8 +1072,9 @@ TEST_F(PacsTests, VerifyCccValues) {
   InjectGattConnectedEvent(test_dev2);
 
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-          .WillByDefault([](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                            tGATTS_RSP* /*p_msg*/) { ASSERT_EQ(GATT_SUCCESS, status); });
+          .WillByDefault(
+                  [](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
+                     std::unique_ptr<tGATTS_RSP> /*p_msg*/) { ASSERT_EQ(GATT_SUCCESS, status); });
 
   // 1) Check dev1 write results
   const uint16_t expected_cccd_idx0 = GATT_CLT_CONFIG_NOTIFICATION;
@@ -1094,7 +1095,7 @@ TEST_F(PacsTests, VerifyCccValues) {
     uint16_t expected_cccd = 0x0F0F;
     EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
             .WillRepeatedly([&](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                tGATTS_RSP* p_msg) {
+                                std::unique_ptr<tGATTS_RSP> p_msg) {
               ASSERT_EQ(GATT_SUCCESS, status);
 
               uint16_t cccd = 0x00FF;
@@ -1120,7 +1121,7 @@ TEST_F(PacsTests, VerifyCccValues) {
     uint16_t expected_cccd = 0x0F0F;
     EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
             .WillRepeatedly([&](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                tGATTS_RSP* p_msg) {
+                                std::unique_ptr<tGATTS_RSP> p_msg) {
               ASSERT_EQ(GATT_SUCCESS, status);
 
               uint16_t cccd = 0x00FF;
@@ -1168,7 +1169,7 @@ TEST_F(PacsTests, UpdateContextAvailability) {
           });
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([&, this](uint16_t conn_id, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                   tGATTS_RSP* p_msg) {
+                                   std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             auto value = std::make_shared<std::vector<uint8_t>>(
@@ -1219,8 +1220,9 @@ TEST_F(PacsTests, UpdateContextAvailability) {
   // After reading, check the notifications
   {
     ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-            .WillByDefault([](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                              tGATTS_RSP* /*p_msg*/) { ASSERT_EQ(GATT_SUCCESS, status); });
+            .WillByDefault(
+                    [](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
+                       std::unique_ptr<tGATTS_RSP> /*p_msg*/) { ASSERT_EQ(GATT_SUCCESS, status); });
     InSequence s2;
     // Write the CCC descriptors to receive the notifications
     // Note: test_dev3 is not subscribed to notifications
@@ -1326,7 +1328,7 @@ TEST_F(PacsTests, RemoteReadPacsWithEmptyRecords) {
   // Now, read the characteristic
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillOnce([](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                       tGATTS_RSP* p_msg) {
+                       std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
             // It should contain a single byte: the number of records, which is 0.
             ASSERT_EQ(p_msg->attr_value.len, 1);
@@ -1350,7 +1352,7 @@ TEST_F(PacsTests, UpdateAudioChannelLocations) {
           };
   ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillByDefault([&, this](uint16_t conn_id, uint32_t /*trans_id*/, tGATT_STATUS status,
-                                   tGATTS_RSP* p_msg) {
+                                   std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
 
             auto value = std::make_shared<std::vector<uint8_t>>(
@@ -1402,8 +1404,9 @@ TEST_F(PacsTests, UpdateAudioChannelLocations) {
   // After reading, check the notifications
   {
     ON_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-            .WillByDefault([](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                              tGATTS_RSP* /*p_msg*/) { ASSERT_EQ(GATT_SUCCESS, status); });
+            .WillByDefault(
+                    [](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
+                       std::unique_ptr<tGATTS_RSP> /*p_msg*/) { ASSERT_EQ(GATT_SUCCESS, status); });
     InSequence s2;
     // Write the CCC descriptors to receive the notifications
     // Note: test_dev2 is not subscribed to notifications
@@ -1655,7 +1658,7 @@ TEST_F(PacsTests, RemoteReadWithValidOffset) {
   // Expect a response with GATT_SUCCESS
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillOnce([](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                       tGATTS_RSP* p_msg) {
+                       std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
             // The full value is 4 bytes: 0x03, 0x00, 0x00, 0x00
             // With an offset of 1, we expect 3 bytes.
@@ -1679,7 +1682,7 @@ TEST_F(PacsTests, RemoteReadWithOffsetEqualToLength) {
   // Expect a response with GATT_SUCCESS and 0 length
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
           .WillOnce([](uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATT_STATUS status,
-                       tGATTS_RSP* p_msg) {
+                       std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(GATT_SUCCESS, status);
             // The full value is 4 bytes. With an offset of 4, we expect 0 bytes.
             ASSERT_EQ(p_msg->attr_value.len, 0);

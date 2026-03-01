@@ -518,12 +518,12 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic);
+                    tBTM_BLE_CONN_TYPE connection_type);
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     uint16_t preferred_mtu, bool prefer_relax_mode);
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled);
 
 /*******************************************************************************
@@ -905,24 +905,6 @@ void BTA_GATTC_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_el
 void BTA_GATTC_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id);
 
 /*******************************************************************************
- * Function         BTA_GATTC_SubrateModeRequest
- *
- * Description      Update fixed subrate parameters of subrate mode in config.
- *                  Subrate mode request, can only be used when connection is up.
- *
- * Parameters:      client_if     - client interface.
- *                  bd_addr       - BD address of the peer
- *                  subrate_mode  - subrate mode [none/low/balanced/high/lea]
- *                  Subrate parameters
- *
- * Returns          tGATT_STATUS
- *
- ******************************************************************************/
-tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
-                                          tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max = 0,
-                                          uint16_t subrate_min = 0, uint16_t cont_num = 0);
-
-/*******************************************************************************
  *  BTA GATT Server API
  ******************************************************************************/
 
@@ -1060,12 +1042,13 @@ void BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id, std::ve
  * Parameters       conn_id - connection identifier.
  *                  trans_id - transaction ID.
  *                  status - response status
- *                  p_msg - response data.
+ *                  rsp - response data.
  *
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status, tGATTS_RSP* p_msg);
+void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status,
+                       std::unique_ptr<tGATTS_RSP> rsp);
 
 /*******************************************************************************
  *

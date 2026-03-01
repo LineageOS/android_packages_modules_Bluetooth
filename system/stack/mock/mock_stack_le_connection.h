@@ -45,17 +45,21 @@ namespace mock {
 namespace stack_le_connection {
 
 // Name: leConnectionUpdateSubrateConfig
-// Params: GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
+// Params: tGATT_IF gatt_if, const RawAddress& bd_addr,
+//         GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
 //         uint16_t subrate_min, uint16_t cont_num
-// Return: void
+// Return: tGATT_STATUS
 struct leConnectionUpdateSubrateConfig {
-  std::function<void(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max, uint16_t subrate_min,
-                     uint16_t cont_num)>
-          body{[](tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
-                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) {}};
-  void operator()(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max, uint16_t subrate_min,
-                  uint16_t cont_num) {
-    body(subrate_mode, subrate_max, subrate_min, cont_num);
+  std::function<tGATT_STATUS(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                             tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                             uint16_t subrate_min, uint16_t cont_num)>
+          body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
+                  tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
+                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) { return GATT_SUCCESS; }};
+  tGATT_STATUS operator()(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                          tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                          uint16_t subrate_min, uint16_t cont_num) {
+    return body(gatt_if, bd_addr, subrate_mode, subrate_max, subrate_min, cont_num);
   }
 };
 extern struct leConnectionUpdateSubrateConfig leConnectionUpdateSubrateConfig;
@@ -91,23 +95,22 @@ extern struct leConnectionCancelConnect leConnectionCancelConnect;
 
 // Name: leConnectionConnect
 // Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
-// bool opportunistic, uint16_t preferred_mtu, bool prefer_relax_mode,
+// uint16_t preferred_mtu, bool prefer_relax_mode,
 // bool auto_mtu_enabled Return: bool
 struct leConnectionConnect {
   static bool return_value;
   std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                     tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                      bool prefer_relax_mode, bool auto_mtu_enabled)>
           body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
                   tBLE_ADDR_TYPE /* addr_type */, tBTM_BLE_CONN_TYPE /* connection_type */,
-                  bool /* opportunistic */, uint16_t /* preferred_mtu */,
-                  bool /* prefer_relax_mode */,
+                  uint16_t /* preferred_mtu */, bool /* prefer_relax_mode */,
                   bool /* auto_mtu_enabled */) { return return_value; }};
   bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                  tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                  tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                   bool prefer_relax_mode, bool auto_mtu_enabled) {
-    return body(gatt_if, bd_addr, addr_type, connection_type, opportunistic, preferred_mtu,
-                prefer_relax_mode, auto_mtu_enabled);
+    return body(gatt_if, bd_addr, addr_type, connection_type, preferred_mtu, prefer_relax_mode,
+                auto_mtu_enabled);
   }
 };
 extern struct leConnectionConnect leConnectionConnect;

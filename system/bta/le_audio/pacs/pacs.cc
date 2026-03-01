@@ -413,24 +413,27 @@ struct Pacs::service_impl {
                      "No matching PAC characteristic found for handle: {}", read_req.handle);
 
     // Respond with a global value
-    tGATTS_RSP p_msg;
-    auto status = FillPacCharacteristicReadReqRsp(
-            p_msg.attr_value, read_req.handle, read_req.offset, pacs_by_handle.at(read_req.handle));
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status, &p_msg);
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    auto status =
+            FillPacCharacteristicReadReqRsp(p_msg->attr_value, read_req.handle, read_req.offset,
+                                            pacs_by_handle.at(read_req.handle));
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status,
+                      std::move(p_msg));
   }
 
   static void OnReadAudioLocationCharacteristic(tBTA_GATTS* p_data,
                                                 const AudioLocations& locations) {
     auto const& read_req = p_data->req_data.p_data->read_req;
 
-    tGATTS_RSP p_msg;
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
     auto status = FillGattReadReqRspValue(
-            p_msg.attr_value, read_req.handle, read_req.offset,
+            p_msg->attr_value, read_req.handle, read_req.offset,
             pacs::AudioLocationsCharValueBuilder::Create(locations.to_ullong())
                     ->SerializeToBytes());
 
     log::info("handle: 0x{:04x}, status: {}", read_req.handle, status);
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status, &p_msg);
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status,
+                      std::move(p_msg));
   }
 
   static void RespondWithAudioContexts(tBTA_GATTS* p_data,
@@ -438,12 +441,13 @@ struct Pacs::service_impl {
     auto const& read_req = p_data->req_data.p_data->read_req;
     log::info("handle: 0x{:04x}", read_req.handle);
 
-    tGATTS_RSP p_msg;
-    auto status = FillGattReadReqRspValue(p_msg.attr_value, read_req.handle, read_req.offset,
+    std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
+    auto status = FillGattReadReqRspValue(p_msg->attr_value, read_req.handle, read_req.offset,
                                           pacs::AudioContextsCharValueBuilder::Create(
                                                   contexts.sink.value(), contexts.source.value())
                                                   ->SerializeToBytes());
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status, &p_msg);
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status,
+                      std::move(p_msg));
   }
 
   void OnReadAvailableAudioContextsCharacteristic(

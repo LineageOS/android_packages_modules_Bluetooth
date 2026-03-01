@@ -178,7 +178,6 @@ cc_defaults {
         "latest_android_media_audio_common_types_ndk_static",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libbinder_ndk",
         "libcrypto",
         "libfmq",
@@ -194,6 +193,7 @@ cc_defaults {
         "android.hardware.common-V2-ndk",
         "android.hardware.common.fmq-V1-ndk",
         "libFraunhoferAAC",
+        "libPlatformProperties",
         "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",

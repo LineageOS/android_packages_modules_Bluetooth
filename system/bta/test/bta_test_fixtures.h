@@ -27,6 +27,7 @@
 #include "stack/include/main_thread.h"
 #include "stack/mock/mock_stack_app.h"
 #include "stack/mock/mock_stack_btm_interface.h"
+#include "stack/mock/mock_stack_security_client_interface.h"
 #include "stack/mock/mock_stack_gatt_api.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/mock/mock_stack_rnr_interface.h"
@@ -57,6 +58,7 @@ class BtaWithMocksTest : public BtaWithFakesTest {
 protected:
   void SetUp() override {
     BtaWithFakesTest::SetUp();
+    set_security_client_interface(mock_security_client_interface_);
     reset_mock_function_count_map();
     reset_mock_btm_client_interface();
     ASSERT_NE(get_btm_client_interface().lifecycle.btm_init, nullptr);
@@ -78,12 +80,12 @@ protected:
       osi_free(p_buf);
       return tBTM_STATUS::BTM_SUCCESS;
     };
-    mock_btm_client_interface.security.BTM_SecRegister =
-            [](const BtmAppReg& /* app_reg */) -> bool { return true; };
+
+    ON_CALL(mock_security_client_interface_, BTM_SecRegister(::testing::_))
+      .WillByDefault(::testing::Return(true));
   }
 
   void TearDown() override {
-    mock_btm_client_interface.security.BTM_SecRegister = {};
     mock_btm_client_interface.eir.BTM_WriteEIR = {};
     mock_btm_client_interface.eir.BTM_GetEirSupportedServices = {};
     test::mock::stack_app::appRegister = {};
@@ -91,12 +93,14 @@ protected:
     bluetooth::testing::stack::rnr::reset_interface();
     bluetooth::testing::stack::l2cap::reset_interface();
     bluetooth::hci::testing::mock_controller_.reset();
+    reset_mock_security_client_interface();
 
     BtaWithFakesTest::TearDown();
   }
 
   bluetooth::testing::stack::l2cap::Mock mock_l2cap_interface_;
   bluetooth::testing::stack::rnr::Mock mock_stack_rnr_interface_;
+  MockSecurityClientInterface mock_security_client_interface_;
 };
 
 class BtaWithContextTest : public BtaWithMocksTest {

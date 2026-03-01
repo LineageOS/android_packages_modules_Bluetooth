@@ -550,7 +550,7 @@ TEST_F(VcsTest, RemoteReadVolumeState) {
 
   // Initial state: volume 123, Not Muted, counter 0
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-          .WillOnce([this](uint16_t, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
+          .WillOnce([this](uint16_t, uint32_t, tGATT_STATUS, std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(p_msg->attr_value.len, 3);
             ASSERT_EQ(p_msg->attr_value.value[0], svc_desc_.initial_volume);
             ASSERT_EQ(p_msg->attr_value.value[1],
@@ -563,7 +563,7 @@ TEST_F(VcsTest, RemoteReadVolumeState) {
   // Update state to 100, Muted
   vcs_->UpdateVolumeState(100, MuteState::kMuted);
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-          .WillOnce([](uint16_t, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
+          .WillOnce([](uint16_t, uint32_t, tGATT_STATUS, std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(p_msg->attr_value.len, 3);
             ASSERT_EQ(p_msg->attr_value.value[0], 100);
             ASSERT_EQ(p_msg->attr_value.value[1], static_cast<uint8_t>(MuteState::kMuted));
@@ -692,7 +692,8 @@ TEST_F(VcsTest, UpdateVolumeStateSameValue) {
 
   // 4. Read Volume State to verify final change counter is 2
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-          .WillOnce([new_volume](uint16_t, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
+          .WillOnce([new_volume](uint16_t, uint32_t, tGATT_STATUS,
+                                 std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(p_msg->attr_value.len, 3);
             ASSERT_EQ(p_msg->attr_value.value[0], new_volume);
             ASSERT_EQ(p_msg->attr_value.value[1], static_cast<uint8_t>(MuteState::kMuted));
@@ -743,7 +744,7 @@ TEST_F(VcsTest, ChangeCounterWrapAround) {
 
   // Verify counter is 255 with a read.
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-          .WillOnce([](uint16_t, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
+          .WillOnce([](uint16_t, uint32_t, tGATT_STATUS, std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(p_msg->attr_value.len, 3);
             ASSERT_EQ(p_msg->attr_value.value[2], 255);  // Change counter
           });
@@ -755,7 +756,7 @@ TEST_F(VcsTest, ChangeCounterWrapAround) {
 
   // Verify counter is 0 with a read.
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _))
-          .WillOnce([](uint16_t, uint32_t, tGATT_STATUS, tGATTS_RSP* p_msg) {
+          .WillOnce([](uint16_t, uint32_t, tGATT_STATUS, std::unique_ptr<tGATTS_RSP> p_msg) {
             ASSERT_EQ(p_msg->attr_value.len, 3);
             ASSERT_EQ(p_msg->attr_value.value[2], 0);  // Change counter
           });

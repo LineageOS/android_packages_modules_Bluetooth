@@ -65,8 +65,8 @@ namespace bluetooth::stack {
  *
  ******************************************************************************/
 bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
-                         uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
+                         tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
+                         bool prefer_relax_mode, bool auto_mtu_enabled) {
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -81,7 +81,7 @@ bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_
     return false;
   }
 
-  if (opportunistic) {
+  if (connection_type == BTM_BLE_OPPORTUNISTIC) {
     log::info("Registered for opportunistic connection gatt_if={}", gatt_if);
     return true;
   }
@@ -162,9 +162,8 @@ bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_
 }
 
 bool leConnectionConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
-  return leConnectionConnect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, opportunistic, 0,
-                             false, false);
+                         tBTM_BLE_CONN_TYPE connection_type) {
+  return leConnectionConnect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, 0, false, false);
 }
 
 /*******************************************************************************
@@ -226,23 +225,47 @@ bool leConnectionCancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool
   return true;
 }
 
-void leConnectionUpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
-                                     uint16_t subrate_min, uint16_t cont_num) {
-  if (!gatt_cb.subrate_mode_config.contains(subrate_mode)) {
-    log::warn("This is a unknown subrate mode to update: {}", subrate_mode);
-    return;
+tGATT_STATUS leConnectionUpdateSubrateConfig(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                                             tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                                             uint16_t subrate_min, uint16_t cont_num) {
+  log::info("gatt_if:{} addr:{}, subrate_mode:{}", gatt_if, bd_addr, subrate_mode);
+
+  /* Make sure app is registered */
+  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
+  if (!p_reg) {
+    log::error("Unable to find registered app gatt_if={}", gatt_if);
+    return GATT_ERROR;
   }
-  if (subrate_min > subrate_max || cont_num >= subrate_max || subrate_min > 500 ||
-      subrate_max > 500) {
-    log::error("Invalid subrate parameter to update: {} {} {} {}", subrate_mode, subrate_max,
-               subrate_min, cont_num);
-    return;
+
+  if (!get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+    return GATT_ERROR;
   }
-  log::debug("Update subrate mode config: {} {} {} {}", subrate_mode, subrate_max, subrate_min,
-             cont_num);
-  gatt_cb.subrate_mode_config[subrate_mode].subrate_max = subrate_max;
-  gatt_cb.subrate_mode_config[subrate_mode].subrate_min = subrate_min;
-  gatt_cb.subrate_mode_config[subrate_mode].cont_num = cont_num;
+
+  if (subrate_max != 0 || subrate_min != 0 || cont_num != 0) {
+    log::info("update subrate parameters: {} {} {}", subrate_max, subrate_min, cont_num);
+
+    if (!gatt_cb.subrate_mode_config.contains(subrate_mode)) {
+      log::warn("This is a unknown subrate mode to update: {}", subrate_mode);
+    } else {
+      if (subrate_min > subrate_max || cont_num >= subrate_max || subrate_min > 500 ||
+          subrate_max > 500) {
+        log::error("Invalid subrate parameter to update: {} {} {} {}", subrate_mode, subrate_max,
+                   subrate_min, cont_num);
+      } else {
+        log::debug("Update subrate mode config: {} {} {} {}", subrate_mode, subrate_max,
+                   subrate_min, cont_num);
+        gatt_cb.subrate_mode_config[subrate_mode].subrate_max = subrate_max;
+        gatt_cb.subrate_mode_config[subrate_mode].subrate_min = subrate_min;
+        gatt_cb.subrate_mode_config[subrate_mode].cont_num = cont_num;
+      }
+    }
+  }
+
+  if (!stack::leConnectionSubrateModeRequest(gatt_if, bd_addr, subrate_mode)) {
+    return GATT_ERROR;
+  }
+
+  return GATT_SUCCESS;
 }
 
 bool leConnectionSubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
