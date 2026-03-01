@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a155177e_8e18c047",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 19979
+      },
+      "writtenOn": "2026-03-01T16:02:21Z",
+      "side": 1,
+      "message": "Just out of curiosity, wouldn\u0027t this be better as a prop?",
+      "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
