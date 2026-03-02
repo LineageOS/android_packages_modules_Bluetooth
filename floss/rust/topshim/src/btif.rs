@@ -1200,12 +1200,6 @@ pub(crate) mod ffi {
         fn set_scan_mode(self: &BtIntf, mode: BtScanMode);
         fn set_local_name(self: &BtIntf, local_name: String);
         fn set_adapter_property(self: &BtIntf, property: BluetoothProperty) -> i32;
-        fn get_remote_device_properties(self: &BtIntf, remote_addr: RawAddress) -> i32;
-        fn get_remote_device_property(
-            self: &BtIntf,
-            remote_addr: RawAddress,
-            prop_type: BtPropertyType,
-        ) -> i32;
         fn set_remote_device_property(
             self: &BtIntf,
             remote_addr: RawAddress,
@@ -1382,14 +1376,6 @@ impl BluetoothInterface {
 
     pub fn set_local_name(&self, local_name: String) {
         self.internal.set_local_name(local_name)
-    }
-
-    pub fn get_remote_device_properties(&self, addr: RawAddress) -> i32 {
-        self.internal.get_remote_device_properties(addr)
-    }
-
-    pub fn get_remote_device_property(&self, addr: RawAddress, prop_type: BtPropertyType) -> i32 {
-        self.internal.get_remote_device_property(addr, prop_type.into())
     }
 
     pub fn set_remote_device_property(&self, addr: RawAddress, prop: BluetoothProperty) -> i32 {

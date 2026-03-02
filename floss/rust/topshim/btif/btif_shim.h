@@ -47,8 +47,6 @@ public:
   void set_scan_mode(bt_scan_mode_t mode) const;
   void set_local_name(::rust::String local_name) const;
   int set_adapter_property(bt_property_t property) const;
-  int get_remote_device_properties(RawAddress remote_addr) const;
-  int get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) const;
   int set_remote_device_property(RawAddress remote_addr, bt_property_t property) const;
   int get_remote_services(RawAddress remote_addr, int transport) const;
   int start_discovery() const;

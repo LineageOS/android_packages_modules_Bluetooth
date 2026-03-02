@@ -186,14 +186,6 @@ int BtIntf::set_adapter_property(bt_property_t property) const {
   return intf_->set_adapter_property(&property);
 }
 
-int BtIntf::get_remote_device_properties(RawAddress remote_addr) const {
-  return intf_->get_remote_device_properties(remote_addr);
-}
-
-int BtIntf::get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) const {
-  return intf_->get_remote_device_property(remote_addr, type);
-}
-
 int BtIntf::set_remote_device_property(RawAddress remote_addr, bt_property_t property) const {
   return intf_->set_remote_device_property(remote_addr, &property);
 }
