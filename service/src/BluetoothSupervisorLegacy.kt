@@ -58,9 +58,9 @@ class BluetoothSupervisorLegacy(
         Log.i(TAG, "Created BluetoothSupervisorLegacy")
     }
 
-    override fun onBluetoothDisallowed() {
+    override fun onRestrictionChange() {
         enforceCorrectThread()
-        bms.onBluetoothDisallowed()
+        bms.onRestrictionChange()
     }
 
     fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {

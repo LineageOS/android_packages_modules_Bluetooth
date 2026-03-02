@@ -70,14 +70,14 @@ class BluetoothRestrictionTest {
     }
 
     @Test
-    fun allowUser_whenDisallowed_doNotTriggerCallback() {
+    fun allowUser_whenDisallowed_triggerCallback() {
         disallowBluetooth()
         start()
 
         allowBluetooth()
 
         assertThat(isBluetoothAllowed).isTrue()
-        assertThat(callback_count).isEqualTo(0)
+        assertThat(callback_count).isEqualTo(1)
     }
 
     companion object {
