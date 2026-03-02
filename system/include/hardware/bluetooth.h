@@ -898,9 +898,6 @@ typedef struct {
   void (*set_adapter_index)(int adapter_index);
 #endif
 
-  /** Get all Bluetooth Adapter properties at init */
-  int (*get_adapter_properties)(void);
-
   /** Get Bluetooth Adapter property of 'type' */
   int (*get_adapter_property)(bt_property_type_t type);
 

@@ -525,15 +525,6 @@ int get_common_criteria_config_compare_result() {
 
 bool is_atv_device() { return is_local_device_atv; }
 
-static int get_adapter_properties(void) {
-  if (!stack_is_running()) {
-    return BT_STATUS_NOT_READY;
-  }
-
-  do_in_main_thread(base::BindOnce(btif_get_adapter_properties));
-  return BT_STATUS_SUCCESS;
-}
-
 static int get_adapter_property(bt_property_type_t type) {
   /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
   if (!stack_is_running() && (type != BT_PROPERTY_BDADDR) && (type != BT_PROPERTY_BDNAME)) {
@@ -1241,7 +1232,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
 #ifdef TARGET_FLOSS
         .set_adapter_index = set_adapter_index,
 #endif
-        .get_adapter_properties = get_adapter_properties,
         .get_adapter_property = get_adapter_property,
         .set_scan_mode = set_scan_mode,
         .set_adapter_property = set_adapter_property,
