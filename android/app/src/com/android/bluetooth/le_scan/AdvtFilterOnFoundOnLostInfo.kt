@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothDevice
+import com.google.protobuf.ByteString
 
-import com.google.protobuf.ByteString;
-
-public record AdvtFilterOnFoundOnLostInfo(
-        int scannerId,
-        int advPacketLen,
-        ByteString advPacket,
-        int scanResponseLen,
-        ByteString scanResponse,
-        int filtIndex,
-        int advState,
-        int advInfoPresent,
-        String address,
-        @BluetoothDevice.AddressType int addressType,
-        int txPower,
-        int rssiValue,
-        int timeStamp) {
-
-    public byte[] getResult() {
-        if (scanResponse == null) {
-            return advPacket.toByteArray();
-        }
-        return advPacket.concat(scanResponse).toByteArray();
-    }
+// All values of this class are accessed from native; see com_android_bluetooth_scan.cpp
+data class AdvtFilterOnFoundOnLostInfo(
+    val scannerId: Int,
+    val advPacketLen: Int,
+    val advPacket: ByteString,
+    val scanResponseLen: Int,
+    val scanResponse: ByteString?,
+    val filtIndex: Int,
+    val advState: Int,
+    val advInfoPresent: Int,
+    val address: String,
+    @param:BluetoothDevice.AddressType val addressType: Int,
+    val txPower: Int,
+    val rssiValue: Int,
+    val timeStamp: Int,
+) {
+    fun getResult(): ByteArray =
+        scanResponse?.let { advPacket.concat(it).toByteArray() } ?: advPacket.toByteArray()
 }
