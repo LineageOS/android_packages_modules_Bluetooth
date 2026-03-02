@@ -23,6 +23,7 @@
 #include <variant>
 
 #include "ascs_types.h"
+#include "stack/include/gatt_api.h"
 
 namespace bluetooth::le_audio {
 

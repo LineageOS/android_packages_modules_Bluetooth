@@ -145,7 +145,7 @@ protected:
   std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics_;
   RawAddress test_address_;
   uint16_t test_conn_id_ = 0x0001;
-  tBTA_GATTS_CBACK* captured_gatt_callback_ = nullptr;
+  const tBTA_GATTS_CBACK* captured_gatt_callback_ = nullptr;
   gatt::MockBtaGattServerInterface mock_gatt_server_interface_;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface_;
   MockRasServerCallbacks mock_ras_server_callbacks_;
@@ -176,9 +176,7 @@ protected:
                     testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
     // Mock BTA_GATTS_REG_EVT
-    tBTA_GATTS gatts_cb_data;
-    gatts_cb_data.reg_oper.status = GATT_SUCCESS;
-    captured_gatt_callback_(BTA_GATTS_REG_EVT, &gatts_cb_data);
+    captured_gatt_callback_->p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
 
     // Update handle for testing
     UpdateTestServiceHandle(captured_service);
@@ -188,18 +186,11 @@ protected:
 
     // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
     EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(1);
-    tBTA_GATTS p_data;
-    p_data.conn.transport = BT_TRANSPORT_LE;
-    p_data.conn.remote_bda = test_address_;
-    p_data.conn.conn_id = test_conn_id_;
-    captured_gatt_callback_(BTA_GATTS_CONNECT_EVT, &p_data);
+    captured_gatt_callback_->p_connect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
   }
 
   void TearDown() override {
-    tBTA_GATTS p_data;
-    p_data.conn.remote_bda = test_address_;
-    p_data.conn.conn_id = test_conn_id_;
-    captured_gatt_callback_(BTA_GATTS_DISCONNECT_EVT, &p_data);
+    captured_gatt_callback_->p_disconnect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
     RasServerTestNoInit::TearDown();
   }
 };
@@ -222,9 +213,7 @@ TEST_F(RasServerTestNoInit, InitializationSuccessful) {
                   testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
   // Mock BTA_GATTS_REG_EVT
-  tBTA_GATTS gatts_cb_data;
-  gatts_cb_data.reg_oper.status = GATT_SUCCESS;
-  captured_gatt_callback_(BTA_GATTS_REG_EVT, &gatts_cb_data);
+  captured_gatt_callback_->p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
 
   // Run BTA_GATTS_AddServiceCb
   std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
@@ -242,18 +231,11 @@ TEST_F(RasServerTestNoInit, ConnectAndDisconnect) {
 
   // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(1);
-  tBTA_GATTS p_data;
-  p_data.conn.transport = BT_TRANSPORT_LE;
-  p_data.conn.remote_bda = test_address_;
-  p_data.conn.conn_id = test_conn_id_;
-  captured_gatt_callback_(BTA_GATTS_CONNECT_EVT, &p_data);
+  captured_gatt_callback_->p_connect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
 
   // OnRasServerDisconnected should be triggered after receiving BTA_GATTS_DISCONNECT_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerDisconnected(test_address_)).Times(1);
-  tBTA_GATTS p_data2;
-  p_data2.conn.remote_bda = test_address_;
-  p_data2.conn.conn_id = test_conn_id_;
-  captured_gatt_callback_(BTA_GATTS_DISCONNECT_EVT, &p_data2);
+  captured_gatt_callback_->p_disconnect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
 }
 
 TEST_F(RasServerTestNoInit, IgnoreBrEdr) {
@@ -268,11 +250,7 @@ TEST_F(RasServerTestNoInit, IgnoreBrEdr) {
 
   // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(0);
-  tBTA_GATTS p_data;
-  p_data.conn.transport = BT_TRANSPORT_BR_EDR;
-  p_data.conn.remote_bda = test_address_;
-  p_data.conn.conn_id = test_conn_id_;
-  captured_gatt_callback_(BTA_GATTS_CONNECT_EVT, &p_data);
+  captured_gatt_callback_->p_connect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_BR_EDR);
 }
 
 TEST_F(RasServerTest, EmptyTest) {}
@@ -281,12 +259,7 @@ TEST_F(RasServerTest, GattMtuChanged) {
   uint16_t mtu = 512;
   // OnMtuChangedFromServer should be triggered after receiving BTA_GATTS_MTU_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnMtuChangedFromServer(test_address_, mtu)).Times(1);
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.mtu = mtu;
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_MTU_EVT, &p_data);
+  captured_gatt_callback_->p_mtu_changed_cb(1, 0, test_address_, mtu);
 }
 
 TEST_F(RasServerTest, ReadCharacteristic) {
@@ -294,38 +267,34 @@ TEST_F(RasServerTest, ReadCharacteristic) {
   tGATT_STATUS captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.read_req.handle = GetCharacteristicHandle(kRasFeaturesCharacteristic);
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasFeaturesCharacteristic), 0, false);
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 
   // Read kRasRangingDataReadyCharacteristic
   captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->read_req.handle =
-          GetCharacteristicHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasRangingDataReadyCharacteristic), 0,
+          false);
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 
   // Read kRasRangingDataOverWrittenCharacteristic
   captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->read_req.handle =
-          GetCharacteristicHandle(kRasRangingDataOverWrittenCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasRangingDataOverWrittenCharacteristic), 0,
+          false);
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 
   // Read kVendorSpecificCharacteristic1
   captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->read_req.handle = GetCharacteristicHandle(kVendorSpecificCharacteristic1);
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kVendorSpecificCharacteristic1), 0, false);
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 }
 
@@ -334,11 +303,7 @@ TEST_F(RasServerTest, ReadCharacteristicInvalid) {
   tGATT_STATUS captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.read_req.handle = 0x1234;  // Invalid handle
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(1, 1, test_address_, 0x1234, 0, false);
   EXPECT_EQ(GATT_INVALID_HANDLE, captured_status);
 
   // Read invalid address
@@ -346,10 +311,9 @@ TEST_F(RasServerTest, ReadCharacteristicInvalid) {
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
   RawAddress invalid_address = RawAddress::FromString("11:22:33:44:55:77").value();
-  p_data.req_data.remote_bda = invalid_address;
-  p_data.req_data.p_data->read_req.handle =
-          GetCharacteristicHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(
+          1, 1, invalid_address, GetCharacteristicHandle(kRasRangingDataReadyCharacteristic), 0,
+          false);
   bluetooth::log::info("captured_status");
   EXPECT_EQ(GATT_ILLEGAL_PARAMETER, captured_status);
 
@@ -357,10 +321,9 @@ TEST_F(RasServerTest, ReadCharacteristicInvalid) {
   captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data->read_req.handle =
-          GetCharacteristicHandle(kRasRealTimeRangingDataCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_read_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasRealTimeRangingDataCharacteristic), 0,
+          false);
   EXPECT_EQ(GATT_ILLEGAL_PARAMETER, captured_status);
 }
 
@@ -370,22 +333,17 @@ TEST_F(RasServerTest, ReadWriteDescriptor) {
   tGATT_STATUS captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasRangingDataReadyCharacteristic);
-  p_req_data.write_req.len = 0x02;
-  memcpy(p_req_data.write_req.value, &ccc_value, sizeof(uint16_t));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRangingDataReadyCharacteristic), 0, false,
+          false, (uint8_t*)&ccc_value, sizeof(uint16_t));
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 
   // Read descriptor of kRasRangingDataReadyCharacteristic
   captured_status = GATT_ERROR;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->read_req.handle = GetDescriptorHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_READ_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_read_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRangingDataReadyCharacteristic), 0, false);
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 }
 
@@ -395,13 +353,9 @@ TEST_F(RasServerTest, ReadWriteDescriptorInvalid) {
   tGATT_STATUS captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetCharacteristicHandle(kRasRangingDataReadyCharacteristic);
-  p_req_data.write_req.len = 0x02;
-  memcpy(p_req_data.write_req.value, &ccc_value, sizeof(uint16_t));
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasRangingDataReadyCharacteristic), 0,
+          false, false, (uint8_t*)&ccc_value, sizeof(uint16_t));
   EXPECT_EQ(GATT_INVALID_HANDLE, captured_status);
 
   // Invalid address
@@ -409,34 +363,33 @@ TEST_F(RasServerTest, ReadWriteDescriptorInvalid) {
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
   RawAddress invalid_address = RawAddress::FromString("11:22:33:44:55:77").value();
-  p_data.req_data.remote_bda = invalid_address;
-  p_data.req_data.p_data->write_req.handle =
-          GetDescriptorHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, invalid_address, GetDescriptorHandle(kRasRangingDataReadyCharacteristic), 0, false,
+          false, (uint8_t*)&ccc_value, sizeof(uint16_t));
   EXPECT_EQ(GATT_ILLEGAL_PARAMETER, captured_status);
 
   // Check that On-demand and Real-time are not registered at the same time
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data->write_req.handle = GetDescriptorHandle(kRasOnDemandDataCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasOnDemandDataCharacteristic), 0, false, false,
+          (uint8_t*)&ccc_value, sizeof(uint16_t));
   EXPECT_EQ(GATT_SUCCESS, captured_status);
 
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->write_req.handle =
-          GetDescriptorHandle(kRasRealTimeRangingDataCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRealTimeRangingDataCharacteristic), 0, false,
+          false, (uint8_t*)&ccc_value, sizeof(uint16_t));
   EXPECT_EQ(GATT_CCC_CFG_ERR, captured_status);
 
   // Read descriptor, only Client Characteristic Configuration (CCC) descriptor is expected
   captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->read_req.handle =
-          GetCharacteristicHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_READ_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_read_descriptor_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasRangingDataReadyCharacteristic), 0,
+          false);
   EXPECT_EQ(GATT_INVALID_HANDLE, captured_status);
 }
 
@@ -445,20 +398,17 @@ TEST_F(RasServerTest, WriteCharacteristicInalid) {
   tGATT_STATUS captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = 0x3456;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_write_characteristic_cb(1, 1, test_address_, 0x3456, 0, false, false,
+                                                     nullptr, 0);
   EXPECT_EQ(GATT_INVALID_HANDLE, captured_status);
 
   // Invalid uuid
   captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  p_data.req_data.p_data->write_req.handle =
-          GetCharacteristicHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasRangingDataReadyCharacteristic), 0,
+          false, false, nullptr, 0);
   EXPECT_EQ(GATT_ILLEGAL_PARAMETER, captured_status);
 
   // Invalid address
@@ -466,10 +416,9 @@ TEST_F(RasServerTest, WriteCharacteristicInalid) {
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
   RawAddress invalid_address = RawAddress::FromString("11:22:33:44:55:77").value();
-  p_data.req_data.remote_bda = invalid_address;
-  p_data.req_data.p_data->write_req.handle =
-          GetCharacteristicHandle(kRasControlPointCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          1, 1, invalid_address, GetCharacteristicHandle(kRasControlPointCharacteristic), 0, false,
+          false, nullptr, 0);
   EXPECT_EQ(GATT_ILLEGAL_PARAMETER, captured_status);
 }
 
@@ -478,15 +427,10 @@ TEST_F(RasServerTest, PushRealTimeData) {
   uint16_t procedure_counter = 0x1234;
 
   // Enable Real-time notifications
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasRealTimeRangingDataCharacteristic);
   uint16_t ccc_value = GATT_CLT_CONFIG_NOTIFICATION;
-  p_req_data.write_req.len = 0x02;
-  memcpy(p_req_data.write_req.value, &ccc_value, sizeof(uint16_t));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRealTimeRangingDataCharacteristic), 0, false,
+          false, (uint8_t*)&ccc_value, sizeof(uint16_t));
 
   // Expect a notification
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(test_conn_id_, _, _, false))
@@ -500,15 +444,10 @@ TEST_F(RasServerTest, PushOnDemandData) {
   uint16_t procedure_counter = 0x1234;
 
   // Enable data ready indications
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasRangingDataReadyCharacteristic);
   uint16_t ccc_value = GATT_CLT_CONFIG_INDICATION;
-  p_req_data.write_req.len = 0x02;
-  memcpy(p_req_data.write_req.value, &ccc_value, sizeof(uint16_t));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRangingDataReadyCharacteristic), 0, false,
+          false, (uint8_t*)&ccc_value, sizeof(uint16_t));
 
   // Expect a data ready indication
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(test_conn_id_, _, _, true))
@@ -525,16 +464,10 @@ TEST_F(RasServerTest, DataOverwritten) {
   uint16_t procedure_counter4 = 0x1237;
 
   // Enable data overwritten indications
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasOnDemandDataCharacteristic);
   uint16_t ccc_value = GATT_CLT_CONFIG_INDICATION;
-  p_req_data.write_req.len = 0x02;
-  memcpy(p_req_data.write_req.value, &ccc_value, sizeof(uint16_t));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasRangingDataOverWrittenCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRangingDataOverWrittenCharacteristic), 0,
+          false, false, (uint8_t*)&ccc_value, sizeof(uint16_t));
 
   // Expect a data overwritten indication for procedure_counter1
   std::vector<uint8_t> overwritten_value1(2);
@@ -560,26 +493,14 @@ TEST_F(RasServerTest, WriteVendorSpecificCharacteristic) {
   EXPECT_CALL(mock_ras_server_callbacks_, OnVendorSpecificReply(test_address_, _)).Times(1);
 
   // Write the first characteristic
-  tBTA_GATTS p_data1;
-  tGATTS_DATA p_req_data1;
-  p_req_data1.write_req.handle = GetCharacteristicHandle(kVendorSpecificCharacteristic1);
-  p_req_data1.write_req.len = value1.size();
-  memcpy(p_req_data1.write_req.value, value1.data(), value1.size());
-  p_data1.req_data.remote_bda = test_address_;
-  p_data1.req_data.conn_id = test_conn_id_;
-  p_data1.req_data.p_data = &p_req_data1;
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data1);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          test_conn_id_, 1, test_address_, GetCharacteristicHandle(kVendorSpecificCharacteristic1),
+          0, false, false, value1.data(), value1.size());
 
   // Write the second characteristic
-  tBTA_GATTS p_data2;
-  tGATTS_DATA p_req_data2;
-  p_req_data2.write_req.handle = GetCharacteristicHandle(kVendorSpecificCharacteristic2);
-  p_req_data2.write_req.len = value2.size();
-  memcpy(p_req_data2.write_req.value, value2.data(), value2.size());
-  p_data2.req_data.remote_bda = test_address_;
-  p_data2.req_data.conn_id = test_conn_id_;
-  p_data2.req_data.p_data = &p_req_data2;
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data2);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          test_conn_id_, 2, test_address_, GetCharacteristicHandle(kVendorSpecificCharacteristic2),
+          0, false, false, value2.data(), value2.size());
 
   // Expect SendRsp to be called with GATT_SUCCESS
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(test_conn_id_, _, GATT_SUCCESS, _)).Times(1);
@@ -605,31 +526,21 @@ TEST_F(RasServerTest, UnsupportedOpcode) {
           .Times(1);
 
   // Simulate a write to the RAS Control Point
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetCharacteristicHandle(kRasControlPointCharacteristic);
-  p_req_data.write_req.len = command.size();
-  memcpy(p_req_data.write_req.value, command.data(), command.size());
-  p_req_data.write_req.need_rsp = true;
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasControlPointCharacteristic), 0, true,
+          false, command.data(), command.size());
 }
 
 TEST_F(RasServerTest, GetAckRangingData) {
   // Enable On-demand indications and data ready indications
-  tBTA_GATTS p_data;
-  tGATTS_DATA p_req_data;
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasOnDemandDataCharacteristic);
   uint16_t ccc_value = GATT_CLT_CONFIG_INDICATION;
-  p_req_data.write_req.len = 0x02;
-  memcpy(p_req_data.write_req.value, &ccc_value, sizeof(uint16_t));
-  p_data.req_data.remote_bda = test_address_;
-  p_data.req_data.p_data = &p_req_data;
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasOnDemandDataCharacteristic), 0, false, false,
+          (uint8_t*)&ccc_value, sizeof(uint16_t));
 
-  p_req_data.write_req.handle = GetDescriptorHandle(kRasRangingDataReadyCharacteristic);
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &p_data);
+  captured_gatt_callback_->p_write_descriptor_cb(
+          1, 1, test_address_, GetDescriptorHandle(kRasRangingDataReadyCharacteristic), 0, false,
+          false, (uint8_t*)&ccc_value, sizeof(uint16_t));
 
   uint16_t procedure_counter = 0x6677;
   std::vector<uint8_t> data = {0x01, 0x02, 0x03, 0x04};
@@ -663,15 +574,9 @@ TEST_F(RasServerTest, GetAckRangingData) {
           .Times(1);
 
   // Simulate a write to the RAS Control Point
-  tBTA_GATTS p_data2;
-  tGATTS_DATA p_req_data2;
-  p_req_data2.write_req.handle = GetCharacteristicHandle(kRasControlPointCharacteristic);
-  p_req_data2.write_req.len = get_command.size();
-  memcpy(p_req_data2.write_req.value, get_command.data(), get_command.size());
-  p_req_data2.write_req.need_rsp = true;
-  p_data2.req_data.remote_bda = test_address_;
-  p_data2.req_data.p_data = &p_req_data2;
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data2);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasControlPointCharacteristic), 0, true,
+          false, get_command.data(), get_command.size());
 
   // Construct an ACK_RANGING_DATA command
   std::vector<uint8_t> ack_command = {
@@ -692,15 +597,9 @@ TEST_F(RasServerTest, GetAckRangingData) {
           .Times(1);
 
   // Simulate a write to the RAS Control Point
-  tBTA_GATTS p_data3;
-  tGATTS_DATA p_req_data3;
-  p_req_data3.write_req.handle = GetCharacteristicHandle(kRasControlPointCharacteristic);
-  p_req_data3.write_req.len = ack_command.size();
-  memcpy(p_req_data3.write_req.value, ack_command.data(), ack_command.size());
-  p_req_data3.write_req.need_rsp = true;
-  p_data3.req_data.remote_bda = test_address_;
-  p_data3.req_data.p_data = &p_req_data3;
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &p_data3);
+  captured_gatt_callback_->p_write_characteristic_cb(
+          1, 1, test_address_, GetCharacteristicHandle(kRasControlPointCharacteristic), 0, true,
+          false, ack_command.data(), ack_command.size());
 }
 
 }  // namespace bluetooth::ras

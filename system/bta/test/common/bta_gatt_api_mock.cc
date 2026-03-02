@@ -130,7 +130,7 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->AppDeregister(server_if);
 }
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, tBTA_GATTS_CBACK* p_cback,
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
                            bool eatt_support) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->AppRegister(app_uuid, p_cback, eatt_support);

@@ -51,7 +51,7 @@ void BTA_GATTS_Disable(void) {
   bta_sys_deregister(BTA_ID_GATTS);
 }
 
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, tBTA_GATTS_CBACK* p_cback,
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
                            bool eatt_support) {
   do_in_main_thread(base::BindOnce(&bta_gatts_register, app_uuid, p_cback, eatt_support));
 }

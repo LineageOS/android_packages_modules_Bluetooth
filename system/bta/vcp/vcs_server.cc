@@ -111,62 +111,105 @@ struct VcsServer::service_impl {
             static_cast<int>(service_descriptor_.initial_volume_setting_persisted),
             service_descriptor_.step_size);
 
-    BTA_GATTS_AppRegister(
-            uuid::kVolumeControlServiceUuid,
-            [](tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
-              if (instance) {
-                instance->service_impl_->OnGattEventHandler(event, p_data);
-              }
-            },
-            false);
+    static const tBTA_GATTS_CBACK vcs_ops = {
+            .p_reg_cb = OnGattRegisterStatic,
+            .p_connect_cb = OnGattConnectStatic,
+            .p_disconnect_cb = OnGattDisconnectStatic,
+            .p_read_characteristic_cb = OnGattReadCharacteristicStatic,
+            .p_read_descriptor_cb = OnGattReadDescriptorStatic,
+            .p_write_characteristic_cb = OnGattWriteCharacteristicStatic,
+            .p_write_descriptor_cb = OnGattWriteDescriptorStatic,
+    };
+
+    BTA_GATTS_AppRegister(uuid::kVolumeControlServiceUuid, &vcs_ops, false);
   }
 
-  void OnGattEventHandler(tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
-    log::verbose("event: {}", gatt_server_event_text(event));
-    log::assert_that(p_data != nullptr, "No valid GATT event data");
+  static void OnGattRegisterStatic(tGATT_STATUS status, tGATT_IF server_if,
+                                   const bluetooth::Uuid& uuid) {
+    if (instance) {
+      instance->service_impl_->OnGattServerAppRegistered(status, server_if, uuid);
+    }
+  }
 
-    switch (event) {
-      case BTA_GATTS_REG_EVT:
-        OnGattServerAppRegistered(p_data);
-        break;
-      case BTA_GATTS_CONNECT_EVT: {
-        auto device = device_tracker_.OnGattConnectedEventHandler(p_data, std::monostate{});
-        if (device) {
-          callbacks_->OnDeviceConnected(device->pseudo_addr);
-        }
-      } break;
-      case BTA_GATTS_DISCONNECT_EVT: {
-        auto device = device_tracker_.OnGattDisconnectedEventHandler(p_data);
-        if (device) {
-          callbacks_->OnDeviceDisconnected(device->pseudo_addr);
-        }
-      } break;
-      case BTA_GATTS_READ_CHARACTERISTIC_EVT:
-        OnGattReadCharacteristic(p_data);
-        break;
-      case BTA_GATTS_WRITE_CHARACTERISTIC_EVT:
-        OnGattWriteCharacteristic(p_data);
-        break;
-      case BTA_GATTS_READ_DESCRIPTOR_EVT:
-        device_tracker_.OnGattReadDescriptor(p_data);
-        break;
-      case BTA_GATTS_WRITE_DESCRIPTOR_EVT: {
-        device_tracker_.OnGattWriteDescriptor(p_data);
+  static void OnGattConnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                                  tCONN_ID conn_id, tBT_TRANSPORT transport) {
+    if (instance) {
+      instance->service_impl_->OnGattConnect(remote_bda, conn_id, transport);
+    }
+  }
 
-        uint16_t conn_id = p_data->req_data.conn_id;
-        auto const& device = device_tracker_.FindConnectedDevice(conn_id);
-        if (device) {
-          uint16_t handle = p_data->req_data.p_data->write_req.handle;
-          if (handle == volume_state_cccd_handle_) {
-            SendVolumeStateNotificationIfNeeded(conn_id, device);
-          } else if (handle == volume_flags_cccd_handle_) {
-            SendVolumeFlagsNotificationIfNeeded(conn_id, device);
-          }
-        }
-      } break;
-      default:
-        log::verbose("Unhandled event {}", gatt_server_event_text(event));
-        break;
+  static void OnGattDisconnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                                     tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
+    if (instance) {
+      instance->service_impl_->OnGattDisconnect(remote_bda, conn_id);
+    }
+  }
+
+  static void OnGattReadCharacteristicStatic(tCONN_ID conn_id, uint32_t trans_id,
+                                             const RawAddress& remote_bda, uint16_t handle,
+                                             uint16_t offset, bool is_long) {
+    if (instance) {
+      instance->service_impl_->OnGattReadCharacteristic(conn_id, trans_id, remote_bda, handle,
+                                                        offset, is_long);
+    }
+  }
+
+  static void OnGattWriteCharacteristicStatic(tCONN_ID conn_id, uint32_t trans_id,
+                                              const RawAddress& remote_bda, uint16_t handle,
+                                              uint16_t offset, bool need_rsp, bool is_prep,
+                                              uint8_t* value, uint16_t len) {
+    if (instance) {
+      instance->service_impl_->OnGattWriteCharacteristic(conn_id, trans_id, remote_bda, handle,
+                                                         offset, need_rsp, is_prep, value, len);
+    }
+  }
+
+  static void OnGattReadDescriptorStatic(tCONN_ID conn_id, uint32_t trans_id,
+                                         const RawAddress& /*remote_bda*/, uint16_t handle,
+                                         uint16_t offset, bool is_long) {
+    if (instance) {
+      instance->service_impl_->device_tracker_.OnGattReadDescriptor(conn_id, trans_id, handle,
+                                                                    offset, is_long);
+    }
+  }
+
+  static void OnGattWriteDescriptorStatic(tCONN_ID conn_id, uint32_t trans_id,
+                                          const RawAddress& /*remote_bda*/, uint16_t handle,
+                                          uint16_t offset, bool need_rsp, bool is_prep,
+                                          uint8_t* value, uint16_t len) {
+    if (instance) {
+      instance->service_impl_->OnGattWriteDescriptor(conn_id, trans_id, handle, offset, need_rsp,
+                                                     is_prep, value, len);
+    }
+  }
+
+  void OnGattConnect(const RawAddress& remote_bda, tCONN_ID conn_id, tBT_TRANSPORT transport) {
+    auto device = device_tracker_.OnGattConnectedEventHandler(conn_id, remote_bda, transport,
+                                                              std::monostate{});
+    if (device) {
+      callbacks_->OnDeviceConnected(device->pseudo_addr);
+    }
+  }
+
+  void OnGattDisconnect(const RawAddress& /*remote_bda*/, tCONN_ID conn_id) {
+    auto device = device_tracker_.OnGattDisconnectedEventHandler(conn_id, RawAddress::kEmpty);
+    if (device) {
+      callbacks_->OnDeviceDisconnected(device->pseudo_addr);
+    }
+  }
+
+  void OnGattWriteDescriptor(tCONN_ID conn_id, uint32_t trans_id, uint16_t handle, uint16_t offset,
+                             bool need_rsp, bool is_prep, uint8_t* value, uint16_t len) {
+    device_tracker_.OnGattWriteDescriptor(conn_id, trans_id, handle, offset, len, need_rsp, is_prep,
+                                          value);
+
+    auto const& device = device_tracker_.FindConnectedDevice(conn_id);
+    if (device) {
+      if (handle == volume_state_cccd_handle_) {
+        SendVolumeStateNotificationIfNeeded(conn_id, device);
+      } else if (handle == volume_flags_cccd_handle_) {
+        SendVolumeFlagsNotificationIfNeeded(conn_id, device);
+      }
     }
   }
 
@@ -204,12 +247,12 @@ struct VcsServer::service_impl {
     return db;
   }
 
-  void OnGattServerAppRegistered(tBTA_GATTS* p_data) {
-    log::assert_that(p_data->reg_oper.status == tGATT_STATUS::GATT_SUCCESS,
-                     "Failed to register GATT Server, status: {}",
-                     gatt_status_text(p_data->reg_oper.status));
+  void OnGattServerAppRegistered(tGATT_STATUS status, tGATT_IF server_if,
+                                 const bluetooth::Uuid& /*uuid*/) {
+    log::assert_that(status == tGATT_STATUS::GATT_SUCCESS,
+                     "Failed to register GATT Server, status: {}", gatt_status_text(status));
 
-    server_if_ = p_data->reg_oper.server_if;
+    server_if_ = server_if;
     log::info("GATT Server Registered with server_if: {}", server_if_);
 
     auto gatt_db = BuildGattDatabase();
@@ -264,8 +307,9 @@ struct VcsServer::service_impl {
     callbacks_->OnVcsServerRegistered();
   }
 
-  void OnGattReadCharacteristic(tBTA_GATTS* p_data) {
-    uint16_t handle = p_data->req_data.p_data->read_req.handle;
+  void OnGattReadCharacteristic(tCONN_ID conn_id, uint32_t trans_id,
+                                const RawAddress& /*remote_bda*/, uint16_t handle,
+                                uint16_t /*offset*/, bool /*is_long*/) {
     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
     p_msg->attr_value.handle = handle;
 
@@ -283,41 +327,36 @@ struct VcsServer::service_impl {
     } else {
       log::warn("Unhandled read request for invalid handle: 0x{:04x}", handle);
       p_msg->attr_value.len = 0;
-      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                        std::move(p_msg));
+      BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INVALID_HANDLE, std::move(p_msg));
       return;
     }
 
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
-                      std::move(p_msg));
+    BTA_GATTS_SendRsp(conn_id, trans_id, GATT_SUCCESS, std::move(p_msg));
   }
 
-  void OnGattWriteCharacteristic(tBTA_GATTS* p_data) {
-    auto& req_data = p_data->req_data;
-    auto& write_req = p_data->req_data.p_data->write_req;
-    log::info("From device {}, conn_id {}, handle 0x{:04x}, len {}, need_rsp {}",
-              req_data.remote_bda, req_data.conn_id, write_req.handle, write_req.len,
-              write_req.need_rsp ? "true" : "false");
+  void OnGattWriteCharacteristic(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                                 uint16_t handle, uint16_t /*offset*/, bool need_rsp,
+                                 bool /*is_prep*/, uint8_t* value, uint16_t len) {
+    log::info("From device {}, conn_id {}, handle 0x{:04x}, len {}, need_rsp {}", remote_bda,
+              conn_id, handle, len, need_rsp ? "true" : "false");
 
-    if (write_req.handle != volume_control_point_handle_) {
-      log::warn("Unhandled write request for invalid handle: 0x{:04x}", write_req.handle);
+    if (handle != volume_control_point_handle_) {
+      log::warn("Unhandled write request for invalid handle: 0x{:04x}", handle);
       return;
     }
 
-    if (write_req.len < kVolumeControlPointMinLen) {
-      log::warn("Invalid VCP write length: {}", write_req.len);
-      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_ATTR_LEN,
-                        nullptr);
+    if (len < kVolumeControlPointMinLen) {
+      log::warn("Invalid VCP write length: {}", len);
+      BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INVALID_ATTR_LEN, nullptr);
       return;
     }
 
-    uint8_t opcode = write_req.value[kControlPointOpcodeIndex];
-    uint8_t counter = write_req.value[kControlPointChangeCounterIndex];
+    uint8_t opcode = value[kControlPointOpcodeIndex];
+    uint8_t counter = value[kControlPointChangeCounterIndex];
 
     if (counter != change_counter_) {
       log::warn("Invalid change counter. Expected {}, got {}", change_counter_, counter);
-      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                        VCS_INVALID_CHANGE_COUNTER, nullptr);
+      BTA_GATTS_SendRsp(conn_id, trans_id, VCS_INVALID_CHANGE_COUNTER, nullptr);
       return;
     }
 
@@ -348,12 +387,11 @@ struct VcsServer::service_impl {
                              : kVolumeSettingMax;
         break;
       case kControlPointOpcodeSetAbsoluteVolume:
-        if (write_req.len != kVolumeControlPointSetAbsoluteVolumeLen) {
-          BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                            GATT_INVALID_ATTR_LEN, nullptr);
+        if (len != kVolumeControlPointSetAbsoluteVolumeLen) {
+          BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INVALID_ATTR_LEN, nullptr);
           return;
         }
-        new_volume = write_req.value[kControlPointVolumeSettingIndex];
+        new_volume = value[kControlPointVolumeSettingIndex];
         break;
       case kControlPointOpcodeUnmute:
         new_mute = MuteState::kNotMuted;
@@ -363,14 +401,13 @@ struct VcsServer::service_impl {
         break;
       default:
         log::warn("Opcode not supported: 0x{:02x}", opcode);
-        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          VCS_OPCODE_NOT_SUPPORTED, nullptr);
+        BTA_GATTS_SendRsp(conn_id, trans_id, VCS_OPCODE_NOT_SUPPORTED, nullptr);
         return;
     }
 
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS, nullptr);
+    BTA_GATTS_SendRsp(conn_id, trans_id, GATT_SUCCESS, nullptr);
 
-    auto const& device = device_tracker_.FindConnectedDevice(p_data->req_data.conn_id);
+    auto const& device = device_tracker_.FindConnectedDevice(conn_id);
     if (device) {
       callbacks_->OnVolumeStateChangeRequest(device->pseudo_addr, new_volume, new_mute);
     }

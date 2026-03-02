@@ -24,6 +24,9 @@
 #include <unordered_map>
 
 namespace bluetooth::le_audio {
+
+class GmapServerTest;
+
 struct GmapCharacteristic {
   bluetooth::Uuid uuid_;
   uint16_t attribute_handle_;
@@ -34,6 +37,7 @@ struct GmapCharacteristic {
  */
 class GmapServer {
 public:
+  friend class GmapServerTest;
   static void DebugDump(int fd);
 
   /**
@@ -60,11 +64,6 @@ public:
 
   /**
    * This function is used only for testing
-   */
-  static void GattsCallback(tBTA_GATTS_EVT event, tBTA_GATTS *p_data);
-
-  /**
-   * This function is used only for testing
    * @return an unordered_map whose key is attribute_handle_ and value is GmapCharacteristic
    */
   static std::unordered_map<uint16_t, GmapCharacteristic> &GetCharacteristics();
@@ -72,18 +71,25 @@ public:
   constexpr static uint16_t kGmapRoleLen = 1;
   constexpr static uint16_t kGmapUGGFeatureLen = 1;
 
-private:
-  static void OnGattConnect(tBTA_GATTS *p_data);
+  static void OnGattConnect(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
+                            tBT_TRANSPORT transport);
 
-  static void OnGattDisconnect(tBTA_GATTS *p_data);
+  static void OnGattDisconnect(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
+                               tBT_TRANSPORT transport);
 
-  static void OnGattServerRegister(tBTA_GATTS *p_data);
+  static void OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if,
+                                   const bluetooth::Uuid& uuid);
+
+  static void OnGattServerDeregister(tGATT_STATUS status, tGATT_IF server_if);
 
   static void OnServiceAdded(tGATT_STATUS status, int server_if,
                              std::vector<btgatt_db_element_t> services);
 
-  static void OnReadCharacteristic(tBTA_GATTS *p_data);
+  static void OnReadCharacteristic(tCONN_ID conn_id, uint32_t trans_id,
+                                   const RawAddress& remote_bda, uint16_t handle, uint16_t offset,
+                                   bool is_long);
 
+private:
   static bool is_offloader_support_gmap_;
   static uint16_t server_if_;
   static std::unordered_map<uint16_t, GmapCharacteristic> characteristics_;

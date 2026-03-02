@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "bta/le_audio/le_audio_types.h"
+#include "stack/include/gatt_api.h"
 
 namespace bluetooth::le_audio {
 
