@@ -232,6 +232,7 @@ public final class BondStateMachine extends StateMachine {
                     && msg.what != MESSAGE_BOND_STATE_CHANGE
                     && msg.what != MESSAGE_PAIRING_REQUEST
                     && msg.what != MESSAGE_PIN_REQUEST) {
+                logD("StateBonding: Deferring message: " + msg.what);
                 deferMessage(msg);
                 return true;
             }
