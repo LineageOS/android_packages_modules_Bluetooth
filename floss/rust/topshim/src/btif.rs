@@ -803,6 +803,9 @@ impl BluetoothProperty {
         match self {
             BluetoothProperty::BdName(name) => cmp::min(PROPERTY_NAME_MAX, name.len() + 1),
             BluetoothProperty::ClassOfDevice(_) => mem::size_of::<u32>(),
+            BluetoothProperty::RemoteFriendlyName(name) => {
+                cmp::min(PROPERTY_NAME_MAX, name.len() + 1)
+            }
             _ => panic!("Converting unsupported BluetoothProperty {:?} to CXX", self),
         }
     }
@@ -821,6 +824,11 @@ impl BluetoothProperty {
             }
             BluetoothProperty::ClassOfDevice(cod) => {
                 data.copy_from_slice(&cod.to_ne_bytes());
+            }
+            BluetoothProperty::RemoteFriendlyName(name) => {
+                let copy_len = len - 1;
+                data[0..copy_len].copy_from_slice(&name.as_bytes()[0..copy_len]);
+                data[copy_len] = 0;
             }
             _ => panic!("Converting unsupported BluetoothProperty {:?} to CXX", self),
         };
