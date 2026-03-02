@@ -40,7 +40,12 @@ public:
     rusty::avrcp_send_key_event(key, state == KeyState::PUSHED);
   }
 
-  void GetSongInfo(SongInfoCallback cb) override { std::move(cb).Run(songInfo_); }
+  void GetSongInfo(std::string /* media_id */, SongInfoCallback cb) override {
+    // We ignore |media_id| because Floss only have the info for the current song (the fallback).
+    // See also the comment in |SetMetadata| below and reference the |getSongInfo| implementation in
+    // android/app/src/com/android/bluetooth/audio_util/MediaPlayerList.java
+    std::move(cb).Run(songInfo_);
+  }
 
   void GetPlayStatus(PlayStatusCallback cb) override { std::move(cb).Run(playStatus_); }
 
