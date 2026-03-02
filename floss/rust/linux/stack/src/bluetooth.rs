@@ -63,6 +63,9 @@ const PID_DIR: &str = "/var/run/bluetooth";
 
 const DUMPSYS_LOG: &str = "/tmp/dumpsys.log";
 
+/// The name when discoverable. This default value is set every time the adapter is enabled.
+const DEFAULT_LOCAL_NAME: &str = "Floss";
+
 /// Represents various roles the adapter supports.
 #[derive(Debug, FromPrimitive, ToPrimitive)]
 #[repr(u32)]
@@ -114,7 +117,7 @@ pub trait IBluetooth {
     fn get_name(&self) -> String;
 
     /// Sets the local adapter name.
-    fn set_name(&self, name: String) -> bool;
+    fn set_name(&mut self, name: String) -> bool;
 
     /// Gets the bluetooth class.
     fn get_bluetooth_class(&self) -> u32;
@@ -598,6 +601,7 @@ pub struct Bluetooth {
     is_socket_listening: bool,
     discoverable_mode: BtDiscMode,
     discoverable_duration: u32,
+    local_name: String,
     // This refers to the suspend mode of the functionality related to Classic scan mode,
     // i.e., page scan and inquiry scan; Also known as connectable and discoverable.
     scan_suspend_mode: SuspendMode,
@@ -661,6 +665,7 @@ impl Bluetooth {
             is_socket_listening: false,
             discoverable_mode: BtDiscMode::NonDiscoverable,
             discoverable_duration: 0,
+            local_name: String::default(),
             scan_suspend_mode: SuspendMode::Normal,
             is_discovering: false,
             is_discovering_before_suspend: false,
@@ -1716,7 +1721,6 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
                 // Fetch the properties that LibBluetooth doesn't automatically tell
                 self.intf.lock().unwrap().get_adapter_property(BtPropertyType::BdAddr);
-                self.intf.lock().unwrap().get_adapter_property(BtPropertyType::BdName);
                 self.intf.lock().unwrap().get_adapter_property(BtPropertyType::ClassOfDevice);
 
                 let mut controller = controller::Controller::new();
@@ -1808,11 +1812,6 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
                     // Update the connectable mode since bonded device list might be updated.
                     self.update_connectable_mode();
-                }
-                BluetoothProperty::BdName(bdname) => {
-                    self.callbacks.for_all_callbacks(|callback| {
-                        callback.on_name_changed(bdname.clone());
-                    });
                 }
                 _ => {}
             }
@@ -2292,7 +2291,8 @@ impl IBluetooth for Bluetooth {
 
     fn enable(&mut self) -> bool {
         self.disabling = false;
-        self.intf.lock().unwrap().enable();
+        self.local_name = String::from(DEFAULT_LOCAL_NAME);
+        self.intf.lock().unwrap().enable(self.local_name.clone());
         true
     }
 
@@ -2316,17 +2316,18 @@ impl IBluetooth for Bluetooth {
     }
 
     fn get_name(&self) -> String {
-        match self.properties.get(&BtPropertyType::BdName) {
-            Some(BluetoothProperty::BdName(name)) => name.clone(),
-            _ => String::new(),
-        }
+        self.local_name.clone()
     }
 
-    fn set_name(&self, name: String) -> bool {
-        if self.get_name() == name {
-            return true;
+    fn set_name(&mut self, name: String) -> bool {
+        if self.local_name != name {
+            self.local_name = name.clone();
+            self.intf.lock().unwrap().set_local_name(name.clone());
+            self.callbacks.for_all_callbacks(|callback| {
+                callback.on_name_changed(name.clone());
+            });
         }
-        self.intf.lock().unwrap().set_adapter_property(BluetoothProperty::BdName(name)) == 0
+        true
     }
 
     fn get_bluetooth_class(&self) -> u32 {

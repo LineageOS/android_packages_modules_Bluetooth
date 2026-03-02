@@ -680,7 +680,7 @@ impl CommandHandler {
             },
             "set-name" => {
                 if let Some(name) = args.get(1) {
-                    self.lock_context().adapter_dbus.as_ref().unwrap().set_name(name.to_string());
+                    self.lock_context().adapter_dbus.as_mut().unwrap().set_name(name.to_string());
                 } else {
                     println!("usage: adapter set-name <name>");
                 }
