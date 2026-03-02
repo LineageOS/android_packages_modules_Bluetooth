@@ -43,7 +43,6 @@ public:
   void bluetooth_enable() const;
   void bluetooth_disable() const;
   void bluetooth_cleanup() const;
-  int get_adapter_properties() const;
   int get_adapter_property(bt_property_type_t type) const;
   void set_scan_mode(bt_scan_mode_t mode) const;
   int set_adapter_property(bt_property_t property) const;

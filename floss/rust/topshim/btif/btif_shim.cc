@@ -173,8 +173,6 @@ void BtIntf::bluetooth_disable() const { return ::bluetooth_disable(); }
 
 void BtIntf::bluetooth_cleanup() const { return ::bluetooth_cleanup(); }
 
-int BtIntf::get_adapter_properties() const { return intf_->get_adapter_properties(); }
-
 int BtIntf::get_adapter_property(bt_property_type_t type) const {
   return intf_->get_adapter_property(type);
 }

@@ -1714,11 +1714,11 @@ impl BtifBluetoothCallbacks for Bluetooth {
                 // Initialize core profiles
                 self.init_profiles();
 
-                // Trigger properties update
-                self.intf.lock().unwrap().get_adapter_properties();
-
-                // Also need to manually request some properties
+                // Fetch the properties that LibBluetooth doesn't automatically tell
+                self.intf.lock().unwrap().get_adapter_property(BtPropertyType::BdAddr);
+                self.intf.lock().unwrap().get_adapter_property(BtPropertyType::BdName);
                 self.intf.lock().unwrap().get_adapter_property(BtPropertyType::ClassOfDevice);
+
                 let mut controller = controller::Controller::new();
                 self.le_supported_states = controller.get_ble_supported_states();
                 self.le_local_supported_features = controller.get_ble_local_supported_features();
