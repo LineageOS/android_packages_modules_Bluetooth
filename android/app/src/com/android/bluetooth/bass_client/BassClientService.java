@@ -1586,8 +1586,10 @@ public class BassClientService extends ConnectableProfile {
             return action;
         }
 
-        if (newSyncStatus == SyncStatus.PA_SYNCED) {
-            /* PA state transitioned to PA_SYNCED and synced to own broadcast source
+        if ((newSyncStatus == SyncStatus.PA_SYNCED)
+                || (Flags.leaudioBroadcastSourceChannelMapClassificationImprovement()
+                        && newSyncStatus == SyncStatus.BIS_SYNCED)) {
+            /* PA state transitioned to PA_SYNCED or BIS_SYNCED and synced to own broadcast source
              * action determined: ADD */
             action = SetBigChannelMapClassificationAction.ADD.getValue();
 
