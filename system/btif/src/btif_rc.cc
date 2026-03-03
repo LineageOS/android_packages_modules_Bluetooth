@@ -2543,25 +2543,59 @@ static void handle_avk_rc_metamsg_cmd(tBTA_AV_META_MSG* pmeta_msg) {
  * Returns          void
  *
  **************************************************************************/
+static void reset_device(btif_rc_device_cb_t& dev) {
+  dev.rc_connected = {};
+  dev.br_connected = {};
+  dev.rc_handle = {};
+  dev.rc_features = {};
+  dev.rc_cover_art_psm = {};
+  dev.rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
+  dev.rc_addr = RawAddress::kEmpty;
+  for (int i = 0; i < MAX_CMD_QUEUE_LEN; ++i) {
+    dev.rc_pdu_info[i] = {};
+  }
+  for (int i = 0; i < MAX_RC_NOTIFICATIONS; ++i) {
+    dev.rc_notif[i] = {};
+  }
+  if (dev.rc_supported_event_list != nullptr) {
+    list_free(dev.rc_supported_event_list);
+    dev.rc_supported_event_list = nullptr;
+  }
+  dev.rc_volume = MAX_VOLUME;
+  dev.rc_vol_label = MAX_LABEL;
+  dev.rc_app_settings = {};
+
+  alarm_free(dev.rc_play_status_timer);
+  dev.rc_play_status_timer = nullptr;
+
+  dev.rc_features_processed = {};
+  dev.rc_playing_uid = {};
+  dev.rc_procedure_complete = {};
+
+  for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; ++i) {
+    dev.transaction_set.transaction[i].in_use = {};
+    dev.transaction_set.transaction[i].label = {};
+    dev.transaction_set.transaction[i].context = {};
+    alarm_free(dev.transaction_set.transaction[i].timer);
+    dev.transaction_set.transaction[i].timer = nullptr;
+  }
+
+  dev.peer_ct_features = {};
+  dev.peer_tg_features = {};
+  dev.launch_cmd_pending = {};
+}
+
 static void cleanup_ctrl() {
   log::verbose("");
 
   if (bt_rc_ctrl_callbacks) {
-    bt_rc_ctrl_callbacks = NULL;
+    bt_rc_ctrl_callbacks = nullptr;
   }
 
-  /*
-   * TODO: the void* casts are a workaround to silence a glibc+clang warning that memset
-   *       should not be used on complex data structures / classes.
-   */
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
-    alarm_free(btif_rc_cb.rc_multi_cb[idx].rc_play_status_timer);
-
-    void* ptr = static_cast<void*>(&btif_rc_cb.rc_multi_cb[idx]);
-    memset(ptr, 0, sizeof(btif_rc_cb.rc_multi_cb[idx]));
+    reset_device(btif_rc_cb.rc_multi_cb[idx]);
   }
 
-  memset(static_cast<void*>(&btif_rc_cb.rc_multi_cb), 0, sizeof(btif_rc_cb.rc_multi_cb));
   log::verbose("completed");
 }
 
