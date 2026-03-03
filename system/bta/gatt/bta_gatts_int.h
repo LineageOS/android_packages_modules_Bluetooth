@@ -102,6 +102,5 @@ tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tGATT_IF server_if);
 uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb, tGATT_IF server_if);
 uint8_t bta_gatts_alloc_srvc_cb(tBTA_GATTS_CB* p_cb, uint8_t rcb_idx);
 tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_srvc_id(tBTA_GATTS_CB* p_cb, uint16_t service_id);
-tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_attr_id(tBTA_GATTS_CB* p_cb, uint16_t attr_id);
 
 #endif /* BTA_GATTS_INT_H */

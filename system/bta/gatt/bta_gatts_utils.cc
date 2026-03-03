@@ -115,30 +115,3 @@ tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_srvc_id(tBTA_GATTS_CB* p_cb, uint1
   }
   return NULL;
 }
-/*******************************************************************************
- *
- * Function         bta_gatts_find_srvc_cb_by_attr_id
- *
- * Description      find the service control block by attribute ID.
- *
- * Returns          pointer to the rcb.
- *
- ******************************************************************************/
-tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_attr_id(tBTA_GATTS_CB* p_cb, uint16_t attr_id) {
-  uint8_t i;
-
-  for (i = 0; i < (BTA_GATTS_MAX_SRVC_NUM); i++) {
-    if (/* middle service */
-        (i < (BTA_GATTS_MAX_SRVC_NUM - 1) && p_cb->srvc_cb[i].in_use &&
-         p_cb->srvc_cb[i + 1].in_use && attr_id >= p_cb->srvc_cb[i].service_id &&
-         attr_id < p_cb->srvc_cb[i + 1].service_id) ||
-        /* last active service */
-        (i < (BTA_GATTS_MAX_SRVC_NUM - 1) && p_cb->srvc_cb[i].in_use &&
-         !p_cb->srvc_cb[i + 1].in_use && attr_id >= p_cb->srvc_cb[i].service_id) ||
-        /* last service incb */
-        (i == (BTA_GATTS_MAX_SRVC_NUM - 1) && attr_id >= p_cb->srvc_cb[i].service_id)) {
-      return &p_cb->srvc_cb[i];
-    }
-  }
-  return NULL;
-}
