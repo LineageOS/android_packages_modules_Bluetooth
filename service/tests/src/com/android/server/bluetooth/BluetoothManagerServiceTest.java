@@ -292,13 +292,10 @@ public class BluetoothManagerServiceTest {
             }
 
             String customError =
-                    String.format(
-                            """
-                            Not the expected message. Expected what=[%s] but got what=[%s].
-                              -> Received Msg: %s
-                              -> List of queued messages: %s\
-                            """,
-                            what, msg.what, msg.toString(), msgList.toString());
+                    "Not the expected message."
+                            + (" Expected what=[" + what + "] but got what=[" + msg.what + "].\n")
+                            + ("  -> Received Msg: " + msg + "\n")
+                            + ("  -> List of queued messages: " + msgList);
 
             assertWithMessage(customError).that(msg.what).isEqualTo(what);
         }
