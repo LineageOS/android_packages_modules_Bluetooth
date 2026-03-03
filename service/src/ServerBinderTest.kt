@@ -62,7 +62,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class ServerBinderTest(private val flags: FlagsWrapper) {
-    @get:Rule val mSetFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
     private val callback: IBluetoothManagerCallback.Stub = mock()
     private val tokenBinder: IBinder = mock()

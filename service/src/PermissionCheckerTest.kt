@@ -45,7 +45,6 @@ import libcore.junit.util.compat.CoreCompatChangeRule.EnableCompatChanges
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
@@ -63,8 +62,8 @@ import org.robolectric.shadows.ShadowProcess
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class PermissionCheckerTest(private val flags: FlagsWrapper) {
-    @get:Rule val mSetFlagsRule = SetFlagsRule(flags.flags)
-    @get:Rule val compatChangeRule: TestRule = PlatformCompatChangeRule()
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val compatChangeRule = PlatformCompatChangeRule()
 
     private val application: Application = ApplicationProvider.getApplicationContext()
     private val context: Context = application
