@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
 // All values of this class are accessed from native; see com_android_bluetooth_scan.cpp
-public record FilterParams(
-        int clientInterface,
-        int filterIndex,
-        int featureSelection,
-        int listLogicType,
-        int filterLogicType,
-        int rssiHighValue,
-        int rssiLowValue,
-        int delayMode,
-        int foundTimeout,
-        int lostTimeout,
-        int foundTimeoutCount,
-        int numberOfTrackEntries) {}
+data class FilterParams(
+    @JvmField val clientInterface: Int,
+    @JvmField val filterIndex: Int,
+    @JvmField val featureSelection: Int,
+    @JvmField val listLogicType: Int,
+    @JvmField val filterLogicType: Int,
+    @JvmField val rssiHighValue: Int,
+    @JvmField val rssiLowValue: Int,
+    @JvmField val delayMode: Int,
+    @JvmField val foundTimeout: Int,
+    @JvmField val lostTimeout: Int,
+    @JvmField val foundTimeoutCount: Int,
+    @JvmField val numberOfTrackEntries: Int,
+)

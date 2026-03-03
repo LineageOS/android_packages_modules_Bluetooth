@@ -380,44 +380,44 @@ static void scanFilterParamAddNative(JNIEnv* env, jobject /* object */, jobject 
   const int add_scan_filter_params_action = 0;
   auto filt_params = std::make_unique<btgatt_filt_param_setup_t>();
 
-  jmethodID methodId = 0;
+  jfieldID fieldId = 0;
   ScopedLocalRef<jclass> filtparam(env, env->GetObjectClass(params));
 
-  methodId = env->GetMethodID(filtparam.get(), "clientInterface", "()I");
-  uint8_t client_if = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "clientInterface", "I");
+  uint8_t client_if = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "filterIndex", "()I");
-  uint8_t filt_index = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "filterIndex", "I");
+  uint8_t filt_index = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "featureSelection", "()I");
-  filt_params->feat_seln = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "featureSelection", "I");
+  filt_params->feat_seln = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "listLogicType", "()I");
-  filt_params->list_logic_type = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "listLogicType", "I");
+  filt_params->list_logic_type = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "filterLogicType", "()I");
-  filt_params->filt_logic_type = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "filterLogicType", "I");
+  filt_params->filt_logic_type = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "delayMode", "()I");
-  filt_params->dely_mode = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "delayMode", "I");
+  filt_params->dely_mode = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "foundTimeout", "()I");
-  filt_params->found_timeout = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "foundTimeout", "I");
+  filt_params->found_timeout = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "lostTimeout", "()I");
-  filt_params->lost_timeout = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "lostTimeout", "I");
+  filt_params->lost_timeout = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "foundTimeoutCount", "()I");
-  filt_params->found_timeout_cnt = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "foundTimeoutCount", "I");
+  filt_params->found_timeout_cnt = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "numberOfTrackEntries", "()I");
-  filt_params->num_of_tracking_entries = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "numberOfTrackEntries", "I");
+  filt_params->num_of_tracking_entries = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "rssiHighValue", "()I");
-  filt_params->rssi_high_thres = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "rssiHighValue", "I");
+  filt_params->rssi_high_thres = env->GetIntField(params, fieldId);
 
-  methodId = env->GetMethodID(filtparam.get(), "rssiLowValue", "()I");
-  filt_params->rssi_low_thres = env->CallIntMethod(params, methodId);
+  fieldId = env->GetFieldID(filtparam.get(), "rssiLowValue", "I");
+  filt_params->rssi_low_thres = env->GetIntField(params, fieldId);
 
   sScanner->ScanFilterParamSetup(client_if, add_scan_filter_params_action, filt_index,
                                  std::move(filt_params),
