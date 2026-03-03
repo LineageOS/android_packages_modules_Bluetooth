@@ -271,3 +271,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "remove_bond_in_idle_state"
+    namespace: "bluetooth"
+    description: "Remove bond without transitioning BondStateMachine to bonding state"
+    bug: "489217572"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
