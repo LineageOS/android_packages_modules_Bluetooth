@@ -786,14 +786,13 @@ public class ScanController {
 
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) {
         enforceScanThread();
-        int scannerId = trackingInfo.scannerId();
+        int scannerId = trackingInfo.getScannerId();
+        var address = trackingInfo.getAddress();
         Log.d(
                 TAG,
-                "onTrackAdvFoundLost(): "
-                        + ("scannerId=" + scannerId)
-                        + (", address=" + trackingInfo.address())
-                        + (", addressType=" + trackingInfo.addressType())
-                        + (", adv_state=" + trackingInfo.advState()));
+                ("onTrackAdvFoundLost(): scannerId=" + scannerId + ", address=" + address)
+                        + (", addressType=" + trackingInfo.getAddressType())
+                        + (", adv_state=" + trackingInfo.getAdvState()));
 
         var app = mScannerMap.getById(scannerId);
         if (app == null) {
@@ -801,14 +800,13 @@ public class ScanController {
             return;
         }
 
-        var device =
-                mAdapterService.getRemoteDevice(trackingInfo.address(), trackingInfo.addressType());
-        int advertiserState = trackingInfo.advState();
+        var device = mAdapterService.getRemoteDevice(address, trackingInfo.getAddressType());
+        int advertiserState = trackingInfo.getAdvState();
         ScanResult result =
                 new ScanResult(
                         device,
                         ScanRecord.parseFromBytes(trackingInfo.getResult()),
-                        trackingInfo.rssiValue(),
+                        trackingInfo.getRssiValue(),
                         SystemClock.elapsedRealtimeNanos());
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
