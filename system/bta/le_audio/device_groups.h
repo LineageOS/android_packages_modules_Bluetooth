@@ -78,7 +78,10 @@ public:
     LeAudioDeviceGroup* group_;
     types::CigState state_;
 
-    /* Life time of cises is from GenerateCisIds() up to when CIG is removed.*/
+    /* Life time of cises is from GenerateCisIds() up to when CIG is removed.
+     * Note in case of stream being reconfigured before CIG is created, cises might be
+     * regenerated (i.e. cleared and generated)
+     */
     std::vector<struct types::cis> cises;
   } cig;
 
