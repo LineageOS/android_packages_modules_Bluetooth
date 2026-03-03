@@ -21,7 +21,7 @@ import android.os.UserHandle
 interface BluetoothSupervisor {
     val api: BluetoothManagerServiceApi
 
-    fun onBluetoothDisallowed()
+    fun onRestrictionChange()
 
     fun onBootCompleted()
 

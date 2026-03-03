@@ -105,8 +105,8 @@ class BluetoothManagerServiceNew(
         // TODO wait for completion
     }
 
-    fun onBluetoothDisallowed() {
-        Log.i(TAG, "onBluetoothDisallowed")
+    fun onRestrictionChange() {
+        Log.i(TAG, "onRestrictionChange")
     }
 
     /** Send Intent to the Notification Service in the Bluetooth app */

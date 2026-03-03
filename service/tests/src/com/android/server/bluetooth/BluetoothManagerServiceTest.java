@@ -257,7 +257,7 @@ public class BluetoothManagerServiceTest {
                         mTimeProvider);
         doReturn(false).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
         BluetoothRestriction.initialize(
-                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+                mContext, mLooper.getLooper(), mManagerService::onRestrictionChange);
 
         mManagerService.handleOnBootPhase(DEFAULT_USER);
         mManagerService.registerAdapter(mManagerCallback);
@@ -325,7 +325,7 @@ public class BluetoothManagerServiceTest {
         doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
 
         BluetoothRestriction.handleRestrictionChange(
-                mContext, mManagerService::onBluetoothDisallowed);
+                mContext, mManagerService::onRestrictionChange);
         transition_onToOff(btCallback);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
@@ -926,7 +926,7 @@ public class BluetoothManagerServiceTest {
     public void initialStart_whenUserIsRestricted_staysOff() throws Exception {
         doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
         BluetoothRestriction.handleRestrictionChange(
-                mContext, mManagerService::onBluetoothDisallowed);
+                mContext, mManagerService::onRestrictionChange);
 
         mManagerService =
                 new BluetoothManagerService(
@@ -1400,7 +1400,7 @@ public class BluetoothManagerServiceTest {
                         mBluetoothComponent,
                         mTimeProvider);
         BluetoothRestriction.initialize(
-                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+                mContext, mLooper.getLooper(), mManagerService::onRestrictionChange);
         mManagerService.registerAdapter(mManagerCallback);
 
         var supervisor =
@@ -1429,7 +1429,7 @@ public class BluetoothManagerServiceTest {
                         mBluetoothComponent,
                         mTimeProvider);
         BluetoothRestriction.initialize(
-                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+                mContext, mLooper.getLooper(), mManagerService::onRestrictionChange);
         mManagerService.registerAdapter(mManagerCallback);
         var supervisor =
                 new BluetoothSupervisorLegacy(
@@ -1455,7 +1455,7 @@ public class BluetoothManagerServiceTest {
                         mBluetoothComponent,
                         mTimeProvider);
         BluetoothRestriction.initialize(
-                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+                mContext, mLooper.getLooper(), mManagerService::onRestrictionChange);
         mManagerService.registerAdapter(mManagerCallback);
         var supervisor =
                 new BluetoothSupervisorLegacy(

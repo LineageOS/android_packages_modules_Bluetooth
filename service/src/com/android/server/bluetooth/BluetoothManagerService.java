@@ -638,29 +638,37 @@ public class BluetoothManagerService {
                         + (" AutoOnEnabled=" + mConfigAllowAutoOn));
     }
 
-    Unit onBluetoothDisallowed() {
+    Unit onRestrictionChange() {
         if (mSharingRestriction != null) {
             mSharingRestriction.updateRestriction();
         }
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
+            autoOnSetupTimer();
+            if (mState.oneOf(State.OFF)) {
+                return Unit.INSTANCE;
+            }
 
-        autoOnSetupTimer();
+            Log.i(TAG, "onRestrictionChange: Shutting down");
 
-        if (mState.oneOf(State.OFF)) {
-            return Unit.INSTANCE;
-        }
+            mBleAppManager.clearBleApps();
 
-        Log.i(TAG, "onBluetoothDisallowed: Shutting down");
+            mEnable = false;
+            mEnableExternal = false;
+            mActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false);
 
-        mBleAppManager.clearBleApps();
-
-        mEnable = false;
-        mEnableExternal = false;
-        mActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false);
-
-        if (mState.oneOf(State.BLE_ON)) {
-            bleOnToOff();
-        } else if (mState.oneOf(State.ON)) {
-            onToBleOn();
+            if (mState.oneOf(State.BLE_ON)) {
+                bleOnToOff();
+            } else if (mState.oneOf(State.ON)) {
+                onToBleOn();
+            }
+        } else {
+            if (!isBluetoothPersistedStateOnBluetooth()) {
+                Log.i(TAG, "onRestrictionChange: Bluetooth not started");
+                autoOnSetupTimer();
+            } else {
+                Log.i(TAG, "onRestrictionChange: Re-enabling Bluetooth for " + mUser);
+                sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_DISALLOWED);
+            }
         }
         return Unit.INSTANCE;
     }

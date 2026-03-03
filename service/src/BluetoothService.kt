@@ -54,7 +54,7 @@ class BluetoothService(context: Context) : SystemService(context) {
             }
 
         launchOnServerThread {
-            BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
+            BluetoothRestriction.initialize(context, looper, supervisor::onRestrictionChange)
         }
     }
 
