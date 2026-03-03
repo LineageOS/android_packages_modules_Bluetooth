@@ -35,6 +35,7 @@
 #include "bta/include/bta_vap_server_api.h"
 #include "bta/le_audio/device_groups.h"
 #include "bta/vap/vap_server_types.h"
+#include "gd/common/utils.h"
 #include "gd/os/rand.h"
 #include "hardware/bt_common_types.h"
 #include "main/shim/entry.h"
@@ -786,14 +787,42 @@ public:
      }
    }
 
+   void NotifyVaSessionStateForPts(RawAddress bda, VaSessionState state) {
+     log::info("bda: {}, state: {}", bda, static_cast<int>(state));
+
+     if (remote_clients_.find(bda) != remote_clients_.end()) {
+       RemoteClient* remote_client = &remote_clients_[bda];
+       uint16_t ccc_vas_control_point = remote_client->ccc_values_[kVasControlPointCharacteristic];
+       uint16_t ccc_va_session_state = remote_client->ccc_values_[kVaSessionStateCharacteristic];
+       ResponseCodeValue rsp_code_value = ResponseCodeValue::SUCCESS;
+
+       // Send VAS Control Point notification
+       SendVasControlPointNotification(remote_client, rsp_code_value, ccc_vas_control_point);
+
+       uint8_t va_session_state = static_cast<uint8_t>(state);
+       // Send VA Session State notification
+       SendVaSessionStateNotification(remote_client, ccc_va_session_state, va_session_state);
+     }
+   }
+
    void OnStartVaSession(RawAddress bda) {
      log::info("bda:{}", bda);
-     callbacks_->OnStartVaSession(bda);
+
+     if (bluetooth::common::IsPtsTestMode()) {
+       NotifyVaSessionStateForPts(bda, VaSessionState::VA_SESSION_ACTIVE);
+     } else {
+       callbacks_->OnStartVaSession(bda);
+     }
    }
 
    void OnStopVaSession(RawAddress bda) {
      log::info("bda:{}", bda);
-     callbacks_->OnStopVaSession(bda);
+
+     if (bluetooth::common::IsPtsTestMode()) {
+       NotifyVaSessionStateForPts(bda, VaSessionState::VA_SESSION_READY);
+     } else {
+       callbacks_->OnStopVaSession(bda);
+     }
    }
 
    void OnInitializeVaSession(RawAddress bda) {
