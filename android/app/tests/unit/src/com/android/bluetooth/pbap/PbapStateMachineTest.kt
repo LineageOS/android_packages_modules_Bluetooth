@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,121 +14,112 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbap;
+package com.android.bluetooth.pbap
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.app.NotificationManager
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothSocket
+import android.os.Handler
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.io.InputStream
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.Mockito.doReturn;
-
-import android.app.NotificationManager;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.os.Handler;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.io.IOException;
-import java.io.InputStream;
-
-/** Test cases for {@link PbapStateMachine}. */
+/** Test cases for [PbapStateMachine]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class PbapStateMachineTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class PbapStateMachineTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private BluetoothPbapService mBluetoothPbapService;
-    @Mock private NotificationManager mNotificationManager;
-    @Mock private BluetoothSocket mSocket;
-    @Mock private InputStream mInputStream;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var bluetoothPbapService: BluetoothPbapService
+    @Mock private lateinit var notificationManager: NotificationManager
+    @Mock private lateinit var socket: BluetoothSocket
+    @Mock private lateinit var inputStream: InputStream
 
-    private static final int TEST_NOTIFICATION_ID = 1000000;
+    private val testNotificationId = 1000000
 
-    private final BluetoothDevice mDevice = getTestDevice(36);
+    private val device = getTestDevice(36)
 
-    private Handler mHandler;
-    private TestLooper mLooper;
-    private PbapStateMachine mStateMachine;
+    private lateinit var handler: Handler
+    private lateinit var looper: TestLooper
+    private lateinit var stateMachine: PbapStateMachine
 
     @Before
-    public void setUp() throws IOException {
-        doReturn(mInputStream).when(mSocket).getInputStream();
-        doReturn(mInputStream).when(mSocket).getInputStream();
+    fun setUp() {
+        doReturn(inputStream).whenever(socket).inputStream
 
-        mLooper = new TestLooper();
-        mHandler = new Handler(mLooper.getLooper());
+        looper = TestLooper()
+        handler = Handler(looper.looper)
 
-        mStateMachine =
-                new PbapStateMachine(
-                        mAdapterService,
-                        mBluetoothPbapService,
-                        mNotificationManager,
-                        mLooper.getLooper(),
-                        mDevice,
-                        mSocket,
-                        mHandler,
-                        TEST_NOTIFICATION_ID);
+        stateMachine =
+            PbapStateMachine(
+                adapterService,
+                bluetoothPbapService,
+                notificationManager,
+                looper.looper,
+                device,
+                socket,
+                handler,
+                testNotificationId,
+            )
     }
 
     /** Test that initial state is WaitingForAuth */
     @Test
-    public void initialState_isConnecting() {
-        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTING);
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(PbapStateMachine.WaitingForAuth.class);
+    fun initialState_isConnecting() {
+        assertThat(stateMachine.connectionState).isEqualTo(STATE_CONNECTING)
+        assertThat(stateMachine.currentState)
+            .isInstanceOf(PbapStateMachine.WaitingForAuth::class.java)
     }
 
     /** Test state transition from WaitingForAuth to Finished when the user rejected */
     @Test
-    public void testStateTransition_WaitingForAuthToFinished() {
-        sendAndDispatchMessage(PbapStateMachine.REJECTED);
+    fun testStateTransition_WaitingForAuthToFinished() {
+        sendAndDispatchMessage(PbapStateMachine.REJECTED)
 
-        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mStateMachine.getCurrentState()).isInstanceOf(PbapStateMachine.Finished.class);
+        assertThat(stateMachine.connectionState).isEqualTo(STATE_DISCONNECTED)
+        assertThat(stateMachine.currentState).isInstanceOf(PbapStateMachine.Finished::class.java)
     }
 
     /** Test state transition from WaitingForAuth to Finished when the user rejected */
     @Test
-    public void testStateTransition_WaitingForAuthToConnected() {
-        sendAndDispatchMessage(PbapStateMachine.AUTHORIZED);
+    fun testStateTransition_WaitingForAuthToConnected() {
+        sendAndDispatchMessage(PbapStateMachine.AUTHORIZED)
 
-        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
-        assertThat(mStateMachine.getCurrentState()).isInstanceOf(PbapStateMachine.Connected.class);
+        assertThat(stateMachine.connectionState).isEqualTo(STATE_CONNECTED)
+        assertThat(stateMachine.currentState).isInstanceOf(PbapStateMachine.Connected::class.java)
     }
 
     /** Test state transition from Connected to Finished when the OBEX server is done */
     @Test
-    public void testStateTransition_ConnectedToFinished() {
-        sendAndDispatchMessage(PbapStateMachine.AUTHORIZED);
+    fun testStateTransition_ConnectedToFinished() {
+        sendAndDispatchMessage(PbapStateMachine.AUTHORIZED)
 
-        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
-        assertThat(mStateMachine.getCurrentState()).isInstanceOf(PbapStateMachine.Connected.class);
+        assertThat(stateMachine.connectionState).isEqualTo(STATE_CONNECTED)
+        assertThat(stateMachine.currentState).isInstanceOf(PbapStateMachine.Connected::class.java)
 
-        sendAndDispatchMessage(PbapStateMachine.DISCONNECT);
+        sendAndDispatchMessage(PbapStateMachine.DISCONNECT)
 
-        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
-        assertThat(mStateMachine.getCurrentState()).isInstanceOf(PbapStateMachine.Finished.class);
+        assertThat(stateMachine.connectionState).isEqualTo(STATE_DISCONNECTED)
+        assertThat(stateMachine.currentState).isInstanceOf(PbapStateMachine.Finished::class.java)
     }
 
-    private void sendAndDispatchMessage(int what) {
-        mStateMachine.sendMessage(what);
-        mLooper.dispatchAll();
+    private fun sendAndDispatchMessage(what: Int) {
+        stateMachine.sendMessage(what)
+        looper.dispatchAll()
     }
 }
