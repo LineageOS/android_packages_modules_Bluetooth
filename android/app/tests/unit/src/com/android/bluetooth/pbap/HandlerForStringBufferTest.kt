@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,117 +14,106 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbap;
+package com.android.bluetooth.pbap
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.obex.Operation
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.io.IOException
+import java.io.OutputStream
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.doThrow
+import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.obex.Operation;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.io.IOException;
-import java.io.OutputStream;
-
-/** Test cases for {@link HandlerForStringBuffer}. */
+/** Test cases for [HandlerForStringBuffer]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class HandlerForStringBufferTest {
+@RunWith(AndroidJUnit4::class)
+class HandlerForStringBufferTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private Operation mOperation;
-
-    @Mock private OutputStream mOutputStream;
+    @Mock private lateinit var operation: Operation
+    @Mock private lateinit var outputStream: OutputStream
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(mOutputStream).when(mOperation).openOutputStream();
+    fun setUp() {
+        doReturn(outputStream).whenever(operation).openOutputStream()
     }
 
     @Test
-    public void init_withNonNullOwnerVCard_returnsTrue() throws Exception {
-        String ownerVcard = "testOwnerVcard";
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, ownerVcard);
+    fun init_withNonNullOwnerVCard_returnsTrue() {
+        val ownerVcard = "testOwnerVcard"
+        val buffer = HandlerForStringBuffer(operation, ownerVcard)
 
-        assertThat(buffer.init()).isTrue();
-        verify(mOutputStream).write(ownerVcard.getBytes());
+        assertThat(buffer.init()).isTrue()
+        verify(outputStream).write(ownerVcard.toByteArray())
     }
 
     @Test
-    public void init_withNullOwnerVCard_returnsTrue() throws Exception {
-        String ownerVcard = null;
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, ownerVcard);
+    fun init_withNullOwnerVCard_returnsTrue() {
+        val ownerVcard: String? = null
+        val buffer = HandlerForStringBuffer(operation, ownerVcard)
 
-        assertThat(buffer.init()).isTrue();
-        verify(mOutputStream, never()).write(any());
+        assertThat(buffer.init()).isTrue()
+        verify(outputStream, never()).write(any<ByteArray>())
     }
 
     @Test
-    public void init_withIOExceptionWhenOpeningOutputStream_returnsFalse() throws Exception {
-        doThrow(new IOException()).when(mOperation).openOutputStream();
+    fun init_withIOExceptionWhenOpeningOutputStream_returnsFalse() {
+        doThrow(IOException()).whenever(operation).openOutputStream()
 
-        String ownerVcard = "testOwnerVcard";
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, ownerVcard);
+        val ownerVcard = "testOwnerVcard"
+        val buffer = HandlerForStringBuffer(operation, ownerVcard)
 
-        assertThat(buffer.init()).isFalse();
+        assertThat(buffer.init()).isFalse()
     }
 
     @Test
-    public void writeVCard_withNonNullOwnerVCard_returnsTrue() throws Exception {
-        String ownerVcard = null;
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, ownerVcard);
-        buffer.init();
+    fun writeVCard_withNonNullOwnerVCard_returnsTrue() {
+        val ownerVcard: String? = null
+        val buffer = HandlerForStringBuffer(operation, ownerVcard)
+        buffer.init()
 
-        String newVcard = "newEntryVcard";
-
-        assertThat(buffer.writeVCard(newVcard)).isTrue();
+        val newVcard = "newEntryVcard"
+        assertThat(buffer.writeVCard(newVcard)).isTrue()
     }
 
     @Test
-    public void writeVCard_withNullOwnerVCard_returnsFalse() throws Exception {
-        String ownerVcard = null;
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, ownerVcard);
-        buffer.init();
+    fun writeVCard_withNullOwnerVCard_returnsFalse() {
+        val ownerVcard: String? = null
+        val buffer = HandlerForStringBuffer(operation, ownerVcard)
+        buffer.init()
 
-        String newVcard = null;
-
-        assertThat(buffer.writeVCard(newVcard)).isFalse();
+        val newVcard: String? = null
+        assertThat(buffer.writeVCard(newVcard)).isFalse()
     }
 
     @Test
-    public void writeVCard_withIOExceptionWhenWritingToStream_returnsFalse() throws Exception {
-        doThrow(new IOException()).when(mOutputStream).write(any(byte[].class));
-        HandlerForStringBuffer buffer =
-                new HandlerForStringBuffer(mOperation, /* ownerVcard= */ null);
-        buffer.init();
+    fun writeVCard_withIOExceptionWhenWritingToStream_returnsFalse() {
+        doThrow(IOException()).whenever(outputStream).write(any<ByteArray>())
+        val buffer = HandlerForStringBuffer(operation, /* ownerVCard= */ null)
+        buffer.init()
 
-        String newVCard = "newVCard";
-
-        assertThat(buffer.writeVCard(newVCard)).isFalse();
+        val newVCard = "newVCard"
+        assertThat(buffer.writeVCard(newVCard)).isFalse()
     }
 
     @Test
-    public void terminate() throws Exception {
-        String ownerVcard = "testOwnerVcard";
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, ownerVcard);
-        buffer.init();
+    fun terminate() {
+        val ownerVcard = "testOwnerVcard"
+        val buffer = HandlerForStringBuffer(operation, ownerVcard)
+        buffer.init()
 
-        buffer.terminate();
-
-        verify(mOutputStream).close();
+        buffer.terminate()
+        verify(outputStream).close()
     }
 }
