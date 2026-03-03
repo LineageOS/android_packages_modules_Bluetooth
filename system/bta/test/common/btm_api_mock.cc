@@ -36,45 +36,6 @@ static bluetooth::manager::MockBtmInterface* btm_interface = nullptr;
 
 void bluetooth::manager::SetMockBtmInterface(MockBtmInterface* mock_btm_interface) {
   btm_interface = mock_btm_interface;
-  mock_btm_client_interface.peer.BTM_IsPhy2mSupported = [](const RawAddress& remote_bda,
-                                                           tBT_TRANSPORT transport) {
-    return btm_interface->IsPhy2mSupported(remote_bda, transport);
-  };
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle = [](RawAddress const& bd_addr,
-                                                           tBT_TRANSPORT transport) -> uint16_t {
-    return btm_interface->GetHCIConnHandle(bd_addr, transport);
-  };
-  mock_btm_client_interface.peer.BTM_GetPeerSCA = [](const RawAddress& remote_bda,
-                                                     tBT_TRANSPORT transport) {
-    return btm_interface->GetPeerSCA(remote_bda, transport);
-  };
-  mock_btm_client_interface.peer.BTM_RequestPeerSCA = [](RawAddress const& bd_addr,
-                                                         tBT_TRANSPORT transport) {
-    btm_interface->RequestPeerSCA(bd_addr, transport);
-  };
-  mock_btm_client_interface.peer.BTM_IsAclConnectionUp = [](const RawAddress& remote_bda,
-                                                            tBT_TRANSPORT transport) {
-    return btm_interface->BTM_IsAclConnectionUp(remote_bda, transport);
-  };
-  mock_btm_client_interface.link_policy.BTM_GetRole = [](const RawAddress& bd_addr,
-                                                         tBT_TRANSPORT transport, tHCI_ROLE* role) {
-    return btm_interface->BTM_GetRole(bd_addr, transport, role);
-  };
-}
-
-bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->IsDeviceBonded(bd_addr, transport);
-}
-
-bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  return btm_interface->BTM_IsEncrypted(bd_addr, transport);
-}
-
-tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                              tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
-                              tBTM_BLE_SEC_ACT sec_act) {
-  return btm_interface->SetEncryption(bd_addr, transport, p_callback, p_ref_data, sec_act);
 }
 
 bool BTM_SecIsLeSecurityPending(const RawAddress& bd_addr) {

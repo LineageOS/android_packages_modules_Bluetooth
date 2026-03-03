@@ -35,7 +35,10 @@
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_properties.h"
 
+using ::testing::Eq;
+using ::testing::Field;
 using ::testing::NiceMock;
+using ::testing::Pointee;
 using ::testing::Return;
 using ::testing::Test;
 using ::testing::TestWithParam;
@@ -148,8 +151,6 @@ using bluetooth::audio::hfp::testing::mock_hfp_client_interface::MockEncode;
 using bluetooth::audio::hfp::testing::mock_hfp_client_interface::MockOffload;
 const std::string kPropHfpSoftwarePathEnabled = "bluetooth.hfp.software_datapath.enabled";
 
-enh_esco_params_t sco_managed_by_audio_params{};
-
 class BtaAgScoupdateCodecParametersFromProviderInfoTest : public Test {
 protected:
   void SetUp() override {
@@ -158,20 +159,17 @@ protected:
     mock_decode_ = std::make_unique<MockDecode>();
     mock_encode_ = std::make_unique<MockEncode>();
     mock_offload_ = std::make_unique<MockOffload>();
+    set_mock_btm_client_interface(&btm_client_interface_);
 
     test::mock::osi_properties::osi_property_get_bool.body = [this](const char* key,
                                                                     bool default_value) {
       return key == kPropHfpSoftwarePathEnabled ? prop_hfp_software_path_enabled_return_
                                                 : default_value;
     };
-    set_com_android_bluetooth_flags_sco_managed_by_audio_remove_hfp_hal(true);
 
-    sco_managed_by_audio_params = {};
-    mock_btm_client_interface.sco.BTM_SetEScoMode = [](enh_esco_params_t* p_params) -> tBTM_STATUS {
-      sco_managed_by_audio_params = *p_params;
-      return tBTM_STATUS::BTM_SUCCESS;
-    };
+    set_com_android_bluetooth_flags_sco_managed_by_audio_remove_hfp_hal(true);
   }
+
   void TearDown() override {
     // Disable sco_managed_by_audio as the rest of the unittests expect this.
     bta_ag_set_is_sco_managed_by_audio(false);
@@ -187,7 +185,9 @@ protected:
 
     reset_mock_btm_client_interface();
   }
+
   bool prop_hfp_software_path_enabled_return_;
+  MockBtmClientInterface btm_client_interface_;
 };
 
 TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_offload_path) {
@@ -213,6 +213,13 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_offload_path) {
               IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
           .WillOnce(Return(true));
 
+  EXPECT_CALL(
+          btm_client_interface_,
+          BTM_SetEScoMode(AllOf(
+                  Pointee(Field(&enh_esco_params_t::input_data_path, Eq(ESCO_DATA_PATH_PCM))),
+                  Pointee(Field(&enh_esco_params_t::output_data_path, Eq(ESCO_DATA_PATH_PCM))))))
+          .WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+
   prop_hfp_software_path_enabled_return_ = false;
   bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
   bta_ag_api_set_active_device(kRawAddress);
@@ -229,9 +236,6 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_offload_path) {
 
   ASSERT_TRUE(bta_ag_get_wbs_supported());
   ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC);
-  // esco_parameters_for_codec is mocked so not many params will be updated.
-  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_PCM);
-  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_PCM);
 }
 
 TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_offload_path) {
@@ -257,6 +261,13 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_offload_path) {
               IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
           .WillOnce(Return(true));
 
+  EXPECT_CALL(
+          btm_client_interface_,
+          BTM_SetEScoMode(AllOf(
+                  Pointee(Field(&enh_esco_params_t::input_data_path, Eq(ESCO_DATA_PATH_PCM))),
+                  Pointee(Field(&enh_esco_params_t::output_data_path, Eq(ESCO_DATA_PATH_PCM))))))
+          .WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+
   prop_hfp_software_path_enabled_return_ = false;
   bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
   bta_ag_api_set_active_device(kRawAddress);
@@ -273,9 +284,6 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_offload_path) {
 
   ASSERT_TRUE(bta_ag_get_swb_supported());
   ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_LC3);
-  // esco_parameters_for_codec is mocked so not many params will be updated.
-  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_PCM);
-  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_PCM);
 }
 
 TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, cvsd_software_path) {
@@ -293,6 +301,13 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, cvsd_software_path) {
               IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
           .WillOnce(Return(true));
 
+  EXPECT_CALL(
+          btm_client_interface_,
+          BTM_SetEScoMode(AllOf(
+                  Pointee(Field(&enh_esco_params_t::input_data_path, Eq(ESCO_DATA_PATH_HCI))),
+                  Pointee(Field(&enh_esco_params_t::output_data_path, Eq(ESCO_DATA_PATH_HCI))))))
+          .WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+
   prop_hfp_software_path_enabled_return_ = true;
   bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
   bta_ag_api_set_active_device(kRawAddress);
@@ -308,9 +323,6 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, cvsd_software_path) {
   bta_clear_active_device();
 
   ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_CVSD);
-  // esco_parameters_for_codec is mocked so not many params will be updated.
-  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_HCI);
-  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_HCI);
 }
 
 TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_software_path) {
@@ -328,6 +340,24 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_software_path) {
               IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
           .WillOnce(Return(true));
 
+  EXPECT_CALL(btm_client_interface_,
+              BTM_SetEScoMode(AllOf(
+                      Pointee(Field(&enh_esco_params_t::input_data_path, Eq(ESCO_DATA_PATH_HCI))),
+                      Pointee(Field(&enh_esco_params_t::output_data_path, Eq(ESCO_DATA_PATH_HCI))),
+                      Pointee(Field(&enh_esco_params_t::input_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))),
+                      Pointee(Field(&enh_esco_params_t::output_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))),
+                      Pointee(Field(&enh_esco_params_t::transmit_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))),
+                      Pointee(Field(&enh_esco_params_t::receive_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))))))
+          .WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+
   prop_hfp_software_path_enabled_return_ = true;
   bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
   bta_ag_api_set_active_device(kRawAddress);
@@ -344,16 +374,6 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_software_path) {
 
   ASSERT_TRUE(bta_ag_get_wbs_supported());
   ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC);
-  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_HCI);
-  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_HCI);
-  ASSERT_EQ(sco_managed_by_audio_params.input_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
-  ASSERT_EQ(sco_managed_by_audio_params.output_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
-  ASSERT_EQ(sco_managed_by_audio_params.transmit_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
-  ASSERT_EQ(sco_managed_by_audio_params.receive_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
 }
 
 TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_software_path) {
@@ -371,6 +391,24 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_software_path) {
               IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
           .WillOnce(Return(true));
 
+  EXPECT_CALL(btm_client_interface_,
+              BTM_SetEScoMode(AllOf(
+                      Pointee(Field(&enh_esco_params_t::input_data_path, Eq(ESCO_DATA_PATH_HCI))),
+                      Pointee(Field(&enh_esco_params_t::output_data_path, Eq(ESCO_DATA_PATH_HCI))),
+                      Pointee(Field(&enh_esco_params_t::input_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))),
+                      Pointee(Field(&enh_esco_params_t::output_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))),
+                      Pointee(Field(&enh_esco_params_t::transmit_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))),
+                      Pointee(Field(&enh_esco_params_t::receive_coding_format,
+                                    Field(&esco_coding_id_format_t::coding_format,
+                                          Eq(ESCO_CODING_FORMAT_TRANSPNT)))))))
+          .WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+
   prop_hfp_software_path_enabled_return_ = true;
   bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
   bta_ag_api_set_active_device(kRawAddress);
@@ -387,14 +425,4 @@ TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_software_path) {
 
   ASSERT_TRUE(bta_ag_get_swb_supported());
   ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_LC3);
-  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_HCI);
-  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_HCI);
-  ASSERT_EQ(sco_managed_by_audio_params.input_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
-  ASSERT_EQ(sco_managed_by_audio_params.output_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
-  ASSERT_EQ(sco_managed_by_audio_params.transmit_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
-  ASSERT_EQ(sco_managed_by_audio_params.receive_coding_format.coding_format,
-            ESCO_CODING_FORMAT_TRANSPNT);
 }

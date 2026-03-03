@@ -37,10 +37,6 @@
 #include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_security_client_interface.h"
 
-// To override the mock function to return a specific handle.
-extern struct btm_client_interface_t mock_btm_client_interface;
-extern void reset_mock_btm_client_interface();
-
 using android::bluetooth::gatt::GattOffloadErrorEnum;
 using android::bluetooth::gatt::GattOffloadSessionStateEnum;
 using android::bluetooth::gatt::GattRoleEnum;
@@ -132,6 +128,7 @@ protected:
     mock_metrics_logger_ = std::make_shared<bluetooth::metrics::MockMetrics>();
     bluetooth::metrics::MockMetrics::SetInstance(mock_metrics_logger_);
     set_security_client_interface(mock_btm_security_);
+    set_mock_btm_client_interface(&btm_client_interface_);
 
     EXPECT_CALL(*mock_, InitializeGattHal(_))
             .WillOnce(DoAll(SaveArg<0>(&gatt_hal_callback_), Return(true)));
@@ -158,6 +155,7 @@ protected:
   std::unique_ptr<bluetooth::lpp::testing::MockLppOffloadInterface> mock_;
   GattHalCallback* gatt_hal_callback_ = nullptr;
   NiceMock<MockSecurityClientInterface> mock_btm_security_;
+  MockBtmClientInterface btm_client_interface_;
   std::shared_ptr<bluetooth::metrics::MockMetrics> mock_metrics_logger_;
 };
 
@@ -257,13 +255,12 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_invalid_conn_id) 
   EXPECT_EQ(result.status, tGATT_STATUS::GATT_INVALID_HANDLE);
   EXPECT_EQ(result.session_id, BTGATT_OFFLOAD_SESSION_ID_UNKNOWN);
 }
+
 TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_with_invalid_acl_handle) {
   const tCONN_ID conn_id = 0;
   const uint16_t fake_acl_handle = GATT_INVALID_ACL_HANDLE;
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle =
-          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) -> uint16_t {
-    return fake_acl_handle;
-  };
+
+  EXPECT_CALL(btm_client_interface_, BTM_GetHCIConnHandle).WillOnce(Return(fake_acl_handle));
 
   std::vector<btgatt_db_element_t> service = create_service_vector();
   std::promise<btgatt_offload_result_t> promise;
@@ -276,9 +273,6 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_with_invalid_acl_
   auto result = future.get();
   EXPECT_EQ(result.session_id, BTGATT_OFFLOAD_SESSION_ID_UNKNOWN);
   EXPECT_EQ(result.status, tGATT_STATUS::GATT_INVALID_HANDLE);
-
-  // cleanup
-  reset_mock_btm_client_interface();
 }
 
 struct PermissionTestParams {
@@ -292,10 +286,8 @@ struct PermissionTestParams {
 class GattOffloadPermissionTest : public GattOffloadCharacteristicsTest,
                                   public ::testing::WithParamInterface<PermissionTestParams> {
 protected:
-  void TearDown() override {
-    reset_mock_btm_client_interface();
-    GattOffloadCharacteristicsTest::TearDown();
-  }
+  void TearDown() override { GattOffloadCharacteristicsTest::TearDown(); }
+
   static bool mock_is_encrypted_;
   static bool mock_is_bonded_;
 };
@@ -766,10 +758,9 @@ TEST_F(GattOffloadCharacteristicsTest, clear_session_by_handle_failure) {
                       _, _, _, GattOffloadSessionStateEnum::GATT_OFFLOAD_SESSION_STATE_STARTED, _,
                       0, _, _, _))
           .Times(1);
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle =
-          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) -> uint16_t {
-    return 0x1234;
-  };
+
+  EXPECT_CALL(btm_client_interface_, BTM_GetHCIConnHandle).WillOnce(Return(0x1234));
+
   uint16_t acl_handle = 0x1234;
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
@@ -1051,16 +1042,14 @@ TEST_F(GattOffloadHalCallbackTest, error_report_out_of_sync) {
   uint16_t session_id = BTGATT_OFFLOAD_SESSION_ID_UNKNOWN;
   uint16_t acl_handle = 0;
 
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle =
-          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) -> uint16_t {
-    return 0x1234;
-  };
+  EXPECT_CALL(btm_client_interface_, BTM_GetHCIConnHandle).WillOnce(Return(0x1234));
 
   EXPECT_CALL(*mock_, RegisterGattService(_)).WillOnce([&](const GattSession& session) {
     session_id = session.id;
     acl_handle = session.acl_connection_handle;
     return true;
   });
+
   EXPECT_CALL(*mock_metrics_logger_,
               LogGattOffloadSessionStateChanged(
                       _, _, _, GattOffloadSessionStateEnum::GATT_OFFLOAD_SESSION_STATE_STARTED, _,
@@ -1096,16 +1085,14 @@ TEST_F(GattOffloadHalCallbackTest, error_report_err_rsp_timeout) {
   uint16_t session_id = BTGATT_OFFLOAD_SESSION_ID_UNKNOWN;
   uint16_t acl_handle = 0;
 
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle =
-          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) -> uint16_t {
-    return 0x1234;
-  };
+  EXPECT_CALL(btm_client_interface_, BTM_GetHCIConnHandle).WillRepeatedly(Return(0x1234));
 
   EXPECT_CALL(*mock_, RegisterGattService(_)).WillOnce([&](const GattSession& session) {
     session_id = session.id;
     acl_handle = session.acl_connection_handle;
     return true;
   });
+
   EXPECT_CALL(*mock_metrics_logger_,
               LogGattOffloadSessionStateChanged(
                       _, _, _, GattOffloadSessionStateEnum::GATT_OFFLOAD_SESSION_STATE_STARTED, _,
@@ -1139,16 +1126,14 @@ TEST_F(GattOffloadHalCallbackTest, error_report_err_protocol_violation) {
   uint16_t session_id = BTGATT_OFFLOAD_SESSION_ID_UNKNOWN;
   uint16_t acl_handle = 0;
 
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle =
-          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) -> uint16_t {
-    return 0x1234;
-  };
+  EXPECT_CALL(btm_client_interface_, BTM_GetHCIConnHandle).WillRepeatedly(Return(0x1234));
 
   EXPECT_CALL(*mock_, RegisterGattService(_)).WillOnce([&](const GattSession& session) {
     session_id = session.id;
     acl_handle = session.acl_connection_handle;
     return true;
   });
+
   EXPECT_CALL(*mock_metrics_logger_,
               LogGattOffloadSessionStateChanged(
                       _, _, _, GattOffloadSessionStateEnum::GATT_OFFLOAD_SESSION_STATE_STARTED, _,
@@ -1202,16 +1187,14 @@ TEST_F(GattOffloadHalCallbackTest, error_report_out_of_sync_with_callback) {
   uint16_t session_id = BTGATT_OFFLOAD_SESSION_ID_UNKNOWN;
   uint16_t acl_handle = 0;
 
-  mock_btm_client_interface.peer.BTM_GetHCIConnHandle =
-          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) -> uint16_t {
-    return 0x1234;
-  };
+  EXPECT_CALL(btm_client_interface_, BTM_GetHCIConnHandle).WillOnce(Return(0x1234));
 
   EXPECT_CALL(*mock_, RegisterGattService(_)).WillOnce([&](const GattSession& session) {
     session_id = session.id;
     acl_handle = session.acl_connection_handle;
     return true;
   });
+
   EXPECT_CALL(*mock_metrics_logger_,
               LogGattOffloadSessionStateChanged(
                       _, _, _, GattOffloadSessionStateEnum::GATT_OFFLOAD_SESSION_STATE_STARTED, _,

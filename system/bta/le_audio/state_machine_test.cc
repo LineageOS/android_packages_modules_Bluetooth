@@ -40,6 +40,7 @@
 #include "mock_csis_client.h"
 #include "mock_test_sync_main_handler.h"
 #include "stack/include/bt_types.h"
+#include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_btm_iso.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -308,7 +309,7 @@ protected:
 
     init_message_loop_thread();
     reset_mock_function_count_map();
-    bluetooth::manager::SetMockBtmInterface(&btm_interface);
+    set_mock_btm_client_interface(&btm_interface);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
 
@@ -389,8 +390,8 @@ protected:
             }));
 
     // Support 2M Phy
-    ON_CALL(btm_interface, IsPhy2mSupported(_, _)).WillByDefault(Return(true));
-    ON_CALL(btm_interface, GetHCIConnHandle(_, _))
+    ON_CALL(btm_interface, BTM_IsPhy2mSupported(_, _)).WillByDefault(Return(true));
+    ON_CALL(btm_interface, BTM_GetHCIConnHandle(_, _))
             .WillByDefault(Invoke([](RawAddress const& remote_bda, tBT_TRANSPORT /*transport*/) {
               return remote_bda.IsEmpty()
                              ? HCI_INVALID_HANDLE
@@ -849,7 +850,7 @@ protected:
 
     gatt::SetMockBtaGattQueue(nullptr);
     gatt::SetMockBtaGattInterface(nullptr);
-    bluetooth::manager::SetMockBtmInterface(nullptr);
+    reset_mock_btm_client_interface();
 
     le_audio_devices_.clear();
     le_audio_device_groups_.clear();
@@ -2318,7 +2319,7 @@ protected:
   }
 
   MockCsisClient mock_csis_client_module_;
-  NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
+  NiceMock<MockBtmClientInterface> btm_interface;
   gatt::MockBtaGattInterface gatt_interface;
   gatt::MockBtaGattQueue gatt_queue;
 

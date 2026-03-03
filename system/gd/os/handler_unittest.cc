@@ -85,6 +85,7 @@ TEST_F(HandlerTest, post_task_cleared) {
   closure_can_continue.set_value();
   closure_finished_future.wait();
   ASSERT_EQ(val, 1);
+  handler_->WaitUntilStopped(std::chrono::milliseconds(10));
 }
 
 void check_int(std::unique_ptr<int> number, std::shared_ptr<int> to_change) {

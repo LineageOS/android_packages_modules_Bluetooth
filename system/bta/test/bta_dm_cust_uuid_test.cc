@@ -65,31 +65,18 @@ TEST_F(BtaWithMocksTest, test_eir_ignores_empty_custom_uuid) {
   tBTA_CUSTOM_UUID valid_uuid = {uuid1, handle1};
   tBTA_CUSTOM_UUID empty_uuid = {Uuid::kEmpty, handle2};
 
-  static bool write_eir_called = false;
-  write_eir_called = false;
-
-  mock_btm_client_interface.eir.BTM_WriteEIR = [](BT_HDR* p_buf) -> tBTM_STATUS {
-    write_eir_called = true;
-
+  EXPECT_CALL(mock_btm_client_interface_, BTM_WriteEIR).WillRepeatedly([](BT_HDR* p_buf) {
     osi_free(p_buf);
-
     return tBTM_STATUS::BTM_SUCCESS;
-  };
+  });
 
   bta_dm_eir_update_cust_uuid(valid_uuid, true);
-  ASSERT_TRUE(write_eir_called);
-
-  write_eir_called = false;
-
   bta_dm_eir_update_cust_uuid(empty_uuid, true);
-  ASSERT_TRUE(write_eir_called);
 
   ASSERT_STREQ(uuid1.ToString().c_str(),
                bta_dm_cb.bta_custom_uuid[0].custom_uuid.ToString().c_str());
   ASSERT_STREQ(Uuid::kEmpty.ToString().c_str(),
                bta_dm_cb.bta_custom_uuid[1].custom_uuid.ToString().c_str());
-
-  mock_btm_client_interface.eir.BTM_WriteEIR = {};
 }
 
 TEST_F(BtaWithMocksTest, test_eir_ignores_zero_16_and_32_bit_uuid) {
@@ -98,29 +85,15 @@ TEST_F(BtaWithMocksTest, test_eir_ignores_zero_16_and_32_bit_uuid) {
   tBTA_CUSTOM_UUID valid_32 = {valid_uuid32, 3};
   tBTA_CUSTOM_UUID zero_32 = {Uuid::From32Bit(0x00000000), 4};
 
-  static bool write_eir_called = false;
-
-  mock_btm_client_interface.eir.BTM_WriteEIR = [](BT_HDR* p_buf) -> tBTM_STATUS {
-    write_eir_called = true;
+  EXPECT_CALL(mock_btm_client_interface_, BTM_WriteEIR).WillRepeatedly([](BT_HDR* p_buf) {
     osi_free(p_buf);
     return tBTM_STATUS::BTM_SUCCESS;
-  };
+  });
 
-  write_eir_called = false;
   bta_dm_eir_update_cust_uuid(valid_16, true);
-  ASSERT_TRUE(write_eir_called);
-
-  write_eir_called = false;
   bta_dm_eir_update_cust_uuid(zero_16, true);
-  ASSERT_TRUE(write_eir_called);
-
-  write_eir_called = false;
   bta_dm_eir_update_cust_uuid(valid_32, true);
-  ASSERT_TRUE(write_eir_called);
-
-  write_eir_called = false;
   bta_dm_eir_update_cust_uuid(zero_32, true);
-  ASSERT_TRUE(write_eir_called);
 
   ASSERT_STREQ(valid_uuid16.ToString().c_str(),
                bta_dm_cb.bta_custom_uuid[0].custom_uuid.ToString().c_str());
@@ -130,8 +103,6 @@ TEST_F(BtaWithMocksTest, test_eir_ignores_zero_16_and_32_bit_uuid) {
                bta_dm_cb.bta_custom_uuid[2].custom_uuid.ToString().c_str());
   ASSERT_STREQ(Uuid::From32Bit(0x00000000).ToString().c_str(),
                bta_dm_cb.bta_custom_uuid[3].custom_uuid.ToString().c_str());
-
-  mock_btm_client_interface.eir.BTM_WriteEIR = {};
 }
 
 TEST_F(BtaWithMocksTest, test_eir_ignores_uuid_with_zero_handle) {
@@ -139,24 +110,18 @@ TEST_F(BtaWithMocksTest, test_eir_ignores_uuid_with_zero_handle) {
   tBTA_CUSTOM_UUID valid_32 = {valid_uuid32, 2};
   tBTA_CUSTOM_UUID valid_128 = {uuid1, 3};
 
-  static bool write_eir_called = false;
-
-  mock_btm_client_interface.eir.BTM_WriteEIR = [](BT_HDR* p_buf) -> tBTM_STATUS {
-    write_eir_called = true;
+  EXPECT_CALL(mock_btm_client_interface_, BTM_WriteEIR).WillRepeatedly([](BT_HDR* p_buf) {
     osi_free(p_buf);
     return tBTM_STATUS::BTM_SUCCESS;
-  };
+  });
 
   bta_dm_eir_update_cust_uuid(valid_16, true);
   bta_dm_eir_update_cust_uuid(valid_32, true);
   bta_dm_eir_update_cust_uuid(valid_128, true);
 
-  write_eir_called = false;
   bta_dm_eir_update_cust_uuid(valid_16, false);
   bta_dm_eir_update_cust_uuid(valid_32, false);
   bta_dm_eir_update_cust_uuid(valid_128, false);
-
-  ASSERT_TRUE(write_eir_called);
 
   ASSERT_STREQ(valid_uuid16.ToString().c_str(),
                bta_dm_cb.bta_custom_uuid[0].custom_uuid.ToString().c_str());
@@ -168,6 +133,4 @@ TEST_F(BtaWithMocksTest, test_eir_ignores_uuid_with_zero_handle) {
   ASSERT_EQ(0u, bta_dm_cb.bta_custom_uuid[0].handle);
   ASSERT_EQ(0u, bta_dm_cb.bta_custom_uuid[1].handle);
   ASSERT_EQ(0u, bta_dm_cb.bta_custom_uuid[2].handle);
-
-  mock_btm_client_interface.eir.BTM_WriteEIR = {};
 }

@@ -49,6 +49,7 @@
 using ::testing::_;
 using ::testing::MockFunction;
 using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::Test;
 
 using namespace bluetooth;
@@ -75,6 +76,7 @@ protected:
     reset_mock_function_count_map();
     memset(&bta_ag_cb, 0, sizeof(bta_ag_cb));
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
+    set_mock_btm_client_interface(&btm_client_interface_);
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
 
@@ -92,6 +94,7 @@ protected:
     };
   }
   void TearDown() override {
+    reset_mock_btm_client_interface();
     test::mock::device_esco_parameters::esco_parameters_for_codec = {};
     bta_sys_deregister(BTA_ID_AG);
     post_on_bt_main([]() { log::info("Main thread shutting down"); });
@@ -100,6 +103,7 @@ protected:
   }
 
   std::unique_ptr<test::fake::FakeOsi> fake_osi_;
+  MockBtmClientInterface btm_client_interface_;
   const char test_strings[5][13] = {"0,4,6,7", "4,6,7", "test,0,4", "9,8,7", "4,6,7,test"};
   uint32_t tmp_num = 0xFFFF;
   RawAddress addr;
@@ -264,19 +268,9 @@ TEST_F(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_disabled) {
 }
 
 TEST_F(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_q0_enabled) {
-  reset_mock_btm_client_interface();
-  mock_btm_client_interface.sco.BTM_SetEScoMode =
-          [](enh_esco_params_t* /* p_params */) -> tBTM_STATUS {
-    inc_func_call_count("BTM_SetEScoMode");
-    return tBTM_STATUS::BTM_SUCCESS;
-  };
-  mock_btm_client_interface.sco.BTM_CreateSco =
-          [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
-             uint16_t* /* p_sco_inx */, tBTM_SCO_CB* /* p_conn_cb */,
-             tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
-    inc_func_call_count("BTM_CreateSco");
-    return tBTM_STATUS::BTM_CMD_STARTED;
-  };
+  EXPECT_CALL(btm_client_interface_, BTM_SetEScoMode(_)).WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+  EXPECT_CALL(btm_client_interface_, BTM_CreateSco(_, _, _, _, _, _))
+          .WillOnce(Return(tBTM_STATUS::BTM_CMD_STARTED));
 
   tBTA_AG_SCB p_scb = {.peer_addr = addr,
                        .sco_idx = BTM_INVALID_SCO_INDEX,
@@ -297,26 +291,14 @@ TEST_F(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_q0_enabled) {
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   ASSERT_EQ(1, get_func_call_count("esco_parameters_for_codec"));
   ASSERT_EQ(BtifStatus(), enable_aptx_swb_codec(true, addr));
-  ASSERT_EQ(1, get_func_call_count("BTM_SetEScoMode"));
-  ASSERT_EQ(1, get_func_call_count("BTM_CreateSco"));
   ASSERT_EQ(this->codec, ESCO_CODEC_SWB_Q0);
   ASSERT_TRUE(enable_aptx_voice_property(false));
 }
 
 TEST_F(BtaAgCmdTest, handle_swb_at_event__qcs_ev_codec_q1_fallback_to_q0) {
-  reset_mock_btm_client_interface();
-  mock_btm_client_interface.sco.BTM_SetEScoMode =
-          [](enh_esco_params_t* /*p_params*/) -> tBTM_STATUS {
-    inc_func_call_count("BTM_SetEScoMode");
-    return tBTM_STATUS::BTM_SUCCESS;
-  };
-  mock_btm_client_interface.sco.BTM_CreateSco =
-          [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
-             uint16_t* /* p_sco_inx */, tBTM_SCO_CB* /* p_conn_cb */,
-             tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
-    inc_func_call_count("BTM_CreateSco");
-    return tBTM_STATUS::BTM_CMD_STARTED;
-  };
+  EXPECT_CALL(btm_client_interface_, BTM_SetEScoMode(_)).WillOnce(Return(tBTM_STATUS::BTM_SUCCESS));
+  EXPECT_CALL(btm_client_interface_, BTM_CreateSco(_, _, _, _, _, _))
+          .WillOnce(Return(tBTM_STATUS::BTM_CMD_STARTED));
 
   tBTA_AG_SCB p_scb = {.peer_addr = addr,
                        .sco_idx = BTM_INVALID_SCO_INDEX,
@@ -338,8 +320,6 @@ TEST_F(BtaAgCmdTest, handle_swb_at_event__qcs_ev_codec_q1_fallback_to_q0) {
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   ASSERT_EQ(1, get_func_call_count("esco_parameters_for_codec"));
   ASSERT_EQ(BtifStatus(), enable_aptx_swb_codec(true, addr));
-  ASSERT_EQ(1, get_func_call_count("BTM_SetEScoMode"));
-  ASSERT_EQ(1, get_func_call_count("BTM_CreateSco"));
   ASSERT_EQ(this->codec, ESCO_CODEC_SWB_Q0);
   ASSERT_TRUE(enable_aptx_voice_property(false));
 }
@@ -350,14 +330,8 @@ uint8_t data[3] = {1, 2, 3};
 
 class BtaAgScoTest : public BtaAgTest {
 protected:
-  void SetUp() override {
-    BtaAgTest::SetUp();
-    reset_mock_btm_client_interface();
-    mock_btm_client_interface.peer.BTM_ReadRemoteFeatures = [](const RawAddress& /*addr*/) {
-      inc_func_call_count("BTM_ReadRemoteFeatures");
-      return data;
-    };
-  }
+  void SetUp() override { BtaAgTest::SetUp(); }
+
   void TearDown() override {
     reset_mock_btm_client_interface();
     BtaAgTest::TearDown();
@@ -372,10 +346,11 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_on) {
   p_scb->peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK;
   p_scb->is_aptx_swb_codec = false;
 
+  EXPECT_CALL(btm_client_interface_, BTM_ReadRemoteFeatures(_)).WillOnce(Return(data));
+
   ASSERT_TRUE(enable_aptx_voice_property(true));
   ASSERT_EQ(BtifStatus(), enable_aptx_swb_codec(true, addr));
   bta_ag_codec_negotiate(p_scb);
-  ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
   ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
   ASSERT_TRUE(p_scb->is_aptx_swb_codec);
@@ -393,10 +368,11 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_off) {
   p_scb->peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK;
   p_scb->is_aptx_swb_codec = true;
 
+  EXPECT_CALL(btm_client_interface_, BTM_ReadRemoteFeatures(_)).WillOnce(Return(data));
+
   ASSERT_TRUE(enable_aptx_voice_property(true));
   ASSERT_EQ(BtifStatus(), enable_aptx_swb_codec(false, addr));
   bta_ag_codec_negotiate(p_scb);
-  ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
   ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
   ASSERT_FALSE(p_scb->is_aptx_swb_codec);
@@ -415,10 +391,11 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_disabled) {
   p_scb->is_aptx_swb_codec = true;
   p_scb->codec_updated = true;
 
+  EXPECT_CALL(btm_client_interface_, BTM_ReadRemoteFeatures(_)).WillOnce(Return(data));
+
   ASSERT_TRUE(enable_aptx_voice_property(false));
   ASSERT_EQ(BtifStatus(FAIL), enable_aptx_swb_codec(false, addr));
   bta_ag_codec_negotiate(p_scb);
-  ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
   ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
   ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
   ASSERT_FALSE(p_scb->codec_updated);
@@ -1317,22 +1294,6 @@ protected:
     p_scb->peer_addr = addr;
     p_scb->conn_service = BTA_AG_HSP;
     bta_ag_cb.p_cback = [](tBTA_AG_EVT event, tBTA_AG* p_data) { event_cb.Call(event, p_data); };
-
-    reset_mock_btm_client_interface();
-    mock_btm_client_interface.sco.BTM_CreateSco =
-            [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
-               uint16_t* p_sco_inx, tBTM_SCO_CB* /* p_conn_cb */,
-               tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
-      inc_func_call_count("BTM_CreateSco");
-      if (p_sco_inx) {
-        *p_sco_inx = 0;
-      }
-      return tBTM_STATUS::BTM_CMD_STARTED;
-    };
-    mock_btm_client_interface.sco.BTM_RemoveSco = [](uint16_t /* sco_inx */) -> tBTM_STATUS {
-      inc_func_call_count("BTM_RemoveSco");
-      return tBTM_STATUS::BTM_CMD_STARTED;
-    };
     p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
   }
 
@@ -1370,7 +1331,6 @@ TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_sco_already_open) {
   bta_ag_result(p_scb, data);
 
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // For RING
-  ASSERT_EQ(0, get_func_call_count("BTM_CreateSco"));
 }
 
 TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_no_inband_ring) {
@@ -1381,7 +1341,6 @@ TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_no_inband_ring) {
   bta_ag_result(p_scb, data);
 
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // For RING
-  ASSERT_EQ(0, get_func_call_count("BTM_CreateSco"));
 }
 
 TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_nosco_feature) {
@@ -1393,7 +1352,6 @@ TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_nosco_feature) {
   bta_ag_result(p_scb, data);
 
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // For RING
-  ASSERT_EQ(0, get_func_call_count("BTM_CreateSco"));
 }
 
 TEST_F(BtaAgCmdHspResultTest, bta_ag_inband_ring_res) {

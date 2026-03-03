@@ -59,8 +59,8 @@ protected:
   void SetUp() override {
     BtaWithFakesTest::SetUp();
     set_security_client_interface(mock_security_client_interface_);
+    set_mock_btm_client_interface(&mock_btm_client_interface_);
     reset_mock_function_count_map();
-    reset_mock_btm_client_interface();
     ASSERT_NE(get_btm_client_interface().lifecycle.btm_init, nullptr);
     ASSERT_NE(get_btm_client_interface().lifecycle.btm_free, nullptr);
 
@@ -73,26 +73,25 @@ protected:
             [](const bluetooth::Uuid& /*p_app_uuid128*/, const std::string /*name*/,
                stack::tGATT_CBACK* /*p_cb_info*/,
                bool /*eatt_support*/) -> tGATT_IF { return kGattRegisteredIf; };
-    mock_btm_client_interface.eir.BTM_GetEirSupportedServices =
-            [](uint32_t* /*p_eir_uuid*/, uint8_t** /*p*/, uint8_t /*max_num_uuid16*/,
-               uint8_t* /*p_num_uuid16*/) -> uint8_t { return 0; };
-    mock_btm_client_interface.eir.BTM_WriteEIR = [](BT_HDR* p_buf) -> tBTM_STATUS {
+
+    ON_CALL(mock_btm_client_interface_, BTM_GetEirSupportedServices)
+            .WillByDefault(::testing::Return(0));
+    ON_CALL(mock_btm_client_interface_, BTM_WriteEIR).WillByDefault([](BT_HDR* p_buf) {
       osi_free(p_buf);
       return tBTM_STATUS::BTM_SUCCESS;
-    };
+    });
 
     ON_CALL(mock_security_client_interface_, BTM_SecRegister(::testing::_))
       .WillByDefault(::testing::Return(true));
   }
 
   void TearDown() override {
-    mock_btm_client_interface.eir.BTM_WriteEIR = {};
-    mock_btm_client_interface.eir.BTM_GetEirSupportedServices = {};
     test::mock::stack_app::appRegister = {};
 
     bluetooth::testing::stack::rnr::reset_interface();
     bluetooth::testing::stack::l2cap::reset_interface();
     bluetooth::hci::testing::mock_controller_.reset();
+    reset_mock_btm_client_interface();
     reset_mock_security_client_interface();
 
     BtaWithFakesTest::TearDown();
@@ -100,6 +99,7 @@ protected:
 
   bluetooth::testing::stack::l2cap::Mock mock_l2cap_interface_;
   bluetooth::testing::stack::rnr::Mock mock_stack_rnr_interface_;
+  MockBtmClientInterface mock_btm_client_interface_;
   MockSecurityClientInterface mock_security_client_interface_;
 };
 
