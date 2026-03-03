@@ -18,16 +18,16 @@ package com.android.bluetooth.le_scan
 
 // All values of this class are accessed from native; see com_android_bluetooth_scan.cpp
 data class FilterParams(
-    @get:JvmName("clientInterface") val clientInterface: Int,
-    @get:JvmName("filterIndex") val filterIndex: Int,
-    @get:JvmName("featureSelection") val featureSelection: Int,
-    @get:JvmName("listLogicType") val listLogicType: Int,
-    @get:JvmName("filterLogicType") val filterLogicType: Int,
-    @get:JvmName("rssiHighValue") val rssiHighValue: Int,
-    @get:JvmName("rssiLowValue") val rssiLowValue: Int,
-    @get:JvmName("delayMode") val delayMode: Int,
-    @get:JvmName("foundTimeout") val foundTimeout: Int,
-    @get:JvmName("lostTimeout") val lostTimeout: Int,
-    @get:JvmName("foundTimeoutCount") val foundTimeoutCount: Int,
-    @get:JvmName("numberOfTrackEntries") val numberOfTrackEntries: Int,
+    @JvmField val clientInterface: Int,
+    @JvmField val filterIndex: Int,
+    @JvmField val featureSelection: Int,
+    @JvmField val listLogicType: Int,
+    @JvmField val filterLogicType: Int,
+    @JvmField val rssiHighValue: Int,
+    @JvmField val rssiLowValue: Int,
+    @JvmField val delayMode: Int,
+    @JvmField val foundTimeout: Int,
+    @JvmField val lostTimeout: Int,
+    @JvmField val foundTimeoutCount: Int,
+    @JvmField val numberOfTrackEntries: Int,
 )
