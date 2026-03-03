@@ -279,12 +279,13 @@ bool btm_sec_register(const BtmAppReg& app_reg) {
   log::verbose("SMP_Register(btm_proc_smp_cback)");
   SMP_Register(btm_proc_smp_cback);
 
+  BtmSecurity::Get().app_ = &app_reg;
+
   /* if no IR is loaded, need to regenerate all the keys */
   if (BtmSecurity::Get().devcb_.id_keys.ir == ZERO_OCTET16) {
     btm_ble_reset_id();
   }
 
-  BtmSecurity::Get().app_ = &app_reg;
   return true;
 }
 
