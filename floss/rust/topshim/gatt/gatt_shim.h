@@ -96,7 +96,6 @@ public:
   tBT_STATUS_LEGACY disconnect(int server_if, RawAddress bd_addr, int conn_id) const;
   tBT_STATUS_LEGACY add_service(int server_if, ::rust::Slice<const btgatt_db_element_t> service,
                                 size_t service_count) const;
-  tBT_STATUS_LEGACY stop_service(int server_if, int service_handle) const;
   tBT_STATUS_LEGACY delete_service(int server_if, int service_handle) const;
   tBT_STATUS_LEGACY send_indication(int server_if, int attribute_handle, int conn_id, int confirm,
                                     ::rust::Vec<uint8_t> value, size_t length) const;

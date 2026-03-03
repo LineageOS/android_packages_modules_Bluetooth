@@ -140,11 +140,6 @@ static void btapp_gatts_disconnect_cback(tGATT_IF server_if, const RawAddress& r
                    to_java_transport(transport), false, remote_bda);
 }
 
-static void btapp_gatts_stop_service_cback(tGATT_STATUS status, tGATT_IF server_if,
-                                           uint16_t service_id) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->service_stopped_cb, status, server_if, service_id);
-}
-
 static void btapp_gatts_delete_service_cback(tGATT_STATUS status, tGATT_IF server_if,
                                              uint16_t service_id) {
   HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->service_deleted_cb, status, server_if, service_id);
@@ -258,7 +253,6 @@ static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
         .p_dereg_cb = btapp_gatts_dereg_cback,
         .p_connect_cb = btapp_gatts_connect_cback,
         .p_disconnect_cb = btapp_gatts_disconnect_cback,
-        .p_stop_service_cb = btapp_gatts_stop_service_cback,
         .p_delete_service_cb = btapp_gatts_delete_service_cback,
         .p_read_characteristic_cb = btapp_gatts_read_characteristic_cback,
         .p_read_descriptor_cb = btapp_gatts_read_descriptor_cback,
@@ -380,11 +374,6 @@ static BtStatus btif_gatts_add_service(int server_if, const btgatt_db_element_t*
           BindOnce(&add_service_impl, server_if, std::vector(service, service + service_count)));
 }
 
-static BtStatus btif_gatts_stop_service(int /* server_if */, int service_handle) {
-  CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&BTA_GATTS_StopService, service_handle));
-}
-
 static BtStatus btif_gatts_delete_service(int /* server_if */, int service_handle) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(BindOnce(&BTA_GATTS_DeleteService, service_handle));
@@ -480,7 +469,6 @@ const btgatt_server_interface_t btgattServerInterface = {btif_gatts_register_app
                                                          btif_gatts_open,
                                                          btif_gatts_close,
                                                          btif_gatts_add_service,
-                                                         btif_gatts_stop_service,
                                                          btif_gatts_delete_service,
                                                          btif_gatts_send_indication,
                                                          btif_gatts_send_response,

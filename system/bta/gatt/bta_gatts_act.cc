@@ -267,23 +267,6 @@ void bta_gatts_delete_service(uint16_t service_id) {
   }
 }
 
-void bta_gatts_stop_service(uint16_t service_id) {
-  tBTA_GATTS_SRVC_CB* p_srvc_cb = bta_gatts_find_srvc_cb_by_srvc_id(&bta_gatts_cb, service_id);
-  if (p_srvc_cb == NULL) {
-    log::error("can't stop service - no srvc_cb found");
-    return;
-  }
-
-  tBTA_GATTS_RCB* p_rcb = &bta_gatts_cb.rcb[p_srvc_cb->rcb_idx];
-
-  GATTS_StopService(p_srvc_cb->service_id);
-  log::error("service_id={}", p_srvc_cb->service_id);
-
-  if (p_rcb->p_cback && p_rcb->p_cback->p_stop_service_cb) {
-    p_rcb->p_cback->p_stop_service_cb(GATT_SUCCESS, p_rcb->gatt_if, p_srvc_cb->service_id);
-  }
-}
-
 void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
                         std::unique_ptr<tGATTS_RSP> rsp) {
   if (GATTS_SendRsp(conn_id, trans_id, status, rsp.get()) != GATT_SUCCESS) {

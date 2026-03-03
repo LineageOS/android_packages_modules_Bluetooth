@@ -167,11 +167,6 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->SendRsp(conn_id, trans_id, status, std::move(p_msg));
 }
-void BTA_GATTS_StopService(uint16_t service_id) {
-  log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->StopService(service_id);
-}
-
 void BTA_GATTS_InitBonded(void) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->InitBonded();

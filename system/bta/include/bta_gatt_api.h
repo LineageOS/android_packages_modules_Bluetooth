@@ -933,19 +933,6 @@ void BTA_GATTS_DeleteService(uint16_t service_id);
 
 /*******************************************************************************
  *
- * Function         BTA_GATTS_StopService
- *
- * Description      This function is called to stop a service.
- *
- * Parameters       service_id - service to be topped.
- *
- * Returns          None
- *
- ******************************************************************************/
-void BTA_GATTS_StopService(uint16_t service_id);
-
-/*******************************************************************************
- *
  * Function         BTA_GATTS_HandleValueIndication
  *
  * Description      This function is called to read a characteristics

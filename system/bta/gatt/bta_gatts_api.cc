@@ -105,10 +105,6 @@ void BTA_GATTS_DeleteService(uint16_t service_id) {
   do_in_main_thread(base::BindOnce(&bta_gatts_delete_service, service_id));
 }
 
-void BTA_GATTS_StopService(uint16_t service_id) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_stop_service, service_id));
-}
-
 void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
                                      bool need_confirm) {
   if (value.size() > GATT_MAX_ATTR_LEN) {

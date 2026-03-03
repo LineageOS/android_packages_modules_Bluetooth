@@ -48,13 +48,6 @@ void ServiceAddedCallback(int status, int server_if, const btgatt_db_element_t* 
   semaphore_post(instance->service_added_callback_sem_);
 }
 
-void ServiceStoppedCallback(int status, int server_if, int srvc_handle) {
-  instance->status_ = status;
-  instance->server_interface_id_ = server_if;
-  instance->service_handle_ = srvc_handle;
-  semaphore_post(instance->service_stopped_callback_sem_);
-}
-
 void ServiceDeletedCallback(int status, int server_if, int srvc_handle) {
   instance->status_ = status;
   instance->server_interface_id_ = server_if;
@@ -69,7 +62,6 @@ static const btgatt_client_callbacks_t client_callbacks = {
 static const btgatt_server_callbacks_t server_callbacks = {
         .register_server_cb = RegisterServerCallback,
         .service_added_cb = ServiceAddedCallback,
-        .service_stopped_cb = ServiceStoppedCallback,
         .service_deleted_cb = ServiceDeletedCallback,
 };
 
