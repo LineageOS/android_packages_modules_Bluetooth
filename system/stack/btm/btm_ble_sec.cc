@@ -1733,6 +1733,11 @@ void btm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, tBTM_STATUS re
  ******************************************************************************/
 /** This function is to notify application new keys have been generated. */
 static void btm_notify_new_key(uint8_t key_type) {
+  if (BtmSecurity::Get().app_ == nullptr) {
+    log::warn("No app registered");
+    return;
+  }
+
   tBTM_BLE_LOCAL_KEYS* p_local_keys = nullptr;
 
   log::verbose("key_type={}", key_type);
