@@ -1889,11 +1889,13 @@ public class RemoteDevices {
         mAdapterService.aclStateChangeBroadcastCallback(connectionChangeConsumer);
 
         // Send the ACTION_KEY_MISSING Intent here if the link is disconnected in a bond-loss
-        // scenario.
+        // scenario, and none of the transports are connected indicating that we are done.
         if (Utils.isAutonomousRepairingSupported()
                 && mAdapterService.isBondLost(device)
                 && newState == AbstractionLayer.BT_ACL_STATE_DISCONNECTED
-                && deviceProperties.getLastBondLossReason().isPresent()) {
+                && deviceProperties.getLastBondLossReason().isPresent()
+                && deviceProperties.getConnectionHandle(TRANSPORT_LE) == BluetoothDevice.ERROR
+                && deviceProperties.getConnectionHandle(TRANSPORT_BREDR) == BluetoothDevice.ERROR) {
             sendKeyMissingIntent(device, deviceProperties.getLastBondLossReason().get());
             deviceProperties.setLastBondLossReason(Optional.empty()); // Reset once sent.
         }
