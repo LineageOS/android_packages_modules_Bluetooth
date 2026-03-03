@@ -29,7 +29,8 @@
     { "name": "libaptxhd_enc_tests" },
     { "name": "libbluetooth_private_gatt_rs_test" },
     { "name": "libbluetooth_log_test" },
-    { "name": "libbluetooth_offload_hci_test" }
+    { "name": "libbluetooth_offload_hci_test" },
+    { "name": "libbluetooth_rs_test" }
   ],
   "presubmit": [
     // android_test targets
@@ -63,7 +64,8 @@
     { "name": "libaptxhd_enc_tests" },
     { "name": "libbluetooth_private_gatt_rs_test" },
     { "name": "libbluetooth_log_test" },
-    { "name": "libbluetooth_offload_hci_test" }
+    { "name": "libbluetooth_offload_hci_test" },
+    { "name": "libbluetooth_rs_test" }
   ],
   "hwasan-presubmit": [
     { "name": "CtsBluetoothTestCases" },
