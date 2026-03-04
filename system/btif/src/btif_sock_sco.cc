@@ -264,7 +264,7 @@ static void connection_request_cb(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* data)
 
   sock_connect_signal_t connect_signal;
   connect_signal.size = sizeof(connect_signal);
-  if (com_android_bluetooth_flags_pseudo_addr_in_socket_connect_signal()) {
+  {
     RawAddress pseudo_addr = get_btm_client_interface()
                                      .peer.BTM_GetConnectedTransportAddress(conn_data->bd_addr)
                                      .first;
@@ -274,8 +274,6 @@ static void connection_request_cb(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* data)
       log::warn("BTM_GetConnectedTransportAddress returned empty pseudo addr, using public addr");
       connect_signal.bd_addr = conn_data->bd_addr;
     }
-  } else {
-    connect_signal.bd_addr = conn_data->bd_addr;
   }
   connect_signal.channel = 0;
   connect_signal.status = 0;
