@@ -82,16 +82,6 @@ flag {
 }
 
 flag {
-    name: "device_record_wipe_ranking"
-    namespace: "bluetooth"
-    description: "New ranking for wiping oldest device record"
-    bug: "444268274"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "btm_iocaps_sysprop_override"
     namespace: "bluetooth"
     description: "Override IO capabilities using system properties"
