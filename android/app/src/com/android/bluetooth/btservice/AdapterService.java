@@ -4120,6 +4120,15 @@ public class AdapterService extends Service {
         return mAdapterProperties.isLeConnectedIsochronousStreamPeripheralSupported();
     }
 
+    /**
+     * Check if the LE BIG Channel Classification feature is supported.
+     *
+     * @return true, if the LE BIG Channel Classification is supported
+     */
+    public boolean isLeBigSetChannelClassificationSupported() {
+        return mAdapterProperties.isLeBigSetChannelClassificationSupported();
+    }
+
     public int getLeMaximumAdvertisingDataLength() {
         return mAdapterProperties.getLeMaximumAdvertisingDataLength();
     }

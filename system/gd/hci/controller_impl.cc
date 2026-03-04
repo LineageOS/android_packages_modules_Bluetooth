@@ -616,6 +616,7 @@ struct ControllerImpl::impl {
     vendor_capabilities_.sniff_offload_support_ = 0x00;
     vendor_capabilities_.vendor_connection_handle_min_ = 0;
     vendor_capabilities_.vendor_connection_handle_max_ = 0;
+    vendor_capabilities_.big_set_channel_map_classification_support_ = 0x00;
 
     if (!complete_view.IsValid()) {
       vendor_promise.set_value();
@@ -709,13 +710,17 @@ struct ControllerImpl::impl {
     }
 
     // v1.06
-    if (com_android_bluetooth_flags_report_vendor_events_from_acl()) {
-      auto v106 = LeGetVendorCapabilitiesComplete106View::Create(v105);
-      if (!v106.IsValid()) {
-        log::info("invalid data for hci requirements v1.06");
-      } else {
+    auto v106 = LeGetVendorCapabilitiesComplete106View::Create(v105);
+    if (!v106.IsValid()) {
+      log::info("invalid data for hci requirements v1.06");
+    } else {
+      if (com_android_bluetooth_flags_report_vendor_events_from_acl()) {
         vendor_capabilities_.vendor_connection_handle_min_ = v106.GetVendorConnectionHandleMin();
         vendor_capabilities_.vendor_connection_handle_max_ = v106.GetVendorConnectionHandleMax();
+      }
+      if (com_android_bluetooth_flags_leaudio_broadcast_source_channel_map_classification_improvement()) {
+        vendor_capabilities_.big_set_channel_map_classification_support_ =
+                v106.GetBigSetChannelMapClassificationSupport();
       }
     }
 
