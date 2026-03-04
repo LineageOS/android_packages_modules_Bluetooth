@@ -69,16 +69,6 @@ flag {
 }
 
 flag {
-    name: "get_profile_oneway"
-    namespace: "bluetooth"
-    description: "do not block calling thread when fetching profiles"
-    bug: "438829357"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "consistent_battery_level"
     namespace: "bluetooth"
     description: "Do not reset battey level from BAS to prevent battey level fluctuation"
