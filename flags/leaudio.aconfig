@@ -406,16 +406,6 @@ flag {
 }
 
 flag {
-    name: "coordinated_remove_bond"
-    namespace: "bluetooth"
-    description: "Remove all coordinated set members when any member is requested to be removed"
-    bug: "454419225"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_broadcast_sw_config_quality_logic"
     namespace: "bluetooth"
     description: "Improve broadcast config selection by using quality-based logic instead of context type"

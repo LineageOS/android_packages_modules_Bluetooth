@@ -3226,18 +3226,16 @@ public class AdapterService extends Service {
         deviceProp.setBondingInitiatedLocally(false);
 
         Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>(List.of(device));
-        if (Flags.coordinatedRemoveBond()) {
-            Optional<CsipSetCoordinatorService> csipSetCoordinatorService =
-                    getCsipSetCoordinatorService();
-            if (csipSetCoordinatorService.isPresent()) {
-                List<BluetoothDevice> groupDevices =
-                        csipSetCoordinatorService
-                                .get()
-                                .getGroupDevicesOrdered(device, BluetoothUuid.CAP);
-                if (!groupDevices.isEmpty()) {
-                    Log.i(TAG, header + "Group devices found: " + groupDevices);
-                    devices.addAll(groupDevices);
-                }
+        Optional<CsipSetCoordinatorService> csipSetCoordinatorService =
+                getCsipSetCoordinatorService();
+        if (csipSetCoordinatorService.isPresent()) {
+            List<BluetoothDevice> groupDevices =
+                    csipSetCoordinatorService
+                            .get()
+                            .getGroupDevicesOrdered(device, BluetoothUuid.CAP);
+            if (!groupDevices.isEmpty()) {
+                Log.i(TAG, header + "Group devices found: " + groupDevices);
+                devices.addAll(groupDevices);
             }
         }
 
