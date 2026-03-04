@@ -9206,7 +9206,7 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
-    public void testNotifyReceiveStateChanged_addClientForBigChannelMap() {
+    public void testNotifyReceiveStateChanged_addClientForBigChannelMapwhenPaSynced() {
         // Mock that the broadcast is local
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
         prepareConnectedDeviceGroup();
@@ -9216,6 +9216,30 @@ public class BassClientServiceTest {
 
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is called with ADD action
+        verify(mLeAudioService)
+                .setBigChannelMapClassification(
+                        eq(BassClientService.SetBigChannelMapClassificationAction.ADD.getValue()),
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1.getBroadcastId()));
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION,
+        Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION_IMPROVEMENT
+    })
+    public void testNotifyReceiveStateChanged_addClientForBigChannelMapwhenBisSynced() {
+        // Mock that the broadcast is local
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ true);
 
         // Verify that setBigChannelMapClassification is called with ADD action
         verify(mLeAudioService)

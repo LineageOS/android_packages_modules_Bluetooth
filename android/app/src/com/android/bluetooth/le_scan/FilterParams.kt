@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 
-//! Crate root for the Unified Bluetooth Rust Stack.
+package com.android.bluetooth.le_scan
 
-/// Common Bluetooth data types.
-pub mod types;
-
-pub use types::*;
+// All values of this class are accessed from native; see com_android_bluetooth_scan.cpp
+data class FilterParams(
+    @JvmField val clientInterface: Int,
+    @JvmField val filterIndex: Int,
+    @JvmField val featureSelection: Int,
+    @JvmField val listLogicType: Int,
+    @JvmField val filterLogicType: Int,
+    @JvmField val rssiHighValue: Int,
+    @JvmField val rssiLowValue: Int,
+    @JvmField val delayMode: Int,
+    @JvmField val foundTimeout: Int,
+    @JvmField val lostTimeout: Int,
+    @JvmField val foundTimeoutCount: Int,
+    @JvmField val numberOfTrackEntries: Int,
+)

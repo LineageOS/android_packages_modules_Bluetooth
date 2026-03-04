@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include "mock_hcic_layer.h"
+#include "mock_stack_hcic_layer.h"
 
 static hcic::MockHcicInterface* hcic_interface = nullptr;
 
-void hcic::SetMockHcicInterface(MockHcicInterface* interface) { hcic_interface = interface; }
+void hcic::SetMockHcicInterface(hcic::MockHcicInterface* interface) { hcic_interface = interface; }
 
 void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
                                    uint8_t sca, uint8_t packing, uint8_t framing,
@@ -46,10 +46,6 @@ void btsnd_hcic_ble_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*,
 void btsnd_hcic_ble_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
                                base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   hcic_interface->CreateCis(num_cis, cis_cfg, std::move(cb));
-}
-
-static void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
-  hcic_interface->Disconnect(handle, reason);
 }
 
 void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
@@ -123,25 +119,5 @@ void btsnd_hcic_ble_big_terminate_sync(uint8_t big_handle,
 }
 
 namespace bluetooth::legacy::hci {
-
-class MockInterface : public Interface {
-public:
-  virtual void Disconnect(uint16_t handle, uint8_t reason) const override {
-    btsnd_hcic_disconnect(handle, reason);
-  }
-  virtual void ChangeConnectionPacketType(uint16_t /* handle */,
-                                          uint16_t /* packet_types */) const override {
-    FAIL();
-  }
-  virtual void StartRoleSwitch(const RawAddress& /* bd_addr */, uint8_t /* role */) const override {
-    FAIL();
-  }
-  virtual void ConfigureDataPath(hci_data_direction_t /* data_path_direction */,
-                                 uint8_t /* data_path_id */,
-                                 std::vector<uint8_t> /* vendor_config */) const override {
-    FAIL();
-  }
-} interface_;
-
-const Interface& GetInterface() { return interface_; }
+const Interface& GetInterface() { return *hcic_interface; }
 }  // namespace bluetooth::legacy::hci

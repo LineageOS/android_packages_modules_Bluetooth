@@ -177,7 +177,7 @@ class ScanNativeCallback(
         filtIndex: Int,
         advState: Int,
         advInfoPresent: Int,
-        address: String?,
+        address: String,
         addrType: Int,
         txPower: Int,
         rssiValue: Int,

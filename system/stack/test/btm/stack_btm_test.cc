@@ -34,10 +34,10 @@
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/l2cap/l2c_int.h"
+#include "stack/mock/mock_stack_hcic_layer.h"
 #include "stack/rnr/remote_name_request.h"
 #include "stack/test/btm/btm_test_fixtures.h"
 #include "test/common/mock_functions.h"
-#include "test/mock/mock_legacy_hci_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
 
 using ::testing::_;
@@ -81,7 +81,7 @@ protected:
     bluetooth::hci::testing::mock_hci_layer_ =
             std::make_unique<bluetooth::hci::testing::MockHciLayer>();
     bluetooth::hci::testing::mock_gd_shim_handler_ = up_handler_;
-    bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);
+    hcic::SetMockHcicInterface(&legacy_hci_mock_);
     EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, RegisterForScoConnectionRequests(_));
     EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, RegisterForDisconnects(_));
   }
@@ -96,7 +96,7 @@ protected:
     StackBtmTest::TearDown();
   }
   bluetooth::common::BidiQueue<bluetooth::hci::ScoView, bluetooth::hci::ScoBuilder> sco_queue_{10};
-  bluetooth::legacy::hci::testing::MockInterface legacy_hci_mock_;
+  hcic::MockHcicInterface legacy_hci_mock_;
   bluetooth::os::Thread* up_thread_;
   bluetooth::os::Handler* up_handler_;
   bluetooth::os::Thread* down_thread_;

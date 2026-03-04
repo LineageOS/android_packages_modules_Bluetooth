@@ -70,9 +70,9 @@ class BluetoothSupervisorNew(
         Log.i(TAG, "Instance created, waiting for user")
     }
 
-    override fun onBluetoothDisallowed() {
-        Log.i(TAG, "onBluetoothDisallowed")
-        activeBms?.onBluetoothDisallowed()
+    override fun onRestrictionChange() {
+        Log.i(TAG, "onRestrictionChange")
+        activeBms?.onRestrictionChange()
     }
 
     override fun onBootCompleted() {

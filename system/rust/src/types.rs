@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.audio_util;
+//! Common Bluetooth data types.
 
-/** Carries Media Player Information */
-public class PlayerInfo {
-    public int id;
-    public String name;
-    public boolean browsable;
-}
+/// Bluetooth address types.
+pub mod address;
+
+pub use address::*;

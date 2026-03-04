@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-#include "test/mock/mock_legacy_hci_interface.h"
+package com.android.bluetooth.btservice
 
-#include <stddef.h>
+import com.android.bluetooth.profile.NativeInterface
 
-#include "stack/include/hcimsgs.h"
+/** Native interface to BQR */
+class BluetoothQualityReportNativeInterface(nativeCallback: BluetoothQualityReportNativeCallback) :
+    NativeInterface<BluetoothQualityReportNativeCallback>(nativeCallback) {
 
-namespace bluetooth::legacy::hci {
-namespace testing {
-const MockInterface* interface_;
-void SetMock(const MockInterface& mock) { interface_ = &mock; }
-}  // namespace testing
-const Interface& GetInterface() { return *testing::interface_; }
-}  // namespace bluetooth::legacy::hci
+    fun init() {
+        initNative()
+    }
+
+    override fun cleanup() {
+        cleanupNative()
+    }
+
+    private external fun initNative()
+
+    private external fun cleanupNative()
+}

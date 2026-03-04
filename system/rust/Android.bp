@@ -38,3 +38,22 @@ rust_ffi_static {
     ],
     host_supported: true,
 }
+
+rust_test {
+    name: "libbluetooth_rs_test",
+    defaults: ["libbluetooth_rs_defaults"],
+    srcs: [
+        "src/lib.rs",
+    ],
+    host_supported: true,
+    test_suites: [
+        "general-tests",
+    ],
+    target: {
+        android: {
+            test_suites: [
+                "mts-bt",
+            ],
+        },
+    },
+}

@@ -30,7 +30,7 @@
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "osi/include/properties.h"
-#include "test/mock/mock_legacy_hci_interface.h"
+#include "stack/mock/mock_stack_hcic_layer.h"
 #include "test/mock/mock_main_shim_entry.h"
 
 using ::testing::_;
@@ -378,7 +378,7 @@ public:
     set_com_android_bluetooth_flags_leaudio_codec_id_support(true);
     set_mock_offload_capabilities(offload_capabilities_none);
 
-    bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);
+    hcic::SetMockHcicInterface(&legacy_hci_mock_);
 
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
@@ -422,7 +422,7 @@ public:
 
   std::vector<const char*> properties_;
   CodecManager* codec_manager;
-  bluetooth::legacy::hci::testing::MockInterface legacy_hci_mock_;
+  hcic::MockHcicInterface legacy_hci_mock_;
 
 protected:
   void RegisterSourceHalClientMock() {

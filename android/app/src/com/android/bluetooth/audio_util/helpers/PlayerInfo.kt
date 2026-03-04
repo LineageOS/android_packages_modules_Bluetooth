@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.audio_util
 
-// All values of this class are accessed from native; see com_android_bluetooth_scan.cpp
-public record FilterParams(
-        int clientInterface,
-        int filterIndex,
-        int featureSelection,
-        int listLogicType,
-        int filterLogicType,
-        int rssiHighValue,
-        int rssiLowValue,
-        int delayMode,
-        int foundTimeout,
-        int lostTimeout,
-        int foundTimeoutCount,
-        int numberOfTrackEntries) {}
+/**
+ * Carries Media Player Information.
+ *
+ * All values of this class are accessed from native; see com_android_bluetooth_avrcp_target.cpp
+ */
+data class PlayerInfo(
+    @JvmField val id: Int,
+    @JvmField val name: String,
+    @JvmField val browsable: Boolean,
+)

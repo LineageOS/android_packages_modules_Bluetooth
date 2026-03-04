@@ -885,7 +885,6 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockBtaLeAudioHalVerifier",
-        ":TestMockLegacyHciInterface",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
         ":TestStubOsi",
@@ -922,7 +921,7 @@ cc_test {
         "libbluetooth_log",
         "libbluetooth_types",
         "libbt-common",
-
+        "libbt-stack-mock",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1834,7 +1833,6 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestCommonSyncMainHandler",
-        ":TestMockLegacyHciInterface",
         ":TestMockMainShimEntry",
         ":TestStubOsi",
         "le_audio/ascs/ascs.cc",

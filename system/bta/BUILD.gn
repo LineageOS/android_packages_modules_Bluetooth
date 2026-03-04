@@ -63,7 +63,6 @@ static_library("bta") {
     "gatt/bta_gattc_utils.cc",
     "gatt/bta_gatts_act.cc",
     "gatt/bta_gatts_api.cc",
-    "gatt/bta_gatts_main.cc",
     "gatt/bta_gatts_utils.cc",
     "gatt/database.cc",
     "gatt/database_builder.cc",
