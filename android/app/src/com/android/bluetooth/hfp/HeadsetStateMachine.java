@@ -42,7 +42,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.os.SystemProperties;
-import android.os.UserHandle;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
@@ -366,13 +365,7 @@ class HeadsetStateMachine extends StateMachine {
                 intent.putExtra(BluetoothHeadset.EXTRA_DISCONNECTED_REASON, mReason);
             }
             intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-            if (Flags.onlyBroadcastToLocalUser()) {
-                mHeadsetService.sendBroadcast(
-                        intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            } else {
-                mHeadsetService.sendBroadcastAsUser(
-                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            }
+            mHeadsetService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         }
 
         // Should not be called from enter() method
@@ -392,13 +385,7 @@ class HeadsetStateMachine extends StateMachine {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-            if (Flags.onlyBroadcastToLocalUser()) {
-                mHeadsetService.sendBroadcast(
-                        intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            } else {
-                mHeadsetService.sendBroadcastAsUser(
-                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            }
+            mHeadsetService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         }
 
         /**
@@ -1824,12 +1811,7 @@ class HeadsetStateMachine extends StateMachine {
                 BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_COMPANY_ID_CATEGORY
                         + "."
                         + Integer.toString(companyId));
-        if (Flags.onlyBroadcastToLocalUser()) {
-            mHeadsetService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-        } else {
-            mHeadsetService.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-        }
+        mHeadsetService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     private void setAudioParameters() {

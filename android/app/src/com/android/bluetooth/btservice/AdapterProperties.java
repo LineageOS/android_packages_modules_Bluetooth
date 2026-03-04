@@ -46,7 +46,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
-import android.os.UserHandle;
 import android.util.Log;
 import android.util.Pair;
 
@@ -549,12 +548,7 @@ public class AdapterProperties {
             MetricsLogger.getInstance()
                     .logProfileConnectionStateChange(device, profile, newState, prevState);
             debugLog("updateOnProfileConnectionChanged: " + logInfo);
-            if (Flags.onlyBroadcastToLocalUser()) {
-                mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            } else {
-                mService.sendBroadcastAsUser(
-                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            }
+            mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         }
     }
 
