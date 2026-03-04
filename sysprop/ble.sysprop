@@ -4,6 +4,7 @@ owner: Platform
 prop {
     api_name: "vnd_included"
     type: Boolean
+    default_value: "true"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.vnd.included"
@@ -12,6 +13,7 @@ prop {
 prop {
     api_name: "random_address_rotation_interval_min"
     type: Integer
+    default_value: "7"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.random_address_rotation_interval_min"
@@ -20,6 +22,7 @@ prop {
 prop {
     api_name: "random_address_rotation_interval_max"
     type: Integer
+    default_value: "15"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.random_address_rotation_interval_max"
@@ -28,6 +31,7 @@ prop {
 prop {
     api_name: "allow_enc_with_bredr"
     type: Boolean
+    default_value: "false"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.allow_enc_with_bredr"

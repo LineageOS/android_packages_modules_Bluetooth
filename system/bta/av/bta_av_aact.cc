@@ -114,12 +114,6 @@ constexpr char kBtmLogTag[] = "A2DP";
 /* ACL quota we are letting FW use for A2DP Offload Tx. */
 #define BTA_AV_A2DP_OFFLOAD_XMIT_QUOTA 4
 
-/* Time to wait for open from SNK when signaling is initiated from SNK. */
-/* If not, we abort and try to initiate the connection as SRC. */
-#ifndef BTA_AV_ACCEPT_OPEN_TIMEOUT_MS
-#define BTA_AV_ACCEPT_OPEN_TIMEOUT_MS (10 * 1000) /* 10 seconds */
-#endif
-
 static void bta_av_accept_open_timer_cback(void* data);
 static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb, tBT_A2DP_OFFLOAD* p_a2dp_offload);
 
@@ -1139,8 +1133,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->accept_open_timer = alarm_new("accept_open_timer");
     }
     const uint64_t accept_open_timeout =
-            android::sysprop::bluetooth::A2dp::avdt_accept_open_timeout_ms().value_or(
-                    BTA_AV_ACCEPT_OPEN_TIMEOUT_MS);
+            android::sysprop::bluetooth::A2dp::avdt_accept_open_timeout_ms();
     log::debug("accept_open_timeout = {} ms", accept_open_timeout);
     alarm_set_on_mloop(p_scb->accept_open_timer, accept_open_timeout,
                        bta_av_accept_open_timer_cback, UINT_TO_PTR(p_scb->hdi));

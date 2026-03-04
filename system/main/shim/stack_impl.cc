@@ -116,7 +116,7 @@ void StackImpl::StartEverything() {
     if (!com_android_bluetooth_flags_unify_timeout_property()) {
       start_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
     } else {
-      if (android::sysprop::bluetooth::Hardware::degraded_performance_mode().value_or(false) ||
+      if (android::sysprop::bluetooth::Hardware::degraded_performance_mode() ||
           os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
         log::warn("Running in degraded performance mode due to slow hardware");
         start_timeout = std::chrono::milliseconds(8000);

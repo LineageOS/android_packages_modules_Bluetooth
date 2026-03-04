@@ -322,7 +322,7 @@ static bool lazy_initialize(void) {
   // on those platforms, if we go to sleep with a timer armed, it will
   // continue counting during sleep. to prevent unwanted timer fires on
   // those platforms, use CLOCK_MONOTONIC and don't count up during sleep.
-  bool wakeup_supported = android::sysprop::bluetooth::Hardware::wakeup_supported().value_or(true);
+  bool wakeup_supported = android::sysprop::bluetooth::Hardware::wakeup_supported();
   clockid_t alarm_clockid = wakeup_supported ? CLOCK_BOOTTIME_ALARM : CLOCK_MONOTONIC;
 
   std::lock_guard<std::mutex> lock(alarms_mutex);

@@ -4,6 +4,7 @@ owner: Platform
 prop {
     api_name: "absolute_volume"
     type: Boolean
+    default_value: "true"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.avrcp.absolute_volume.enabled"
@@ -22,6 +23,7 @@ prop {
 prop {
     api_name: "isAvrcpControllerCoverArtEnabled"
     type: Boolean
+    default_value: "true"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.avrcp.controller.coverart.enabled"

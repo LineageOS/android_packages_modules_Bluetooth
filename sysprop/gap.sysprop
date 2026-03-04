@@ -4,6 +4,7 @@ owner: Platform
 prop {
     api_name: "min_key_size"
     type: Integer
+    default_value: "7"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.gap.min_key_size"

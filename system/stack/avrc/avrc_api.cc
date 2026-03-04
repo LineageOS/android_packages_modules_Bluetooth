@@ -101,7 +101,7 @@ static void avrc_start_cmd_timer(uint8_t handle, uint8_t label, uint8_t msg_mask
  *
  *****************************************************************************/
 bool avrcp_absolute_volume_is_enabled() {
-  return android::sysprop::bluetooth::Avrcp::absolute_volume().value_or(true);
+  return android::sysprop::bluetooth::Avrcp::absolute_volume();
 }
 
 /******************************************************************************
@@ -114,7 +114,7 @@ bool avrcp_absolute_volume_is_enabled() {
  *
  *****************************************************************************/
 bool avrcp_controller_cover_art_enabled() {
-  return android::sysprop::bluetooth::Avrcp::isAvrcpControllerCoverArtEnabled().value_or(true);
+  return android::sysprop::bluetooth::Avrcp::isAvrcpControllerCoverArtEnabled();
 }
 
 /******************************************************************************

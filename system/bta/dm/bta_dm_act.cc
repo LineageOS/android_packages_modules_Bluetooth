@@ -78,11 +78,6 @@
 using bluetooth::Uuid;
 using namespace bluetooth;
 
-static bool ble_vnd_is_included() {
-  // replace build time config BLE_VND_INCLUDED with runtime
-  return android::sysprop::bluetooth::Ble::vnd_included().value_or(true);
-}
-
 static void bta_dm_check_av();
 
 /* Extended Inquiry Response */
@@ -252,7 +247,7 @@ void BTA_dm_on_hw_on(const std::string local_name) {
   get_btm_client_interface().link_policy.BTM_WritePageTimeout(
           osi_property_get_int32(PROPERTY_PAGE_TIMEOUT, p_bta_dm_cfg->page_timeout));
 
-  if (ble_vnd_is_included()) {
+  if (android::sysprop::bluetooth::Ble::vnd_included()) {
     get_btm_client_interface().ble.BTM_BleReadControllerFeatures(
             bta_dm_ctrl_features_rd_cmpl_cback);
   } else {
@@ -340,8 +335,7 @@ void bta_dm_disable() {
   if (BTM_GetNumAclLinks() == 0) {
     // Time to wait after receiving shutdown request to delay the actual
     // shutdown process. This time may be zero which invokes immediate shutdown.
-    const uint64_t disable_delay_ms =
-            android::sysprop::bluetooth::Bta::disable_delay().value_or(200);
+    const uint64_t disable_delay_ms = android::sysprop::bluetooth::Bta::disable_delay_ms();
     switch (disable_delay_ms) {
       case 0:
         log::debug("Immediately disabling device manager");

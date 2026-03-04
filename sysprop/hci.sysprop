@@ -4,6 +4,7 @@ owner: Platform
 prop {
     api_name: "msft_vendor_opcode"
     type: Integer
+    default_value: "0"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.hci.msft_vendor_opcode"
