@@ -30,9 +30,7 @@ namespace hci {
 
 using ::bluetooth::hci::iso_manager::big_create_params;
 using ::bluetooth::hci::iso_manager::big_create_sync_params;
-using ::bluetooth::hci::iso_manager::BigCallbacks;
 using ::bluetooth::hci::iso_manager::cig_create_params;
-using ::bluetooth::hci::iso_manager::CigCallbacks;
 using ::bluetooth::hci::iso_manager::cis_establish_params;
 using ::bluetooth::hci::iso_manager::iso_data_path_params;
 using ::bluetooth::hci::iso_manager::iso_impl;
