@@ -3712,10 +3712,8 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
                      pairing_cb.pairing_type);
   pairing_cb.is_ssp = false;
 
-  if (com_android_bluetooth_flags_passkey_entry_pairing_approval()) {
-    pairing_cb.is_le_only = true;
-    pairing_cb.is_le_nc = false;
-  }
+  pairing_cb.is_le_only = true;
+  pairing_cb.is_le_nc = false;
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",

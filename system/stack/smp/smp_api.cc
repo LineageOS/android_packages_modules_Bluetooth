@@ -205,8 +205,7 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
                res, smp_cb.br_state, smp_evt_to_text(smp_cb.cb_evt), smp_cb.pairing_bda,
                smp_cb.selected_association_model);
 
-  if (com_android_bluetooth_flags_passkey_entry_pairing_approval() &&
-      smp_cb.pairing_bda == bd_addr &&
+  if (smp_cb.pairing_bda == bd_addr &&
       (smp_cb.selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
        smp_cb.selected_association_model == SMP_MODEL_KEY_NOTIF)) {
     if (res == SMP_SUCCESS) {
