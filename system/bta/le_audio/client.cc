@@ -5056,8 +5056,7 @@ public:
     auto group = aseGroups_.FindById(active_group_id_);
     if (!group) {
       log::error("Invalid group: {}", static_cast<int>(active_group_id_));
-      if (com_android_bluetooth_flags_leaudio_cancel_stream_request_when_invalid_group() &&
-          (active_group_id_ != bluetooth::groups::kGroupUnknown)) {
+      if (active_group_id_ != bluetooth::groups::kGroupUnknown) {
         CancelLocalAudioSourceStreamingRequest();
       }
       return;
@@ -5401,8 +5400,7 @@ public:
     auto group = aseGroups_.FindById(active_group_id_);
     if (!group) {
       log::error("Invalid group: {}", static_cast<int>(active_group_id_));
-      if (com_android_bluetooth_flags_leaudio_cancel_stream_request_when_invalid_group() &&
-          (active_group_id_ != bluetooth::groups::kGroupUnknown)) {
+      if (active_group_id_ != bluetooth::groups::kGroupUnknown) {
         CancelLocalAudioSinkStreamingRequest();
       }
       return;

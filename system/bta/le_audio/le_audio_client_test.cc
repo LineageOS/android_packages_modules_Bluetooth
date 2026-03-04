@@ -15703,9 +15703,6 @@ TEST_F(UnicastTest, HandleConfigureStreamFailure) {
 }
 
 TEST_F(UnicastTest, OnLocalAudioSourceResumeWithInvalidGroupCancelsStreamRequest) {
-  // Enable the feature flag
-  set_com_android_bluetooth_flags_leaudio_cancel_stream_request_when_invalid_group(true);
-
   // 1. Setup device and group
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = test_address0.address[RawAddress::kLength - 1];
@@ -15729,35 +15726,6 @@ TEST_F(UnicastTest, OnLocalAudioSourceResumeWithInvalidGroupCancelsStreamRequest
   // 4. Expect CancelStreamingRequest when resuming with an invalid group
   //    (confirmation=false, cancel=true)
   LocalAudioSourceResume(false, true);
-}
-
-TEST_F(UnicastTest, OnLocalAudioSourceResumeWithInvalidGroupFlagDisabledDoesNotCancel) {
-  // Disable the feature flag (default state)
-  set_com_android_bluetooth_flags_leaudio_cancel_stream_request_when_invalid_group(false);
-
-  // 1. Setup device and group
-  const RawAddress test_address0 = GetTestAddress(0);
-  int group_id = test_address0.address[RawAddress::kLength - 1];
-  ConnectNonCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
-                       codec_spec_conf::kLeAudioLocationFrontLeft);
-  SyncOnMainLoop();
-  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-
-  // 2. Set group active, which acquires the HAL client
-  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
-  LeAudioClient::Get()->GroupSetActive(group_id);
-  SyncOnMainLoop();
-  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
-
-  // 3. Remove the group by injecting a callback, leaving active_group_id stale
-  InjectGroupDeviceRemoved(test_address0, group_id);
-  SyncOnMainLoop();
-
-  // 4. Expect CancelStreamingRequest to NOT be called when resuming with an
-  //    invalid group because the flag is off (confirmation=false, cancel=false)
-  LocalAudioSourceResume(false, false);
 }
 
 class UnicastTestGmap : public UnicastTest {
