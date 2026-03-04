@@ -296,7 +296,6 @@ public class RemoteDevicesTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_COALESCE_ACL_CONNECTION_BROADCASTS)
     public void testResetBatteryLevel_testAclStateChangeCallback() {
         int batteryLevel = 10;
         int transport = 2; // LE transport
@@ -332,33 +331,6 @@ public class RemoteDevicesTest {
         verifyBatteryLevelUpdate(newBatteryLevel);
     }
 
-    @Test
-    @DisableFlags(Flags.FLAG_COALESCE_ACL_CONNECTION_BROADCASTS)
-    public void testResetBatteryLevel_testAclStateChangeCallback_withBroadcastCoalescingDisabled() {
-        int batteryLevel = 10;
-        // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent
-        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevel, /* fromBas= */ false);
-        verifyBatteryLevelUpdate(batteryLevel);
-
-        // Verify that when device is completely disconnected, RemoteDevices reset battery level to
-        // BluetoothDevice.BATTERY_LEVEL_UNKNOWN
-        doReturn(State.ON).when(mAdapterService).getState();
-        mRemoteDevices.aclStateChangeCallback(
-                0,
-                Utils.getByteAddress(mDevice),
-                0, // Public address type
-                2, // LE transport
-                AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
-                19,
-                BluetoothDevice.ERROR); // HCI code 19 remote terminated
-        // Verify ACTION_ACL_DISCONNECTED and BATTERY_LEVEL_CHANGED intent are sent
-        verifyIntentSent(hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED));
-
-        int newBatteryLevel = 20;
-        // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent again
-        mRemoteDevices.updateBatteryLevel(mDevice, newBatteryLevel, /* fromBas= */ false);
-        verifyBatteryLevelUpdate(newBatteryLevel);
-    }
 
     @Test
     public void testHfIndicatorParser_testCorrectValue() {
