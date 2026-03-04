@@ -1645,7 +1645,6 @@ public class GattService extends ProfileService {
     }
 
     private boolean shouldBlockMessaging(BluetoothDevice device) {
-        // This flag implies reverting the change made by Flags.gattMessagingPermissions
         if (Flags.checkMapclientConnectionPolicyForAncs()) {
             return getAdapterService()
                     .getMapClientService()
@@ -1654,11 +1653,9 @@ public class GattService extends ProfileService {
                                     mapClientService.getConnectionPolicy(device)
                                             != CONNECTION_POLICY_ALLOWED)
                     .orElse(false);
-        } else if (Flags.gattMessagingPermissions()) {
+        } else {
             return getAdapterService().getMessageAccessPermission(device)
                     != BluetoothDevice.ACCESS_ALLOWED;
-        } else {
-            return false;
         }
     }
 
