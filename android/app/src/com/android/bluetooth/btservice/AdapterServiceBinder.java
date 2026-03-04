@@ -1870,16 +1870,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public IBinder getProfile(int profileId) {
-        AdapterService service = getService();
-        if (service == null) {
-            return null;
-        }
-
-        return service.getProfile(profileId);
-    }
-
-    @Override
     public void getProfileOneway(int profileId, IBluetoothProfileCallback callback) {
         AdapterService service = getService();
         if (service == null) {

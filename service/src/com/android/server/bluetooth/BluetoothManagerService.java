@@ -867,19 +867,6 @@ public class BluetoothManagerService {
         }
     }
 
-    /**
-     * Inform BluetoothAdapter instances that BREDR part is down and turn off all service and stack
-     * if no LE app needs it
-     */
-    private void sendBrEdrDownCallback() {
-        if (mAdapter == null) {
-            Log.d(TAG, "sendBrEdrDownCallback: mAdapter is null");
-            return;
-        }
-        Log.i(TAG, "sendBrEdrDownCallback: going to OFF");
-        bleOnToOff();
-    }
-
     private Unit enableFromAutoOn() {
         if (!BluetoothRestriction.isBluetoothAllowed()) {
             Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn");
@@ -1337,17 +1324,8 @@ public class BluetoothManagerService {
                     if (mState.oneOf(State.TURNING_ON, State.ON)) {
                         bluetoothStateChangeHandler(mState.get(), State.TURNING_OFF);
                     }
-                    if (Flags.skipBleOnWhenTurningOff()) {
-                        if (mState.oneOf(State.TURNING_OFF, State.BLE_ON)) {
-                            bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
-                        }
-                    } else {
-                        if (mState.oneOf(State.TURNING_OFF)) {
-                            bluetoothStateChangeHandler(mState.get(), State.BLE_ON);
-                        }
-                        if (mState.oneOf(State.BLE_ON)) {
-                            bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
-                        }
+                    if (mState.oneOf(State.TURNING_OFF, State.BLE_ON)) {
+                        bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
                     }
                     if (mState.oneOf(State.BLE_TURNING_ON, State.BLE_TURNING_OFF)) {
                         bluetoothStateChangeHandler(mState.get(), State.OFF);
@@ -1661,9 +1639,6 @@ public class BluetoothManagerService {
             broadcastIntentStateChange(ACTION_STATE_CHANGED, prevBrEdrState, newBrEdrState);
             if (newBrEdrState == State.OFF) {
                 sendBluetoothOffCallback();
-                if (!Flags.skipBleOnWhenTurningOff()) {
-                    sendBrEdrDownCallback();
-                }
             }
         }
 

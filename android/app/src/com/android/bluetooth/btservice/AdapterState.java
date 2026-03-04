@@ -37,24 +37,6 @@ import com.android.internal.util.StateMachine;
 //      {@link TurningBleOn} : Off to BleOn
 //      {@link TurningBleOff} : BleOn to Off
 //      {@link TurningOn} : BleOn to On
-//      {@link TurningOff} : On to BleOn
-//
-//        +------   Off  <-----+
-//        |                    |
-//        v                    |
-// TurningBleOn   TO--->   TurningBleOff
-//        |                  ^ ^
-//        |                  | |
-//        +----->        ----+ |
-//                 BleOn       |
-//        +------        <---+ O
-//        v                  | T
-//    TurningOn  TO---->  TurningOff
-//        |                    ^
-//        |                    |
-//        +----->   On   ------+
-//
-// Once skip_ble_on_when_turning_off is released it will be:
 //      {@link TurningOff} : On to TurningBleOff
 //
 //           OFF ⮜─────────────────╮
@@ -393,13 +375,7 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BREDR_STOPPED -> {
-                    if (Flags.skipBleOnWhenTurningOff()) {
-                        transitionTo(mTurningBleOff);
-                    } else {
-                        transitionTo(mBleOn);
-                    }
-                }
+                case BREDR_STOPPED -> transitionTo(mTurningBleOff);
 
                 case BREDR_STOP_TIMEOUT -> {
                     errorLog(messageString(msg.what));

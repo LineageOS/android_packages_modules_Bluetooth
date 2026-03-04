@@ -4468,19 +4468,6 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getDistanceMeasurement();
     }
 
-    IBinder getProfile(int id) {
-        if (getState() == State.TURNING_ON) {
-            return null;
-        }
-
-        // LE_AUDIO_BROADCAST is not associated with a service and use LE_AUDIO's Binder
-        if (id == BluetoothProfile.LE_AUDIO_BROADCAST) {
-            id = BluetoothProfile.LE_AUDIO;
-        }
-
-        return getStartedProfile(id).flatMap(ProfileService::getBinder).orElse(null);
-    }
-
     void getProfile(int id, IBluetoothProfileCallback callback) {
         if (getState() == State.TURNING_ON) {
             return;
