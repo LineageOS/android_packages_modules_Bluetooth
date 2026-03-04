@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "sco_managed_by_audio_remove_hfp_hal"
-    namespace: "bluetooth"
-    description: "Deprecate the btm_sco_hfp_hal and migrate to IBluetoothAudio"
-    bug: "417621867"
-}
-
-flag {
     name: "sco_state_machine_cleanup"
     namespace: "bluetooth"
     description: "Cleanup SCO SM if headset disconnected during opening."
