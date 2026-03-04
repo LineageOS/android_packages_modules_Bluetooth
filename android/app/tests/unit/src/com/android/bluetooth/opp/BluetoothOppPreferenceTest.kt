@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,106 +14,100 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.opp;
+package com.android.bluetooth.opp
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.BluetoothMethodProxy
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.spy
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
+/** Test cases for [BluetoothOppPreference]. */
+@RunWith(AndroidJUnit4::class)
+class BluetoothOppPreferenceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
+    @Mock private lateinit var adapterService: AdapterService
 
-import android.bluetooth.BluetoothDevice;
-import android.content.Context;
-import android.content.SharedPreferences;
+    private val context = InstrumentationRegistry.getInstrumentation().context
+    private val device = getTestDevice(45)
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link BluetoothOppPreference}. */
-@RunWith(AndroidJUnit4.class)
-public class BluetoothOppPreferenceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private AdapterService mAdapterService;
-
-    private static final String TEST_PREF = "BluetoothOppPreferenceTest";
-
-    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
-
-    private final BluetoothDevice mDevice = getTestDevice(45);
-
-    private BluetoothMethodProxy mCallProxy;
-    private SharedPreferences mPrefs;
-    private BluetoothOppPreference mBluetoothOppPreference;
+    private lateinit var callProxy: BluetoothMethodProxy
+    private lateinit var prefs: SharedPreferences
+    private lateinit var bluetoothOppPreference: BluetoothOppPreference
 
     @Before
-    public void setUp() {
-        mCallProxy = spy(BluetoothMethodProxy.getInstance());
-        BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
-        mPrefs = mContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
-        doReturn(mPrefs).when(mAdapterService).getSharedPreferences(anyString(), anyInt());
-        final String address = mDevice.getAddress();
-        doReturn(address).when(mAdapterService).getIdentityAddress(address);
+    fun setUp() {
+        callProxy = spy(BluetoothMethodProxy.getInstance())
+        BluetoothMethodProxy.setInstanceForTesting(callProxy)
+        prefs = context.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE)
+
+        doReturn(prefs).whenever(adapterService).getSharedPreferences(any<String>(), any<Int>())
+        val address = device.address
+        doReturn(address).whenever(adapterService).getIdentityAddress(address)
 
         doReturn(null)
-                .when(mCallProxy)
-                .contentResolverInsert(any(), eq(BluetoothShare.CONTENT_URI), any());
+            .whenever(callProxy)
+            .contentResolverInsert(any(), eq(BluetoothShare.CONTENT_URI), any())
 
-        mBluetoothOppPreference = BluetoothOppPreference.getInstance(mAdapterService);
+        bluetoothOppPreference = BluetoothOppPreference.getInstance(adapterService)
     }
 
     @After
-    public void tearDown() {
-        mPrefs.edit().clear().apply();
-        mContext.deleteSharedPreferences(TEST_PREF);
+    fun tearDown() {
+        prefs.edit().clear().apply()
+        context.deleteSharedPreferences(TEST_PREF)
 
-        BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppUtility.sSendFileMap.clear();
-        BluetoothOppManager.setInstanceForTesting(null);
-        BluetoothOppPreference.setInstance(null);
+        BluetoothMethodProxy.setInstanceForTesting(null)
+        BluetoothOppUtility.sSendFileMap.clear()
+        BluetoothOppManager.setInstanceForTesting(null)
+        BluetoothOppPreference.setInstance(null)
     }
 
     @Test
-    public void dump_shouldNotThrow() {
-        mBluetoothOppPreference.dump();
+    fun dump_shouldNotThrow() {
+        bluetoothOppPreference.dump()
     }
 
     @Test
-    public void setNameAndGetNameAndRemoveName_setsAndGetsAndRemovesNameCorrectly() {
-        final var name = "randomName";
-        mBluetoothOppPreference.setName(mDevice, name);
-        assertThat(mBluetoothOppPreference.getName(mDevice)).isEqualTo(name);
+    fun setNameAndGetNameAndRemoveName_setsAndGetsAndRemovesNameCorrectly() {
+        val name = "randomName"
+        bluetoothOppPreference.setName(device, name)
+        assertThat(bluetoothOppPreference.getName(device)).isEqualTo(name)
 
         // Undo the change so this will not be saved on share preference
-        mBluetoothOppPreference.removeName(mDevice);
-        assertThat(mBluetoothOppPreference.getName(mDevice)).isNull();
+        bluetoothOppPreference.removeName(device)
+        assertThat(bluetoothOppPreference.getName(device)).isNull()
     }
 
     @Test
-    public void setChannelAndGetAndRemoveChannel_setsAndGetsAndRemovesChannelCorrectly() {
-        int uuid = 1234;
-        int channel = 78910;
-        mBluetoothOppPreference.setChannel(mDevice, uuid, channel);
-        assertThat(mBluetoothOppPreference.getChannel(mDevice, uuid)).isEqualTo(channel);
+    fun setChannelAndGetAndRemoveChannel_setsAndGetsAndRemovesChannelCorrectly() {
+        val uuid = 1234
+        val channel = 78910
+        bluetoothOppPreference.setChannel(device, uuid, channel)
+        assertThat(bluetoothOppPreference.getChannel(device, uuid)).isEqualTo(channel)
 
         // Undo the change so this will not be saved on share preference
-        mBluetoothOppPreference.removeChannel(mDevice, uuid);
-        assertThat(mBluetoothOppPreference.getChannel(mDevice, uuid)).isEqualTo(-1);
+        bluetoothOppPreference.removeChannel(device, uuid)
+        assertThat(bluetoothOppPreference.getChannel(device, uuid)).isEqualTo(-1)
+    }
+
+    companion object {
+        private const val TEST_PREF = "BluetoothOppPreferenceTest"
     }
 }
