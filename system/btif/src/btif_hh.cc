@@ -479,10 +479,6 @@ static void reject_incoming_connection(uint8_t handle) {
 
 static void btif_hh_incoming_connection_timeout(void* data) {
   uint8_t handle = reinterpret_cast<size_t>(data) & 0xFF;
-  if (!com_android_bluetooth_flags_hid_connection_timeout_in_jni_thread()) {
-    reject_incoming_connection(handle);
-    return;
-  }
   do_in_jni_thread(base::BindOnce(reject_incoming_connection, handle));
 }
 
