@@ -41,7 +41,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.timeout
@@ -156,19 +155,7 @@ class PanServiceTest {
     }
 
     @Test
-    fun setConnectionPolicy_whenDatabaseManagerRefuses_returnsFalse() {
-        doReturn(false)
-            .whenever(adapterService)
-            .setProfileConnectionPolicy(any(), anyInt(), anyInt())
-        val connectionPolicy = CONNECTION_POLICY_ALLOWED
-        assertThat(service.setConnectionPolicy(remoteDevice, connectionPolicy)).isFalse()
-    }
-
-    @Test
-    fun setConnectionPolicy_returnsTrue() {
-        doReturn(true)
-            .whenever(adapterService)
-            .setProfileConnectionPolicy(any(), anyInt(), anyInt())
+    fun setConnectionPolicy() {
         assertThat(service.setConnectionPolicy(remoteDevice, CONNECTION_POLICY_ALLOWED)).isTrue()
         testLooper.dispatchAll()
         verify(nativeInterface, timeout(TIMEOUT_MS)).connect(any())

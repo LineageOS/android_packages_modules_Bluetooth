@@ -74,7 +74,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -103,7 +102,6 @@ public class HeadsetServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothStorageManager mStorage;
     @Mock private HeadsetSystemInterface mSystemInterface;
     @Mock private HeadsetNativeInterface mNativeInterface;
@@ -145,7 +143,6 @@ public class HeadsetServiceTest {
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         doAnswer(
                         invocation -> {
@@ -1249,9 +1246,6 @@ public class HeadsetServiceTest {
     public void testGetFallbackCandidates() {
         BluetoothDevice deviceA = getTestDevice(0);
         BluetoothDevice deviceB = getTestDevice(1);
-        doReturn(null)
-                .when(mDatabaseManager)
-                .getCustomMeta(any(BluetoothDevice.class), any(Integer.class));
 
         // No connected device
         assertThat(mHeadsetService.getFallbackCandidates()).isEmpty();

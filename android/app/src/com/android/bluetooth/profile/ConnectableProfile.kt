@@ -49,7 +49,6 @@ import android.util.Log
 import com.android.bluetooth.Util
 import com.android.bluetooth.Util.arrayContains
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.hid.HidHostService
 import com.android.bluetooth.storage.BluetoothStorageManager
 
@@ -63,13 +62,6 @@ constructor(
     adapterService: AdapterService,
     protected val storage: BluetoothStorageManager? = null,
 ) : ProfileService(id, adapterService) {
-
-    protected val databaseManager =
-        if (Flags.mainlineBetaStorage()) {
-            null
-        } else {
-            adapterService.databaseManager
-        }
 
     /**
      * Connects the given Bluetooth device to the profile.

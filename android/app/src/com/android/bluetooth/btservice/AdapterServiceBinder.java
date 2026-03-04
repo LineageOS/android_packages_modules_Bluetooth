@@ -339,10 +339,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        if (Flags.mainlineBetaStorage()) {
-            return service.getMostRecentlyConnectedDevices();
-        }
-        return service.getDatabaseManager().getMostRecentlyConnectedDevices(); // Migrating
+        return service.getMostRecentlyConnectedDevices();
     }
 
     @Override
@@ -511,10 +508,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         Log.i(TAG, "removeBond: device=" + device + ", from " + getUidPidString());
         service.logUserBondResponse(device, false, source);
-        if (Flags.mainlineBetaStorage()) {
-            return service.syncPost(() -> service.removeBond(device), false);
-        }
-        return service.removeBond(device);
+        return service.syncPost(() -> service.removeBond(device), false);
     }
 
     @Override
@@ -1897,14 +1891,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        if (Flags.mainlineBetaStorage()) {
-            if (!Util.arrayContains(service.getBondedDevices(), device)) {
-                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
-            }
-            service.setActiveAudioPolicy(device, policy);
-            return BluetoothStatusCodes.SUCCESS;
+        if (!Util.arrayContains(service.getBondedDevices(), device)) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
         }
-        return service.getDatabaseManager().setActiveAudioDevicePolicy(device, policy); // Migrating
+        service.setActiveAudioPolicy(device, policy);
+        return BluetoothStatusCodes.SUCCESS;
     }
 
     @Override
@@ -1924,10 +1915,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        if (Flags.mainlineBetaStorage()) {
-            return service.getActiveAudioPolicy(device);
-        }
-        return service.getDatabaseManager().getActiveAudioDevicePolicy(device); // Migrating
+        return service.getActiveAudioPolicy(device);
     }
 
     @Override
@@ -1948,15 +1936,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        if (Flags.mainlineBetaStorage()) {
-            if (!Util.arrayContains(service.getBondedDevices(), device)) {
-                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
-            }
-            service.setMicrophonePreferredForCalls(device, enabled);
-            return BluetoothStatusCodes.SUCCESS;
+        if (!Util.arrayContains(service.getBondedDevices(), device)) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
         }
-        return service.getDatabaseManager() // Migrating
-                .setMicrophonePreferredForCalls(device, enabled);
+        service.setMicrophonePreferredForCalls(device, enabled);
+        return BluetoothStatusCodes.SUCCESS;
     }
 
     @Override
@@ -1976,10 +1960,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        if (Flags.mainlineBetaStorage()) {
-            return service.isMicrophonePreferredForCalls(device);
-        }
-        return service.getDatabaseManager().isMicrophonePreferredForCalls(device); // Migrating
+        return service.isMicrophonePreferredForCalls(device);
     }
 
     @Override

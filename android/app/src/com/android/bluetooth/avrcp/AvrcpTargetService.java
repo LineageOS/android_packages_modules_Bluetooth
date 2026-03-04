@@ -51,7 +51,6 @@ import com.android.bluetooth.audio_util.PlayStatus;
 import com.android.bluetooth.audio_util.PlayerInfo;
 import com.android.bluetooth.audio_util.PlayerSettingsManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.util.Text;
@@ -289,14 +288,6 @@ public class AvrcpTargetService extends ProfileService {
     void deviceDisconnected(BluetoothDevice device) {
         Log.i(TAG, "deviceDisconnected: device=" + device);
         mVolumeManager.deviceDisconnected(device);
-    }
-
-    /** Removes the stored volume for a device. */
-    public void removeStoredVolumeForDevice(BluetoothDevice device) {
-        if (Flags.mainlineBetaStorage()) throw new IllegalStateException("mainlineBetaStorage");
-        if (device == null) return;
-
-        mVolumeManager.removeStoredVolumeForDevice(device);
     }
 
     /**

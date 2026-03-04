@@ -59,7 +59,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -103,7 +102,6 @@ public class ActiveDeviceManagerTest {
     @Mock private LeAudioService mLeAudioService;
     @Mock private AudioManager mAudioManager;
     @Mock private BluetoothStorageManager mStorage;
-    @Mock private DatabaseManager mDatabaseManager;
 
     @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
 
@@ -137,7 +135,7 @@ public class ActiveDeviceManagerTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
+        return FlagsWrapper.progressionOf();
     }
 
     public ActiveDeviceManagerTest(FlagsWrapper flags) {
@@ -152,20 +150,13 @@ public class ActiveDeviceManagerTest {
         doNothing().when(mMethodProxy).threadStart(any());
 
         doAnswer(invocation -> getMostRecentlyConnectedDeviceInList(invocation.getArgument(0)))
-                .when(mDatabaseManager)
-                .getMostRecentlyConnectedDevicesInList(any());
-        doAnswer(invocation -> getMostRecentlyConnectedDeviceInList(invocation.getArgument(0)))
                 .when(mStorage)
                 .getMostRecentlyConnectedDeviceInList(any());
-        doAnswer(invocation -> getMostRecentlyConnectedDevices())
-                .when(mDatabaseManager)
-                .getMostRecentlyConnectedDevices();
         doAnswer(invocation -> getMostRecentlyConnectedDevices())
                 .when(mStorage)
                 .getMostRecentlyConnectedDevices();
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
         doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
         doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();

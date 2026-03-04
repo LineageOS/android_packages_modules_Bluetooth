@@ -1739,9 +1739,6 @@ public class RemoteDevices {
                     .getBatteryService()
                     .filter(battery -> transport == TRANSPORT_LE)
                     .ifPresent(battery -> battery.connectIfPossible(device));
-            if (!Flags.mainlineBetaStorage()) {
-                mAdapterService.updatePhonePolicyOnAclConnect(device);
-            }
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_CONNECTION,
                     device.toString(), /* success */
@@ -2030,11 +2027,7 @@ public class RemoteDevices {
             }
 
             Log.w(TAG, "Removing " + device + " on behalf of: " + Arrays.toString(packages));
-            if (Flags.mainlineBetaStorage()) {
-                mAdapterService.syncPost(() -> mAdapterService.removeBond(device), false);
-            } else {
-                mAdapterService.removeBond(device);
-            }
+            mAdapterService.syncPost(() -> mAdapterService.removeBond(device), false);
         }
 
         if (!Utils.isAutonomousRepairingSupported()) {

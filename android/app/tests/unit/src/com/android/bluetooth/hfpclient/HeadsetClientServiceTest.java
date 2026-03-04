@@ -49,7 +49,6 @@ import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
@@ -74,7 +73,6 @@ public class HeadsetClientServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientStateMachine mStateMachine;
     @Mock private HeadsetClientNativeInterface mNativeInterface;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private PackageManager mPackageManager;
 
@@ -89,7 +87,6 @@ public class HeadsetClientServiceTest {
     public void setUp() throws Exception {
         mMockAudioManager = mockGetSystemService(mAdapterService, AudioManager.class);
         mockGetSystemService(mAdapterService, BatteryManager.class);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
     }

@@ -49,7 +49,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -69,7 +68,6 @@ public class BluetoothPbapServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private NotificationManager mNotificationManager;
     @Mock private SharedPreferences mSharedPreferences;
 
@@ -94,7 +92,6 @@ public class BluetoothPbapServiceTest {
         doReturn(List.of()).when(manager).getAllProfiles();
 
         mLooper = new TestLooper();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mockGetBluetoothManager(mAdapterService);
         mService =
                 new BluetoothPbapService(

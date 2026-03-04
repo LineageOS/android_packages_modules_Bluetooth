@@ -54,7 +54,6 @@ import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.State;
 import android.companion.CompanionDeviceManager;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
@@ -230,7 +229,7 @@ public class AdapterServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
+        return FlagsWrapper.progressionOf();
     }
 
     public AdapterServiceTest(FlagsWrapper flags) {
@@ -1305,22 +1304,6 @@ public class AdapterServiceTest {
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         orderNative.verify(mNativeInterface, never()).disconnectAcl(any(), anyInt());
         assertThat(mAdapter.mLeGattClientsControllingAutoActiveMode).isEmpty();
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE) // permission are now part of device entry
-    public void testRemovePermissionBondedToBonding() {
-        initTest();
-        SharedPreferences mockPreferences = mock(SharedPreferences.class);
-        SharedPreferences.Editor mockEditor = mock(SharedPreferences.Editor.class);
-
-        doReturn(mockPreferences).when(mContext).getSharedPreferences(anyString(), anyInt());
-        doReturn(mockEditor).when(mockPreferences).edit();
-
-        mAdapter.handleBondStateChanged(
-                mDevice1, BluetoothDevice.BOND_BONDED, BluetoothDevice.BOND_BONDING);
-
-        verify(mockEditor, times(3)).remove(anyString());
     }
 
     @Test

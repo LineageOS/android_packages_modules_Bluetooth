@@ -105,8 +105,6 @@ public class PbapClientServiceTest {
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
-        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
-
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
 
@@ -444,13 +442,6 @@ public class PbapClientServiceTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> mService.setConnectionPolicy(null, CONNECTION_POLICY_ALLOWED));
-    }
-
-    // setConnectionPolicy (database call fails) -> false
-    @Test
-    public void testSetConnectionPolicy_databaseCallFails_returnsFalse() {
-        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
-        assertThat(mService.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED)).isFalse();
     }
 
     // getConnectionPolicy -> returns what we set in setup() (allowed)
