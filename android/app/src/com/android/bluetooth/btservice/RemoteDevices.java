@@ -1832,9 +1832,8 @@ public class RemoteDevices {
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT)
                 .addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         final BroadcastOptions options = Util.getTempBroadcastOptions();
-        if (Flags.coalesceAclConnectionBroadcasts()
-                && (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction())
-                        || BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction()))) {
+        if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction())
+                || BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) {
             // This allows the broadcasting system to discard any older broadcasts
             // waiting to be delivered to a process.
             options.setDeliveryGroupPolicy(BroadcastOptions.DELIVERY_GROUP_POLICY_MOST_RECENT);

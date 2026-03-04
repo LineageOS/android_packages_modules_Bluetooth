@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "coalesce_acl_connection_broadcasts"
-    namespace: "bluetooth"
-    description: "Set delivery group policy to coalesce ACL connection state change broadcasts."
-    bug: "448673677"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "enable_get_bond_status"
     is_exported: true
     namespace: "bluetooth"
