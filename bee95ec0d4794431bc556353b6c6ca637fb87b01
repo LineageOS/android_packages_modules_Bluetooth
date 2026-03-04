@@ -36,6 +36,24 @@
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "498c5407_8b48e75c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2026-03-04T15:29:29Z",
+      "side": 1,
+      "message": "Not to mention that no additional sepolicy rules are needed.",
+      "parentUuid": "72ca3ad4_04e94ec7",
+      "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "94e00f90_ee4719ee",
