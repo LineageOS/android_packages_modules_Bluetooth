@@ -212,55 +212,6 @@ bt_status_t btif_cleanup_bluetooth() {
  *
  ****************************************************************************/
 
-static bt_status_t btif_in_get_adapter_properties(void) {
-  static const uint32_t NUM_ADAPTER_PROPERTIES = 5;
-  bt_property_t properties[NUM_ADAPTER_PROPERTIES];
-  uint32_t num_props = 0;
-
-  RawAddress addr;
-  bt_bdname_t name;
-  uint32_t disc_timeout;
-  tBLE_BD_ADDR_SERIALIZED serialized_bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
-  Uuid local_uuids[BT_MAX_NUM_UUIDS];
-  bt_status_t status;
-
-  /* RawAddress */
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDADDR, sizeof(addr), &addr);
-  status = btif_storage_get_adapter_property(&properties[num_props]);
-  // Add BT_PROPERTY_BDADDR property into list only when successful.
-  // Otherwise, skip this property entry.
-  if (status == BT_STATUS_SUCCESS) {
-    num_props++;
-  }
-
-  /* BD_NAME */
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDNAME, sizeof(name), &name);
-  btif_storage_get_adapter_property(&properties[num_props]);
-  num_props++;
-
-  /* DISC_TIMEOUT */
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT,
-                             sizeof(disc_timeout), &disc_timeout);
-  btif_storage_get_adapter_property(&properties[num_props]);
-  num_props++;
-
-  /* BONDED_DEVICES */
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_ADAPTER_BONDED_DEVICES,
-                             sizeof(serialized_bonded_devices), serialized_bonded_devices);
-  btif_storage_get_adapter_property(&properties[num_props]);
-  num_props++;
-
-  /* LOCAL UUIDs */
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_UUIDS, sizeof(local_uuids),
-                             local_uuids);
-  btif_storage_get_adapter_property(&properties[num_props]);
-  num_props++;
-
-  GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(BT_STATUS_SUCCESS, num_props,
-                                                                 properties);
-  return BT_STATUS_SUCCESS;
-}
-
 static bt_status_t btif_in_get_remote_device_properties(RawAddress bd_addr) {
   bt_property_t remote_properties[10];
   uint32_t num_props = 0;
@@ -328,20 +279,6 @@ void btif_remote_properties_evt(bt_status_t status, RawAddress remote_addr,
                                 bt_property_t* p_props) {
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
           status, remote_addr, addr_type, num_props, p_props);
-}
-
-/*******************************************************************************
- *
- * Function         btif_get_adapter_properties
- *
- * Description      Fetch all available properties (local & remote)
- *
- ******************************************************************************/
-
-void btif_get_adapter_properties(void) {
-  log::verbose("");
-
-  btif_in_get_adapter_properties();
 }
 
 /*******************************************************************************

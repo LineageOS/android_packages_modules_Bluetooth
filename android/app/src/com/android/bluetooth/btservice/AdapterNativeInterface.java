@@ -81,10 +81,6 @@ public class AdapterNativeInterface {
         return setAdapterPropertyNative(type, val);
     }
 
-    boolean getAdapterProperties() {
-        return getAdapterPropertiesNative();
-    }
-
     boolean getAdapterProperty(int type) {
         return getAdapterPropertyNative(type);
     }
@@ -304,8 +300,6 @@ public class AdapterNativeInterface {
     private native void setLocalNameNative(String localName);
 
     private native boolean setAdapterPropertyNative(int type, byte[] val);
-
-    private native boolean getAdapterPropertiesNative();
 
     private native boolean getAdapterPropertyNative(int type);
 

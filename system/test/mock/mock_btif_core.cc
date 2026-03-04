@@ -57,7 +57,6 @@ void btif_adapter_properties_evt(bt_status_t /* status */, uint32_t /* num_props
 void btif_disable_service(tBTA_SERVICE_ID /* service_id */) { inc_func_call_count(__func__); }
 void btif_enable_bluetooth_evt() { inc_func_call_count(__func__); }
 void btif_enable_service(tBTA_SERVICE_ID /* service_id */) { inc_func_call_count(__func__); }
-void btif_get_adapter_properties(void) { inc_func_call_count(__func__); }
 void btif_get_adapter_property(bt_property_type_t /* type */) { inc_func_call_count(__func__); }
 void btif_get_remote_device_properties(RawAddress /* remote_addr */) {
   inc_func_call_count(__func__);

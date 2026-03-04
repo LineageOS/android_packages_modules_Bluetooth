@@ -40,15 +40,13 @@ public:
   void set_adapter_index(int adapter_index) const;
   void bluetooth_init(bool guest_mode, bool is_common_criteria_mode, int config_compare_result,
                       bool is_atv, const ::rust::String hci_instance_name) const;
-  void bluetooth_enable() const;
+  void bluetooth_enable(::rust::String local_name) const;
   void bluetooth_disable() const;
   void bluetooth_cleanup() const;
-  int get_adapter_properties() const;
   int get_adapter_property(bt_property_type_t type) const;
   void set_scan_mode(bt_scan_mode_t mode) const;
+  void set_local_name(::rust::String local_name) const;
   int set_adapter_property(bt_property_t property) const;
-  int get_remote_device_properties(RawAddress remote_addr) const;
-  int get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) const;
   int set_remote_device_property(RawAddress remote_addr, bt_property_t property) const;
   int get_remote_services(RawAddress remote_addr, int transport) const;
   int start_discovery() const;

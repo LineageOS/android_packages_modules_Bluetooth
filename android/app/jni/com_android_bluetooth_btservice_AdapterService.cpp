@@ -1393,17 +1393,6 @@ static jboolean setAdapterPropertyNative(JNIEnv* env, jobject /* obj */, jint ty
   return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-static jboolean getAdapterPropertiesNative(JNIEnv* /* env */, jobject /* obj */) {
-  log::verbose("");
-
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-
-  int ret = sBluetoothInterface->get_adapter_properties();
-  return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
-}
-
 static jboolean getAdapterPropertyNative(JNIEnv* /* env */, jobject /* obj */, jint type) {
   log::verbose("");
 
@@ -1919,8 +1908,6 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"setLocalNameNative", "(Ljava/lang/String;)V",
            reinterpret_cast<void*>(setLocalNameNative)},
           {"setAdapterPropertyNative", "(I[B)Z", reinterpret_cast<void*>(setAdapterPropertyNative)},
-          {"getAdapterPropertiesNative", "()Z",
-           reinterpret_cast<void*>(getAdapterPropertiesNative)},
           {"getAdapterPropertyNative", "(I)Z", reinterpret_cast<void*>(getAdapterPropertyNative)},
           {"getDevicePropertyNative", "([BI)Z", reinterpret_cast<void*>(getDevicePropertyNative)},
           {"setDevicePropertyNative", "([BI[B)Z", reinterpret_cast<void*>(setDevicePropertyNative)},
