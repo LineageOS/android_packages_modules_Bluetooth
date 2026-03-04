@@ -266,11 +266,6 @@ protected:
       last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
     }
 
-    if (!com_android_bluetooth_flags_remove_fake_role_change_event()) {
-      EXPECT_CALL(mock_connection_management_callbacks_,
-                  OnRoleChange(hci::ErrorCode::SUCCESS, Role::CENTRAL));
-    }
-
     auto first_connection = GetConnectionFuture();
     test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
             ErrorCode::SUCCESS, handle_, remote, LinkType::ACL, Enable::DISABLED));
