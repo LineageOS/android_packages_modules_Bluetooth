@@ -33,6 +33,8 @@ McpClient* McpClient::Get(void) {
   return nullptr;
 }
 
+void McpClient::AddFromStorage(const RawAddress& /* address */) { inc_func_call_count(__func__); }
+
 void McpClient::DebugDump(int /* fd */) { inc_func_call_count(__func__); }
 
 }  // namespace mcp

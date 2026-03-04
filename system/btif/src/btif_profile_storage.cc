@@ -43,6 +43,7 @@
 #include "bta_hearing_aid_api.h"
 #include "bta_hh_api.h"
 #include "bta_le_audio_api.h"
+#include "bta_mcp_client_api.h"
 #include "bta_vcp_controller_api.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_jni_task.h"
@@ -934,6 +935,15 @@ void btif_storage_load_bonded_groups(void) {
     std::vector<uint8_t> in(buffer_size);
     if (btif_config_get_bin(name, BTIF_STORAGE_KEY_DEVICE_GROUP_BIN, in.data(), &buffer_size)) {
       do_in_main_thread(BindOnce(&DeviceGroups::AddFromStorage, bd_addr, std::move(in)));
+    }
+  }
+}
+
+/** Loads information about bonded devices */
+void btif_storage_load_bonded_mcp_client_devices(void) {
+  for (const auto& bd_addr : btif_config_get_paired_devices()) {
+    if (btif_device_supports_profile(bd_addr, Uuid::From16Bit(UUID_SERVCLASS_GMCS_SERVER))) {
+      do_in_main_thread(BindOnce(&mcp::McpClient::AddFromStorage, bd_addr));
     }
   }
 }

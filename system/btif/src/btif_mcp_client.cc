@@ -24,6 +24,7 @@
 #include "bta/include/bta_mcp_client_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_le_audio_peripheral.h"
+#include "btif/include/btif_profile_storage.h"
 #include "stack/include/main_thread.h"
 
 using base::BindOnce;
@@ -44,7 +45,9 @@ class McpClientInterfaceImpl : public McpClientInterface, public McpClientCallba
 
   void Init(McpClientCallbacks* callbacks) override {
     this->callbacks_ = callbacks;
-    do_in_main_thread(BindOnce(&McpClient::Initialize, this, BindOnce([] {})));
+    do_in_main_thread(BindOnce(
+            &McpClient::Initialize, this,
+            jni_thread_wrapper(base::BindOnce(&btif_storage_load_bonded_mcp_client_devices))));
   }
 
   void Cleanup() override { do_in_main_thread(BindOnce(&McpClient::Cleanup)); }

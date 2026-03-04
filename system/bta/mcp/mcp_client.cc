@@ -108,7 +108,11 @@ public:
       callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
       return;
     }
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
+    if (com_android_bluetooth_flags_leaudio_peripheral_mcp_link_abstraction_layer()) {
+      StartOpportunisticConnect(address);
+    } else {
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
+    }
   }
 
   void Disconnect(const RawAddress& address) override {
@@ -126,6 +130,11 @@ public:
       DoDisconnectCleanup(device);
       callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
     }
+  }
+
+  void AddFromStorage(const RawAddress& address) {
+    log::info("{}", address);
+    StartOpportunisticConnect(address);
   }
 
   void Play(const RawAddress& address, int service_id) override {
@@ -308,12 +317,21 @@ public:
   }
 
 private:
+  void StartOpportunisticConnect(const RawAddress& address) {
+    if (!com_android_bluetooth_flags_leaudio_peripheral_mcp_link_abstraction_layer()) {
+      return;
+    }
+    log::info("{}", address);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
+  }
+
   void OnGattConnected(const tBTA_GATTC_OPEN& evt) {
     log::info("Connected to {}, conn_id {}", evt.remote_bda, evt.conn_id);
 
     if (evt.status != GATT_SUCCESS) {
       log::error("Connect failed for {}: {}", evt.remote_bda, gatt_status_text(evt.status));
       callbacks_->OnConnectionState(evt.remote_bda, ConnectionState::DISCONNECTED);
+      StartOpportunisticConnect(evt.remote_bda);
       return;
     }
 
@@ -353,6 +371,7 @@ private:
     DoDisconnectCleanup(device);
     devices_.remove(device);
     callbacks_->OnConnectionState(evt.remote_bda, ConnectionState::DISCONNECTED);
+    StartOpportunisticConnect(evt.remote_bda);
   }
 
   void OnEncryptionComplete(const RawAddress& bda, bool success) {
@@ -894,6 +913,13 @@ void McpClient::Cleanup() {
 }
 
 McpClient* McpClient::Get() { return instance.get(); }
+
+void McpClient::AddFromStorage(const RawAddress& address) {
+  std::scoped_lock<std::mutex> lock(instance_mutex);
+  if (instance) {
+    instance->AddFromStorage(address);
+  }
+}
 
 void McpClient::DebugDump(int fd) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
