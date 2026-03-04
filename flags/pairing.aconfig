@@ -62,16 +62,6 @@ flag {
 }
 
 flag {
-    name: "pairing_collision_with_same_device"
-    namespace: "bluetooth"
-    description: "Continue pairing if collision is detected with the same device"
-    bug: "438291410"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reject_bond_request_during_bonding"
     namespace: "bluetooth"
     description: "Don't accept new bond request when bonding"

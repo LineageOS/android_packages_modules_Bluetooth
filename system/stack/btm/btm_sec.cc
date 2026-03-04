@@ -593,8 +593,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
   /* Other security process is in progress */
   if (BtmSecurity::Get().pairing_state_ != BTM_PAIR_STATE_IDLE) {
-    if (com_android_bluetooth_flags_pairing_collision_with_same_device() &&
-        BtmSecurity::Get().link_spec_.addrt.bda == bd_addr) {
+    if (BtmSecurity::Get().link_spec_.addrt.bda == bd_addr) {
       log::warn("Already pairing with {}", BtmSecurity::Get().link_spec_);
       return tBTM_STATUS::BTM_CMD_STARTED;
     } else {
