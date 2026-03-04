@@ -144,7 +144,7 @@ public class ScanManager {
     private final PendingIntent mBatchScanIntervalIntent;
     private final ActivityManager mActivityManager;
     private final LocationManager mLocationManager;
-    private final ScanThrottler mScanThrottler;
+    @VisibleForTesting final ScanThrottler mScanThrottler;
     private final BatchScanThrottler mBatchScanThrottler;
     // Whether or not MSFT-based scanning hardware offload is available on this device
     private final boolean mIsMsftSupported;
@@ -252,7 +252,7 @@ public class ScanManager {
         IntentFilter locationIntentFilter = new IntentFilter(LocationManager.MODE_CHANGED_ACTION);
         locationIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
-        mScanThrottler = new ScanThrottler(this, mAdapterService);
+        mScanThrottler = new ScanThrottler(this, mAdapterService, mHandler);
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
         Log.d(TAG, "MSFT: isSupported=" + mIsMsftSupported + ", useFiltering=" + mUseMsftFiltering);
@@ -447,6 +447,10 @@ public class ScanManager {
     }
 
     private void configureTimeout(ScanClient client) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            // Skip scan time out when allowance based throttling is enabled
+            return;
+        }
         if (isExemptFromScanTimeout(client)) {
             return;
         }
@@ -487,9 +491,11 @@ public class ScanManager {
         if (mSuspendedScanClients.contains(client)) {
             mSuspendedScanClients.remove(client);
         }
-        Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
-        if (timeoutRunnable != null) {
-            mHandler.removeCallbacks(timeoutRunnable);
+        if (!mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
+            if (timeoutRunnable != null) {
+                mHandler.removeCallbacks(timeoutRunnable);
+            }
         }
         Runnable revertRunnable = mRevertScanModeUpgradeRunnables.remove(client);
         if (revertRunnable != null) {
@@ -841,6 +847,17 @@ public class ScanManager {
         }
     }
 
+    public void onScanAllowanceChanged() {
+        boolean changed = false;
+        // TODO(b/478349128): support batch scan clients
+        for (ScanClient client : mRegularScanClients) {
+            changed |= mScanThrottler.throttleScanMode(client, client.getScanModeApp(), mScreenOn);
+        }
+        if (changed) {
+            configureRegularScanParams();
+        }
+    }
+
     private void configureRegularScanParams() {
         var header = "configureRegularScanParams(): ";
         int newScanSetting1m = Integer.MIN_VALUE;
@@ -1110,6 +1127,10 @@ public class ScanManager {
     }
 
     private void handleRegularScanTimeout(ScanClient client) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            // skip scan timeout when allowance based throttling is enabled
+            return;
+        }
         var header = "handleRegularScanTimeout(" + client + "): ";
         var appScanStats = client.getAppScanStats();
         var isScanningTooLong = appScanStats == null || appScanStats.isScanningTooLong();

@@ -30,6 +30,7 @@ import android.os.Bundle
 import android.os.ParcelUuid
 import android.os.SystemProperties
 import android.os.WorkSource
+import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
@@ -41,11 +42,13 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.TestLooper
+import com.android.bluetooth.TestUtils.mockSystemPropertyGet
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.DisplayListener
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanMetricsReporter.Companion.convertScanMode
+import com.android.bluetooth.le_scan.ScanThrottler.Companion.ALLOWANCE_REFILL_WINDOW
 import com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
 import com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_TIMEOUT
 import com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_UPGRADE_DURATION
@@ -59,14 +62,17 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTE
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW
+import com.android.bluetooth.le_scan.ScanUtil.convertAllowanceToRemainingTime
+import com.android.bluetooth.le_scan.ScanUtil.getScanAllowance
 import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.mockGetSystemService
 import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.tests.bluetooth.FakeTimeProvider
-import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.staticMockitoRule
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.Duration
 import java.util.UUID
 import kotlin.time.ExperimentalTime
@@ -87,18 +93,16 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import platform.test.runner.parameterized.ParameterizedAndroidJunit4
-import platform.test.runner.parameterized.Parameters
 
 private const val TAG = "ScanManagerTest"
 
 /** Test cases for [ScanManager]. */
 @OptIn(ExperimentalTime::class)
 @SmallTest
-@RunWith(ParameterizedAndroidJunit4::class)
-class ScanManagerTest(flags: FlagsWrapper) {
+@RunWith(TestParameterInjector::class)
+class ScanManagerTest() {
     @get:Rule val mockitoRule = staticMockitoRule<SystemProperties>()
-    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val setFlagsRule = SetFlagsRule()
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var displayListener: DisplayListener
@@ -398,6 +402,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
     fun testUnfilteredScanTimeout() {
         // Set filtered scan flag
         val isFiltered = false
@@ -435,6 +440,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
     fun testFilteredScanTimeout() {
         // Set filtered scan flag
         val isFiltered = true
@@ -475,6 +481,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
     fun testScanTimeoutResetForNewScan() {
         // Set filtered scan flag
         val isFiltered = false
@@ -508,6 +515,259 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
         assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
         assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testFilteredScanOutOfAllowance(@TestParameter isFiltered: Boolean) {
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_BALANCED,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+            )
+        scanModeMap.forEach { (scanMode, expectedScanMode) ->
+            var expectedScanMode = expectedScanMode
+            scannerId += 1
+            expectedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Move time forward to clear any pending refill job
+            advanceTime(
+                ALLOWANCE_REFILL_WINDOW -
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance
+            )
+            this@ScanManagerTest.looper.dispatchAll()
+            // Start scan, this sends scan allowance check message with delay
+            startScan(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Move time forward so scan allowance check message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >=
+                        getScanAllowance()
+                )
+                .isTrue()
+            // Turn off screen
+            setScreenOn(false)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            // Set as background app
+            setAppImportance(false, Binder.getCallingUid())
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            // Turn on screen
+            setScreenOn(true)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            // Set as foreground app
+            setAppImportance(true, Binder.getCallingUid())
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowanceForNewScan() {
+        // Set filtered scan flag
+        val isFiltered = true
+        // Turn on screen
+        setScreenOn(true)
+        // Create scan client
+        val scanMode = ScanSettings.SCAN_MODE_LOW_LATENCY
+        val client = createScanClient(isFiltered, scanMode)
+
+        // Put a record usage runnable in the map to emulate the scan being started already
+        val fakeStepDownRunnable = Runnable {}
+        scanManager.mScanThrottler.recordUsageRunnables!![client] = fakeStepDownRunnable
+        scanManager.mHandler!!.postDelayed(
+            fakeStepDownRunnable,
+            (convertAllowanceToRemainingTime(getScanAllowance(), scanMode) / 2).inWholeMilliseconds,
+        )
+        // Start the scan. This should remove the fake runnable and post a new one.
+        startScan(client)
+
+        // Verify that the new, real record usage runnable is in the map.
+        assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(1)
+
+        advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode) / 2)
+        // After restarting the scan, we can check that the initial record allowace usage message is
+        // not triggered
+        assertThat(looper.dispatchAll()).isEqualTo(0)
+
+        // The next job should record allowance usage
+        advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode) / 2)
+
+        // Dispatching should now record allowance usage.
+        looper.dispatchAll()
+        // Verify the client was moved to SCREEN_OFF mode
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_SCREEN_OFF)
+        assertThat(
+                client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >= getScanAllowance()
+            )
+            .isTrue()
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowanceSkipped_scanModeScreenOff() {
+        // Set filtered scan flag
+        val isFiltered = true
+        // Turn on screen
+        setScreenOn(true)
+        // Create scan client
+        val scanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
+        val client = createScanClient(isFiltered, scanMode)
+
+        // Start the scan.
+        startScan(client)
+
+        // Verify that therer is no record usage runnable in the map.
+        assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(0)
+
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_SCREEN_OFF)
+        assertThat(
+                client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                    kotlin.time.Duration.ZERO
+            )
+            .isTrue()
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowanceRefill_recordUsageNotScheduled_noRefillJobScheduled() {
+        // Set filtered scan flag
+        val isFiltered = true
+        val scanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
+        // Turn on screen
+        setScreenOn(true)
+        // Create scan client
+        val client = createScanClient(isFiltered, scanMode)
+        startScan(client)
+        assertThat(client.settings.scanMode).isEqualTo(scanMode)
+        // Verify that therer is no record usage runnable in the map.
+        assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(0)
+        // Verify that therer is no refill runnable in the map.
+        assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowanceRefill_recordUsageNotRun_noRefillJobScheduled() {
+        // Set filtered scan flag
+        val isFiltered = true
+        var scannerCount = 0
+        defaultScanMode.forEach { (scanMode, expectedScanMode) ->
+            var expectedScanMode = expectedScanMode
+            scannerId += 1
+            scannerCount += 1
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan, this sends scan allowance check message with delay
+            startScan(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Verify that the record usage runnable is in the map.
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(scannerCount)
+            // Verify that therer is no refill runnable in the map.
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                        kotlin.time.Duration.ZERO
+                )
+                .isTrue()
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowanceRefill_refillJobRun() {
+        // Set filtered scan flag
+        val isFiltered = true
+        var scannerCount = 0
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_BALANCED,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+            )
+        scanModeMap.forEach { (scanMode, expectedScanMode) ->
+            var expectedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
+            scannerId += 1
+            scannerCount += 1
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan, this sends scan allowance check message with delay
+            startScan(client)
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(scannerCount)
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Move time forward so record usage message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(0)
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(1)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >=
+                        getScanAllowance()
+                )
+                .isTrue()
+            // Move time forward so refill message can be dispatched
+            advanceTime(
+                ALLOWANCE_REFILL_WINDOW -
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance
+            )
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(scannerCount)
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                        kotlin.time.Duration.ZERO
+                )
+                .isTrue()
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanWithLargeAllowance(@TestParameter isFiltered: Boolean) {
+        mockSystemPropertyGet(ScanUtil.SCAN_ALLOWANCE_SECONDS_PROPERTY, 24 * 60 * 60) // 24h
+        defaultScanMode.forEach { (scanMode, expectedScanMode) ->
+            scannerId += 1
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Move time forward to clear any pending refill job
+            advanceTime(
+                ALLOWANCE_REFILL_WINDOW -
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance
+            )
+            this@ScanManagerTest.looper.dispatchAll()
+            // Start scan, this sends scan allowance check message with delay
+            startScan(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Move time forward so scan allowance check message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            // Allowance is refilled right after record allowance usage
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                        kotlin.time.Duration.ZERO
+                )
+                .isTrue()
+        }
     }
 
     @Test
@@ -2153,7 +2413,12 @@ class ScanManagerTest(flags: FlagsWrapper) {
         timeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis))
     }
 
-    private fun startScan(client: ScanClient?) = executeOnScanThread {
+    private fun advanceTime(amountToAdvance: kotlin.time.Duration) {
+        looper.moveTimeForward(amountToAdvance.inWholeMilliseconds)
+        timeProvider.advanceTime(amountToAdvance)
+    }
+
+    private fun startScan(client: ScanClient?) {
         scanManager.startScan(client)
     }
 
@@ -2209,7 +2474,5 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
                 ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
             )
-
-        @JvmStatic @Parameters(name = "{0}") fun getParams() = FlagsWrapper.progressionOf()
     }
 }
