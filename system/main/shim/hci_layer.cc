@@ -199,8 +199,7 @@ static void development_event_callback_with_hop(
 static void OnTransmitPacketCommandComplete(command_complete_cb complete_callback, void* context,
                                             bluetooth::hci::CommandCompleteView view) {
   log::debug("Received cmd complete for {}", bluetooth::hci::OpCodeText(view.GetCommandOpCode()));
-  BT_HDR* response = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &view);
-  complete_callback(response, context);
+  complete_callback(view, context);
 }
 
 static void OnTransmitPacketStatus(command_status_cb status_callback, void* context,

@@ -29,6 +29,7 @@ cc_library_static {
     min_sdk_version: "36",
     header_libs: ["libbluetooth_headers"],
     static_libs: [
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
     ],
@@ -59,6 +60,7 @@ cc_test {
         "liblog",
     ],
     static_libs: [
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
         "libbt-hci",

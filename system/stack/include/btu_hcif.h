@@ -21,6 +21,7 @@
 
 #include <cstdint>
 
+#include "hci/hci_packets.h"
 #include "stack/include/bt_hdr.h"
 
 /* Functions provided by btu_hcif.cc
@@ -28,7 +29,7 @@
  */
 void btu_hcif_send_cmd(uint8_t controller_id, const BT_HDR* p_msg);
 void btu_hcif_send_cmd_with_cb(uint16_t opcode, uint8_t* params, uint8_t params_len,
-                               base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+                               base::OnceCallback<void(bluetooth::hci::CommandCompleteView)> cb);
 void btu_hci_msg_process(BT_HDR* p_msg);
 
 namespace bluetooth::legacy::testing {

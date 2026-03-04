@@ -1312,16 +1312,15 @@ void btsnd_hcic_read_rssi(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-static void read_encryption_key_size_complete(ReadEncKeySizeCb cb, uint8_t* return_parameters,
-                                              uint16_t /* return_parameters_length */) {
-  uint8_t status;
-  uint16_t handle;
-  uint8_t key_size;
-  STREAM_TO_UINT8(status, return_parameters);
-  STREAM_TO_UINT16(handle, return_parameters);
-  STREAM_TO_UINT8(key_size, return_parameters);
-
-  std::move(cb).Run(status, handle, key_size);
+static void read_encryption_key_size_complete(ReadEncKeySizeCb cb,
+                                              bluetooth::hci::CommandCompleteView view) {
+  auto complete_view = bluetooth::hci::ReadEncryptionKeySizeCompleteView::Create(view);
+  if (!complete_view.IsValid()) {
+    bluetooth::log::error("Invalid ReadEncryptionKeySize command complete view");
+    return;
+  }
+  std::move(cb).Run(static_cast<uint8_t>(complete_view.GetStatus()),
+                    complete_view.GetConnectionHandle(), complete_view.GetKeySize());
 }
 
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
@@ -1382,13 +1381,16 @@ void btsnd_hcic_write_pagescan_type(uint8_t type) {
 }
 
 static void btsnd_hcic_vendor_spec_complete(tBTM_VSC_CMPL_CB* p_vsc_cplt_cback, uint16_t opcode,
-                                            uint8_t* data, uint16_t len) {
+                                            bluetooth::hci::CommandCompleteView view) {
   /* If there was a callback address for vcs complete, call it */
   if (p_vsc_cplt_cback) {
+    auto payload = view.GetPayload();
+    std::vector<uint8_t> data(payload.begin(), payload.end());
+
     tBTM_VSC_CMPL vcs_cplt_params;
     vcs_cplt_params.opcode = opcode;
-    vcs_cplt_params.param_len = len;
-    vcs_cplt_params.p_param_buf = data;
+    vcs_cplt_params.param_len = data.size();
+    vcs_cplt_params.p_param_buf = data.data();
     /* Call the VSC complete callback function */
     (*p_vsc_cplt_cback)(&vcs_cplt_params);
   }
