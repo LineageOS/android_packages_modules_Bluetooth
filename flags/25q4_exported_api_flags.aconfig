@@ -1,0 +1,96 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+# Parking api flags that released with 25Q4.
+# We cannot remove api flags like any flags.
+# This requires more investigation and making sure there are no usage at all
+
+# Do not add any flag to this file
+
+flag {
+    name: "a2dp_lhdc_api"
+    namespace: "bluetooth"
+    description: "API change for LHDC codec support"
+    is_exported: true
+    bug: "380118954"
+}
+
+flag {
+    name: "add_profile_as_intent_extra"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add Profile as intent extra"
+    bug: "419074085"
+}
+
+flag {
+    name: "get_svc_uuids_from_ble_adv_data"
+    namespace: "bluetooth"
+    is_exported: true
+    description: "Add API for getting service UUIDs from BLE advertising data. go/get-service-uuids-from-advertising-data"
+    bug: "389598210"
+}
+
+flag {
+    name: "key_missing_count_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Promote getKeyMissingCount as public API"
+    bug: "421357557"
+}
+
+flag {
+    name: "le_subrate_api"
+    namespace: "bluetooth"
+    description: "New API to control LE subrate parameters"
+    bug: "384794418"
+    is_exported: true
+}
+
+flag {
+    name: "leaudio_add_opus_hi_res_codec_type_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add OPUS codec type to LE Audio API"
+    bug: "419699224"
+}
+
+flag {
+    name: "link_status_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add Link Status API to BluetoothDevice"
+    bug: "419143231"
+}
+
+flag {
+    name: "prioritized_in_ear_routing"
+    namespace: "bluetooth"
+    description: "Prioritized routing by checking in-ear state when multiple devices connected"
+    bug: "420509925"
+    is_exported: true
+}
+
+flag {
+    name: "rssi_scan_filter"
+    namespace: "bluetooth"
+    is_exported: true
+    description: "Add RSSI ScanFilter"
+    bug: "404986559"
+}
+
+flag {
+    name: "support_passive_scanning"
+    namespace: "bluetooth"
+    is_exported: true
+    description: "Support passive scanning by delivering adv packet w/o scan response"
+    bug: "414501027"
+}
+
+flag {
+    name: "support_zoomed_in_icon_metadata"
+    namespace: "bluetooth"
+    is_exported: true
+    description: "Add api support for a zoomed in icon metadata"
+    bug: "417245933"
+}
