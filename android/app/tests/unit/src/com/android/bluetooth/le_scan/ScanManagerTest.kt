@@ -808,6 +808,37 @@ class ScanManagerTest() {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanWithForegroundUi_skipAllowanceCheck(@TestParameter isFiltered: Boolean) {
+        defaultScanMode.forEach { (scanMode, expectedScanMode) ->
+            scannerId += 1
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Move uid to foreground UI
+            setAppImportance(
+                ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+                Binder.getCallingUid(),
+            )
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan
+            startScan(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(0)
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+            // Move time forward to assert there is no scheduled jobs on the handler thread
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                        kotlin.time.Duration.ZERO
+                )
+                .isTrue()
+        }
+    }
+
+    @Test
     fun testSwitchForeBackgroundUnfilteredScan() {
         // Set filtered scan flag
         val isFiltered = false
@@ -2604,6 +2635,11 @@ class ScanManagerTest() {
         val importance =
             if (isForeground) ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
             else ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1
+        val uidImportance = ScanManager.UidImportance(uid, importance)
+        executeOnScanThread { scanManager.handleImportanceChange(uidImportance) }
+    }
+
+    private fun setAppImportance(importance: Int, uid: Int) {
         val uidImportance = ScanManager.UidImportance(uid, importance)
         executeOnScanThread { scanManager.handleImportanceChange(uidImportance) }
     }

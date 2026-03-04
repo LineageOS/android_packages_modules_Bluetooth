@@ -215,7 +215,7 @@ class ScanThrottler(
 
     fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
         val ledger = client.appScanStats.scanAllowanceLedger
-        if (scanManager.hasPrivilegedPermission(client)) {
+        if (scanManager.hasPrivilegedPermission(client) || scanManager.isAppForegroundUi(client)) {
             return client.updateScanMode(targetScanMode)
         }
         if (
