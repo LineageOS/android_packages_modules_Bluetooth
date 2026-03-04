@@ -110,7 +110,7 @@ final class AdapterState extends StateMachine {
                     SystemProperties.getInt("ro.bluetooth.ble_stop_timeout_delay", defaultDelay);
         } else {
             // Validate the configuration when property is enabled or for new devices after 25Q4.
-            if ((DEGRADED_PERFORMANCE || !isAtMost25Q4)
+            if ((DEGRADED_PERFORMANCE)
                     && (!SystemProperties.get("ro.bluetooth.ble_start_timeout_delay").isEmpty()
                             || !SystemProperties.get("ro.bluetooth.ble_stop_timeout_delay")
                                     .isEmpty()
