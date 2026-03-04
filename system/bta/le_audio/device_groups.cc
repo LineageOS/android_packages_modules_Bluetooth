@@ -1670,8 +1670,17 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(LeAudioContextType con
   };
 
   if (cises.size() > 0) {
-    log::info("CIS IDs already generated");
-    return;
+    log::info("CIS IDs already generated, cig state: {}", bluetooth::common::ToString(state_));
+    if (!com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+      return;
+    }
+
+    if (state_ != CigState::NONE) {
+      return;
+    }
+
+    log::info("Clear CIS IDs due to reconfiguration befere even CIG was created");
+    ClearCisIds();
   }
 
   cises = generate_expected_cis_ids(context_type);
