@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,80 +14,79 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.opp;
+package com.android.bluetooth.opp
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.scrollTo;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.intent.Intents.intended;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
-import static androidx.test.espresso.matcher.RootMatchers.isDialog;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import android.content.Intent
+import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.R
+import com.android.bluetooth.opp.BluetoothOppTestUtils.enableActivity
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 
-import static org.mockito.Mockito.mock;
+/** Test cases for [BluetoothOppBtEnableActivity]. */
+@RunWith(AndroidJUnit4::class)
+class BluetoothOppBtEnableActivityTest {
 
-import android.content.Context;
-import android.content.Intent;
-
-import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.intent.Intents;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.R;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link BluetoothOppBtEnableActivity}. */
-@RunWith(AndroidJUnit4.class)
-public class BluetoothOppBtEnableActivityTest {
-    private static final Context sContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-
-    private Intent mIntent;
-
-    @BeforeClass
-    public static void setUpClass() {
-        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, true, sContext);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnablingActivity.class, true, sContext);
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, false, sContext);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnablingActivity.class, false, sContext);
-    }
+    private lateinit var intent: Intent
 
     @Before
-    public void setUp() throws Exception {
-        mIntent = new Intent();
-        mIntent.setClass(sContext, BluetoothOppBtEnableActivity.class);
-        Intents.init();
+    fun setUp() {
+        intent = Intent()
+        intent.setClass(context, BluetoothOppBtEnableActivity::class.java)
+        Intents.init()
     }
 
     @After
-    public void tearDown() throws Exception {
-        Intents.release();
+    fun tearDown() {
+        Intents.release()
     }
 
     @Test
-    public void onCreate_clickOnEnable_launchEnablingActivity() {
-        try (ActivityScenario<BluetoothOppBtEnableActivity> activityScenario =
-                ActivityScenario.launch(mIntent)) {
-            activityScenario.onActivity(
-                    activity -> activity.mOppManager = mock(BluetoothOppManager.class));
+    fun onCreate_clickOnEnable_launchEnablingActivity() {
+        ActivityScenario.launch<BluetoothOppBtEnableActivity>(intent).use { activityScenario ->
+            activityScenario.onActivity { activity ->
+                activity.mOppManager = mock<BluetoothOppManager>()
+            }
             onView(withText(R.string.bt_enable_ok))
-                    .inRoot(isDialog())
-                    .check(matches(isDisplayed()))
-                    .perform(scrollTo(), click());
-            intended(hasComponent(BluetoothOppBtEnablingActivity.class.getName()));
+                .inRoot(isDialog())
+                .check(matches(isDisplayed()))
+                .perform(scrollTo(), click())
+            intended(hasComponent(BluetoothOppBtEnablingActivity::class.java.name))
+        }
+    }
+
+    companion object {
+        private val context = InstrumentationRegistry.getInstrumentation().context
+
+        @BeforeClass
+        @JvmStatic
+        fun setUpClass() {
+            enableActivity(BluetoothOppBtEnableActivity::class.java, true, context)
+            enableActivity(BluetoothOppBtEnablingActivity::class.java, true, context)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun tearDownClass() {
+            enableActivity(BluetoothOppBtEnableActivity::class.java, false, context)
+            enableActivity(BluetoothOppBtEnablingActivity::class.java, false, context)
         }
     }
 }
