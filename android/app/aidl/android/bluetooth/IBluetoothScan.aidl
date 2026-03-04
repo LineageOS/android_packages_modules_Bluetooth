@@ -30,17 +30,11 @@ import android.bluetooth.le.IPeriodicAdvertisingCallback;
 /** Binder method for BLE scan interaction */
 @JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothScan {
-    // TODO(b/455057044) Delete on flag cleanup
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN,android.Manifest.permission.UPDATE_DEVICE_STATS}, conditional=true)")
-    void registerScanner(in IScannerCallback callback, in ScanSettings settings, in List<ScanFilter> filters, in WorkSource workSource, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN,android.Manifest.permission.UPDATE_DEVICE_STATS}, conditional=true)")
     void registerAndStartScan(in IScannerCallback callback, in ScanSettings settings, in List<ScanFilter> filters, in WorkSource workSource, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void unregisterScanner(in int scannerId, in AttributionSource attributionSource);
 
-    // TODO(b/455057044) Delete on flag cleanup
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN}, conditional=true)")
-    void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN}, conditional=true)")
     void registerPiAndStartScan(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")

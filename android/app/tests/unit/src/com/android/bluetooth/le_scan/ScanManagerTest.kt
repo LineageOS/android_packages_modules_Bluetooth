@@ -27,7 +27,6 @@ import android.location.LocationManager
 import android.os.BatteryStatsManager
 import android.os.Binder
 import android.os.Bundle
-import android.os.Message
 import android.os.ParcelUuid
 import android.os.SystemProperties
 import android.os.WorkSource
@@ -166,10 +165,6 @@ class ScanManagerTest(flags: FlagsWrapper) {
         doReturn(mockContentResolver).whenever(adapterService).contentResolver
         // Needed to mock Native call/callback when hw offload scan filter is enabled
         simulateIsOffloadFilteringSupported(true)
-
-        // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
-        // Mock JNI callback in ScanNativeCallback
-        doReturn(true).whenever(nativeCallback).waitForCallback(any<Int>().toLong())
 
         val scanRadioStats = ScanRadioStats(timeProvider)
         doReturn(scanRadioStats).whenever(scanController).getScanRadioStats()
@@ -488,34 +483,18 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Create scan client
         val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_POWER)
 
-        if (Flags.scanControllerThread()) {
-            // Put a timeout runnable in the map to emulate the scan being started already
-            val fakeTimeoutRunnable = Runnable {}
-            scanManager.mScanTimeoutRunnables!![client] = fakeTimeoutRunnable
-            scanManager.mHandler!!.postDelayed(
-                fakeTimeoutRunnable,
-                DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis(),
-            )
-            // Start the scan. This should remove the fake runnable and post a new one.
-            startScan(client)
-        } else {
-            // Put a timeout message in the queue to emulate the scan being started already
-            val timeoutMessage =
-                scanManager.mClientHandler!!.obtainMessage(ScanManager.MSG_SCAN_TIMEOUT, client)
-            scanManager.mClientHandler!!.sendMessageDelayed(
-                timeoutMessage,
-                DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis(),
-            )
-            scanManager.mClientHandler!!.sendMessage(createStartStopScanMessage(true, client))
-        }
+        // Put a timeout runnable in the map to emulate the scan being started already
+        val fakeTimeoutRunnable = Runnable {}
+        scanManager.mScanTimeoutRunnables!![client] = fakeTimeoutRunnable
+        scanManager.mHandler!!.postDelayed(
+            fakeTimeoutRunnable,
+            DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis(),
+        )
+        // Start the scan. This should remove the fake runnable and post a new one.
+        startScan(client)
 
-        if (Flags.scanControllerThread()) {
-            // Verify that only the new, real runnable is in the map.
-            assertThat(scanManager.mScanTimeoutRunnables).hasSize(1)
-        } else {
-            // Dispatching all messages only runs start scan
-            assertThat(looper.dispatchAll()).isEqualTo(1)
-        }
+        // Verify that only the new, real runnable is in the map.
+        assertThat(scanManager.mScanTimeoutRunnables).hasSize(1)
 
         advanceTime(DEFAULT_SCAN_TIMEOUT.dividedBy(2))
         // After restarting the scan, we can check that the initial timeout message is not triggered
@@ -524,17 +503,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // After timeout, the next message that is run should be a timeout message
         advanceTime(DEFAULT_SCAN_TIMEOUT.dividedBy(2))
 
-        if (Flags.scanControllerThread()) {
-            // Dispatching should now execute the real timeout.
-            looper.dispatchAll()
-            // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
-            assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
-            assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
-        } else {
-            val nextMessage = looper.nextMessage()
-            assertThat(nextMessage.what).isEqualTo(ScanManager.MSG_SCAN_TIMEOUT)
-            assertThat(nextMessage.obj).isEqualTo(client)
-        }
+        // Dispatching should now execute the real timeout.
+        looper.dispatchAll()
+        // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
+        assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
     }
 
     @Test
@@ -2180,41 +2153,20 @@ class ScanManagerTest(flags: FlagsWrapper) {
         timeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis))
     }
 
-    private fun startScan(client: ScanClient?) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread { scanManager.startScan(client) }
-        } else {
-            sendMessageWaitForProcessed(createStartStopScanMessage(true, client))
-        }
+    private fun startScan(client: ScanClient?) = executeOnScanThread {
+        scanManager.startScan(client)
     }
 
-    private fun stopScan(client: ScanClient) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread { scanManager.stopScan(client.scannerId) }
-        } else {
-            sendMessageWaitForProcessed(createStartStopScanMessage(false, client))
-        }
+    private fun stopScan(client: ScanClient) = executeOnScanThread {
+        scanManager.stopScan(client.scannerId)
     }
 
-    private fun setScreenOn(isScreenOn: Boolean) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread {
-                if (isScreenOn) scanManager.handleScreenOn() else scanManager.handleScreenOff()
-            }
-        } else {
-            sendMessageWaitForProcessed(createScreenOnOffMessage(isScreenOn))
-        }
+    private fun setScreenOn(isScreenOn: Boolean) = executeOnScanThread {
+        if (isScreenOn) scanManager.handleScreenOn() else scanManager.handleScreenOff()
     }
 
-    private fun setLocationOn(isLocationOn: Boolean) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread {
-                if (isLocationOn) scanManager.handleResumeScans()
-                else scanManager.handleSuspendScans()
-            }
-        } else {
-            sendMessageWaitForProcessed(createLocationOnOffMessage(isLocationOn))
-        }
+    private fun setLocationOn(isLocationOn: Boolean) = executeOnScanThread {
+        if (isLocationOn) scanManager.handleResumeScans() else scanManager.handleSuspendScans()
     }
 
     private fun setAppImportance(isForeground: Boolean, uid: Int) {
@@ -2222,67 +2174,17 @@ class ScanManagerTest(flags: FlagsWrapper) {
             if (isForeground) ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
             else ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1
         val uidImportance = ScanManager.UidImportance(uid, importance)
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread { scanManager.handleImportanceChange(uidImportance) }
-        } else {
-            val message = Message()
-            message.what = ScanManager.MSG_IMPORTANCE_CHANGE
-            message.obj = uidImportance
-            sendMessageWaitForProcessed(message)
-        }
+        executeOnScanThread { scanManager.handleImportanceChange(uidImportance) }
     }
 
-    private fun setConnectingState(isConnecting: Boolean) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread {
-                if (isConnecting) scanManager.handleConnectingState()
-                else scanManager.handleClearConnectingState()
-            }
-        } else {
-            sendMessageWaitForProcessed(createConnectingMessage(isConnecting))
-        }
+    private fun setConnectingState(isConnecting: Boolean) = executeOnScanThread {
+        if (isConnecting) scanManager.handleConnectingState()
+        else scanManager.handleClearConnectingState()
     }
 
     private fun executeOnScanThread(r: Runnable) {
         scanManager.mHandler!!.post(r)
         assertThat(looper.dispatchAll()).isEqualTo(1)
-    }
-
-    private fun sendMessageWaitForProcessed(msg: Message) {
-        scanManager.mClientHandler!!.sendMessage(msg)
-        looper.dispatchAll()
-    }
-
-    private fun createStartStopScanMessage(isStartScan: Boolean, obj: Any?): Message {
-        val message = Message()
-        message.what =
-            if (isStartScan) ScanManager.MSG_START_BLE_SCAN else ScanManager.MSG_STOP_BLE_SCAN
-        message.obj = obj
-        return message
-    }
-
-    private fun createScreenOnOffMessage(isScreenOn: Boolean): Message {
-        val message = Message()
-        message.what = if (isScreenOn) ScanManager.MSG_SCREEN_ON else ScanManager.MSG_SCREEN_OFF
-        message.obj = null
-        return message
-    }
-
-    private fun createLocationOnOffMessage(isLocationOn: Boolean): Message {
-        val message = Message()
-        message.what =
-            if (isLocationOn) ScanManager.MSG_RESUME_SCANS else ScanManager.MSG_SUSPEND_SCANS
-        message.obj = null
-        return message
-    }
-
-    private fun createConnectingMessage(isConnectingOn: Boolean): Message {
-        val message = Message()
-        message.what =
-            if (isConnectingOn) ScanManager.MSG_START_CONNECTING
-            else ScanManager.MSG_STOP_CONNECTING
-        message.obj = null
-        return message
     }
 
     private fun simulateIsOffloadFilteringSupported(supported: Boolean) {
@@ -2308,8 +2210,6 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
             )
 
-        @JvmStatic
-        @Parameters(name = "{0}")
-        fun getParams() = FlagsWrapper.progressionOf(Flags.FLAG_SCAN_CONTROLLER_THREAD)
+        @JvmStatic @Parameters(name = "{0}") fun getParams() = FlagsWrapper.progressionOf()
     }
 }

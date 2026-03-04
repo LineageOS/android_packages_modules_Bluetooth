@@ -44,7 +44,6 @@ class ScannerMap {
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
     private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
-    // TODO(b/455057044) Remove on flag cleanup as only the below `addWithCallback` will be used
     fun addWithCallback(
         appUid: Int,
         appPid: Int,
@@ -53,37 +52,8 @@ class ScannerMap {
         source: AttributionSource,
         workSource: WorkSource?,
         callback: IScannerCallback,
-        adapterService: AdapterService,
-        batteryStatsManager: BatteryStatsManager,
-        isInternal: Boolean,
-    ): ScannerApp =
-        add(
-            appUid = appUid,
-            appPid = appPid,
-            appName = appName,
-            uuid = uuid,
-            userHandle = null,
-            source = source,
-            workSource = workSource,
-            callback = callback,
-            settings = null,
-            filters = null,
-            piInfo = null,
-            adapterService = adapterService,
-            batteryStatsManager = batteryStatsManager,
-            isInternal = isInternal,
-        )
-
-    fun addWithCallback(
-        appUid: Int,
-        appPid: Int,
-        appName: String,
-        uuid: UUID,
-        source: AttributionSource,
-        workSource: WorkSource?,
-        callback: IScannerCallback,
-        settings: ScanSettings? = null, // TODO(b/455057044) Remove nullable on cleanup
-        filters: List<ScanFilter>? = null, // TODO(b/455057044) Remove not nullable on cleanup
+        settings: ScanSettings,
+        filters: List<ScanFilter>,
         adapterService: AdapterService,
         batteryStatsManager: BatteryStatsManager,
         isInternal: Boolean = false,
@@ -111,8 +81,8 @@ class ScannerMap {
         userHandle: UserHandle,
         source: AttributionSource,
         piInfo: ScanController.PendingIntentInfo,
-        settings: ScanSettings? = null,
-        filters: List<ScanFilter>? = null,
+        settings: ScanSettings,
+        filters: List<ScanFilter>,
         adapterService: AdapterService,
         batteryStatsManager: BatteryStatsManager,
     ): ScannerApp =
@@ -142,8 +112,8 @@ class ScannerMap {
         source: AttributionSource,
         workSource: WorkSource?,
         callback: IScannerCallback?,
-        settings: ScanSettings?, // TODO(b/455057044) Remove nullable on cleanup
-        filters: List<ScanFilter>?, // TODO(b/455057044) Remove nullable on cleanup
+        settings: ScanSettings,
+        filters: List<ScanFilter>,
         piInfo: ScanController.PendingIntentInfo?,
         adapterService: AdapterService,
         batteryStatsManager: BatteryStatsManager,

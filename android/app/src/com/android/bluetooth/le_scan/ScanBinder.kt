@@ -65,24 +65,6 @@ class ScanBinder(
         return scanController
     }
 
-    // TODO(b/455057044) Delete on flag cleanup
-    override fun registerScanner(
-        callback: IScannerCallback,
-        settings: ScanSettings,
-        filters: List<ScanFilter>,
-        workSource: WorkSource?,
-        source: AttributionSource,
-    ) {
-        enforcePrivilegedPermissionIfNeeded(settings, filters)
-        if (workSource != null) {
-            adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
-        }
-        val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(adapterService)
-        withControllerRunOnScanThread(source, "registerScanner") {
-            registerScanner(callback, workSource, source, hasPrivilegedPermission)
-        }
-    }
-
     override fun registerAndStartScan(
         callback: IScannerCallback,
         settings: ScanSettings,
@@ -109,19 +91,6 @@ class ScanBinder(
 
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
         withControllerRunOnScanThread(source, "unregisterScanner") { unregisterScanner(scannerId) }
-    }
-
-    // TODO(b/455057044) Delete on flag cleanup
-    override fun startScan(
-        scannerId: Int,
-        settings: ScanSettings,
-        filters: List<ScanFilter>,
-        source: AttributionSource,
-    ) {
-        enforcePrivilegedPermissionIfNeeded(settings, filters)
-        withControllerRunOnScanThread(source, "startScan") {
-            startScan(scannerId, settings, filters, source)
-        }
     }
 
     override fun registerPiAndStartScan(

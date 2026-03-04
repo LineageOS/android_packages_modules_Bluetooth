@@ -83,17 +83,6 @@ class ScanBinderTest {
     }
 
     @Test
-    fun registerScanner() {
-        val callback = mock<IScannerCallback>()
-        val settings = ScanSettings.Builder().build()
-        val filters = listOf<ScanFilter>()
-        val workSource = mock<WorkSource>()
-
-        binder.registerScanner(callback, settings, filters, workSource, source)
-        verify(scanController).registerScanner(callback, workSource, source, true)
-    }
-
-    @Test
     fun registerAndStartScan() {
         // Setup: Create mock objects for the call
         val callback = mock<IScannerCallback>()
@@ -148,68 +137,78 @@ class ScanBinderTest {
     }
 
     @Test
-    fun startScan_withDefaultSettings_doesNotEnforcePrivilegedPermission() {
-        val scannerId = 1
+    fun registerAndStartScan_withDefaultSettings_doesNotEnforcePrivilegedPermission() {
+        val callback = mock<IScannerCallback>()
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
 
-        binder.startScan(scannerId, settings, filters, source)
-        verify(scanController).startScan(scannerId, settings, filters, source)
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
+        verify(scanController)
+            .registerAndStartScan(callback, workSource, source, true, settings, filters)
         verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
     }
 
     @Test
-    fun startScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
+    fun registerAndStartScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
         doReturn(State.BLE_ON).whenever(adapterService).state
-        val scannerId = 1
+        val callback = mock<IScannerCallback>()
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
 
-        binder.startScan(scannerId, settings, filters, source)
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        verify(scanController).startScan(scannerId, settings, filters, source)
+        verify(scanController)
+            .registerAndStartScan(callback, workSource, source, true, settings, filters)
     }
 
     @Test
-    fun startScan_withAmbientDiscoveryMode_enforcesPrivilegedPermission() {
-        val scannerId = 1
+    fun registerAndStartScan_withAmbientDiscoveryMode_enforcesPrivilegedPermission() {
+        val callback = mock<IScannerCallback>()
         val settings =
             ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY).build()
         val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
 
-        binder.startScan(scannerId, settings, filters, source)
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        verify(scanController).startScan(scannerId, settings, filters, source)
+        verify(scanController)
+            .registerAndStartScan(callback, workSource, source, true, settings, filters)
     }
 
     @Test
-    fun startScan_withBatchScanTruncated_enforcesPrivilegedPermission() {
-        val scannerId = 1
+    fun registerAndStartScan_withBatchScanTruncated_enforcesPrivilegedPermission() {
+        val callback = mock<IScannerCallback>()
         val settings =
             ScanSettings.Builder()
                 .setReportDelay(1000)
                 .setScanResultType(ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED)
                 .build()
         val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
 
-        binder.startScan(scannerId, settings, filters, source)
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        verify(scanController).startScan(scannerId, settings, filters, source)
+        verify(scanController)
+            .registerAndStartScan(callback, workSource, source, true, settings, filters)
     }
 
     @Test
-    fun startScan_withBatchScanFull_doesNotEnforcePrivilegedPermission() {
-        val scannerId = 1
+    fun registerAndStartScan_withBatchScanFull_doesNotEnforcePrivilegedPermission() {
+        val callback = mock<IScannerCallback>()
         val settings =
             ScanSettings.Builder()
                 .setReportDelay(1000)
                 .setScanResultType(ScanSettings.SCAN_RESULT_TYPE_FULL)
                 .build()
         val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
 
-        binder.startScan(scannerId, settings, filters, source)
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
         verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        verify(scanController).startScan(scannerId, settings, filters, source)
+        verify(scanController)
+            .registerAndStartScan(callback, workSource, source, true, settings, filters)
     }
 
     @Test
