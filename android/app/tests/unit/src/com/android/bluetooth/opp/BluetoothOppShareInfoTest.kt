@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,90 +14,88 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.opp;
+package com.android.bluetooth.opp
 
-import static com.google.common.truth.Truth.assertThat;
+import android.net.Uri
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import android.net.Uri;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link BluetoothOppShareInfo}. */
+/** Test cases for [BluetoothOppShareInfo]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class BluetoothOppShareInfoTest {
+@RunWith(AndroidJUnit4::class)
+class BluetoothOppShareInfoTest {
 
-    private BluetoothOppShareInfo mBluetoothOppShareInfo;
+    private lateinit var bluetoothOppShareInfo: BluetoothOppShareInfo
 
     @Before
-    public void setUp() throws Exception {
-        mBluetoothOppShareInfo =
-                new BluetoothOppShareInfo(
-                        0,
-                        Uri.parse("file://Idontknow//Justmadeitup"),
-                        "this is a object that take 4 bytes",
-                        "random.jpg",
-                        "image/jpeg",
-                        BluetoothShare.DIRECTION_INBOUND,
-                        "01:23:45:67:89:AB",
-                        BluetoothShare.VISIBILITY_VISIBLE,
-                        BluetoothShare.USER_CONFIRMATION_CONFIRMED,
-                        BluetoothShare.STATUS_PENDING,
-                        1023,
-                        42,
-                        123456789,
-                        false);
+    fun setUp() {
+        bluetoothOppShareInfo =
+            BluetoothOppShareInfo(
+                0,
+                Uri.parse("file://Idontknow//Justmadeitup"),
+                "this is a object that take 4 bytes",
+                "random.jpg",
+                "image/jpeg",
+                BluetoothShare.DIRECTION_INBOUND,
+                "01:23:45:67:89:AB",
+                BluetoothShare.VISIBILITY_VISIBLE,
+                BluetoothShare.USER_CONFIRMATION_CONFIRMED,
+                BluetoothShare.STATUS_PENDING,
+                1023,
+                42,
+                123456789,
+                false,
+            )
     }
 
     @Test
-    public void testConstructor() {
-        assertThat(mBluetoothOppShareInfo.mUri)
-                .isEqualTo(Uri.parse("file://Idontknow//Justmadeitup"));
-        assertThat(mBluetoothOppShareInfo.mFilename).isEqualTo("random.jpg");
-        assertThat(mBluetoothOppShareInfo.mMimetype).isEqualTo("image/jpeg");
-        assertThat(mBluetoothOppShareInfo.mDirection).isEqualTo(BluetoothShare.DIRECTION_INBOUND);
-        assertThat(mBluetoothOppShareInfo.mDestination).isEqualTo("01:23:45:67:89:AB");
-        assertThat(mBluetoothOppShareInfo.mVisibility).isEqualTo(BluetoothShare.VISIBILITY_VISIBLE);
-        assertThat(mBluetoothOppShareInfo.mConfirm)
-                .isEqualTo(BluetoothShare.USER_CONFIRMATION_CONFIRMED);
-        assertThat(mBluetoothOppShareInfo.mStatus).isEqualTo(BluetoothShare.STATUS_PENDING);
-        assertThat(mBluetoothOppShareInfo.mTotalBytes).isEqualTo(1023);
-        assertThat(mBluetoothOppShareInfo.mCurrentBytes).isEqualTo(42);
-        assertThat(mBluetoothOppShareInfo.mTimestamp).isEqualTo(123456789);
-        assertThat(mBluetoothOppShareInfo.mMediaScanned).isFalse();
+    fun testConstructor() {
+        assertThat(bluetoothOppShareInfo.mUri)
+            .isEqualTo(Uri.parse("file://Idontknow//Justmadeitup"))
+        assertThat(bluetoothOppShareInfo.mFilename).isEqualTo("random.jpg")
+        assertThat(bluetoothOppShareInfo.mMimetype).isEqualTo("image/jpeg")
+        assertThat(bluetoothOppShareInfo.mDirection).isEqualTo(BluetoothShare.DIRECTION_INBOUND)
+        assertThat(bluetoothOppShareInfo.mDestination).isEqualTo("01:23:45:67:89:AB")
+        assertThat(bluetoothOppShareInfo.mVisibility).isEqualTo(BluetoothShare.VISIBILITY_VISIBLE)
+        assertThat(bluetoothOppShareInfo.mConfirm)
+            .isEqualTo(BluetoothShare.USER_CONFIRMATION_CONFIRMED)
+        assertThat(bluetoothOppShareInfo.mStatus).isEqualTo(BluetoothShare.STATUS_PENDING)
+        assertThat(bluetoothOppShareInfo.mTotalBytes).isEqualTo(1023)
+        assertThat(bluetoothOppShareInfo.mCurrentBytes).isEqualTo(42)
+        assertThat(bluetoothOppShareInfo.mTimestamp).isEqualTo(123456789)
+        assertThat(bluetoothOppShareInfo.mMediaScanned).isFalse()
     }
 
     @Test
-    public void testReadyToStart() {
-        assertThat(mBluetoothOppShareInfo.isReadyToStart()).isTrue();
+    fun testReadyToStart() {
+        assertThat(bluetoothOppShareInfo.isReadyToStart).isTrue()
 
-        mBluetoothOppShareInfo.mDirection = BluetoothShare.DIRECTION_OUTBOUND;
-        assertThat(mBluetoothOppShareInfo.isReadyToStart()).isTrue();
+        bluetoothOppShareInfo.mDirection = BluetoothShare.DIRECTION_OUTBOUND
+        assertThat(bluetoothOppShareInfo.isReadyToStart).isTrue()
 
-        mBluetoothOppShareInfo.mStatus = BluetoothShare.STATUS_RUNNING;
-        assertThat(mBluetoothOppShareInfo.isReadyToStart()).isFalse();
+        bluetoothOppShareInfo.mStatus = BluetoothShare.STATUS_RUNNING
+        assertThat(bluetoothOppShareInfo.isReadyToStart).isFalse()
     }
 
     @Test
-    public void testHasCompletionNotification() {
-        assertThat(mBluetoothOppShareInfo.hasCompletionNotification()).isFalse();
+    fun testHasCompletionNotification() {
+        assertThat(bluetoothOppShareInfo.hasCompletionNotification()).isFalse()
 
-        mBluetoothOppShareInfo.mStatus = BluetoothShare.STATUS_CANCELED;
-        assertThat(mBluetoothOppShareInfo.hasCompletionNotification()).isTrue();
+        bluetoothOppShareInfo.mStatus = BluetoothShare.STATUS_CANCELED
+        assertThat(bluetoothOppShareInfo.hasCompletionNotification()).isTrue()
 
-        mBluetoothOppShareInfo.mVisibility = BluetoothShare.VISIBILITY_HIDDEN;
-        assertThat(mBluetoothOppShareInfo.hasCompletionNotification()).isFalse();
+        bluetoothOppShareInfo.mVisibility = BluetoothShare.VISIBILITY_HIDDEN
+        assertThat(bluetoothOppShareInfo.hasCompletionNotification()).isFalse()
     }
 
     @Test
-    public void testIsObsolete() {
-        assertThat(mBluetoothOppShareInfo.isObsolete()).isFalse();
-        mBluetoothOppShareInfo.mStatus = BluetoothShare.STATUS_RUNNING;
-        assertThat(mBluetoothOppShareInfo.isObsolete()).isTrue();
+    fun testIsObsolete() {
+        assertThat(bluetoothOppShareInfo.isObsolete).isFalse()
+        bluetoothOppShareInfo.mStatus = BluetoothShare.STATUS_RUNNING
+        assertThat(bluetoothOppShareInfo.isObsolete).isTrue()
     }
 }
