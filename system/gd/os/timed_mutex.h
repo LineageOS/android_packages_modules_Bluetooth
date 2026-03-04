@@ -22,6 +22,7 @@
 #include <sys/timerfd.h>
 
 #include <ctime>
+#include <mutex>
 #include <source_location>
 
 namespace bluetooth {
