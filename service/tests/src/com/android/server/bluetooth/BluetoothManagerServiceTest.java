@@ -71,7 +71,6 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionManager;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.sysprop.BluetoothProperties;
@@ -114,7 +113,7 @@ public class BluetoothManagerServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);
+        return FlagsWrapper.progressionOf();
     }
 
     private static final UserHandle DEFAULT_USER = UserHandle.of(42);
@@ -489,17 +488,6 @@ public class BluetoothManagerServiceTest {
         verifyBleStateIntentSent(State.BLE_TURNING_OFF, State.OFF);
     }
 
-    private void transition_onToBleOn(IBluetoothCallback btCallback) throws Exception {
-        mInOrder.verify(mAdapterBinder).onToBleOn();
-        verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
-        verifyStateIntentSent(State.ON, State.TURNING_OFF);
-
-        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-        verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
-        verifyStateIntentSent(State.TURNING_OFF, State.OFF);
-    }
-
     private void transition_bleOnToOff(IBluetoothCallback btCallback) throws Exception {
         mInOrder.verify(mAdapterBinder).bleOnToOff();
         verifyBleStateIntentSent(State.BLE_ON, State.BLE_TURNING_OFF);
@@ -511,19 +499,13 @@ public class BluetoothManagerServiceTest {
     }
 
     private void transition_onToOff(IBluetoothCallback btCallback) throws Exception {
-        if (Flags.skipBleOnWhenTurningOff()) {
-            transition_onToTurningOff();
+        transition_onToTurningOff();
 
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            transition_turningOffToBleTurningOff();
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        transition_turningOffToBleTurningOff();
 
-            btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
-            transition_bleTurningOffToOff();
-            return;
-        }
-
-        transition_onToBleOn(btCallback);
-        transition_bleOnToOff(btCallback);
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
+        transition_bleTurningOffToOff();
     }
 
     @Test
@@ -621,60 +603,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF)
-    public void crash_whenOn_goesToOffCorrectly_withBleOnWhenTurningOffFlagOff() throws Exception {
-        mManagerService.enable(0, "crash_whenOn_goesToOffCorrectly_withBleOnWhenTurningOffFlagOff");
-
-        // Manually perform transition to ON to get the ServiceConnection
-        var serviceConnection = acceptBluetoothBinding();
-        IBluetoothCallback btCallback = captureBluetoothCallback();
-        btCallback.setAdapterServiceBinder(mBinder);
-        syncHandler(0); // To post setAdapterServiceBinder
-        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(mBinder);
-        btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.BLE_ON);
-
-        mInOrder.verify(mAdapterBinder).bleOnToOn();
-        verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
-        verifyStateIntentSent(State.OFF, State.TURNING_ON);
-        btCallback.onBluetoothStateChange(State.TURNING_ON, State.ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-        verifyBleStateIntentSent(State.TURNING_ON, State.ON);
-        verifyStateIntentSent(State.TURNING_ON, State.ON);
-        assertThat(mManagerService.getState()).isEqualTo(State.ON);
-
-        // Simulate crash
-        serviceConnection.onServiceDisconnected(
-                new ComponentName("", "com.android.bluetooth.btservice.AdapterService"));
-        syncHandler(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
-
-        // Verify state transitions
-        // 1. ON -> TURNING_OFF
-        verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
-        verifyStateIntentSent(State.ON, State.TURNING_OFF);
-
-        // 2. TURNING_OFF -> BLE_ON
-        verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
-        verifyStateIntentSent(State.TURNING_OFF, State.OFF);
-
-        // 3. BLE_ON -> BLE_TURNING_OFF
-        verifyBleStateIntentSent(State.BLE_ON, State.BLE_TURNING_OFF);
-
-        // 4. BLE_TURNING_OFF -> OFF
-        verifyBleStateIntentSent(State.BLE_TURNING_OFF, State.OFF);
-
-        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
-
-        // Verify recovery is scheduled
-        mLooper.moveTimeForward(120_000);
-        discardMessage(MESSAGE_RESTART_BLUETOOTH_SERVICE);
-
-        endTest();
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF)
     public void crash_whenOn_goesToOffCorrectly_withBleOnWhenTurningOffFlagOn() throws Exception {
         mManagerService.enable(0, "crash_whenOn_goesToOffCorrectly_withBleOnWhenTurningOffFlagOn");
 
@@ -811,16 +739,10 @@ public class BluetoothManagerServiceTest {
         // Generate an event that will be delayed due to the TURNING_OFF state
         mManagerService.onAirplaneModeChanged(false);
 
-        if (Flags.skipBleOnWhenTurningOff()) {
-            transition_onToTurningOff();
+        transition_onToTurningOff();
 
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            transition_turningOffToBleTurningOff();
-        } else {
-            transition_onToBleOn(btCallback);
-            mInOrder.verify(mAdapterBinder).bleOnToOff();
-            verifyBleStateIntentSent(State.BLE_ON, State.BLE_TURNING_OFF);
-        }
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        transition_turningOffToBleTurningOff();
 
         // As soon as we start turning down BLE, emulate request to go to BLE_ON
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_OFF);
@@ -1025,21 +947,12 @@ public class BluetoothManagerServiceTest {
         UserHandle anotherUser = mock(UserHandle.class);
         mManagerService.onUserSwitching(anotherUser);
 
-        if (Flags.skipBleOnWhenTurningOff()) {
-            // Complete the shutdown to OFF
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            transition_turningOffToBleTurningOff();
+        // Complete the shutdown to OFF
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        transition_turningOffToBleTurningOff();
 
-            btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
-            transition_bleTurningOffToOff();
-        } else {
-            // Complete the shutdown by going to BLE_ON then OFF
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
-            syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-            verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
-            verifyStateIntentSent(State.TURNING_OFF, State.OFF);
-            transition_bleOnToOff(btCallback);
-        }
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
+        transition_bleTurningOffToOff();
 
         mCurrentUser = anotherUser;
 
@@ -1259,20 +1172,11 @@ public class BluetoothManagerServiceTest {
 
         // Because of graceful disable, it should immediately call onToBleOn
         // and then go through the full off transition.
-        if (Flags.skipBleOnWhenTurningOff()) {
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            transition_turningOffToBleTurningOff();
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        transition_turningOffToBleTurningOff();
 
-            btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
-            transition_bleTurningOffToOff();
-        } else {
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
-            syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-            verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
-            verifyStateIntentSent(State.TURNING_OFF, State.OFF);
-
-            transition_bleOnToOff(btCallback);
-        }
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
+        transition_bleTurningOffToOff();
 
         transition_offToOn(); // reaching OFF when mEnable is true
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
@@ -1300,20 +1204,11 @@ public class BluetoothManagerServiceTest {
 
         // Because of graceful disable, it should immediately call onToBleOn
         // and then go through the full off transition.
-        if (Flags.skipBleOnWhenTurningOff()) {
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            transition_turningOffToBleTurningOff();
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        transition_turningOffToBleTurningOff();
 
-            btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
-            transition_bleTurningOffToOff();
-        } else {
-            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
-            syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-            verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
-            verifyStateIntentSent(State.TURNING_OFF, State.OFF);
-
-            transition_bleOnToOff(btCallback);
-        }
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
+        transition_bleTurningOffToOff();
 
         transition_offToOn(); // reaching OFF when mEnable is true
         assertThat(mManagerService.getState()).isEqualTo(State.ON);

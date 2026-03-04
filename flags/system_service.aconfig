@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "skip_ble_on_when_turning_off"
-    namespace: "bluetooth"
-    description: "Now that transitioning from ON to BLE_ON go through OFF, we should not broadcast BLE_ON when going OFF."
-    bug: "444761370"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reject_enable_from_unknown_requester"
     namespace: "bluetooth"
     description: "Sometimes, the requester of enable/enableBle is unknown, making investigation impossible. Let's reject them to trace and properly identify the caller"
