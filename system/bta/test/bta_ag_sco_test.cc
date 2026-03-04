@@ -166,8 +166,6 @@ protected:
       return key == kPropHfpSoftwarePathEnabled ? prop_hfp_software_path_enabled_return_
                                                 : default_value;
     };
-
-    set_com_android_bluetooth_flags_sco_managed_by_audio_remove_hfp_hal(true);
   }
 
   void TearDown() override {

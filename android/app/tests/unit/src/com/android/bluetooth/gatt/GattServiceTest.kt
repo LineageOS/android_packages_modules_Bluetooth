@@ -944,7 +944,6 @@ class GattServiceTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GATT_MESSAGING_PERMISSIONS)
     fun clientAncsAccessPermissionRejected() {
         if (Flags.checkMapclientConnectionPolicyForAncs()) {
             return

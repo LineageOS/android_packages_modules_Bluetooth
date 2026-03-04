@@ -17,13 +17,6 @@ flag {
 }
 
 flag {
-    name: "gatt_messaging_permissions"
-    namespace: "bluetooth"
-    description: "Check messaging permission for ANCS"
-    bug: "428743016"
-}
-
-flag {
     name: "check_mapclient_connection_policy_for_ancs"
     namespace: "bluetooth"
     description: "Check MapClient connection policy for ANCS"
