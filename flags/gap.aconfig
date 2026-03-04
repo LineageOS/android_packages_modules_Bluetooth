@@ -90,16 +90,6 @@ flag {
 }
 
 flag {
-    name: "ensure_acl_connection_is_removed_from_pending_list"
-    namespace: "bluetooth"
-    description: "Fix that ACL connection is left in the pending list when advertiser is removed right before connection is established."
-    bug: "441211531"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "l2cap_improve_segmented_sdu"
     namespace: "bluetooth"
     description: "Improve sending segmented sdu"
