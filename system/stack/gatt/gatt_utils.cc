@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <deque>
 
+#include "btif/include/btif_debug_conn.h"
 #include "hardware/bt_gatt_types.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
@@ -1730,9 +1731,18 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
   }
 }
 
+void gatt_set_debug_conn_state_cb(void (*debug_conn_state)(
+        const RawAddress& bda, bool connected, const tGATT_DISCONN_REASON disconnect_reason)) {
+  gatt_cb.debug_conn_state = debug_conn_state;
+}
+
 static void gatt_disconnect_complete_notify_user(const RawAddress& bda, tGATT_DISCONN_REASON reason,
                                                  tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, transport);
+
+  if (gatt_cb.debug_conn_state) {
+    gatt_cb.debug_conn_state(bda, false, reason);
+  }
 
   for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
     if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {

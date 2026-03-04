@@ -26,6 +26,7 @@
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
+#include "btif/include/btif_debug_conn.h"
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
@@ -510,6 +511,10 @@ void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
 
     bool is_active = !p_tcb->app_hold_link.empty();
     gatt_set_idle_timeout(p_tcb->peer_bda, is_active);
+  }
+
+  if (gatt_cb.debug_conn_state) {
+    gatt_cb.debug_conn_state(p_tcb->peer_bda, true, GATT_CONN_OK);
   }
 
   /* notifying all applications for the connection up event */

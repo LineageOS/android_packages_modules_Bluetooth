@@ -28,10 +28,13 @@
 #include "btcore/include/module.h"
 #include "btif_status.h"
 #include "include/hardware/bt_hh.h"
+#include "stack/include/gatt_api.h"
 #include "test/common/core_interface.h"
 #include "test/common/mock_functions.h"
 
 using namespace std::chrono_literals;
+
+void gatt_set_debug_conn_state_cb(void (*)(const RawAddress&, bool, const tGATT_DISCONN_REASON)) {}
 
 namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);

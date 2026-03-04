@@ -34,6 +34,7 @@
 #include "btif/include/btif_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_config.h"
+#include "btif/include/btif_debug_conn.h"
 #include "btif/include/btif_profile_queue.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
@@ -191,6 +192,7 @@ void stack_enable(ProfileStartCallback startProfiles, const std::string local_na
 
   bta_sys_init();
   BTA_GATT_Init_gatt_pm_callbacks();
+  gatt_set_debug_conn_state_cb(btif_debug_conn_state);
 
   btif_init_ok();
   BTA_dm_init();

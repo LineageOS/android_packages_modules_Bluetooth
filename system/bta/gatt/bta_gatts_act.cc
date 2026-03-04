@@ -324,12 +324,6 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr, tCO
   log::verbose("bda={} gatt_if= {}, conn_id=0x{:x} connected={}", bdaddr, gatt_if, conn_id,
                connected);
 
-  if (connected) {
-    btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_OK);
-  } else {
-    btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, GATT_CONN_OK);
-  }
-
   tBTA_GATTS_RCB* p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
   if (!p_reg || !p_reg->p_cback) {
     log::error("server_if={} not found", gatt_if);

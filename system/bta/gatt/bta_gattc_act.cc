@@ -1450,16 +1450,6 @@ static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg) {
 static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr, tCONN_ID conn_id,
                                  bool connected, tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport) {
-  if (connected) {
-    log::info("Connected client_if:{} addr:{}, transport:{} reason:{}", gattc_if, bdaddr,
-              bt_transport_text(transport), gatt_disconnection_reason_text(reason));
-    btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, reason);
-  } else {
-    log::info("Disconnected att_id:{} addr:{}, transport:{} reason:{}", gattc_if, bdaddr,
-              bt_transport_text(transport), gatt_disconnection_reason_text(reason));
-    btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, reason);
-  }
-
   tBTA_GATTC_DATA* p_buf = (tBTA_GATTC_DATA*)osi_calloc(sizeof(tBTA_GATTC_DATA));
   p_buf->int_conn.hdr.event = connected ? BTA_GATTC_INT_CONN_EVT : BTA_GATTC_INT_DISCONN_EVT;
   p_buf->int_conn.hdr.layer_specific = static_cast<uint16_t>(conn_id);

@@ -524,6 +524,8 @@ typedef struct {
   std::unordered_map<uint16_t, tGATT_OFFLOAD_SESSION> offload_sessions;
   std::unordered_map<tGATT_SUBRATE_MODE, tGATT_SUBRATE_MODE_CONFIG> subrate_mode_config;
   std::unordered_map<RawAddress, tGATT_SUBRATE_MGR_CB> subrate_info;
+  void (*debug_conn_state)(const RawAddress& bda, bool connected,
+                           const tGATT_DISCONN_REASON disconnect_reason);
 } tGATT_CB;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
