@@ -1418,8 +1418,7 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
   BTM_BLE_SEC_CALLBACK(BTM_LE_COMPLT_EVT, bd_addr, p_data);
 
   /* Reset BTM state if the callback address matches pairing address */
-  if (com_android_bluetooth_flags_btm_le_pairing_state_reset() &&
-      bd_addr == BtmSecurity::Get().link_spec_.addrt.bda) {
+  if (bd_addr == BtmSecurity::Get().link_spec_.addrt.bda) {
     BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
     BtmSecurity::Get().link_spec_ = {};
     BtmSecurity::Get().link_spec_.addrt.bda = RawAddress::kAny;
@@ -1481,16 +1480,6 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
   log::verbose("BtmSecurity::Get().pairing_state_={:x} pairing_flags={:x} ",
                BtmSecurity::Get().pairing_state_, BtmSecurity::Get().pairing_flags_);
 
-  /* Reset btm state only if the callback address matches pairing address */
-  if (!com_android_bluetooth_flags_btm_le_pairing_state_reset() &&
-      bd_addr == BtmSecurity::Get().link_spec_.addrt.bda) {
-    BtmSecurity::Get().link_spec_ = {};
-    BtmSecurity::Get().link_spec_.addrt.bda = RawAddress::kAny;
-    BtmSecurity::Get().pairing_state_ = BTM_PAIR_STATE_IDLE;
-    BtmSecurity::Get().pairing_flags_ = 0;
-    BtmSecurity::Get().ResetLinkKeyRequestTimer();
-  }
-
   if (res == tBTM_STATUS::BTM_SUCCESS) {
     p_device->sec_rec.le_link = tSECURITY_STATE::IDLE;
 
@@ -1547,11 +1536,7 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
   if (p_device == nullptr) {
     log::warn("Unexpected event '{}' for unknown device.", smp_evt_to_text(event));
     if (bd_addr == BtmSecurity::Get().link_spec_.addrt.bda && event == SMP_COMPLT_EVT) {
-      if (com_android_bluetooth_flags_btm_le_pairing_state_reset()) {
-        BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
-      } else {
-        BtmSecurity::Get().pairing_state_ = BTM_PAIR_STATE_IDLE;
-      }
+      BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);
       BtmSecurity::Get().link_spec_ = {};
       BtmSecurity::Get().link_spec_.addrt.bda = RawAddress::kAny;
       BtmSecurity::Get().pairing_flags_ = 0;
