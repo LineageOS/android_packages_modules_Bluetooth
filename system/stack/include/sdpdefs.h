@@ -30,8 +30,7 @@
 
 #include "macros.h"
 
-/* Define the service attribute IDs.
- */
+/* Define the service attribute IDs. */
 #define ATTR_ID_SERVICE_RECORD_HDL 0x0000
 #define ATTR_ID_SERVICE_CLASS_ID_LIST 0x0001
 #define ATTR_ID_SERVICE_RECORD_STATE 0x0002
@@ -49,8 +48,7 @@
 #define ATTR_ID_SERVICE_DESCRIPTION (LANGUAGE_BASE_ID + 0x0001)
 #define ATTR_ID_PROVIDER_NAME (LANGUAGE_BASE_ID + 0x0002)
 
-/* Device Identification (DI)
- */
+/* Device Identification (DI) */
 #define ATTR_ID_SPECIFICATION_ID 0x0200
 #define ATTR_ID_VENDOR_ID 0x0201
 #define ATTR_ID_PRODUCT_ID 0x0202

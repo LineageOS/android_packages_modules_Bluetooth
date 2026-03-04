@@ -89,12 +89,10 @@ void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   hci::AddressWithType empty_address_with_type(hci::Address{},
                                                hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
-  /* Default to 7 minutes minimum, 15 minutes maximum for random address refreshing;
-   * device can override. */
   auto minimum_rotation_time = std::chrono::minutes(
-          android::sysprop::bluetooth::Ble::random_address_rotation_interval_min().value_or(7));
+          android::sysprop::bluetooth::Ble::random_address_rotation_interval_min());
   auto maximum_rotation_time = std::chrono::minutes(
-          android::sysprop::bluetooth::Ble::random_address_rotation_interval_max().value_or(15));
+          android::sysprop::bluetooth::Ble::random_address_rotation_interval_max());
 
   Stack::GetInstance()->GetAclManagerLe()->SetPrivacyPolicyForInitiatorAddress(
           address_policy, empty_address_with_type, minimum_rotation_time, maximum_rotation_time);

@@ -202,11 +202,6 @@ AdvertisingCache cache;
 
 }  // namespace
 
-static bool ble_vnd_is_included() {
-  // replace build time config BLE_VND_INCLUDED with runtime
-  return android::sysprop::bluetooth::Ble::vnd_included().value_or(true);
-}
-
 /**********PAST & PS *******************/
 using StartSyncCb = base::RepeatingCallback<void(
         uint8_t /*status*/, uint16_t /*sync_handle*/, uint8_t /*advertising_sid*/,
@@ -487,7 +482,7 @@ void BTM_BleGetDynamicAudioBuffer(tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB p_dynamic_audi
  *
  ******************************************************************************/
 void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
-  if (!ble_vnd_is_included()) {
+  if (!android::sysprop::bluetooth::Ble::vnd_included()) {
     return;
   }
 
@@ -1726,7 +1721,7 @@ void btm_ble_init(void) {
           alarm_new("btm_ble_addr.refresh_raddr_timer");
   btm_ble_pa_sync_cb = {};
   sync_timeout_alarm = alarm_new("btm.sync_start_task");
-  if (!ble_vnd_is_included()) {
+  if (!android::sysprop::bluetooth::Ble::vnd_included()) {
     btm_ble_adv_filter_init();
   }
 }
