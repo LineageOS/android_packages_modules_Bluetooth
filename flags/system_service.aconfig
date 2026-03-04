@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "set_name_in_system_server"
-    namespace: "bluetooth"
-    description: "We should offer a consistent API to set the Bluetooth friendly name, whatever if Bluetooth is ON or OFF"
-    bug: "448709503"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "system_server_migrate_bms_to_kotlin"
     namespace: "bluetooth"
     description: "The entire Bluetooth System Server is now in Kotlin, except BluetoothManagerService. Let's finish it"

@@ -208,19 +208,6 @@ public class BluetoothManagerService {
                 }
 
                 @Override
-                public void onAdapterNameChange(String name) {
-                    if (Flags.setNameInSystemServer()) {
-                        throw new IllegalStateException("setNameInSystemServer is enabled");
-                    }
-                    requireNonNull(name);
-                    if (name.isEmpty()) {
-                        throw new IllegalArgumentException("Invalid Empty name");
-                    }
-                    Log.d(TAG, "IBluetoothCallback.onAdapterNameChange: " + name);
-                    post(() -> storeName(name));
-                }
-
-                @Override
                 public void onAdapterAddressChange(String address) {
                     requireNonNull(address);
                     if (!ADDR_PATTERN.matcher(address).matches()) {
@@ -593,18 +580,11 @@ public class BluetoothManagerService {
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mContext.registerReceiver(mReceiver, filter, null, mHandler);
 
-        if (Flags.setNameInSystemServer()) {
-            mName =
-                    validateLocalName(
-                            BluetoothServerProxy.getInstance()
-                                    .settingsSecureGetString(
-                                            mContentResolver, Settings.Secure.BLUETOOTH_NAME));
-        } else {
-            mName =
-                    BluetoothServerProxy.getInstance()
-                            .settingsSecureGetString(
-                                    mContentResolver, Settings.Secure.BLUETOOTH_NAME);
-        }
+        mName =
+                validateLocalName(
+                        BluetoothServerProxy.getInstance()
+                                .settingsSecureGetString(
+                                        mContentResolver, Settings.Secure.BLUETOOTH_NAME));
         mAddress =
                 BluetoothServerProxy.getInstance()
                         .settingsSecureGetString(
@@ -1481,9 +1461,7 @@ public class BluetoothManagerService {
         requireNonNull(mUser, "There is no user to start for.");
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        if (Flags.setNameInSystemServer()) {
-            intent.putExtra(EXTRA_LOCAL_NAME, mName);
-        }
+        intent.putExtra(EXTRA_LOCAL_NAME, mName);
         intent.setComponent(mBluetoothComponent.getComponentName());
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
