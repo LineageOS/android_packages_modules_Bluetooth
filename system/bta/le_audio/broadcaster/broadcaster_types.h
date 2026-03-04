@@ -153,11 +153,7 @@ struct BroadcastSubgroupCodecConfig {
       config = bis_codec_configs_.at(bis_idx);
     }
 
-    if (config.HasVendorCodecSpecific()) {
-      return config.GetVendorCodecSpecific().value();
-    }
-
-    return std::nullopt;
+    return config.GetVendorCodecSpecific();
   }
 
   uint16_t GetBisOctetsPerCodecFrame(uint8_t bis_idx) const {
