@@ -159,7 +159,11 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
     return false;
   }
 
-  // Seen on both transports, use the most recently seen transport
+  if (p_inq_info->results.ble_evt_type != BTM_BLE_ADV_IND_EVT) {  // Not connectable over LE
+    return false;
+  }
+
+  // Use the most recently seen transport
   return p_inq_info->results.last_inq_result_transport == BT_TRANSPORT_LE;
 }
 
