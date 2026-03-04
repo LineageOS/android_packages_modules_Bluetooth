@@ -16,6 +16,41 @@
       "message": "Just out of curiosity, wouldn\u0027t this be better as a prop?",
       "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72ca3ad4_04e94ec7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 36656
+      },
+      "writtenOn": "2026-03-04T15:15:50Z",
+      "side": 1,
+      "message": "Only one value would work properly on each device, so we simply determine it at compile time.",
+      "parentUuid": "a155177e_8e18c047",
+      "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94e00f90_ee4719ee",
+        "filename": "system/bta/Android.bp",
+        "patchSetId": 6
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 36656
+      },
+      "writtenOn": "2026-03-04T15:15:50Z",
+      "side": 1,
+      "message": "Better name:\n\n```suggestion\n            any @ flag_val: [\"-DBLE_LC3_DEFAULT_BITS\u003d\" + flag_val],\n```",
+      "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
