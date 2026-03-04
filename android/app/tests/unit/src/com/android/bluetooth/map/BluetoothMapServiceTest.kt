@@ -23,7 +23,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.mockGetSystemService
 import com.android.tests.bluetooth.MockitoRule
@@ -44,7 +43,6 @@ class BluetoothMapServiceTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var databaseManager: DatabaseManager
 
     private val device = getTestDevice(32)
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -60,7 +58,6 @@ class BluetoothMapServiceTest {
         adapterService.mockGetSystemService<TelephonyManager>()
         adapterService.mockGetSystemService<AlarmManager>()
 
-        doReturn(databaseManager).whenever(adapterService).databaseManager
         service = BluetoothMapService(adapterService)
         service.isAvailable = true
     }

@@ -47,7 +47,6 @@ import android.util.Log;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.metrics.MetricsLogger;
@@ -86,7 +85,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     @VisibleForTesting static final Duration CONNECT_OTHER_PROFILES_TIMEOUT = Duration.ofSeconds(6);
 
-    private final DatabaseManager mDatabaseManager; // Migrating
     private final BluetoothStorageManager mStorage;
     private final AdapterService mAdapterService;
     private final Handler mHandler;
@@ -99,13 +97,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     PhonePolicy(AdapterService adapterService, Looper looper, BluetoothStorageManager storage) {
         mAdapterService = adapterService;
-        if (Flags.mainlineBetaStorage()) {
-            mStorage = requireNonNull(storage);
-            mDatabaseManager = null;
-        } else {
-            mDatabaseManager = requireNonNull(mAdapterService.getDatabaseManager()); // Migrating
-            mStorage = null;
-        }
+        mStorage = requireNonNull(storage);
         mHandler = new Handler(looper);
         mAutoConnectProfilesSupported =
                 SystemProperties.getBoolean(AUTO_CONNECT_PROFILES_PROPERTY, false);
@@ -144,10 +136,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
      */
     public void profileActiveDeviceChanged(int profile, BluetoothDevice device) {
         mHandler.post(() -> processActiveDeviceChanged(device, profile));
-    }
-
-    public void handleAclConnected(BluetoothDevice device) {
-        mHandler.post(() -> processDeviceConnected(device));
     }
 
     public void cleanup() {
@@ -612,12 +600,8 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             connectOtherProfile(device);
         } else if (nextState == STATE_DISCONNECTED) {
             if (prevState == STATE_CONNECTING || prevState == STATE_DISCONNECTING) {
-                if (Flags.mainlineBetaStorage()) {
-                    if (profile == BluetoothProfile.A2DP || profile == BluetoothProfile.HEADSET) {
-                        mStorage.onDeviceDisconnected(device, profile);
-                    }
-                } else {
-                    mDatabaseManager.setDisconnection(device, profile); // Migrating
+                if (profile == BluetoothProfile.A2DP || profile == BluetoothProfile.HEADSET) {
+                    mStorage.onDeviceDisconnected(device, profile);
                 }
             }
             handleAllProfilesDisconnected(device);
@@ -639,11 +623,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             return;
         }
 
-        if (Flags.mainlineBetaStorage()) {
-            mStorage.onDeviceConnected(device, profile);
-        } else {
-            mDatabaseManager.setConnection(device, profile); // Migrating
-        }
+        mStorage.onDeviceConnected(device, profile);
 
         boolean isDualMode = isDualModeAudioEnabled();
         Log.d(TAG, log + "isDualMode=" + isDualMode);
@@ -679,13 +659,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                             .setConnectionPolicy(activeGroupDevice, CONNECTION_POLICY_FORBIDDEN);
                 }
             }
-        }
-    }
-
-    private void processDeviceConnected(BluetoothDevice device) {
-        Log.d(TAG, "processDeviceConnected(" + device + ")");
-        if (!Flags.mainlineBetaStorage()) {
-            mDatabaseManager.setConnection(device); // Migrating
         }
     }
 
@@ -756,13 +729,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             return;
         }
 
-        final BluetoothDevice mostRecentlyActiveA2dpDevice;
-        if (Flags.mainlineBetaStorage()) {
-            mostRecentlyActiveA2dpDevice = mStorage.getMostRecentlyActiveA2dpDevice();
-        } else {
-            mostRecentlyActiveA2dpDevice =
-                    mDatabaseManager.getMostRecentlyConnectedA2dpDevice(); // Migrating
-        }
+        BluetoothDevice mostRecentlyActiveA2dpDevice = mStorage.getMostRecentlyActiveA2dpDevice();
         if (mostRecentlyActiveA2dpDevice != null) {
             Log.d(TAG, log + "Most recent A2DP device " + mostRecentlyActiveA2dpDevice);
             autoConnectHeadset(mostRecentlyActiveA2dpDevice);
@@ -771,18 +738,13 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             return;
         }
 
-        final List<BluetoothDevice> mostRecentlyConnectedHfpDevices;
-        if (Flags.mainlineBetaStorage()) {
-            mostRecentlyConnectedHfpDevices = mStorage.getMostRecentlyActiveHfpDevices();
-        } else {
-            mostRecentlyConnectedHfpDevices =
-                    mDatabaseManager.getMostRecentlyActiveHfpDevices(); // Migrating
-        }
+        final List<BluetoothDevice> mostRecentlyConnectedHfpDevices =
+                mStorage.getMostRecentlyActiveHfpDevices();
         for (BluetoothDevice hfpDevice : mostRecentlyConnectedHfpDevices) {
             Log.d(TAG, log + "Most recent HFP device " + hfpDevice);
             autoConnectHeadset(hfpDevice);
         }
-        if (mostRecentlyConnectedHfpDevices.size() == 0) {
+        if (mostRecentlyConnectedHfpDevices.isEmpty()) {
             Log.d(TAG, log + "There was no A2DP/HFP device to auto connect to");
         }
     }
@@ -1015,29 +977,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             processInitProfilePriorities(device, uuids);
         } else {
             Log.d(TAG, log + "Device in BOND_NONE state, won't connect profiles");
-        }
-    }
-
-    /**
-     * Resets the service connection policies for the device. This is called when the {@link
-     * BluetoothDevice#removeBond} is requested for the device.
-     *
-     * @param device is the remote device whose services have been discovered
-     */
-    void onRemoveBondRequest(BluetoothDevice device) {
-        if (Flags.mainlineBetaStorage()) {
-            throw new IllegalStateException("mainlineBetaStorage is enabled");
-        }
-        Log.d(TAG, "onRemoveBondRequest(" + device + "): Disabling all profiles");
-        // Don't allow any profiles to connect to the device.
-        for (int profileId = BluetoothProfile.HEADSET;
-                profileId < BluetoothProfile.MAX_PROFILE_ID;
-                profileId++) {
-            if (mAdapterService.getProfileConnectionPolicy(device, profileId)
-                    == CONNECTION_POLICY_ALLOWED) {
-                mAdapterService.setProfileConnectionPolicy(
-                        device, profileId, CONNECTION_POLICY_FORBIDDEN);
-            }
         }
     }
 }

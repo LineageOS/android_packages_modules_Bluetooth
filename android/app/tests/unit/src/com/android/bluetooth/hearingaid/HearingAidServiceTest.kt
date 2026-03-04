@@ -632,10 +632,6 @@ class HearingAidServiceTest {
 
     @Test
     fun serviceBinder_setConnectionPolicy() {
-        doReturn(true)
-            .whenever(adapterService)
-            .setProfileConnectionPolicy(singleDevice, HEARING_AID, CONNECTION_POLICY_UNKNOWN)
-
         assertThat(binder.setConnectionPolicy(singleDevice, CONNECTION_POLICY_UNKNOWN, null))
             .isTrue()
         verify(adapterService)

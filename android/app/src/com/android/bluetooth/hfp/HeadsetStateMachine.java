@@ -54,7 +54,6 @@ import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.InteropUtil;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.metrics.MetricsLogger;
 import com.android.bluetooth.profile.ProfileService;
@@ -158,7 +157,6 @@ class HeadsetStateMachine extends StateMachine {
     private final AdapterService mAdapterService;
     private final HeadsetNativeInterface mNativeInterface;
     private final HeadsetSystemInterface mSystemInterface;
-    private final DatabaseManager mDatabaseManager; // Migrating
     private final BluetoothStorageManager mStorage;
 
     // Runtime states
@@ -239,30 +237,11 @@ class HeadsetStateMachine extends StateMachine {
         mNativeInterface = requireNonNull(nativeInterface);
         mSystemInterface = requireNonNull(systemInterface);
         mAdapterService = requireNonNull(adapterService);
-        if (Flags.mainlineBetaStorage()) {
-            mDatabaseManager = null;
-            mStorage = requireNonNull(storage);
-        } else {
-            mDatabaseManager = requireNonNull(adapterService.getDatabaseManager()); // Migrating
-            mStorage = null;
-        }
+        mStorage = requireNonNull(storage);
 
         mDeviceSilenced = false;
 
-        if (Flags.mainlineBetaStorage()) {
-            mHsClientAudioPolicy = mStorage.getAudioPolicyMetadata(device);
-        } else {
-            BluetoothSinkAudioPolicy storedAudioPolicy =
-                    mDatabaseManager.getAudioPolicyMetadata(device); // Migrating
-            if (storedAudioPolicy == null) {
-                Log.w(TAG, "Audio Policy not created in database! Creating...");
-                mHsClientAudioPolicy = new BluetoothSinkAudioPolicy.Builder().build();
-                mDatabaseManager.setAudioPolicyMetadata(device, mHsClientAudioPolicy); // Migrating
-            } else {
-                Log.i(TAG, "Audio Policy found in database!");
-                mHsClientAudioPolicy = storedAudioPolicy;
-            }
-        }
+        mHsClientAudioPolicy = mStorage.getAudioPolicyMetadata(device);
 
         // Create phonebook helper
         mPhonebook = new AtPhonebook(mAdapterService, mNativeInterface);
@@ -2468,11 +2447,7 @@ class HeadsetStateMachine extends StateMachine {
 
     private void setHfpCallAudioPolicy(BluetoothSinkAudioPolicy policies) {
         mHsClientAudioPolicy = policies;
-        if (Flags.mainlineBetaStorage()) {
-            mStorage.setAudioPolicyMetadata(mDevice, policies);
-        } else {
-            mDatabaseManager.setAudioPolicyMetadata(mDevice, policies); // Migrating
-        }
+        mStorage.setAudioPolicyMetadata(mDevice, policies);
     }
 
     /** get the audio policy of the client device */

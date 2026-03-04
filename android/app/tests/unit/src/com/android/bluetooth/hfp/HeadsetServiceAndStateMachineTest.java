@@ -82,7 +82,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
@@ -130,9 +129,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
-    @Mock private DatabaseManager mDatabaseManager;
-    @Mock private BluetoothStorageManager mStorageFlag;
-    private BluetoothStorageManager mStorage; // Move to mock when cleaning flag
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private HeadsetSystemInterface mSystemInterface;
     @Mock private AudioManager mAudioManager;
     @Mock private AudioDeviceVolumeManager mAudioDeviceVolumeManager;
@@ -169,12 +166,7 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Before
     public void setUp() {
-        if (!Flags.mainlineBetaStorage()) {
-            mStorage = null; // force mock to null when flag is off to be compliant with code
-        } else {
-            mStorage = mStorageFlag;
-            doReturn(sinkAudioPolicy).when(mStorage).getAudioPolicyMetadata(any());
-        }
+        doReturn(sinkAudioPolicy).when(mStorage).getAudioPolicyMetadata(any());
         mInOrder = inOrder(mAdapterService);
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
@@ -188,7 +180,6 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(new ParcelUuid[] {BluetoothUuid.HFP})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         HeadsetObjectsFactory.setInstanceForTesting(mObjectsFactory);
         // Mock methods in AdapterService
         doReturn(FAKE_HEADSET_UUID)

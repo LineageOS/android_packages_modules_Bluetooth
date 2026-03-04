@@ -63,8 +63,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
@@ -99,7 +97,6 @@ public class A2dpServiceTest {
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AdapterService mAdapterService;
     @Mock private AudioManager mAudioManager;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothStorageManager mStorage;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
 
@@ -118,7 +115,7 @@ public class A2dpServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
+        return FlagsWrapper.progressionOf();
     }
 
     public A2dpServiceTest(FlagsWrapper flags) {
@@ -142,7 +139,6 @@ public class A2dpServiceTest {
         doReturn(true).when(mAdapterService).isA2dpOffloadEnabled();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
         mA2dpService =
@@ -1135,8 +1131,6 @@ public class A2dpServiceTest {
 
         doReturn(previousSupport).when(mStorage).getA2dpOptionalCodecsSupported(mDevice);
         doReturn(previousEnabled).when(mStorage).getA2dpOptionalCodecsEnabled(mDevice);
-        doReturn(previousSupport).when(mDatabaseManager).getA2dpSupportsOptionalCodecs(mDevice);
-        doReturn(previousEnabled).when(mDatabaseManager).getA2dpOptionalCodecsEnabled(mDevice);
 
         // Generate connection request from native with bad codec status
         connectDeviceWithCodecStatus(mDevice, badCodecStatus);
@@ -1147,7 +1141,6 @@ public class A2dpServiceTest {
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
 
         // Check optional codec status is set properly
-        if (Flags.mainlineBetaStorage()) {
             verify(mStorage, times(verifyNotSupportTime))
                     .setA2dpOptionalCodecsSupported(
                             mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
@@ -1157,17 +1150,6 @@ public class A2dpServiceTest {
             verify(mStorage, times(verifyEnabledTime))
                     .setA2dpOptionalCodecsEnabled(
                             mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
-        } else {
-            verify(mDatabaseManager, times(verifyNotSupportTime))
-                    .setA2dpSupportsOptionalCodecs(
-                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
-            verify(mDatabaseManager, times(verifySupportTime))
-                    .setA2dpSupportsOptionalCodecs(
-                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED);
-            verify(mDatabaseManager, times(verifyEnabledTime))
-                    .setA2dpOptionalCodecsEnabled(
-                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
-        }
     }
 
     private static BluetoothCodecConfig buildBluetoothCodecConfig(

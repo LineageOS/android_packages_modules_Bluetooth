@@ -31,7 +31,6 @@ import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.TestUtils.mockGetRemoteDevice
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.btservice.storage.Metadata
 import com.android.bluetooth.btservice.storage.MetadataDatabase
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
@@ -216,7 +215,7 @@ class MigrationFromRoomDatabaseTest {
         roomDb.insert(regularMetadata)
 
         // The local storage metadata that should be skipped
-        val localStorageMetadata = Metadata(DatabaseManager.LOCAL_STORAGE)
+        val localStorageMetadata = Metadata("LocalStorage")
         localStorageMetadata.last_active_time = 456L // some value to ensure it's not used
         roomDb.insert(localStorageMetadata)
 
@@ -228,7 +227,7 @@ class MigrationFromRoomDatabaseTest {
         // 3. Assert that the UserStorage proto contains only the regular device
         assertThat(migratedStorage.devicesMap).hasSize(1)
         assertThat(migratedStorage.devicesMap).containsKey(device.address)
-        assertThat(migratedStorage.devicesMap).doesNotContainKey(DatabaseManager.LOCAL_STORAGE)
+        assertThat(migratedStorage.devicesMap).doesNotContainKey("LocalStorage")
 
         // Also assert that the connection number is from the regular device, not local storage
         assertThat(migratedStorage.currentConnectionNumber).isEqualTo(123L)

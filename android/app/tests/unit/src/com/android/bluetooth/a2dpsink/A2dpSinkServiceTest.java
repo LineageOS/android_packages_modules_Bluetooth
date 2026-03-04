@@ -83,8 +83,6 @@ public class A2dpSinkServiceTest {
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class);
 
-        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
-
         doReturn(true).when(mNativeInterface).setActiveDevice(any());
 
         mLooper = new TestLooper();
@@ -426,15 +424,6 @@ public class A2dpSinkServiceTest {
         verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP_SINK, CONNECTION_POLICY_UNKNOWN);
-        assertThat(mLooper.nextMessage()).isNull();
-    }
-
-    /** Test that SetConnectionPolicy is robust to DatabaseManager failures */
-    @Test
-    public void testSetConnectionPolicyDatabaseWriteFails() {
-        initTest();
-        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
-        assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED)).isFalse();
         assertThat(mLooper.nextMessage()).isNull();
     }
 
