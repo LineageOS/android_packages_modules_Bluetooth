@@ -79,16 +79,6 @@ flag {
 }
 
 flag {
-    name: "end_outgoing_call_on_chld"
-    namespace: "bluetooth"
-    description: "End outgoing call on CHLD"
-    bug: "426374659"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "check_call_state_atd"
     namespace: "bluetooth"
     description: "End outgoing call on CHLD"
