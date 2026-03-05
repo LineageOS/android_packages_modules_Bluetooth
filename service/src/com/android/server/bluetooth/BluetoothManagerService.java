@@ -74,6 +74,7 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 
+import com.android.bluetooth.beta.flags.Flags;
 import com.android.bluetooth.util.Text;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
@@ -174,7 +175,7 @@ public class BluetoothManagerService {
     private AdapterBinder mAdapter;
     private Context mUserContext;
     private UserHandle mUser;
-    private UserHandle mNextUser; // Non null if a user switch is in progress
+    private UserHandle mNextUser; // Non null only when user switch is pending
 
     // used inside handler thread
     private boolean mQuietEnable = false;
@@ -400,11 +401,16 @@ public class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    // Call is coming from the systemServer main thread and need to be post to avoid race
     void onUserSwitching(UserHandle userHandle) {
+        if (Flags.systemServerDirectSwitch()) {
+            Log.d(TAG, "onUserSwitching(" + userHandle + ") -- Direct switch");
+            handleSwitchUser(userHandle);
+            return;
+        }
         Log.d(TAG, "onUserSwitching(" + userHandle + ")");
         mNextUser = userHandle;
-        delayModeChangedIfNeeded(ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(), "onUserSwitching");
+        delayModeChangedIfNeeded(
+                ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(mNextUser), "onUserSwitching");
     }
 
     private void forceToOffFromModeChange(int currentState, int reason) {
@@ -1051,12 +1057,21 @@ public class BluetoothManagerService {
 
     /** Called when switching to a different foreground user. */
     @VisibleForTesting
-    void handleSwitchUser() {
-        Log.d(TAG, "handleSwitchUser()");
-        if (mUser.equals(mNextUser)) {
-            Log.d(TAG, "Skip fast switch on same user=" + mUser);
-            mNextUser = null;
-            return;
+    void handleSwitchUser(UserHandle nextUser) {
+        Log.d(TAG, "handleSwitchUser(" + nextUser + ")");
+        if (Flags.systemServerDirectSwitch()) {
+            if (mUser.equals(nextUser) && mState.oneOf(State.TURNING_ON)) {
+                //  When we are already shutting down, the switch will restart, else we can skip
+                Log.d(TAG, "Skip fast switch on same user=" + mUser);
+                mNextUser = null;
+                return;
+            }
+        } else {
+            if (mUser.equals(mNextUser)) {
+                Log.d(TAG, "Skip fast switch on same user=" + mUser);
+                mNextUser = null;
+                return;
+            }
         }
 
         if (mAutoOn != null) {
@@ -1068,9 +1083,9 @@ public class BluetoothManagerService {
         mSharingRestriction.stop();
 
         if (mState.oneOf(State.OFF)) {
-            executeUserSwitch();
+            executeUserSwitch(nextUser);
         } else {
-            prepareUserSwitch();
+            prepareUserSwitch(nextUser);
         }
     }
 
@@ -1102,6 +1117,10 @@ public class BluetoothManagerService {
     }
 
     private void sendBluetoothServiceDownCallback() {
+        if (Flags.systemServerDirectSwitch() && isBinding()) {
+            // No need to call onBluetoothServiceDown if the service was never up
+            return;
+        }
         broadcastToAdapters(
                 "sendBluetoothServiceDownCallback",
                 IBluetoothManagerCallback::onBluetoothServiceDown);
@@ -1354,27 +1373,50 @@ public class BluetoothManagerService {
         handleEnable();
     }
 
-    private void prepareUserSwitch() {
-        Log.d(TAG, "prepareUserSwitch(): Next user is " + mNextUser);
+    private void prepareUserSwitch(UserHandle nextUser) {
+        Log.d(TAG, "prepareUserSwitch(" + nextUser + "): during state:" + mState);
 
-        // Clear registered LE apps to force shut-off
-        mBleAppManager.clearBleApps();
+        mBleAppManager.clearBleApps(); // Clear registered LE apps to force shut-off
 
         mEnable = false;
         mEnableExternal = false;
 
         mActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false);
+
+        if (Flags.systemServerDirectSwitch()) {
+            switch (mState.get()) {
+                case State.ON -> onToBleOn();
+                case State.BLE_ON -> bleOnToOff();
+                case State.BLE_TURNING_ON -> {
+                    bleTurningOnToOff();
+                    executeUserSwitch(nextUser);
+                    return;
+                }
+                default -> {} // Already turning OFF, or handled with mNextUser when reaching ON
+            }
+            mNextUser = nextUser;
+            return;
+        }
+
         switch (mState.get()) {
             case State.ON -> onToBleOn();
             case State.BLE_ON -> bleOnToOff();
             case State.BLE_TURNING_ON -> bleTurningOnToOff();
-            default -> throw new IllegalStateException("From impossible state: " + mState);
+            default -> throw new IllegalStateException("From impossible state:" + mState);
         }
     }
 
-    private void executeUserSwitch() {
-        mUser = mNextUser;
-        mNextUser = null;
+    private void executeUserSwitch(UserHandle nextUser) {
+        if (Flags.systemServerDirectSwitch()) {
+            mUser = nextUser;
+            Log.i(TAG, "executeUserSwitch: Active user is " + mUser);
+            mQuietEnable = false;
+            mQuietEnableExternal = false;
+        } else {
+            mUser = mNextUser;
+            mNextUser = null;
+        }
+
         mUserContext = mContext.createContextAsUser(mUser, 0);
 
         mAirplaneModeController =
@@ -1384,6 +1426,7 @@ public class BluetoothManagerService {
                         this::onAirplaneModeChanged,
                         this::sendToggleNotification,
                         TimeSource.Monotonic.INSTANCE);
+
         if (mConfigAllowAutoOn) {
             mAutoOn =
                     new AutoOn(
@@ -1394,6 +1437,7 @@ public class BluetoothManagerService {
                             this::enableFromAutoOn,
                             mAirplaneModeController);
         }
+
         mSharingRestriction =
                 new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
 
@@ -1536,11 +1580,21 @@ public class BluetoothManagerService {
         Log.d(TAG, "bleTurningOnToOff: Sending request");
         if (mAdapter == null) {
             // When Bluetooth was not yet bound, prevent binding to complete
+            Log.d(TAG, "bleTurningOnToOff: Cancel binding");
             mContext.unbindService(mConnection);
+            if (!Flags.systemServerDirectSwitch()) {
+                mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
+            }
+        }
+        if (!Flags.systemServerDirectSwitch()) {
+            mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        }
+        bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+        if (Flags.systemServerDirectSwitch()) {
+            mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
+            mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
             mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
         }
-        mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
-        bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
     }
 
     private void broadcastIntentStateChange(String action, int prevState, int newState) {
@@ -1581,7 +1635,6 @@ public class BluetoothManagerService {
 
         if (newState == State.OFF) {
             // If Bluetooth is off, send service down event to proxy objects, and unbind
-            Log.d(TAG, header + "Send ServiceDown");
             sendBluetoothServiceDownCallback();
             unbindAndFinish();
         }
@@ -1629,10 +1682,16 @@ public class BluetoothManagerService {
         }
 
         if (mNextUser != null) {
-            mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
+            if (!Flags.systemServerDirectSwitch()) {
+                mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
+            }
             if (!mNextUser.equals(mUser)) {
-                Log.d(TAG, header + "Resume user switch");
-                prepareUserSwitch();
+                Log.d(TAG, header + "Resume user switch to " + mNextUser);
+                if (Flags.systemServerDirectSwitch()) {
+                    onToBleOn();
+                } else {
+                    prepareUserSwitch(mNextUser);
+                }
                 return;
             }
             Log.d(TAG, header + "Already on correct user. Discard user switch");
@@ -1645,11 +1704,18 @@ public class BluetoothManagerService {
     private void actionWhenBluetoothReachStateOff(int prevState) {
         String header = "actionWhenBluetoothReachStateOff(): ";
 
-        if (mNextUser != null) {
-            Log.d(TAG, header + "Resume user switch");
+        if (mNextUser != null && Flags.systemServerDirectSwitch()) {
+            Log.d(TAG, header + "Resume user switch to " + mNextUser);
+            UserHandle nextUser = mNextUser;
+            mNextUser = null;
+            executeUserSwitch(nextUser);
+            return;
+        }
+        if (mNextUser != null && !Flags.systemServerDirectSwitch()) {
+            Log.d(TAG, header + "Resume user switch to " + mNextUser);
             mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
             // Once everything is done finish the user switch if present
-            executeUserSwitch();
+            executeUserSwitch(mNextUser);
             return;
         }
 
