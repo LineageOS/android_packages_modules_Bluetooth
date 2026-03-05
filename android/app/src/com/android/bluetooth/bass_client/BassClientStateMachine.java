@@ -41,8 +41,6 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
-import android.bluetooth.le.PeriodicAdvertisingCallback;
-import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.bluetooth.le.PeriodicAdvertisingReport;
 import android.content.AttributionSource;
 import android.content.Intent;
@@ -133,8 +131,6 @@ class BassClientStateMachine extends StateMachine {
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
-    // TODO Delete it on leaudioBroadcastImproveSourceOperations flag cleanup
-    private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
 
     @VisibleForTesting
     final List<BluetoothGattCharacteristic> mBroadcastCharacteristics = new ArrayList<>();
@@ -161,8 +157,6 @@ class BassClientStateMachine extends StateMachine {
     private boolean mAllowReconnect = false;
     @VisibleForTesting BluetoothGattTestableWrapper mBluetoothGatt = null;
     BluetoothGattCallback mGattCallback = null;
-    // TODO Delete it on leaudioBroadcastImproveSourceOperations flag cleanup
-    PeriodicAdvertisingCallback mLocalPeriodicAdvCallbackObsolete = new PACallbackObsolete();
     IPeriodicAdvertisingCallback mLocalPeriodicAdvCallback = new PACallback();
     int mMaxSingleAttributeWriteValueLen = 0;
     @VisibleForTesting BluetoothLeBroadcastMetadata mPendingSourceToSwitch = null;
@@ -173,7 +167,6 @@ class BassClientStateMachine extends StateMachine {
             BassClientService svc,
             AdapterService adapterService,
             ScanController scanController,
-            PeriodicAdvertisingManager periodicAdvertisingManager,
             Looper looper) {
         super(TAG + "(" + device + ")", looper);
         mDevice = device;
@@ -181,7 +174,6 @@ class BassClientStateMachine extends StateMachine {
         mAdapterService = adapterService;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
-        mPeriodicAdvertisingManager = periodicAdvertisingManager;
         addState(mDisconnected);
         addState(mConnected);
         addState(mConnecting);
@@ -484,16 +476,11 @@ class BassClientStateMachine extends StateMachine {
                                 + advHandle
                                 + ", serviceData: "
                                 + serviceData);
-                if (Flags.leaudioBroadcastImproveSourceOperations()) {
-                    final int sd = serviceData;
-                    mScanController.doOnScanThread(
-                            () ->
-                                    mScanController.transferSetInfo(
-                                            mDevice, sd, advHandle, mLocalPeriodicAdvCallback));
-                } else {
-                    mPeriodicAdvertisingManager.transferSetInfo(
-                            mDevice, serviceData, advHandle, mLocalPeriodicAdvCallbackObsolete);
-                }
+                final int sd = serviceData;
+                mScanController.doOnScanThread(
+                        () ->
+                                mScanController.transferSetInfo(
+                                        mDevice, sd, advHandle, mLocalPeriodicAdvCallback));
             } else {
                 int broadcastId = recvState.getBroadcastId();
                 PeriodicAdvertisementResult result =
@@ -530,13 +517,9 @@ class BassClientStateMachine extends StateMachine {
                             + syncHandle
                             + ", serviceData: "
                             + serviceData);
-            if (Flags.leaudioBroadcastImproveSourceOperations()) {
-                final int sd = serviceData;
-                mScanController.doOnScanThread(
-                        () -> mScanController.transferSync(mDevice, sd, syncHandle));
-            } else {
-                mPeriodicAdvertisingManager.transferSync(mDevice, serviceData, syncHandle);
-            }
+            final int sd = serviceData;
+            mScanController.doOnScanThread(
+                    () -> mScanController.transferSync(mDevice, sd, syncHandle));
         } else {
             Log.e(
                     TAG,
@@ -1098,16 +1081,6 @@ class BassClientStateMachine extends StateMachine {
             sendMessage(m);
         }
     }
-
-    // TODO Delete it on leaudioBroadcastImproveSourceOperations flag cleanup
-    /** Internal periodic Advertising manager callback */
-    private static final class PACallbackObsolete extends PeriodicAdvertisingCallback {
-        @Override
-        public void onSyncTransferred(BluetoothDevice device, int status) {
-            Log.i(TAG, "onSyncTransferred: device=" + device + ", status =" + status);
-        }
-    }
-
     /** Internal periodic Advertising manager callback */
     private static final class PACallback extends IPeriodicAdvertisingCallback.Stub {
         @Override
