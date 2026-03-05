@@ -56,7 +56,10 @@ class ScanBinder(
         source: AttributionSource,
         method: String,
         block: ScanController.() -> Unit,
-    ) = getController(source, method)?.let { it.runOrDoOnScanThread(it, block) }
+    ) =
+        getController(source, method)?.let { controller ->
+            controller.doOnScanThread { controller.block() }
+        }
 
     @RequiresPermission(BLUETOOTH_SCAN)
     private fun getController(source: AttributionSource, method: String): ScanController? {
@@ -160,7 +163,7 @@ class ScanBinder(
 
     override fun numHwTrackFiltersAvailable(source: AttributionSource): Int {
         val scan = getController(source, "numHwTrackFiltersAvailable") ?: return 0
-        return scan.runOrFetchOnScanThread(scan, 0) { scan.numHwTrackFiltersAvailable() }
+        return scan.fetchOnScanThread({ scan.numHwTrackFiltersAvailable() }, 0)
     }
 
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
@@ -219,27 +222,5 @@ class ScanBinder(
         }
 
         enforcePrivilegedPermissionIfNeeded(filters)
-    }
-
-    // TODO(b/444010402) Delete on Flags.leaudioBroadcastImproveSourceOperations() cleanup
-    private fun <T> ScanController.runOrDoOnScanThread(target: T, block: T.() -> Unit) {
-        if (isOnScanThread) {
-            target.block()
-        } else {
-            doOnScanThread { target.block() }
-        }
-    }
-
-    // TODO(b/444010402) Delete on Flags.leaudioBroadcastImproveSourceOperations() cleanup
-    private fun <T, R> ScanController.runOrFetchOnScanThread(
-        target: T,
-        defaultValue: R,
-        block: T.() -> R,
-    ): R {
-        return if (isOnScanThread) {
-            target.block()
-        } else {
-            fetchOnScanThread<R>({ target.block() }, defaultValue)
-        }
     }
 }
