@@ -164,6 +164,7 @@ import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.metrics.MetricsLogger;
+import com.android.bluetooth.media_audio.sink.MediaAudioServer;
 import com.android.bluetooth.notification.NotificationHelperService;
 import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
@@ -317,6 +318,9 @@ public class AdapterService extends Service {
      * physical location.
      */
     private final Predicate<BluetoothDevice> mLocationDenylistPredicate;
+
+    // Only available on devices that have any of the various media or audio sink profile roles
+    private Optional<MediaAudioServer> mMediaAudioServer = Optional.empty();
 
     private boolean mIsMediaProfileConnected;
 
@@ -716,6 +720,14 @@ public class AdapterService extends Service {
         mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
         mAdapterStateMachine = new AdapterState(this, mLooper);
 
+        // Media Audio Server is enabled when any of the various sink media or audio profiles are
+        // enabled. It allows protocols to register and contribute to our outward MediaSession,
+        // which in turn allows Media clients to interact with Bluetooth media as if it was any
+        // other media application
+        if (Flags.mediaAudioServer() && MediaAudioServer.isEnabled()) {
+            mMediaAudioServer = Optional.of(new MediaAudioServer(this));
+        }
+
         setAdapterService(this);
     }
 
@@ -791,6 +803,10 @@ public class AdapterService extends Service {
 
     Map<String, CallerInfo> getBondAttemptCallerInfo() {
         return mBondAttemptCallerInfo;
+    }
+
+    public Optional<MediaAudioServer> getMediaAudioServer() {
+        return mMediaAudioServer;
     }
 
     Optional<PhonePolicy> getPhonePolicy() {
@@ -1573,6 +1589,9 @@ public class AdapterService extends Service {
         }
 
         mStorage.cleanup();
+
+        mMediaAudioServer.ifPresent(MediaAudioServer::cleanup);
+        mMediaAudioServer = Optional.empty();
 
         if (mAdapterStateMachine != null) {
             mAdapterStateMachine.doQuit();
@@ -4757,6 +4776,15 @@ public class AdapterService extends Service {
         for (ProfileService profile : mRegisteredProfiles) {
             profile.dump(stringBuilder);
             stringBuilder.append("\n");
+        }
+
+        if (Flags.mediaAudioServer()) {
+            if (mMediaAudioServer.isPresent()) {
+                mMediaAudioServer.get().dump(stringBuilder);
+                stringBuilder.append("\n");
+            } else {
+                stringBuilder.append("\nMediaAudioServer:\n    Disabled\n\n");
+            }
         }
 
         final var scanController = getBluetoothScanController();
