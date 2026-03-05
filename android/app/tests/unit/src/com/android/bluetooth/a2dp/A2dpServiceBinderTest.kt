@@ -157,6 +157,7 @@ class A2dpServiceBinderTest {
         verify(a2dpService).getCodecStatus(device)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun setCodecConfigPreference() {
         val config = BluetoothCodecConfig(SOURCE_CODEC_TYPE_INVALID)
