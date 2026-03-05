@@ -3367,8 +3367,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
       log::warn("Unable to get link policy role peer:{}", p_device->bd_addr);
     }
 
-    if (com_android_bluetooth_flags_role_switch_after_encryption() &&
-        p_device->role_switch_pending != BtmDevice::RoleSwitchPending::kNone &&
+    if (p_device->role_switch_pending != BtmDevice::RoleSwitchPending::kNone &&
         role == HCI_ROLE_PERIPHERAL) {
       if (btm_sec_use_smp_br_chnl(p_device)) {
         /* Role switch request might prevent remote central device from initiating CTKD */

@@ -1431,8 +1431,7 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
     return;
   }
 
-  if (com_android_bluetooth_flags_role_switch_after_encryption() &&
-      p_device->role_switch_pending == BtmDevice::RoleSwitchPending::kAfterCtkd &&
+  if (p_device->role_switch_pending == BtmDevice::RoleSwitchPending::kAfterCtkd &&
       p_data->complt.smp_over_br) {
     tHCI_ROLE role = HCI_ROLE_UNKNOWN;
     if (get_btm_client_interface().link_policy.BTM_GetRole(bd_addr, BT_TRANSPORT_BR_EDR, &role) !=
