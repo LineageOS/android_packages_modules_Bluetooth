@@ -102,16 +102,6 @@ flag {
 }
 
 flag {
-    name: "btm_le_pairing_state_reset"
-    namespace: "bluetooth"
-    description: "Reset BTM pairing state when LE pairing concludes"
-    bug: "444741056"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "btm_iocaps_sysprop_override"
     namespace: "bluetooth"
     description: "Override IO capabilities using system properties"
