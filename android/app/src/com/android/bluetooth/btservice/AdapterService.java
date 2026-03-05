@@ -3834,11 +3834,7 @@ public class AdapterService extends Service {
         }
         disconnectEnabledProfile(BluetoothProfile.HEADSET, device);
         disconnectEnabledProfile(BluetoothProfile.HEADSET_CLIENT, device);
-        if (Flags.a2dpDelayDisconnect()) {
-            disconnectEnabledA2dpProfile(device);
-        } else {
-            disconnectEnabledProfile(BluetoothProfile.A2DP, device);
-        }
+        disconnectEnabledA2dpProfile(device);
         disconnectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         disconnectEnabledProfile(BluetoothProfile.MAP_CLIENT, device);
         disconnectEnabledProfile(BluetoothProfile.MAP, device);
