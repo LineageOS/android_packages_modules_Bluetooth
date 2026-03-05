@@ -23,10 +23,10 @@ import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.SmallTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.TestUtils
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.mockGetSystemService
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Assert
@@ -64,9 +64,9 @@ class LeAudioPeripheralServiceTest {
         MockitoAnnotations.initMocks(this)
         testLooper = TestLooper()
 
-        // Use the official TestUtils to mock getSystemService on the AdapterService mock.
+        // Use the official TestUtil to mock getSystemService on the AdapterService mock.
         // This is the key to solving the ContextWrapper delegation issue for ProfileServices.
-        TestUtils.mockGetSystemService(adapterService, AudioManager::class.java, audioManager)
+        adapterService.mockGetSystemService(audioManager)
 
         // Now, when the service is created, it will wrap the adapterService. When AudioProxy
         // calls getSystemService on the service, the call will be correctly delegated to our
