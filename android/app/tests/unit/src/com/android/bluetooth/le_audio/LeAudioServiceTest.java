@@ -348,12 +348,7 @@ public class LeAudioServiceTest {
         mLooper = new TestLooper();
 
         mStorage = Mockito.spy(new BluetoothStorageManager(mAdapterService));
-        mInOrder =
-                inOrder(
-                        mAdapterService,
-                        mAudioManager,
-                        mNativeInterface,
-                        mStorage);
+        mInOrder = inOrder(mAdapterService, mAudioManager, mNativeInterface, mStorage);
 
         mService =
                 new LeAudioService(

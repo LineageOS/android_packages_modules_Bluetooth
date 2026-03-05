@@ -1771,7 +1771,6 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-
         InOrder inOrderNative = inOrder(mLeAudioNativeInterface);
 
         prepareHandoverStreamingBroadcast(groupId, broadcastId, code);

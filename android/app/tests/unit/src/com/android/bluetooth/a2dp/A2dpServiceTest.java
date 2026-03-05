@@ -1141,15 +1141,13 @@ public class A2dpServiceTest {
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
 
         // Check optional codec status is set properly
-            verify(mStorage, times(verifyNotSupportTime))
-                    .setA2dpOptionalCodecsSupported(
-                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
-            verify(mStorage, times(verifySupportTime))
-                    .setA2dpOptionalCodecsSupported(
-                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED);
-            verify(mStorage, times(verifyEnabledTime))
-                    .setA2dpOptionalCodecsEnabled(
-                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
+        verify(mStorage, times(verifyNotSupportTime))
+                .setA2dpOptionalCodecsSupported(
+                        mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
+        verify(mStorage, times(verifySupportTime))
+                .setA2dpOptionalCodecsSupported(mDevice, BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED);
+        verify(mStorage, times(verifyEnabledTime))
+                .setA2dpOptionalCodecsEnabled(mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
     }
 
     private static BluetoothCodecConfig buildBluetoothCodecConfig(

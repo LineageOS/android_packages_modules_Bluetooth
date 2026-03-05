@@ -331,7 +331,6 @@ public class RemoteDevicesTest {
         verifyBatteryLevelUpdate(newBatteryLevel);
     }
 
-
     @Test
     public void testHfIndicatorParser_testCorrectValue() {
         int batteryLevel = 10;

@@ -24,7 +24,6 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;

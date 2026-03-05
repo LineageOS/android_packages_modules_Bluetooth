@@ -562,7 +562,7 @@ public class ScanController {
             callbackToApp(() -> app.getCallback().onScannerRegistered(status, scannerId));
         }
         if (status != ScanCallback.NO_ERROR) {
-                unregisterScanner(scannerId);
+            unregisterScanner(scannerId);
             return;
         }
         app.setId(scannerId);
@@ -572,11 +572,11 @@ public class ScanController {
             var message = "Unregister " + scannerId + " for " + app;
             Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
             app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
-                if (app.isInternal()) {
-                    startScanInternal(scannerId, app.getSettings(), app.getFilters());
-                } else {
-                    startScan(scannerId, app.getSettings(), app.getFilters(), app.getSource());
-                }
+            if (app.isInternal()) {
+                startScanInternal(scannerId, app.getSettings(), app.getFilters());
+            } else {
+                startScan(scannerId, app.getSettings(), app.getFilters(), app.getSource());
+            }
         } else {
             dispatchPendingIntentStartScan(scannerId, app);
         }
