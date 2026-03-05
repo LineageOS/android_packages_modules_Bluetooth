@@ -444,9 +444,8 @@ void smp_generate_compare(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
 static void smp_process_stk(tSMP_CB* p_cb, Octet16* p) {
   smp_mask_enc_key(p_cb->loc_enc_size, p);
 
-  if (com_android_bluetooth_flags_passkey_entry_pairing_approval() &&
-      (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
-       p_cb->selected_association_model == SMP_MODEL_KEY_NOTIF)) {
+  if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
+      p_cb->selected_association_model == SMP_MODEL_KEY_NOTIF) {
     p_cb->passkey_display_state.confirmed = true;
     p_cb->tk = *p;
     if (!p_cb->passkey_display_state.approved) {

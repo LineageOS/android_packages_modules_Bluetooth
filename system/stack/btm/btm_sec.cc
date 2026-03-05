@@ -4386,8 +4386,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_AUTH_COMPLETE:
-      if (com_android_bluetooth_flags_passkey_entry_pairing_approval() &&
-          (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_LE_ACTIVE)) {
+      if (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_LE_ACTIVE) {
         SMP_PairCancel(BtmSecurity::Get().link_spec_.addrt.bda);
       }
       ABSL_FALLTHROUGH_INTENDED;
