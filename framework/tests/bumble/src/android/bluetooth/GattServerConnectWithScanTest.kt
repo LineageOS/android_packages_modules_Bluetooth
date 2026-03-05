@@ -33,11 +33,11 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
@@ -56,7 +56,7 @@ class GattServerConnectWithScanTest {
         advertiseWithBumble(OwnAddressType.RANDOM)
         assertThat(scanBumbleDevice(Utils.BUMBLE_RANDOM_ADDRESS)).isNotNull()
 
-        val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
+        val mockGattServerCallback = mock<BluetoothGattServerCallback>()
         val gattServer =
             manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
 
@@ -83,7 +83,7 @@ class GattServerConnectWithScanTest {
         advertiseWithBumble(OwnAddressType.RANDOM)
         assertThat(scanBumbleDevice(Utils.BUMBLE_RANDOM_ADDRESS)).isNotNull()
 
-        val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
+        val mockGattServerCallback = mock<BluetoothGattServerCallback>()
         val gattServer =
             manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_LE)
 
@@ -111,7 +111,7 @@ class GattServerConnectWithScanTest {
         advertiseWithBumble(OwnAddressType.PUBLIC)
         assertThat(scanBumbleDevice(publicAddress)).isNotNull()
 
-        val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
+        val mockGattServerCallback = mock<BluetoothGattServerCallback>()
         val gattServer =
             manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
 
@@ -133,7 +133,7 @@ class GattServerConnectWithScanTest {
         advertiseWithBumble(OwnAddressType.PUBLIC)
         assertThat(scanBumbleDevice(publicAddress)).isNotNull()
 
-        val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
+        val mockGattServerCallback = mock<BluetoothGattServerCallback>()
         val gattServer =
             manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_LE)
 

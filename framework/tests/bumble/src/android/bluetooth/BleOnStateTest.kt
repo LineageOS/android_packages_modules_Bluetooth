@@ -45,7 +45,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.mock
+import org.mockito.kotlin.mock
 import pandora.HostProto
 
 @RunWith(AndroidJUnit4::class)
@@ -175,7 +175,7 @@ class BleOnStateTest {
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
 
-        val gattCallback = mock(BluetoothGattCallback::class.java)
+        val gattCallback = mock<BluetoothGattCallback>()
         val gatt = device.connectGatt(context, false, gattCallback)
         assertThat(gatt).isNotNull()
         gatt?.close()
@@ -192,7 +192,7 @@ class BleOnStateTest {
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
 
-        val gattCallback = mock(BluetoothGattCallback::class.java)
+        val gattCallback = mock<BluetoothGattCallback>()
         val gatt = device.connectGatt(context, false, gattCallback)
         assertThat(gatt).isNull()
     }

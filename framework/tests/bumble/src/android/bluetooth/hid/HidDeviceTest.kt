@@ -72,11 +72,11 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.eq
 import org.mockito.Mockito.inOrder
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.hamcrest.MockitoHamcrest.argThat
 import org.mockito.junit.MockitoJUnit
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import pandora.HIDGrpc
 import pandora.HidProto.HidServiceType
@@ -220,7 +220,7 @@ class HidDeviceTest {
 
         verifyRemoteDeviceConnectToHidHostService()
 
-        callback = mock(BluetoothHidDevice.Callback::class.java)
+        callback = mock<BluetoothHidDevice.Callback>()
         inOrder = inOrder(receiver, callback)
         assertThat(hidDeviceService.registerApp(sdpSettings, null, outQos, executor, callback))
             .isTrue()
@@ -240,7 +240,7 @@ class HidDeviceTest {
 
         verifyRemoteDeviceBondToHidHostService()
 
-        callback = mock(BluetoothHidDevice.Callback::class.java)
+        callback = mock<BluetoothHidDevice.Callback>()
         inOrder = inOrder(receiver, callback)
         assertThat(
                 hidDeviceService.registerApp(
@@ -286,8 +286,7 @@ class HidDeviceTest {
         verifyHidDeviceConnectionStateChanged(device, STATE_CONNECTING)
         verifyHidDeviceConnectionStateChanged(device, STATE_CONNECTED)
 
-        assertThat(hidDeviceService.getConnectionState(device))
-            .isEqualTo(BluetoothHidDevice.STATE_CONNECTED)
+        assertThat(hidDeviceService.getConnectionState(device)).isEqualTo(STATE_CONNECTED)
     }
 
     private fun verifyDisconnectHidDeviceService() {
@@ -295,8 +294,7 @@ class HidDeviceTest {
         verifyHidDeviceConnectionStateChanged(device, STATE_DISCONNECTING)
         verifyHidDeviceConnectionStateChanged(device, STATE_DISCONNECTED)
 
-        assertThat(hidDeviceService.getConnectionState(device))
-            .isEqualTo(BluetoothHidDevice.STATE_DISCONNECTED)
+        assertThat(hidDeviceService.getConnectionState(device)).isEqualTo(STATE_DISCONNECTED)
     }
 
     private fun verifyRemoteDeviceBondToHidHostService() {

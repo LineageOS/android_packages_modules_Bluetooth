@@ -37,11 +37,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.OwnAddressType
@@ -87,7 +87,7 @@ class ConnParamTest {
     fun connParamsAreRelaxedAfterServiceDiscovery() {
         checkAggressiveConnectionWillBeUsed()
 
-        val gattCallback = mock(BluetoothGattCallback::class.java)
+        val gattCallback = mock<BluetoothGattCallback>()
         val connectionIntervalCaptor = ArgumentCaptor.forClass(Int::class.java)
 
         val gatt = connectGattAndWaitConnection(gattCallback, false)
@@ -124,7 +124,7 @@ class ConnParamTest {
         assertThat(BlockingBluetoothAdapter.enable()).isTrue()
 
         // Connect GATT
-        val gattCallback = mock(BluetoothGattCallback::class.java)
+        val gattCallback = mock<BluetoothGattCallback>()
         val connectionIntervalCaptor = ArgumentCaptor.forClass(Int::class.java)
         val gatt = connectGattAndWaitConnection(gattCallback, false)
 
