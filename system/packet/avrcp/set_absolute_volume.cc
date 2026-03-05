@@ -69,7 +69,7 @@ std::string SetAbsoluteVolumeResponse::ToString() const {
   ss << "  └ Command PDU = " << GetCommandPdu() << std::endl;
   ss << "  └ PacketType = " << GetPacketType() << std::endl;
   ss << "  └ Parameter Length = " << loghex(GetParameterLength()) << std::endl;
-  ss << "  └ Volume = " << GetVolume() << std::endl;
+  ss << "  └ Volume = " << static_cast<int>(GetVolume()) << std::endl;
   ss << std::endl;
 
   return ss.str();

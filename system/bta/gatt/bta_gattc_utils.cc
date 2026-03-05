@@ -947,7 +947,7 @@ void bta_gatt_client_dump(int fd) {
            << "  num_clcb: " << +p_known_server->num_clcb
            << "  state: " << bta_server_state_text(p_known_server->state)
            << "  connected: " << p_known_server->connected
-           << "  srvc_disc_count: " << p_known_server->srvc_disc_count
+           << "  srvc_disc_count: " << static_cast<int>(p_known_server->srvc_disc_count)
            << "  disc_blocked_waiting_on_version: "
            << p_known_server->disc_blocked_waiting_on_version
            << "  srvc_hdl_chg: " << +p_known_server->srvc_hdl_chg

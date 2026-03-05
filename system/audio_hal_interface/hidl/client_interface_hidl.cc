@@ -62,7 +62,7 @@ std::ostream& operator<<(std::ostream& os, const BluetoothAudioCtrlAck& ack) {
     case BluetoothAudioCtrlAck::FAILURE:
       return os << "FAILURE";
     default:
-      return os << "UNDEFINED " << static_cast<int8_t>(ack);
+      return os << "UNDEFINED " << static_cast<int>(ack);
   }
 }
 
