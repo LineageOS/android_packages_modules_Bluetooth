@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "bluetooth-a2dp-ahal-aidl"
+#define LOG_TAG "bluetooth-a2dp-aidl"
 
 #include "a2dp_aidl_transport.h"
 
