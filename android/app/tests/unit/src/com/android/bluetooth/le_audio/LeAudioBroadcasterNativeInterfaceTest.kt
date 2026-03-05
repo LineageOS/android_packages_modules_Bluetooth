@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,89 +14,82 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_audio;
+package com.android.bluetooth.le_audio
 
-import static com.google.common.truth.Truth.assertThat;
+import android.bluetooth.BluetoothLeBroadcastMetadata
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.btservice.AdapterService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.whenever
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
+/** Test cases for [LeAudioBroadcasterNativeInterface]. */
+@RunWith(AndroidJUnit4::class)
+class LeAudioBroadcasterNativeInterfaceTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-import android.bluetooth.BluetoothLeBroadcastMetadata;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var mockService: LeAudioService
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-
-/** Test cases for {@link LeAudioBroadcasterNativeInterface}. */
-@RunWith(AndroidJUnit4.class)
-public class LeAudioBroadcasterNativeInterfaceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private AdapterService mAdapterService;
-    @Mock private LeAudioService mMockService;
-
-    private LeAudioBroadcasterNativeInterface mNativeInterface;
+    private lateinit var nativeInterface: LeAudioBroadcasterNativeInterface
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(true).when(mMockService).isAvailable();
-        mNativeInterface = new LeAudioBroadcasterNativeInterface(mAdapterService, mMockService);
+    fun setUp() {
+        doReturn(true).whenever(mockService).isAvailable
+        nativeInterface = LeAudioBroadcasterNativeInterface(adapterService, mockService)
     }
 
     @Test
-    public void onBroadcastCreated() {
-        int broadcastId = 1;
-        boolean success = true;
+    fun onBroadcastCreated() {
+        val broadcastId = 1
+        val success = true
+        nativeInterface.onBroadcastCreated(broadcastId, success)
 
-        mNativeInterface.onBroadcastCreated(broadcastId, success);
-
-        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
-        verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        val event = argumentCaptor<LeAudioStackEvent>()
+        verify(mockService).messageFromNative(event.capture())
+        assertThat(event.firstValue.type).isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED)
     }
 
     @Test
-    public void onBroadcastDestroyed() {
-        int broadcastId = 1;
+    fun onBroadcastDestroyed() {
+        val broadcastId = 1
 
-        mNativeInterface.onBroadcastDestroyed(broadcastId);
+        nativeInterface.onBroadcastDestroyed(broadcastId)
 
-        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
-        verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type)
-                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED);
+        val event = argumentCaptor<LeAudioStackEvent>()
+        verify(mockService).messageFromNative(event.capture())
+        assertThat(event.firstValue.type)
+            .isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED)
     }
 
     @Test
-    public void onBroadcastStateChanged() {
-        int broadcastId = 1;
-        int state = 0;
+    fun onBroadcastStateChanged() {
+        val broadcastId = 1
+        val state = 0
+        nativeInterface.onBroadcastStateChanged(broadcastId, state)
 
-        mNativeInterface.onBroadcastStateChanged(broadcastId, state);
-
-        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
-        verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
+        val event = argumentCaptor<LeAudioStackEvent>()
+        verify(mockService).messageFromNative(event.capture())
+        assertThat(event.firstValue.type).isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE)
     }
 
     @Test
-    public void onBroadcastMetadataChanged() {
-        int broadcastId = 1;
-        BluetoothLeBroadcastMetadata metadata = null;
+    fun onBroadcastMetadataChanged() {
+        val broadcastId = 1
+        val metadata: BluetoothLeBroadcastMetadata? = null
+        nativeInterface.onBroadcastMetadataChanged(broadcastId, metadata)
 
-        mNativeInterface.onBroadcastMetadataChanged(broadcastId, metadata);
-
-        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
-        verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type)
-                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED);
+        val event = argumentCaptor<LeAudioStackEvent>()
+        verify(mockService).messageFromNative(event.capture())
+        assertThat(event.firstValue.type)
+            .isEqualTo(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED)
     }
 }
