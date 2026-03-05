@@ -929,7 +929,7 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
  * Returns          returns none.
  *
  ******************************************************************************/
-void BTA_GATTS_DeleteService(uint16_t service_id);
+void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id);
 
 /*******************************************************************************
  *
