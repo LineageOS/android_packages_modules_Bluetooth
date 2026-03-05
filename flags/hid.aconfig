@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "hid_connection_timeout_in_jni_thread"
-    namespace: "bluetooth"
-    description: "Handle incoming HID connection timeout in JNI thread"
-    bug: "440091360"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hid_dont_reconnect_on_uhid_timeout"
     namespace: "bluetooth"
     description: "Set connection policy off if we timed out waiting for uhid open"

@@ -62,16 +62,6 @@ flag {
 }
 
 flag {
-    name: "pairing_collision_with_same_device"
-    namespace: "bluetooth"
-    description: "Continue pairing if collision is detected with the same device"
-    bug: "438291410"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reject_bond_request_during_bonding"
     namespace: "bluetooth"
     description: "Don't accept new bond request when bonding"
@@ -86,16 +76,6 @@ flag {
     namespace: "bluetooth"
     description: "Modify BTM device record list only in main thread"
     bug: "444243832"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "device_record_wipe_ranking"
-    namespace: "bluetooth"
-    description: "New ranking for wiping oldest device record"
-    bug: "444268274"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
