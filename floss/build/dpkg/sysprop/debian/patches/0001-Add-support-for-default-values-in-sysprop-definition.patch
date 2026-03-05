@@ -1,0 +1,956 @@
+From 6bfaaa6f54030f76be2d6ab952741466021564f9 Mon Sep 17 00:00:00 2001
+From: William Escande <wescande@google.com>
+Date: Fri, 27 Feb 2026 14:20:29 -0800
+Subject: [PATCH] Add support for default values in sysprop definitions.
+
+This change introduces a "default_value" field in the sysprop proto.
+When a property is defined with a "default_value", the generated APIs will return the specified default value if the system property
+is not set or is empty. The return type of the generated getter
+functions is also adjusted to be non-optional when a default value is
+provided.
+
+Bug: 269635186
+Test: atest sysprop_test
+Change-Id: I495c8e2e15baacf1eb18d4cacb439a8196cd1569
+---
+ CppGen.cpp                 |  60 ++-
+ JavaGen.cpp                |  23 +-
+ RustGen.cpp                |  53 ++-
+ sysprop.proto              |   1 +
+ tests/CppGenTest.cpp       |   5 +-
+ tests/DefaultValueTest.cpp | 724 +++++++++++++++++++++++++++++++++++++
+ 6 files changed, 842 insertions(+), 24 deletions(-)
+ create mode 100644 tests/DefaultValueTest.cpp
+
+diff --git a/CppGen.cpp b/CppGen.cpp
+index 58efde2..5288c4c 100644
+--- a/CppGen.cpp
++++ b/CppGen.cpp
+@@ -214,3 +214,3 @@ template <typename T>
+ template <typename T>
+-T GetProp(const char* key, const char* legacy = nullptr) {
++T GetProp(const char* key, const char* legacy = nullptr, const char* default_val = nullptr) {
+     std::string value;
+@@ -230,2 +230,5 @@ T GetProp(const char* key, const char* legacy = nullptr) {
+     }
++    if (value.empty() && default_val) {
++        value = default_val;
++    }
+     return TryParse<T>(value.c_str());
+@@ -252,2 +255,25 @@ std::string GetCppEnumName(const sysprop::Property& prop) {
+ std::string GetCppPropTypeName(const sysprop::Property& prop) {
++  if (!prop.default_value().empty()) {
++    switch (prop.type()) {
++      case sysprop::Boolean:
++        return "bool";
++      case sysprop::Integer:
++        return "std::int32_t";
++      case sysprop::Long:
++        return "std::int64_t";
++      case sysprop::Double:
++        return "double";
++      case sysprop::String:
++        return "std::string";
++      case sysprop::Enum:
++        return GetCppEnumName(prop);
++      case sysprop::UInt:
++        return "std::uint32_t";
++      case sysprop::ULong:
++        return "std::uint64_t";
++      default:
++        break;
++    }
++  }
++
+   switch (prop.type()) {
+@@ -438,8 +464,24 @@ std::string GenerateSource(const sysprop::Properties& props,
+     writer.Indent();
+-    if (legacy_name.empty()) {
+-      writer.Write("return GetProp<%s>(\"%s\");\n", prop_type.c_str(),
+-                   prop_name.c_str());
++    if (prop.default_value().empty()) {
++      if (legacy_name.empty()) {
++        writer.Write("return GetProp<%s>(\"%s\");\n", prop_type.c_str(),
++                     prop_name.c_str());
++      } else {
++        writer.Write("return GetProp<%s>(\"%s\", \"%s\");\n", prop_type.c_str(),
++                     prop_name.c_str(), legacy_name.c_str());
++      }
+     } else {
+-      writer.Write("return GetProp<%s>(\"%s\", \"%s\");\n", prop_type.c_str(),
+-                   prop_name.c_str(), legacy_name.c_str());
++      std::string internal_type = prop_type;
++      if (!IsListProp(prop)) {
++        internal_type = "std::optional<" + prop_type + ">";
++      }
++      std::string legacy =
++          legacy_name.empty() ? "nullptr" : "\"" + legacy_name + "\"";
++      writer.Write("return GetProp<%s>(\"%s\", %s, \"%s\")",
++                   internal_type.c_str(), prop_name.c_str(), legacy.c_str(),
++                   prop.default_value().c_str());
++      if (!IsListProp(prop)) {
++        writer.Write(".value()");
++      }
++      writer.Write(";\n");
+     }
+@@ -457,3 +499,7 @@ std::string GenerateSource(const sysprop::Properties& props,
+       if (prop.type() == sysprop::String) {
+-        format_expr = "value ? value->c_str() : \"\"";
++        if (!prop.default_value().empty()) {
++          format_expr = "value.c_str()";
++        } else {
++          format_expr = "value ? value->c_str() : \"\"";
++        }
+       } else if (prop.integer_as_bool()) {
+diff --git a/JavaGen.cpp b/JavaGen.cpp
+index 06d1581..32c9a95 100644
+--- a/JavaGen.cpp
++++ b/JavaGen.cpp
+@@ -419,4 +419,9 @@ std::string GenerateJavaClass(const sysprop::Properties& props,
+     } else {
+-      writer.Write("public static Optional<%s> %s() {\n", prop_type.c_str(),
+-                   prop_id.c_str());
++      if (prop.default_value().empty()) {
++        writer.Write("public static Optional<%s> %s() {\n", prop_type.c_str(),
++                     prop_id.c_str());
++      } else {
++        writer.Write("public static %s %s() {\n", prop_type.c_str(),
++                     prop_id.c_str());
++      }
+     }
+@@ -440,3 +445,15 @@ std::string GenerateJavaClass(const sysprop::Properties& props,
+     }
+-    writer.Write("return %s;\n", GetParsingExpression(prop).c_str());
++    if (!prop.default_value().empty()) {
++      writer.Write("if (\"\".equals(value)) {\n");
++      writer.Indent();
++      writer.Write("value = \"%s\";\n", prop.default_value().c_str());
++      writer.Dedent();
++      writer.Write("}\n");
++    }
++    if (IsListProp(prop) || prop.default_value().empty()) {
++      writer.Write("return %s;\n", GetParsingExpression(prop).c_str());
++    } else {
++      writer.Write("return %s.orElse(null);\n",
++                   GetParsingExpression(prop).c_str());
++    }
+     writer.Dedent();
+diff --git a/RustGen.cpp b/RustGen.cpp
+index c84fbbd..4c7bc79 100644
+--- a/RustGen.cpp
++++ b/RustGen.cpp
+@@ -276,5 +276,10 @@ std::string GenerateRustSource(sysprop::Properties props, sysprop::Scope scope)
+     std::string identifier = (prop_id == "type") ? "r#" + prop_id : prop_id;
+-    writer.Write(
+-        "pub fn %s() -> std::result::Result<Option<%s>, SysPropError> {\n",
+-        identifier.c_str(), prop_return_type.c_str());
++    if (prop.default_value().empty()) {
++      writer.Write(
++          "pub fn %s() -> std::result::Result<Option<%s>, SysPropError> {\n",
++          identifier.c_str(), prop_return_type.c_str());
++    } else {
++      writer.Write("pub fn %s() -> std::result::Result<%s, SysPropError> {\n",
++                   identifier.c_str(), prop_return_type.c_str());
++    }
+     writer.Indent();
+@@ -285,7 +290,18 @@ std::string GenerateRustSource(sysprop::Properties props, sysprop::Scope scope)
+     writer.Write("Err(e) => Err(SysPropError::FetchError(e)),\n");
+-    writer.Write(
+-        "Ok(Some(val)) => "
+-        "%s(val.as_str()).map_err(SysPropError::ParseError).map(Some),\n",
+-        parser.c_str());
+-    writer.Write("Ok(None) => Ok(None),\n");
++    if (prop.default_value().empty()) {
++      writer.Write(
++          "Ok(Some(val)) => "
++          "%s(val.as_str()).map_err(SysPropError::ParseError).map(Some),\n",
++          parser.c_str());
++      writer.Write("Ok(None) => Ok(None),\n");
++    } else {
++      writer.Write(
++          "Ok(Some(val)) => "
++          "%s(val.as_str()).map_err(SysPropError::ParseError),\n",
++          parser.c_str());
++      writer.Write(
++          "Ok(None) => "
++          "%s(\"%s\").map_err(SysPropError::ParseError),\n",
++          parser.c_str(), prop.default_value().c_str());
++    }
+     writer.Dedent();
+@@ -304,7 +320,18 @@ std::string GenerateRustSource(sysprop::Properties props, sysprop::Scope scope)
+       writer.Write("Err(e) => Err(SysPropError::FetchError(e)),\n");
+-      writer.Write(
+-          "Ok(Some(val)) => "
+-          "%s(val.as_str()).map_err(SysPropError::ParseError).map(Some),\n",
+-          parser.c_str());
+-      writer.Write("Ok(None) => Ok(None),\n");
++      if (prop.default_value().empty()) {
++        writer.Write(
++            "Ok(Some(val)) => "
++            "%s(val.as_str()).map_err(SysPropError::ParseError).map(Some),\n",
++            parser.c_str());
++        writer.Write("Ok(None) => Ok(None),\n");
++      } else {
++        writer.Write(
++            "Ok(Some(val)) => "
++            "%s(val.as_str()).map_err(SysPropError::ParseError),\n",
++            parser.c_str());
++        writer.Write(
++            "Ok(None) => "
++            "%s(\"%s\").map_err(SysPropError::ParseError),\n",
++            parser.c_str(), prop.default_value().c_str());
++      }
+       writer.Dedent();
+diff --git a/sysprop.proto b/sysprop.proto
+index 29922d8..cdac3dd 100644
+--- a/sysprop.proto
++++ b/sysprop.proto
+@@ -68,2 +68,3 @@ message Property {
+   string legacy_prop_name = 9;
++  string default_value = 10;
+ }
+diff --git a/tests/CppGenTest.cpp b/tests/CppGenTest.cpp
+index 8deb780..15737d7 100644
+--- a/tests/CppGenTest.cpp
++++ b/tests/CppGenTest.cpp
+@@ -427,3 +427,3 @@ template <typename T>
+ template <typename T>
+-T GetProp(const char* key, const char* legacy = nullptr) {
++T GetProp(const char* key, const char* legacy = nullptr, const char* default_val = nullptr) {
+     std::string value;
+@@ -443,2 +443,5 @@ T GetProp(const char* key, const char* legacy = nullptr) {
+     }
++    if (value.empty() && default_val) {
++        value = default_val;
++    }
+     return TryParse<T>(value.c_str());
+diff --git a/tests/DefaultValueTest.cpp b/tests/DefaultValueTest.cpp
+new file mode 100644
+index 0000000..6e349b7
+--- /dev/null
++++ b/tests/DefaultValueTest.cpp
+@@ -0,0 +1,724 @@
++/*
++ * Copyright (C) 2026 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <android-base/file.h>
++#include <android-base/scopeguard.h>
++#include <android-base/test_utils.h>
++#include <gtest/gtest.h>
++#include <unistd.h>
++
++#include <string>
++
++#include "CppGen.h"
++#include "JavaGen.h"
++#include "RustGen.h"
++
++namespace {
++
++constexpr const char* kTestSyspropFile =
++    R"(owner: Platform
++module: "android.sysprop.DefaultValueProperties"
++
++prop {
++    api_name: "test_bool"
++    type: Boolean
++    prop_name: "test.bool"
++    scope: Public
++    access: Readonly
++    default_value: "true"
++}
++
++prop {
++    api_name: "test_int"
++    type: Integer
++    prop_name: "test.int"
++    scope: Public
++    access: Readonly
++    default_value: "123"
++}
++
++prop {
++    api_name: "test_string"
++    type: String
++    prop_name: "test.string"
++    scope: Public
++    access: Readonly
++    default_value: "default"
++}
++
++prop {
++    api_name: "test_enum"
++    type: Enum
++    prop_name: "test.enum"
++    enum_values: "a|b|c"
++    scope: Public
++    access: Readonly
++    default_value: "b"
++}
++)";
++
++constexpr const char* kExpectedJavaOutput =
++    R"s(// Generated by the sysprop generator. DO NOT EDIT!
++
++package android.sysprop;
++
++import android.os.SystemProperties;
++import android.util.Log;
++
++import java.lang.StringBuilder;
++import java.util.ArrayList;
++import java.util.function.Function;
++import java.util.List;
++import java.util.Locale;
++import java.util.Optional;
++import java.util.StringJoiner;
++import java.util.stream.Collectors;
++
++public final class DefaultValueProperties {
++    private DefaultValueProperties () {}
++
++    private static Boolean tryParseBoolean(String str) {
++        if (str == null) return null;
++        switch (str.toLowerCase(Locale.US)) {
++            case "1":
++            case "true":
++                return Boolean.TRUE;
++            case "0":
++            case "false":
++                return Boolean.FALSE;
++            default:
++                return null;
++        }
++    }
++
++    private static Integer tryParseInteger(String str) {
++        try {
++            return Integer.valueOf(str);
++        } catch (NumberFormatException e) {
++            return null;
++        }
++    }
++
++    private static Integer tryParseUInt(String str) {
++        try {
++            return Integer.parseUnsignedInt(str);
++        } catch (NumberFormatException e) {
++            return null;
++        }
++    }
++
++    private static Long tryParseLong(String str) {
++        try {
++            return Long.valueOf(str);
++        } catch (NumberFormatException e) {
++            return null;
++        }
++    }
++
++    private static Long tryParseULong(String str) {
++        try {
++            return Long.parseUnsignedLong(str);
++        } catch (NumberFormatException e) {
++            return null;
++        }
++    }
++
++    private static Double tryParseDouble(String str) {
++        try {
++            return Double.valueOf(str);
++        } catch (NumberFormatException e) {
++            return null;
++        }
++    }
++
++    private static String tryParseString(String str) {
++        return "".equals(str) ? null : str;
++    }
++
++    private static <T extends Enum<T>> T tryParseEnum(Function<String, T> enumParser, String str) {
++        try {
++            return enumParser.apply(str.toUpperCase(Locale.US));
++        } catch (IllegalArgumentException e) {
++            return null;
++        }
++    }
++
++    private static <T> List<T> tryParseList(Function<String, T> elementParser, String str) {
++        if ("".equals(str)) return new ArrayList<>();
++
++        List<T> ret = new ArrayList<>();
++
++        int p = 0;
++        for (;;) {
++            StringBuilder sb = new StringBuilder();
++            while (p < str.length() && str.charAt(p) != ',') {
++                if (str.charAt(p) == '\\') ++p;
++                if (p == str.length()) break;
++                sb.append(str.charAt(p++));
++            }
++            ret.add(elementParser.apply(sb.toString()));
++            if (p == str.length()) break;
++            ++p;
++        }
++
++        return ret;
++    }
++
++    private static <T extends Enum<T>> List<T> tryParseEnumList(Function<String, T> enumParser, String str) {
++        if ("".equals(str)) return new ArrayList<>();
++
++        List<T> ret = new ArrayList<>();
++
++        for (String element : str.split(",")) {
++            ret.add(tryParseEnum(enumParser, element));
++        }
++
++        return ret;
++    }
++
++    private static String escape(String str) {
++        return str.replaceAll("([\\\\,])", "\\\\$1");
++    }
++
++    private static <T> String formatList(List<T> list) {
++        StringJoiner joiner = new StringJoiner(",");
++
++        for (T element : list) {
++            joiner.add(element == null ? "" : escape(element.toString()));
++        }
++
++        return joiner.toString();
++    }
++
++    private static String formatUIntList(List<Integer> list) {
++        StringJoiner joiner = new StringJoiner(",");
++
++        for (Integer element : list) {
++            joiner.add(element == null ? "" : escape(Integer.toUnsignedString(element)));
++        }
++
++        return joiner.toString();
++    }
++
++    private static String formatULongList(List<Long> list) {
++        StringJoiner joiner = new StringJoiner(",");
++
++        for (Long element : list) {
++            joiner.add(element == null ? "" : escape(Long.toUnsignedString(element)));
++        }
++
++        return joiner.toString();
++    }
++
++    private static <T extends Enum<T>> String formatEnumList(List<T> list, Function<T, String> elementFormatter) {
++        StringJoiner joiner = new StringJoiner(",");
++
++        for (T element : list) {
++            joiner.add(element == null ? "" : elementFormatter.apply(element));
++        }
++
++        return joiner.toString();
++    }
++
++    public static Boolean test_bool() {
++        String value = SystemProperties.get("test.bool");
++        if ("".equals(value)) {
++            value = "true";
++        }
++        return Optional.ofNullable(tryParseBoolean(value)).orElse(null);
++    }
++
++    public static Integer test_int() {
++        String value = SystemProperties.get("test.int");
++        if ("".equals(value)) {
++            value = "123";
++        }
++        return Optional.ofNullable(tryParseInteger(value)).orElse(null);
++    }
++
++    public static String test_string() {
++        String value = SystemProperties.get("test.string");
++        if ("".equals(value)) {
++            value = "default";
++        }
++        return Optional.ofNullable(tryParseString(value)).orElse(null);
++    }
++
++    public static enum test_enum_values {
++        A("a"),
++        B("b"),
++        C("c");
++        private final String propValue;
++        private test_enum_values(String propValue) {
++            this.propValue = propValue;
++        }
++        public String getPropValue() {
++            return propValue;
++        }
++    }
++
++    public static test_enum_values test_enum() {
++        String value = SystemProperties.get("test.enum");
++        if ("".equals(value)) {
++            value = "b";
++        }
++        return Optional.ofNullable(tryParseEnum(test_enum_values::valueOf, value)).orElse(null);
++    }
++}
++)s";
++
++constexpr const char* kExpectedCppHeaderOutput =
++    R"(// Generated by the sysprop generator. DO NOT EDIT!
++
++#pragma once
++
++#include <cstdint>
++#include <optional>
++#include <string>
++#include <vector>
++
++namespace android::sysprop::DefaultValueProperties {
++
++bool test_bool();
++
++std::int32_t test_int();
++
++std::string test_string();
++
++enum class test_enum_values {
++    A,
++    B,
++    C,
++};
++
++test_enum_values test_enum();
++
++}  // namespace android::sysprop::DefaultValueProperties
++)";
++
++constexpr const char* kExpectedRustOutput =
++    R"(//! Autogenerated system property accessors.
++//!
++//! This is an autogenerated module. The module contains methods for typed access to
++//! Android system properties.
++
++// Generated by the sysprop generator. DO NOT EDIT!
++
++use std::fmt;
++use rustutils::android::system_properties::{self, parsers_formatters};
++pub use rustutils::android::system_properties::error::SysPropError;
++
++/// The property name of the "test_bool" API.
++pub const TEST_BOOL_PROP: &str = "test.bool";
++
++/// Returns the value of the property 'test.bool' if set.
++pub fn test_bool() -> std::result::Result<bool, SysPropError> {
++    let result = match system_properties::read(TEST_BOOL_PROP) {
++        Err(e) => Err(SysPropError::FetchError(e)),
++        Ok(Some(val)) => parsers_formatters::parse_bool(val.as_str()).map_err(SysPropError::ParseError),
++        Ok(None) => parsers_formatters::parse_bool("true").map_err(SysPropError::ParseError),
++    };
++    result
++}
++
++/// The property name of the "test_int" API.
++pub const TEST_INT_PROP: &str = "test.int";
++
++/// Returns the value of the property 'test.int' if set.
++pub fn test_int() -> std::result::Result<i32, SysPropError> {
++    let result = match system_properties::read(TEST_INT_PROP) {
++        Err(e) => Err(SysPropError::FetchError(e)),
++        Ok(Some(val)) => parsers_formatters::parse(val.as_str()).map_err(SysPropError::ParseError),
++        Ok(None) => parsers_formatters::parse("123").map_err(SysPropError::ParseError),
++    };
++    result
++}
++
++/// The property name of the "test_string" API.
++pub const TEST_STRING_PROP: &str = "test.string";
++
++/// Returns the value of the property 'test.string' if set.
++pub fn test_string() -> std::result::Result<String, SysPropError> {
++    let result = match system_properties::read(TEST_STRING_PROP) {
++        Err(e) => Err(SysPropError::FetchError(e)),
++        Ok(Some(val)) => parsers_formatters::parse(val.as_str()).map_err(SysPropError::ParseError),
++        Ok(None) => parsers_formatters::parse("default").map_err(SysPropError::ParseError),
++    };
++    result
++}
++
++/// The property name of the "test_enum" API.
++pub const TEST_ENUM_PROP: &str = "test.enum";
++
++#[allow(missing_docs)]
++#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Hash, Ord)]
++pub enum TestEnumValues {
++    A,
++    B,
++    C,
++}
++
++impl std::str::FromStr for TestEnumValues {
++    type Err = String;
++
++    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
++        match s {
++            "a" => Ok(TestEnumValues::A),
++            "b" => Ok(TestEnumValues::B),
++            "c" => Ok(TestEnumValues::C),
++            _ => Err(format!("'{}' cannot be parsed for TestEnumValues", s)),
++        }
++    }
++}
++
++impl fmt::Display for TestEnumValues {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        match self {
++            TestEnumValues::A => write!(f, "a"),
++            TestEnumValues::B => write!(f, "b"),
++            TestEnumValues::C => write!(f, "c"),
++        }
++    }
++}
++
++/// Returns the value of the property 'test.enum' if set.
++pub fn test_enum() -> std::result::Result<TestEnumValues, SysPropError> {
++    let result = match system_properties::read(TEST_ENUM_PROP) {
++        Err(e) => Err(SysPropError::FetchError(e)),
++        Ok(Some(val)) => parsers_formatters::parse(val.as_str()).map_err(SysPropError::ParseError),
++        Ok(None) => parsers_formatters::parse("b").map_err(SysPropError::ParseError),
++    };
++    result
++}
++
++)";
++
++constexpr const char* kExpectedCppSourceOutput =
++    R"(// Generated by the sysprop generator. DO NOT EDIT!
++
++#include <properties/DefaultValueProperties.sysprop.h>
++
++#include <cctype>
++#include <cerrno>
++#include <cstdio>
++#include <cstring>
++#include <limits>
++#include <utility>
++
++#include <strings.h>
++#ifdef __BIONIC__
++#include <sys/system_properties.h>
++[[maybe_unused]] static bool SetProp(const char* key, const char* value) {
++    return __system_property_set(key, value) == 0;
++}
++#else
++#include <android-base/properties.h>
++[[maybe_unused]] static bool SetProp(const char* key, const char* value) {
++    android::base::SetProperty(key, value);
++    return true;
++}
++#endif
++
++#include <android-base/parseint.h>
++#include <log/log.h>
++
++namespace {
++
++using namespace android::sysprop::DefaultValueProperties;
++
++template <typename T> T DoParse(const char* str);
++
++constexpr const std::pair<const char*, test_enum_values> test_enum_list[] = {
++    {"a", test_enum_values::A},
++    {"b", test_enum_values::B},
++    {"c", test_enum_values::C},
++};
++
++template <>
++std::optional<test_enum_values> DoParse(const char* str) {
++    for (auto [name, val] : test_enum_list) {
++        if (strcmp(str, name) == 0) {
++            return val;
++        }
++    }
++    return std::nullopt;
++}
++
++template <typename T> constexpr bool is_vector = false;
++
++template <typename T> constexpr bool is_vector<std::vector<T>> = true;
++
++template <> [[maybe_unused]] std::optional<bool> DoParse(const char* str) {
++    static constexpr const char* kYes[] = {"1", "true"};
++    static constexpr const char* kNo[] = {"0", "false"};
++
++    for (const char* yes : kYes) {
++        if (strcasecmp(yes, str) == 0) return std::make_optional(true);
++    }
++
++    for (const char* no : kNo) {
++        if (strcasecmp(no, str) == 0) return std::make_optional(false);
++    }
++
++    return std::nullopt;
++}
++
++template <> [[maybe_unused]] std::optional<std::int32_t> DoParse(const char* str) {
++    std::int32_t ret;
++    return android::base::ParseInt(str, &ret) ? std::make_optional(ret) : std::nullopt;
++}
++
++template <> [[maybe_unused]] std::optional<std::uint32_t> DoParse(const char* str) {
++    std::uint32_t ret;
++    return android::base::ParseUint(str, &ret) ? std::make_optional(ret) : std::nullopt;
++}
++
++template <> [[maybe_unused]] std::optional<std::int64_t> DoParse(const char* str) {
++    std::int64_t ret;
++    return android::base::ParseInt(str, &ret) ? std::make_optional(ret) : std::nullopt;
++}
++
++template <> [[maybe_unused]] std::optional<std::uint64_t> DoParse(const char* str) {
++    std::uint64_t ret;
++    return android::base::ParseUint(str, &ret) ? std::make_optional(ret) : std::nullopt;
++}
++
++template <> [[maybe_unused]] std::optional<double> DoParse(const char* str) {
++    int old_errno = errno;
++    errno = 0;
++    char* end;
++    double ret = std::strtod(str, &end);
++    if (errno != 0) {
++        return std::nullopt;
++    }
++    if (str == end || *end != '\0') {
++        errno = EINVAL;
++        return std::nullopt;
++    }
++    errno = old_errno;
++    return std::make_optional(ret);
++}
++
++template <> [[maybe_unused]] std::optional<std::string> DoParse(const char* str) {
++    return *str == '\0' ? std::nullopt : std::make_optional(str);
++}
++
++template <typename Vec> [[maybe_unused]] Vec DoParseList(const char* str) {
++    Vec ret;
++    if (*str == '\0') return ret;
++    const char* p = str;
++    for (;;) {
++        const char* r = p;
++        std::string value;
++        while (*r != ',') {
++            if (*r == '\\') ++r;
++            if (*r == '\0') break;
++            value += *r++;
++        }
++        ret.emplace_back(DoParse<typename Vec::value_type>(value.c_str()));
++        if (*r == '\0') break;
++        p = r + 1;
++    }
++    return ret;
++}
++
++template <typename T> inline T TryParse(const char* str) {
++    if constexpr(is_vector<T>) {
++        return DoParseList<T>(str);
++    } else {
++        return DoParse<T>(str);
++    }
++}
++
++[[maybe_unused]] std::string FormatValue(const std::optional<std::int32_t>& value) {
++    return value ? std::to_string(*value) : "";
++}
++
++[[maybe_unused]] std::string FormatValue(const std::optional<std::uint32_t>& value) {
++    return value ? std::to_string(*value) : "";
++}
++
++[[maybe_unused]] std::string FormatValue(const std::optional<std::int64_t>& value) {
++    return value ? std::to_string(*value) : "";
++}
++
++[[maybe_unused]] std::string FormatValue(const std::optional<std::uint64_t>& value) {
++    return value ? std::to_string(*value) : "";
++}
++
++[[maybe_unused]] std::string FormatValue(const std::optional<double>& value) {
++    if (!value) return "";
++    char buf[1024];
++    std::sprintf(buf, "%.*g", std::numeric_limits<double>::max_digits10, *value);
++    return buf;
++}
++
++[[maybe_unused]] std::string FormatValue(const std::optional<bool>& value) {
++    return value ? (*value ? "true" : "false") : "";
++}
++
++template <typename T>
++[[maybe_unused]] std::string FormatValue(const std::vector<T>& value) {
++    if (value.empty()) return "";
++
++    std::string ret;
++    bool first = true;
++
++    for (auto&& element : value) {
++        if (!first) ret += ',';
++        else first = false;
++        if constexpr(std::is_same_v<T, std::optional<std::string>>) {
++            if (element) {
++                for (char c : *element) {
++                    if (c == '\\' || c == ',') ret += '\\';
++                    ret += c;
++                }
++            }
++        } else {
++            ret += FormatValue(element);
++        }
++    }
++
++    return ret;
++}
++
++template <typename T>
++T GetProp(const char* key, const char* legacy = nullptr, const char* default_val = nullptr) {
++    std::string value;
++#ifdef __BIONIC__
++    auto pi = __system_property_find(key);
++    if (pi != nullptr) {
++        __system_property_read_callback(pi, [](void* cookie, const char*, const char* value, std::uint32_t) {
++            *static_cast<std::string*>(cookie) = value;
++        }, &value);
++    }
++#else
++    value = android::base::GetProperty(key, "");
++#endif
++    if (value.empty() && legacy) {
++        ALOGV("prop %s doesn't exist; fallback to legacy prop %s", key, legacy);
++        return GetProp<T>(legacy);
++    }
++    if (value.empty() && default_val) {
++        value = default_val;
++    }
++    return TryParse<T>(value.c_str());
++}
++
++}  // namespace
++
++namespace android::sysprop::DefaultValueProperties {
++
++bool test_bool() {
++    return GetProp<std::optional<bool>>("test.bool", nullptr, "true").value();
++}
++
++std::int32_t test_int() {
++    return GetProp<std::optional<std::int32_t>>("test.int", nullptr, "123").value();
++}
++
++std::string test_string() {
++    return GetProp<std::optional<std::string>>("test.string", nullptr, "default").value();
++}
++
++test_enum_values test_enum() {
++    return GetProp<std::optional<test_enum_values>>("test.enum", nullptr, "b").value();
++}
++
++}  // namespace android::sysprop::DefaultValueProperties
++)";
++
++}  // namespace
++
++using namespace std::string_literals;
++
++TEST(SyspropTest, DefaultValueJavaGenTest) {
++  TemporaryFile temp_file;
++
++  ASSERT_EQ(write(temp_file.fd, kTestSyspropFile, strlen(kTestSyspropFile)),
++            strlen(kTestSyspropFile));
++  close(temp_file.fd);
++  temp_file.fd = -1;
++
++  TemporaryDir temp_dir;
++
++  ASSERT_RESULT_OK(GenerateJavaLibrary(temp_file.path, sysprop::Scope::Public,
++                                       temp_dir.path));
++
++  std::string java_output_path =
++      temp_dir.path + "/android/sysprop/DefaultValueProperties.java"s;
++
++  std::string java_output;
++  ASSERT_TRUE(
++      android::base::ReadFileToString(java_output_path, &java_output, true));
++  EXPECT_EQ(java_output, kExpectedJavaOutput);
++}
++
++TEST(SyspropTest, DefaultValueCppGenTest) {
++  TemporaryDir temp_dir;
++
++  std::string temp_sysprop_path =
++      temp_dir.path + "/DefaultValueProperties.sysprop"s;
++  ASSERT_TRUE(
++      android::base::WriteStringToFile(kTestSyspropFile, temp_sysprop_path));
++
++  ASSERT_RESULT_OK(GenerateCppFiles(
++      temp_sysprop_path, temp_dir.path, temp_dir.path + "/public"s,
++      temp_dir.path, "properties/DefaultValueProperties.sysprop.h"));
++
++  std::string header_output_path =
++      temp_dir.path + "/DefaultValueProperties.sysprop.h"s;
++  std::string public_header_output_path =
++      temp_dir.path + "/public/DefaultValueProperties.sysprop.h"s;
++  std::string source_output_path =
++      temp_dir.path + "/DefaultValueProperties.sysprop.cpp"s;
++
++  std::string header_output;
++  ASSERT_TRUE(android::base::ReadFileToString(header_output_path,
++                                              &header_output, true));
++  EXPECT_EQ(header_output, kExpectedCppHeaderOutput);
++
++  std::string public_header_output;
++  ASSERT_TRUE(android::base::ReadFileToString(public_header_output_path,
++                                              &public_header_output, true));
++  EXPECT_EQ(public_header_output, kExpectedCppHeaderOutput);
++
++  std::string source_output;
++  ASSERT_TRUE(android::base::ReadFileToString(source_output_path,
++                                              &source_output, true));
++  EXPECT_EQ(source_output, kExpectedCppSourceOutput);
++}
++
++TEST(SyspropTest, DefaultValueRustGenTest) {
++  TemporaryFile temp_file;
++
++  ASSERT_EQ(write(temp_file.fd, kTestSyspropFile, strlen(kTestSyspropFile)),
++            strlen(kTestSyspropFile));
++  close(temp_file.fd);
++  temp_file.fd = -1;
++
++  TemporaryDir temp_dir;
++
++  ASSERT_RESULT_OK(GenerateRustLibrary(temp_file.path, sysprop::Scope::Public,
++                                       temp_dir.path));
++
++  std::string rust_output_path = temp_dir.path + "/mod.rs"s;
++
++  std::string rust_output;
++  ASSERT_TRUE(
++      android::base::ReadFileToString(rust_output_path, &rust_output, true));
++  EXPECT_EQ(rust_output, kExpectedRustOutput);
++}
