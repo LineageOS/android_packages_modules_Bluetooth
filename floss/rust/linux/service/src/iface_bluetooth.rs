@@ -546,7 +546,7 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     #[dbus_method("SetName")]
-    fn set_name(&self, name: String) -> bool {
+    fn set_name(&mut self, name: String) -> bool {
         dbus_generated!()
     }
 

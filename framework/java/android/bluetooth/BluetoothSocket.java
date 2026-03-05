@@ -1353,6 +1353,11 @@ public final class BluetoothSocket implements Closeable {
 
     @Override
     public String toString() {
+        // A partially constructed object will have a null reference here. This probably has to do
+        // with the `finalize()` method and its usage of `close()` which calls this `toString()`
+        if (mRemoteDevice == null) {
+            return "Local Socket (partially constructed)";
+        }
         return mRemoteDevice.map(Object::toString).orElse("Local Socket");
     }
 }

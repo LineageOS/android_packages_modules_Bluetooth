@@ -284,9 +284,6 @@ interface IBluetooth {
     IBinder getBluetoothScan();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    IBinder getProfile(int profile);// TODO delete with get_profile_oneway
-
-    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     oneway void getProfileOneway(int profile, in IBluetoothProfileCallback callback);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")

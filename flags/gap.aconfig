@@ -33,16 +33,6 @@ flag {
 }
 
 flag {
-    name: "scan_controller_thread"
-    namespace: "bluetooth"
-    description: "Makes scan controller operations run on one thread."
-    bug: "397863857"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_private_gatt_advertisement"
     namespace: "bluetooth"
     description: "Fix that private GATT advertising is handled as a normal GATT"

@@ -113,8 +113,6 @@ public class MapClientServiceTest {
 
     @Test
     public void setConnectionPolicy() {
-        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
-
         assertThat(mService.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_UNKNOWN)).isTrue();
         verify(mAdapterService)
                 .setProfileConnectionPolicy(

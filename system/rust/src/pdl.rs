@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-//! Crate root for the Unified Bluetooth Rust Stack.
+//! PDL generated packets.
 
-/// PDL generated packets.
-pub mod pdl;
-/// Common Bluetooth data types.
-pub mod types;
-
-pub use types::*;
+/// Host Controller Interface (HCI) packets and common types.
+pub mod hci;

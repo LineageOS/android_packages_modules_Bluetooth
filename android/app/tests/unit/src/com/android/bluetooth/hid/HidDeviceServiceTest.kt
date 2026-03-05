@@ -38,7 +38,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.mockGetSystemService
 import com.android.tests.bluetooth.MockitoRule
@@ -69,7 +68,6 @@ class HidDeviceServiceTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var databaseManager: DatabaseManager
     @Mock private lateinit var nativeInterface: HidDeviceNativeInterface
     @Mock private lateinit var callback: IBluetoothHidDeviceCallback.Stub
     @Mock private lateinit var binder: Binder
@@ -88,7 +86,6 @@ class HidDeviceServiceTest {
         }
 
         adapterService.mockGetSystemService<ActivityManager>()
-        doReturn(databaseManager).whenever(adapterService).databaseManager
         doReturn(binder).whenever(callback).asBinder()
 
         inOrder = inOrder(adapterService)

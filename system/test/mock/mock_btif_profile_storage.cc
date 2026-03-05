@@ -61,6 +61,7 @@ struct btif_storage_load_bonded_hearing_aids btif_storage_load_bonded_hearing_ai
 struct btif_storage_load_bonded_hid_info btif_storage_load_bonded_hid_info;
 struct btif_storage_load_bonded_leaudio btif_storage_load_bonded_leaudio;
 struct btif_storage_load_bonded_leaudio_has_devices btif_storage_load_bonded_leaudio_has_devices;
+struct btif_storage_load_bonded_mcp_client_devices btif_storage_load_bonded_mcp_client_devices;
 struct btif_storage_load_bonded_volume_control_devices
         btif_storage_load_bonded_volume_control_devices;
 struct btif_storage_load_hidd btif_storage_load_hidd;
@@ -212,6 +213,10 @@ void btif_storage_load_bonded_leaudio() {
 void btif_storage_load_bonded_leaudio_has_devices() {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_load_bonded_leaudio_has_devices();
+}
+void btif_storage_load_bonded_mcp_client_devices(void) {
+  inc_func_call_count(__func__);
+  test::mock::btif_profile_storage::btif_storage_load_bonded_mcp_client_devices();
 }
 void btif_storage_load_bonded_volume_control_devices(void) {
   inc_func_call_count(__func__);

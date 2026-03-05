@@ -46,7 +46,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
@@ -70,7 +69,6 @@ public class A2dpSinkStreamHandlerTest {
     @Mock private AudioManager mAudioManager;
     @Mock private Resources mResources;
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private PackageManager mPackageManager;
 
     private static final int DUCK_PERCENT = 75;
@@ -91,7 +89,6 @@ public class A2dpSinkStreamHandlerTest {
 
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
         doReturn(context.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(mResources).when(mAdapterService).getResources();
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);

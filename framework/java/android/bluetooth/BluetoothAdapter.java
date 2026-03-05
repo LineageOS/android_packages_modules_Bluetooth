@@ -837,7 +837,7 @@ public final class BluetoothAdapter {
 
         @GuardedBy("BluetoothAdapter.sProfileLock")
         void connect(BluetoothProfile proxy, IBinder binder) {
-            if (Flags.getProfileOneway() && mConnected) {
+            if (mConnected) {
                 Log.v(TAG, getProfileName(mProfile) + " already connected");
                 return;
             }
@@ -849,7 +849,7 @@ public final class BluetoothAdapter {
 
         @GuardedBy("BluetoothAdapter.sProfileLock")
         void disconnect(BluetoothProfile proxy) {
-            if (Flags.getProfileOneway() && !mConnected) {
+            if (!mConnected) {
                 Log.v(TAG, getProfileName(mProfile) + " already disconnected");
                 return;
             }
@@ -3145,23 +3145,16 @@ public final class BluetoothAdapter {
             // ProfileConnection.connect concurrently
             mProfileConnections.put(profileProxy, connection);
 
-            if (Flags.getProfileOneway()) {
-                getProfile(
-                        profile,
-                        new IBluetoothProfileCallback.Stub() {
-                            @RequiresNoPermission
-                            public void getProfileReply(IBinder binder) {
-                                synchronized (sProfileLock) {
-                                    connection.connect(profileProxy, binder);
-                                }
+            getProfile(
+                    profile,
+                    new IBluetoothProfileCallback.Stub() {
+                        @RequiresNoPermission
+                        public void getProfileReply(IBinder binder) {
+                            synchronized (sProfileLock) {
+                                connection.connect(profileProxy, binder);
                             }
-                        });
-                return true;
-            }
-            IBinder binder = getProfile(profile);
-            if (binder != null) {
-                connection.connect(profileProxy, binder);
-            }
+                        }
+                    });
         }
         return true;
     }
@@ -3370,28 +3363,16 @@ public final class BluetoothAdapter {
                             (proxy, connection) -> {
                                 if (connection.mConnected) return;
 
-                                if (Flags.getProfileOneway()) {
-                                    getProfile(
-                                            connection.mProfile,
-                                            new IBluetoothProfileCallback.Stub() {
-                                                @RequiresNoPermission
-                                                public void getProfileReply(IBinder binder) {
-                                                    synchronized (sProfileLock) {
-                                                        connection.connect(proxy, binder);
-                                                    }
+                                getProfile(
+                                        connection.mProfile,
+                                        new IBluetoothProfileCallback.Stub() {
+                                            @RequiresNoPermission
+                                            public void getProfileReply(IBinder binder) {
+                                                synchronized (sProfileLock) {
+                                                    connection.connect(proxy, binder);
                                                 }
-                                            });
-                                    return;
-                                }
-                                IBinder binder = getProfile(connection.mProfile);
-                                if (binder == null) {
-                                    Log.e(
-                                            TAG,
-                                            "Failed to retrieve a binder for "
-                                                    + getProfileName(connection.mProfile));
-                                    return;
-                                }
-                                connection.connect(proxy, binder);
+                                            }
+                                        });
                             });
                     return true;
                 }
@@ -3690,11 +3671,6 @@ public final class BluetoothAdapter {
 
     private void getProfile(int profile, IBluetoothProfileCallback callback) {
         callServiceIfEnabled(s -> s.getProfileOneway(profile, callback));
-    }
-
-    /** Return a binder to a Profile service */
-    private @Nullable IBinder getProfile(int profile) { // Delete with get_profile_oneway clean up
-        return callServiceIfEnabled(s -> s.getProfile(profile), null);
     }
 
     void removeServiceStateCallback(IBluetoothManagerCallback cb) {

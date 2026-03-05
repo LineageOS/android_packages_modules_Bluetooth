@@ -616,10 +616,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!getAdapterService()
-                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
-            return false;
-        }
+        getAdapterService().setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }

@@ -107,3 +107,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "cancel_pending_le_conn_on_socket_close"
+    namespace: "bluetooth"
+    description: "Cancel pending LE connection on socket close"
+    bug: "489426053"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

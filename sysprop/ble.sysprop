@@ -338,3 +338,12 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.max_tx_power_dbm.config"
 }
+
+# Bluetooth Scan Throttle Configuration
+prop {
+    api_name: "scan_allowance_seconds"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.scan.scan_allowance_seconds.config"
+}

@@ -34,8 +34,8 @@ class ScannerApp(
     val userHandle: UserHandle?, // User handle of the scanning app
     val attributionTag: String?, // Final attribution tag in chain
     val callback: IScannerCallback?,
-    val settings: ScanSettings? = null, // TODO(b/455057044) Remove nullable on cleanup
-    val filters: List<ScanFilter>? = null, // TODO(b/455057044) Remove nullable on cleanup
+    val settings: ScanSettings,
+    val filters: List<ScanFilter>,
     val source: AttributionSource,
     val info: ScanController.PendingIntentInfo?, // Context information
     val isInternal: Boolean,

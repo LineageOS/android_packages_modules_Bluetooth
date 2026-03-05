@@ -27,6 +27,7 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_POWER
 import android.bluetooth.le.ScanSettings.SCAN_MODE_OPPORTUNISTIC
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.le_scan.ScanThrottler.ScanAllowanceLedger
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_AMBIENT_DISCOVERY
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_BALANCED
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_LOW_LATENCY
@@ -110,6 +111,9 @@ class AppScanStats(
     var appImportance = IMPORTANCE_CACHED
         @Synchronized get
         @Synchronized set
+
+    var scanAllowanceLedger = ScanAllowanceLedger()
+        @Synchronized get
 
     private var scansStarted = 0
     private var scansStopped = 0

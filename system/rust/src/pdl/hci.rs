@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-//! Crate root for the Unified Bluetooth Rust Stack.
+// Casing inherited from PDL.
+#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+#![allow(warnings, missing_docs)]
+#![allow(clippy::all)]
 
-/// PDL generated packets.
-pub mod pdl;
-/// Common Bluetooth data types.
-pub mod types;
+include!(concat!(env!("OUT_DIR"), "/hci_packets.rs"));
 
-pub use types::*;
+pub use ErrorCode as HciStatus;

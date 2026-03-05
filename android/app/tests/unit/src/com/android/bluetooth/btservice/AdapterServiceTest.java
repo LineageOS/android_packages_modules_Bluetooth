@@ -54,7 +54,6 @@ import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.State;
 import android.companion.CompanionDeviceManager;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
@@ -230,8 +229,7 @@ public class AdapterServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(
-                Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF, Flags.FLAG_MAINLINE_BETA_STORAGE);
+        return FlagsWrapper.progressionOf();
     }
 
     public AdapterServiceTest(FlagsWrapper flags) {
@@ -435,15 +433,9 @@ public class AdapterServiceTest {
         }
 
         syncHandler(AdapterState.BREDR_STOPPED);
-        if (Flags.skipBleOnWhenTurningOff()) {
-            verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
 
-            assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_OFF);
-            return;
-        }
-        verifyStateChange(State.TURNING_OFF, State.BLE_ON);
-
-        assertThat(mAdapter.getState()).isEqualTo(State.BLE_ON);
+        assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_OFF);
     }
 
     void onToOff(boolean onlyGatt) {
@@ -506,14 +498,7 @@ public class AdapterServiceTest {
         Log.e(TAG, "doDisable() start");
         assertThat(mAdapter.getState()).isEqualTo(State.ON);
 
-        if (Flags.skipBleOnWhenTurningOff()) {
-            onToOff(onlyGatt);
-        } else {
-            onToBleOn(onlyGatt);
-            mAdapter.bleOnToOff();
-            syncHandler(AdapterState.BLE_TURN_OFF);
-            verifyStateChange(State.BLE_ON, State.BLE_TURNING_OFF);
-        }
+        onToOff(onlyGatt);
 
         if (!Flags.onlyStartScanDuringBleOn()) {
             syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
@@ -657,15 +642,7 @@ public class AdapterServiceTest {
         initTest();
         doEnable(false);
 
-        if (Flags.skipBleOnWhenTurningOff()) {
-            onToOff(false);
-        } else {
-            onToBleOn(false);
-            mAdapter.bleOnToOff();
-            syncHandler(AdapterState.BLE_TURN_OFF);
-            verifyStateChange(State.BLE_ON, State.BLE_TURNING_OFF);
-            assertThat(mAdapter.getBluetoothGatt()).isNull();
-        }
+        onToOff(false);
 
         // Fetch Gatt message and never process it to simulate a timeout.
         dropNextMessage(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
@@ -786,13 +763,8 @@ public class AdapterServiceTest {
         }
 
         syncHandler(AdapterState.BREDR_STOPPED);
-        if (Flags.skipBleOnWhenTurningOff()) {
-            verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_OFF);
-        } else {
-            verifyStateChange(State.TURNING_OFF, State.BLE_ON);
-            assertThat(mAdapter.getState()).isEqualTo(State.BLE_ON);
-        }
+        verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_OFF);
 
         assertThat(mLooper.nextMessage()).isNull();
     }
@@ -830,16 +802,10 @@ public class AdapterServiceTest {
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
         syncHandler(AdapterState.BREDR_STOPPED);
 
-        if (Flags.skipBleOnWhenTurningOff()) {
-            verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-            if (!Flags.onlyStartScanDuringBleOn()) {
-                syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
-                syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
-            }
-        } else {
-            verifyStateChange(State.TURNING_OFF, State.BLE_ON);
-            // Ensure GATT is still running
-            assertThat(mAdapter.getBluetoothGatt()).isNotNull();
+        verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        if (!Flags.onlyStartScanDuringBleOn()) {
+            syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+            syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
         }
 
         assertThat(mLooper.nextMessage()).isNull();
@@ -1338,22 +1304,6 @@ public class AdapterServiceTest {
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         orderNative.verify(mNativeInterface, never()).disconnectAcl(any(), anyInt());
         assertThat(mAdapter.mLeGattClientsControllingAutoActiveMode).isEmpty();
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE) // permission are now part of device entry
-    public void testRemovePermissionBondedToBonding() {
-        initTest();
-        SharedPreferences mockPreferences = mock(SharedPreferences.class);
-        SharedPreferences.Editor mockEditor = mock(SharedPreferences.Editor.class);
-
-        doReturn(mockPreferences).when(mContext).getSharedPreferences(anyString(), anyInt());
-        doReturn(mockEditor).when(mockPreferences).edit();
-
-        mAdapter.handleBondStateChanged(
-                mDevice1, BluetoothDevice.BOND_BONDED, BluetoothDevice.BOND_BONDING);
-
-        verify(mockEditor, times(3)).remove(anyString());
     }
 
     @Test

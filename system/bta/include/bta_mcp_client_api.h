@@ -32,6 +32,7 @@ public:
   static void Initialize(McpClientCallbacks* callbacks, base::OnceClosure initCb);
   static void Cleanup();
   static McpClient* Get();
+  static void AddFromStorage(const RawAddress& address);
   static void DebugDump(int fd);
 
   virtual void Connect(const RawAddress& address) = 0;

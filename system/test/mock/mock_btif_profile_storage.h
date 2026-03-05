@@ -292,6 +292,16 @@ struct btif_storage_load_bonded_leaudio_has_devices {
 extern struct btif_storage_load_bonded_leaudio_has_devices
         btif_storage_load_bonded_leaudio_has_devices;
 
+// Name: btif_storage_load_bonded_mcp_client_devices
+// Params: void
+// Return: void
+struct btif_storage_load_bonded_mcp_client_devices {
+  std::function<void(void)> body{[](void) {}};
+  void operator()(void) { body(); }
+};
+extern struct btif_storage_load_bonded_mcp_client_devices
+        btif_storage_load_bonded_mcp_client_devices;
+
 // Name: btif_storage_load_bonded_volume_control_devices
 // Params: void
 // Return: void

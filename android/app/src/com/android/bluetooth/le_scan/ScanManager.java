@@ -60,7 +60,6 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 
@@ -70,7 +69,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.TimeProvider;
-import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.time.Duration;
@@ -92,28 +90,11 @@ import java.util.stream.Stream;
 public class ScanManager {
     private static final String TAG = ScanUtil.TAG_PREFIX + ScanManager.class.getSimpleName();
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. To be deleted [START]
-    // Messages for handling BLE scan operations.
-    @VisibleForTesting static final int MSG_START_BLE_SCAN = 0;
-    @VisibleForTesting static final int MSG_STOP_BLE_SCAN = 1;
-    private static final int MSG_FLUSH_BATCH_RESULTS = 2;
-    @VisibleForTesting static final int MSG_SCAN_TIMEOUT = 3;
-    @VisibleForTesting static final int MSG_SUSPEND_SCANS = 4;
-    @VisibleForTesting static final int MSG_RESUME_SCANS = 5;
-    @VisibleForTesting static final int MSG_IMPORTANCE_CHANGE = 6;
-    @VisibleForTesting static final int MSG_SCREEN_ON = 7;
-    @VisibleForTesting static final int MSG_SCREEN_OFF = 8;
-    private static final int MSG_REVERT_SCAN_MODE_UPGRADE = 9;
-    @VisibleForTesting static final int MSG_START_CONNECTING = 10;
-    @VisibleForTesting static final int MSG_STOP_CONNECTING = 11;
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. To be deleted [END]
-
     private static final int FOREGROUND_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
     private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
     private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
 
     // Timeout for each controller operation.
-    private static final int OPERATION_TIME_OUT_MILLIS = 500;
     private static final int MAX_IS_UID_FOREGROUND_MAP_SIZE = 500;
 
     private static final int ALL_PASS_FILTER_INDEX_REGULAR_SCAN = 1;
@@ -128,9 +109,6 @@ public class ScanManager {
 
     // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
     private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
-
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. Delete on flag cleanup
-    @VisibleForTesting @Nullable final ClientHandler mClientHandler;
 
     private final Set<ScanClient> mRegularScanClients = ConcurrentHashMap.newKeySet();
     private final Set<ScanClient> mBatchClients = ConcurrentHashMap.newKeySet();
@@ -147,16 +125,11 @@ public class ScanManager {
 
     private final AtomicReference<BroadcastReceiver> mBatchAlarmReceiver = new AtomicReference<>();
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()`. Remove @Nullable on flag cleanup
-    @VisibleForTesting @Nullable
-    final Map<ScanClient, Runnable> mScanTimeoutRunnables = new HashMap<>();
+    @VisibleForTesting final Map<ScanClient, Runnable> mScanTimeoutRunnables = new HashMap<>();
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()`. Remove @Nullable on flag cleanup
-    @Nullable
     private final Map<ScanClient, Runnable> mRevertScanModeUpgradeRunnables = new HashMap<>();
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()`. Remove @Nullable on flag cleanup
-    @Nullable private Runnable mClearConnectingStateRunnable;
+    private Runnable mClearConnectingStateRunnable;
 
     // List of merged MSFT patterns
     private final MsftAdvMonitorMergedPatternList mMsftAdvMonitorMergedPatternList =
@@ -171,15 +144,14 @@ public class ScanManager {
     private final PendingIntent mBatchScanIntervalIntent;
     private final ActivityManager mActivityManager;
     private final LocationManager mLocationManager;
-    private final ScanThrottler mScanThrottler;
+    @VisibleForTesting final ScanThrottler mScanThrottler;
     private final BatchScanThrottler mBatchScanThrottler;
     // Whether or not MSFT-based scanning hardware offload is available on this device
     private final boolean mIsMsftSupported;
     // Whether or not to use MSFT-based scan filtering
     private final boolean mUseMsftFiltering;
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()`. Remove @Nullable on flag cleanup
-    @VisibleForTesting @Nullable final Handler mHandler;
+    @VisibleForTesting final Handler mHandler;
     private volatile boolean mIsAvailable = true;
 
     @VisibleForTesting boolean mIsConnecting;
@@ -190,14 +162,6 @@ public class ScanManager {
     // Scan parameters for batch scan.
     private BatchScanParams mBatchScanParams;
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. Delete on flag cleanup
-    private final Object mCurUsedTrackableAdvertisementsLock = new Object();
-
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. Delete on flag cleanup
-    @GuardedBy("mCurUsedTrackableAdvertisementsLock")
-    private int mCurUsedTrackableAdvertisements = 0;
-
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is true
     // TODO(b/397863857) Rename to `mCurUsedTrackableAdvertisements` on flag cleanup
     private int mCurUsedTrackableAdvertisementsScanThread = 0;
 
@@ -274,13 +238,7 @@ public class ScanManager {
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
         mIsConnecting = false;
-        if (Flags.scanControllerThread()) {
-            mHandler = new Handler(looper);
-            mClientHandler = null;
-        } else {
-            mHandler = null;
-            mClientHandler = new ClientHandler(looper);
-        }
+        mHandler = new Handler(looper);
         mScreenOn = mAdapterService.getDisplayListener().isScreenOn();
         mScanController.doOnScanThread(
                 () -> {
@@ -294,7 +252,7 @@ public class ScanManager {
         IntentFilter locationIntentFilter = new IntentFilter(LocationManager.MODE_CHANGED_ACTION);
         locationIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
-        mScanThrottler = new ScanThrottler(this, mAdapterService);
+        mScanThrottler = new ScanThrottler(this, mAdapterService, mHandler);
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
         Log.d(TAG, "MSFT: isSupported=" + mIsMsftSupported + ", useFiltering=" + mUseMsftFiltering);
@@ -313,11 +271,6 @@ public class ScanManager {
             } catch (IllegalArgumentException e) {
                 Log.w(TAG, "exception when invoking removeOnUidImportanceListener", e);
             }
-        }
-
-        if (!Flags.scanControllerThread()) {
-            // Shut down the thread
-            mClientHandler.removeCallbacksAndMessages(null);
         }
 
         mAlarmManager.cancel(mBatchScanIntervalIntent);
@@ -380,55 +333,21 @@ public class ScanManager {
 
     void startScan(ScanClient client) {
         Log.d(TAG, "startScan(" + client + ")");
-        if (Flags.scanControllerThread()) {
-            handleStartScan(client);
-        } else {
-            sendMessage(MSG_START_BLE_SCAN, client);
-        }
+        handleStartScan(client);
     }
 
     void stopScan(int scannerId) {
         ScanClient tmpClient = new ScanClient(0, scannerId);
-        if (Flags.scanControllerThread()) {
-            handleStopScan(tmpClient);
-        } else {
-            sendMessage(MSG_STOP_BLE_SCAN, tmpClient);
-        }
+        handleStopScan(tmpClient);
     }
 
     void flushBatchScanResults(ScanClient client) {
         Log.d(TAG, "flushBatchScanResults(" + client + ")");
-        if (Flags.scanControllerThread()) {
-            handleFlushBatchResults(client);
-        } else {
-            sendMessage(MSG_FLUSH_BATCH_RESULTS, client);
-        }
-    }
-
-    // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
-    void callbackDone(int scannerId, int status) {
-        if (Flags.scanControllerThread()) {
-            return;
-        }
-        Log.d(TAG, "callbackDone for scannerId=" + scannerId + ", status=" + status);
-        if (status == 0) {
-            mNativeCallback.callbackDone();
-        }
-        // TODO: add a callback for scan failure.
+        handleFlushBatchResults(client);
     }
 
     void batchScanResultDelivered() {
         mBatchScanThrottler.resetBackoff();
-    }
-
-    private void sendMessage(int what, ScanClient client) {
-        if (Flags.scanControllerThread()) {
-            throw new IllegalStateException(
-                    "sendMessage using `mClientHandler` should not be called on scan thread");
-        }
-        final var message = mClientHandler.messageToString(what);
-        Log.d(TAG, "Sending message=" + message + " to=" + client);
-        mClientHandler.obtainMessage(what, client).sendToTarget();
     }
 
     private boolean isFilteringSupported() {
@@ -436,12 +355,6 @@ public class ScanManager {
     }
 
     int getCurrentUsedTrackingAdvertisement() {
-        if (!Flags.scanControllerThread()) {
-            synchronized (mCurUsedTrackableAdvertisementsLock) {
-                return mCurUsedTrackableAdvertisements;
-            }
-        }
-
         return mCurUsedTrackableAdvertisementsScanThread;
     }
 
@@ -462,106 +375,6 @@ public class ScanManager {
         mIsUidForegroundMap.put(client.getAppUid(), isForeground);
         final int finalImportance = importance;
         client.ifAppScanStatsPresent(stats -> stats.setAppImportance(finalImportance));
-    }
-
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. Delete on flag cleanup
-    // Handler class that handles BLE scan operations.
-    @VisibleForTesting
-    class ClientHandler extends Handler {
-
-        ClientHandler(Looper looper) {
-            super(looper);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_START_BLE_SCAN -> handleStartScanClientHandlerImpl((ScanClient) msg.obj);
-                case MSG_STOP_BLE_SCAN -> handleStopScanClientHandlerImpl((ScanClient) msg.obj);
-                case MSG_FLUSH_BATCH_RESULTS ->
-                        handleFlushBatchResultsClientHandlerImpl((ScanClient) msg.obj);
-                case MSG_SCAN_TIMEOUT ->
-                        handleRegularScanTimeoutClientHandlerImpl((ScanClient) msg.obj);
-                case MSG_SUSPEND_SCANS -> handleSuspendScansClientHandlerImpl();
-                case MSG_RESUME_SCANS -> handleResumeScansClientHandlerImpl();
-                case MSG_SCREEN_OFF -> handleScreenOffClientHandlerImpl();
-                case MSG_SCREEN_ON -> handleScreenOnClientHandlerImpl();
-                case MSG_REVERT_SCAN_MODE_UPGRADE ->
-                        handleRevertScanModeUpgradeClientHandlerImpl((ScanClient) msg.obj);
-                case MSG_IMPORTANCE_CHANGE ->
-                        handleImportanceChangeClientHandlerImpl((UidImportance) msg.obj);
-                case MSG_START_CONNECTING -> handleConnectingStateClientHandlerImpl();
-                case MSG_STOP_CONNECTING -> handleClearConnectingStateClientHandlerImpl();
-                // Shouldn't happen.
-                default -> Log.e(TAG, "received an unknown message : " + msg.what);
-            }
-        }
-
-        void handleStartScanClientHandlerImpl(ScanClient client) {
-            handleStartScan(client);
-        }
-
-        void handleStopScanClientHandlerImpl(ScanClient client) {
-            handleStopScan(client);
-        }
-
-        void handleFlushBatchResultsClientHandlerImpl(ScanClient client) {
-            handleFlushBatchResults(client);
-        }
-
-        void handleRegularScanTimeoutClientHandlerImpl(ScanClient client) {
-            handleRegularScanTimeout(client);
-        }
-
-        void handleSuspendScansClientHandlerImpl() {
-            handleSuspendScans();
-        }
-
-        void handleResumeScansClientHandlerImpl() {
-            handleResumeScans();
-        }
-
-        void handleScreenOffClientHandlerImpl() {
-            handleScreenOff();
-        }
-
-        void handleScreenOnClientHandlerImpl() {
-            handleScreenOn();
-        }
-
-        void handleRevertScanModeUpgradeClientHandlerImpl(ScanClient client) {
-            handleRevertScanModeUpgrade(client);
-        }
-
-        void handleImportanceChangeClientHandlerImpl(UidImportance uidImportance) {
-            handleImportanceChange(uidImportance);
-        }
-
-        void handleConnectingStateClientHandlerImpl() {
-            handleConnectingState();
-        }
-
-        void handleClearConnectingStateClientHandlerImpl() {
-            handleClearConnectingState();
-        }
-
-        private static String messageToString(int msg) {
-            return switch (msg) {
-                case MSG_START_BLE_SCAN -> "MSG_START_BLE_SCAN";
-                case MSG_STOP_BLE_SCAN -> "MSG_STOP_BLE_SCAN";
-                case MSG_FLUSH_BATCH_RESULTS -> "MSG_FLUSH_BATCH_RESULTS";
-                case MSG_SCAN_TIMEOUT -> "MSG_SCAN_TIMEOUT";
-                case MSG_SUSPEND_SCANS -> "MSG_SUSPEND_SCANS";
-                case MSG_RESUME_SCANS -> "MSG_RESUME_SCANS";
-                case MSG_IMPORTANCE_CHANGE -> "MSG_IMPORTANCE_CHANGE";
-                case MSG_SCREEN_ON -> "MSG_SCREEN_ON";
-                case MSG_SCREEN_OFF -> "MSG_SCREEN_OFF";
-                case MSG_REVERT_SCAN_MODE_UPGRADE -> "MSG_REVERT_SCAN_MODE_UPGRADE";
-                case MSG_START_CONNECTING -> "MSG_START_CONNECTING";
-                case MSG_STOP_CONNECTING -> "MSG_STOP_CONNECTING";
-                default -> "UNKNOWN(" + msg + ")";
-            };
-        }
     }
 
     private void handleStartScan(ScanClient client) {
@@ -634,30 +447,26 @@ public class ScanManager {
     }
 
     private void configureTimeout(ScanClient client) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            // Skip scan time out when allowance based throttling is enabled
+            return;
+        }
         if (isExemptFromScanTimeout(client)) {
             return;
         }
-        if (Flags.scanControllerThread()) {
-            // Ensure only one timeout runnable exists per client
-            Runnable oldRunnable = mScanTimeoutRunnables.remove(client);
-            if (oldRunnable != null) {
-                mHandler.removeCallbacks(oldRunnable);
-            }
-            final Runnable timeoutRunnable =
-                    () -> {
-                        if (!mIsAvailable) return;
-                        mScanTimeoutRunnables.remove(client);
-                        handleRegularScanTimeout(client);
-                    };
-            mScanTimeoutRunnables.put(client, timeoutRunnable);
-            mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeout().toMillis());
-        } else {
-            Message msg = mClientHandler.obtainMessage(MSG_SCAN_TIMEOUT);
-            msg.obj = client;
-            // Only one timeout message should exist at any time
-            mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
-            mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanTimeout().toMillis());
+        // Ensure only one timeout runnable exists per client
+        Runnable oldRunnable = mScanTimeoutRunnables.remove(client);
+        if (oldRunnable != null) {
+            mHandler.removeCallbacks(oldRunnable);
         }
+        final Runnable timeoutRunnable =
+                () -> {
+                    if (!mIsAvailable) return;
+                    mScanTimeoutRunnables.remove(client);
+                    handleRegularScanTimeout(client);
+                };
+        mScanTimeoutRunnables.put(client, timeoutRunnable);
+        mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeout().toMillis());
         Log.d(TAG, "Apply scan timeout (" + mAdapterService.getScanTimeout() + ") to " + client);
     }
 
@@ -682,18 +491,15 @@ public class ScanManager {
         if (mSuspendedScanClients.contains(client)) {
             mSuspendedScanClients.remove(client);
         }
-        if (Flags.scanControllerThread()) {
+        if (!mScanThrottler.isScanAllowanceThrottlingEnabled()) {
             Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
             if (timeoutRunnable != null) {
                 mHandler.removeCallbacks(timeoutRunnable);
             }
-            Runnable revertRunnable = mRevertScanModeUpgradeRunnables.remove(client);
-            if (revertRunnable != null) {
-                mHandler.removeCallbacks(revertRunnable);
-            }
-        } else {
-            mClientHandler.removeMessages(MSG_REVERT_SCAN_MODE_UPGRADE, client);
-            mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
+        }
+        Runnable revertRunnable = mRevertScanModeUpgradeRunnables.remove(client);
+        if (revertRunnable != null) {
+            mHandler.removeCallbacks(revertRunnable);
         }
         if (mRegularScanClients.contains(client)) {
             stopRegularScan(client);
@@ -701,7 +507,7 @@ public class ScanManager {
             if (!isOpportunisticScanClient(client)) {
                 configureRegularScanParams();
             }
-        } else if (!Flags.stopBatchScanOnlyIfBatchClient() || mBatchClients.contains(client)) {
+        } else if (mBatchClients.contains(client)) {
             if (isAutoBatchScanClientEnabled(client)) {
                 handleFlushBatchResults(client);
             }
@@ -767,25 +573,18 @@ public class ScanManager {
         if (updatedScanParams) {
             configureRegularScanParams();
         }
-        if (Flags.scanControllerThread()) {
-            // Cancel any previously scheduled runnable to ensure only one is pending.
-            if (mClearConnectingStateRunnable != null) {
-                mHandler.removeCallbacks(mClearConnectingStateRunnable);
-            }
-            mClearConnectingStateRunnable =
-                    () -> {
-                        if (!mIsAvailable) return;
-                        handleClearConnectingState();
-                    };
-            mHandler.postDelayed(
-                    mClearConnectingStateRunnable,
-                    mAdapterService.getScanDowngradeDuration().toMillis());
-        } else {
-            mClientHandler.removeMessages(MSG_STOP_CONNECTING);
-            Message msg = mClientHandler.obtainMessage(MSG_STOP_CONNECTING);
-            mClientHandler.sendMessageDelayed(
-                    msg, mAdapterService.getScanDowngradeDuration().toMillis());
+        // Cancel any previously scheduled runnable to ensure only one is pending.
+        if (mClearConnectingStateRunnable != null) {
+            mHandler.removeCallbacks(mClearConnectingStateRunnable);
         }
+        mClearConnectingStateRunnable =
+                () -> {
+                    if (!mIsAvailable) return;
+                    handleClearConnectingState();
+                };
+        mHandler.postDelayed(
+                mClearConnectingStateRunnable,
+                mAdapterService.getScanDowngradeDuration().toMillis());
     }
 
     @VisibleForTesting
@@ -805,13 +604,9 @@ public class ScanManager {
         if (updatedScanParams) {
             configureRegularScanParams();
         }
-        if (Flags.scanControllerThread()) {
-            if (mClearConnectingStateRunnable != null) {
-                mHandler.removeCallbacks(mClearConnectingStateRunnable);
-                mClearConnectingStateRunnable = null;
-            }
-        } else {
-            mClientHandler.removeMessages(MSG_STOP_CONNECTING);
+        if (mClearConnectingStateRunnable != null) {
+            mHandler.removeCallbacks(mClearConnectingStateRunnable);
+            mClearConnectingStateRunnable = null;
         }
         mIsConnecting = false;
     }
@@ -917,22 +712,15 @@ public class ScanManager {
         }
 
         if (upgradeScanModeByOneLevel(client)) {
-            if (Flags.scanControllerThread()) {
-                final Runnable revertRunnable =
-                        () -> {
-                            if (!mIsAvailable) return;
-                            mRevertScanModeUpgradeRunnables.remove(client);
-                            handleRevertScanModeUpgrade(client);
-                        };
-                mRevertScanModeUpgradeRunnables.put(client, revertRunnable);
-                mHandler.postDelayed(
-                        revertRunnable, mAdapterService.getScanUpgradeDuration().toMillis());
-            } else {
-                Message msg = mClientHandler.obtainMessage(MSG_REVERT_SCAN_MODE_UPGRADE);
-                msg.obj = client;
-                mClientHandler.sendMessageDelayed(
-                        msg, mAdapterService.getScanUpgradeDuration().toMillis());
-            }
+            final Runnable revertRunnable =
+                    () -> {
+                        if (!mIsAvailable) return;
+                        mRevertScanModeUpgradeRunnables.remove(client);
+                        handleRevertScanModeUpgrade(client);
+                    };
+            mRevertScanModeUpgradeRunnables.put(client, revertRunnable);
+            mHandler.postDelayed(
+                    revertRunnable, mAdapterService.getScanUpgradeDuration().toMillis());
             final var scanModeString = scanModeToString(client.getSettings().getScanMode());
             Log.d(TAG, "upgradeScanModeBeforeStart(): for " + client + " to=" + scanModeString);
             return true;
@@ -1056,6 +844,17 @@ public class ScanManager {
             if (mIsConnecting) {
                 handleClearConnectingState();
             }
+        }
+    }
+
+    public void onScanAllowanceChanged() {
+        boolean changed = false;
+        // TODO(b/478349128): support batch scan clients
+        for (ScanClient client : mRegularScanClients) {
+            changed |= mScanThrottler.throttleScanMode(client, client.getScanModeApp(), mScreenOn);
+        }
+        if (changed) {
+            configureRegularScanParams();
         }
     }
 
@@ -1205,9 +1004,7 @@ public class ScanManager {
         // Stop batch if batch scan params changed and previous params is not null.
         if (mBatchScanParams != null && (!mBatchScanParams.equals(batchScanParams))) {
             Log.d(TAG, header + "Stopping BLE Batch");
-            resetCountDownLatch();
             mNativeInterface.stopBatchScan(scannerId);
-            waitForCallback();
             // Clear pending results as it's illegal to config storage if there are still
             // pending results.
             flushBatchResults(client);
@@ -1217,12 +1014,9 @@ public class ScanManager {
             int notifyThreshold = 95;
             int resultType = BatchScanUtil.resultType(batchScanParams);
             int fullScanPercent = BatchScanUtil.fullScanStoragePercent(resultType);
-            resetCountDownLatch();
             Log.d(TAG, header + "Configuring batch scan storage");
             mNativeInterface.configBatchScanStorage(
                     client.getScannerId(), fullScanPercent, 100 - fullScanPercent, notifyThreshold);
-            waitForCallback();
-            resetCountDownLatch();
             var scanMode = batchScanParams.getScanMode();
             int scanInterval =
                     Utils.millsToUnit(BatchScanUtil.intervalMillis(mAdapterService, scanMode));
@@ -1240,7 +1034,6 @@ public class ScanManager {
                     scanWindow,
                     0,
                     DISCARD_OLDEST_WHEN_BUFFER_FULL);
-            waitForCallback();
         }
         mBatchScanParams = batchScanParams;
         setBatchAlarm(client);
@@ -1334,6 +1127,10 @@ public class ScanManager {
     }
 
     private void handleRegularScanTimeout(ScanClient client) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            // skip scan timeout when allowance based throttling is enabled
+            return;
+        }
         var header = "handleRegularScanTimeout(" + client + "): ";
         var appScanStats = client.getAppScanStats();
         var isScanningTooLong = appScanStats == null || appScanStats.isScanningTooLong();
@@ -1376,15 +1173,11 @@ public class ScanManager {
     private void flushBatchResults(ScanClient client) {
         int fullScanScannerId = mBatchScanParams.getFullScanScannerId();
         if (fullScanScannerId != -1) {
-            resetCountDownLatch();
             mNativeInterface.readScanReports(fullScanScannerId, SCAN_RESULT_TYPE_FULL);
-            waitForCallback();
         }
         int truncatedScanScannerId = mBatchScanParams.getTruncatedScanScannerId();
         if (truncatedScanScannerId != -1) {
-            resetCountDownLatch();
             mNativeInterface.readScanReports(truncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
-            waitForCallback();
         }
         setBatchAlarm(client);
     }
@@ -1406,19 +1199,15 @@ public class ScanManager {
             return;
         }
 
-        resetCountDownLatch();
         mNativeInterface.scanFilterEnable(scannerId, true);
-        waitForCallback();
 
         if (shouldUseAllPassFilter(client)) {
             int filterIndex =
                     (deliveryMode == ScanUtil.DELIVERY_MODE_BATCH)
                             ? ALL_PASS_FILTER_INDEX_BATCH_SCAN
                             : ALL_PASS_FILTER_INDEX_REGULAR_SCAN;
-            resetCountDownLatch();
             // Don't allow Onfound/onlost with all pass
             configureFilterParameter(scannerId, client, ALL_PASS_FILTER_SELECTION, filterIndex, 0);
-            waitForCallback();
         } else {
             Deque<Integer> clientFilterIndices = new ArrayDeque<>();
             for (ScanFilter filter : client.getFilters()) {
@@ -1427,11 +1216,8 @@ public class ScanManager {
                 int featureSelection = queue.getFeatureSelection();
                 int filterIndex = mFilterIndexStack.pop();
 
-                resetCountDownLatch();
                 mNativeInterface.scanFilterAdd(scannerId, queue.toArray(), filterIndex);
-                waitForCallback();
 
-                resetCountDownLatch();
                 if (deliveryMode == ScanUtil.DELIVERY_MODE_ON_FOUND_LOST) {
                     trackEntries = getNumOfTrackingAdvertisements(client.getSettings());
                     if (!manageAllocationOfTrackingAdvertisement(trackEntries, true)) {
@@ -1450,7 +1236,6 @@ public class ScanManager {
                 }
                 configureFilterParameter(
                         scannerId, client, featureSelection, filterIndex, trackEntries);
-                waitForCallback();
                 clientFilterIndices.add(filterIndex);
             }
             mClientFilterIndexMap.put(scannerId, clientFilterIndices);
@@ -1479,9 +1264,7 @@ public class ScanManager {
         if (filterIndices != null) {
             mFilterIndexStack.addAll(filterIndices);
             for (Integer filterIndex : filterIndices) {
-                resetCountDownLatch();
                 mNativeInterface.scanFilterParamDelete(scannerId, filterIndex);
-                waitForCallback();
             }
         }
         // Remove if ALL_PASS filters are used.
@@ -1496,9 +1279,7 @@ public class ScanManager {
         clients.remove(scannerId);
         // Remove ALL_PASS filter iff no app is using it.
         if (clients.isEmpty()) {
-            resetCountDownLatch();
             mNativeInterface.scanFilterParamDelete(scannerId, filterIndex);
-            waitForCallback();
         }
     }
 
@@ -1603,42 +1384,20 @@ public class ScanManager {
             int numOfTrackableAdvertisement, boolean allocate) {
         final int maxTotalTrackableAdvertisements =
                 mAdapterService.getTotalNumOfTrackableAdvertisements();
-        if (Flags.scanControllerThread()) {
-            final int availableEntries =
-                    maxTotalTrackableAdvertisements - mCurUsedTrackableAdvertisementsScanThread;
-            if (allocate) {
-                if (availableEntries >= numOfTrackableAdvertisement) {
-                    mCurUsedTrackableAdvertisementsScanThread += numOfTrackableAdvertisement;
-                    return true;
-                }
-                return false;
-            } else {
-                if (numOfTrackableAdvertisement > mCurUsedTrackableAdvertisementsScanThread) {
-                    return false;
-                }
-                mCurUsedTrackableAdvertisementsScanThread -= numOfTrackableAdvertisement;
+        final int availableEntries =
+                maxTotalTrackableAdvertisements - mCurUsedTrackableAdvertisementsScanThread;
+        if (allocate) {
+            if (availableEntries >= numOfTrackableAdvertisement) {
+                mCurUsedTrackableAdvertisementsScanThread += numOfTrackableAdvertisement;
                 return true;
             }
+            return false;
         } else {
-            synchronized (mCurUsedTrackableAdvertisementsLock) {
-                final int availableEntries =
-                        maxTotalTrackableAdvertisements - mCurUsedTrackableAdvertisements;
-                if (allocate) {
-                    if (availableEntries >= numOfTrackableAdvertisement) {
-                        mCurUsedTrackableAdvertisements += numOfTrackableAdvertisement;
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    if (numOfTrackableAdvertisement > mCurUsedTrackableAdvertisements) {
-                        return false;
-                    } else {
-                        mCurUsedTrackableAdvertisements -= numOfTrackableAdvertisement;
-                        return true;
-                    }
-                }
+            if (numOfTrackableAdvertisement > mCurUsedTrackableAdvertisementsScanThread) {
+                return false;
             }
+            mCurUsedTrackableAdvertisementsScanThread -= numOfTrackableAdvertisement;
+            return true;
         }
     }
 
@@ -1670,14 +1429,12 @@ public class ScanManager {
                             == MsftAdvMonitor.MSFT_CONDITION_TYPE_UUID) {
                 int filterIndex = mFilterIndexStack.pop();
 
-                resetCountDownLatch();
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
                         monitor.getUuid(),
                         monitor.getAddress(),
                         filterIndex);
-                waitForCallback();
 
                 clientFilterIndices.add(filterIndex);
                 continue;
@@ -1689,14 +1446,12 @@ public class ScanManager {
             int existingFilterIndex =
                     mMsftAdvMonitorMergedPatternList.add(filterIndex, monitor.getPatterns());
             if (filterIndex == existingFilterIndex) {
-                resetCountDownLatch();
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
                         monitor.getUuid(),
                         monitor.getAddress(),
                         filterIndex);
-                waitForCallback();
             } else {
                 mFilterIndexStack.add(filterIndex);
             }
@@ -1716,9 +1471,7 @@ public class ScanManager {
                     final int monitorHandle =
                             mScanController.msftMonitorHandleFromFilterIndex(filterIndex);
                     if (monitorHandle >= 0) {
-                        resetCountDownLatch();
                         mNativeInterface.msftAdvMonitorRemove(filterIndex, monitorHandle);
-                        waitForCallback();
                     }
                     mFilterIndexStack.add(filterIndex);
                 }
@@ -1738,9 +1491,7 @@ public class ScanManager {
                                                 && !this.mClientFilterIndexMap.containsKey(
                                                         c.getScannerId()));
         if (mScanEnabledMsft != shouldEnableScanMsft) {
-            resetCountDownLatch();
             mNativeInterface.msftAdvMonitorEnable(shouldEnableScanMsft);
-            waitForCallback();
             mScanEnabledMsft = shouldEnableScanMsft;
 
             // Restart scanning, since enabling/disabling may have changed
@@ -1754,34 +1505,21 @@ public class ScanManager {
     }
 
     void onDisplayChanged(boolean screenOn) {
-        if (Flags.scanControllerThread()) {
-            if (screenOn) handleScreenOn();
-            else handleScreenOff();
-        } else {
-            sendMessage(screenOn ? MSG_SCREEN_ON : MSG_SCREEN_OFF, null);
-        }
+        if (screenOn) handleScreenOn();
+        else handleScreenOff();
     }
 
     private final ActivityManager.OnUidImportanceListener mUidImportanceListener =
             new ActivityManager.OnUidImportanceListener() {
                 @Override
                 public void onUidImportance(final int uid, final int importance) {
-                    if (Flags.scanControllerThread()) {
-                        mScanController.doOnScanThread(
-                                () -> {
-                                    if (mScanController.getScannerMap().getAppScanStatsByUid(uid)
-                                            != null) {
-                                        handleImportanceChange(new UidImportance(uid, importance));
-                                    }
-                                });
-                    } else {
-                        if (mScanController.getScannerMap().getAppScanStatsByUid(uid) != null) {
-                            Message message = new Message();
-                            message.what = MSG_IMPORTANCE_CHANGE;
-                            message.obj = new UidImportance(uid, importance);
-                            mClientHandler.sendMessage(message);
-                        }
-                    }
+                    mScanController.doOnScanThread(
+                            () -> {
+                                if (mScanController.getScannerMap().getAppScanStatsByUid(uid)
+                                        != null) {
+                                    handleImportanceChange(new UidImportance(uid, importance));
+                                }
+                            });
                 }
             };
 
@@ -1792,15 +1530,10 @@ public class ScanManager {
                     String action = intent.getAction();
                     if (LocationManager.MODE_CHANGED_ACTION.equals(action)) {
                         final var locationEnabled = mLocationManager.isLocationEnabled();
-                        if (Flags.scanControllerThread()) {
-                            mScanController.doOnScanThread(
-                                    locationEnabled
-                                            ? ScanManager.this::handleResumeScans
-                                            : ScanManager.this::handleSuspendScans);
-                        } else {
-                            sendMessage(
-                                    locationEnabled ? MSG_RESUME_SCANS : MSG_SUSPEND_SCANS, null);
-                        }
+                        mScanController.doOnScanThread(
+                                locationEnabled
+                                        ? ScanManager.this::handleResumeScans
+                                        : ScanManager.this::handleSuspendScans);
                     }
                 }
             };
@@ -1855,19 +1588,6 @@ public class ScanManager {
      * LE Audio).
      */
     void handleBluetoothProfileConnectionStateChanged(int profile, int fromState, int toState) {
-        if (Flags.scanControllerThread()) {
-            handleProfileConnectionStateChanged(profile, fromState, toState);
-        } else {
-            mClientHandler.post(
-                    () -> handleProfileConnectionStateChanged(profile, fromState, toState));
-        }
-    }
-
-    private void resetCountDownLatch() {
-        mNativeCallback.resetCountDownLatch();
-    }
-
-    private boolean waitForCallback() {
-        return mNativeCallback.waitForCallback(OPERATION_TIME_OUT_MILLIS);
+        handleProfileConnectionStateChanged(profile, fromState, toState);
     }
 }

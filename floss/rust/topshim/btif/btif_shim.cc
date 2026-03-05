@@ -15,6 +15,7 @@
  */
 #include "topshim/btif/btif_shim.h"
 
+#include <bta/include/bta_api.h>
 #include <btcore/include/hal_util.h>
 
 #include "src/btif.rs.h"
@@ -164,33 +165,25 @@ void BtIntf::bluetooth_init(bool guest_mode, bool is_common_criteria_mode,
                    &internal::bt_os_callouts, /* autonomous_repairing_initiation = */ false);
 }
 
-void BtIntf::bluetooth_enable() const {
-  // TODO(b/470303514): Pass the local name string
-  return ::bluetooth_enable("");
+void BtIntf::bluetooth_enable(::rust::String local_name) const {
+  return ::bluetooth_enable(std::string(local_name));
 }
 
 void BtIntf::bluetooth_disable() const { return ::bluetooth_disable(); }
 
 void BtIntf::bluetooth_cleanup() const { return ::bluetooth_cleanup(); }
 
-int BtIntf::get_adapter_properties() const { return intf_->get_adapter_properties(); }
-
 int BtIntf::get_adapter_property(bt_property_type_t type) const {
   return intf_->get_adapter_property(type);
 }
 
 void BtIntf::set_scan_mode(bt_scan_mode_t mode) const { return intf_->set_scan_mode(mode); }
+void BtIntf::set_local_name(::rust::String local_name) const {
+  BTA_DmSetDeviceName(std::string(local_name).c_str());
+}
 
 int BtIntf::set_adapter_property(bt_property_t property) const {
   return intf_->set_adapter_property(&property);
-}
-
-int BtIntf::get_remote_device_properties(RawAddress remote_addr) const {
-  return intf_->get_remote_device_properties(remote_addr);
-}
-
-int BtIntf::get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) const {
-  return intf_->get_remote_device_property(remote_addr, type);
 }
 
 int BtIntf::set_remote_device_property(RawAddress remote_addr, bt_property_t property) const {

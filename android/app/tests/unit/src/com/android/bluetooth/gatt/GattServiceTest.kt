@@ -67,7 +67,6 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.kotlin.any
@@ -91,8 +90,7 @@ import platform.test.runner.parameterized.Parameters
 class GattServiceTest(flags: FlagsWrapper) {
     @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
-
-    @get:Rule val compatChangeRule: TestRule = CoreCompatChangeRule()
+    @get:Rule val compatChangeRule = CoreCompatChangeRule()
 
     @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var gattCallback: IBluetoothGattCallback

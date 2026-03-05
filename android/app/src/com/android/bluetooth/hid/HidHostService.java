@@ -915,10 +915,7 @@ public class HidHostService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy: device=" + device);
 
-        if (!getAdapterService()
-                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
-            return false;
-        }
+        getAdapterService().setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         Log.d(TAG, "Saved connectionPolicy=" + connectionPolicy + " for device=" + device);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);

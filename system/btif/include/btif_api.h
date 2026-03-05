@@ -131,15 +131,6 @@ int get_common_criteria_config_compare_result(void);
  ******************************************************************************/
 bool is_atv_device(void);
 
-/*******************************************************************************
- *
- * Function         btif_get_adapter_properties
- *
- * Description      Fetches all local adapter properties
- *
- ******************************************************************************/
-void btif_get_adapter_properties(void);
-
 bt_property_t* property_deep_copy(const bt_property_t* prop);
 
 /*******************************************************************************

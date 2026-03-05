@@ -24,7 +24,6 @@ import android.security.keystore.KeyProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothKeystoreProto;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.protobuf.ByteString;
@@ -154,11 +153,6 @@ public class BluetoothKeystoreService {
     /** Cleans up the keystore service. */
     public void cleanup() {
         debugLog("cleanup");
-
-        if (!Flags.mainlineBetaStorage()) {
-            debugLog("cleanup() called before start()");
-            return;
-        }
 
         // Cleanup native interface
         mBluetoothKeystoreNativeInterface.cleanup();

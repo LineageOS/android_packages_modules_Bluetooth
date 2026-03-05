@@ -164,6 +164,7 @@ void btif_storage_update_csis_info(const RawAddress& addr);
 void btif_storage_load_bonded_csis_devices();
 void btif_storage_remove_csis_device(const RawAddress& address);
 
+void btif_storage_load_bonded_mcp_client_devices(void);
 void btif_storage_load_bonded_volume_control_devices(void);
 
 /*******************************************************************************

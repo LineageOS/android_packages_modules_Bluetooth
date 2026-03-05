@@ -849,7 +849,6 @@ cc_test {
         "rfcomm/rfc_port_if.cc",
         "rfcomm/rfc_ts_frames.cc",
         "rfcomm/rfc_utils.cc",
-        "test/common/mock_btm_layer.cc",
         "test/common/stack_test_packet_utils.cc",
         "test/rfcomm/stack_rfcomm_test.cc",
         "test/rfcomm/stack_rfcomm_test_main.cc",
@@ -884,13 +883,6 @@ cc_test {
         "libprotobuf-cpp-lite",
         "server_configurable_flags",
     ],
-    target: {
-        android: {
-            static_libs: [
-                "libperfetto_client_experimental",
-            ],
-        },
-    },
     sanitize: {
         cfi: false,
     },
@@ -953,7 +945,6 @@ cc_test {
         "libbluetooth_private_gatt_rs_bridge", // TODO: remove this dependency
         "libbluetooth_types",
         "libbt-btu-main-thread",
-        "libbt-btu-main-thread",
         "libbt-common",
         "libbt-stack-mock",
         "libchrome",
@@ -1013,14 +1004,12 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestCommonSyncMainHandler",
         ":TestMockMainShim",
-        ":TestMockMainShim",
         ":TestMockMainShimEntry",
         "connection_manager/connection_manager.cc",
         "test/connection_manager_test.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libbinder_ndk",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
@@ -1047,22 +1036,6 @@ cc_test {
     ],
     sanitize: {
         cfi: false,
-    },
-    target: {
-        android: {
-            shared_libs: [
-                "libcutils",
-                "libhidlbase",
-                "libutils",
-            ],
-            static_libs: [
-                "android.hardware.bluetooth@1.0",
-                "android.hardware.bluetooth@1.1",
-                "android.system.suspend-V1-ndk",
-                "android.system.suspend.control-V1-ndk",
-                "libperfetto_client_experimental",
-            ],
-        },
     },
     header_libs: ["libbluetooth_headers"],
 }
@@ -1543,7 +1516,6 @@ cc_test {
         ":TestMockMainShimEntry",
         ":TestStubOsi",
         "eatt/eatt.cc",
-        "test/common/mock_btm_api_layer.cc",
         "test/common/mock_gatt_layer.cc",
         "test/eatt/eatt_test.cc",
         "test/gatt/mock_gatt_utils_ref.cc",
@@ -1691,9 +1663,6 @@ cc_test {
     ],
     target: {
         android: {
-            static_libs: [
-                "libperfetto_client_experimental",
-            ],
             sanitize: {
                 address: false, // TODO(b/481480264) - Mts can't run with asan
             },
@@ -2233,12 +2202,8 @@ cc_test {
     ],
     target: {
         android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
             static_libs: [
                 "libPlatformProperties",
-                "libperfetto_client_experimental",
             ],
         },
     },
@@ -2405,13 +2370,6 @@ cc_test {
         scs: true,
         diag: {
             undefined: true,
-        },
-    },
-    target: {
-        android: {
-            static_libs: [
-                "libperfetto_client_experimental",
-            ],
         },
     },
     header_libs: ["libbluetooth_headers"],
