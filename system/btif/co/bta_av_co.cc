@@ -716,10 +716,6 @@ bool BtaAvCo::SetActivePeer(const RawAddress& peer_address, const uint8_t t_loca
 
   reference_state->setActivePeer(p_peer);
   log::info("codec = {}", A2DP_CodecInfoString(p_peer->getCodecConfig()));
-  // report the selected codec configuration of this new active peer.
-  if (!com_android_bluetooth_flags_a2dp_control_codec_state_reports()) {
-    ReportSourceCodecState(p_peer);
-  }
   return true;
 }
 

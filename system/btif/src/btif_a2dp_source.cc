@@ -568,9 +568,7 @@ static void btif_a2dp_source_start_session_delayed(const RawAddress& peer_addres
     bluetooth::audio::a2dp::set_remote_delay(btif_av_get_audio_delay(A2dpType::kSource));
   }
 
-  if (com_android_bluetooth_flags_a2dp_control_codec_state_reports()) {
-    bta_av_co_report_codec_config_changed(peer_address);
-  }
+  bta_av_co_report_codec_config_changed(peer_address);
   peer_ready_promise.set_value();
 }
 
