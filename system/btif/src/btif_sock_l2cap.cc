@@ -435,16 +435,12 @@ static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
                                     uint64_t socket_id) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
-  if (com_android_bluetooth_flags_pseudo_addr_in_socket_connect_signal()) {
-    RawAddress pseudo_addr =
-            get_btm_client_interface().peer.BTM_GetConnectedTransportAddress(*addr).first;
-    if (pseudo_addr != RawAddress::kEmpty) {
-      cs.bd_addr = pseudo_addr;
-    } else {
-      log::warn("BTM_GetConnectedTransportAddress returned empty pseudo addr, using public addr");
-      cs.bd_addr = *addr;
-    }
+  RawAddress pseudo_addr =
+          get_btm_client_interface().peer.BTM_GetConnectedTransportAddress(*addr).first;
+  if (pseudo_addr != RawAddress::kEmpty) {
+    cs.bd_addr = pseudo_addr;
   } else {
+    log::warn("BTM_GetConnectedTransportAddress returned empty pseudo addr, using public addr");
     cs.bd_addr = *addr;
   }
   cs.channel = channel;
