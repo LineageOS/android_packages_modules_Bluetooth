@@ -175,7 +175,7 @@ public class BluetoothManagerService {
     private AdapterBinder mAdapter;
     private Context mUserContext;
     private UserHandle mUser;
-    private UserHandle mNextUser; // Non null only when user switch is pending
+    private UserHandle mPendingUser; // Non null only when user switch is pending
 
     // used inside handler thread
     private boolean mQuietEnable = false;
@@ -332,14 +332,14 @@ public class BluetoothManagerService {
             return ADD_PROXY_DELAY;
         } else if (mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                 || isBinding()
-                || (token != ON_SWITCH_USER_TOKEN && mNextUser != null)) {
+                || (token != ON_SWITCH_USER_TOKEN && mPendingUser != null)) {
             Log.d(
                     TAG,
                     "Busy reason:"
                             + " RESTART_BLUETOOTH_SERVICE="
                             + mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                             + (" isBinding=" + isBinding())
-                            + (" mNextUser=" + mNextUser));
+                            + (" mPendingUser=" + mPendingUser));
             // Bluetooth is restarting
             return SERVICE_RESTART_DELAY;
         }
@@ -408,9 +408,9 @@ public class BluetoothManagerService {
             return;
         }
         Log.d(TAG, "onUserSwitching(" + userHandle + ")");
-        mNextUser = userHandle;
+        mPendingUser = userHandle;
         delayModeChangedIfNeeded(
-                ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(mNextUser), "onUserSwitching");
+                ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(mPendingUser), "onUserSwitching");
     }
 
     private void forceToOffFromModeChange(int currentState, int reason) {
@@ -755,7 +755,7 @@ public class BluetoothManagerService {
             return false;
         }
 
-        if (mNextUser != null) {
+        if (mPendingUser != null) {
             Log.d(TAG, "enableBle: user switch in progress");
             return false;
         }
@@ -870,7 +870,7 @@ public class BluetoothManagerService {
             return false;
         }
 
-        if (mNextUser != null) {
+        if (mPendingUser != null) {
             Log.d(TAG, "enableNoAutoConnect: user switch in progress");
             return false;
         }
@@ -899,7 +899,7 @@ public class BluetoothManagerService {
             return false;
         }
 
-        if (mNextUser != null) {
+        if (mPendingUser != null) {
             Log.d(TAG, "enable: user switch in progress");
             return false;
         }
@@ -1063,13 +1063,13 @@ public class BluetoothManagerService {
             if (mUser.equals(nextUser) && mState.oneOf(State.TURNING_ON)) {
                 //  When we are already shutting down, the switch will restart, else we can skip
                 Log.d(TAG, "Skip fast switch on same user=" + mUser);
-                mNextUser = null;
+                mPendingUser = null;
                 return;
             }
         } else {
-            if (mUser.equals(mNextUser)) {
+            if (mUser.equals(mPendingUser)) {
                 Log.d(TAG, "Skip fast switch on same user=" + mUser);
-                mNextUser = null;
+                mPendingUser = null;
                 return;
             }
         }
@@ -1394,7 +1394,7 @@ public class BluetoothManagerService {
                 }
                 default -> {} // Already turning OFF, or handled with mNextUser when reaching ON
             }
-            mNextUser = nextUser;
+            mPendingUser = nextUser;
             return;
         }
 
@@ -1413,8 +1413,8 @@ public class BluetoothManagerService {
             mQuietEnable = false;
             mQuietEnableExternal = false;
         } else {
-            mUser = mNextUser;
-            mNextUser = null;
+            mUser = mPendingUser;
+            mPendingUser = null;
         }
 
         mUserContext = mContext.createContextAsUser(mUser, 0);
@@ -1681,21 +1681,21 @@ public class BluetoothManagerService {
             return;
         }
 
-        if (mNextUser != null) {
+        if (mPendingUser != null) {
             if (!Flags.systemServerDirectSwitch()) {
                 mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
             }
-            if (!mNextUser.equals(mUser)) {
-                Log.d(TAG, header + "Resume user switch to " + mNextUser);
+            if (!mPendingUser.equals(mUser)) {
+                Log.d(TAG, header + "Resume user switch to " + mPendingUser);
                 if (Flags.systemServerDirectSwitch()) {
                     onToBleOn();
                 } else {
-                    prepareUserSwitch(mNextUser);
+                    prepareUserSwitch(mPendingUser);
                 }
                 return;
             }
             Log.d(TAG, header + "Already on correct user. Discard user switch");
-            mNextUser = null;
+            mPendingUser = null;
         }
 
         sendBluetoothOnCallback();
@@ -1704,18 +1704,18 @@ public class BluetoothManagerService {
     private void actionWhenBluetoothReachStateOff(int prevState) {
         String header = "actionWhenBluetoothReachStateOff(): ";
 
-        if (mNextUser != null && Flags.systemServerDirectSwitch()) {
-            Log.d(TAG, header + "Resume user switch to " + mNextUser);
-            UserHandle nextUser = mNextUser;
-            mNextUser = null;
+        if (mPendingUser != null && Flags.systemServerDirectSwitch()) {
+            Log.d(TAG, header + "Resume user switch to " + mPendingUser);
+            UserHandle nextUser = mPendingUser;
+            mPendingUser = null;
             executeUserSwitch(nextUser);
             return;
         }
-        if (mNextUser != null && !Flags.systemServerDirectSwitch()) {
-            Log.d(TAG, header + "Resume user switch to " + mNextUser);
+        if (mPendingUser != null && !Flags.systemServerDirectSwitch()) {
+            Log.d(TAG, header + "Resume user switch to " + mPendingUser);
             mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
             // Once everything is done finish the user switch if present
-            executeUserSwitch(mNextUser);
+            executeUserSwitch(mPendingUser);
             return;
         }
 
