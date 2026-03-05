@@ -10,17 +10,16 @@ outdir="$1"
 pkgdir=sysprop-0.0.1
 origtar=sysprop_0.0.1.orig.tar.gz
 scriptdir="$( cd "$( dirname "$0" )" && pwd )"
-branch=platform-tools-34.0.0
 
 tmpdir=$(mktemp -d)
 echo Generating source package in "${tmpdir}".
 
 cd "${tmpdir}"
 # Download libbase source.
-git clone --branch "${branch}" https://android.googlesource.com/platform/system/libbase || exit 1
+git clone https://android.googlesource.com/platform/system/libbase || exit 1
 
 # Download sysprop source.
-git clone --branch "${branch}" https://android.googlesource.com/platform/system/tools/sysprop "${pkgdir}" || exit 1
+git clone https://android.googlesource.com/platform/system/tools/sysprop "${pkgdir}" || exit 1
 cd "${pkgdir}"
 rm -rf .git
 
@@ -28,7 +27,7 @@ cp -ra ../libbase/include/android-base include
 echo "#include <iostream>" > include/android-base/logging.h
 echo "#define LOG(x) std::cerr" >> include/android-base/logging.h
 echo "#define PLOG(x) std::cerr" >> include/android-base/logging.h
-cp -ra ../libbase/{file,strings,stringprintf,posix_strerror_r}.cpp .
+cp -ra ../libbase/{file,strings,stringprintf,posix_strerror_r,result}.cpp .
 
 cd ..
 
