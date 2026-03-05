@@ -36,7 +36,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
-import android.media.AudioFormat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
