@@ -54,6 +54,8 @@ class ScanThrottler(
     // refill job and cancel any pending recording jobs.
     @VisibleForTesting val recordUsageRunnables = HashMap<ScanClient, Runnable>()
     @VisibleForTesting val refillRunnables = HashMap<Int, Runnable>()
+    @VisibleForTesting val backgroundUidThrottleRunnables = HashMap<Int, Runnable>()
+    @VisibleForTesting var pendingScreenOffThrottleTask: Runnable? = null
 
     class ScanAllowanceLedger {
         var spentScanAllowance = Duration.ZERO
@@ -101,7 +103,6 @@ class ScanThrottler(
     }
 
     fun throttleScanModeScreenOff(client: ScanClient): Boolean {
-        // TODO(b/478349128): Implement Event Debouncing for Screen Off
         val targetScanMode = client.scanModeApp
         if (throttleScanMode(client, targetScanMode, isScreenOn = false)) {
             Log.d(
@@ -114,7 +115,46 @@ class ScanThrottler(
         return false
     }
 
+    private fun <K> postDelayedTask(
+        key: K,
+        registry: MutableMap<K, Runnable>,
+        delay: Duration,
+        action: () -> Unit,
+    ) {
+        val task = Runnable {
+            registry.remove(key)
+            action()
+        }
+
+        registry[key] = task
+        handler.postDelayed(task, delay.inWholeMilliseconds)
+    }
+
+    fun throttleAllScanModeScreenOffDelayed(
+        clients: Set<ScanClient>,
+        callback: java.util.function.Consumer<Boolean>,
+    ) {
+        pendingScreenOffThrottleTask?.let { handler.removeCallbacks(it) }
+
+        val task = Runnable {
+            val updatedCount = clients.count { throttleScanModeScreenOff(it) }
+            callback.accept(updatedCount > 0)
+            pendingScreenOffThrottleTask = null
+        }
+
+        pendingScreenOffThrottleTask = task
+        handler.postDelayed(task, ScanUtil.DEFAULT_SCAN_THROTTLE_DELAY.inWholeMilliseconds)
+    }
+
     fun throttleScanModeScreenOn(client: ScanClient): Boolean {
+        // use the scan_allowance_throttling_enabled flag to gate the screen off delayed
+        // throttling
+        if (isScanAllowanceThrottlingEnabled()) {
+            // cancel any pending delayed screen off throttle job
+            pendingScreenOffThrottleTask?.let { handler.removeCallbacks(it) }
+            pendingScreenOffThrottleTask = null
+        }
+
         val targetScanMode = client.scanModeApp
         if (throttleScanMode(client, targetScanMode, isScreenOn = true)) {
             Log.d(
@@ -128,6 +168,12 @@ class ScanThrottler(
     }
 
     fun throttleScanModeForegroundUid(client: ScanClient, uid: Int, isScreenOn: Boolean): Boolean {
+        // use the scan_allowance_throttling_enabled flag to gate the background uid delayed
+        // throttling
+        if (isScanAllowanceThrottlingEnabled()) {
+            // cancel any pending delayed background uid throttle job
+            backgroundUidThrottleRunnables.remove(uid)?.let { handler.removeCallbacks(it) }
+        }
         var targetScanMode = client.scanModeApp
         if (isForceDowngradedScanClient(client)) {
             targetScanMode = minScanMode(ScanSettings.SCAN_MODE_LOW_POWER, targetScanMode)
@@ -176,6 +222,17 @@ class ScanThrottler(
         }
         return false
     }
+
+    fun throttleAllScanModeBackgroundUidDelayed(
+        uid: Int,
+        isScreenOn: Boolean,
+        clients: Set<ScanClient>,
+        callback: java.util.function.Consumer<Boolean>,
+    ) =
+        postDelayedTask(uid, backgroundUidThrottleRunnables, ScanUtil.DEFAULT_SCAN_THROTTLE_DELAY) {
+            val updatedCount = clients.count { throttleScanModeBackgroundUid(it, uid, isScreenOn) }
+            callback.accept(updatedCount > 0)
+        }
 
     fun downgradeScanModeFromMaxDuty(client: ScanClient): Boolean {
         if (adapterService.scanDowngradeDuration == java.time.Duration.ZERO) {
@@ -229,8 +286,7 @@ class ScanThrottler(
             )
             return applyModeAndScheduleNextJob(client, targetScanMode, ledger, remainingAllowance)
         }
-        recordUsageRunnables[client]?.let { handler.removeCallbacks(it) }
-        recordUsageRunnables.remove(client)
+        recordUsageRunnables.remove(client)?.let { handler.removeCallbacks(it) }
         return client.updateScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF)
     }
 
@@ -246,13 +302,10 @@ class ScanThrottler(
             return // skip if allowance is full
         }
         // Schedule the refill
-        val refillTask = Runnable {
+        postDelayedTask(client.appUid, refillRunnables, delay) {
             refillAllowance(client, ledger)
-            refillRunnables.remove(client.appUid)
             scanManager.onScanAllowanceChanged()
         }
-        refillRunnables[client.appUid] = refillTask
-        handler.postDelayed(refillTask, delay.inWholeMilliseconds)
         Log.d(
             TAG,
             "Scheduled allowance refill in $delay for app ${client.appUid} scanner ${client.scannerId}",
@@ -266,9 +319,11 @@ class ScanThrottler(
         allowance: Duration,
     ): Boolean {
         val remainingTime = convertAllowanceToRemainingTime(allowance, targetScanMode)
-        val recordUsageTask = Runnable {
+
+        // Replace it if the next record usage job is pending
+        recordUsageRunnables.remove(client)?.let { handler.removeCallbacks(it) }
+        postDelayedTask(client, recordUsageRunnables, remainingTime) {
             recordUsage(client, ledger, allowance) // Lock in the time spent
-            recordUsageRunnables.remove(client)
             scanManager.onScanAllowanceChanged()
             scheduleAllowanceRefill(
                 client,
@@ -276,11 +331,6 @@ class ScanThrottler(
                 maxOf(ALLOWANCE_REFILL_WINDOW - remainingTime, Duration.ZERO),
             )
         }
-
-        // Replace it if the next record usage job is pending
-        recordUsageRunnables[client]?.let { handler.removeCallbacks(it) }
-        recordUsageRunnables[client] = recordUsageTask
-        handler.postDelayed(recordUsageTask, remainingTime.inWholeMilliseconds)
         Log.d(
             TAG,
             "Scheduled the next allowance check in $remainingTime for app ${client.appUid} scanner ${client.scannerId}",
@@ -303,10 +353,7 @@ class ScanThrottler(
     }
 
     fun removeRecordUsageRunnable(client: ScanClient) {
-        val recordUsageRunnable = recordUsageRunnables.remove(client)
-        if (recordUsageRunnable != null) {
-            handler.removeCallbacks(recordUsageRunnable)
-        }
+        recordUsageRunnables.remove(client)?.let { handler.removeCallbacks(it) }
     }
 
     companion object {

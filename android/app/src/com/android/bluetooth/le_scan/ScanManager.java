@@ -707,6 +707,20 @@ public class ScanManager {
     }
 
     private void updateRegularScanClientsScreenOff() {
+        // use the scan_allowance_throttling_enabled flag to gate the screen off delayed
+        // throttling
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            if (!mRegularScanClients.isEmpty()) {
+                mScanThrottler.throttleAllScanModeScreenOffDelayed(
+                        mRegularScanClients,
+                        isUpdated -> {
+                            if (isUpdated) {
+                                configureRegularScanParams();
+                            }
+                        });
+            }
+            return;
+        }
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
             if (mScanThrottler.throttleScanModeScreenOff(client)) {
@@ -823,31 +837,51 @@ public class ScanManager {
             mUidImportanceMap.put(uid, importance);
         }
 
+        Set<ScanClient> uidScanClients =
+                mRegularScanClients.stream()
+                        .filter(
+                                client ->
+                                        client.getAppUid() == uid
+                                                && !isOpportunisticScanClient(client))
+                        .collect(Collectors.toSet());
+
+        if (uidScanClients.isEmpty()) return;
+
         boolean updatedScanParams = false;
-        for (ScanClient client : mRegularScanClients) {
-            if (client.getAppUid() != uid || isOpportunisticScanClient(client)) {
-                continue;
-            }
+        for (ScanClient client : uidScanClients) {
             client.getAppScanStats().setAppImportance(importance);
-            final var scanSettings = client.getSettings();
             if (isForeground) {
                 if (mScanThrottler.throttleScanModeForegroundUid(client, uid, mScreenOn)) {
                     updatedScanParams = true;
                 }
             } else {
-                if (mScanThrottler.throttleScanModeBackgroundUid(client, uid, mScreenOn)) {
+                // use the scan_allowance_throttling_enabled flag to gate the background uid
+                // delayed
+                // throttling. Background uid immediate throttling should be disabled when flag is
+                // on
+                if (!mScanThrottler.isScanAllowanceThrottlingEnabled()
+                        && mScanThrottler.throttleScanModeBackgroundUid(client, uid, mScreenOn)) {
                     updatedScanParams = true;
                 }
             }
-            Log.d(
-                    TAG,
-                    "handleImportanceChange(): "
-                            + ("for " + client + " uid=" + uid + " isForeground=" + isForeground)
-                            + (" scanMode=" + scanModeToString(scanSettings.getScanMode())));
         }
 
         if (updatedScanParams) {
             configureRegularScanParams();
+        }
+
+        // use the scan_allowance_throttling_enabled flag to gate the background uid delayed
+        // throttling
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled() && !isForeground) {
+            mScanThrottler.throttleAllScanModeBackgroundUidDelayed(
+                    uid,
+                    mScreenOn,
+                    uidScanClients,
+                    isUpdated -> {
+                        if (isUpdated) {
+                            configureRegularScanParams();
+                        }
+                    });
         }
     }
 

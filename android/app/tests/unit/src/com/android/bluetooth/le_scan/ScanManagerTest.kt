@@ -839,6 +839,147 @@ class ScanManagerTest() {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testDelayedScreenOffThrottle_throttleJobRun() {
+        // Set filtered scan flag
+        val isFiltered = true
+        var scannerCount = 0
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_LOW_POWER to ScanSettings.SCAN_MODE_SCREEN_OFF,
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to
+                    ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED,
+            )
+        scanModeMap.forEach { (scanMode, throttledScanMode) ->
+            scannerId += 1
+            scannerCount += 1
+            Log.d(TAG, "ScanMode: $scanMode throttledScanMode: $throttledScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            startScan(client)
+            // Turn off screen, this schedules screen off throttle job with delay
+            setScreenOn(false)
+            assertThat(scanManager.mScanThrottler.pendingScreenOffThrottleTask).isNotNull()
+            // Scan mode is not throttled yet
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Move time forward so delayed screen off throttle job can run
+            advanceTime(ScanUtil.DEFAULT_SCAN_THROTTLE_DELAY)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.mScanThrottler.pendingScreenOffThrottleTask).isNull()
+            assertThat(client.settings.scanMode).isEqualTo(throttledScanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testDelayedScreenOffThrottle_screenOn_cancelPendingJob() {
+        // Set filtered scan flag
+        val isFiltered = true
+        var scannerCount = 0
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_LOW_POWER to ScanSettings.SCAN_MODE_SCREEN_OFF,
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to
+                    ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED,
+            )
+        scanModeMap.forEach { (scanMode, throttledScanMode) ->
+            scannerId += 1
+            scannerCount += 1
+            Log.d(TAG, "ScanMode: $scanMode throttledScanMode: $throttledScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            startScan(client)
+            // Turn off screen, this schedules screen off throttle job with delay
+            setScreenOn(false)
+            assertThat(scanManager.mScanThrottler.pendingScreenOffThrottleTask).isNotNull()
+            // Scan mode is not throttled yet
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Turn on screen, this cancel any pending delayed screen off throttle job
+            setScreenOn(true)
+            assertThat(scanManager.mScanThrottler.pendingScreenOffThrottleTask).isNull()
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testDelayedBackgroundUidThrottle_throttleJobRun() {
+        // Set filtered scan flag
+        val isFiltered = true
+        var scannerCount = 0
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_LOW_POWER to ScanSettings.SCAN_MODE_LOW_POWER,
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_LOW_POWER,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_POWER,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_LOW_POWER,
+            )
+        scanModeMap.forEach { (scanMode, throttledScanMode) ->
+            scannerId += 1
+            scannerCount += 1
+            Log.d(TAG, "ScanMode: $scanMode throttledScanMode: $throttledScanMode")
+            // Turn on screen and set as foreground app
+            setScreenOn(true)
+            setAppImportance(true, Binder.getCallingUid())
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            startScan(client)
+            // Set as background app, this schedules background uid throttle job with delay
+            setAppImportance(false, Binder.getCallingUid())
+            assertThat(scanManager.mScanThrottler.backgroundUidThrottleRunnables).hasSize(1)
+            // Scan mode is not throttled yet
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Move time forward so delayed background uid throttle job can run
+            advanceTime(ScanUtil.DEFAULT_SCAN_THROTTLE_DELAY)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.mScanThrottler.backgroundUidThrottleRunnables).hasSize(0)
+            assertThat(client.settings.scanMode).isEqualTo(throttledScanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testDelayedBackgroundUidThrottle_changeToForeground_cancelPendingJob() {
+        // Set filtered scan flag
+        val isFiltered = true
+        var scannerCount = 0
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_LOW_POWER to ScanSettings.SCAN_MODE_LOW_POWER,
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_LOW_POWER,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_POWER,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_LOW_POWER,
+            )
+        scanModeMap.forEach { (scanMode, throttledScanMode) ->
+            scannerId += 1
+            scannerCount += 1
+            Log.d(TAG, "ScanMode: $scanMode throttledScanMode: $throttledScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            startScan(client)
+            // Set as background app, this schedules background uid throttle job with delay
+            setAppImportance(false, Binder.getCallingUid())
+            assertThat(scanManager.mScanThrottler.backgroundUidThrottleRunnables).hasSize(1)
+            // Scan mode is not throttled yet
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            // Set as foreground app, this cancel any pending delayed background uid throttle job
+            setAppImportance(true, Binder.getCallingUid())
+            assertThat(scanManager.mScanThrottler.backgroundUidThrottleRunnables).hasSize(0)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+        }
+    }
+
+    @Test
     fun testSwitchForeBackgroundUnfilteredScan() {
         // Set filtered scan flag
         val isFiltered = false
