@@ -62,7 +62,6 @@ protected:
   friend void RegisterServerCallback(int status, int server_if, const bluetooth::Uuid& uuid);
   friend void ServiceAddedCallback(int status, int server_if, const btgatt_db_element_t* service,
                                    size_t service_count);
-  friend void ServiceStoppedCallback(int status, int server_if, int srvc_handle);
   friend void ServiceDeletedCallback(int status, int server_if, int srvc_handle);
 
   // Semaphores used to wait for specific callback execution. Each callback
@@ -75,7 +74,6 @@ protected:
   btsemaphore characteristic_added_callback_sem_;
   btsemaphore descriptor_added_callback_sem_;
   btsemaphore service_started_callback_sem_;
-  btsemaphore service_stopped_callback_sem_;
   btsemaphore service_deleted_callback_sem_;
 
 private:

@@ -185,10 +185,6 @@ class GattNativeCallback(
         serverDoOnGattThread { onServiceAddedFromNative(status, serverIf, serviceAdded) }
     }
 
-    fun onServiceStopped(status: Int, serverIf: Int, srvcHandle: Int) {
-        serverDoOnGattThread { onServiceStoppedFromNative(status, serverIf, srvcHandle) }
-    }
-
     fun onServiceDeleted(status: Int, serverIf: Int, srvcHandle: Int) {
         serverDoOnGattThread { onServiceDeletedFromNative(status, serverIf, srvcHandle) }
     }

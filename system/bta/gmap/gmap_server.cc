@@ -107,14 +107,15 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
             UGG_feature.to_string());
   characteristics_.clear();
 
-  BTA_GATTS_AppRegister(
-          bluetooth::le_audio::uuid::kGamingAudioServiceUuid,
-          [](tBTA_GATTS_EVT event, tBTA_GATTS *p_data) {
-            if (p_data) {
-              GmapServer::GattsCallback(event, p_data);
-            }
-          },
-          false);
+  static const tBTA_GATTS_CBACK gmap_ops = {
+          .p_reg_cb = GmapServer::OnGattServerRegister,
+          .p_dereg_cb = GmapServer::OnGattServerDeregister,
+          .p_connect_cb = GmapServer::OnGattConnect,
+          .p_disconnect_cb = GmapServer::OnGattDisconnect,
+          .p_read_characteristic_cb = GmapServer::OnReadCharacteristic,
+  };
+
+  BTA_GATTS_AppRegister(bluetooth::le_audio::uuid::kGamingAudioServiceUuid, &gmap_ops, false);
 }
 
 std::bitset<8> GmapServer::GetRole() { return GmapServer::role_; }
@@ -145,66 +146,37 @@ std::unordered_map<uint16_t, GmapCharacteristic> &GmapServer::GetCharacteristics
   return GmapServer::characteristics_;
 }
 
-void GmapServer::GattsCallback(tBTA_GATTS_EVT event, tBTA_GATTS *p_data) {
-  log::info("event: {}", gatt_server_event_text(event));
-  switch (event) {
-    case BTA_GATTS_CONNECT_EVT: {
-      OnGattConnect(p_data);
-      break;
-    }
-    case BTA_GATTS_DEREG_EVT: {
-      BTA_GATTS_AppDeregister(server_if_);
-      break;
-    }
-    case BTA_GATTS_DISCONNECT_EVT: {
-      OnGattDisconnect(p_data);
-      break;
-    }
-    case BTA_GATTS_REG_EVT: {
-      OnGattServerRegister(p_data);
-      break;
-    }
-    case BTA_GATTS_READ_CHARACTERISTIC_EVT: {
-      OnReadCharacteristic(p_data);
-      break;
-    }
-    default:
-      log::warn("Unhandled event {}", gatt_server_event_text(event));
-  }
-}
-
-void GmapServer::OnGattConnect(tBTA_GATTS *p_data) {
-  if (p_data == nullptr) {
-    log::warn("invalid p_data");
-  }
-  auto address = p_data->conn.remote_bda;
-  log::info("Address: {}, conn_id:{}", address, p_data->conn.conn_id);
-  if (p_data->conn.transport == BT_TRANSPORT_BR_EDR) {
+void GmapServer::OnGattConnect(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                               tCONN_ID conn_id, tBT_TRANSPORT transport) {
+  log::info("Address: {}, conn_id:{}", remote_bda, conn_id);
+  if (transport == BT_TRANSPORT_BR_EDR) {
     log::warn("Skip BE/EDR connection");
     return;
   }
 }
 
-void GmapServer::OnGattDisconnect(tBTA_GATTS *p_data) {
-  if (p_data == nullptr) {
-    log::warn("invalid p_data");
-  }
-  auto address = p_data->conn.remote_bda;
-  log::info("Address: {}, conn_id:{}", address, p_data->conn.conn_id);
+void GmapServer::OnGattDisconnect(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                                  tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
+  log::info("Address: {}, conn_id:{}", remote_bda, conn_id);
 }
 
-void GmapServer::OnGattServerRegister(tBTA_GATTS *p_data) {
-  if (p_data == nullptr) {
-    log::warn("invalid p_data");
+void GmapServer::OnGattServerDeregister(tGATT_STATUS status, tGATT_IF /*server_if*/) {
+  if (status != GATT_SUCCESS) {
+    log::warn("Deregister Server fail");
+    return;
   }
-  tGATT_STATUS status = p_data->reg_oper.status;
-  log::info("status: {}", gatt_status_text(p_data->reg_oper.status));
+  BTA_GATTS_AppDeregister(server_if_);
+}
+
+void GmapServer::OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if,
+                                      const bluetooth::Uuid& /*uuid*/) {
+  log::info("status: {}", gatt_status_text(status));
 
   if (status != tGATT_STATUS::GATT_SUCCESS) {
     log::warn("Register Server fail");
     return;
   }
-  server_if_ = p_data->reg_oper.server_if;
+  server_if_ = server_if;
 
   std::vector<btgatt_db_element_t> service;
 
@@ -253,17 +225,17 @@ void GmapServer::OnServiceAdded(tGATT_STATUS status, int server_if,
   }
 }
 
-void GmapServer::OnReadCharacteristic(tBTA_GATTS *p_data) {
-  uint16_t read_req_handle = p_data->req_data.p_data->read_req.handle;
-  log::info("read_req_handle: 0x{:04x},", read_req_handle);
+void GmapServer::OnReadCharacteristic(tCONN_ID conn_id, uint32_t trans_id,
+                                      const RawAddress& /*remote_bda*/, uint16_t handle,
+                                      uint16_t /*offset*/, bool /*is_long*/) {
+  log::info("read_req_handle: 0x{:04x},", handle);
 
   std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
-  p_msg->attr_value.handle = read_req_handle;
-  auto it = characteristics_.find(read_req_handle);
+  p_msg->attr_value.handle = handle;
+  auto it = characteristics_.find(handle);
   if (it == characteristics_.end()) {
-    log::error("Invalid handle 0x{:04x}", read_req_handle);
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
-                      std::move(p_msg));
+    log::error("Invalid handle 0x{:04x}", handle);
+    BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INVALID_HANDLE, std::move(p_msg));
     return;
   }
 
@@ -281,11 +253,9 @@ void GmapServer::OnReadCharacteristic(tBTA_GATTS *p_data) {
     p_msg->attr_value.value[0] = static_cast<uint8_t>(UGGFeature.to_ulong());
   } else {
     log::warn("Unhandled uuid {}", uuid.ToString());
-    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER,
-                      std::move(p_msg));
+    BTA_GATTS_SendRsp(conn_id, trans_id, GATT_ILLEGAL_PARAMETER, std::move(p_msg));
     return;
   }
 
-  BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
-                    std::move(p_msg));
+  BTA_GATTS_SendRsp(conn_id, trans_id, GATT_SUCCESS, std::move(p_msg));
 }

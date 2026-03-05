@@ -117,8 +117,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
 
     private native void gattServerAddServiceNative(int serverIf, List<GattDbElement> service);
 
-    private native void gattServerStopServiceNative(int serverIf, int svcHandle);
-
     private native void gattServerDeleteServiceNative(int serverIf, int svcHandle);
 
     private native void gattServerSendIndicationNative(
@@ -390,11 +388,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
     /** Add a service to the list of services to be hosted. */
     void gattServerAddService(int serverIf, List<GattDbElement> service) {
         gattServerAddServiceNative(serverIf, service);
-    }
-
-    /** Stop a service */
-    void gattServerStopService(int serverIf, int svcHandle) {
-        gattServerStopServiceNative(serverIf, svcHandle);
     }
 
     /** Removes a service from the list of services to be provided */

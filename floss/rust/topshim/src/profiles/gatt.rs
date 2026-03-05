@@ -285,7 +285,6 @@ pub mod ffi {
             service: &[BtGattDbElement],
             service_count: usize,
         ) -> u32;
-        fn stop_service(self: &GattServerIntf, server_if: i32, service_handle: i32) -> u32;
         fn delete_service(self: &GattServerIntf, server_if: i32, service_handle: i32) -> u32;
         fn send_indication(
             self: &GattServerIntf,
@@ -364,7 +363,6 @@ pub mod ffi {
             bda: RawAddress,
         );
         fn gs_service_added_cb(status: i32, server_if: i32, service: &[BtGattDbElement]);
-        fn gs_service_stopped_cb(status: i32, server_if: i32, srvc_handle: i32);
         fn gs_service_deleted_cb(status: i32, server_if: i32, srvc_handle: i32);
         fn gs_request_read_characteristic_cb(
             conn_id: i32,
@@ -880,7 +878,6 @@ pub enum GattServerCallbacks {
     RegisterServer(GattStatus, i32, Uuid),
     Connection(i32, i32, i32, i32, RawAddress),
     ServiceAdded(GattStatus, i32, Vec<BtGattDbElement>),
-    ServiceStopped(GattStatus, i32, i32),
     ServiceDeleted(GattStatus, i32, i32),
     RequestReadCharacteristic(i32, i32, RawAddress, i32, i32, bool),
     RequestReadDescriptor(i32, i32, RawAddress, i32, i32, bool),
@@ -1042,12 +1039,6 @@ cb_variant!(
     GattServerCb,
     gs_service_added_cb -> GattServerCallbacks::ServiceAdded,
     i32 -> GattStatus, i32, &[BtGattDbElement] -> Vec::<BtGattDbElement>
-);
-
-cb_variant!(
-    GattServerCb,
-    gs_service_stopped_cb -> GattServerCallbacks::ServiceStopped,
-    i32 -> GattStatus, i32, i32
 );
 
 cb_variant!(
@@ -1652,11 +1643,6 @@ impl GattServer {
     #[log_args]
     pub fn add_service(&self, server_if: i32, service: &[BtGattDbElement]) -> BtStatus {
         self.internal.add_service(server_if, service, service.len()).into()
-    }
-
-    #[log_args]
-    pub fn stop_service(&self, server_if: i32, service_handle: i32) -> BtStatus {
-        self.internal.stop_service(server_if, service_handle).into()
     }
 
     #[log_args]
