@@ -49,10 +49,8 @@ using bluetooth::bta::le_audio::PeripheralAudioHalDecoder;
 using bluetooth::bta::le_audio::PeripheralAudioHalEncoder;
 using bluetooth::common::MessageLoopThread;
 using bluetooth::hci::IsoManager;
-using bluetooth::hci::iso_manager::CigCallbacks;
 using bluetooth::le_audio::DsaMode;
 using bluetooth::le_audio::DsaModes;
-using bluetooth::le_audio::GattConnectionState;
 
 namespace bluetooth::le_audio {
 namespace {

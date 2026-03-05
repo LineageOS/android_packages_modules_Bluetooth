@@ -34,7 +34,6 @@
 using namespace bluetooth;
 using le_audio::GattConnectionState;
 using le_audio::LeAudioServerCallbacks;
-using le_audio::LeAudioServerCodecConfig;
 using le_audio::LeAudioServerInterface;
 
 namespace {
