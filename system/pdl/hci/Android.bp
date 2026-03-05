@@ -5,7 +5,7 @@ genrule {
     out: ["hci_packets.rs"],
     cmd: "$(location :pdlc) --output-format rust " +
         "--include-declaration ErrorCode --include-declaration DataStatus " +
-        "$(in) > $(out)",
+        "--include-declaration AddressType $(in) > $(out)",
     visibility: [
         "//packages/modules/Bluetooth/system/rust:__subpackages__",
     ],

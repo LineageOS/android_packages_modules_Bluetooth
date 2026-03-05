@@ -72,21 +72,6 @@ impl fmt::Debug for Address {
     }
 }
 
-/// Represents the address type.
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum AddressType {
-    /// Public Device Address.
-    #[default]
-    PublicDeviceAddress = 0x00,
-    /// Random Device Address.
-    RandomDeviceAddress = 0x01,
-    /// Public Identity Address.
-    PublicIdentityAddress = 0x02,
-    /// Random (Static) Identity Address.
-    RandomStaticIdentityAddress = 0x03,
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
