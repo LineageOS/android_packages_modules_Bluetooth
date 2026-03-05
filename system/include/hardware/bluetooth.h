@@ -262,7 +262,6 @@ typedef struct {
   bool le_channel_sounding_supported;
   bool le_high_data_rate_throughput_supported;
   bool le_connected_isochronous_stream_peripheral_supported;
-  bool le_big_set_channel_map_classification_support;
 } __attribute__((packed)) bt_local_le_features_t;
 
 typedef struct {
