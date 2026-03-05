@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "remove_fake_role_change_event"
-    namespace: "bluetooth"
-    description: "Removes fake role change event generated when classic connection is established"
-    bug: "456794465"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "use_cached_clock_offset"
     namespace: "bluetooth"
     description: "Use cached clock offset for BR/EDR connection requests and RNRs"

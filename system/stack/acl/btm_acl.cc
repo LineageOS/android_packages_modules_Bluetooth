@@ -1899,9 +1899,7 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc
     return;
   }
 
-  if (com_android_bluetooth_flags_remove_fake_role_change_event()) {
-    p_acl->link_role = role;
-  }
+  p_acl->link_role = role;
 
   /*
    * The legacy code path informs the upper layer via the BTA
