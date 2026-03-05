@@ -341,8 +341,8 @@ public class ScanManager {
     }
 
     void stopScan(int scannerId) {
-        ScanClient tmpClient = new ScanClient(0, scannerId);
-        handleStopScan(tmpClient);
+        // TODO: Inline in next CL
+        handleStopScan(scannerId);
     }
 
     void flushBatchScanResults(ScanClient client) {
@@ -502,9 +502,7 @@ public class ScanManager {
         Log.d(TAG, "Apply scan timeout (" + mAdapterService.getScanTimeout() + ") to " + client);
     }
 
-    private void handleStopScan(ScanClient tmpClient) {
-        var header = "handleStopScan(): ";
-        int scannerIdToStop = tmpClient.getScannerId();
+    private void handleStopScan(int scannerIdToStop) {
         ScanClient client = ScanUtil.findById(mBatchClients, scannerIdToStop);
         if (client == null) {
             client = ScanUtil.findById(mRegularScanClients, scannerIdToStop);
@@ -513,9 +511,14 @@ public class ScanManager {
             client = ScanUtil.findById(mSuspendedScanClients, scannerIdToStop);
         }
         if (client == null) {
-            Log.d(TAG, header + "No client found for scannerId=" + scannerIdToStop);
+            Log.d(TAG, "handleStopScan(): No client found for scannerId=" + scannerIdToStop);
             return;
         }
+        handleStopScan(client);
+    }
+
+    private void handleStopScan(ScanClient client) {
+        var header = "handleStopScan(): ";
         Log.d(TAG, header + "For " + client);
         final var appDied = client.getAppDied();
         final var scannerId = client.getScannerId();

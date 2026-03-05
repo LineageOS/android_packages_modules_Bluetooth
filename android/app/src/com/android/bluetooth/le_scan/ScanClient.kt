@@ -54,42 +54,19 @@ private constructor(
     var appDied = false
     var appScanStats: AppScanStats? = null
 
-    // This constructor is only used when `ScanClient` acts as a `scannerId` wrapper and for tests
-    @JvmOverloads
     constructor(
         appUid: Int,
         scannerId: Int,
         settings: ScanSettings = ScanSettings.Builder().build(),
         filters: List<ScanFilter> = emptyList(),
         userHandle: UserHandle? = null,
+        eligibleForSanitizedExposureNotification: Boolean = false,
+        hasDisavowedLocation: Boolean = false,
+        hasLocationPermission: Boolean = false,
         hasNetworkSettingsPermission: Boolean = false,
+        hasNetworkSetupWizardPermission: Boolean = false,
         hasScanWithoutLocationPermission: Boolean = false,
         associatedDevices: List<String> = emptyList(),
-    ) : this(
-        appUid,
-        scannerId,
-        settings,
-        settings.scanMode,
-        filters,
-        userHandle,
-        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
-        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
-        associatedDevices = associatedDevices,
-    )
-
-    constructor(
-        appUid: Int,
-        scannerId: Int,
-        settings: ScanSettings = ScanSettings.Builder().build(),
-        filters: List<ScanFilter> = emptyList(),
-        userHandle: UserHandle?,
-        eligibleForSanitizedExposureNotification: Boolean,
-        hasDisavowedLocation: Boolean,
-        hasLocationPermission: Boolean,
-        hasNetworkSettingsPermission: Boolean,
-        hasNetworkSetupWizardPermission: Boolean,
-        hasScanWithoutLocationPermission: Boolean,
-        associatedDevices: List<String>,
     ) : this(
         appUid = appUid,
         scannerId = scannerId,

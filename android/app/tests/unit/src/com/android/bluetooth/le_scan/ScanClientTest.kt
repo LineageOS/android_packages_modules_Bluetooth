@@ -19,7 +19,6 @@ package com.android.bluetooth.le_scan
 import android.app.PendingIntent
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
-import android.os.Binder
 import android.os.UserHandle
 import android.platform.test.annotations.RequiresFlagsDisabled
 import android.platform.test.annotations.RequiresFlagsEnabled
@@ -43,29 +42,6 @@ class ScanClientTest {
     @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    // TODO(b/397863857) Delete post `Flags.scanControllerThread()` cleanup
-    @Test
-    fun constructor_asScannerIdWrapper() {
-        val appUid = 1234
-        val scannerId = 1
-        val scanClient = ScanClient(appUid, scannerId)
-        assertThat(scanClient.scannerId).isEqualTo(scannerId)
-        assertThat(scanClient.appUid).isEqualTo(appUid)
-        assertThat(scanClient.isInternal).isFalse()
-    }
-
-    // TODO(b/397863857) Delete post `Flags.scanControllerThread()` cleanup
-    @Test
-    fun equals_comparesScannerIdOnly() {
-        val appUid = 1234
-        val client1 = ScanClient(1234, 1)
-        val client1Duplicate = ScanClient(1234, 1)
-        val client2 = ScanClient(1234, 2)
-
-        assertThat(client1).isEqualTo(client1Duplicate)
-        assertThat(client1).isNotEqualTo(client2)
-    }
-
     @Test
     fun constructor_external() {
         val id = 5
@@ -74,21 +50,7 @@ class ScanClientTest {
             ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         val userHandle = UserHandle.getUserHandleForUid(uid)
 
-        val client =
-            ScanClient(
-                uid,
-                id,
-                settings,
-                emptyList(),
-                userHandle,
-                eligibleForSanitizedExposureNotification = false,
-                hasDisavowedLocation = false,
-                hasLocationPermission = false,
-                hasNetworkSettingsPermission = false,
-                hasNetworkSetupWizardPermission = false,
-                hasScanWithoutLocationPermission = false,
-                associatedDevices = emptyList(),
-            )
+        val client = ScanClient(uid, id, settings, emptyList(), userHandle)
 
         assertThat(client.scannerId).isEqualTo(id)
         assertThat(client.appUid).isEqualTo(uid)
@@ -168,14 +130,6 @@ class ScanClientTest {
                 1,
                 ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build(),
                 emptyList(),
-                Binder.getCallingUserHandle(),
-                eligibleForSanitizedExposureNotification = false,
-                hasDisavowedLocation = false,
-                hasLocationPermission = false,
-                hasNetworkSettingsPermission = false,
-                hasNetworkSetupWizardPermission = false,
-                hasScanWithoutLocationPermission = false,
-                associatedDevices = emptyList(),
             )
         assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_POWER)
 
@@ -190,7 +144,7 @@ class ScanClientTest {
     fun isFiltered_allEmptyFiltersIsFiltered() {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
-        val client = ScanClient(1000, 1, settings, filters, Binder.getCallingUserHandle())
+        val client = ScanClient(1000, 1, settings, filters)
 
         assertThat(client.isFiltered).isTrue()
     }
@@ -200,7 +154,7 @@ class ScanClientTest {
     fun isFiltered_allEmptyFiltersIsUnfiltered() {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
-        val client = ScanClient(1000, 1, settings, filters, Binder.getCallingUserHandle())
+        val client = ScanClient(1000, 1, settings, filters)
 
         assertThat(client.isFiltered).isFalse()
     }
@@ -210,28 +164,14 @@ class ScanClientTest {
     fun isFiltered_anyFieldSetFiltersIsFiltered() {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().setDeviceName("TestName").build())
-        val client = ScanClient(1000, 1, settings, filters, Binder.getCallingUserHandle())
+        val client = ScanClient(1000, 1, settings, filters)
 
         assertThat(client.isFiltered).isTrue()
     }
 
     @Test
     fun toString_doesNotCrash() {
-        val scanClient =
-            ScanClient(
-                1000,
-                1,
-                ScanSettings.Builder().build(),
-                emptyList(),
-                Binder.getCallingUserHandle(),
-                eligibleForSanitizedExposureNotification = false,
-                hasDisavowedLocation = false,
-                hasLocationPermission = false,
-                hasNetworkSettingsPermission = false,
-                hasNetworkSetupWizardPermission = false,
-                hasScanWithoutLocationPermission = false,
-                associatedDevices = emptyList(),
-            )
+        val scanClient = ScanClient(1000, 1, ScanSettings.Builder().build(), emptyList())
         scanClient.toString()
     }
 }
