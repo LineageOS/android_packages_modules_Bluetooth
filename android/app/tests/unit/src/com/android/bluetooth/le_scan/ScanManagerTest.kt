@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.le_scan
 
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.app.ActivityManager
 import android.app.AlarmManager
 import android.bluetooth.BluetoothDevice
@@ -23,6 +24,10 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProtoEnums
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED
+import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.BatteryStatsManager
 import android.os.Binder
@@ -66,6 +71,7 @@ import com.android.bluetooth.le_scan.ScanUtil.convertAllowanceToRemainingTime
 import com.android.bluetooth.le_scan.ScanUtil.getScanAllowance
 import com.android.bluetooth.metrics.MetricsLogger
 import com.android.bluetooth.mockGetSystemService
+import com.android.bluetooth.mockPackageManager
 import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.tests.bluetooth.FakeTimeProvider
@@ -86,6 +92,7 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.clearInvocations
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -107,6 +114,7 @@ class ScanManagerTest() {
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var displayListener: DisplayListener
     @Mock private lateinit var locationManager: LocationManager
+    @Mock private lateinit var packageManager: PackageManager
     @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var metricsLogger: MetricsLogger
     @Mock private lateinit var nativeCallback: ScanNativeCallback
@@ -154,6 +162,7 @@ class ScanManagerTest() {
         doReturn(true).whenever(locationManager).isLocationEnabled
         adapterService.mockGetSystemService<BatteryStatsManager>(batteryStatsManager)
         adapterService.mockGetSystemService<AlarmManager>()
+        adapterService.mockPackageManager(packageManager)
 
         val context = InstrumentationRegistry.getInstrumentation().context
         adapterService.mockResources(context.resources)
@@ -771,6 +780,33 @@ class ScanManagerTest() {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanWithPrivilegedPermission_skipAllowanceCheck(@TestParameter isFiltered: Boolean) {
+        mockPrivilegedPermission()
+        defaultScanMode.forEach { (scanMode, expectedScanMode) ->
+            scannerId += 1
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan
+            startScan(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            assertThat(scanManager.mScanThrottler.recordUsageRunnables).hasSize(0)
+            assertThat(scanManager.mScanThrottler.refillRunnables).hasSize(0)
+            // Move time forward to assert there is no scheduled jobs on the handler thread
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance ==
+                        kotlin.time.Duration.ZERO
+                )
+                .isTrue()
+        }
+    }
+
+    @Test
     fun testSwitchForeBackgroundUnfilteredScan() {
         // Set filtered scan flag
         val isFiltered = false
@@ -1042,6 +1078,57 @@ class ScanManagerTest() {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testDowngradeDuringScanForConcurrencyOutOfAllowance() {
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
+            .whenever(adapterService)
+            .scanDowngradeDuration
+
+        // Set filtered scan flag
+        val isFiltered = true
+
+        val scanModeMap =
+            mapOf(
+                ScanSettings.SCAN_MODE_BALANCED to ScanSettings.SCAN_MODE_BALANCED,
+                ScanSettings.SCAN_MODE_LOW_LATENCY to ScanSettings.SCAN_MODE_LOW_LATENCY,
+                ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY to ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+            )
+        scanModeMap.forEach { (scanMode, expectedScanMode) ->
+            var expectedScanMode = expectedScanMode
+            scannerId += 1
+            expectedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
+            Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
+            // Turn on screen
+            setScreenOn(true)
+            // Set as foreground app
+            setAppImportance(true, Binder.getCallingUid())
+            // Create scan client
+            val client = createScanClient(isFiltered, scanMode)
+            // Start scan
+            startScan(client)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            // Move time forward so record allowance usage message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(
+                    client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >=
+                        getScanAllowance()
+                )
+                .isTrue()
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+            // Set connecting state
+            setConnectingState(true)
+            // Wait for downgrade duration
+            advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
     fun testStartUnfilteredBatchScan() {
         // Set filtered and batch scan flag
         val isFiltered = false
@@ -1117,6 +1204,107 @@ class ScanManagerTest() {
             assertThat(scanManager.regularScanQueue).doesNotContain(client)
             assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
             assertThat(scanManager.batchScanQueue).contains(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowance_BatchScan() {
+        val isFiltered = true
+        val isBatch = true
+        val isAutoBatch = false
+        // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
+        val scanModeMap = SparseIntArray()
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_POWER, ScanSettings.SCAN_MODE_LOW_POWER)
+        scanModeMap.put(ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_BALANCED)
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, ScanSettings.SCAN_MODE_LOW_LATENCY)
+        scanModeMap.put(
+            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+            ScanSettings.SCAN_MODE_LOW_LATENCY,
+        )
+
+        for (i in 0..<scanModeMap.size()) {
+            val scanMode = scanModeMap.keyAt(i)
+            val expectedScanMode = scanModeMap.get(scanMode)
+
+            // Turn off screen
+            setScreenOn(false)
+            // Create scan client
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
+            // Start scan
+            startScan(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
+            // Move time forward so scan allowance check message can be dispatched
+            advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), scanMode))
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).contains(client)
+            // Allowance is refilled immediately for SCAN_MODE_LOW_POWER, so scan mode does not
+            // change. For other scan mode,
+            // allowance refill job is scheduled and scan mode is lowered to SCAN_MODE_SCREEN_OFF
+            // due to out of allowance
+            assertThat(scanManager.batchScanParams.scanMode)
+                .isEqualTo(
+                    if (scanMode == ScanSettings.SCAN_MODE_LOW_POWER)
+                        ScanSettings.SCAN_MODE_LOW_POWER
+                    else ScanSettings.SCAN_MODE_SCREEN_OFF
+                )
+            // Move time forward so refill message can be dispatched
+            advanceTime(ALLOWANCE_REFILL_WINDOW)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SCAN_ALLOWANCE_THROTTLING_ENABLED)
+    fun testScanAllowance_BatchScanOutOfAllowance() {
+        val isFiltered = true
+        val isBatch = true
+        val isAutoBatch = false
+        val previousScanMode = ScanSettings.SCAN_MODE_LOW_LATENCY
+        val client =
+            createScanClient(
+                isFiltered,
+                previousScanMode,
+                isBatch = isBatch,
+                isAutoBatch = isAutoBatch,
+            )
+        startScan(client)
+        // Move time forward so scan allowance check message can be dispatched
+        advanceTime(convertAllowanceToRemainingTime(getScanAllowance(), previousScanMode))
+        this@ScanManagerTest.looper.dispatchAll()
+        assertThat(
+                client.appScanStats!!.scanAllowanceLedger.spentScanAllowance >= getScanAllowance()
+            )
+            .isTrue()
+
+        // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
+        val scanModeMap = SparseIntArray()
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_POWER, ScanSettings.SCAN_MODE_SCREEN_OFF)
+        scanModeMap.put(ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_SCREEN_OFF)
+        scanModeMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, ScanSettings.SCAN_MODE_SCREEN_OFF)
+        scanModeMap.put(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY, ScanSettings.SCAN_MODE_SCREEN_OFF)
+
+        for (i in 0..<scanModeMap.size()) {
+            val scanMode = scanModeMap.keyAt(i)
+            val expectedScanMode = scanModeMap.get(scanMode)
+            // Turn off screen
+            setScreenOn(false)
+            // Create scan client
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
+            // Start scan
+            startScan(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
             assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
         }
     }
@@ -2457,6 +2645,23 @@ class ScanManagerTest() {
         doReturn(filterCount).whenever(adapterService).numOfOffloadedScanFilterSupported
     }
 
+    private fun mockPrivilegedPermission() {
+        doReturn(arrayOf(TEST_PRIVILEGED_PACKAGE_NAME))
+            .whenever(packageManager)
+            .getPackagesForUid(any())
+        val mockUserContext = mock(Context::class.java)
+        doReturn(mockUserContext).whenever(adapterService).createContextAsUser(any(), any())
+        doReturn(packageManager).whenever(mockUserContext).packageManager
+        val privilegedPackageInfo =
+            PackageInfo().apply {
+                requestedPermissions = arrayOf(BLUETOOTH_PRIVILEGED)
+                requestedPermissionsFlags = intArrayOf(REQUESTED_PERMISSION_GRANTED)
+            }
+        doReturn(privilegedPackageInfo)
+            .whenever(packageManager)
+            .getPackageInfo(any<String>(), any<Int>())
+    }
+
     companion object {
         private const val DEFAULT_REGULAR_SCAN_REPORT_DELAY_MS = 0
         private const val DEFAULT_BATCH_SCAN_REPORT_DELAY_MS = 100
@@ -2466,6 +2671,7 @@ class ScanManagerTest() {
         private const val TEST_SCAN_QUOTA_COUNT = 5
         private const val TEST_APP_NAME = "Test"
         private const val TEST_PACKAGE_NAME = "com.test.package"
+        private const val TEST_PRIVILEGED_PACKAGE_NAME = "com.test.privileged.package"
 
         private val defaultScanMode =
             mapOf(

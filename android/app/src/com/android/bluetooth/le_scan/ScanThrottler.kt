@@ -187,7 +187,11 @@ class ScanThrottler(
 
         val updatedScanMode = minScanMode(client.settings.scanMode, ScanSettings.SCAN_MODE_BALANCED)
 
-        if (client.updateScanMode(updatedScanMode)) {
+        val isUpdated =
+            if (isScanAllowanceThrottlingEnabled())
+                applyAllowanceThrottling(client, updatedScanMode)
+            else client.updateScanMode(updatedScanMode)
+        if (isUpdated) {
             client.appScanStats!!.setScanDowngrade(client.scannerId, true)
             Log.d(
                 TAG,
@@ -212,10 +216,12 @@ class ScanThrottler(
         }
     }
 
-    private fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
+    fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
         val ledger = client.appScanStats?.scanAllowanceLedger
-        // TODO(b/478349128): support isExemptFromScanAllowanceThrottling
         if (ledger == null) {
+            return client.updateScanMode(targetScanMode)
+        }
+        if (scanManager.hasPrivilegedPermission(client)) {
             return client.updateScanMode(targetScanMode)
         }
         if (
@@ -300,6 +306,13 @@ class ScanThrottler(
     private fun refillAllowance(client: ScanClient, ledger: ScanAllowanceLedger) {
         ledger.spentScanAllowance = Duration.ZERO
         Log.d(TAG, "Scan Allowance Refilled for app ${client.appUid} scanner ${client.scannerId}")
+    }
+
+    fun removeRecordUsageRunnable(client: ScanClient) {
+        val recordUsageRunnable = recordUsageRunnables.remove(client)
+        if (recordUsageRunnable != null) {
+            handler.removeCallbacks(recordUsageRunnable)
+        }
     }
 
     companion object {
