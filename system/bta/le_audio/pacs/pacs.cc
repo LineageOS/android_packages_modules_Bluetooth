@@ -625,12 +625,13 @@ struct Pacs::service_impl {
     auto char_uuid = char_metadata_by_value_handle_.at(handle).uuid;
     if (char_uuid == uuid::kSinkAudioLocationCharacteristicUuid.As16Bit() ||
         char_uuid == uuid::kSourceAudioLocationCharacteristicUuid.As16Bit()) {
-      tGATT_WRITE_REQ write_req;
-      write_req.handle = handle;
-      write_req.offset = offset;
-      write_req.len = len;
-      write_req.need_rsp = need_rsp;
-      write_req.is_prep = is_prep;
+      tGATT_WRITE_REQ write_req = {
+          .handle = handle,
+          .offset = offset,
+          .len = len,
+          .need_rsp = need_rsp,
+          .is_prep = is_prep,
+      };
       memcpy(write_req.value, value, len);
       OnWriteAudioLocationCharacteristic(conn_id, trans_id, write_req);
     } else {
