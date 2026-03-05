@@ -182,6 +182,8 @@ int register_com_android_bluetooth_mcp_client(JNIEnv* env);
 
 int register_com_android_bluetooth_vc(JNIEnv* env);
 
+int register_com_android_bluetooth_vcp_renderer(JNIEnv* env);
+
 int register_com_android_bluetooth_csip_set_coordinator(JNIEnv* env);
 
 int register_com_android_bluetooth_vap_server(JNIEnv* env);

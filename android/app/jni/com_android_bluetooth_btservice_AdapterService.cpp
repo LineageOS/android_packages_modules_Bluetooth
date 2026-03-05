@@ -2167,9 +2167,21 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_mcp_client(e);
+  if (status < 0) {
+    log::error("jni le_audio mcp client registration failure: {}", status);
+    return JNI_ERR;
+  }
+
   status = android::register_com_android_bluetooth_vc(e);
   if (status < 0) {
     log::error("jni vc registration failure: {}", status);
+    return JNI_ERR;
+  }
+
+  status = android::register_com_android_bluetooth_vcp_renderer(e);
+  if (status < 0) {
+    log::error("jni vcp renderer registration failure: {}", status);
     return JNI_ERR;
   }
 

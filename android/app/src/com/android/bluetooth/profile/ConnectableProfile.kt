@@ -35,6 +35,7 @@ import android.bluetooth.BluetoothProfile.LE_AUDIO
 import android.bluetooth.BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT
 import android.bluetooth.BluetoothProfile.MAP
 import android.bluetooth.BluetoothProfile.MAP_CLIENT
+import android.bluetooth.BluetoothProfile.MCP_CLIENT
 import android.bluetooth.BluetoothProfile.PAN
 import android.bluetooth.BluetoothProfile.PBAP
 import android.bluetooth.BluetoothProfile.PBAP_CLIENT
@@ -191,6 +192,7 @@ constructor(
                 MAP_CLIENT ->
                     localDeviceUuids.arrayContains(BluetoothUuid.MNS) &&
                         remoteDeviceUuids.arrayContains(BluetoothUuid.MAS)
+                MCP_CLIENT -> remoteDeviceUuids.arrayContains(BluetoothUuid.GENERIC_MEDIA_CONTROL)
                 PAN -> remoteDeviceUuids.arrayContains(BluetoothUuid.NAP)
                 PBAP_CLIENT ->
                     localDeviceUuids.arrayContains(BluetoothUuid.PBAP_PCE) &&
