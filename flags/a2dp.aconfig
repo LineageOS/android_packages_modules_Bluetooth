@@ -37,16 +37,6 @@ flag {
 }
 
 flag {
-    name: "a2dp_reject_sho_request"
-    namespace: "bluetooth"
-    description: "Reject SHO request when rsp pending from active device"
-    bug: "440286060"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_delay_disconnect"
     namespace: "bluetooth"
     description: "Delay A2DP profile disconnection to fix interoperability issues"
