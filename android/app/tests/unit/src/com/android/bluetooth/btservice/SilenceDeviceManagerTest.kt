@@ -24,14 +24,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.HandlerThread
 import android.os.Looper
-import android.os.UserHandle
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestUtils
 import com.android.bluetooth.a2dp.A2dpService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.hfp.HeadsetService
 import com.android.tests.bluetooth.MockitoRule
@@ -167,29 +165,14 @@ class SilenceDeviceManagerTest {
     }
 
     private fun verifyNoIntentSent() {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            inOrder.verify(adapterService, never()).sendBroadcast(any(), any(), any())
-        } else {
-            inOrder.verify(adapterService, never()).sendBroadcastAsUser(any(), any(), any(), any())
-        }
+        inOrder.verify(adapterService, never()).sendBroadcast(any(), any(), any())
     }
 
     @SafeVarargs
     private fun verifyIntentSent(vararg matchers: Matcher<Intent>) {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            inOrder
-                .verify(adapterService)
-                .sendBroadcast(argThat(allOf(*matchers)), eq(BLUETOOTH_CONNECT), any<Bundle>())
-        } else {
-            inOrder
-                .verify(adapterService)
-                .sendBroadcastAsUser(
-                    argThat(allOf(*matchers)),
-                    eq(UserHandle.ALL),
-                    eq(BLUETOOTH_CONNECT),
-                    any<Bundle>(),
-                )
-        }
+        inOrder
+            .verify(adapterService)
+            .sendBroadcast(argThat(allOf(*matchers)), eq(BLUETOOTH_CONNECT), any<Bundle>())
     }
 
     private fun verifySilenceStateIntent() {

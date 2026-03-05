@@ -736,11 +736,7 @@ public class AdapterService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind()");
-        if (Flags.setNameInSystemServer()) {
-            mLocalName = intent.getStringExtra(BluetoothAdapter.EXTRA_LOCAL_NAME);
-        } else {
-            mLocalName = "Name is not set"; // Safe fallback
-        }
+        mLocalName = intent.getStringExtra(BluetoothAdapter.EXTRA_LOCAL_NAME);
         return mAdapterBinder;
     }
 
@@ -1078,9 +1074,6 @@ public class AdapterService extends Service {
         mNativeAvailable = true;
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
-        if (!Flags.setNameInSystemServer()) {
-            mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
-        }
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE);
 
         mBluetoothKeystoreService.initJni();
@@ -1831,14 +1824,6 @@ public class AdapterService extends Service {
     void updateWatchConnection(boolean connected) {
         broadcastToSystemServerCallbacks(
                 "updateWatchConnection", (c) -> c.onWatchConnectionChange(connected));
-    }
-
-    void updateAdapterName(String name) {
-        if (Flags.setNameInSystemServer()) {
-            throw new IllegalStateException("setNameInSystemServer is enabled");
-        }
-        broadcastToSystemServerCallbacks(
-                "updateAdapterName(" + name + ")", (c) -> c.onAdapterNameChange(name));
     }
 
     void updateAdapterAddress(String address) {
@@ -2829,17 +2814,11 @@ public class AdapterService extends Service {
     }
 
     public String getName() {
-        if (Flags.setNameInSystemServer()) {
-            return mLocalName;
-        }
-        return mAdapterProperties.getName();
+        return mLocalName;
     }
 
     public int getNameLengthForAdvertise() {
-        if (Flags.setNameInSystemServer()) {
-            return mLocalName.length();
-        }
-        return mAdapterProperties.getName().length();
+        return mLocalName.length();
     }
 
     boolean startDiscovery(AttributionSource source) {

@@ -23,13 +23,11 @@ import android.bluetooth.BluetoothProfile.STATE_CONNECTING
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Intent
 import android.os.Bundle
-import android.os.UserHandle
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.hearingaid.HearingAidStateMachine.MESSAGE_CONNECTION_STATE_CHANGED
 import com.android.tests.bluetooth.MockitoRule
@@ -176,23 +174,12 @@ class HearingAidStateMachineTest {
 
     @SafeVarargs
     private fun verifyIntentSent(vararg matchers: Matcher<Intent?>?) {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            inOrder
-                .verify(service)
-                .sendBroadcast(
-                    MockitoHamcrest.argThat(AllOf.allOf(*matchers)),
-                    any<String>(),
-                    any<Bundle>(),
-                )
-        } else {
-            inOrder
-                .verify(service)
-                .sendBroadcastAsUser(
-                    MockitoHamcrest.argThat(AllOf.allOf(*matchers)),
-                    eq(UserHandle.ALL),
-                    any<String>(),
-                    any<Bundle>(),
-                )
-        }
+        inOrder
+            .verify(service)
+            .sendBroadcast(
+                MockitoHamcrest.argThat(AllOf.allOf(*matchers)),
+                any<String>(),
+                any<Bundle>(),
+            )
     }
 }

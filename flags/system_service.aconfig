@@ -2,30 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "only_broadcast_to_local_user"
-    namespace: "bluetooth"
-    description: "The bluetooth stack start and exist only for the current user. We should only restrict the intent to the current user"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "435244086"
-}
-
-flag {
     name: "reject_enable_from_unknown_requester"
     namespace: "bluetooth"
     description: "Sometimes, the requester of enable/enableBle is unknown, making investigation impossible. Let's reject them to trace and properly identify the caller"
     bug: "453047643"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "set_name_in_system_server"
-    namespace: "bluetooth"
-    description: "We should offer a consistent API to set the Bluetooth friendly name, whatever if Bluetooth is ON or OFF"
-    bug: "448709503"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

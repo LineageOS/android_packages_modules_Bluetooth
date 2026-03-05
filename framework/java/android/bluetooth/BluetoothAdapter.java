@@ -1700,18 +1700,12 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean setName(String name) {
-        if (Flags.setNameInSystemServer()) {
-            try {
-                mManagerService.setName(name, mAttributionSource);
-                return true;
-            } catch (RemoteException e) {
-                throw e.rethrowFromSystemServer();
-            }
+        try {
+            mManagerService.setName(name, mAttributionSource);
+            return true;
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
         }
-        if (getState() != STATE_ON) {
-            return false;
-        }
-        return callServiceIfEnabled(s -> s.setName(name, mAttributionSource), false);
     }
 
     /**
