@@ -24,7 +24,6 @@ import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.StateMachine;
 
 // This state machine handles Bluetooth Adapter states.
@@ -85,39 +84,31 @@ final class AdapterState extends StateMachine {
     static {
         // Values must not be lower than the one in stack.cc
         int defaultDelay = 4_000 * HW_MULTIPLIER;
-        if (!Flags.unifyTimeoutProperty()) {
-            BLE_START_TIMEOUT_DELAY =
-                    SystemProperties.getInt("ro.bluetooth.ble_start_timeout_delay", defaultDelay);
-            BLE_STOP_TIMEOUT_DELAY =
-                    SystemProperties.getInt("ro.bluetooth.ble_stop_timeout_delay", defaultDelay);
+        // Validate the configuration when property is enabled or for new devices after 25Q4.
+        if ((DEGRADED_PERFORMANCE)
+                && (!SystemProperties.get("ro.bluetooth.ble_start_timeout_delay").isEmpty()
+                        || !SystemProperties.get("ro.bluetooth.ble_stop_timeout_delay").isEmpty()
+                        || !SystemProperties.get("bluetooth.gd.start_timeout").isEmpty()
+                        || !SystemProperties.get("bluetooth.gd.stop_timeout").isEmpty())) {
+            throw new IllegalStateException("Bluetooth timeout properties are incorrect");
+        }
+        if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
+            defaultDelay = 8_000;
+            BLE_START_TIMEOUT_DELAY = defaultDelay;
+            BLE_STOP_TIMEOUT_DELAY = defaultDelay;
         } else {
-            // Validate the configuration when property is enabled or for new devices after 25Q4.
-            if ((DEGRADED_PERFORMANCE)
-                    && (!SystemProperties.get("ro.bluetooth.ble_start_timeout_delay").isEmpty()
-                            || !SystemProperties.get("ro.bluetooth.ble_stop_timeout_delay")
-                                    .isEmpty()
-                            || !SystemProperties.get("bluetooth.gd.start_timeout").isEmpty()
-                            || !SystemProperties.get("bluetooth.gd.stop_timeout").isEmpty())) {
-                throw new IllegalStateException("Bluetooth timeout properties are incorrect");
-            }
-            if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
-                defaultDelay = 8_000;
+            defaultDelay = 4_000;
+            // Tolerate property usage on older devices
+            if (isAtMost25Q4) {
+                BLE_START_TIMEOUT_DELAY =
+                        SystemProperties.getInt(
+                                "ro.bluetooth.ble_start_timeout_delay", defaultDelay);
+                BLE_STOP_TIMEOUT_DELAY =
+                        SystemProperties.getInt(
+                                "ro.bluetooth.ble_stop_timeout_delay", defaultDelay);
+            } else {
                 BLE_START_TIMEOUT_DELAY = defaultDelay;
                 BLE_STOP_TIMEOUT_DELAY = defaultDelay;
-            } else {
-                defaultDelay = 4_000;
-                // Tolerate property usage on older devices
-                if (isAtMost25Q4) {
-                    BLE_START_TIMEOUT_DELAY =
-                            SystemProperties.getInt(
-                                    "ro.bluetooth.ble_start_timeout_delay", defaultDelay);
-                    BLE_STOP_TIMEOUT_DELAY =
-                            SystemProperties.getInt(
-                                    "ro.bluetooth.ble_stop_timeout_delay", defaultDelay);
-                } else {
-                    BLE_START_TIMEOUT_DELAY = defaultDelay;
-                    BLE_STOP_TIMEOUT_DELAY = defaultDelay;
-                }
             }
         }
         BREDR_START_TIMEOUT_DELAY = defaultDelay;

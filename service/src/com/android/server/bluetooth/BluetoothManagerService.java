@@ -117,25 +117,16 @@ public class BluetoothManagerService {
 
     @VisibleForTesting static final Duration TIMEOUT_BIND;
     private static final Duration STATE_TIMEOUT;
-    @VisibleForTesting static final Duration SERVICE_RESTART_DELAY;
-    private static final Duration ADD_PROXY_DELAY;
+    @VisibleForTesting static final Duration SERVICE_RESTART_DELAY = Duration.ofMillis(400);
+    private static final Duration ADD_PROXY_DELAY = Duration.ofMillis(100);
 
     static {
-        if (!Flags.unifyTimeoutProperty()) {
-            TIMEOUT_BIND = Duration.ofSeconds(4).multipliedBy(HW_MULTIPLIER);
-            STATE_TIMEOUT = Duration.ofSeconds(4).multipliedBy(HW_MULTIPLIER);
-            SERVICE_RESTART_DELAY = Duration.ofMillis(400).multipliedBy(HW_MULTIPLIER);
-            ADD_PROXY_DELAY = Duration.ofMillis(100).multipliedBy(HW_MULTIPLIER);
+        if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
+            TIMEOUT_BIND = Duration.ofSeconds(8);
+            STATE_TIMEOUT = Duration.ofSeconds(8);
         } else {
-            if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
-                TIMEOUT_BIND = Duration.ofSeconds(8);
-                STATE_TIMEOUT = Duration.ofSeconds(8);
-            } else {
-                TIMEOUT_BIND = Duration.ofSeconds(4);
-                STATE_TIMEOUT = Duration.ofSeconds(4);
-            }
-            SERVICE_RESTART_DELAY = Duration.ofMillis(400);
-            ADD_PROXY_DELAY = Duration.ofMillis(100);
+            TIMEOUT_BIND = Duration.ofSeconds(4);
+            STATE_TIMEOUT = Duration.ofSeconds(4);
         }
     }
 

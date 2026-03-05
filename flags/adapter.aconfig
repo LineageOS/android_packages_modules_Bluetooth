@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "unify_timeout_property"
-    namespace: "bluetooth"
-    description: "Unify the various timeout in the stack to allow slower hardware to still boot"
-    bug: "441576259"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "adapter_suspend_mgmt"
     namespace: "bluetooth"
     description: "Configure the BT adapter in a suspend state to avoid unexpected wake-up"
