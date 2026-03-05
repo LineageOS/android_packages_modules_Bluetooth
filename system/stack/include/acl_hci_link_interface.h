@@ -23,6 +23,7 @@
 #include <cstdint>
 
 #include "hci/class_of_device.h"
+#include "hci/hci_packets.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
@@ -41,10 +42,10 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status);
 void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle, tHCI_MODE mode,
                              uint16_t interval);
 void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
-void btm_read_automatic_flush_timeout_complete(uint8_t* p);
+void btm_read_automatic_flush_timeout_complete(bluetooth::hci::CommandCompleteView view);
 void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle, uint8_t lmp_version,
                                       uint16_t manufacturer, uint16_t lmp_subversion);
-void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len);
+void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view);
 
 void acl_rcv_acl_data(BT_HDR* p_msg);
 void acl_packets_completed(uint16_t handle, uint16_t num_packets);
