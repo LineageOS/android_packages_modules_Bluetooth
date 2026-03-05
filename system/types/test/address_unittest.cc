@@ -171,3 +171,13 @@ TEST(RawAddress, ToStringTest) {
   std::string ret2 = addr.ToRedactedStringForLogging();
   ASSERT_STREQ(ret2.c_str(), redacted_loggable_str.c_str());
 }
+
+TEST(RawAddressUnittest, ToUint64) {
+  RawAddress addr("12:34:56:78:9a:bc");
+  // Big-endian: MSB is index 0 (0x12)
+  EXPECT_EQ(addr.ToUint64(), 0x123456789abcULL);
+}
+
+TEST(RawAddressUnittest, FromUint64) {
+  EXPECT_EQ(RawAddress::FromUint64(0x123456789abcULL), RawAddress("12:34:56:78:9a:bc"));
+}

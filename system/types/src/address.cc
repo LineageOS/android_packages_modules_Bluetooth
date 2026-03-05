@@ -42,6 +42,23 @@ std::string RawAddress::ToRedactedStringForLogging() const {
   return std::format("xx:xx:xx:xx:{:02x}:{:02x}", address[4], address[5]);
 }
 
+uint64_t RawAddress::ToUint64() const {
+  return (static_cast<uint64_t>(address[0]) << 40) | (static_cast<uint64_t>(address[1]) << 32) |
+         (static_cast<uint64_t>(address[2]) << 24) | (static_cast<uint64_t>(address[3]) << 16) |
+         (static_cast<uint64_t>(address[4]) << 8) | (static_cast<uint64_t>(address[5]));
+}
+
+RawAddress RawAddress::FromUint64(uint64_t addr) {
+  return RawAddress(std::array<uint8_t, 6>{
+          static_cast<uint8_t>(addr >> 40),
+          static_cast<uint8_t>(addr >> 32),
+          static_cast<uint8_t>(addr >> 24),
+          static_cast<uint8_t>(addr >> 16),
+          static_cast<uint8_t>(addr >> 8),
+          static_cast<uint8_t>(addr),
+  });
+}
+
 std::optional<RawAddress> RawAddress::FromString(const std::string& from) {
   if (from.length() != 17) {
     return std::nullopt;

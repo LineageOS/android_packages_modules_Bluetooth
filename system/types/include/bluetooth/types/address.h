@@ -76,6 +76,12 @@ public:
   // leftmost 4 bytes masked with "xx", e.g., "xx:xx:xx:xx:ab:cd".
   std::string ToRedactedStringForLogging() const;
 
+  // Returns a 64-bit integer representation of the address in big-endian order.
+  uint64_t ToUint64() const;
+
+  // Creates a RawAddress from a 64-bit integer representation.
+  static RawAddress FromUint64(uint64_t addr);
+
   // Converts |string| to RawAddress and places it in |to|. If |from| does
   // not represent a Bluetooth address, |to| is not modified and this function
   // returns false. Otherwise, it returns true.
