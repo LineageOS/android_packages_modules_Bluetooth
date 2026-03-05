@@ -212,7 +212,6 @@ public:
     uint8_t sniff_offload_support_;
     uint16_t vendor_connection_handle_min_;
     uint16_t vendor_connection_handle_max_;
-    uint16_t big_set_channel_map_classification_support_;
   };
 
   virtual uint32_t GetDabSupportedCodecs() const = 0;

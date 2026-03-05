@@ -339,7 +339,6 @@ typedef struct {
   uint32_t dynamic_audio_buffer_support;
   uint16_t adv_filter_extended_features_mask;
   uint8_t a2dp_offload_v2_support;
-  uint16_t big_set_channel_map_classification_support;
 } tBTM_BLE_VSC_CB;
 
 /* Stored the default/maximum/minimum buffer time for dynamic audio buffer.
