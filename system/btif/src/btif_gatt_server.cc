@@ -109,19 +109,13 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
  *  Static functions
  ******************************************************************************/
 
-#define HAL_CBACK_IN_JNI(P_CB, P_CBACK, ...)                    \
-  do {                                                          \
-    if ((P_CB) && (P_CB)->P_CBACK) {                            \
-      bluetooth::log::verbose("HAL {}->{}", #P_CB, #P_CBACK);   \
-      do_in_jni_thread(BindOnce((P_CB)->P_CBACK, __VA_ARGS__)); \
-    } else {                                                    \
-      ASSERTC(0, "Callback is NULL", 0);                        \
-    }                                                           \
-  } while (0)
-
 static void btapp_gatts_reg_cback(tGATT_STATUS status, tGATT_IF server_if,
                                   const bluetooth::Uuid& uuid) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->register_server_cb, status, server_if, uuid);
+  do_in_jni_thread(BindOnce(
+          [](tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid) {
+            HAL_CBACK(bt_gatt_callbacks, server->register_server_cb, status, server_if, uuid);
+          },
+          status, server_if, uuid));
 }
 
 static void btapp_gatts_dereg_cback(tGATT_STATUS /*status*/, tGATT_IF /*server_if*/) {
@@ -130,33 +124,57 @@ static void btapp_gatts_dereg_cback(tGATT_STATUS /*status*/, tGATT_IF /*server_i
 
 static void btapp_gatts_connect_cback(tGATT_IF server_if, const RawAddress& remote_bda,
                                       tCONN_ID conn_id, tBT_TRANSPORT transport) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->connection_cb, conn_id, server_if,
-                   to_java_transport(transport), true, remote_bda);
+  do_in_jni_thread(BindOnce(
+          [](tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
+             tBT_TRANSPORT transport) {
+            HAL_CBACK(bt_gatt_callbacks, server->connection_cb, conn_id, server_if,
+                      to_java_transport(transport), true, remote_bda);
+          },
+          server_if, remote_bda, conn_id, transport));
 }
 
 static void btapp_gatts_disconnect_cback(tGATT_IF server_if, const RawAddress& remote_bda,
                                          tCONN_ID conn_id, tBT_TRANSPORT transport) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->connection_cb, conn_id, server_if,
-                   to_java_transport(transport), false, remote_bda);
+  do_in_jni_thread(BindOnce(
+          [](tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
+             tBT_TRANSPORT transport) {
+            HAL_CBACK(bt_gatt_callbacks, server->connection_cb, conn_id, server_if,
+                      to_java_transport(transport), false, remote_bda);
+          },
+          server_if, remote_bda, conn_id, transport));
 }
 
 static void btapp_gatts_delete_service_cback(tGATT_STATUS status, tGATT_IF server_if,
                                              uint16_t service_id) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->service_deleted_cb, status, server_if, service_id);
+  do_in_jni_thread(BindOnce(
+          [](tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id) {
+            HAL_CBACK(bt_gatt_callbacks, server->service_deleted_cb, status, server_if, service_id);
+          },
+          status, server_if, service_id));
 }
 
 static void btapp_gatts_read_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
                                                   const RawAddress& remote_bda, uint16_t handle,
                                                   uint16_t offset, bool is_long) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->request_read_characteristic_cb, conn_id, trans_id,
-                   remote_bda, handle, offset, is_long);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda, uint16_t handle,
+             uint16_t offset, bool is_long) {
+            HAL_CBACK(bt_gatt_callbacks, server->request_read_characteristic_cb, conn_id, trans_id,
+                      remote_bda, handle, offset, is_long);
+          },
+          conn_id, trans_id, remote_bda, handle, offset, is_long));
 }
 
 static void btapp_gatts_read_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
                                               const RawAddress& remote_bda, uint16_t handle,
                                               uint16_t offset, bool is_long) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->request_read_descriptor_cb, conn_id, trans_id,
-                   remote_bda, handle, offset, is_long);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda, uint16_t handle,
+             uint16_t offset, bool is_long) {
+            HAL_CBACK(bt_gatt_callbacks, server->request_read_descriptor_cb, conn_id, trans_id,
+                      remote_bda, handle, offset, is_long);
+          },
+          conn_id, trans_id, remote_bda, handle, offset, is_long));
 }
 
 static void btapp_gatts_write_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
@@ -193,41 +211,72 @@ static void btapp_gatts_write_descriptor_cback(tCONN_ID conn_id, uint32_t trans_
 
 static void btapp_gatts_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id,
                                          const RawAddress& remote_bda, tGATT_EXEC_FLAG exec_write) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->request_exec_write_cb, conn_id, trans_id, remote_bda,
-                   exec_write);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+             tGATT_EXEC_FLAG exec_write) {
+            HAL_CBACK(bt_gatt_callbacks, server->request_exec_write_cb, conn_id, trans_id,
+                      remote_bda, exec_write);
+          },
+          conn_id, trans_id, remote_bda, exec_write));
 }
 
 static void btapp_gatts_mtu_changed_cback(tCONN_ID conn_id, uint32_t /*trans_id*/,
                                           const RawAddress& /*remote_bda*/, uint16_t mtu) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->mtu_changed_cb, conn_id, mtu);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint16_t mtu) {
+            HAL_CBACK(bt_gatt_callbacks, server->mtu_changed_cb, conn_id, mtu);
+          },
+          conn_id, mtu));
 }
 
 static void btapp_gatts_conf_cback(tCONN_ID conn_id, tGATT_STATUS status) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->indication_sent_cb, conn_id, status);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, tGATT_STATUS status) {
+            HAL_CBACK(bt_gatt_callbacks, server->indication_sent_cb, conn_id, status);
+          },
+          conn_id, status));
 }
 
 static void btapp_gatts_congestion_cback(tCONN_ID conn_id, bool congested) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->congestion_cb, conn_id, congested);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, bool congested) {
+            HAL_CBACK(bt_gatt_callbacks, server->congestion_cb, conn_id, congested);
+          },
+          conn_id, congested));
 }
 
 static void btapp_gatts_phy_update_cback(tGATT_IF /*server_if*/, tCONN_ID conn_id, uint8_t tx_phy,
                                          uint8_t rx_phy, tGATT_STATUS status) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->phy_updated_cb, conn_id, tx_phy, rx_phy, status);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint8_t tx_phy, uint8_t rx_phy, tGATT_STATUS status) {
+            HAL_CBACK(bt_gatt_callbacks, server->phy_updated_cb, conn_id, tx_phy, rx_phy, status);
+          },
+          conn_id, tx_phy, rx_phy, status));
 }
 
 static void btapp_gatts_conn_update_cback(tGATT_IF /*server_if*/, tCONN_ID conn_id,
                                           uint16_t interval, uint16_t latency, uint16_t timeout,
                                           tGATT_STATUS status) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->conn_updated_cb, conn_id, interval, latency, timeout,
-                   status);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint16_t interval, uint16_t latency, uint16_t timeout,
+             tGATT_STATUS status) {
+            HAL_CBACK(bt_gatt_callbacks, server->conn_updated_cb, conn_id, interval, latency,
+                      timeout, status);
+          },
+          conn_id, interval, latency, timeout, status));
 }
 
 static void btapp_gatts_subrate_chg_cback(tGATT_IF /*server_if*/, tCONN_ID conn_id,
                                           uint16_t subrate_factor, uint16_t latency,
                                           uint16_t cont_num, uint16_t timeout,
                                           tGATT_SUBRATE_MODE subrate_mode, tGATT_STATUS status) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->subrate_chg_cb, conn_id, subrate_factor, latency,
-                   cont_num, timeout, subrate_mode, status);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint16_t subrate_factor, uint16_t latency, uint16_t cont_num,
+             uint16_t timeout, tGATT_SUBRATE_MODE subrate_mode, tGATT_STATUS status) {
+            HAL_CBACK(bt_gatt_callbacks, server->subrate_chg_cb, conn_id, subrate_factor, latency,
+                      cont_num, timeout, subrate_mode, status);
+          },
+          conn_id, subrate_factor, latency, cont_num, timeout, subrate_mode, status));
 }
 
 static void btapp_gatts_req_open_cback(tGATT_STATUS /*status*/) {
@@ -244,8 +293,12 @@ static void btapp_gatts_close_cback(tGATT_STATUS /*status*/) {
 
 static void btapp_gatts_characteristics_unoffloaded_cback(tCONN_ID conn_id, uint32_t session_id,
                                                           tGATT_STATUS status) {
-  HAL_CBACK_IN_JNI(bt_gatt_callbacks, server->characteristics_unoffloaded_cb, conn_id, session_id,
-                   status);
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id, uint32_t session_id, tGATT_STATUS status) {
+            HAL_CBACK(bt_gatt_callbacks, server->characteristics_unoffloaded_cb, conn_id,
+                      session_id, status);
+          },
+          conn_id, session_id, status));
 }
 
 static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
