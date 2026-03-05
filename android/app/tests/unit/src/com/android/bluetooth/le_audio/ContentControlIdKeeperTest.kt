@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,129 +14,119 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_audio;
+package com.android.bluetooth.le_audio
 
-import static com.google.common.truth.Truth.assertThat;
+import android.bluetooth.BluetoothLeAudio
+import android.os.ParcelUuid
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.android.bluetooth.btservice.AdapterService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.util.Optional
+import java.util.UUID
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothLeAudio;
-import android.os.ParcelUuid;
-import android.platform.test.flag.junit.SetFlagsRule;
-import android.util.Pair;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
-/** Test cases for {@link ContentControlIdKeeper}. */
+/** Test cases for [ContentControlIdKeeper]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class ContentControlIdKeeperTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class ContentControlIdKeeperTest {
+    @get:Rule val setFlagsRule = SetFlagsRule()
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private LeAudioService mLeAudioService;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var leAudioService: LeAudioService
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        ContentControlIdKeeper.initForTesting();
+    fun setUp() {
+        doReturn(Optional.of(leAudioService)).whenever(adapterService).leAudioService
+        ContentControlIdKeeper.initForTesting()
     }
 
-    public int testCcidAcquire(ParcelUuid uuid, int context, int expectedListSize) {
-        int ccid = ContentControlIdKeeper.acquireCcid(mAdapterService, uuid, context);
-        assertThat(ccid).isNotEqualTo(ContentControlIdKeeper.CCID_INVALID);
+    fun testCcidAcquire(uuid: ParcelUuid, context: Int, expectedListSize: Int): Int {
+        val ccid = ContentControlIdKeeper.acquireCcid(adapterService, uuid, context)
+        assertThat(ccid).isNotEqualTo(ContentControlIdKeeper.CCID_INVALID)
 
-        verify(mLeAudioService).setCcidInformation(eq(uuid), eq(ccid), eq(context));
-        Map<ParcelUuid, Pair<Integer, Integer>> uuidToCcidContextPair =
-                ContentControlIdKeeper.getUuidToCcidContextPairMap();
-        assertThat(uuidToCcidContextPair).hasSize(expectedListSize);
-        assertThat(uuidToCcidContextPair).containsKey(uuid);
-        assertThat(uuidToCcidContextPair.get(uuid).first).isEqualTo(ccid);
-        assertThat(uuidToCcidContextPair.get(uuid).second).isEqualTo(context);
+        verify(leAudioService).setCcidInformation(eq(uuid), eq(ccid), eq(context))
+        val uuidToCcidContextPair = ContentControlIdKeeper.getUuidToCcidContextPairMap()
+        assertThat(uuidToCcidContextPair).hasSize(expectedListSize)
+        assertThat(uuidToCcidContextPair).containsKey(uuid)
+        assertThat(uuidToCcidContextPair[uuid]?.first).isEqualTo(ccid)
+        assertThat(uuidToCcidContextPair[uuid]?.second).isEqualTo(context)
 
-        return ccid;
+        return ccid
     }
 
-    public void testCcidRelease(ParcelUuid uuid, int ccid, int expectedListSize) {
-        Map<ParcelUuid, Pair<Integer, Integer>> uuidToCcidContextPair =
-                ContentControlIdKeeper.getUuidToCcidContextPairMap();
-        assertThat(uuidToCcidContextPair).containsKey(uuid);
+    fun testCcidRelease(uuid: ParcelUuid, ccid: Int, expectedListSize: Int) {
+        var uuidToCcidContextPair = ContentControlIdKeeper.getUuidToCcidContextPairMap()
+        assertThat(uuidToCcidContextPair).containsKey(uuid)
 
-        ContentControlIdKeeper.releaseCcid(mAdapterService, ccid);
-        uuidToCcidContextPair = ContentControlIdKeeper.getUuidToCcidContextPairMap();
-        assertThat(uuidToCcidContextPair).doesNotContainKey(uuid);
+        ContentControlIdKeeper.releaseCcid(adapterService, ccid)
+        uuidToCcidContextPair = ContentControlIdKeeper.getUuidToCcidContextPairMap()
+        assertThat(uuidToCcidContextPair).doesNotContainKey(uuid)
 
-        verify(mLeAudioService).setCcidInformation(eq(uuid), eq(ccid), eq(0));
+        verify(leAudioService).setCcidInformation(eq(uuid), eq(ccid), eq(0))
 
-        assertThat(uuidToCcidContextPair).hasSize(expectedListSize);
-    }
-
-    @Test
-    public void testAcquireReleaseCcid() {
-        ParcelUuid uuid_one = new ParcelUuid(UUID.randomUUID());
-        ParcelUuid uuid_two = new ParcelUuid(UUID.randomUUID());
-
-        int ccid_one = testCcidAcquire(uuid_one, BluetoothLeAudio.CONTEXT_TYPE_MEDIA, 1);
-        int ccid_two = testCcidAcquire(uuid_two, BluetoothLeAudio.CONTEXT_TYPE_RINGTONE, 2);
-        assertThat(ccid_one).isNotEqualTo(ccid_two);
-
-        testCcidRelease(uuid_one, ccid_one, 1);
-        testCcidRelease(uuid_two, ccid_two, 0);
+        assertThat(uuidToCcidContextPair).hasSize(expectedListSize)
     }
 
     @Test
-    public void testAcquireReleaseCcidForCompoundContext() {
-        ParcelUuid uuid = new ParcelUuid(UUID.randomUUID());
-        int ccid =
-                testCcidAcquire(
-                        uuid,
-                        BluetoothLeAudio.CONTEXT_TYPE_MEDIA
-                                | BluetoothLeAudio.CONTEXT_TYPE_RINGTONE,
-                        1);
-        testCcidRelease(uuid, ccid, 0);
+    fun testAcquireReleaseCcid() {
+        val uuidOne = ParcelUuid(UUID.randomUUID())
+        val uuidTwo = ParcelUuid(UUID.randomUUID())
+
+        val ccidOne = testCcidAcquire(uuidOne, BluetoothLeAudio.CONTEXT_TYPE_MEDIA, 1)
+        val ccidTwo = testCcidAcquire(uuidTwo, BluetoothLeAudio.CONTEXT_TYPE_RINGTONE, 2)
+        assertThat(ccidOne).isNotEqualTo(ccidTwo)
+
+        testCcidRelease(uuidOne, ccidOne, 1)
+        testCcidRelease(uuidTwo, ccidTwo, 0)
     }
 
     @Test
-    public void testAcquireInvalidContext() {
-        ParcelUuid uuid = new ParcelUuid(UUID.randomUUID());
-
-        assertThat(ContentControlIdKeeper.acquireCcid(mAdapterService, uuid, 0))
-                .isEqualTo(ContentControlIdKeeper.CCID_INVALID);
-
-        verify(mLeAudioService, times(0))
-                .setCcidInformation(any(ParcelUuid.class), any(int.class), any(int.class));
-        Map<ParcelUuid, Pair<Integer, Integer>> uuidToCcidContextPair =
-                ContentControlIdKeeper.getUuidToCcidContextPairMap();
-        assertThat(uuidToCcidContextPair).isEmpty();
+    fun testAcquireReleaseCcidForCompoundContext() {
+        val uuid = ParcelUuid(UUID.randomUUID())
+        val ccid =
+            testCcidAcquire(
+                uuid,
+                BluetoothLeAudio.CONTEXT_TYPE_MEDIA or BluetoothLeAudio.CONTEXT_TYPE_RINGTONE,
+                1,
+            )
+        testCcidRelease(uuid, ccid, 0)
     }
 
     @Test
-    public void testAcquireContextMoreThanOnce() {
-        ParcelUuid uuid = new ParcelUuid(UUID.randomUUID());
+    fun testAcquireInvalidContext() {
+        val uuid = ParcelUuid(UUID.randomUUID())
 
-        int ccid_one = testCcidAcquire(uuid, BluetoothLeAudio.CONTEXT_TYPE_MEDIA, 1);
-        int ccid_two = testCcidAcquire(uuid, BluetoothLeAudio.CONTEXT_TYPE_RINGTONE, 1);
+        assertThat(ContentControlIdKeeper.acquireCcid(adapterService, uuid, 0))
+            .isEqualTo(ContentControlIdKeeper.CCID_INVALID)
+
+        verify(leAudioService, times(0))
+            .setCcidInformation(any<ParcelUuid>(), any<Int>(), any<Int>())
+        val uuidToCcidContextPair = ContentControlIdKeeper.getUuidToCcidContextPairMap()
+        assertThat(uuidToCcidContextPair).isEmpty()
+    }
+
+    @Test
+    fun testAcquireContextMoreThanOnce() {
+        val uuid = ParcelUuid(UUID.randomUUID())
+
+        val ccidOne = testCcidAcquire(uuid, BluetoothLeAudio.CONTEXT_TYPE_MEDIA, 1)
+        val ccidTwo = testCcidAcquire(uuid, BluetoothLeAudio.CONTEXT_TYPE_RINGTONE, 1)
 
         // This is implementation specific but verifies that the previous CCID was recycled
-        assertThat(ccid_two).isEqualTo(ccid_one);
+        assertThat(ccidTwo).isEqualTo(ccidOne)
     }
 }
