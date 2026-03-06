@@ -87,6 +87,7 @@ public final class BondStateMachine extends StateMachine {
     static final String KEY_PAIRING_VARIANT = "pairing_variant";
     static final String KEY_PAIRING_CONTEXT = "pairing_context";
     static final String KEY_PAIRING_INITIATOR = "pairing_initiator";
+    static final String KEY_HCI_REASON = "hci_reason";
 
     // Bond retry values
     private static final int BOND_MAX_RETRIES = 30;
@@ -176,6 +177,7 @@ public final class BondStateMachine extends StateMachine {
                     break;
                 case MESSAGE_BOND_STATE_CHANGE:
                     int newState = msg.arg1;
+                    int hciReason = msg.getData().getInt(KEY_HCI_REASON, 0);
                     logI("StateIdle: Bond state change - To " + bondStateToString(newState));
                     // Incoming pairing, transition to bonding state
                     if (newState == BluetoothDevice.BOND_BONDING) {
@@ -200,7 +202,8 @@ public final class BondStateMachine extends StateMachine {
                                 0,
                                 0,
                                 AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
-                                reason);
+                                reason,
+                                hciReason);
                     } else {
                         logW("StateIdle: Bond state change - Invalid state, ignoring.");
                     }
@@ -271,6 +274,7 @@ public final class BondStateMachine extends StateMachine {
                     int pairingAlgorithm = msg.getData().getInt(KEY_PAIRING_ALGORITHM);
                     int pairingVariant = msg.getData().getInt(KEY_PAIRING_VARIANT);
                     int pairingInitiator = msg.getData().getInt(KEY_PAIRING_INITIATOR);
+                    int bondingHciReason = msg.getData().getInt(KEY_HCI_REASON, 0);
 
                     if (newState != BluetoothDevice.BOND_BONDING) {
                         mDevices.remove(dev);
@@ -293,7 +297,8 @@ public final class BondStateMachine extends StateMachine {
                             pairingAlgorithm,
                             pairingVariant,
                             pairingInitiator,
-                            reason);
+                            reason,
+                            bondingHciReason);
                     break;
                 case MESSAGE_PAIRING_REQUEST:
                     if (devProp == null) {
@@ -502,7 +507,8 @@ public final class BondStateMachine extends StateMachine {
                     0,
                     0,
                     AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
-                    BluetoothDevice.UNBOND_REASON_REMOVED);
+                    BluetoothDevice.UNBOND_REASON_REMOVED,
+                    -1);
 
             if (Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(dev)) {
                 // If it's a bond-loss scenario, disconnect the ACL.
@@ -573,7 +579,8 @@ public final class BondStateMachine extends StateMachine {
             int pairingAlgorithm,
             int pairingVariant,
             int pairingInitiator,
-            int reason) {
+            int reason,
+            int hciReason) {
         // If new bond state is invalid, immediately return.
         if (newState < BluetoothDevice.BOND_NONE || newState > BluetoothDevice.BOND_BONDED) {
             logE("handleBondStateChanged: Invalid new state: " + newState);
@@ -636,7 +643,8 @@ public final class BondStateMachine extends StateMachine {
         int deviceType = mRemoteDevices.getType(device);
         int deviceClass = mRemoteDevices.getBluetoothClass(device);
 
-        MetricsLogger.getInstance().logBondStateMachineEvent(device, newState);
+        MetricsLogger.getInstance()
+                .logBondStateMachineEvent(device, newState, reason, hciReason);
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_BOND_STATE_CHANGED,
                 mAdapterService.obfuscateAddress(device),
@@ -796,6 +804,7 @@ public final class BondStateMachine extends StateMachine {
         msg.getData().putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
         msg.getData().putInt(KEY_PAIRING_VARIANT, pairingVariant);
         msg.getData().putInt(KEY_PAIRING_INITIATOR, pairingInitiator);
+        msg.getData().putInt(KEY_HCI_REASON, hciReason);
 
         logI(
                 "bondStateChangeCallback: Status: "
