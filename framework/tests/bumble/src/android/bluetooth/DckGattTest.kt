@@ -318,6 +318,6 @@ class DckGattTest() {
         // CCC DK Specification R3 1.2.0 r14 section 19.2.1.2 Bluetooth Le Pairing
         private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
 
-        @TestParameter private val connected: Boolean = false
+        @TestParameter private var connected: Boolean = false
     }
 }
