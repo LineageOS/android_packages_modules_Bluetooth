@@ -24,6 +24,7 @@ import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_audio.LeAudioPeripheralService
+import com.android.bluetooth.media_audio.sink.MediaAudioServer
 import com.android.bluetooth.profile.ConnectableProfile
 import java.util.HashMap
 
@@ -41,6 +42,13 @@ constructor(
     private var nativeInterface: McpClientNativeInterface =
         initNativeInterface ?: McpClientNativeInterface(nativeCallback)
     private val stateMachines = HashMap<BluetoothDevice, McpClientStateMachine>()
+    // TODO(Flags.mediaAudioServer): Remove ? when flag is cleaned up
+    private val mediaAudioServer: MediaAudioServer? =
+        if (Flags.mediaAudioServer()) {
+            requireNotNull(adapterService.mediaAudioServer.orElse(null))
+        } else {
+            null
+        }
 
     init {
         Log.d(TAG, "init()")
@@ -118,7 +126,14 @@ constructor(
                 return sm
             }
             Log.d(TAG, "Creating a new state machine for $device")
-            sm = McpClientStateMachine(this, device, nativeInterface, handler.looper)
+            sm =
+                McpClientStateMachine(
+                    this,
+                    device,
+                    nativeInterface,
+                    mediaAudioServer,
+                    handler.looper,
+                )
             stateMachines[device] = sm
             return sm
         }
