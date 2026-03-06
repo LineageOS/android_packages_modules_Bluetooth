@@ -74,6 +74,7 @@ rust_test {
         },
     },
     rustlibs: [
+        "libgoogletest_rust",
         "libmockall",
     ],
 }

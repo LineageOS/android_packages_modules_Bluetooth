@@ -180,3 +180,155 @@ impl PeriodicSyncCallbacks {
         sync_registry.broadcast_event(PeriodicSyncEvent::BigInfoReport { sync_handle, encrypted });
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use googletest::prelude::*;
+    use std::time::Duration;
+    use tokio::sync::{mpsc, oneshot};
+    use tokio::time::timeout;
+
+    const SUBSCRIBER_EVENT_BUFFER: usize = 10;
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_periodic_sync_started_broadcasts_event_and_updates_registry_on_success() {
+        // Verify that when periodic sync is successfully established, the manager updates its
+        // active handle registry, fulfills the pending request, and broadcasts a notification event.
+        let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
+        let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+
+        let (sender, receiver) = oneshot::channel();
+        sync_registry.lock().unwrap().pending_requests.start_sync.insert(123, sender);
+
+        let address = Address::from_be_bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
+        callbacks.on_periodic_sync_started(
+            123,
+            0, // success
+            1, // handle
+            2, // sid
+            AddressType::RandomDeviceAddress.into(),
+            address,
+            3, // phy
+            4, // interval
+        );
+
+        expect_that!(
+            receiver.await,
+            ok(ok(matches_pattern!(&PeriodicSyncInfo {
+                reg_id: eq(123),
+                status: eq(HciStatus::Success),
+                sync_handle: eq(1),
+                advertising_sid: eq(2),
+                advertiser_addr_type: eq(AddressType::RandomDeviceAddress),
+                advertiser_addr: eq(address),
+                phy: eq(3),
+                sync_interval: eq(4),
+            })))
+        );
+        expect_that!(sync_registry.lock().unwrap().active_handles.contains(&1), is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_periodic_sync_started_reports_error_on_failure() {
+        // Verify that if periodic sync fails to start, the manager reports the HCI error to the
+        // requester and broadcasts a notification event without updating the active handles.
+        let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
+        let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+
+        let (sender, receiver) = oneshot::channel();
+        sync_registry.lock().unwrap().pending_requests.start_sync.insert(456, sender);
+
+        callbacks.on_periodic_sync_started(
+            456,
+            HciStatus::UnknownHciCommand.into(), // failure
+            0,
+            0,
+            AddressType::PublicDeviceAddress.into(),
+            Address::default(),
+            0,
+            0,
+        );
+
+        expect_that!(
+            receiver.await,
+            ok(err(matches_pattern!(&PeriodicSyncError::HciError(eq(
+                HciStatus::UnknownHciCommand
+            )))))
+        );
+        expect_that!(sync_registry.lock().unwrap().active_handles.is_empty(), is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_periodic_sync_report_broadcasts_event_with_received_data() {
+        // Verify that receiving a periodic advertising report correctly triggers a broadcast
+        // event containing the report's metadata and payload.
+        let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
+        let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
+
+        let data = vec![1, 2, 3];
+        callbacks.on_periodic_sync_report(10, 20, -50, DataStatus::Complete.into(), &data);
+
+        expect_that!(
+            timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
+            ok(some(matches_pattern!(PeriodicSyncEvent::PaReport {
+                sync_handle: eq(&10),
+                tx_power: eq(&20),
+                rssi: eq(&-50),
+                data_status: eq(&DataStatus::Complete),
+                data: eq(&vec![1, 2, 3]),
+            })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_periodic_sync_lost_removes_handle_and_broadcasts_event() {
+        // Verify that when synchronization is lost, the manager removes the handle from it s
+        // active set and broadcasts a lost event to all subscribers.
+        let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
+        sync_registry.lock().unwrap().active_handles.insert(99);
+        let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
+
+        callbacks.on_periodic_sync_lost(99);
+
+        expect_that!(sync_registry.lock().unwrap().active_handles.is_empty(), is_true());
+
+        expect_that!(
+            timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
+            ok(some(matches_pattern!(&PeriodicSyncEvent::PaSyncLost { sync_handle: eq(99) })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_big_info_report_broadcasts_event_with_encryption_status() {
+        // Verify that receiving a BIG Info report correctly triggers a broadcast event with the
+        // specified synchronization handle and encryption status.
+        let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
+        let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
+
+        callbacks.on_big_info_report(88, true);
+
+        expect_that!(
+            timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
+            ok(some(matches_pattern!(&PeriodicSyncEvent::BigInfoReport {
+                sync_handle: eq(88),
+                encrypted: eq(true)
+            })))
+        );
+    }
+}
