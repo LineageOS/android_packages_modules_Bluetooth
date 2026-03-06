@@ -517,12 +517,13 @@ public:
     auto uuid = characteristics_[handle].uuid_;
     auto vendor_specific_characteristic = GetVendorSpecificCharacteristic(uuid);
     if (vendor_specific_characteristic != nullptr) {
-      tGATT_WRITE_REQ write_req;
-      write_req.handle = handle;
-      write_req.offset = offset;
-      write_req.len = len;
-      write_req.need_rsp = need_rsp;
-      write_req.is_prep = is_prep;
+      tGATT_WRITE_REQ write_req = {
+          .handle = handle,
+          .offset = offset,
+          .len = len,
+          .need_rsp = need_rsp,
+          .is_prep = is_prep,
+      };
       memcpy(write_req.value, value, len);
       WriteVendorSpecificCharacteristic(vendor_specific_characteristic, conn_id, trans_id,
                                         remote_bda, &write_req, std::move(p_msg));
@@ -542,12 +543,13 @@ public:
         if (need_rsp) {
           BTA_GATTS_SendRsp(conn_id, trans_id, GATT_SUCCESS, std::move(p_msg));
         }
-        tGATT_WRITE_REQ write_req;
-        write_req.handle = handle;
-        write_req.offset = offset;
-        write_req.len = len;
-        write_req.need_rsp = need_rsp;
-        write_req.is_prep = is_prep;
+        tGATT_WRITE_REQ write_req = {
+          .handle = handle,
+          .offset = offset,
+          .len = len,
+          .need_rsp = need_rsp,
+          .is_prep = is_prep,
+        };
         memcpy(write_req.value, value, len);
         HandleControlPoint(tracker, &write_req);
       } break;
@@ -560,7 +562,7 @@ public:
 
   void WriteVendorSpecificCharacteristic(
           VendorSpecificCharacteristic* vendor_specific_characteristic, tCONN_ID conn_id,
-          uint32_t trans_id, const RawAddress& remote_bda, tGATT_WRITE_REQ* write_req,
+          uint32_t trans_id, const RawAddress& remote_bda, const tGATT_WRITE_REQ* write_req,
           std::unique_ptr<tGATTS_RSP> p_msg) {
     log::debug("uuid {}", vendor_specific_characteristic->characteristicUuid_);
     uint16_t len = write_req->len;
@@ -629,9 +631,7 @@ public:
       ccc_on_demand_temp = ccc_value;
     }
     if (ccc_real_time_temp != GATT_CLT_CONFIG_NONE && ccc_on_demand_temp != GATT_CLT_CONFIG_NONE) {
-      log::warn(
-              "Client Characteristic Configuration Descriptor Improperly "
-              "Configured");
+      log::warn("Client Characteristic Configuration Descriptor Improperly Configured");
       BTA_GATTS_SendRsp(conn_id, trans_id, GATT_CCC_CFG_ERR, std::move(p_msg));
       return;
     }
