@@ -3602,7 +3602,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SYNC_HANDLE_TO_DEVICE_FIX)
     public void onSyncEstablished_forSameDevice_doesNotRemoveOtherSyncs() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();

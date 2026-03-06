@@ -771,13 +771,7 @@ public class BassClientService extends ConnectableProfile {
             }
             if (syncHandle != BassConstants.INVALID_SYNC_HANDLE
                     && syncHandle != BassConstants.PENDING_SYNC_HANDLE) {
-                if (!Flags.leaudioBroadcastSyncHandleToDeviceFix()) {
-                    mSyncHandleToDeviceMap
-                            .entrySet()
-                            .removeIf(entry -> entry.getValue().equals(device));
-                } else {
-                    mSyncHandleToDeviceMap.remove(BassConstants.PENDING_SYNC_HANDLE);
-                }
+                mSyncHandleToDeviceMap.remove(BassConstants.PENDING_SYNC_HANDLE);
                 mSyncHandleToDeviceMap.put(syncHandle, device);
                 paRes.updateSyncHandle(syncHandle);
                 if (paRes.getBroadcastId() != LeAudioConstants.INVALID_BROADCAST_ID) {
