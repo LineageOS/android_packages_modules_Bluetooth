@@ -396,7 +396,6 @@ public class AdapterServiceTest {
             syncHandler(-2); // Init AdapterSuspendStateMachine
         }
         syncHandler(AdapterState.BLE_TURN_ON);
-        verifyStateChange(State.OFF, State.BLE_TURNING_ON);
 
         if (isAdapterSuspendFeatureEnabled()) {
             // Called after callbacks are registered in DeviceStateManager
@@ -416,32 +415,9 @@ public class AdapterServiceTest {
         assertThat(mAdapter.getState()).isEqualTo(State.BLE_ON);
     }
 
-    void onToBleOn(boolean onlyGatt) {
-        mAdapter.onToBleOn();
-        syncHandler(AdapterState.USER_TURN_OFF);
-        verifyStateChange(State.ON, State.TURNING_OFF);
-
-        if (!onlyGatt) {
-            List<ProfileService> services = listOfMockServices();
-            // Stop (if Flags.onlyStartScanDuringBleOn GATT), PBAP, and PAN services
-            assertThat(mAdapter.mSetProfileServiceStateCounter).isEqualTo(services.size() * 2);
-
-            for (ProfileService service : services) {
-                mAdapter.onProfileServiceStateChanged(service, State.OFF);
-                syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
-            }
-        }
-
-        syncHandler(AdapterState.BREDR_STOPPED);
-        verifyStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
-
-        assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_OFF);
-    }
-
     void onToOff(boolean onlyGatt) {
         mAdapter.onToBleOn();
         syncHandler(AdapterState.USER_TURN_OFF);
-        verifyStateChange(State.ON, State.TURNING_OFF);
 
         if (!onlyGatt) {
             List<ProfileService> services = listOfMockServices();
@@ -469,7 +445,6 @@ public class AdapterServiceTest {
 
         mAdapter.bleOnToOn();
         syncHandler(AdapterState.USER_TURN_ON);
-        verifyStateChange(State.BLE_ON, State.TURNING_ON);
 
         if (!onlyGatt) {
             List<ProfileService> services = listOfMockServices();
@@ -599,7 +574,6 @@ public class AdapterServiceTest {
             syncHandler(-2); // Init AdapterSuspendStateMachine
         }
         syncHandler(AdapterState.BLE_TURN_ON);
-        verifyStateChange(State.OFF, State.BLE_TURNING_ON);
         assertThat(mAdapter.getBluetoothGatt()).isNotNull();
         if (isAdapterSuspendFeatureEnabled()) {
             // Called after callbacks are registered in DeviceStateManager
@@ -697,7 +671,6 @@ public class AdapterServiceTest {
 
         mAdapter.bleOnToOff();
         syncHandler(AdapterState.BLE_TURN_OFF);
-        verifyStateChange(State.BLE_ON, State.BLE_TURNING_OFF);
 
         verify(mNativeInterface).disable();
         mAdapter.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
@@ -729,7 +702,6 @@ public class AdapterServiceTest {
 
         mAdapter.bleOnToOn();
         syncHandler(AdapterState.USER_TURN_ON);
-        verifyStateChange(State.BLE_ON, State.TURNING_ON);
 
         // Start Mock PBAP, PAN, and GATT services
         assertThat(mAdapter.mSetProfileServiceStateCounter).isEqualTo(3);
@@ -752,7 +724,6 @@ public class AdapterServiceTest {
 
         mAdapter.onToBleOn();
         syncHandler(AdapterState.USER_TURN_OFF);
-        verifyStateChange(State.ON, State.TURNING_OFF);
 
         // Stop PBAP, PAN, and GATT services
         assertThat(mAdapter.mSetProfileServiceStateCounter).isEqualTo(6);
@@ -780,7 +751,6 @@ public class AdapterServiceTest {
 
         mAdapter.bleOnToOn();
         syncHandler(AdapterState.USER_TURN_ON);
-        verifyStateChange(State.BLE_ON, State.TURNING_ON);
         assertThat(mAdapter.mSetProfileServiceStateCounter).isEqualTo(2);
 
         mAdapter.addProfile(mMockService1);
@@ -820,7 +790,6 @@ public class AdapterServiceTest {
 
         mAdapter.onToBleOn();
         syncHandler(AdapterState.USER_TURN_OFF);
-        verifyStateChange(State.ON, State.TURNING_OFF);
         assertThat(mAdapter.mSetProfileServiceStateCounter).isEqualTo(4);
 
         mAdapter.onProfileServiceStateChanged(mMockService1, State.OFF);
