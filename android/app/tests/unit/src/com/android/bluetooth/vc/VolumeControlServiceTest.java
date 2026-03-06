@@ -607,7 +607,6 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VCP_STORE_VOLUME_PER_STREAM_TYPE)
     public void volumeCache_multipleDevicesAndStreamTypes() {
         int group1_mediaVolume = 5;
         int group1_callVolume = 10;
@@ -864,7 +863,6 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VCP_STORE_VOLUME_PER_STREAM_TYPE)
     public void muteCache_multipleDevicesAndStreamTypes() {
         BluetoothDevice device1_g2 = getRealDevice(101);
         BluetoothDevice device2_g2 = getRealDevice(102);
