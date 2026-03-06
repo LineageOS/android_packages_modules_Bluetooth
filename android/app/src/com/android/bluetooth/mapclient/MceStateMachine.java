@@ -873,43 +873,33 @@ class MceStateMachine extends StateMachine {
         private void processMessageListing(RequestGetMessagesListing request) {
             Log.i(
                     TAG,
-                    mDevice
-                            + " [Connected]: Received Message Listing, listing="
-                            + (request != null
-                                    ? (request.getList() != null
-                                            ? String.valueOf(request.getList().size())
-                                            : "null list")
-                                    : "null request"));
+                    mDevice + " [Connected]: Received Message Listing=" + request.getList().size());
 
             List<com.android.bluetooth.mapclient.Message> messageListing = request.getList();
-            if (messageListing != null) {
-                // Message listings by spec arrive ordered newest first but we wish to broadcast as
-                // oldest first. Iterate in reverse order so we initiate requests oldest first.
-                for (int i = messageListing.size() - 1; i >= 0; i--) {
-                    com.android.bluetooth.mapclient.Message msg = messageListing.get(i);
-                    Log.d(
+            // Message listings by spec arrive ordered newest first but we wish to broadcast as
+            // oldest first. Iterate in reverse order so we initiate requests oldest first.
+            for (int i = messageListing.size() - 1; i >= 0; i--) {
+                com.android.bluetooth.mapclient.Message msg = messageListing.get(i);
+                Log.d(
+                        TAG,
+                        mDevice + " [Connected]: fetch message content, handle=" + msg.getHandle());
+                // A message listing coming from the server should always have up to date data
+                if (msg.getDateTime() == null) {
+                    Log.w(
                             TAG,
-                            mDevice
-                                    + " [Connected]: fetch message content, handle="
-                                    + msg.getHandle());
-                    // A message listing coming from the server should always have up to date data
-                    if (msg.getDateTime() == null) {
-                        Log.w(
-                                TAG,
-                                "message with handle "
-                                        + msg.getHandle()
-                                        + " has a null datetime, ignoring");
-                        continue;
-                    }
-                    mMessages.put(
-                            msg.getHandle(),
-                            new MessageMetadata(
-                                    msg.getHandle(),
-                                    msg.getDateTime().getTime(),
-                                    msg.isRead(),
-                                    MESSAGE_SEEN));
-                    getMessage(msg.getHandle());
+                            "message with handle "
+                                    + msg.getHandle()
+                                    + " has a null datetime, ignoring");
+                    continue;
                 }
+                mMessages.put(
+                        msg.getHandle(),
+                        new MessageMetadata(
+                                msg.getHandle(),
+                                msg.getDateTime().getTime(),
+                                msg.isRead(),
+                                MESSAGE_SEEN));
+                getMessage(msg.getHandle());
             }
         }
 

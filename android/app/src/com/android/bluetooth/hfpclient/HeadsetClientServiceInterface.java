@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.hfpclient;
 
+import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.util.Log;
@@ -92,7 +93,7 @@ public class HeadsetClientServiceInterface {
         return withHeadsetClient(hC -> hC.disconnectAudio(device), false);
     }
 
-    public Set<Integer> getCurrentAgFeatures(BluetoothDevice device) {
+    public @Nullable Set<Integer> getCurrentAgFeatures(BluetoothDevice device) {
         return withHeadsetClient(hC -> hC.getCurrentAgFeatures(device), null);
     }
 

@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.media.AudioManager;
@@ -1861,7 +1862,8 @@ class AvrcpControllerStateMachine extends StateMachine {
             };
         }
 
-        private static List<MediaSource.BrowseNode> toBrowseNodeList(List<AvrcpItem> items) {
+        private static @Nullable List<MediaSource.BrowseNode> toBrowseNodeList(
+                List<AvrcpItem> items) {
             if (items == null) {
                 return null;
             }
