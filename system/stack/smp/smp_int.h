@@ -35,7 +35,6 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/smp_api_types.h"
-#include "stack/btm/btm_security_record.h"
 
 typedef enum : uint16_t {
   SMP_METRIC_COMMAND_LE_FLAG = 0x0000,
