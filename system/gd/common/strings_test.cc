@@ -160,59 +160,59 @@ TEST(StringsTest, from_hex_string_test) {
 }
 
 TEST(StringsTest, int64_from_and_to_string_test) {
-  ASSERT_THAT(Int64FromString("42"), Optional(Eq(int64_t(42))));
-  ASSERT_THAT(Int64FromString("-42"), Optional(Eq(int64_t(-42))));
-  ASSERT_THAT(Int64FromString("0"), Optional(Eq(int64_t(0))));
-  ASSERT_FALSE(Int64FromString(""));
+  EXPECT_THAT(Int64FromString("42"), Optional(Eq(int64_t(42))));
+  EXPECT_THAT(Int64FromString("-42"), Optional(Eq(int64_t(-42))));
+  EXPECT_THAT(Int64FromString("0"), Optional(Eq(int64_t(0))));
+  EXPECT_FALSE(Int64FromString(""));
   // only base 10 is supported
-  ASSERT_FALSE(Int64FromString("0x42ab"));
-  ASSERT_FALSE(Int64FromString("-0x42"));
+  EXPECT_FALSE(Int64FromString("0x42ab"));
+  EXPECT_FALSE(Int64FromString("-0x42"));
   // floating point not supported
-  ASSERT_FALSE(Int64FromString("42.0"));
-  ASSERT_FALSE(Int64FromString("-42.0"));
-  ASSERT_FALSE(Int64FromString("42abc"));
-  ASSERT_FALSE(Int64FromString(""));
+  EXPECT_FALSE(Int64FromString("42.0"));
+  EXPECT_FALSE(Int64FromString("-42.0"));
+  EXPECT_FALSE(Int64FromString("42abc"));
+  EXPECT_FALSE(Int64FromString(""));
   // INT32_MAX + 1
-  ASSERT_THAT(Int64FromString("2147483648"), Optional(Eq(int64_t(2147483648))));
-  ASSERT_THAT(ToString(int64_t(2147483648)), StrEq("2147483648"));
+  EXPECT_THAT(Int64FromString("2147483648"), Optional(Eq(int64_t(2147483648))));
+  EXPECT_THAT(ToString(int64_t(2147483648)), StrEq("2147483648"));
   // INT32_MIN - 1
-  ASSERT_THAT(Int64FromString("-2147483649"), Optional(Eq(int64_t(-2147483649))));
-  ASSERT_THAT(ToString(int64_t(-2147483649)), StrEq("-2147483649"));
+  EXPECT_THAT(Int64FromString("-2147483649"), Optional(Eq(int64_t(-2147483649))));
+  EXPECT_THAT(ToString(int64_t(-2147483649)), StrEq("-2147483649"));
   // INT64_MAX
-  ASSERT_THAT(Int64FromString("9223372036854775807"), Optional(Eq(int64_t(9223372036854775807))));
-  ASSERT_THAT(ToString(int64_t(9223372036854775807)), StrEq("9223372036854775807"));
+  EXPECT_THAT(Int64FromString("9223372036854775807"), Optional(Eq(int64_t(9223372036854775807))));
+  EXPECT_THAT(ToString(int64_t(9223372036854775807)), StrEq("9223372036854775807"));
   // INT64_MAX+1
-  ASSERT_FALSE(Int64FromString("9223372036854775808"));
+  EXPECT_FALSE(Int64FromString("9223372036854775808"));
   // INT64_MIN
-  ASSERT_THAT(Int64FromString("-9223372036854775808"),
+  EXPECT_THAT(Int64FromString("-9223372036854775808"),
               Optional(Eq(int64_t(-9223372036854775807LL - 1))));
-  ASSERT_THAT(ToString(int64_t(-9223372036854775807LL - 1)), StrEq("-9223372036854775808"));
+  EXPECT_THAT(ToString(int64_t(-9223372036854775807LL - 1)), StrEq("-9223372036854775808"));
   // INT64_MIN-1
-  ASSERT_FALSE(Int64FromString("-9223372036854775809"));
+  EXPECT_FALSE(Int64FromString("-9223372036854775809"));
 }
 
 TEST(StringsTest, uint64_from_and_to_string_test) {
-  ASSERT_THAT(Uint64FromString("42"), Optional(Eq(uint64_t(42))));
-  ASSERT_THAT(Uint64FromString("0"), Optional(Eq(uint64_t(0))));
-  ASSERT_FALSE(Uint64FromString(""));
+  EXPECT_THAT(Uint64FromString("42"), Optional(Eq(uint64_t(42))));
+  EXPECT_THAT(Uint64FromString("0"), Optional(Eq(uint64_t(0))));
+  EXPECT_FALSE(Uint64FromString(""));
   // only base 10 is supported
-  ASSERT_FALSE(Uint64FromString("0x42ab"));
+  EXPECT_FALSE(Uint64FromString("0x42ab"));
   // only positive number is supported
-  ASSERT_FALSE(Uint64FromString("-42"));
+  EXPECT_FALSE(Uint64FromString("-42"));
   // floating point not supported
-  ASSERT_FALSE(Uint64FromString("42.0"));
-  ASSERT_FALSE(Uint64FromString("-42.0"));
-  ASSERT_FALSE(Uint64FromString("42abc"));
-  ASSERT_FALSE(Uint64FromString(""));
+  EXPECT_FALSE(Uint64FromString("42.0"));
+  EXPECT_FALSE(Uint64FromString("-42.0"));
+  EXPECT_FALSE(Uint64FromString("42abc"));
+  EXPECT_FALSE(Uint64FromString(""));
   // UINT32_MAX + 1
-  ASSERT_THAT(Uint64FromString("4294967295"), Optional(Eq(uint64_t(4294967295))));
-  ASSERT_THAT(ToString(uint64_t(4294967295)), StrEq("4294967295"));
+  EXPECT_THAT(Uint64FromString("4294967295"), Optional(Eq(uint64_t(4294967295))));
+  EXPECT_THAT(ToString(uint64_t(4294967295)), StrEq("4294967295"));
   // UINT64_MAX
-  ASSERT_THAT(Uint64FromString("18446744073709551615"),
+  EXPECT_THAT(Uint64FromString("18446744073709551615"),
               Optional(Eq(uint64_t(18446744073709551615ULL))));
-  ASSERT_THAT(ToString(uint64_t(18446744073709551615ULL)), StrEq("18446744073709551615"));
+  EXPECT_THAT(ToString(uint64_t(18446744073709551615ULL)), StrEq("18446744073709551615"));
   // UINT64_MAX+1
-  ASSERT_FALSE(Uint64FromString("18446744073709551616"));
+  EXPECT_FALSE(Uint64FromString("18446744073709551616"));
 }
 
 TEST(StringsTest, bool_from_and_to_string_test) {
