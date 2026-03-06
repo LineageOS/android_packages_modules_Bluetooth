@@ -1480,7 +1480,7 @@ public class AdapterService extends Service {
      * Notify AdapterService that a ProfileService has started or stopped.
      *
      * @param profile the service being removed.
-     * @param state {@link BluetoothAdapter#STATE_ON} or {@link BluetoothAdapter#STATE_OFF}
+     * @param state {@link State#ON} or {@link State#OFF}
      */
     @VisibleForTesting
     void onProfileServiceStateChanged(ProfileService profile, int state) {
@@ -3265,10 +3265,10 @@ public class AdapterService extends Service {
      */
     public void deviceUuidsUpdated(BluetoothDevice device, ParcelUuid[] uuids, boolean success) {
         int state = getState();
-        if (state != BluetoothAdapter.STATE_ON
-                && state != BluetoothAdapter.STATE_BLE_ON
-                && state != BluetoothAdapter.STATE_TURNING_ON
-                && state != BluetoothAdapter.STATE_BLE_TURNING_ON) {
+        if (state != State.ON
+                && state != State.BLE_ON
+                && state != State.TURNING_ON
+                && state != State.BLE_TURNING_ON) {
             // Silently dropping UUIDs and with no intent
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
             Log.e(
@@ -3286,7 +3286,7 @@ public class AdapterService extends Service {
             sendUuidsInternal(device, uuids);
         }
 
-        if (state != BluetoothAdapter.STATE_ON) {
+        if (state != State.ON) {
             MetricsLogger.getInstance()
                     .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
             Log.w(
