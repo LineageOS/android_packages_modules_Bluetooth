@@ -72,7 +72,7 @@ public:
   virtual void OnFilterParamSetup(uint8_t available_spaces, ApcfAction action, uint8_t status) = 0;
   virtual void OnFilterConfigCallback(ApcfFilterType filter_type, uint8_t available_spaces,
                                       ApcfAction action, uint8_t status) = 0;
-  virtual void OnPeriodicSyncStarted(int request_id, uint8_t status, uint16_t sync_handle,
+  virtual void OnPeriodicSyncStarted(int reg_id, uint8_t status, uint16_t sync_handle,
                                      uint8_t advertising_sid, AddressWithType address_with_type,
                                      uint8_t phy, uint16_t interval) = 0;
   virtual void OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power, int8_t rssi,

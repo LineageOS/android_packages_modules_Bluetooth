@@ -49,7 +49,7 @@ struct PeriodicSyncTransferStates {
 };
 
 struct PeriodicSyncStates {
-  int request_id;
+  int reg_id;
   uint8_t advertiser_sid;
   AddressWithType address_with_type;
   uint16_t sync_handle;
@@ -94,7 +94,7 @@ public:
 
     if (periodic_syncs_.size() >= kMaxSyncTransactions) {
       int status = static_cast<int>(ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES);
-      callbacks_->OnPeriodicSyncStarted(request.request_id, status, 0, request.advertiser_sid,
+      callbacks_->OnPeriodicSyncStarted(request.reg_id, status, 0, request.advertiser_sid,
                                         request.address_with_type, 0, 0);
       return;
     }
@@ -240,7 +240,7 @@ public:
         AdvanceRequest();
         return;
       }
-      callbacks_->OnPeriodicSyncStarted(sync->request_id, (uint8_t)status, 0, sync->advertiser_sid,
+      callbacks_->OnPeriodicSyncStarted(sync->reg_id, (uint8_t)status, 0, sync->advertiser_sid,
                                         request.address_with_type, 0, 0);
       periodic_syncs_.erase(sync);
       AdvanceRequest();
@@ -354,7 +354,7 @@ public:
     if (periodic_sync->sync_state == PERIODIC_SYNC_STATE_PENDING) {
       periodic_sync->sync_handle = event_view.GetSyncHandle();
       periodic_sync->sync_state = PERIODIC_SYNC_STATE_ESTABLISHED;
-      callbacks_->OnPeriodicSyncStarted(periodic_sync->request_id, (uint8_t)event_view.GetStatus(),
+      callbacks_->OnPeriodicSyncStarted(periodic_sync->reg_id, (uint8_t)event_view.GetStatus(),
                                         event_view.GetSyncHandle(), event_view.GetAdvertisingSid(),
                                         address_with_type, (uint16_t)event_view.GetAdvertiserPhy(),
                                         event_view.GetPeriodicAdvertisingInterval());
@@ -470,7 +470,7 @@ public:
       return;
     }
     int status = static_cast<int>(ErrorCode::ADVERTISING_TIMEOUT);
-    callbacks_->OnPeriodicSyncStarted(sync->request_id, status, 0, sync->advertiser_sid,
+    callbacks_->OnPeriodicSyncStarted(sync->reg_id, status, 0, sync->advertiser_sid,
                                       request.address_with_type, 0, 0);
     periodic_syncs_.erase(sync);
   }
