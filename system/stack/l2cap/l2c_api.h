@@ -24,7 +24,6 @@
 #include <stdbool.h>
 
 #include <cstdint>
-#include <vector>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"

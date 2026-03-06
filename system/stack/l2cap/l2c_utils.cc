@@ -46,7 +46,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
-#include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cap_interface.h"

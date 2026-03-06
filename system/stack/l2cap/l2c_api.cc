@@ -33,7 +33,6 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
 #include "hal/snoop_logger.h"
 #include "hci/controller.h"

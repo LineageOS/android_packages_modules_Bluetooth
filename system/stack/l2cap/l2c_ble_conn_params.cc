@@ -37,7 +37,6 @@
 #include "internal_include/stack_config.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
-#include "osi/include/properties.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_api_types.h"
