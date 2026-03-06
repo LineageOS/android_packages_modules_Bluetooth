@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "vcp_skip_redundant_operation_writes"
-    namespace: "bluetooth"
-    description: "Skip redundant volume/mute writes to avoid pending operations"
-    bug: "448577346"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "vcp_notify_volume_on_each_device_connection"
     namespace: "bluetooth"
     description: "On each device connection, notify its volume to registered clients"
