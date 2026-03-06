@@ -97,7 +97,6 @@ public class AdapterProperties {
             new CompletableFuture<>();
 
     private volatile int mConnectionState = BluetoothAdapter.STATE_DISCONNECTED;
-    private volatile int mState = BluetoothAdapter.STATE_OFF;
     private int mMaxConnectedAudioDevices = 1;
     private boolean mA2dpOffloadEnabled = false;
 
@@ -240,15 +239,6 @@ public class AdapterProperties {
 
     int getConnectionState() {
         return mConnectionState;
-    }
-
-    void setState(int state) {
-        debugLog("Setting state to " + BluetoothAdapter.nameForState(state));
-        mState = state;
-    }
-
-    int getState() {
-        return mState;
     }
 
     int getNumOfAdvertisementInstancesSupported() {
@@ -910,11 +900,7 @@ public class AdapterProperties {
     }
 
     void onBluetoothReady() {
-        debugLog(
-                "onBluetoothReady, state="
-                        + BluetoothAdapter.nameForState(getState())
-                        + ", ScanMode="
-                        + mScanMode);
+        debugLog("onBluetoothReady ScanMode=" + mScanMode);
 
         synchronized (mObject) {
             // Reset adapter and profile connection states
@@ -964,7 +950,6 @@ public class AdapterProperties {
         writer.println("  " + "Name: " + mService.getName());
         writer.println("  " + "Address: " + Utils.getRedactedAddressStringFromByte(mAddress));
         writer.println("  " + "ConnectionState: " + dumpConnectionState(getConnectionState()));
-        writer.println("  " + "State: " + BluetoothAdapter.nameForState(getState()));
         writer.println("  " + "MaxConnectedAudioDevices: " + getMaxConnectedAudioDevices());
         writer.println("  " + "A2dpOffloadEnabled: " + mA2dpOffloadEnabled);
         writer.println("  " + "Discovering: " + mService.isDiscovering());
