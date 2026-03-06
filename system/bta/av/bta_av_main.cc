@@ -1046,6 +1046,12 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB* p_scb, BT_HDR* p_buf) {
 }
 
 static void bta_av_non_state_machine_event(uint16_t event, tBTA_AV_DATA* p_data) {
+  if (event == BTA_AV_CI_SRC_DATA_READY_EVT) {
+    log::verbose("AV nsm event=0x{:x}({})", event, bta_av_evt_code(event));
+  } else {
+    log::debug("AV nsm event=0x{:x}({})", event, bta_av_evt_code(event));
+  }
+
   switch (event) {
     case BTA_AV_API_ENABLE_EVT:
       bta_av_api_enable(p_data);
@@ -1169,14 +1175,11 @@ bool bta_av_hdl_event(const BT_HDR_RIGID* p_msg) {
     return true; /* to free p_msg */
   }
   if (p_msg->event >= BTA_AV_FIRST_NSM_EVT) {
-    log::debug("AV nsm event=0x{:x}({})", p_msg->event, bta_av_evt_code(p_msg->event));
     bta_av_non_state_machine_event(p_msg->event, (tBTA_AV_DATA*)p_msg);
   } else if (p_msg->event >= BTA_AV_FIRST_SM_EVT && p_msg->event <= BTA_AV_LAST_SM_EVT) {
-    log::debug("AV sm event=0x{:x}({})", p_msg->event, bta_av_evt_code(p_msg->event));
     /* state machine events */
     bta_av_sm_execute(&bta_av_cb, p_msg->event, (tBTA_AV_DATA*)p_msg);
   } else {
-    log::debug("bta_handle=0x{:x}", p_msg->layer_specific);
     /* stream state machine events */
     bta_av_ssm_execute(bta_av_hndl_to_scb(p_msg->layer_specific), p_msg->event,
                        (tBTA_AV_DATA*)p_msg);

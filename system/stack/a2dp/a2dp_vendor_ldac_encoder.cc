@@ -343,7 +343,7 @@ void a2dp_vendor_ldac_send_frames(uint64_t timestamp_us) {
   uint8_t nb_iterations = 0;
 
   a2dp_ldac_get_num_frame_iteration(&nb_iterations, &nb_frame, timestamp_us);
-  log::debug("Sending {} frames per iteration, {} iterations", nb_frame, nb_iterations);
+  log::verbose("Sending {} frames per iteration, {} iterations", nb_frame, nb_iterations);
   if (nb_frame == 0) {
     return;
   }
@@ -379,7 +379,7 @@ static void a2dp_ldac_get_num_frame_iteration(uint8_t* num_of_iterations, uint8_
   uint32_t pcm_bytes_per_frame = A2DP_LDAC_MEDIA_BYTES_PER_FRAME *
                                  a2dp_ldac_encoder_cb.feeding_params.channel_count *
                                  a2dp_ldac_encoder_cb.feeding_params.bits_per_sample / 8;
-  log::debug("pcm_bytes_per_frame {}", pcm_bytes_per_frame);
+  log::verbose("pcm_bytes_per_frame {}", pcm_bytes_per_frame);
 
   uint32_t us_this_tick = A2DP_LDAC_ENCODER_INTERVAL_MS * 1000;
   uint64_t now_us = timestamp_us;
@@ -396,7 +396,7 @@ static void a2dp_ldac_get_num_frame_iteration(uint8_t* num_of_iterations, uint8_
   a2dp_ldac_encoder_cb.ldac_feeding_state.counter -= result * pcm_bytes_per_frame;
   nof = result;
 
-  log::debug("effective num of frames {}, iterations {}", nof, noi);
+  log::verbose("effective num of frames {}, iterations {}", nof, noi);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;

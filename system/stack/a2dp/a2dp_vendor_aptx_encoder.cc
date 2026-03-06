@@ -318,7 +318,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t /* timestamp_us */) {
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_reads_count++;
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_read_bytes += expected_read_bytes;
 
-  log::debug("PCM read of size {}", expected_read_bytes);
+  log::verbose("PCM read of size {}", expected_read_bytes);
   bytes_read = a2dp_aptx_encoder_cb.read_callback((uint8_t*)read_buffer16, expected_read_bytes);
   a2dp_aptx_encoder_cb.stats.media_read_total_actual_read_bytes += bytes_read;
   if (bytes_read < expected_read_bytes) {
@@ -341,7 +341,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t /* timestamp_us */) {
   const int COMPRESSION_RATIO = 4;
   size_t encoded_bytes = pcm_bytes_encoded / COMPRESSION_RATIO;
   p_buf->len += encoded_bytes;
-  log::debug("encoded {} PCM bytes to {}", pcm_bytes_encoded, encoded_bytes);
+  log::verbose("encoded {} PCM bytes to {}", pcm_bytes_encoded, encoded_bytes);
 
   // Update the RTP timestamp
   *((uint32_t*)(p_buf + 1)) = a2dp_aptx_encoder_cb.timestamp;
