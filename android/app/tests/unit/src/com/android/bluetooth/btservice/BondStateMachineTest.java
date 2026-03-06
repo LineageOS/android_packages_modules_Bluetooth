@@ -45,6 +45,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.ParcelUuid;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
@@ -56,6 +57,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -876,5 +878,131 @@ public class BondStateMachineTest {
     private void sendAndDispatchMessage(int what, int arg1, int arg2, Object obj) {
         mStateMachine.sendMessage(what, arg1, arg2, obj);
         syncHandler(what);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_REMOVE_BOND_IN_IDLE_STATE)
+    public void testRemoveBondInIdleState_concurrentRequests() {
+        // Set up two devices that are bonded
+        RemoteDevices.DeviceProperties deviceProperties1 =
+                mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
+        BluetoothDevice device1 = mRemoteDevices.getDevice(TEST_BT_ADDR_BYTES);
+        deviceProperties1.mBondState = BOND_BONDED;
+
+        RemoteDevices.DeviceProperties deviceProperties2 =
+                mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES_2);
+        BluetoothDevice device2 = mRemoteDevices.getDevice(TEST_BT_ADDR_BYTES_2);
+        deviceProperties2.mBondState = BOND_BONDED;
+
+        doReturn(true).when(mNativeInterface).removeBond(any(byte[].class));
+
+        // Send remove bond message for device 1
+        sendAndDispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, device1);
+
+        // Verify native removeBond called for device 1
+        verify(mNativeInterface).removeBond(eq(TEST_BT_ADDR_BYTES));
+
+        // Verify we are still in StateIdle
+        assertThat(mStateMachine.getCurrentState().getName()).isEqualTo("StateIdle");
+
+        // Send remove bond message for device 2 BEFORE callback for device 1
+        sendAndDispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, device2);
+
+        // Verify native removeBond called for device 2
+        verify(mNativeInterface).removeBond(eq(TEST_BT_ADDR_BYTES_2));
+        assertThat(mStateMachine.getCurrentState().getName()).isEqualTo("StateIdle");
+
+        // Now simulate callbacks
+        // Callback for device 1
+        mStateMachine.bondStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                TEST_BT_ADDR_BYTES,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_NONE,
+                0,
+                0,
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP,
+                0);
+        syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
+
+        // Callback for device 2
+        mStateMachine.bondStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                TEST_BT_ADDR_BYTES_2,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_NONE,
+                0,
+                0,
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP,
+                0);
+        syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
+
+        // Verify state remains idle
+        assertThat(mStateMachine.getCurrentState().getName()).isEqualTo("StateIdle");
+        assertThat(mRemoteDevices.getBondState(device1)).isEqualTo(BOND_NONE);
+        assertThat(mRemoteDevices.getBondState(device2)).isEqualTo(BOND_NONE);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_REMOVE_BOND_IN_IDLE_STATE)
+    public void testBondStateChangeInIdleState_clearsPermissionsAndSetsReason() {
+        // Set up a device that is bonded
+        RemoteDevices.DeviceProperties deviceProperties =
+                mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
+        BluetoothDevice device = mRemoteDevices.getDevice(TEST_BT_ADDR_BYTES);
+        deviceProperties.mBondState = BOND_BONDED;
+
+        // Mock profile services to be present
+        doReturn(Optional.of(mHidHostService)).when(mAdapterService).getHidHostService();
+        doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+        doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+        doReturn(Optional.of(mHeadsetClientService))
+                .when(mAdapterService)
+                .getHeadsetClientService();
+        doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
+        doReturn(Optional.of(mPbapClientService)).when(mAdapterService).getPbapClientService();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        doReturn(Optional.of(mCsipSetCoordinatorService))
+                .when(mAdapterService)
+                .getCsipSetCoordinatorService();
+        doReturn(Optional.of(mVolumeControlService))
+                .when(mAdapterService)
+                .getVolumeControlService();
+        doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
+
+        // Simulate native callback for bond removal success
+        mStateMachine.bondStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                TEST_BT_ADDR_BYTES,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_NONE,
+                0,
+                0,
+                AbstractionLayer.BT_PAIRING_INITIATOR_APP,
+                0);
+        syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
+
+        // Verify permissions are cleared
+        verify(mAdapterService)
+                .setPhonebookAccessPermission(eq(device), eq(BluetoothDevice.ACCESS_UNKNOWN));
+        verify(mAdapterService)
+                .setMessageAccessPermission(eq(device), eq(BluetoothDevice.ACCESS_UNKNOWN));
+        verify(mAdapterService)
+                .setSimAccessPermission(eq(device), eq(BluetoothDevice.ACCESS_UNKNOWN));
+
+        // Verify profile policies are cleared
+        verify(mHidHostService).setConnectionPolicy(eq(device), eq(CONNECTION_POLICY_UNKNOWN));
+        verify(mA2dpService).setConnectionPolicy(eq(device), eq(CONNECTION_POLICY_UNKNOWN));
+
+        // Verify Intent was broadcast with correct reason
+        ArgumentCaptor<Intent> intentArgument = ArgumentCaptor.forClass(Intent.class);
+        verify(mAdapterService, times(1))
+                .sendBroadcast(intentArgument.capture(), anyString(), any(Bundle.class));
+
+        Intent intent = intentArgument.getValue();
+        assertThat(intent.getAction()).isEqualTo(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        assertThat(intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)).isEqualTo(BOND_NONE);
+        assertThat(intent.getIntExtra(BluetoothDevice.EXTRA_UNBOND_REASON, -1))
+                .isEqualTo(BluetoothDevice.UNBOND_REASON_REMOVED);
     }
 }

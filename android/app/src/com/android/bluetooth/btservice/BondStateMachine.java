@@ -182,15 +182,25 @@ public final class BondStateMachine extends StateMachine {
                         deferMessage(msg);
                         transitionTo(mStateBonding);
                     } else if (newState == BluetoothDevice.BOND_NONE) {
-                        // The link key was deleted by the stack
+                        int transport = BluetoothDevice.TRANSPORT_AUTO;
+                        int reason = 0;
+                        if (Flags.removeBondInIdleState()) {
+                            reason = convertBondStateChangeReason(msg.arg2);
+                            if (reason == BluetoothDevice.BOND_SUCCESS) {
+                                reason = BluetoothDevice.UNBOND_REASON_REMOVED;
+                            }
+                            clearPermissionsAndPolicies(dev);
+                            transport = msg.getData().getInt(KEY_BOND_TRANSPORT);
+                        }
+
                         handleBondStateChanged(
                                 dev,
-                                BluetoothDevice.TRANSPORT_AUTO,
+                                transport,
                                 newState,
                                 0,
                                 0,
                                 AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
-                                0);
+                                reason);
                     } else {
                         logW("StateIdle: Bond state change - Invalid state, ignoring.");
                     }
@@ -245,7 +255,11 @@ public final class BondStateMachine extends StateMachine {
                     result = createBond(dev, msg.arg1, p192Data, p256Data, false);
                     break;
                 case MESSAGE_REMOVE_BOND:
-                    result = removeBond(dev, false);
+                    if (!Flags.removeBondInIdleState()) {
+                        result = removeBond(dev, false);
+                        break;
+                    }
+                    removeBond(dev, false);
                     break;
                 case MESSAGE_CANCEL_BOND:
                     result = cancelBond(dev);
@@ -377,6 +391,8 @@ public final class BondStateMachine extends StateMachine {
         return true;
     }
 
+    // TODO (b/489217572): Change function signature once the flag remove_bond_in_idle_state is
+    // shipped
     /** Removes bond, transition to bonding state if needed */
     private boolean removeBond(BluetoothDevice dev, boolean transition) {
         DeviceProperties devProp = mRemoteDevices.getDeviceProperties(dev);
@@ -398,7 +414,7 @@ public final class BondStateMachine extends StateMachine {
         // Reset the bond-loss state when the bond is removed.
         mAdapterService.updateKeyMissingCount(dev, false);
 
-        if (transition) {
+        if (!Flags.removeBondInIdleState() && transition) {
             transitionTo(mStateBonding);
         }
         return true;
