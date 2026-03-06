@@ -485,6 +485,39 @@ protected:
   }
 };
 
+class Controller106Test : public ControllerTest {
+protected:
+  void SetUp() override {
+    // Set Flags of v1.06 as true
+    set_com_android_bluetooth_flags_report_vendor_events_from_acl(true);
+    set_com_android_bluetooth_flags_leaudio_broadcast_source_channel_map_classification_improvement(
+            true);
+    feature_spec_version_ = 0x100 + 0x06;
+    BaseVendorCapabilities base_vendor_capabilities;
+    base_vendor_capabilities.max_advt_instances_ = 0x10;
+    base_vendor_capabilities.offloaded_resolution_of_private_address_ = 0x01;
+    base_vendor_capabilities.total_scan_results_storage_ = 0x2800;
+    base_vendor_capabilities.max_irk_list_sz_ = 0x20;
+    base_vendor_capabilities.filtering_support_ = 0x01;
+    base_vendor_capabilities.max_filter_ = 0x10;
+    base_vendor_capabilities.activity_energy_info_support_ = 0x01;
+    vendor_capabilities_ = LeGetVendorCapabilitiesComplete106Builder::Create(
+            1, ErrorCode::SUCCESS, base_vendor_capabilities, feature_spec_version_, 0x102,
+            /*extended_scan_support=*/1,
+            /*debug_logging_supported=*/1,
+            /*le_address_generation_offloading_support=*/0,
+            /*a2dp_source_offload_capability_mask=*/0x4,
+            /*bluetooth_quality_report_support=*/1, kDynamicAudioBufferSupport,
+            /*a2dp_offload_v2_support=*/1,
+            /*iso_link_feedback_support=*/1,
+            /*sniff_offload_support=*/1,
+            /*big_set_channel_map_classification_support=*/0x0001,
+            /*vendor_connection_handle_min=*/0x0000,
+            /*vendor_connection_handle_max=*/0x0000, std::make_unique<RawBuilder>());
+    ControllerTest::SetUp();
+  }
+};
+
 TEST_F(ControllerTest, startup_teardown) {}
 
 TEST_F(ControllerTest, read_controller_info) {
@@ -684,6 +717,30 @@ TEST_F(Controller105Test, feature_spec_version_105_test) {
   ASSERT_TRUE(controller_->IsSupported(OpCode::WRITE_SNIFF_OFFLOAD_ENABLE));
   ASSERT_TRUE(controller_->IsSupported(OpCode::WRITE_SNIFF_OFFLOAD_PARAMETERS));
   ASSERT_EQ(controller_->GetDabSupportedCodecs(), kDynamicAudioBufferSupport);
+
+  for (size_t bit = 0; bit < 32; bit++) {
+    if (kDynamicAudioBufferSupport & (1u << bit)) {
+      ASSERT_GT(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0) << " bit " << bit;
+    } else {
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0);
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].minimum_time_ms_, 0);
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].default_time_ms_, 0);
+    }
+  }
+}
+
+TEST_F(Controller106Test, feature_spec_version_106_test) {
+  ASSERT_EQ(controller_->GetVendorCapabilities().version_supported_, 0x100 + 6);
+  ASSERT_TRUE(controller_->GetVendorCapabilities().a2dp_offload_v2_support_);
+  ASSERT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::DYNAMIC_AUDIO_BUFFER));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::WRITE_SNIFF_OFFLOAD_ENABLE));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::WRITE_SNIFF_OFFLOAD_PARAMETERS));
+  ASSERT_EQ(controller_->GetDabSupportedCodecs(), kDynamicAudioBufferSupport);
+  ASSERT_EQ(controller_->GetVendorCapabilities().big_set_channel_map_classification_support_,
+            0x0001);
 
   for (size_t bit = 0; bit < 32; bit++) {
     if (kDynamicAudioBufferSupport & (1u << bit)) {

@@ -1562,6 +1562,10 @@ public class BassClientService extends ConnectableProfile {
             return;
         }
 
+        if (!getAdapterService().isLeBigSetChannelClassificationSupported()) {
+            return;
+        }
+
         if (isLocalBroadcast(broadcastId)) {
             int action =
                     checkPaSyncStatusForBigChannelMapClassification(

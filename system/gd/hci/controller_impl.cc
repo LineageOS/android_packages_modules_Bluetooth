@@ -610,9 +610,11 @@ struct ControllerImpl::impl {
     vendor_capabilities_.a2dp_source_offload_capability_mask_ = 0x00;
     vendor_capabilities_.bluetooth_quality_report_support_ = 0x00;
     vendor_capabilities_.a2dp_offload_v2_support_ = 0x00;
+    vendor_capabilities_.iso_link_feedback_support_ = 0x00;
     vendor_capabilities_.sniff_offload_support_ = 0x00;
-    vendor_capabilities_.vendor_connection_handle_min_ = 0;
-    vendor_capabilities_.vendor_connection_handle_max_ = 0;
+    vendor_capabilities_.big_set_channel_map_classification_support_ = 0x0000;
+    vendor_capabilities_.vendor_connection_handle_min_ = 0x0000;
+    vendor_capabilities_.vendor_connection_handle_max_ = 0x0000;
 
     if (!complete_view.IsValid()) {
       vendor_promise.set_value();
@@ -702,15 +704,20 @@ struct ControllerImpl::impl {
     if (!v105.IsValid()) {
       log::info("invalid data for hci requirements v1.05");
     } else {
+      vendor_capabilities_.iso_link_feedback_support_ = v105.GetIsoLinkFeedbackSupport();
       vendor_capabilities_.sniff_offload_support_ = v105.GetSniffOffloadSupport();
     }
 
     // v1.06
-    if (com_android_bluetooth_flags_report_vendor_events_from_acl()) {
-      auto v106 = LeGetVendorCapabilitiesComplete106View::Create(v105);
-      if (!v106.IsValid()) {
-        log::info("invalid data for hci requirements v1.06");
-      } else {
+    auto v106 = LeGetVendorCapabilitiesComplete106View::Create(v105);
+    if (!v106.IsValid()) {
+      log::info("invalid data for hci requirements v1.06");
+    } else {
+      if (com_android_bluetooth_flags_leaudio_broadcast_source_channel_map_classification_improvement()) {
+        vendor_capabilities_.big_set_channel_map_classification_support_ =
+                v106.GetBigSetChannelMapClassificationSupport();
+      }
+      if (com_android_bluetooth_flags_report_vendor_events_from_acl()) {
         vendor_capabilities_.vendor_connection_handle_min_ = v106.GetVendorConnectionHandleMin();
         vendor_capabilities_.vendor_connection_handle_max_ = v106.GetVendorConnectionHandleMax();
       }
@@ -1211,7 +1218,7 @@ struct ControllerImpl::impl {
       case OpCode::DYNAMIC_AUDIO_BUFFER:
         return vendor_capabilities_.dynamic_audio_buffer_support_ > 0x00;
       case OpCode::LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION:
-        return false;
+        return vendor_capabilities_.big_set_channel_map_classification_support_ > 0x0000;
       // Before MSFT extension is fully supported, return false for the following MSFT_OPCODE_XXXX
       // for now.
       case OpCode::MSFT_OPCODE_INTEL:
@@ -1674,7 +1681,9 @@ void ControllerImpl::impl::dump(OutputT&& out) const {
           "        bluetooth_quality_report_support: {}\n"
           "        dynamic_audio_buffer_support: {}\n"
           "        a2dp_offload_v2_support: {}\n"
+          "        iso_link_feedback_support: {}\n"
           "        sniff_offload_support: {}\n"
+          "        big_set_channel_map_classification_support: {}\n"
           "        vendor_connection_handle_min: {}\n"
           "        vendor_connection_handle_max: {}\n",
           vendor_capabilities_.is_supported_, vendor_capabilities_.max_advt_instances_,
@@ -1690,7 +1699,9 @@ void ControllerImpl::impl::dump(OutputT&& out) const {
           vendor_capabilities_.bluetooth_quality_report_support_,
           vendor_capabilities_.dynamic_audio_buffer_support_,
           vendor_capabilities_.a2dp_offload_v2_support_,
+          vendor_capabilities_.iso_link_feedback_support_,
           vendor_capabilities_.sniff_offload_support_,
+          vendor_capabilities_.big_set_channel_map_classification_support_,
           vendor_capabilities_.vendor_connection_handle_min_,
           vendor_capabilities_.vendor_connection_handle_max_);
 }
