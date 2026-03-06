@@ -159,8 +159,8 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::getPresentationPosition(
     total_bytes_read = 0;
     transmittedOctetsTimeStamp = {};
   }
-  log::verbose("result={}, delay={}, data={} byte(s), timestamp={}", retval, remote_delay_report_ns,
-               total_bytes_read, transmittedOctetsTimeStamp.toString());
+  log::debug("result={}, delay={}, data={} byte(s), timestamp={}", retval, remote_delay_report_ns,
+             total_bytes_read, transmittedOctetsTimeStamp.toString());
   _aidl_return->remoteDeviceAudioDelayNanos = static_cast<int64_t>(remote_delay_report_ns);
   _aidl_return->transmittedOctets = static_cast<int64_t>(total_bytes_read);
   _aidl_return->transmittedOctetsTimestamp = transmittedOctetsTimeStamp;
@@ -211,7 +211,7 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::setLatencyMode(LatencyMode latency_mo
 }
 
 ndk::ScopedAStatus BluetoothAudioPortImpl::updateSinkLatency(int64_t in_latency_ms) {
-  log::verbose("in_latency_ms: {}", in_latency_ms);
+  log::debug("in_latency_ms: {}", in_latency_ms);
   auto transport = transport_instance_.lock();
   if (!transport) {
     log::error("Invalid call to dropped audio port instance");

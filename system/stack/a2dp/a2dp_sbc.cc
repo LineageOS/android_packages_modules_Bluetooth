@@ -137,26 +137,26 @@ static void A2DP_AdjustBitpool(tA2DP_SBC_CIE* p_ie) {
 
   // minbitpool < 2, then set minbitpool = 2
   if (p_ie->min_bitpool < A2DP_SBC_IE_MIN_BITPOOL) {
-    log::verbose("min_bitpool value adjusted from: {} to {}", p_ie->min_bitpool,
-                 A2DP_SBC_IE_MIN_BITPOOL);
+    log::debug("min_bitpool value adjusted from: {} to {}", p_ie->min_bitpool,
+               A2DP_SBC_IE_MIN_BITPOOL);
     p_ie->min_bitpool = A2DP_SBC_IE_MIN_BITPOOL;
   }
   // minbitpool > 250, then set minbitpool = 250
   if (p_ie->min_bitpool > A2DP_SBC_IE_MAX_BITPOOL) {
-    log::verbose("min_bitpool value adjusted from: {} to {}", p_ie->min_bitpool,
-                 A2DP_SBC_IE_MAX_BITPOOL);
+    log::debug("min_bitpool value adjusted from: {} to {}", p_ie->min_bitpool,
+               A2DP_SBC_IE_MAX_BITPOOL);
     p_ie->min_bitpool = A2DP_SBC_IE_MAX_BITPOOL;
   }
   // maxbitpool > 250, then set maxbitpool = 250
   if (p_ie->max_bitpool > A2DP_SBC_IE_MAX_BITPOOL) {
-    log::verbose("max_bitpool value adjusted from: {} to {}", p_ie->max_bitpool,
-                 A2DP_SBC_IE_MAX_BITPOOL);
+    log::debug("max_bitpool value adjusted from: {} to {}", p_ie->max_bitpool,
+               A2DP_SBC_IE_MAX_BITPOOL);
     p_ie->max_bitpool = A2DP_SBC_IE_MAX_BITPOOL;
   }
   // minbitpool > maxbitpool, then set maxbitpool = minbitpool
   if (p_ie->min_bitpool > p_ie->max_bitpool) {
     p_ie->max_bitpool = p_ie->min_bitpool;
-    log::verbose(
+    log::debug(
             "min bitpool value received for SBC is more than DUT supported Max bitpool"
             "Clamping the max bitpool configuration further from {} to {}",
             p_ie->max_bitpool, p_ie->min_bitpool);
@@ -353,17 +353,16 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilitySbc(const tA2DP_SBC_CIE* p_ca
 
   /* verify that each parameter is in range */
 
-  log::verbose("FREQ peer: 0x{:x}, capability 0x{:x}", cfg_cie.samp_freq, p_cap->samp_freq);
-  log::verbose("CH_MODE peer: 0x{:x}, capability 0x{:x}", cfg_cie.ch_mode, p_cap->ch_mode);
-  log::verbose("BLOCK_LEN peer: 0x{:x}, capability 0x{:x}", cfg_cie.block_len, p_cap->block_len);
-  log::verbose("SUB_BAND peer: 0x{:x}, capability 0x{:x}", cfg_cie.num_subbands,
-               p_cap->num_subbands);
-  log::verbose("ALLOC_METHOD peer: 0x{:x}, capability 0x{:x}", cfg_cie.alloc_method,
-               p_cap->alloc_method);
-  log::verbose("MIN_BitPool peer: 0x{:x}, capability 0x{:x}", cfg_cie.min_bitpool,
-               p_cap->min_bitpool);
-  log::verbose("MAX_BitPool peer: 0x{:x}, capability 0x{:x}", cfg_cie.max_bitpool,
-               p_cap->max_bitpool);
+  log::debug("FREQ peer: 0x{:x}, capability 0x{:x}", cfg_cie.samp_freq, p_cap->samp_freq);
+  log::debug("CH_MODE peer: 0x{:x}, capability 0x{:x}", cfg_cie.ch_mode, p_cap->ch_mode);
+  log::debug("BLOCK_LEN peer: 0x{:x}, capability 0x{:x}", cfg_cie.block_len, p_cap->block_len);
+  log::debug("SUB_BAND peer: 0x{:x}, capability 0x{:x}", cfg_cie.num_subbands, p_cap->num_subbands);
+  log::debug("ALLOC_METHOD peer: 0x{:x}, capability 0x{:x}", cfg_cie.alloc_method,
+             p_cap->alloc_method);
+  log::debug("MIN_BitPool peer: 0x{:x}, capability 0x{:x}", cfg_cie.min_bitpool,
+             p_cap->min_bitpool);
+  log::debug("MAX_BitPool peer: 0x{:x}, capability 0x{:x}", cfg_cie.max_bitpool,
+             p_cap->max_bitpool);
 
   /* sampling frequency */
   if ((cfg_cie.samp_freq & p_cap->samp_freq) == 0) {

@@ -155,8 +155,8 @@ BtaAvCoSep* BtaAvCoPeerCache::FindPeerSource(BtaAvCoPeer* p_peer,
       continue;
     }
     if (!AudioSepHasContentProtection(p_source, content_protect_flag)) {
-      log::verbose("peer Source for codec {} does not support Content Protection",
-                   A2DP_CodecIndexStr(codec_index));
+      log::debug("peer Source for codec {} does not support Content Protection",
+                 A2DP_CodecIndexStr(codec_index));
       continue;
     }
     return p_source;
@@ -192,7 +192,7 @@ BtaAvCoPeer* BtaAvCoPeerCache::FindPeer(tBTA_AV_HNDL bta_av_handle) {
 
   index = BTA_AV_CO_AUDIO_HANDLE_TO_INDEX(bta_av_handle);
 
-  log::verbose("bta_av_handle = 0x{:x} index = {}", bta_av_handle, index);
+  log::debug("bta_av_handle = 0x{:x} index = {}", bta_av_handle, index);
 
   // Sanity check
   if (index >= BTA_AV_CO_NUM_ELEMENTS(peers_)) {
@@ -205,7 +205,7 @@ BtaAvCoPeer* BtaAvCoPeerCache::FindPeer(tBTA_AV_HNDL bta_av_handle) {
 
 BtaAvCoPeer* BtaAvCoPeerCache::FindPeerAndUpdate(tBTA_AV_HNDL bta_av_handle,
                                                  const RawAddress& peer_address) {
-  log::verbose("peer {} bta_av_handle = 0x{:x}", peer_address, bta_av_handle);
+  log::debug("peer {} bta_av_handle = 0x{:x}", peer_address, bta_av_handle);
 
   BtaAvCoPeer* p_peer = FindPeer(bta_av_handle);
   if (p_peer == nullptr) {
@@ -214,8 +214,8 @@ BtaAvCoPeer* BtaAvCoPeerCache::FindPeerAndUpdate(tBTA_AV_HNDL bta_av_handle,
     return nullptr;
   }
 
-  log::verbose("peer {} bta_av_handle = 0x{:x} previous address {}", peer_address, bta_av_handle,
-               p_peer->addr);
+  log::debug("peer {} bta_av_handle = 0x{:x} previous address {}", peer_address, bta_av_handle,
+             p_peer->addr);
   p_peer->addr = peer_address;
   return p_peer;
 }
@@ -229,14 +229,14 @@ uint16_t BtaAvCoPeerCache::FindPeerUuid(tBTA_AV_HNDL bta_av_handle) {
 }
 
 bool ContentProtectIsScmst(const uint8_t* p_protect_info) {
-  log::verbose("");
+  log::debug("");
 
   if (*p_protect_info >= AVDT_CP_LOSC) {
     uint16_t cp_id;
     p_protect_info++;
     STREAM_TO_UINT16(cp_id, p_protect_info);
     if (cp_id == AVDT_CP_SCMS_T_ID) {
-      log::verbose("SCMS-T found");
+      log::debug("SCMS-T found");
       return true;
     }
   }
@@ -244,7 +244,7 @@ bool ContentProtectIsScmst(const uint8_t* p_protect_info) {
 }
 
 bool AudioProtectHasScmst(uint8_t num_protect, const uint8_t* p_protect_info) {
-  log::verbose("");
+  log::debug("");
   while (num_protect--) {
     if (ContentProtectIsScmst(p_protect_info)) {
       return true;
@@ -252,18 +252,18 @@ bool AudioProtectHasScmst(uint8_t num_protect, const uint8_t* p_protect_info) {
     // Move to the next Content Protect schema
     p_protect_info += *p_protect_info + 1;
   }
-  log::verbose("SCMS-T not found");
+  log::debug("SCMS-T not found");
   return false;
 }
 
 bool AudioSepHasContentProtection(const BtaAvCoSep* p_sep, const uint8_t content_protect_flag) {
-  log::verbose("");
+  log::debug("");
 
   // Check if content protection is enabled for this stream
   if (content_protect_flag != AVDT_CP_SCMS_COPY_FREE) {
     return AudioProtectHasScmst(p_sep->num_protect, p_sep->protect_info);
   }
 
-  log::verbose("not required");
+  log::debug("not required");
   return true;
 }

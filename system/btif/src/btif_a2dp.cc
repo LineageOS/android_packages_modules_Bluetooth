@@ -41,8 +41,8 @@ using namespace bluetooth;
 using bluetooth::audio::a2dp::Status;
 
 void btif_a2dp_on_idle(const RawAddress& /*peer_addr*/, const A2dpType local_a2dp_type) {
-  log::verbose("Peer stream endpoint type:{}",
-               peer_stream_endpoint_text(btif_av_get_peer_sep(local_a2dp_type)));
+  log::debug("Peer stream endpoint type:{}",
+             peer_stream_endpoint_text(btif_av_get_peer_sep(local_a2dp_type)));
   if (btif_av_get_peer_sep(local_a2dp_type) == AVDT_TSEP_SNK) {
     btif_a2dp_source_on_idle();
   } else if (btif_av_get_peer_sep(local_a2dp_type) == AVDT_TSEP_SRC) {

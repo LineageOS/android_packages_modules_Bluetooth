@@ -428,7 +428,7 @@ void set_remote_delay(uint16_t delay_report) {
     remote_delay = delay_report;
     return;
   }
-  log::verbose("DELAY {} ms", static_cast<float>(delay_report / 10.0));
+  log::debug("DELAY {} ms", static_cast<float>(delay_report / 10.0));
   active_hal_interface->GetTransportInstance()->SetRemoteDelay(delay_report);
 }
 
@@ -724,7 +724,7 @@ std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
   for (auto& codec_info : source_provider_info->codecInfos) {
     auto source_codec = convertCodecInfo(codec_info);
     if (source_codec.has_value()) {
-      log::verbose("provider source codec: {}", source_codec.value().ToString());
+      log::debug("provider source codec: {}", source_codec.value().ToString());
       codecs_info.source_codecs.push_back(source_codec.value());
     }
   }
@@ -732,7 +732,7 @@ std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
   for (auto& codec_info : sink_provider_info->codecInfos) {
     auto sink_codec = convertCodecInfo(codec_info);
     if (sink_codec.has_value()) {
-      log::verbose("provider sink codec: {}", sink_codec.value().ToString());
+      log::debug("provider sink codec: {}", sink_codec.value().ToString());
       codecs_info.sink_codecs.push_back(sink_codec.value());
     }
   }
