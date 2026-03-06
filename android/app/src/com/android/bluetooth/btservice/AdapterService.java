@@ -1833,8 +1833,6 @@ public class AdapterService extends Service {
     }
 
     void updateAdapterState(int from, int to) {
-        mAdapterProperties.setState(to);
-
         broadcastToSystemServerCallbacks(
                 "updateAdapterState(" + nameForState(from) + ", " + nameForState(to) + ")",
                 (c) -> c.onBluetoothStateChange(from, to));
@@ -2793,8 +2791,8 @@ public class AdapterService extends Service {
     }
 
     public int getState() {
-        if (mAdapterProperties != null) {
-            return mAdapterProperties.getState();
+        if (mAdapterStateMachine != null) {
+            return mAdapterStateMachine.getState();
         }
         return State.OFF;
     }
@@ -4270,8 +4268,7 @@ public class AdapterService extends Service {
     }
 
     BluetoothActivityEnergyInfo requestActivityInfo() {
-        if (mAdapterProperties.getState() != State.ON
-                || !mAdapterProperties.isActivityAndEnergyReportingSupported()) {
+        if (getState() != State.ON || !mAdapterProperties.isActivityAndEnergyReportingSupported()) {
             return null;
         }
 
@@ -4785,7 +4782,7 @@ public class AdapterService extends Service {
 
         writer.write(stringBuilder.toString());
 
-        final int currentState = mAdapterProperties.getState();
+        final int currentState = mAdapterStateMachine.getState();
         if (currentState == State.OFF
                 || currentState == State.BLE_TURNING_ON
                 || currentState == State.TURNING_OFF
