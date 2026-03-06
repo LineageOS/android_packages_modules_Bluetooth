@@ -4298,7 +4298,7 @@ public class AdapterService extends Service {
      *
      * @return {@code BluetoothStatusCodes.FEATURE_SUPPORTED} if supported
      */
-    int getOffloadedTransportDiscoveryDataScanSupported() {
+    public int getOffloadedTransportDiscoveryDataScanSupported() {
         if (mAdapterProperties.isOffloadedTransportDiscoveryDataScanSupported()) {
             return BluetoothStatusCodes.FEATURE_SUPPORTED;
         }
