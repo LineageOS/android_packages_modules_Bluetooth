@@ -184,6 +184,13 @@ final class AdapterState extends StateMachine {
     }
 
     private abstract class BaseAdapterState extends com.android.internal.util.State {
+        private static boolean isStableState(int state) {
+            return switch (state) {
+                case State.ON, State.OFF, State.BLE_ON -> true;
+                default -> false;
+            };
+        }
+
         private final int mStateValue;
 
         BaseAdapterState(int state) {
@@ -194,6 +201,12 @@ final class AdapterState extends StateMachine {
         public void enter() {
             infoLog("State entered");
             mState = mStateValue;
+            if (isStableState(mPrevState)) {
+                // The SystemServer initiates transition from stable states
+                // AdapterStates notifies only when initiating transitiong from any other state.
+                // The destination transition may not be stable (ex: TURNING_OFF -> BLE_TURNING_OFF)
+                return;
+            }
             mAdapterService.updateAdapterState(mPrevState, mState);
         }
 
