@@ -911,21 +911,16 @@ public class VolumeControlService extends ConnectableProfile {
      * @param value The new value for the flag.
      */
     private void updateIgnoreSetVolumeFromAFFlag(boolean value) {
-        if (!Flags.vcpSkipIgnoringVolumeDuringBroadcast()) {
+        boolean broadcastActive = false;
+        final var leAudio = getAdapterService().getLeAudioService();
+        if (leAudio.isPresent()) {
+            broadcastActive = leAudio.get().isBroadcastActive();
+        }
+        if (!value || !broadcastActive) {
             Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
             mIgnoreSetVolumeFromAF = value;
         } else {
-            boolean broadcastActive = false;
-            final var leAudio = getAdapterService().getLeAudioService();
-            if (leAudio.isPresent()) {
-                broadcastActive = leAudio.get().isBroadcastActive();
-            }
-            if (!value || !broadcastActive) {
-                Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
-                mIgnoreSetVolumeFromAF = value;
-            } else {
-                Log.d(TAG, "Skip mIgnoreSetVolumeFromAF set as local broadcast is active");
-            }
+            Log.d(TAG, "Skip mIgnoreSetVolumeFromAF set as local broadcast is active");
         }
     }
 

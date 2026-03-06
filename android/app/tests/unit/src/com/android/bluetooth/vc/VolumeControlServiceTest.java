@@ -1196,7 +1196,6 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VCP_SKIP_IGNORING_VOLUME_DURING_BROADCAST)
     public void connectedDeviceWithUserPersistFlagSet_whileBroadcastActive() {
         int volumeDevice = 56;
         int volumeFromAf = 123;
