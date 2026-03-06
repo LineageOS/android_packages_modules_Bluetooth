@@ -23,17 +23,20 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.content.Context;
+import android.os.SystemProperties;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.Config;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.UUID;
 
 /** A GATT server for Telephony and Media Audio Profile (TMAP) */
-class LeAudioTmapGattServer {
+public class LeAudioTmapGattServer implements AutoCloseable {
     private static final String TAG = LeAudioTmapGattServer.class.getSimpleName();
 
     /* Telephony and Media Audio Profile Role Characteristic UUID */
@@ -54,15 +57,46 @@ class LeAudioTmapGattServer {
     public static final int TMAP_ROLE_FLAG_BMR = 1 << 5;
 
     private final BluetoothGattServerProxy mBluetoothGattServer;
+    private int mRoleMask;
 
-    /*package*/ LeAudioTmapGattServer(BluetoothGattServerProxy gattServer) {
+    public LeAudioTmapGattServer(BluetoothGattServerProxy gattServer) {
         mBluetoothGattServer = gattServer;
+        mRoleMask = calculateTmapRoleMask();
+        start(mRoleMask);
     }
 
-    /**
-     * @param roleMask bit mask of supported roles.
-     */
-    void start(int roleMask) {
+    public int getRoleMask() {
+        return mRoleMask;
+    }
+
+    @VisibleForTesting
+    /* package*/ static int calculateTmapRoleMask() {
+        int mask = 0;
+        if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
+            // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
+            mask |= TMAP_ROLE_FLAG_CG;
+        }
+        if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
+            // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
+            mask |= TMAP_ROLE_FLAG_UMS;
+        }
+        if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
+            mask |= TMAP_ROLE_FLAG_BMS;
+        }
+        if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_PERIPHERAL)) {
+            if (SystemProperties.getBoolean(
+                    "bluetooth.profile.tmap.call_terminal.enabled", false)) {
+                mask |= TMAP_ROLE_FLAG_CT;
+            }
+            if (SystemProperties.getBoolean(
+                    "bluetooth.profile.tmap.unicast_media_receiver.enabled", false)) {
+                mask |= TMAP_ROLE_FLAG_UMR;
+            }
+        }
+        return mask;
+    }
+
+    private void start(int roleMask) {
         Log.d(TAG, "start(roleMask:" + roleMask + ")");
 
         if (!mBluetoothGattServer.open(mBluetoothGattServerCallback)) {
@@ -87,7 +121,8 @@ class LeAudioTmapGattServer {
         }
     }
 
-    void stop() {
+    @Override
+    public void close() {
         Log.d(TAG, "stop()");
         if (mBluetoothGattServer == null) {
             Log.w(TAG, "mBluetoothGattServer should not be null when stop() is called");

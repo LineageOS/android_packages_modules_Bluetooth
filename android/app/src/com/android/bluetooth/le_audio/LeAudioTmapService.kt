@@ -17,11 +17,9 @@
 package com.android.bluetooth.le_audio
 
 import android.bluetooth.BluetoothProfile
-import android.os.SystemProperties
 import android.util.Log
 import com.android.bluetooth.Util
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.btservice.Config
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.profile.ProfileService
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder
@@ -33,7 +31,6 @@ class LeAudioTmapService(adapterService: AdapterService) :
     init {
         Log.d(TAG, "LeAudioTmapService(): service is starting")
         gattServer = LeAudioTmapGattServer(LeAudioTmapGattServer.BluetoothGattServerProxy(this))
-        gattServer.start(calculateTmapRoleMask())
     }
 
     override fun initBinder(): IProfileServiceBinder? {
@@ -42,51 +39,16 @@ class LeAudioTmapService(adapterService: AdapterService) :
 
     override fun cleanup() {
         Log.i(TAG, "Cleanup LeAudioTmapService Service")
-        gattServer.stop()
+        gattServer.close()
     }
 
     override fun dump(sb: StringBuilder) {
         super.dump(sb)
-        ProfileService.println(sb, "roleMask: ${calculateTmapRoleMask()}")
+        ProfileService.println(sb, "roleMask: " + gattServer.getRoleMask())
     }
 
     companion object {
         private val TAG = Util.BT_PREFIX + LeAudioTmapService::class.java.simpleName
-
-        @JvmStatic
-        fun calculateTmapRoleMask(): Int {
-            var mask = 0
-            if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
-                // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
-                mask = mask or LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG
-            }
-            if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
-                // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
-                mask = mask or LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS
-            }
-            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
-                mask = mask or LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS
-            }
-            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_PERIPHERAL)) {
-                if (
-                    SystemProperties.getBoolean(
-                        "bluetooth.profile.tmap.call_terminal.enabled",
-                        false,
-                    )
-                ) {
-                    mask = mask or LeAudioTmapGattServer.TMAP_ROLE_FLAG_CT
-                }
-                if (
-                    SystemProperties.getBoolean(
-                        "bluetooth.profile.tmap.unicast_media_receiver.enabled",
-                        false,
-                    )
-                ) {
-                    mask = mask or LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMR
-                }
-            }
-            return mask
-        }
 
         @JvmStatic
         fun isEnabled(): Boolean {
