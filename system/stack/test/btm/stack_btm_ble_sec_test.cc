@@ -90,7 +90,7 @@ protected:
   void SetUp() override {
     main_thread_start_up();
     BtmWithMocksTest::SetUp();
-    BTM_Sec_Init();
+    get_security_client_interface().BTM_Sec_Init();
     p_mock_le_callback = &mock_le_callback_;
     BtmSecurity::Get().app_ = &kAppReg;
   }
@@ -98,7 +98,7 @@ protected:
   void TearDown() override {
     BtmSecurity::Get().app_ = nullptr;
     p_mock_le_callback = nullptr;
-    BTM_Sec_Free();
+    get_security_client_interface().BTM_Sec_Free();
     BtmWithMocksTest::TearDown();
     main_thread_shut_down();
   }

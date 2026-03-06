@@ -36,11 +36,11 @@ protected:
   void SetUp() override {
     BtmWithMocksTest::SetUp();
     main_thread_start_up();
-    BTM_Sec_Init();
+    get_security_client_interface().BTM_Sec_Init();
   }
 
   void TearDown() override {
-    BTM_Sec_Free();
+    get_security_client_interface().BTM_Sec_Free();
     main_thread_shut_down();
     BtmWithMocksTest::TearDown();
   }

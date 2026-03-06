@@ -96,12 +96,12 @@ protected:
     main_thread_start_up();
     post_on_bt_main([]() { log::info("Main thread started up"); });
     StackBtmSecWithQueuesTest::SetUp();
-    BTM_Sec_Init();
+    get_security_client_interface().BTM_Sec_Init();
   }
   void TearDown() override {
     post_on_bt_main([]() { log::info("Main thread shutting down"); });
     main_thread_shut_down();
-    BTM_Sec_Free();
+    get_security_client_interface().BTM_Sec_Free();
     StackBtmSecWithQueuesTest::TearDown();
   }
 };
@@ -163,16 +163,16 @@ TEST_F(StackBtmSecWithInitFreeTest, BTM_SetEncryption) {
   tBTM_BLE_SEC_ACT sec_act{BTM_BLE_SEC_ENCRYPT};
 
   // No device
-  ASSERT_EQ(tBTM_STATUS::BTM_WRONG_MODE,
-            BTM_SetEncryption(bd_addr, transport, p_callback, nullptr, sec_act));
+  ASSERT_EQ(tBTM_STATUS::BTM_WRONG_MODE, get_security_client_interface().BTM_SetEncryption(
+                                                 bd_addr, transport, p_callback, nullptr, sec_act));
 
   // With device
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
   p_device->hci_handle = 0x1234;
 
-  ASSERT_EQ(tBTM_STATUS::BTM_WRONG_MODE,
-            BTM_SetEncryption(bd_addr, transport, p_callback, nullptr, sec_act));
+  ASSERT_EQ(tBTM_STATUS::BTM_WRONG_MODE, get_security_client_interface().BTM_SetEncryption(
+                                                 bd_addr, transport, p_callback, nullptr, sec_act));
 
   wipe_secrets_and_remove(p_device);
 }
