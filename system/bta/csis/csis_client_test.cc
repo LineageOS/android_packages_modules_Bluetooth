@@ -523,10 +523,9 @@ protected:
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }
 
-  void TestConnect(const RawAddress& address, bool encrypted = true, bool opportunistic = false) {
+  void TestConnect(const RawAddress& address, bool /*encrypted*/ = true,
+                   bool opportunistic = false) {
     // by default indicate link as encrypted
-    ON_CALL(btm_interface, GetSecurityFlagsByTransport(address, NotNull(), _))
-            .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(encrypted)));
     if (opportunistic) {
       EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_OPPORTUNISTIC));
     } else {

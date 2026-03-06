@@ -34,59 +34,28 @@ namespace manager {
 
 class BtmInterface {
 public:
-  virtual bool GetSecurityFlagsByTransport(const RawAddress& bd_addr, uint8_t* p_sec_flags,
-                                           tBT_TRANSPORT transport) = 0;
   virtual BtmDevice* FindDevice(const RawAddress& bd_addr) = 0;
-  virtual uint8_t GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) = 0;
-  virtual bool SecIsSecurityPending(const RawAddress& bd_addr) = 0;
-  virtual void RequestPeerSCA(RawAddress const& bd_addr, tBT_TRANSPORT transport) = 0;
   virtual void AclDisconnectFromHandle(uint16_t handle, tHCI_STATUS reason) = 0;
-  virtual tBTM_INQ_INFO* BTM_InqDbFirst() = 0;
-  virtual tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur) = 0;
-  virtual std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) = 0;
-  virtual std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) = 0;
 
-  virtual std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) = 0;
-  virtual bool BTM_IsAclConnectionUp(const RawAddress& remote_bda, tBT_TRANSPORT transport) = 0;
   virtual bool MaybeResolveAddress(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) = 0;
   virtual bool BTM_RandomPseudoToIdentityAddr(RawAddress* random_pseudo,
                                               uint8_t* p_static_addr_type) = 0;
   virtual bool AclPeerSupportsBleConnectionSubrating(const RawAddress& random_pseudo) = 0;
   virtual bool AclPeerSupportsBleConnectionSubratingHost(const RawAddress& random_pseudo) = 0;
-  virtual tBTM_STATUS BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport,
-                                  tHCI_ROLE* role) = 0;
 
   virtual ~BtmInterface() = default;
 };
 
 class MockBtmInterface : public BtmInterface {
 public:
-  MOCK_METHOD((bool), GetSecurityFlagsByTransport,
-              (const RawAddress& bd_addr, uint8_t* p_sec_flags, tBT_TRANSPORT transport),
-              (override));
   MOCK_METHOD((BtmDevice*), FindDevice, (const RawAddress& bd_addr), (override));
-  MOCK_METHOD((uint8_t), GetPeerSCA, (const RawAddress& remote_bda, tBT_TRANSPORT transport),
-              (override));
-  MOCK_METHOD((bool), SecIsSecurityPending, (const RawAddress& bd_addr), (override));
-  MOCK_METHOD((void), RequestPeerSCA, (RawAddress const& bd_addr, tBT_TRANSPORT transport),
-              (override));
   MOCK_METHOD((void), AclDisconnectFromHandle, (uint16_t handle, tHCI_STATUS reason), (override));
-  MOCK_METHOD((tBTM_INQ_INFO*), BTM_InqDbFirst, (), (override));
-  MOCK_METHOD((tBTM_INQ_INFO*), BTM_InqDbNext, (tBTM_INQ_INFO * p_cur), (override));
-  MOCK_METHOD((std::optional<Octet16>), BTM_BleGetPeerLTK, (const RawAddress address), (override));
-  MOCK_METHOD((std::optional<Octet16>), BTM_BleGetPeerIRK, (const RawAddress address), (override));
 
-  MOCK_METHOD((std::optional<tBLE_BD_ADDR>), BTM_BleGetIdentityAddress, (const RawAddress address),
-              (override));
-  MOCK_METHOD((bool), BTM_IsAclConnectionUp,
-              (const RawAddress& remote_bda, tBT_TRANSPORT transport), (override));
   MOCK_METHOD((bool), MaybeResolveAddress, (RawAddress* bda, tBLE_ADDR_TYPE* bda_type), (override));
   MOCK_METHOD((bool), BTM_RandomPseudoToIdentityAddr,
               (RawAddress* random_pseudo, uint8_t* p_static_addr_type), (override));
   MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubrating, (const RawAddress& bd_addr), (override));
   MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubratingHost, (const RawAddress& bd_addr), (override));
-  MOCK_METHOD((tBTM_STATUS), BTM_GetRole,
-              (const RawAddress& address, tBT_TRANSPORT transport, tHCI_ROLE* role), (override));
 };
 
 /**
