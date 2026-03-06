@@ -26,6 +26,7 @@
 
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_status.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/sdpdefs.h"
 
@@ -39,11 +40,20 @@ typedef struct {
 /**************************************************
  *  Device Control and General Callback Functions
  **************************************************/
+namespace bluetooth {
+namespace hci {
+class CommandCompleteView;
+}  // namespace hci
+}  // namespace bluetooth
+
 /* General callback function for notifying an application that a synchronous
  * BTM function is complete. The pointer contains the address of any returned
  * data.
  */
-typedef void(tBTM_CMPL_CB)(void* p1);
+using tBTM_CMPL_CB = void(bluetooth::hci::CommandCompleteView view);
+using tBTM_READ_RSSI_CB = void(tBTM_STATUS status, uint8_t rssi, RawAddress addr);
+using tBTM_READ_AUTOMATIC_FLUSH_TIMEOUT_CB = void(bluetooth::hci::CommandCompleteView view,
+                                                  RawAddress addr);
 
 /* VSC callback function for notifying an application that a synchronous
  * BTM function is complete. The pointer contains the address of any returned

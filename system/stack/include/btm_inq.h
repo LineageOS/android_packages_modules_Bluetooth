@@ -75,7 +75,7 @@
  *
  ******************************************************************************/
 [[nodiscard]] tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
-                                           tBTM_CMPL_CB* p_cmpl_cb);
+                                           tBTM_INQUIRY_CMPL_CB* p_cmpl_cb);
 
 /*******************************************************************************
  *

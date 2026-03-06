@@ -32,6 +32,7 @@
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_octets.h>
 
+#include "hci/hci_packets.h"
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/btm_api_types.h"
@@ -428,11 +429,12 @@ struct btm_ble_start_sec_check {
 extern struct btm_ble_start_sec_check btm_ble_start_sec_check;
 
 // Name: btm_ble_test_command_complete
-// Params: uint8_t* p
+// Params: bluetooth::hci::CommandCompleteView view
 // Return: void
 struct btm_ble_test_command_complete {
-  std::function<void(uint8_t* p)> body{[](uint8_t* /* p */) {}};
-  void operator()(uint8_t* p) { body(p); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) {}};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(view); }
 };
 extern struct btm_ble_test_command_complete btm_ble_test_command_complete;
 

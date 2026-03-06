@@ -273,15 +273,12 @@ static void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   ASSERTC(status, "Context transfer failed!", status);
 }
 
-void btm_read_rssi_cb(void* p_void) {
-  tBTM_RSSI_RESULT* p_result = (tBTM_RSSI_RESULT*)p_void;
-
-  if (!p_result) {
-    return;
+void btm_read_rssi_cb(tBTM_STATUS status, uint8_t rssi, RawAddress address) {
+  if (status != tBTM_STATUS::BTM_SUCCESS) {
+    log::error("Read RSSI failed with status {}", status);
   }
-
-  CLI_CBACK_IN_JNI(read_remote_rssi_cb, rssi_request_client_if, p_result->rem_bda, p_result->rssi,
-                   static_cast<uint8_t>(p_result->status));
+  CLI_CBACK_IN_JNI(read_remote_rssi_cb, rssi_request_client_if, address, rssi,
+                   static_cast<uint8_t>(tBTM_STATUS::BTM_SUCCESS));
 }
 
 /*******************************************************************************
@@ -377,8 +374,7 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
 
 static BtStatus btif_gattc_open(int client_if, const RawAddress& bd_addr, uint8_t addr_type,
                                 bool is_direct, int transport, bool opportunistic,
-                                int preferred_mtu, bool prefer_relax_mode,
-                                   bool auto_mtu_enabled) {
+                                int preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
   CHECK_BTGATT_INIT();
   // Closure will own this value and free it.
   return do_in_jni_thread(BindOnce(&btif_gattc_open_impl, client_if, bd_addr, addr_type, is_direct,
@@ -563,12 +559,12 @@ static void btif_gattc_reg_for_notification_impl(tGATT_IF client_if, const RawAd
   // TODO: conn_id is currently unused
   if (com_android_bluetooth_flags_gatt_reg_notification_on_jni_thread()) {
     do_in_jni_thread(BindOnce(
-        [](tGATT_STATUS status, uint16_t handle) {
-          auto callbacks = bt_gatt_callbacks;
-          HAL_CBACK(callbacks, client->register_for_notification_cb,
-                    /* conn_id */ 0, 1, status, handle);
-        },
-        status, handle));
+            [](tGATT_STATUS status, uint16_t handle) {
+              auto callbacks = bt_gatt_callbacks;
+              HAL_CBACK(callbacks, client->register_for_notification_cb,
+                        /* conn_id */ 0, 1, status, handle);
+            },
+            status, handle));
   } else {
     auto callbacks = bt_gatt_callbacks;
     HAL_CBACK(callbacks, client->register_for_notification_cb,
@@ -590,12 +586,12 @@ static void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if, const Raw
   // TODO: conn_id is currently unused
   if (com_android_bluetooth_flags_gatt_reg_notification_on_jni_thread()) {
     do_in_jni_thread(BindOnce(
-        [](tGATT_STATUS status, uint16_t handle) {
-          auto callbacks = bt_gatt_callbacks;
-          HAL_CBACK(callbacks, client->register_for_notification_cb,
-                    /* conn_id */ 0, 0, status, handle);
-        },
-        status, handle));
+            [](tGATT_STATUS status, uint16_t handle) {
+              auto callbacks = bt_gatt_callbacks;
+              HAL_CBACK(callbacks, client->register_for_notification_cb,
+                        /* conn_id */ 0, 0, status, handle);
+            },
+            status, handle));
   } else {
     auto callbacks = bt_gatt_callbacks;
     HAL_CBACK(callbacks, client->register_for_notification_cb,
@@ -675,7 +671,8 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
     if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
         !acl_peer_supports_ble_connection_subrating(bd_addr) ||
         !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
-        return BtifStatus(UNSUPPORTED);;
+      return BtifStatus(UNSUPPORTED);
+      ;
     }
   }
   return do_in_main_thread(BindOnce(base::IgnoreResult(&stack::leConnectionSubrateRequest), bd_addr,
@@ -688,7 +685,7 @@ static BtStatus btif_gattc_subrate_mode_request(int client_if, const RawAddress&
   if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
       !acl_peer_supports_ble_connection_subrating(bd_addr) ||
       !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
-      return BtifStatus(UNSUPPORTED);
+    return BtifStatus(UNSUPPORTED);
   }
   return do_in_main_thread(BindOnce(base::IgnoreResult(&stack::leConnectionUpdateSubrateConfig),
                                     client_if, bd_addr, (tGATT_SUBRATE_MODE)subrate_mode, 0, 0, 0));

@@ -163,7 +163,7 @@ struct btm_client_interface_t btm_client_interface = {
                                                                                  p_timeout);
                         },
                 .BTM_ReadRSSI =
-                        [](const RawAddress& bd_addr, tBTM_CMPL_CB* p_cb) {
+                        [](const RawAddress& bd_addr, tBTM_READ_RSSI_CB* p_cb) {
                           return btm_client_interface_mock->BTM_ReadRSSI(bd_addr, p_cb);
                         },
         },
@@ -174,7 +174,7 @@ struct btm_client_interface_t btm_client_interface = {
                         },
                 .BTM_BleObserve =
                         [](bool start, uint8_t duration, tBTM_INQ_RESULTS_CB* p_results_cb,
-                           tBTM_CMPL_CB* p_cmpl_cb) {
+                           tBTM_INQUIRY_CMPL_CB* p_cmpl_cb) {
                           return btm_client_interface_mock->BTM_BleObserve(start, duration,
                                                                            p_results_cb, p_cmpl_cb);
                         },

@@ -129,16 +129,15 @@ struct BTM_SetInquiryMode {
 extern struct BTM_SetInquiryMode BTM_SetInquiryMode;
 
 // Name: BTM_StartInquiry
-// Params: tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_CMPL_CB* p_cmpl_cb
+// Params: tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_INQUIRY_CMPL_CB* p_cmpl_cb
 // Return: tBTM_STATUS
 struct BTM_StartInquiry {
   static tBTM_STATUS return_value;
-  std::function<tBTM_STATUS(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_CMPL_CB* p_cmpl_cb)> body{
-          [](tBTM_INQ_RESULTS_CB* /* p_results_cb */, tBTM_CMPL_CB* /* p_cmpl_cb */) {
-            return return_value;
-          }};
-  tBTM_STATUS operator()(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_CMPL_CB* p_cmpl_cb) {
-    return body(p_results_cb, p_cmpl_cb);
+  std::function<tBTM_STATUS(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_INQUIRY_CMPL_CB* p_cmpl_cb)>
+          body;
+  tBTM_STATUS operator()(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_INQUIRY_CMPL_CB* p_cmpl_cb) {
+    if (body) return body(p_results_cb, p_cmpl_cb);
+    return return_value;
   }
 };
 extern struct BTM_StartInquiry BTM_StartInquiry;

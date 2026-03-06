@@ -1414,7 +1414,7 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
  * Returns          tBTM_STATUS::BTM_CMD_STARTED if successfully initiated or error code
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
+tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_READ_RSSI_CB* p_cb) {
   tACL_CONN* p = NULL;
 
   /* If someone already waiting on the version, do not allow another */
@@ -1455,12 +1455,11 @@ tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
  *
  ******************************************************************************/
 void btm_read_rssi_timeout(void* /* data */) {
-  tBTM_RSSI_RESULT result;
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
+  tBTM_READ_RSSI_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
   btm_cb.devcb.p_rssi_cmpl_cb = NULL;
-  result.status = tBTM_STATUS::BTM_DEVICE_TIMEOUT;
+  log::warn("Read RSSI timed out");
   if (p_cb) {
-    (*p_cb)(&result);
+    (*p_cb)(tBTM_STATUS::BTM_DEVICE_TIMEOUT, 0, RawAddress::kEmpty);
   }
 }
 
@@ -1475,37 +1474,34 @@ void btm_read_rssi_timeout(void* /* data */) {
  *
  ******************************************************************************/
 void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
-  tBTM_RSSI_RESULT result;
+  tBTM_READ_RSSI_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
 
   alarm_cancel(btm_cb.devcb.read_rssi_timer);
   btm_cb.devcb.p_rssi_cmpl_cb = NULL;
 
   /* If there was a registered callback, call it */
   if (p_cb) {
-    auto read_rssi_complete_view = bluetooth::hci::ReadRssiCompleteView::Create(view);
-    if (!read_rssi_complete_view.IsValid()) {
-      log::error("Invalid read rssi complete view");
-      return;
-    }
+    auto read_rssi_complete = bluetooth::hci::ReadRssiCompleteView::Create(view);
+    RawAddress address = RawAddress::kEmpty;
+    tBTM_STATUS status = tBTM_STATUS::BTM_SUCCESS;
+    uint8_t rssi = 0;
 
-    result.hci_status = static_cast<tHCI_STATUS>(read_rssi_complete_view.GetStatus());
-    result.status = tBTM_STATUS::BTM_ERR_PROCESSING;
-
-    if (result.hci_status == HCI_SUCCESS) {
-      uint16_t handle = read_rssi_complete_view.GetConnectionHandle();
-      result.rssi = read_rssi_complete_view.GetRssi();
-
-      log::debug("Read rssi complete rssi:{} hci status:{}", result.rssi,
-                 hci_status_code_text(to_hci_status_code(result.hci_status)));
-
-      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
-      if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->link_spec.addrt.bda;
-        result.status = tBTM_STATUS::BTM_SUCCESS;
+    if (read_rssi_complete.IsValid()) {
+      if (read_rssi_complete.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
+        uint16_t handle = read_rssi_complete.GetConnectionHandle();
+        tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+        if (p_acl_cb != nullptr) {
+          address = p_acl_cb->link_spec.addrt.bda;
+        }
+        rssi = read_rssi_complete.GetRssi();
+      } else {
+        status = tBTM_STATUS::BTM_ERR_PROCESSING;
       }
+    } else {
+      status = tBTM_STATUS::BTM_ERR_PROCESSING;
     }
-    (*p_cb)(&result);
+
+    (*p_cb)(status, rssi, address);
   }
 }
 
@@ -1521,41 +1517,26 @@ void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
  *
  ******************************************************************************/
 void btm_read_automatic_flush_timeout_complete(bluetooth::hci::CommandCompleteView view) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
-  tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT result;
+  tBTM_READ_AUTOMATIC_FLUSH_TIMEOUT_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
 
   alarm_cancel(btm_cb.devcb.read_automatic_flush_timeout_timer);
   btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = nullptr;
 
   /* If there was a registered callback, call it */
   if (p_cb) {
-    auto read_automatic_flush_timeout_complete_view =
-            bluetooth::hci::ReadAutomaticFlushTimeoutCompleteView::Create(view);
-    if (!read_automatic_flush_timeout_complete_view.IsValid()) {
-      log::error("Invalid read automatic flush timeout complete view");
-      return;
-    }
+    auto complete = bluetooth::hci::ReadAutomaticFlushTimeoutCompleteView::Create(view);
+    RawAddress address = RawAddress::kEmpty;
 
-    result.hci_status =
-            static_cast<tHCI_STATUS>(read_automatic_flush_timeout_complete_view.GetStatus());
-    uint16_t handle;
-    result.status = tBTM_STATUS::BTM_ERR_PROCESSING;
-
-    if (result.hci_status == HCI_SUCCESS) {
-      result.status = tBTM_STATUS::BTM_SUCCESS;
-
-      handle = read_automatic_flush_timeout_complete_view.GetConnectionHandle();
-      result.automatic_flush_timeout = read_automatic_flush_timeout_complete_view.GetFlushTimeout();
-      log::debug("Read automatic flush timeout complete timeout:{} hci_status:{}",
-                 result.automatic_flush_timeout,
-                 hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status)));
-
-      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
-      if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->link_spec.addrt.bda;
+    if (complete.IsValid()) {
+      if (complete.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
+        uint16_t handle = complete.GetConnectionHandle();
+        tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+        if (p_acl_cb != nullptr) {
+          address = p_acl_cb->link_spec.addrt.bda;
+        }
       }
     }
-    (*p_cb)(&result);
+    (*p_cb)(view, address);
   }
 }
 

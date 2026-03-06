@@ -342,7 +342,7 @@ static std::pair<uint16_t /* interval */, uint16_t /* window */> get_low_latency
  *
  ******************************************************************************/
 tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration, tBTM_INQ_RESULTS_CB* p_results_cb,
-                           tBTM_CMPL_CB* p_cmpl_cb) {
+                           tBTM_INQUIRY_CMPL_CB* p_cmpl_cb) {
   tBTM_STATUS status = tBTM_STATUS::BTM_WRONG_MODE;
   uint8_t scan_phy = btm_cb.ble_ctr_cb.inq_var.scan_phy | BTM_BLE_DEFAULT_PHYS;
 
@@ -1597,7 +1597,7 @@ void btm_ble_stop_inquiry(void) {
  *
  ******************************************************************************/
 static void btm_ble_stop_observe(void) {
-  tBTM_CMPL_CB* p_obs_cb = btm_cb.ble_ctr_cb.p_obs_cmpl_cb;
+  tBTM_INQUIRY_CMPL_CB* p_obs_cb = btm_cb.ble_ctr_cb.p_obs_cmpl_cb;
 
   alarm_cancel(btm_cb.ble_ctr_cb.observer_timer);
 

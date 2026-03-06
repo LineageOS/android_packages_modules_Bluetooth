@@ -85,14 +85,14 @@ struct btm_client_interface_t {
   struct {
     [[nodiscard]] tBTM_STATUS (*BTM_GetLinkSuperTout)(const RawAddress& bd_addr,
                                                       uint16_t* p_timeout);
-    [[nodiscard]] tBTM_STATUS (*BTM_ReadRSSI)(const RawAddress& bd_addr, tBTM_CMPL_CB* p_cb);
+    [[nodiscard]] tBTM_STATUS (*BTM_ReadRSSI)(const RawAddress& bd_addr, tBTM_READ_RSSI_CB* p_cb);
   } link_controller;
 
   struct {
     [[nodiscard]] tBTM_STATUS (*BTM_BleGetEnergyInfo)(tBTM_BLE_ENERGY_INFO_CBACK* callback);
     [[nodiscard]] tBTM_STATUS (*BTM_BleObserve)(bool start, uint8_t duration,
                                                 tBTM_INQ_RESULTS_CB* p_results_cb,
-                                                tBTM_CMPL_CB* p_cmpl_cb);
+                                                tBTM_INQUIRY_CMPL_CB* p_cmpl_cb);
     [[nodiscard]] tBTM_STATUS (*BTM_SetBleDataLength)(const RawAddress& bd_addr,
                                                       uint16_t tx_pdu_length,
                                                       bool is_privileged_client);

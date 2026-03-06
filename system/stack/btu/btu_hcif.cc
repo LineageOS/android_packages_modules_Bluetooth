@@ -985,14 +985,9 @@ static void btu_hcif_hdl_command_complete(bluetooth::hci::CommandCompleteView vi
 
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
-    case HCI_BLE_TEST_END: {
-      uint8_t evt_len = payload_bytes.size();
-      if (evt_len >= 3 || (opcode != HCI_BLE_TEST_END && evt_len >= 1)) {
-        btm_ble_test_command_complete(payload_bytes.data());
-      } else {
-        log::error("Invalid event length for command complete event: {}", evt_len);
-      }
-    } break;
+    case HCI_BLE_TEST_END:
+      btm_ble_test_command_complete(std::move(view));
+      break;
 
     case HCI_BLE_ADD_DEV_RESOLVING_LIST:
       btm_ble_add_resolving_list_entry_complete(payload_bytes.data(), payload_bytes.size());

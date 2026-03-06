@@ -30,6 +30,7 @@ cc_library_static {
     srcs: ["src/btif_jni_task.cc"],
     static_libs: [
         "bluetooth_flags_c_lib",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
         "libosi",
