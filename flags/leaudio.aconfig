@@ -252,16 +252,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_improve_source_operations"
-    namespace: "bluetooth"
-    description: "Improve broadcast source operations"
-    bug: "444010402"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_reactivate_autonomously_inactivated_group_by_broadcast"
     namespace: "bluetooth"
     description: "Reactivate group autonomously deactivated due to broadcast sync"
