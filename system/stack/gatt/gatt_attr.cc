@@ -69,8 +69,29 @@ typedef struct {
 
 static std::map<tCONN_ID, std::deque<gatt_op_cb_data>> OngoingOps;
 
-static void gatt_request_cback(tCONN_ID conn_id, uint32_t trans_id, uint8_t op_code,
-                               tGATTS_DATA* p_data);
+static void gatt_read_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                         const RawAddress& remote_bda,
+                                                         uint16_t handle, uint16_t offset,
+                                                         bool is_long);
+static void gatt_write_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                          const RawAddress& remote_bda,
+                                                          uint16_t handle, uint16_t offset,
+                                                          bool need_rsp, bool is_prep,
+                                                          uint8_t* value, uint16_t len);
+static void gatt_exec_write_cback(tCONN_ID, uint32_t, const RawAddress&, tGATT_EXEC_FLAG) {}
+static void gatt_mtu_changed_cback(tCONN_ID, uint32_t, const RawAddress&, uint16_t) {}
+static void gatt_conf_cback(tCONN_ID, uint32_t, const RawAddress&) {}
+
+static stack::tGATT_REQ_CBACK gatt_profile_req_cback = {
+        .read_characteristic_cb = gatt_read_characteristic_or_descriptor_cback,
+        .read_descriptor_cb = gatt_read_characteristic_or_descriptor_cback,
+        .write_characteristic_cb = gatt_write_characteristic_or_descriptor_cback,
+        .write_descriptor_cb = gatt_write_characteristic_or_descriptor_cback,
+        .exec_write_cb = gatt_exec_write_cback,
+        .mtu_changed_cb = gatt_mtu_changed_cback,
+        .conf_cb = gatt_conf_cback,
+};
+
 static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda, tCONN_ID conn_id,
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport);
@@ -93,14 +114,14 @@ static bool read_sr_sirk_req(tCONN_ID conn_id,
 
 static tGATT_STATUS gatt_sr_read_db_hash(tCONN_ID conn_id, tGATT_VALUE* p_value);
 static tGATT_STATUS gatt_sr_read_cl_supp_feat(tCONN_ID conn_id, tGATT_VALUE* p_value);
-static tGATT_STATUS gatt_sr_write_cl_supp_feat(tCONN_ID conn_id, tGATT_WRITE_REQ* p_data);
+static tGATT_STATUS gatt_sr_write_cl_supp_feat(tCONN_ID conn_id, uint8_t* value, uint16_t len);
 
 static stack::tGATT_CBACK gatt_profile_cback = {
         .p_conn_cb = gatt_connect_cback,
         .p_cmpl_cb = gatt_cl_op_cmpl_cback,
         .p_disc_res_cb = gatt_disc_res_cback,
         .p_disc_cmpl_cb = gatt_disc_cmpl_cback,
-        .p_req_cb = gatt_request_cback,
+        .p_req_cb = &gatt_profile_req_cback,
         .p_enc_cmpl_cb = nullptr,
         .p_congestion_cb = nullptr,
         .p_phy_update_cb = nullptr,
@@ -286,21 +307,20 @@ static tGATT_STATUS read_attr_value(tCONN_ID conn_id, uint16_t handle, tGATT_VAL
 }
 
 /** GAP Attributes Database Read/Read Blob Request process */
-static tGATT_STATUS proc_read_req(tCONN_ID conn_id, tGATTS_REQ_TYPE, tGATT_READ_REQ* p_data,
+static tGATT_STATUS proc_read_req(tCONN_ID conn_id, uint16_t handle, uint16_t offset, bool is_long,
                                   tGATTS_RSP* p_rsp) {
-  if (p_data->is_long) {
-    p_rsp->attr_value.offset = p_data->offset;
+  if (is_long) {
+    p_rsp->attr_value.offset = offset;
   }
 
-  p_rsp->attr_value.handle = p_data->handle;
+  p_rsp->attr_value.handle = handle;
 
-  return read_attr_value(conn_id, p_data->handle, &p_rsp->attr_value, p_data->is_long);
+  return read_attr_value(conn_id, handle, &p_rsp->attr_value, is_long);
 }
 
 /** GAP ATT server process a write request */
-static tGATT_STATUS proc_write_req(tCONN_ID conn_id, tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
-  uint16_t handle = p_data->handle;
-
+static tGATT_STATUS proc_write_req(tCONN_ID conn_id, uint16_t handle, uint8_t* value,
+                                   uint16_t len) {
   /* GATT_UUID_SERVER_SUP_FEAT*/
   if (handle == gatt_cb.handle_sr_supported_feat) {
     return GATT_WRITE_NOT_PERMIT;
@@ -308,7 +328,7 @@ static tGATT_STATUS proc_write_req(tCONN_ID conn_id, tGATTS_REQ_TYPE, tGATT_WRIT
 
   /* GATT_UUID_CLIENT_SUP_FEAT*/
   if (handle == gatt_cb.handle_cl_supported_feat) {
-    return gatt_sr_write_cl_supp_feat(conn_id, p_data);
+    return gatt_sr_write_cl_supp_feat(conn_id, value, len);
   }
 
   /* GATT_UUID_DATABASE_HASH */
@@ -331,54 +351,32 @@ static tGATT_STATUS proc_write_req(tCONN_ID conn_id, tGATTS_REQ_TYPE, tGATT_WRIT
   return GATT_NOT_FOUND;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_request_cback
- *
- * Description      GATT profile attribute access request callback.
- *
- * Returns          void.
- *
- ******************************************************************************/
-static void gatt_request_cback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type,
-                               tGATTS_DATA* p_data) {
-  tGATT_STATUS status = GATT_INVALID_PDU;
+static void gatt_read_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                         const RawAddress& /*remote_bda*/,
+                                                         uint16_t handle, uint16_t offset,
+                                                         bool is_long) {
   tGATTS_RSP rsp_msg;
-  bool rsp_needed = true;
-
   memset(&rsp_msg, 0, sizeof(tGATTS_RSP));
+  tGATT_STATUS status = proc_read_req(conn_id, handle, offset, is_long, &rsp_msg);
+  if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
+    log::warn("Unable to send GATT server response conn_id:{}", conn_id);
+  }
+}
 
-  switch (type) {
-    case GATTS_REQ_TYPE_READ_CHARACTERISTIC:
-    case GATTS_REQ_TYPE_READ_DESCRIPTOR:
-      status = proc_read_req(conn_id, type, &p_data->read_req, &rsp_msg);
-      break;
+static void gatt_write_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                          const RawAddress& /*remote_bda*/,
+                                                          uint16_t handle, uint16_t /* offset */,
+                                                          bool need_rsp, bool /* is_prep */,
+                                                          uint8_t* value, uint16_t len) {
+  tGATT_STATUS status = proc_write_req(conn_id, handle, value, len);
 
-    case GATTS_REQ_TYPE_WRITE_CHARACTERISTIC:
-    case GATTS_REQ_TYPE_WRITE_DESCRIPTOR:
-    case GATTS_REQ_TYPE_WRITE_EXEC:
-    case GATT_CMD_WRITE:
-      if (!p_data->write_req.need_rsp) {
-        rsp_needed = false;
-      }
-
-      status = proc_write_req(conn_id, type, &p_data->write_req);
-      break;
-
-    case GATTS_REQ_TYPE_MTU:
-      log::verbose("Get MTU exchange new mtu size: {}", p_data->mtu);
-      rsp_needed = false;
-      break;
-
-    default:
-      log::verbose("Unknown/unexpected LE GAP ATT request: 0x{:x}", type);
-      break;
+  if (!need_rsp) {
+    return;
   }
 
-  if (rsp_needed) {
-    if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
-      log::warn("Unable to send GATT server response conn_id:{}", conn_id);
-    }
+  tGATTS_RSP rsp_msg{};
+  if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
+    log::warn("Unable to send GATT server response conn_id:{}", conn_id);
   }
 }
 
@@ -1215,10 +1213,10 @@ static tGATT_STATUS gatt_sr_read_cl_supp_feat(tCONN_ID conn_id, tGATT_VALUE* p_v
 }
 
 /* handle request for writing client supported features */
-static tGATT_STATUS gatt_sr_write_cl_supp_feat(tCONN_ID conn_id, tGATT_WRITE_REQ* p_data) {
+static tGATT_STATUS gatt_sr_write_cl_supp_feat(tCONN_ID conn_id, uint8_t* write_value,
+                                               uint16_t len) {
   std::list<uint8_t> tmp;
-  uint16_t len = p_data->len;
-  uint8_t value, *p = p_data->value;
+  uint8_t value, *p = write_value;
   // Read all octets into list
   while (len > 0) {
     STREAM_TO_UINT8(value, p);

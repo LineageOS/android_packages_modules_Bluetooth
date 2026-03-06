@@ -82,8 +82,6 @@ void tGATT_CMPL_CBACK(uint16_t /*conn_id*/, tGATTC_OPTYPE /*op*/, tGATT_STATUS /
 void tGATT_CONN_CBACK(tGATT_IF /*gatt_if*/, const RawAddress& /*bda*/, uint16_t /*conn_id*/,
                       bool /*connected*/, tGATT_DISCONN_REASON /*reason*/,
                       tBT_TRANSPORT /*transport*/) {}
-void tGATT_REQ_CBACK(uint16_t /*conn_id*/, uint32_t /*trans_id*/, tGATTS_REQ_TYPE /*type*/,
-                     tGATTS_DATA* /*p_data*/) {}
 void tGATT_CONGESTION_CBACK(uint16_t /*conn_id*/, bool /*congested*/) {}
 void tGATT_ENC_CMPL_CB(tGATT_IF /*gatt_if*/, const RawAddress& /*bda*/) {}
 void tGATT_PHY_UPDATE_CB(tGATT_IF /*gatt_if*/, uint16_t /*conn_id*/, uint8_t /*tx_phy*/,
@@ -96,7 +94,7 @@ stack::tGATT_CBACK gatt_callbacks = {
         .p_cmpl_cb = tGATT_CMPL_CBACK,
         .p_disc_res_cb = tGATT_DISC_RES_CB,
         .p_disc_cmpl_cb = tGATT_DISC_CMPL_CB,
-        .p_req_cb = tGATT_REQ_CBACK,
+        .p_req_cb = nullptr,
         .p_enc_cmpl_cb = tGATT_ENC_CMPL_CB,
         .p_congestion_cb = tGATT_CONGESTION_CBACK,
         .p_phy_update_cb = tGATT_PHY_UPDATE_CB,

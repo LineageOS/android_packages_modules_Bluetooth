@@ -38,8 +38,23 @@ typedef void(tGATT_CONN_CBACK)(tGATT_IF gatt_if, const RawAddress& bda, tCONN_ID
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport);
 /* attribute request callback for ATT server */
-typedef void(tGATT_REQ_CBACK)(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type,
-                              tGATTS_DATA* p_data);
+struct tGATT_REQ_CBACK {
+  void (&read_characteristic_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                                 uint16_t handle, uint16_t offset, bool is_long);
+  void (&read_descriptor_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                             uint16_t handle, uint16_t offset, bool is_long);
+  void (&write_characteristic_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                                  uint16_t handle, uint16_t offset, bool need_rsp, bool is_prep,
+                                  uint8_t* value, uint16_t len);
+  void (&write_descriptor_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                              uint16_t handle, uint16_t offset, bool need_rsp, bool is_prep,
+                              uint8_t* value, uint16_t len);
+  void (&exec_write_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                        tGATT_EXEC_FLAG exec_write);
+  void (&mtu_changed_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                         uint16_t mtu);
+  void (&conf_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
+};
 /* channel congestion/uncongestion callback */
 typedef void(tGATT_CONGESTION_CBACK)(tCONN_ID conn_id, bool congested);
 /* Define a callback function when encryption is established. */

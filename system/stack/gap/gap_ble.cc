@@ -62,17 +62,41 @@ typedef struct {
   tGAP_BLE_ATTR_VALUE attr_value;
 } tGAP_ATTR;
 
-static void server_attr_request_cback(tCONN_ID, uint32_t, tGATTS_REQ_TYPE, tGATTS_DATA*);
 static void client_connect_cback(tGATT_IF, const RawAddress&, tCONN_ID, bool, tGATT_DISCONN_REASON,
                                  tBT_TRANSPORT);
 static void client_cmpl_cback(tCONN_ID, tGATTC_OPTYPE, tGATT_STATUS, tGATT_CL_COMPLETE*);
+
+static void gap_read_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                        const RawAddress& remote_bda,
+                                                        uint16_t handle, uint16_t offset,
+                                                        bool is_long);
+static void gap_write_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                         const RawAddress& remote_bda,
+                                                         uint16_t handle, uint16_t offset,
+                                                         bool need_rsp, bool is_prep,
+                                                         uint8_t* value, uint16_t len);
+static void gap_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                                 tGATT_EXEC_FLAG exec_write);
+static void gap_mtu_changed_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
+                                  uint16_t mtu);
+static void gap_conf_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
+
+static stack::tGATT_REQ_CBACK gap_req_cback = {
+        .read_characteristic_cb = gap_read_characteristic_or_descriptor_cback,
+        .read_descriptor_cb = gap_read_characteristic_or_descriptor_cback,
+        .write_characteristic_cb = gap_write_characteristic_or_descriptor_cback,
+        .write_descriptor_cb = gap_write_characteristic_or_descriptor_cback,
+        .exec_write_cb = gap_exec_write_cback,
+        .mtu_changed_cb = gap_mtu_changed_cback,
+        .conf_cb = gap_conf_cback,
+};
 
 stack::tGATT_CBACK gap_cback = {
         .p_conn_cb = client_connect_cback,
         .p_cmpl_cb = client_cmpl_cback,
         .p_disc_res_cb = nullptr,
         .p_disc_cmpl_cb = nullptr,
-        .p_req_cb = server_attr_request_cback,
+        .p_req_cb = &gap_req_cback,
         .p_enc_cmpl_cb = nullptr,
         .p_congestion_cb = nullptr,
         .p_phy_update_cb = nullptr,
@@ -191,73 +215,53 @@ static tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value, bool 
   return GATT_NOT_FOUND;
 }
 
-/** GAP Attributes Database Read/Read Blob Request process */
-static tGATT_STATUS proc_read(tGATTS_REQ_TYPE, tGATT_READ_REQ* p_data, tGATTS_RSP* p_rsp) {
-  if (p_data->is_long) {
-    p_rsp->attr_value.offset = p_data->offset;
+static void gap_read_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                        const RawAddress& /*remote_bda*/,
+                                                        uint16_t handle, uint16_t offset,
+                                                        bool is_long) {
+  tGATTS_RSP rsp_msg{};
+  if (is_long) {
+    rsp_msg.attr_value.offset = offset;
   }
-
-  p_rsp->attr_value.handle = p_data->handle;
-
-  return read_attr_value(p_data->handle, &p_rsp->attr_value, p_data->is_long);
+  rsp_msg.attr_value.handle = handle;
+  tGATT_STATUS status = read_attr_value(handle, &rsp_msg.attr_value, is_long);
+  if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg)) {
+    log::warn("Unable to send GATT server response conn_id:{}", conn_id);
+  }
 }
 
-/** GAP ATT server process a write request */
-static tGATT_STATUS proc_write_req(tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
-  for (const auto& db_addr : gatt_attr) {
-    if (p_data->handle == db_addr.handle) {
-      return GATT_WRITE_NOT_PERMIT;
-    }
-  }
-
-  return GATT_NOT_FOUND;
-}
-
-/** GAP ATT server attribute access request callback */
-static void server_attr_request_cback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type,
-                                      tGATTS_DATA* p_data) {
-  tGATT_STATUS status = GATT_INVALID_PDU;
-  bool ignore = false;
-
-  tGATTS_RSP rsp_msg;
-  memset(&rsp_msg, 0, sizeof(tGATTS_RSP));
-
-  switch (type) {
-    case GATTS_REQ_TYPE_READ_CHARACTERISTIC:
-    case GATTS_REQ_TYPE_READ_DESCRIPTOR:
-      status = proc_read(type, &p_data->read_req, &rsp_msg);
-      break;
-
-    case GATTS_REQ_TYPE_WRITE_CHARACTERISTIC:
-    case GATTS_REQ_TYPE_WRITE_DESCRIPTOR:
-      if (!p_data->write_req.need_rsp) {
-        ignore = true;
+static void gap_write_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                                         const RawAddress& /*remote_bda*/,
+                                                         uint16_t handle, uint16_t /*offset*/,
+                                                         bool need_rsp, bool /*is_prep*/,
+                                                         uint8_t* /*value*/, uint16_t /*len*/) {
+  if (need_rsp) {
+    tGATT_STATUS status = GATT_NOT_FOUND;
+    for (const auto& db_addr : gatt_attr) {
+      if (handle == db_addr.handle) {
+        status = GATT_WRITE_NOT_PERMIT;
+        break;
       }
-
-      status = proc_write_req(type, &p_data->write_req);
-      break;
-
-    case GATTS_REQ_TYPE_WRITE_EXEC:
-      ignore = true;
-      log::verbose("Ignore GATTS_REQ_TYPE_WRITE_EXEC");
-      break;
-
-    case GATTS_REQ_TYPE_MTU:
-      log::verbose("Get MTU exchange new mtu size: {}", p_data->mtu);
-      ignore = true;
-      break;
-
-    default:
-      log::verbose("Unknown/unexpected LE GAP ATT request: 0x{:02x}", type);
-      break;
-  }
-
-  if (!ignore) {
-    if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
-      log::warn("Unable to send GATT ervier response conn_id:{}", conn_id);
+    }
+    tGATTS_RSP rsp_msg{};
+    if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg)) {
+      log::warn("Unable to send GATT server response conn_id:{}", conn_id);
     }
   }
 }
+
+static void gap_exec_write_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
+                                 const RawAddress& /*remote_bda*/, tGATT_EXEC_FLAG /*exec_write*/) {
+  log::verbose("Ignore GATTS_REQ_TYPE_WRITE_EXEC");
+}
+
+static void gap_mtu_changed_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
+                                  const RawAddress& /*remote_bda*/, uint16_t mtu) {
+  log::verbose("Get MTU exchange new mtu size: {}", mtu);
+}
+
+static void gap_conf_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
+                           const RawAddress& /*remote_bda*/) {}
 
 /**
  * Utility function to send a read request for GAP characteristics.
