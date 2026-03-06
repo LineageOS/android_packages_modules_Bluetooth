@@ -281,6 +281,17 @@ public class BrowseTree {
             return null;
         }
 
+        synchronized List<AvrcpItem> getContentsAsAvrcpItems() {
+            if (mChildren.size() > 0 || mCached) {
+                List<AvrcpItem> contents = new ArrayList<>(mChildren.size());
+                for (BrowseNode child : mChildren) {
+                    contents.add(child.getAvrcpItem());
+                }
+                return contents;
+            }
+            return null;
+        }
+
         synchronized boolean isChild(BrowseNode node) {
             return mChildren.contains(node);
         }
@@ -333,6 +344,10 @@ public class BrowseTree {
 
         synchronized MediaItem getMediaItem() {
             return mItem.toMediaItem();
+        }
+
+        synchronized AvrcpItem getAvrcpItem() {
+            return mItem;
         }
 
         synchronized boolean isPlayer() {

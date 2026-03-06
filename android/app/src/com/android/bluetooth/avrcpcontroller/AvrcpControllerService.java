@@ -18,6 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
@@ -33,8 +34,10 @@ import com.android.bluetooth.BluetoothPrefs;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService.BrowseResult;
+import com.android.bluetooth.media_audio.sink.MediaAudioServer;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -97,6 +100,8 @@ public class AvrcpControllerService extends ProfileService {
 
     private final Object mActiveDeviceLock = new Object();
 
+    private MediaAudioServer mMediaAudioServer;
+
     private final AvrcpControllerNativeInterface mNativeInterface;
     private final AvrcpCoverArtManager mCoverArtManager;
     private final boolean mCoverArtEnabled;
@@ -140,6 +145,11 @@ public class AvrcpControllerService extends ProfileService {
     public AvrcpControllerService(
             AdapterService adapterService, AvrcpControllerNativeInterface nativeInterface) {
         super(BluetoothProfile.AVRCP_CONTROLLER, adapterService);
+
+        if (Flags.mediaAudioServer()) {
+            mMediaAudioServer = requireNonNull(adapterService.getMediaAudioServer().orElse(null));
+        }
+
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -194,6 +204,11 @@ public class AvrcpControllerService extends ProfileService {
 
     /** Get the current active device */
     public BluetoothDevice getActiveDevice() {
+        if (Flags.mediaAudioServer()) {
+            Log.d(TAG, "getActiveDevice(): Not available");
+            return null;
+        }
+
         synchronized (mActiveDeviceLock) {
             return mActiveDevice;
         }
@@ -203,6 +218,12 @@ public class AvrcpControllerService extends ProfileService {
     @VisibleForTesting
     boolean setActiveDevice(BluetoothDevice device) {
         Log.d(TAG, "setActiveDevice(device=" + device + ")");
+
+        if (Flags.mediaAudioServer()) {
+            Log.d(TAG, "setActiveDevice(device=" + device + "): Not available");
+            return false;
+        }
+
         final var a2dpSink = getAdapterService().getA2dpSinkService();
         if (a2dpSink.isEmpty()) {
             Log.w(TAG, "setActiveDevice(device=" + device + "): A2DP Sink not available");
@@ -414,6 +435,11 @@ public class AvrcpControllerService extends ProfileService {
     public void onAudioFocusStateChanged(int state) {
         Log.d(TAG, "onAudioFocusStateChanged(state=" + state + ")");
 
+        if (Flags.mediaAudioServer()) {
+            Log.d(TAG, "onAudioFocusStateChanged(state=" + state + "): Not available");
+            return;
+        }
+
         // Make sure the active device isn't changed while we're processing the event so play/pause
         // commands get routed to the correct device
         synchronized (mActiveDeviceLock) {
@@ -606,7 +632,7 @@ public class AvrcpControllerService extends ProfileService {
     protected AvrcpControllerStateMachine getOrCreateStateMachine(BluetoothDevice device) {
         AvrcpControllerStateMachine newStateMachine =
                 new AvrcpControllerStateMachine(
-                        getAdapterService(), this, device, mNativeInterface);
+                        getAdapterService(), this, mMediaAudioServer, device, mNativeInterface);
         AvrcpControllerStateMachine existingStateMachine =
                 mDeviceStateMap.putIfAbsent(device, newStateMachine);
         // Given null is not a valid value in our map, ConcurrentHashMap will return null if the
@@ -674,12 +700,14 @@ public class AvrcpControllerService extends ProfileService {
             sb.append("\n  ").append(mCoverArtManager.toString());
         }
 
-        sb.append("\n  ").append(BluetoothMediaBrowserService.dump()).append("\n");
-
         sb.append("\n  Desired Volume Strategy: ")
                 .append(
                         AvrcpControllerVolumeHandler.strategyToString(
                                 AvrcpControllerVolumeHandler.getDesiredVolumeStrategy(this)))
                 .append("\n");
+
+        if (!Flags.mediaAudioServer()) {
+            sb.append("\n  ").append(BluetoothMediaBrowserService.dump()).append("\n");
+        }
     }
 }

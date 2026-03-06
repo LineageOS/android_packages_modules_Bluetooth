@@ -36,11 +36,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.media_audio.sink.AudioSource;
+import com.android.bluetooth.media_audio.sink.MediaAudioServer;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -48,14 +53,17 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 /** Test cases for {@link A2dpSinkStateMachine}. */
 @RunWith(AndroidJUnit4.class)
 public class A2dpSinkStateMachineTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private A2dpSinkService mService;
+    @Mock private MediaAudioServer mMediaAudioServer;
     @Mock private A2dpSinkNativeInterface mNativeInterface;
 
     private final BluetoothDevice mDevice = getTestDevice(11);
@@ -63,14 +71,23 @@ public class A2dpSinkStateMachineTest {
     private TestLooper mLooper;
     private A2dpSinkStateMachine mStateMachine;
 
+    private AudioSource mAudioSource;
+    @Mock private AudioSource.Callback mAudioSourceCallbacks;
+
     @Before
     public void setUp() throws Exception {
         mLooper = new TestLooper();
 
         mStateMachine =
-                new A2dpSinkStateMachine(mService, mDevice, mLooper.getLooper(), mNativeInterface);
+                new A2dpSinkStateMachine(
+                        mService,
+                        mDevice,
+                        mMediaAudioServer,
+                        mLooper.getLooper(),
+                        mNativeInterface);
 
         assertThat(mStateMachine.getDevice()).isEqualTo(mDevice);
+        assertThat(mStateMachine.isPlaying()).isFalse();
         assertThat(mStateMachine.getState()).isEqualTo(STATE_DISCONNECTED);
     }
 
@@ -95,6 +112,22 @@ public class A2dpSinkStateMachineTest {
     private void sendAudioConfigChangedEvent(int sampleRate, int channelCount) {
         mStateMachine.onAudioConfigChanged(sampleRate, channelCount);
         syncHandler(A2dpSinkStateMachine.MESSAGE_AUDIO_CONFIG_CHANGED);
+    }
+
+    private void sendAudioStateChangedEvent(int state) {
+        mStateMachine.onAudioStateChanged(state);
+        syncHandler(A2dpSinkStateMachine.MESSAGE_AUDIO_STATE_CHANGED);
+    }
+
+    private void verifyAndCaptureAudioSourceRegistration() {
+        var captor = ArgumentCaptor.forClass(AudioSource.class);
+        verify(mMediaAudioServer).registerAudioSource(captor.capture());
+        assertThat(captor.getAllValues()).hasSize(1);
+        mAudioSource = captor.getValue();
+
+        assertThat(mAudioSource).isNotNull();
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.IDLE);
+        mAudioSource.registerCallback(mAudioSourceCallbacks);
     }
 
     /**********************************************************************************************
@@ -361,6 +394,145 @@ public class A2dpSinkStateMachineTest {
 
         syncHandler(A2dpSinkStateMachine.CLEANUP);
         verify(mService).removeStateMachine(mStateMachine);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testConnectedEnter_audioSourceRegisteredWithMediaServer() {
+        // TODO(Flags.media_audio_server): Can move this as a pass criteria for all tests entering
+        // connected. This is easy for now though, and provides a flagged basis for other tests too
+        testConnectedInConnecting();
+        verifyAndCaptureAudioSourceRegistration();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testConnectedExit_audioSourceUnregisteredWithMediaServer() {
+        // TODO(Flags.media_audio_server): Can move this as a pass criteria for all tests exiting
+        // connected. This is easy for now though
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendConnectionEvent(STATE_DISCONNECTING);
+
+        verify(mMediaAudioServer).unregisterAudioSource(mAudioSource);
+        verify(mService).connectionStateChanged(mDevice, STATE_CONNECTED, STATE_DISCONNECTING);
+        assertThat(mStateMachine.getState()).isEqualTo(STATE_DISCONNECTING);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testAudioStateChangedInConnected_toStopped_stateOpen() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_STOPPED);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.OPEN);
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.OPEN);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testAudioStateChangedInConnected_toRemoteSuspended_stateOpen() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_REMOTE_SUSPEND);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.OPEN);
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.OPEN);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testAudioStateChangedInConnected_toStarted_stateStreaming() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_STARTED);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.STREAMING);
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.STREAMING);
+        assertThat(mStateMachine.isPlaying()).isTrue();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testAudioStateChangedInConnected_toRemoteSuspendFromStarted_stateOpen() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_STARTED);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.STREAMING);
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_REMOTE_SUSPEND);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.OPEN);
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.OPEN);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testAudioStateChangedInConnected_toStoppedFromStarted_stateOpen() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_STARTED);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.STREAMING);
+
+        sendAudioStateChangedEvent(A2dpSinkNativeInterface.AUDIO_STATE_STOPPED);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.OPEN);
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.OPEN);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testAudioConfigChangedInConnected_stateConfiguredToStateOpen() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        sendAudioConfigChangedEvent(44, 1);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.CONFIGURED);
+        verify(mAudioSourceCallbacks).onStreamStateChanged(AudioSource.StreamState.OPEN);
+        assertThat(mAudioSource.getStreamState()).isEqualTo(AudioSource.StreamState.OPEN);
+    }
+
+    /**********************************************************************************************
+     * AUDIO SOURCE TESTS                                                                         *
+     *********************************************************************************************/
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testPrepare_activeDeviceSet() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        mAudioSource.prepare();
+
+        verify(mNativeInterface).setActiveDevice(mDevice);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testStartStream_gainSetToFullAndFocusNotified() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        mAudioSource.start();
+
+        verify(mNativeInterface).informAudioTrackGain(1.0f);
+        verify(mNativeInterface).informAudioFocusState(A2dpSinkNativeInterface.STATE_FOCUS_GRANTED);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testSuspendStream_gainSetToZeroAndFocusNotified() {
+        testConnectedEnter_audioSourceRegisteredWithMediaServer();
+
+        mAudioSource.suspend();
+
+        verify(mNativeInterface).informAudioTrackGain(0.0f);
+        verify(mNativeInterface).informAudioFocusState(A2dpSinkNativeInterface.STATE_FOCUS_LOST);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    public void testRelease_activeDeviceRemovedGainSetToZeroAndFocusNotified() {
+        testPrepare_activeDeviceSet();
+
+        mAudioSource.release();
+
+        verify(mNativeInterface).setActiveDevice(null);
+        verify(mNativeInterface).informAudioTrackGain(0.0f);
+        verify(mNativeInterface).informAudioFocusState(A2dpSinkNativeInterface.STATE_FOCUS_LOST);
     }
 
     /**********************************************************************************************
