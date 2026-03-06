@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,128 +14,180 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.mapclient;
+package com.android.bluetooth.mapclient
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.MediumTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-/** Test cases for {@link Bmessage}. */
+/** Test cases for [Bmessage]. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
-public class BmessageTest {
-    private static final String TAG = BmessageTest.class.getSimpleName();
+@RunWith(AndroidJUnit4::class)
+class BmessageTest {
 
-    private static final String SIMPLE_MMS_MESSAGE =
+    @Test
+    fun testNormalMessages() {
+        assertThat(BmessageParser.createBmessage(SIMPLE_MMS_MESSAGE)).isNotNull()
+    }
+
+    @Test
+    fun testParseWrongLengthMessage() {
+        assertThat(BmessageParser.createBmessage(WRONG_LENGTH_MESSAGE)).isNull()
+    }
+
+    @Test
+    fun testParseNoEndMessage() {
+        assertThat(BmessageParser.createBmessage(NO_END_MESSAGE)).isNull()
+    }
+
+    @Test
+    fun testParseReallyLongMessage() {
+        val testMessage = "A".repeat(68048)
+        assertThat(BmessageParser.createBmessage(testMessage)).isNull()
+    }
+
+    @Test
+    fun testNoBodyMessage() {
+        assertThat(BmessageParser.createBmessage(NO_BODY_MESSAGE)).isNull()
+    }
+
+    @Test
+    fun testNegativeLengthMessage() {
+        assertThat(BmessageParser.createBmessage(NEGATIVE_LENGTH_MESSAGE)).isNull()
+    }
+
+    @Test
+    fun setCharset() {
+        val message = Bmessage().apply { charset = "UTF-8" }
+        assertThat(message.charset).isEqualTo("UTF-8")
+    }
+
+    @Test
+    fun setEncoding() {
+        val message = Bmessage().apply { encoding = "test_encoding" }
+        assertThat(message.encoding).isEqualTo("test_encoding")
+    }
+
+    @Test
+    fun setStatus() {
+        val message = Bmessage().apply { status = Bmessage.Status.READ }
+        assertThat(message.status).isEqualTo(Bmessage.Status.READ)
+    }
+
+    companion object {
+        // `trimIndent` removes the last `\r\n` whereas [BMessage] expects it
+        private fun String.toBmessage() = trimIndent().replace(Regex("\n *"), "\r\n").plus("\r\n")
+
+        private val SIMPLE_MMS_MESSAGE =
             """
-            BEGIN:BMSG\r
-            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
-            BEGIN:BENV\r
-            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
-            BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\nEND:BBODY\r
-            END:BENV\r
-            END:BMSG\r
-            """;
-
-    private static final String NO_END_MESSAGE =
+            BEGIN:BMSG
+                VERSION:1.0
+                STATUS:READ
+                TYPE:MMS
+                FOLDER:null
+                BEGIN:BENV
+                    BEGIN:VCARD
+                        VERSION:2.1
+                        N:null;;;;
+                        TEL:555-5555
+                    END:VCARD
+                    BEGIN:BBODY
+                        LENGTH:39
+                        BEGIN:MSG
+                            This is a new msg
+                        END:MSG
+                    END:BBODY
+                END:BENV
+            END:BMSG
             """
-            BEGIN:BMSG\r
-            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
-            BEGIN:BENV\r
-            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
-            BEGIN:BBODY\r\nLENGTH:200\r\nBEGIN:MSG\r\nThis is a new msg\r
-            """;
+                .toBmessage()
 
-    private static final String WRONG_LENGTH_MESSAGE =
+        private val NO_END_MESSAGE =
             """
-            BEGIN:BMSG\r
-            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
-            BEGIN:BENV\r
-            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
-            BEGIN:BBODY\r\nLENGTH:200\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\nEND:BBODY\r
-            END:BENV\r
-            END:BMSG\r
-            """;
-
-    private static final String NO_BODY_MESSAGE =
+            BEGIN:BMSG
+                VERSION:1.0
+                STATUS:READ
+                TYPE:MMS
+                FOLDER:null
+                BEGIN:BENV
+                    BEGIN:VCARD
+                        VERSION:2.1
+                        N:null;;;;
+                        TEL:555-5555
+                    END:VCARD
+                    BEGIN:BBODY
+                        LENGTH:200
+                        BEGIN:MSG
+                            This is a new msg
             """
-            BEGIN:BMSG\r
-            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
-            BEGIN:BENV\r
-            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
-            BEGIN:BBODY\r\nLENGTH:\r
-            """;
+                .toBmessage()
 
-    private static final String NEGATIVE_LENGTH_MESSAGE =
+        private val WRONG_LENGTH_MESSAGE =
             """
-            BEGIN:BMSG\r
-            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
-            BEGIN:BENV\r
-            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
-            BEGIN:BBODY\r\nLENGTH:-1\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\nEND:BBODY\r
-            END:BENV\r
-            END:BMSG\r
-            """;
+            BEGIN:BMSG
+                VERSION:1.0
+                STATUS:READ
+                TYPE:MMS
+                FOLDER:null
+                BEGIN:BENV
+                    BEGIN:VCARD
+                        VERSION:2.1
+                        N:null;;;;
+                        TEL:555-5555
+                    END:VCARD
+                    BEGIN:BBODY
+                        LENGTH:200
+                        BEGIN:MSG
+                            This is a new msg
+                        END:MSG
+                    END:BBODY
+                END:BENV
+            END:BMSG
+            """
+                .toBmessage()
 
-    @Test
-    public void testNormalMessages() {
-        assertThat(BmessageParser.createBmessage(SIMPLE_MMS_MESSAGE)).isNotNull();
-    }
+        private val NO_BODY_MESSAGE =
+            """
+            BEGIN:BMSG
+                VERSION:1.0
+                STATUS:READ
+                TYPE:MMS
+                FOLDER:null
+                BEGIN:BENV
+                    BEGIN:VCARD
+                        VERSION:2.1
+                        N:null;;;;
+                        TEL:555-5555
+                    END:VCARD
+                    BEGIN:BBODY
+                        LENGTH:
+            """
+                .toBmessage()
 
-    @Test
-    public void testParseWrongLengthMessage() {
-        assertThat(BmessageParser.createBmessage(WRONG_LENGTH_MESSAGE)).isNull();
-    }
-
-    @Test
-    public void testParseNoEndMessage() {
-        assertThat(BmessageParser.createBmessage(NO_END_MESSAGE)).isNull();
-    }
-
-    @Test
-    public void testParseReallyLongMessage() {
-        String testMessage = new String(new char[68048]).replace('\0', 'A');
-        assertThat(BmessageParser.createBmessage(testMessage)).isNull();
-    }
-
-    @Test
-    public void testNoBodyMessage() {
-        assertThat(BmessageParser.createBmessage(NO_BODY_MESSAGE)).isNull();
-    }
-
-    @Test
-    public void testNegativeLengthMessage() {
-        assertThat(BmessageParser.createBmessage(NEGATIVE_LENGTH_MESSAGE)).isNull();
-    }
-
-    @Test
-    public void setCharset() {
-        Bmessage message = new Bmessage();
-
-        message.setCharset("UTF-8");
-
-        assertThat(message.getCharset()).isEqualTo("UTF-8");
-    }
-
-    @Test
-    public void setEncoding() {
-        Bmessage message = new Bmessage();
-
-        message.setEncoding("test_encoding");
-
-        assertThat(message.getEncoding()).isEqualTo("test_encoding");
-    }
-
-    @Test
-    public void setStatus() {
-        Bmessage message = new Bmessage();
-
-        message.setStatus(Bmessage.Status.READ);
-
-        assertThat(message.getStatus()).isEqualTo(Bmessage.Status.READ);
+        private val NEGATIVE_LENGTH_MESSAGE =
+            """
+            BEGIN:BMSG
+                VERSION:1.0
+                STATUS:READ
+                TYPE:MMS
+                FOLDER:null
+                BEGIN:BENV
+                    BEGIN:VCARD
+                        VERSION:2.1
+                        N:null;;;;
+                        TEL:555-5555
+                    END:VCARD
+                    BEGIN:BBODY
+                        LENGTH:-1
+                        BEGIN:MSG
+                            This is a new msg
+                        END:MSG
+                    END:BBODY
+                END:BENV
+            END:BMSG
+            """
+                .toBmessage()
     }
 }
