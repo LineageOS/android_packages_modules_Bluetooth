@@ -1234,10 +1234,6 @@ public class BassClientService extends ConnectableProfile {
     }
 
     private void startReactivateGroupMonitor(BluetoothDevice device, boolean inactivated) {
-        if (!Flags.leaudioReactivateAutonomouslyInactivatedGroupByBroadcast()) {
-            return;
-        }
-
         final var leAudio = getAdapterService().getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.d(TAG, "startReactivateGroupMonitor: LeAudioService is not available");

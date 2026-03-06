@@ -232,16 +232,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_reactivate_autonomously_inactivated_group_by_broadcast"
-    namespace: "bluetooth"
-    description: "Reactivate group autonomously deactivated due to broadcast sync"
-    bug: "439502201"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_broadcast_treat_empty_rs_explicitly"
     namespace: "bluetooth"
     description: "Treat remote source removal as a final state for broadcast assistant"

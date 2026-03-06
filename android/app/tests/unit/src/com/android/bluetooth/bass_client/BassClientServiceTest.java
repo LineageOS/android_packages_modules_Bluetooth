@@ -8462,7 +8462,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_afterAddSourceCommand_reactivation() {
         final int groupId = 1;
         final int skCtx =
@@ -8484,7 +8483,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_afterModifySourceCommand_reactivation() {
         final int groupId = 1;
         final int skCtx =
@@ -8506,7 +8504,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_afterSwitchSourceCommand_reactivation() {
         final int groupId = 1;
         final int skCtx =
@@ -8532,7 +8529,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_beforeBroadcastSync_reactivation() {
         final int groupId = 1;
         final int skCtx =
@@ -8558,7 +8554,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_afterBroadcastSync_reactivation() {
         final int groupId = 1;
         final int skCtx =
@@ -8584,7 +8579,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_tooLateBroadcastSync() {
         final int groupId = 1;
         doReturn(groupId).when(mLeAudioService).getGroupId(any());
@@ -8610,7 +8604,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
     public void autonomousInactive_tooEarlyBroadcastSync() {
         final int groupId = 1;
         doReturn(groupId).when(mLeAudioService).getGroupId(any());
