@@ -110,6 +110,7 @@ message ProfileConnectionPolicies {
   Policy pbap_client = 17;
   Policy sap = 18;
   Policy vcp = 19;
+  Policy mcp_client = 20;
 }
 
 message AccessPermission {

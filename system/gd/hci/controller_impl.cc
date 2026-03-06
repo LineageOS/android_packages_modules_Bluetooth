@@ -36,7 +36,6 @@ namespace bluetooth {
 namespace hci {
 
 constexpr int kMinEncryptionKeySize = 7;
-constexpr int kMinEncryptionKeySizeDefault = kMinEncryptionKeySize;
 constexpr int kMaxEncryptionKeySize = 16;
 
 constexpr bool kDefaultVendorCapabilitiesEnabled = true;
@@ -107,11 +106,9 @@ struct ControllerImpl::impl {
             handler_->BindOnceOn(this, &ControllerImpl::impl::read_buffer_size_complete_handler));
 
     if (is_supported(OpCode::SET_MIN_ENCRYPTION_KEY_SIZE)) {
-      uint8_t min_key_size =
-              (uint8_t)std::min(std::max(android::sysprop::bluetooth::Gap::min_key_size().value_or(
-                                                 kMinEncryptionKeySizeDefault),
-                                         kMinEncryptionKeySize),
-                                kMaxEncryptionKeySize);
+      uint8_t min_key_size = (uint8_t)std::min(
+              std::max(android::sysprop::bluetooth::Gap::min_key_size(), kMinEncryptionKeySize),
+              kMaxEncryptionKeySize);
       hci_->EnqueueCommand(
               SetMinEncryptionKeySizeBuilder::Create(min_key_size),
               handler_->BindOnceOn(this,

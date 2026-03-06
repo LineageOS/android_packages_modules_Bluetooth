@@ -193,16 +193,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public String getName(AttributionSource source) {
-        var service = getServiceAndEnforceCallerUserAndConnect(source, "getName");
-        if (service == null) {
-            return null;
-        }
-
-        return service.getName();
-    }
-
-    @Override
     public int getNameLengthForAdvertise(AttributionSource source) {
         AdapterService service = getService();
         if (service == null
@@ -212,26 +202,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         return service.getNameLengthForAdvertise();
-    }
-
-    @Override
-    public boolean setName(String name, AttributionSource source) {
-        if (Flags.setNameInSystemServer()) {
-            throw new IllegalStateException("setNameInSystemServer is active");
-        }
-        var service = getServiceAndEnforceCallerUserAndConnect(source, "setName");
-        if (service == null) {
-            return false;
-        }
-
-        requireNonNull(name);
-        name = name.trim();
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException("Empty names are not valid");
-        }
-
-        Log.d(TAG, "AdapterServiceBinder.setName(" + name + ")");
-        return service.getAdapterProperties().setName(name);
     }
 
     @Override

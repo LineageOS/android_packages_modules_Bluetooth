@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "sco_managed_by_audio_remove_hfp_hal"
-    namespace: "bluetooth"
-    description: "Deprecate the btm_sco_hfp_hal and migrate to IBluetoothAudio"
-    bug: "417621867"
-}
-
-flag {
     name: "sco_state_machine_cleanup"
     namespace: "bluetooth"
     description: "Cleanup SCO SM if headset disconnected during opening."
@@ -73,16 +66,6 @@ flag {
     namespace: "bluetooth"
     description: "Close SCO when end call during codec negotiation"
     bug: "461739981"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "end_outgoing_call_on_chld"
-    namespace: "bluetooth"
-    description: "End outgoing call on CHLD"
-    bug: "426374659"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

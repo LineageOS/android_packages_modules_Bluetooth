@@ -63,3 +63,17 @@ enum class PlayingOrder(val value: Int) {
         }
     }
 }
+
+enum class MediaControlResult(val value: Int) {
+    SUCCESS(0x01),
+    OPCODE_NOT_SUPPORTED(0x02),
+    MEDIA_PLAYER_INACTIVE(0x03),
+    COMMAND_CANNOT_BE_COMPLETED(0x04);
+
+    companion object {
+        @JvmStatic
+        fun fromInt(value: Int): MediaControlResult? {
+            return entries.firstOrNull { it.value == value }
+        }
+    }
+}

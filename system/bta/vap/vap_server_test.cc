@@ -109,10 +109,7 @@ protected:
             .WillOnce(DoAll(SaveArg<0>(&captured_server_if), SaveArg<1>(&captured_service),
                             testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
-    tBTA_GATTS gatts_cb_data;
-    gatts_cb_data.reg_oper.status = GATT_SUCCESS;
-    gatts_cb_data.reg_oper.server_if = 1;
-    captured_gatt_callback_(BTA_GATTS_REG_EVT, &gatts_cb_data);
+    captured_gatt_callback_->p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
     SyncOnMainLoop();
 
     EXPECT_CALL(mock_callbacks_, OnInitialized());
@@ -121,16 +118,12 @@ protected:
     SyncOnMainLoop();
 
     // Connect a client
-    tBTA_GATTS p_data_conn;
-    p_data_conn.conn = {.remote_bda = test_address_, .conn_id = 1, .transport = BT_TRANSPORT_LE};
-    captured_gatt_callback_(BTA_GATTS_CONNECT_EVT, &p_data_conn);
+    captured_gatt_callback_->p_connect_cb(1, test_address_, 1, BT_TRANSPORT_LE);
     SyncOnMainLoop();
   }
 
   void TearDown() override {
-    tBTA_GATTS p_data_conn;
-    p_data_conn.conn = {.remote_bda = test_address_, .conn_id = 1, .transport = BT_TRANSPORT_LE};
-    captured_gatt_callback_(BTA_GATTS_DISCONNECT_EVT, &p_data_conn);
+    captured_gatt_callback_->p_disconnect_cb(1, test_address_, 1, BT_TRANSPORT_LE);
     EXPECT_CALL(mock_gatt_server_interface_, AppDeregister(1));
     GetVapServer()->Cleanup();
     SyncOnMainLoop();
@@ -150,7 +143,7 @@ protected:
   }
 
   RawAddress test_address_;
-  tBTA_GATTS_CBACK* captured_gatt_callback_ = nullptr;
+  const tBTA_GATTS_CBACK* captured_gatt_callback_ = nullptr;
   gatt::MockBtaGattServerInterface mock_gatt_server_interface_;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface_;
   NiceMock<MockCsisClient> mock_csis_client_;
@@ -169,21 +162,9 @@ TEST_F(VapServerTest, init_start_stop_va_session) {
   // Enable notifications for Control Point to allow for multiple commands
   uint16_t cp_ccc_handle = GetDescriptorHandle(::vap::uuid::kVasControlPointCharacteristic);
   uint8_t ccc_notification_value[] = {0x01, 0x00};  // Notification enabled
-  auto* p_data_write_cp_ccc_req_data = new tGATTS_DATA{
-          .write_req = {
-                  .handle = cp_ccc_handle,
-                  .len = 2,
-                  .value = {ccc_notification_value[0], ccc_notification_value[1]},
-                  .need_rsp = true,
-          }};
-
-  auto* p_data_write_cp_ccc = new tBTA_GATTS;
-  p_data_write_cp_ccc->req_data = {.remote_bda = test_address_,
-                                   .trans_id = 1,
-                                   .conn_id = 1,
-                                   .p_data = p_data_write_cp_ccc_req_data};
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, 1, GATT_SUCCESS, _));
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write_cp_ccc);
+  captured_gatt_callback_->p_write_descriptor_cb(1, 1, test_address_, cp_ccc_handle, 0, true, false,
+                                                 ccc_notification_value, 2);
   SyncOnMainLoop();
 
   uint16_t cp_handle = GetCharacteristicHandle(::vap::uuid::kVasControlPointCharacteristic);
@@ -191,32 +172,17 @@ TEST_F(VapServerTest, init_start_stop_va_session) {
 
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(1, cp_handle, _, _)).Times(1);
 
-  auto* p_data_write_init_req_data = new tGATTS_DATA{
-          .write_req = {.handle = cp_handle,
-                        .len = 1,
-                        .value = {(uint8_t)::vap::CtpOpcode::INITIALIZE_VA_SESSION},
-                        .need_rsp = false}};
-  auto* p_data_write_init = new tBTA_GATTS;
-  p_data_write_init->req_data = {.remote_bda = test_address_,
-                                 .trans_id = 2,
-                                 .conn_id = 1,
-                                 .p_data = p_data_write_init_req_data};
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, p_data_write_init);
+  uint8_t init_req_value[] = {(uint8_t)::vap::CtpOpcode::INITIALIZE_VA_SESSION};
+  captured_gatt_callback_->p_write_characteristic_cb(1, 2, test_address_, cp_handle, 0, false,
+                                                     false, init_req_value, sizeof(init_req_value));
   SyncOnMainLoop();
 
   EXPECT_CALL(mock_callbacks_, OnStartVaSession(test_address_)).Times(1);
 
-  auto* p_data_write_req_data = new tGATTS_DATA{
-          .write_req = {.handle = cp_handle,
-                        .len = 1,
-                        .value = {(uint8_t)::vap::CtpOpcode::START_VA_SESSION},
-                        .need_rsp = false}};
-  auto* p_data_write = new tBTA_GATTS;
-  p_data_write->req_data = {.remote_bda = test_address_,
-                            .trans_id = 3,
-                            .conn_id = 1,
-                            .p_data = p_data_write_req_data};
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, p_data_write);
+  uint8_t start_req_value[] = {(uint8_t)::vap::CtpOpcode::START_VA_SESSION};
+  captured_gatt_callback_->p_write_characteristic_cb(1, 3, test_address_, cp_handle, 0, false,
+                                                     false, start_req_value,
+                                                     sizeof(start_req_value));
   SyncOnMainLoop();
 
   EXPECT_CALL(mock_gatt_server_interface_, HandleValueIndication(1, cp_handle, _, _)).Times(1);
@@ -226,26 +192,15 @@ TEST_F(VapServerTest, init_start_stop_va_session) {
 
   EXPECT_CALL(mock_callbacks_, OnStopVaSession(test_address_)).Times(1);
 
-  auto* p_data_write_stop_req_data = new tGATTS_DATA{
-          .write_req = {.handle = cp_handle,
-                        .len = 1,
-                        .value = {(uint8_t)::vap::CtpOpcode::STOP_VA_SESSION},
-                        .need_rsp = false}};
-  auto* p_data_write_stop = new tBTA_GATTS;
-  p_data_write_stop->req_data = {.remote_bda = test_address_,
-                                 .trans_id = 4,
-                                 .conn_id = 1,
-                                 .p_data = p_data_write_stop_req_data};
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, p_data_write_stop);
+  uint8_t stop_req_value[] = {(uint8_t)::vap::CtpOpcode::STOP_VA_SESSION};
+  captured_gatt_callback_->p_write_characteristic_cb(1, 4, test_address_, cp_handle, 0, false,
+                                                     false, stop_req_value, sizeof(stop_req_value));
   SyncOnMainLoop();
 }
 
 TEST_F(VapServerTest, on_gatt_mtu_changed) {
   uint16_t new_mtu = 512;
-  auto* p_data_mtu_data = new tGATTS_DATA{.mtu = new_mtu};
-  auto* p_data_mtu = new tBTA_GATTS;
-  p_data_mtu->req_data = {.remote_bda = test_address_, .p_data = p_data_mtu_data};
-  captured_gatt_callback_(BTA_GATTS_MTU_EVT, p_data_mtu);
+  captured_gatt_callback_->p_mtu_changed_cb(1, 0, test_address_, new_mtu);
   SyncOnMainLoop();
 }
 
@@ -259,13 +214,7 @@ TEST_F(VapServerTest, on_read_characteristic_va_name) {
 
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, 1, GATT_SUCCESS, _));
 
-  auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = handle, .offset = 0}};
-  auto* p_data_read = new tBTA_GATTS;
-  p_data_read->req_data = {.remote_bda = test_address_,
-                           .trans_id = 1,
-                           .conn_id = 1,
-                           .p_data = p_data_read_req_data};
-  captured_gatt_callback_(BTA_GATTS_READ_CHARACTERISTIC_EVT, p_data_read);
+  captured_gatt_callback_->p_read_characteristic_cb(1, 1, test_address_, handle, 0, false);
   SyncOnMainLoop();
 }
 
@@ -273,13 +222,7 @@ TEST_F(VapServerTest, on_read_descriptor_ccc) {
   uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, _, _, _));
 
-  auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = ccc_handle, .offset = 0}};
-  auto* p_data_read = new tBTA_GATTS;
-  p_data_read->req_data = {.remote_bda = test_address_,
-                           .trans_id = 1,
-                           .conn_id = 1,
-                           .p_data = p_data_read_req_data};
-  captured_gatt_callback_(BTA_GATTS_READ_DESCRIPTOR_EVT, p_data_read);
+  captured_gatt_callback_->p_read_descriptor_cb(1, 1, test_address_, ccc_handle, 0, false);
   SyncOnMainLoop();
 }
 
@@ -290,18 +233,9 @@ TEST_F(VapServerTest, notify_va_session_stopped_success) {
   // Enable notifications for Session State
   uint16_t ss_ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   uint8_t ccc_notification_value[] = {0x01, 0x00};  // Notification enabled
-  auto* p_data_write_ss_ccc_req_data = new tGATTS_DATA{
-          .write_req = {.handle = ss_ccc_handle,
-                        .len = 2,
-                        .value = {ccc_notification_value[0], ccc_notification_value[1]},
-                        .need_rsp = false}};
-  auto* p_data_write_ss_ccc = new tBTA_GATTS;
-  p_data_write_ss_ccc->req_data = {.remote_bda = test_address_,
-                                   .trans_id = 1,
-                                   .conn_id = 1,
-                                   .p_data = p_data_write_ss_ccc_req_data};
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, _, _, _));
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write_ss_ccc);
+  captured_gatt_callback_->p_write_descriptor_cb(1, 1, test_address_, ss_ccc_handle, 0, false,
+                                                 false, ccc_notification_value, 2);
   SyncOnMainLoop();
 
   std::vector<uint8_t> active_value = {(uint8_t)::vap::VaSessionState::VA_SESSION_ACTIVE};
@@ -329,17 +263,9 @@ TEST_F(VapServerTest, debug_dump) {
   // The session must be initialized before we can set all debug values
   uint16_t cp_handle = GetCharacteristicHandle(::vap::uuid::kVasControlPointCharacteristic);
   ASSERT_NE(0, cp_handle);
-  auto* p_data_write_init_req_data = new tGATTS_DATA{
-          .write_req = {.handle = cp_handle,
-                        .len = 1,
-                        .value = {(uint8_t)::vap::CtpOpcode::INITIALIZE_VA_SESSION},
-                        .need_rsp = false}};
-  auto* p_data_write_init = new tBTA_GATTS;
-  p_data_write_init->req_data = {.remote_bda = test_address_,
-                                 .trans_id = 1,
-                                 .conn_id = 1,
-                                 .p_data = p_data_write_init_req_data};
-  captured_gatt_callback_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, p_data_write_init);
+  uint8_t init_req_value[] = {(uint8_t)::vap::CtpOpcode::INITIALIZE_VA_SESSION};
+  captured_gatt_callback_->p_write_characteristic_cb(1, 1, test_address_, cp_handle, 0, false,
+                                                     false, init_req_value, sizeof(init_req_value));
   SyncOnMainLoop();
 
   // Setup some state
@@ -374,19 +300,9 @@ TEST_F(VapServerTest, on_write_descriptor_unknown_client) {
   uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   uint8_t ccc_value[] = {0x01, 0x00};  // Notification enabled
 
-  auto* p_data_write_req_data = new tGATTS_DATA{.write_req = {.handle = ccc_handle,
-                                                     .len = 2,
-                                                     .value = {ccc_value[0], ccc_value[1]},
-                                                     .need_rsp = false}};
-
-  auto* p_data_write = new tBTA_GATTS;
-  p_data_write->req_data = {.remote_bda = unknown_address,
-                            .trans_id = 1,
-                            .conn_id = 2,  // different conn_id
-                            .p_data = p_data_write_req_data};
-
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(2, 1, GATT_ILLEGAL_PARAMETER, _));
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write);
+  captured_gatt_callback_->p_write_descriptor_cb(2, 1, unknown_address, ccc_handle, 0, false, false,
+                                                 ccc_value, 2);
   SyncOnMainLoop();
 }
 
@@ -394,19 +310,9 @@ TEST_F(VapServerTest, on_write_descriptor_ccc_success) {
   uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaCcidCharacteristic);
   uint8_t ccc_value[] = {0x01, 0x00};  // Notification enabled
 
-  auto* p_data_write_req_data = new tGATTS_DATA{.write_req = {.handle = ccc_handle,
-                                                     .len = 2,
-                                                     .value = {ccc_value[0], ccc_value[1]},
-                                                     .need_rsp = false}};
-
-  auto* p_data_write = new tBTA_GATTS;
-  p_data_write->req_data = {.remote_bda = test_address_,
-                            .trans_id = 1,
-                            .conn_id = 1,
-                            .p_data = p_data_write_req_data};
-
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, 1, GATT_SUCCESS, _));
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write);
+  captured_gatt_callback_->p_write_descriptor_cb(1, 1, test_address_, ccc_handle, 0, false, false,
+                                                 ccc_value, 2);
   SyncOnMainLoop();
 }
 
@@ -414,19 +320,10 @@ TEST_F(VapServerTest, on_read_descriptor_ccc_val) {
   // First, write a value to the CCC descriptor
   uint16_t ccc_handle = GetDescriptorHandle(::vap::uuid::kVaSessionStateCharacteristic);
   uint8_t ccc_notification_value[] = {0x01, 0x00};  // Notification enabled
-  auto* p_data_write_ccc_req_data = new tGATTS_DATA{
-          .write_req = {.handle = ccc_handle,
-                        .len = 2,
-                        .value = {ccc_notification_value[0], ccc_notification_value[1]},
-                        .need_rsp = true}};
 
-  auto* p_data_write_ccc = new tBTA_GATTS;
-  p_data_write_ccc->req_data = {.remote_bda = test_address_,
-                                .trans_id = 1,
-                                .conn_id = 1,
-                                .p_data = p_data_write_ccc_req_data};
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(1, 1, GATT_SUCCESS, _));
-  captured_gatt_callback_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, p_data_write_ccc);
+  captured_gatt_callback_->p_write_descriptor_cb(1, 1, test_address_, ccc_handle, 0, true, false,
+                                                 ccc_notification_value, 2);
   SyncOnMainLoop();
 
   // Now, read it back
@@ -435,13 +332,7 @@ TEST_F(VapServerTest, on_read_descriptor_ccc_val) {
           .WillOnce(Invoke([&](tCONN_ID, uint32_t, tGATT_STATUS,
                                std::unique_ptr<tGATTS_RSP> p_msg) { captured_rsp.swap(p_msg); }));
 
-  auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = ccc_handle, .offset = 0}};
-  auto* p_data_read = new tBTA_GATTS;
-  p_data_read->req_data = {.remote_bda = test_address_,
-                           .trans_id = 2,
-                           .conn_id = 1,
-                           .p_data = p_data_read_req_data};
-  captured_gatt_callback_(BTA_GATTS_READ_DESCRIPTOR_EVT, p_data_read);
+  captured_gatt_callback_->p_read_descriptor_cb(1, 2, test_address_, ccc_handle, 0, false);
   ASSERT_NE(captured_rsp, nullptr);
   ASSERT_EQ(captured_rsp->attr_value.len, 2);
   SyncOnMainLoop();
@@ -460,13 +351,7 @@ TEST_F(VapServerTest, on_read_descriptor_unknown_client) {
           .WillOnce(Invoke([&](tCONN_ID, uint32_t, tGATT_STATUS,
                                std::unique_ptr<tGATTS_RSP> p_msg) { captured_rsp.swap(p_msg); }));
 
-  auto* p_data_read_req_data = new tGATTS_DATA{.read_req = {.handle = ccc_handle, .offset = 0}};
-  auto* p_data_read = new tBTA_GATTS;
-  p_data_read->req_data = {.remote_bda = unknown_address,
-                           .trans_id = 1,
-                           .conn_id = 2,
-                           .p_data = p_data_read_req_data};
-  captured_gatt_callback_(BTA_GATTS_READ_DESCRIPTOR_EVT, p_data_read);
+  captured_gatt_callback_->p_read_descriptor_cb(2, 1, unknown_address, ccc_handle, 0, false);
   ASSERT_NE(captured_rsp, nullptr);
   ASSERT_EQ(captured_rsp->attr_value.len, 2);
   SyncOnMainLoop();

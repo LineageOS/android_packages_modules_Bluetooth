@@ -117,25 +117,16 @@ public class BluetoothManagerService {
 
     @VisibleForTesting static final Duration TIMEOUT_BIND;
     private static final Duration STATE_TIMEOUT;
-    @VisibleForTesting static final Duration SERVICE_RESTART_DELAY;
-    private static final Duration ADD_PROXY_DELAY;
+    @VisibleForTesting static final Duration SERVICE_RESTART_DELAY = Duration.ofMillis(400);
+    private static final Duration ADD_PROXY_DELAY = Duration.ofMillis(100);
 
     static {
-        if (!Flags.unifyTimeoutProperty()) {
-            TIMEOUT_BIND = Duration.ofSeconds(4).multipliedBy(HW_MULTIPLIER);
-            STATE_TIMEOUT = Duration.ofSeconds(4).multipliedBy(HW_MULTIPLIER);
-            SERVICE_RESTART_DELAY = Duration.ofMillis(400).multipliedBy(HW_MULTIPLIER);
-            ADD_PROXY_DELAY = Duration.ofMillis(100).multipliedBy(HW_MULTIPLIER);
+        if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
+            TIMEOUT_BIND = Duration.ofSeconds(8);
+            STATE_TIMEOUT = Duration.ofSeconds(8);
         } else {
-            if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
-                TIMEOUT_BIND = Duration.ofSeconds(8);
-                STATE_TIMEOUT = Duration.ofSeconds(8);
-            } else {
-                TIMEOUT_BIND = Duration.ofSeconds(4);
-                STATE_TIMEOUT = Duration.ofSeconds(4);
-            }
-            SERVICE_RESTART_DELAY = Duration.ofMillis(400);
-            ADD_PROXY_DELAY = Duration.ofMillis(100);
+            TIMEOUT_BIND = Duration.ofSeconds(4);
+            STATE_TIMEOUT = Duration.ofSeconds(4);
         }
     }
 
@@ -217,19 +208,6 @@ public class BluetoothManagerService {
                 }
 
                 @Override
-                public void onAdapterNameChange(String name) {
-                    if (Flags.setNameInSystemServer()) {
-                        throw new IllegalStateException("setNameInSystemServer is enabled");
-                    }
-                    requireNonNull(name);
-                    if (name.isEmpty()) {
-                        throw new IllegalArgumentException("Invalid Empty name");
-                    }
-                    Log.d(TAG, "IBluetoothCallback.onAdapterNameChange: " + name);
-                    post(() -> storeName(name));
-                }
-
-                @Override
                 public void onAdapterAddressChange(String address) {
                     requireNonNull(address);
                     if (!ADDR_PATTERN.matcher(address).matches()) {
@@ -297,13 +275,8 @@ public class BluetoothManagerService {
                 new Intent(ACTION_LOCAL_NAME_CHANGED)
                         .putExtra(EXTRA_LOCAL_NAME, name)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        if (Flags.onlyBroadcastToLocalUser()) {
-            mContext.sendBroadcastAsUser(
-                    intent, mUser, BLUETOOTH_CONNECT, getTempAllowlistBroadcastOptions());
-        } else {
-            mContext.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, getTempAllowlistBroadcastOptions());
-        }
+        mContext.sendBroadcastAsUser(
+                intent, mUser, BLUETOOTH_CONNECT, getTempAllowlistBroadcastOptions());
     }
 
     private void storeAddress(String address) {
@@ -602,18 +575,11 @@ public class BluetoothManagerService {
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mContext.registerReceiver(mReceiver, filter, null, mHandler);
 
-        if (Flags.setNameInSystemServer()) {
-            mName =
-                    validateLocalName(
-                            BluetoothServerProxy.getInstance()
-                                    .settingsSecureGetString(
-                                            mContentResolver, Settings.Secure.BLUETOOTH_NAME));
-        } else {
-            mName =
-                    BluetoothServerProxy.getInstance()
-                            .settingsSecureGetString(
-                                    mContentResolver, Settings.Secure.BLUETOOTH_NAME);
-        }
+        mName =
+                validateLocalName(
+                        BluetoothServerProxy.getInstance()
+                                .settingsSecureGetString(
+                                        mContentResolver, Settings.Secure.BLUETOOTH_NAME));
         mAddress =
                 BluetoothServerProxy.getInstance()
                         .settingsSecureGetString(
@@ -1490,9 +1456,7 @@ public class BluetoothManagerService {
         requireNonNull(mUser, "There is no user to start for.");
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        if (Flags.setNameInSystemServer()) {
-            intent.putExtra(EXTRA_LOCAL_NAME, mName);
-        }
+        intent.putExtra(EXTRA_LOCAL_NAME, mName);
         intent.setComponent(mBluetoothComponent.getComponentName());
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
@@ -1593,12 +1557,7 @@ public class BluetoothManagerService {
                         .putExtra(EXTRA_PREVIOUS_STATE, prevState)
                         .putExtra(EXTRA_STATE, newState)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        if (Flags.onlyBroadcastToLocalUser()) {
-            mContext.sendBroadcastAsUser(intent, mUser, null, getTempAllowlistBroadcastOptions());
-        } else {
-            mContext.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, null, getTempAllowlistBroadcastOptions());
-        }
+        mContext.sendBroadcastAsUser(intent, mUser, null, getTempAllowlistBroadcastOptions());
     }
 
     private static boolean isBleState(int state) {

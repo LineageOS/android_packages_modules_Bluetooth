@@ -87,7 +87,7 @@ public:
       return;
     }
     std::chrono::milliseconds start_timeout;
-    if (android::sysprop::bluetooth::Hardware::degraded_performance_mode().value_or(false) ||
+    if (android::sysprop::bluetooth::Hardware::degraded_performance_mode() ||
         os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
       log::warn("Running in degraded performance mode due to slow hardware");
       start_timeout = std::chrono::milliseconds(8000);
@@ -187,7 +187,7 @@ void HciHalImpl::sendIsoData(HciPacket packet) {
 
 uint16_t HciHalImpl::getMsftOpcode() {
   if (com_android_bluetooth_flags_le_scan_msft_support()) {
-    return android::sysprop::bluetooth::Hci::msft_vendor_opcode().value_or(0);
+    return android::sysprop::bluetooth::Hci::msft_vendor_opcode();
   }
   return 0;
 }

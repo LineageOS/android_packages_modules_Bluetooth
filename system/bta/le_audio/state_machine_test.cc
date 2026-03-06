@@ -12623,5 +12623,74 @@ TEST_F(StateMachineTest, testReconfigureWhenOneDeviceIsInQoSConfiguredState) {
   Mock::VerifyAndClearExpectations(&mock_callbacks_);
 }
 
+TEST_F(StateMachineTest, testReconfigureFromMediaToConversationalBeforeCigWasCreated) {
+  auto leaudio_group_id = 2;
+  auto num_devices = 2;
+
+  channel_count_ = kLeAudioCodecChannelCountSingleChannel;
+
+  /* Scenario:
+   * 1. Configure group for MEDIA
+   * 2. Do not start the stream
+   * 3. Configure group to Conversational
+   * 4. Make sure, group is configured properly
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group =
+          PrepareSingleTestDeviceGroup(leaudio_group_id, kContextTypeConversational, num_devices,
+                                       kContextTypeConversational | kContextTypeMedia);
+  ASSERT_NE(group, nullptr);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id,
+                             bluetooth::le_audio::GroupStreamStatus::CONFIGURED_BY_USER))
+          .Times(1);
+
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(1);
+
+  InjectInitialIdleNotification(group);
+
+  /* Do reconfiguration */
+  group->SetPendingConfiguration();
+  ConfigureStream_onMainloop(group, kContextTypeMedia,
+                             {.sink = types::AudioContexts(kContextTypeMedia),
+                              .source = types::AudioContexts(kContextTypeMedia)},
+                             {.sink = {}, .source = {}}, false);
+
+  SyncOnMainLoop();
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [media_sink_is_enabled, media_source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(media_sink_is_enabled);
+  ASSERT_FALSE(media_source_is_enabled);
+
+  // Start the configuration and stream Media content
+  StartStream_onMainloop(group, kContextTypeConversational,
+                         {.sink = types::AudioContexts(kContextTypeConversational),
+                          .source = types::AudioContexts(kContextTypeConversational)},
+                         {.sink = {}, .source = {}});
+  SyncOnMainLoop();
+
+  group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [conv_sink_is_enabled, conv_source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(conv_sink_is_enabled);
+  ASSERT_TRUE(conv_source_is_enabled);
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
 }  // namespace internal
 }  // namespace bluetooth::le_audio

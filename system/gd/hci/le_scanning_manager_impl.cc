@@ -35,6 +35,7 @@
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/ble_hci_link_interface.h"
+#include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_client_interface.h"
 
 namespace bluetooth {
@@ -1013,6 +1014,20 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
   void update_address_filter(ApcfAction action, uint8_t filter_index, Address address,
                              ApcfApplicationAddressType address_type, std::array<uint8_t, 16> irk) {
+    AddressWithType resolved_address(address, (AddressType)address_type);
+
+    // This makes sure that if we accidentally pass a RPA for IRK scanning, we correctly
+    // convert that IRK into the Identity Address
+    if (com_android_bluetooth_flags_convert_pseudo_address_to_identity()) {
+      tBLE_BD_ADDR legacy_address = ToLegacyAddressWithType(resolved_address);
+      // If no matching identity address is found for the input address, this call will have no
+      // effect
+      btm_random_pseudo_to_identity_addr(&legacy_address.bda, &legacy_address.type);
+      // Ensure that the address type is normalized before being wrapped back
+      legacy_address.type &= ~BLE_ADDR_TYPE_ID_BIT;
+      resolved_address = ToAddressWithTypeFromLegacy(legacy_address);
+    }
+
     if (action != ApcfAction::CLEAR) {
       /*
        * The vendor command (APCF Filtering 0x0157) takes Public (0) or Random (1)
@@ -1031,7 +1046,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
        */
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterBroadcasterAddressBuilder::Create(
-                      action, filter_index, address, ApcfApplicationAddressType::NOT_APPLICABLE),
+                      action, filter_index, resolved_address.GetAddress(),
+                      ApcfApplicationAddressType::NOT_APPLICABLE),
               handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
       if (!is_empty_128bit(irk)) {
         // If an entry exists for this filter index, replace data because the filter has been
@@ -1052,10 +1068,10 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         // Now replace it with a new one
         std::array<uint8_t, 16> empty_irk;
         log::verbose("irk scan start process: add device to resolving list");
-        le_address_manager_->AddDeviceToResolvingList(static_cast<PeerAddressType>(address_type),
-                                                      address, irk, empty_irk);
-        remove_me_later_map_.emplace(
-                filter_index, AddressWithType(address, static_cast<AddressType>(address_type)));
+        le_address_manager_->AddDeviceToResolvingList(
+                static_cast<PeerAddressType>(resolved_address.GetAddressType()),
+                resolved_address.GetAddress(), irk, empty_irk);
+        remove_me_later_map_.emplace(filter_index, resolved_address);
       }
     } else {
       le_scanning_interface_->EnqueueCommand(
@@ -1065,7 +1081,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       if (entry != remove_me_later_map_.end()) {
         // TODO(optedoblivion): If not bonded
         le_address_manager_->RemoveDeviceFromResolvingList(
-                static_cast<PeerAddressType>(address_type), address);
+                static_cast<PeerAddressType>(resolved_address.GetAddressType()),
+                resolved_address.GetAddress());
         remove_me_later_map_.erase(filter_index);
       }
     }

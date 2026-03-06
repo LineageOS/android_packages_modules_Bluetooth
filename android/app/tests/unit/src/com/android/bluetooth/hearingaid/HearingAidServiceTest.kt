@@ -36,7 +36,6 @@ import android.media.AudioManager
 import android.media.BluetoothProfileConnectionInfo
 import android.os.Bundle
 import android.os.ParcelUuid
-import android.os.UserHandle
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
@@ -45,7 +44,6 @@ import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.btservice.ActiveDeviceManager
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getRealDevice
 import com.android.bluetooth.mockGetSystemService
 import com.android.tests.bluetooth.MockitoRule
@@ -119,20 +117,9 @@ class HearingAidServiceTest {
 
     @SafeVarargs
     private fun verifyIntentSent(vararg matchers: Matcher<Intent>) {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            inOrder
-                .verify(adapterService)
-                .sendBroadcast(argThat(AllOf.allOf(*matchers)), any<String>(), any<Bundle>())
-        } else {
-            inOrder
-                .verify(adapterService)
-                .sendBroadcastAsUser(
-                    argThat(AllOf.allOf(*matchers)),
-                    eq(UserHandle.ALL),
-                    any<String>(),
-                    any<Bundle>(),
-                )
-        }
+        inOrder
+            .verify(adapterService)
+            .sendBroadcast(argThat(AllOf.allOf(*matchers)), any<String>(), any<Bundle>())
     }
 
     private fun verifyConnectionStateIntent(
@@ -669,24 +656,13 @@ class HearingAidServiceTest {
     ) {
         service.onConnectionStateChangedFromNative(device, newConnectionState)
         looper.dispatchAll()
-        if (Flags.onlyBroadcastToLocalUser()) {
-            inOrder
-                .verify(adapterService, never())
-                .sendBroadcast(
-                    argThat(hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
-                    any<String>(),
-                    any<Bundle>(),
-                )
-        } else {
-            inOrder
-                .verify(adapterService, never())
-                .sendBroadcastAsUser(
-                    argThat(hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
-                    eq(UserHandle.ALL),
-                    any<String>(),
-                    any<Bundle>(),
-                )
-        }
+        inOrder
+            .verify(adapterService, never())
+            .sendBroadcast(
+                argThat(hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
+                any<String>(),
+                any<Bundle>(),
+            )
     }
 
     // Emulate hiSyncId map update from native stack

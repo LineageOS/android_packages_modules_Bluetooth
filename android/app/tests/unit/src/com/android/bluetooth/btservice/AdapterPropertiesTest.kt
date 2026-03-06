@@ -25,12 +25,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.HandlerThread
-import android.platform.test.annotations.DisableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.Utils
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.mockBluetoothManager
 import com.android.bluetooth.mockGetSystemService
 import com.android.bluetooth.mockPackageManager
@@ -117,46 +115,6 @@ class AdapterPropertiesTest(flags: FlagsWrapper) {
         assertThat(adapterProperties.getBondedDevices().size).isEqualTo(1)
         assertThat(adapterProperties.getBondedDevices()[0].address)
             .isEqualTo(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2))
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_SET_NAME_IN_SYSTEM_SERVER)
-    fun setName_shortName_isEqual() {
-        val builder = StringBuilder()
-        val stringName = "Wonderful Bluetooth Name Using utf8"
-        builder.append(stringName)
-        builder.append(Character.toChars(0x20AC))
-
-        val initial = builder.toString()
-
-        val argumentName = argumentCaptor<ByteArray>()
-        adapterProperties.setName(initial)
-        verify(nativeInterface)
-            .setAdapterProperty(eq(AbstractionLayer.BT_PROPERTY_BDNAME), argumentName.capture())
-        assertThat(argumentName.firstValue).isEqualTo(initial.toByteArray())
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_SET_NAME_IN_SYSTEM_SERVER)
-    fun setName_tooLongName_isTruncated() {
-        val builder = StringBuilder()
-        val stringName = "Wonderful Bluetooth Name Using utf8 ... But this name is too long"
-        builder.append(stringName)
-
-        val n = 300
-        for (i in 0..<2 * n) {
-            builder.append(Character.toChars(0x20AC))
-        }
-
-        val initial = builder.toString()
-
-        val argumentName = argumentCaptor<ByteArray>()
-        adapterProperties.setName(initial)
-        verify(nativeInterface)
-            .setAdapterProperty(eq(AbstractionLayer.BT_PROPERTY_BDNAME), argumentName.capture())
-        val name = argumentName.firstValue
-        assertThat(name.size).isLessThan(initial.toByteArray().size)
-        assertThat(initial).startsWith(String(name))
     }
 
     @Test

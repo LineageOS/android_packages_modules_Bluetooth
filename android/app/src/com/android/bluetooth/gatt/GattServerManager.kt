@@ -146,15 +146,6 @@ class GattServerManager(
         callbackToApp { app.callback.onServiceAdded(status, svc) }
     }
 
-    fun onServiceStoppedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
-        gatt.enforceGattThread()
-        Log.d(TAG, "onServiceStopped(${Status(status)}, serverIf=$serverIf, handle=$srvcHandle)")
-        if (status == BluetoothGatt.GATT_SUCCESS) {
-            handleMap.setStarted(serverIf, srvcHandle, false)
-        }
-        stopNextService(serverIf, status)
-    }
-
     fun onServiceDeletedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
         gatt.enforceGattThread()
         Log.d(TAG, "onServiceDeleted(${Status(status)}, serverIf=$serverIf, handle=$srvcHandle)")
@@ -934,24 +925,6 @@ class GattServerManager(
         requireNotNull(connId) { "No connection to $device" }
         synchronized(offloadLock) {
             nativeInterface.gattServerUnoffloadCharacteristics(connId, sessionId)
-        }
-    }
-
-    private fun stopNextService(serverIf: Int, status: Int) {
-        Log.d(TAG, "stopNextService(serverIf=$serverIf, ${Status(status)})")
-
-        if (status != BluetoothGatt.GATT_SUCCESS) {
-            return
-        }
-        for (entry in handleMap.entries) {
-            if (
-                entry.type != HandleMap.Type.SERVICE || entry.serverIf != serverIf || !entry.started
-            ) {
-                continue
-            }
-
-            nativeInterface.gattServerStopService(serverIf, entry.handle)
-            return
         }
     }
 

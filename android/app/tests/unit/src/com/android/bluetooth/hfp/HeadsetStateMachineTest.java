@@ -70,7 +70,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.SystemProperties;
-import android.os.UserHandle;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.RequiresFlagsDisabled;
@@ -1785,29 +1784,15 @@ public class HeadsetStateMachineTest {
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            mInOrder.verify(mHeadsetService)
-                    .sendBroadcast(
-                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                            eq(BLUETOOTH_CONNECT),
-                            any());
-        } else {
-            mInOrder.verify(mHeadsetService)
-                    .sendBroadcastAsUser(
-                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                            eq(UserHandle.ALL),
-                            eq(BLUETOOTH_CONNECT),
-                            any());
-        }
+        mInOrder.verify(mHeadsetService)
+                .sendBroadcast(
+                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                        eq(BLUETOOTH_CONNECT),
+                        any());
     }
 
     private void verifyNoIntentSent() {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            mInOrder.verify(mHeadsetService, never()).sendBroadcast(any(), any(), any());
-        } else {
-            mInOrder.verify(mHeadsetService, never())
-                    .sendBroadcastAsUser(any(), any(), any(), any());
-        }
+        mInOrder.verify(mHeadsetService, never()).sendBroadcast(any(), any(), any());
     }
 
     private void verifyConnectionStateIntent(int oldState, int newState) {

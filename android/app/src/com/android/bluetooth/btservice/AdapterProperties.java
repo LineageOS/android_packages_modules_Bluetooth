@@ -46,7 +46,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
-import android.os.UserHandle;
 import android.util.Log;
 import android.util.Pair;
 
@@ -57,7 +56,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.metrics.MetricsLogger;
-import com.android.bluetooth.util.Text;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -82,7 +80,6 @@ public class AdapterProperties {
     private static final long DEFAULT_DISCOVERY_TIMEOUT_MS = 12800;
     @VisibleForTesting static final int BLUETOOTH_NAME_MAX_LENGTH_BYTES = 248;
 
-    private volatile String mName;
     private volatile byte[] mAddress;
     private volatile BluetoothClass mBluetoothClass;
     private volatile int mScanMode;
@@ -229,31 +226,6 @@ public class AdapterProperties {
     private static void invalidateBluetoothGetConnectionStateCache() {
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
-    }
-
-    String getName() {
-        if (Flags.setNameInSystemServer()) {
-            throw new IllegalStateException("setNameInSystemServer is enabled");
-        }
-        return mName;
-    }
-
-    /**
-     * Set the local adapter property - name
-     *
-     * @param name the name to set
-     */
-    boolean setName(String name) {
-        if (Flags.setNameInSystemServer()) {
-            throw new IllegalStateException("setNameInSystemServer is enabled");
-        }
-        synchronized (mObject) {
-            return mService.getNative()
-                    .setAdapterProperty(
-                            AbstractionLayer.BT_PROPERTY_BDNAME,
-                            Text.truncateUtf8String(name, BLUETOOTH_NAME_MAX_LENGTH_BYTES)
-                                    .getBytes());
-        }
     }
 
     public ParcelUuid[] getUuids() {
@@ -571,12 +543,7 @@ public class AdapterProperties {
             MetricsLogger.getInstance()
                     .logProfileConnectionStateChange(device, profile, newState, prevState);
             debugLog("updateOnProfileConnectionChanged: " + logInfo);
-            if (Flags.onlyBroadcastToLocalUser()) {
-                mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            } else {
-                mService.sendBroadcastAsUser(
-                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
-            }
+            mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         }
     }
 
@@ -730,18 +697,6 @@ public class AdapterProperties {
             infoLog("adapterPropertyChangedCallback with type:" + type + " len:" + val.length);
             synchronized (mObject) {
                 switch (type) {
-                    case AbstractionLayer.BT_PROPERTY_BDNAME -> {
-                        if (Flags.setNameInSystemServer()) {
-                            throw new IllegalStateException("setNameInSystemServer is enabled");
-                        }
-                        String name = new String(val);
-                        if (name.equals(mName)) {
-                            debugLog("Name already set: " + mName);
-                            break;
-                        }
-                        mName = name;
-                        mService.updateAdapterName(mName);
-                    }
                     case AbstractionLayer.BT_PROPERTY_BDADDR -> {
                         if (Arrays.equals(mAddress, val)) {
                             debugLog("Address already set");
@@ -998,11 +953,7 @@ public class AdapterProperties {
 
     protected void dump(PrintWriter writer) {
         writer.println(TAG);
-        if (Flags.setNameInSystemServer()) {
-            writer.println("  " + "Name: " + mService.getName());
-        } else {
-            writer.println("  " + "Name: " + getName());
-        }
+        writer.println("  " + "Name: " + mService.getName());
         writer.println("  " + "Address: " + Utils.getRedactedAddressStringFromByte(mAddress));
         writer.println("  " + "ConnectionState: " + dumpConnectionState(getConnectionState()));
         writer.println("  " + "State: " + BluetoothAdapter.nameForState(getState()));

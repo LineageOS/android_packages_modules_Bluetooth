@@ -30,6 +30,7 @@
 #include <bluetooth/types/address.h>
 
 #include "hci/class_of_device.h"
+#include "hci/hci_packets.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_hdr.h"
@@ -525,8 +526,9 @@ extern struct btm_establish_continue_from_address btm_establish_continue_from_ad
 // Params: uint8_t* p
 // Returns: void
 struct btm_read_automatic_flush_timeout_complete {
-  std::function<void(uint8_t* p)> body{[](uint8_t* /* p */) { ; }};
-  void operator()(uint8_t* p) { body(p); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) { ; }};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(view); }
 };
 // Name: btm_read_remote_version_complete
 // Params: tHCI_STATUS status, uint16_t handle, uint8_t lmp_version, uint16_t
@@ -546,9 +548,9 @@ extern struct btm_read_remote_version_complete btm_read_remote_version_complete;
 // Params: uint8_t* p
 // Returns: void
 struct btm_read_rssi_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len)> body{
-          [](uint8_t* /* pm */, uint16_t /* evt_len */) { ; }};
-  void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) { ; }};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(view); }
 };
 extern struct btm_read_rssi_complete btm_read_rssi_complete;
 // Name: btm_rejectlist_role_change_device

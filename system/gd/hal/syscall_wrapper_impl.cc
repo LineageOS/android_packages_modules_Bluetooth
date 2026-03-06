@@ -44,13 +44,13 @@ int SyscallWrapperImpl::Connect(int fd, const struct sockaddr* addr, socklen_t l
 }
 
 ssize_t SyscallWrapperImpl::Send(int fd, const void* buf, size_t n, int flags) {
-  int ret = send(fd, buf, n, flags);
+  ssize_t ret = send(fd, buf, n, flags);
   errno_ = errno;
   return ret;
 }
 
 ssize_t SyscallWrapperImpl::Recv(int fd, void* buf, size_t n, int flags) {
-  int ret = recv(fd, buf, n, flags);
+  ssize_t ret = recv(fd, buf, n, flags);
   errno_ = errno;
   return ret;
 }

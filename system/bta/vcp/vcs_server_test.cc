@@ -97,8 +97,8 @@ TEST_F(VcsTestBase, InstantiateRelease) {
 }
 
 TEST_F(VcsTestBase, RegisterGattService) {
-  tBTA_GATTS_CBACK* p_gatt_event_source_cb = nullptr;
-  tBTA_GATTS p_data;
+  const tBTA_GATTS_CBACK* p_gatt_event_source_cb = nullptr;
+  bluetooth::Uuid uuid;
 
   // Check GATT server app registration
   VcsServer::ServiceDescriptor service_descriptor{
@@ -107,16 +107,14 @@ TEST_F(VcsTestBase, RegisterGattService) {
           .initial_mute_state = MuteState::kNotMuted,
           .initial_volume_setting_persisted = VolumeSettingPersisted::kResetVolumeSetting};
   EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
-          .WillOnce(DoAll(SaveArg<0>(&p_data.reg_oper.uuid), SaveArg<1>(&p_gatt_event_source_cb)));
+          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb)));
   vcs_->RegisterGattService(service_descriptor, &vcs_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
-  ASSERT_EQ(uuid::kVolumeControlServiceUuid, p_data.reg_oper.uuid);
+  ASSERT_EQ(uuid::kVolumeControlServiceUuid, uuid);
   Mock::VerifyAndClearExpectations(&gatt_server_interface_);
 
   // Inject the registration success event
-  p_data.reg_oper.status = tGATT_STATUS::GATT_SUCCESS;
-  p_data.reg_oper.server_if = 0xDE;
-  p_gatt_event_source_cb(BTA_GATTS_REG_EVT, &p_data);
+  p_gatt_event_source_cb->p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
 
   // Ignore second call to register
   EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
@@ -124,12 +122,12 @@ TEST_F(VcsTestBase, RegisterGattService) {
   vcs_->RegisterGattService(service_descriptor, &vcs_callbacks_);
 
   // Make sure destructing unregisters the server interface
-  EXPECT_CALL(gatt_server_interface_, AppDeregister(p_data.reg_oper.server_if));
+  EXPECT_CALL(gatt_server_interface_, AppDeregister(0xDE));
 }
 
 class VcsTest : public VcsTestBase {
 public:
-  tBTA_GATTS_CBACK* p_gatt_event_source_cb_ = nullptr;
+  const tBTA_GATTS_CBACK* p_gatt_event_source_cb_ = nullptr;
   std::vector<btgatt_db_element_t> service_db_;
   tGATT_IF server_if_;
 
@@ -148,14 +146,11 @@ public:
     // Mock GATT application registration success
     EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
             .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
-                                  [](const bluetooth::Uuid& /* app_uuid */,
-                                     tBTA_GATTS_CBACK* p_cback, bool /* eatt_support */) {
-                                    tBTA_GATTS p_data;
-                                    p_data.reg_oper.status = (p_cback == nullptr)
-                                                                     ? tGATT_STATUS::GATT_ERROR
-                                                                     : tGATT_STATUS::GATT_SUCCESS;
-                                    p_data.reg_oper.server_if = 0xDE;
-                                    p_cback(BTA_GATTS_REG_EVT, &p_data);
+                                  [](const bluetooth::Uuid& app_uuid,
+                                     const tBTA_GATTS_CBACK* p_cback, bool /* eatt_support */) {
+                                    if (p_cback) {
+                                      p_cback->p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
+                                    }
                                   }));
 
     // Mock GATT service registration success
@@ -189,12 +184,7 @@ public:
     if (conn_id_by_address_.count(pseudo_addr) == 0) {
       conn_id_by_address_[pseudo_addr] = conn_id;
 
-      tBTA_GATTS p_data;
-      p_data.conn.remote_bda = pseudo_addr;
-      p_data.conn.conn_id = conn_id++;
-      p_data.conn.server_if = server_if_;
-      p_data.conn.transport = BT_TRANSPORT_LE;
-      p_gatt_event_source_cb_(BTA_GATTS_CONNECT_EVT, &p_data);
+      p_gatt_event_source_cb_->p_connect_cb(server_if_, pseudo_addr, conn_id++, BT_TRANSPORT_LE);
     }
   }
 
@@ -207,12 +197,7 @@ public:
     }
 
     if (conn_id != GATT_INVALID_CONN_ID) {
-      tBTA_GATTS p_data;
-      p_data.conn.remote_bda = address;
-      p_data.conn.conn_id = conn_id;
-      p_data.conn.server_if = server_if_;
-      p_data.conn.transport = BT_TRANSPORT_LE;
-      p_gatt_event_source_cb_(BTA_GATTS_DISCONNECT_EVT, &p_data);
+      p_gatt_event_source_cb_->p_disconnect_cb(server_if_, address, conn_id, BT_TRANSPORT_LE);
     }
   }
 
@@ -232,19 +217,8 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      tGATTS_DATA attribute_data;
-      attribute_data.read_req.handle = handle;
-      attribute_data.read_req.offset = 0x0000;
-      attribute_data.read_req.is_long = false;
-      attribute_data.read_req.gatt_type = BTGATT_DB_CHARACTERISTIC;
-
-      tBTA_GATTS gatts_data;
-      gatts_data.req_data.remote_bda = address;
-      gatts_data.req_data.trans_id = gatt_trans_id_++;
-      gatts_data.req_data.conn_id = conn_id;
-      gatts_data.req_data.p_data = &attribute_data;
-
-      p_gatt_event_source_cb_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &gatts_data);
+      p_gatt_event_source_cb_->p_read_characteristic_cb(conn_id, gatt_trans_id_++, address, handle,
+                                                        0, false);
     }
   }
 
@@ -266,23 +240,9 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      tGATTS_DATA attribute_data;
-      attribute_data.write_req.handle = handle;
-      attribute_data.write_req.offset = 0x0000;
-      attribute_data.write_req.need_rsp = with_response;
-      attribute_data.write_req.is_prep = false;
-      attribute_data.write_req.gatt_type = BTGATT_DB_CHARACTERISTIC;
-
-      attribute_data.write_req.len = value.size();
-      std::copy(value.begin(), value.end(), attribute_data.write_req.value);
-
-      tBTA_GATTS gatts_data;
-      gatts_data.req_data.remote_bda = address;
-      gatts_data.req_data.trans_id = gatt_trans_id_++;
-      gatts_data.req_data.conn_id = conn_id;
-      gatts_data.req_data.p_data = &attribute_data;
-
-      p_gatt_event_source_cb_(BTA_GATTS_WRITE_CHARACTERISTIC_EVT, &gatts_data);
+      p_gatt_event_source_cb_->p_write_characteristic_cb(conn_id, gatt_trans_id_++, address, handle,
+                                                         0, with_response, false,
+                                                         (uint8_t*)value.data(), value.size());
     }
   }
 
@@ -314,24 +274,12 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      tGATTS_DATA attribute_data;
-      attribute_data.write_req.handle = handle;
-      attribute_data.write_req.offset = 0x0000;
-      attribute_data.write_req.need_rsp = true;
-      attribute_data.write_req.is_prep = false;
-      attribute_data.write_req.gatt_type = BTGATT_DB_DESCRIPTOR;
-
-      auto* pp = attribute_data.write_req.value;
+      uint8_t value[2];
+      uint8_t* pp = value;
       UINT16_TO_STREAM(pp, cccd_value);
-      attribute_data.write_req.len = sizeof(cccd_value);
 
-      tBTA_GATTS gatts_data;
-      gatts_data.req_data.remote_bda = address;
-      gatts_data.req_data.trans_id = gatt_trans_id_++;
-      gatts_data.req_data.conn_id = conn_id;
-      gatts_data.req_data.p_data = &attribute_data;
-
-      p_gatt_event_source_cb_(BTA_GATTS_WRITE_DESCRIPTOR_EVT, &gatts_data);
+      p_gatt_event_source_cb_->p_write_descriptor_cb(conn_id, gatt_trans_id_++, address, handle, 0,
+                                                     true, false, value, sizeof(value));
     }
   }
 };
@@ -581,19 +529,8 @@ TEST_F(VcsTest, RemoteReadInvalidHandle) {
 
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_INVALID_HANDLE, _));
 
-  tGATTS_DATA attribute_data;
-  attribute_data.read_req.handle = invalid_handle;
-  attribute_data.read_req.offset = 0x0000;
-  attribute_data.read_req.is_long = false;
-  attribute_data.read_req.gatt_type = BTGATT_DB_CHARACTERISTIC;
-
-  tBTA_GATTS gatts_data;
-  gatts_data.req_data.remote_bda = test_dev;
-  gatts_data.req_data.trans_id = gatt_trans_id_++;
-  gatts_data.req_data.conn_id = conn_id_by_address_.at(test_dev);
-  gatts_data.req_data.p_data = &attribute_data;
-
-  p_gatt_event_source_cb_(BTA_GATTS_READ_CHARACTERISTIC_EVT, &gatts_data);
+  p_gatt_event_source_cb_->p_read_characteristic_cb(
+          conn_id_by_address_.at(test_dev), gatt_trans_id_++, test_dev, invalid_handle, 0, false);
 }
 
 TEST_F(VcsTest, UpdateVolumeStateNoSubscription) {

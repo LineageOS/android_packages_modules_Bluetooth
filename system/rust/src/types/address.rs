@@ -51,8 +51,7 @@ impl Address {
     /// Returns the full, non-anonymized address string (e.g., "AA:BB:CC:DD:EE:FF").
     /// Use this for JNI or internal system calls where the real address is required.
     pub fn to_full_string(&self) -> String {
-        let b = self.to_be_bytes();
-        format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", b[0], b[1], b[2], b[3], b[4], b[5])
+        format!("{:?}", self)
     }
 }
 

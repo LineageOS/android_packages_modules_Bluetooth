@@ -312,9 +312,9 @@ void btm_establish_continue_from_address(const RawAddress& bda, tBT_TRANSPORT tr
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_establish_continue_from_address(bda, transport);
 }
-void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
+void btm_read_automatic_flush_timeout_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_automatic_flush_timeout_complete(p);
+  test::mock::stack_acl::btm_read_automatic_flush_timeout_complete(view);
 }
 void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle, uint8_t lmp_version,
                                       uint16_t manufacturer, uint16_t lmp_subversion) {
@@ -322,9 +322,9 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle, uint8
   test::mock::stack_acl::btm_read_remote_version_complete(status, handle, lmp_version, manufacturer,
                                                           lmp_subversion);
 }
-void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
+void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_rssi_complete(p, evt_len);
+  test::mock::stack_acl::btm_read_rssi_complete(view);
 }
 void btm_rejectlist_role_change_device(const RawAddress& bd_addr, uint8_t hci_status) {
   inc_func_call_count(__func__);

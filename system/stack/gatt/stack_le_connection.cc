@@ -363,21 +363,20 @@ void leConnectionSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_p
   UINT8_TO_STREAM(pp, tx_phys);
   UINT8_TO_STREAM(pp, rx_phys);
   UINT16_TO_STREAM(pp, phy_options);
-  btu_hcif_send_cmd_with_cb(HCI_BLE_SET_PHY, data, kLen, base::BindOnce([](uint8_t*, uint16_t) {}));
+  btu_hcif_send_cmd_with_cb(HCI_BLE_SET_PHY, data, kLen,
+                            base::BindOnce([](bluetooth::hci::CommandCompleteView) {}));
 }
 
 static void read_phy_cb(base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb,
-                        uint8_t* data, uint16_t len) {
-  uint8_t status, tx_phy, rx_phy;
-  uint16_t handle;
+                        bluetooth::hci::CommandCompleteView view) {
+  auto complete_view = bluetooth::hci::LeReadPhyCompleteView::Create(view);
 
-  log::assert_that(len == 5, "Received bad response length:{}", len);
-  uint8_t* pp = data;
-  STREAM_TO_UINT8(status, pp);
-  STREAM_TO_UINT16(handle, pp);
-  handle = handle & 0x0FFF;
-  STREAM_TO_UINT8(tx_phy, pp);
-  STREAM_TO_UINT8(rx_phy, pp);
+  bluetooth::log::assert_that(complete_view.IsValid(), "Invalid LeReadPhyCompleteView");
+
+  uint8_t status, tx_phy, rx_phy;
+  status = static_cast<uint8_t>(complete_view.GetStatus());
+  tx_phy = static_cast<uint8_t>(complete_view.GetTxPhy());
+  rx_phy = static_cast<uint8_t>(complete_view.GetRxPhy());
 
   std::move(cb).Run(tx_phy, rx_phy, status);
 }

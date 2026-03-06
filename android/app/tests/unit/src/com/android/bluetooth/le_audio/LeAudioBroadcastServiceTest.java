@@ -1755,14 +1755,8 @@ public class LeAudioBroadcastServiceTest {
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        if (Flags.onlyBroadcastToLocalUser()) {
-            mInOrder.verify(mAdapterService)
-                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
-            return;
-        }
         mInOrder.verify(mAdapterService)
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any(), any());
+                .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
     }
 
     @Test
@@ -1770,7 +1764,6 @@ public class LeAudioBroadcastServiceTest {
         int groupId = 1;
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
-
 
         InOrder inOrderNative = inOrder(mLeAudioNativeInterface);
 

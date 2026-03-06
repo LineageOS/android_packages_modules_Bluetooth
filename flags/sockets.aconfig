@@ -29,16 +29,6 @@ flag {
 }
 
 flag {
-    name: "pseudo_addr_in_socket_connect_signal"
-    namespace: "bluetooth"
-    description: "use pseudo address instead of identity address when sending socket signal"
-    bug: "450667775"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "flush_socket_accept_signal"
     namespace: "bluetooth"
     description: "Flush the socket accept signal to miminmize the latency"

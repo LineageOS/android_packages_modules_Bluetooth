@@ -145,9 +145,6 @@ static void service_added_callback(int status, int server_if, const btgatt_db_el
   rusty::gs_service_added_cb(status, server_if,
                              ::rust::Slice<const btgatt_db_element_t>{service, service_count});
 }
-static void service_stopped_callback(int status, int server_if, int srvc_handle) {
-  rusty::gs_service_stopped_cb(status, server_if, srvc_handle);
-}
 static void service_deleted_callback(int status, int server_if, int srvc_handle) {
   rusty::gs_service_deleted_cb(status, server_if, srvc_handle);
 }
@@ -210,7 +207,6 @@ btgatt_server_callbacks_t gatt_server_callbacks = {
         register_server_callback,
         connection_callback,
         service_added_callback,
-        service_stopped_callback,
         service_deleted_callback,
         request_read_characteristic_callback,
         request_read_descriptor_callback,
@@ -407,10 +403,6 @@ tBT_STATUS_LEGACY GattServerIntf::add_service(int server_if,
                                               ::rust::Slice<const btgatt_db_element_t> service,
                                               size_t service_count) const {
   return toLegacyStatus(server_intf_->add_service(server_if, service.data(), service_count));
-}
-
-tBT_STATUS_LEGACY GattServerIntf::stop_service(int server_if, int service_handle) const {
-  return toLegacyStatus(server_intf_->stop_service(server_if, service_handle));
 }
 
 tBT_STATUS_LEGACY GattServerIntf::delete_service(int server_if, int service_handle) const {

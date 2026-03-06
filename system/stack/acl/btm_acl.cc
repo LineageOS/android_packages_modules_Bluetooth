@@ -47,6 +47,7 @@
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "hci/controller.h"
+#include "hci/hci_packets.h"
 #include "include/l2cap_hci_link_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
@@ -1473,7 +1474,7 @@ void btm_read_rssi_timeout(void* /* data */) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
+void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
   tBTM_RSSI_RESULT result;
 
@@ -1482,23 +1483,20 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
 
   /* If there was a registered callback, call it */
   if (p_cb) {
-    if (evt_len < 1) {
-      goto err_out;
+    auto read_rssi_complete_view = bluetooth::hci::ReadRssiCompleteView::Create(view);
+    if (!read_rssi_complete_view.IsValid()) {
+      log::error("Invalid read rssi complete view");
+      return;
     }
 
-    STREAM_TO_UINT8(result.hci_status, p);
+    result.hci_status = static_cast<tHCI_STATUS>(read_rssi_complete_view.GetStatus());
     result.status = tBTM_STATUS::BTM_ERR_PROCESSING;
 
     if (result.hci_status == HCI_SUCCESS) {
-      uint16_t handle;
+      uint16_t handle = read_rssi_complete_view.GetConnectionHandle();
+      result.rssi = read_rssi_complete_view.GetRssi();
 
-      if (evt_len < 4) {
-        goto err_out;
-      }
-      STREAM_TO_UINT16(handle, p);
-
-      STREAM_TO_UINT8(result.rssi, p);
-      log::debug("Read rrsi complete rssi:{} hci status:{}", result.rssi,
+      log::debug("Read rssi complete rssi:{} hci status:{}", result.rssi,
                  hci_status_code_text(to_hci_status_code(result.hci_status)));
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
@@ -1509,11 +1507,6 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
     }
     (*p_cb)(&result);
   }
-
-  return;
-
-err_out:
-  log::error("Bogus event packet, too short");
 }
 
 /*******************************************************************************
@@ -1527,7 +1520,7 @@ err_out:
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
+void btm_read_automatic_flush_timeout_complete(bluetooth::hci::CommandCompleteView view) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
   tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT result;
 
@@ -1536,15 +1529,23 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
 
   /* If there was a registered callback, call it */
   if (p_cb) {
+    auto read_automatic_flush_timeout_complete_view =
+            bluetooth::hci::ReadAutomaticFlushTimeoutCompleteView::Create(view);
+    if (!read_automatic_flush_timeout_complete_view.IsValid()) {
+      log::error("Invalid read automatic flush timeout complete view");
+      return;
+    }
+
+    result.hci_status =
+            static_cast<tHCI_STATUS>(read_automatic_flush_timeout_complete_view.GetStatus());
     uint16_t handle;
-    STREAM_TO_UINT8(result.hci_status, p);
     result.status = tBTM_STATUS::BTM_ERR_PROCESSING;
 
     if (result.hci_status == HCI_SUCCESS) {
       result.status = tBTM_STATUS::BTM_SUCCESS;
 
-      STREAM_TO_UINT16(handle, p);
-      STREAM_TO_UINT16(result.automatic_flush_timeout, p);
+      handle = read_automatic_flush_timeout_complete_view.GetConnectionHandle();
+      result.automatic_flush_timeout = read_automatic_flush_timeout_complete_view.GetFlushTimeout();
       log::debug("Read automatic flush timeout complete timeout:{} hci_status:{}",
                  result.automatic_flush_timeout,
                  hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status)));
@@ -1899,9 +1900,7 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc
     return;
   }
 
-  if (com_android_bluetooth_flags_remove_fake_role_change_event()) {
-    p_acl->link_role = role;
-  }
+  p_acl->link_role = role;
 
   /*
    * The legacy code path informs the upper layer via the BTA

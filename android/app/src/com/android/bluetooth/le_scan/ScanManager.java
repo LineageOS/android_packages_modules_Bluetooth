@@ -65,9 +65,11 @@ import android.util.SparseBooleanArray;
 
 import androidx.annotation.Nullable;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_scan.ScanManager.UidImportance;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -93,6 +95,7 @@ public class ScanManager {
     private static final int FOREGROUND_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
     private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
     private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
+    private static final boolean DEFAULT_UID_HAS_PRIVILEGED_PERMISSION = false;
 
     // Timeout for each controller operation.
     private static final int MAX_IS_UID_FOREGROUND_MAP_SIZE = 500;
@@ -114,6 +117,7 @@ public class ScanManager {
     private final Set<ScanClient> mBatchClients = ConcurrentHashMap.newKeySet();
     private final Set<ScanClient> mSuspendedScanClients = ConcurrentHashMap.newKeySet();
     private final SparseBooleanArray mIsUidForegroundMap = new SparseBooleanArray();
+    private final SparseBooleanArray mIsUidPrivilegedPermissionMap = new SparseBooleanArray();
 
     // Filter indices that are available to user. It's sad we need to maintain filter index.
     private final Deque<Integer> mFilterIndexStack = new ArrayDeque<>();
@@ -337,8 +341,8 @@ public class ScanManager {
     }
 
     void stopScan(int scannerId) {
-        ScanClient tmpClient = new ScanClient(0, scannerId);
-        handleStopScan(tmpClient);
+        // TODO: Inline in next CL
+        handleStopScan(scannerId);
     }
 
     void flushBatchScanResults(ScanClient client) {
@@ -377,8 +381,29 @@ public class ScanManager {
         client.ifAppScanStatsPresent(stats -> stats.setAppImportance(finalImportance));
     }
 
+    void fetchUidPermission(ScanClient client) {
+        PackageManager packageManager = mAdapterService.getPackageManager();
+        if (packageManager == null) {
+            return;
+        }
+        String[] packages = packageManager.getPackagesForUid(client.getAppUid());
+        if (packages == null || packages.length == 0) {
+            return;
+        }
+        boolean hasPrivilegedPermission = false;
+        for (String packageName : packages) {
+            hasPrivilegedPermission =
+                    Util.checkPrivilegedPermission(
+                            mAdapterService, packageName, client.getAppUid());
+        }
+        mIsUidPrivilegedPermissionMap.put(client.getAppUid(), hasPrivilegedPermission);
+    }
+
     private void handleStartScan(ScanClient client) {
         fetchAppForegroundState(client);
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            fetchUidPermission(client);
+        }
 
         if (!isScanSupported(client)) {
             Log.e(TAG, "Scan settings not supported");
@@ -432,6 +457,13 @@ public class ScanManager {
         // Begin scan operations.
         if (isBatchClient(client) || isAutoBatchScanClientEnabled(client)) {
             mBatchClients.add(client);
+            if (mScanThrottler.isScanAllowanceThrottlingEnabled()
+                    && mScanThrottler.applyAllowanceThrottling(client, client.getScanModeApp())) {
+                Log.d(
+                        TAG,
+                        "Throttled batch scan mode for $client "
+                            + "scanMode=${scanModeToString(client.getSettings().getScanMode())}");
+            }
             startBatchScan(client);
         } else {
             updateScanModeBeforeStart(client);
@@ -470,9 +502,7 @@ public class ScanManager {
         Log.d(TAG, "Apply scan timeout (" + mAdapterService.getScanTimeout() + ") to " + client);
     }
 
-    private void handleStopScan(ScanClient tmpClient) {
-        var header = "handleStopScan(): ";
-        int scannerIdToStop = tmpClient.getScannerId();
+    private void handleStopScan(int scannerIdToStop) {
         ScanClient client = ScanUtil.findById(mBatchClients, scannerIdToStop);
         if (client == null) {
             client = ScanUtil.findById(mRegularScanClients, scannerIdToStop);
@@ -481,9 +511,14 @@ public class ScanManager {
             client = ScanUtil.findById(mSuspendedScanClients, scannerIdToStop);
         }
         if (client == null) {
-            Log.d(TAG, header + "No client found for scannerId=" + scannerIdToStop);
+            Log.d(TAG, "handleStopScan(): No client found for scannerId=" + scannerIdToStop);
             return;
         }
+        handleStopScan(client);
+    }
+
+    private void handleStopScan(ScanClient client) {
+        var header = "handleStopScan(): ";
         Log.d(TAG, header + "For " + client);
         final var appDied = client.getAppDied();
         final var scannerId = client.getScannerId();
@@ -491,7 +526,9 @@ public class ScanManager {
         if (mSuspendedScanClients.contains(client)) {
             mSuspendedScanClients.remove(client);
         }
-        if (!mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            mScanThrottler.removeRecordUsageRunnable(client);
+        } else {
             Runnable timeoutRunnable = mScanTimeoutRunnables.remove(client);
             if (timeoutRunnable != null) {
                 mHandler.removeCallbacks(timeoutRunnable);
@@ -679,6 +716,11 @@ public class ScanManager {
         return mIsUidForegroundMap.get(client.getAppUid(), DEFAULT_UID_IS_FOREGROUND);
     }
 
+    boolean hasPrivilegedPermission(ScanClient client) {
+        return mIsUidPrivilegedPermissionMap.get(
+                client.getAppUid(), DEFAULT_UID_HAS_PRIVILEGED_PERMISSION);
+    }
+
     private boolean updateScanModeBeforeStart(ScanClient client) {
         if (upgradeScanModeBeforeStart(client)) {
             return true;
@@ -855,6 +897,11 @@ public class ScanManager {
         }
         if (changed) {
             configureRegularScanParams();
+        }
+        for (ScanClient client : mBatchClients) {
+            if (mScanThrottler.applyAllowanceThrottling(client, client.getScanModeApp())) {
+                resetBatchScan(client);
+            }
         }
     }
 

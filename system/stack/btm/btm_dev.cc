@@ -755,51 +755,6 @@ BtmDevice* btm_find_or_alloc_dev(const RawAddress& bd_addr) {
   return p_device;
 }
 
-// TODO(b/315241296): Remove this function once the device_record_wipe_ranking flag is shipped
-static BtmDevice* btm_find_oldest_dev_rec_(void) {
-  BtmDevice* p_oldest = NULL;
-  uint32_t ts_oldest = 0xFFFFFFFF;
-  BtmDevice* p_oldest_paired = NULL;
-  uint32_t ts_oldest_paired = 0xFFFFFFFF;
-
-  auto process_record = [&](BtmDevice* p_device) {
-    if ((p_device->sec_rec.sec_flags & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN)) == 0) {
-      // Device is not paired
-      if (p_device->timestamp < ts_oldest) {
-        p_oldest = p_device;
-        ts_oldest = p_device->timestamp;
-      }
-    } else {
-      // Paired device
-      if (p_device->timestamp < ts_oldest_paired) {
-        p_oldest_paired = p_device;
-        ts_oldest_paired = p_device->timestamp;
-      }
-    }
-  };
-
-  if (!com_android_bluetooth_flags_use_array_instead_list_in_sec_dev_rec()) {
-    list_node_t* end = list_end(BtmSecurity::Get().sec_dev_rec_);
-    for (list_node_t* node = list_begin(BtmSecurity::Get().sec_dev_rec_); node != end;
-         node = list_next(node)) {
-      process_record(static_cast<BtmDevice*>(list_node(node)));
-    }
-  } else {
-    for (BtmDevice& device : BtmSecurity::Get().device_records_) {
-      if (device.IsInitialized()) {
-        process_record(&device);
-      }
-    }
-  }
-
-  // If we did not find any non-paired devices, use the oldest paired one...
-  if (ts_oldest == 0xFFFFFFFF) {
-    p_oldest = p_oldest_paired;
-  }
-
-  return p_oldest;
-}
-
 /*******************************************************************************
  *
  * Function         btm_find_oldest_dev_rec
@@ -813,10 +768,6 @@ static BtmDevice* btm_find_oldest_dev_rec_(void) {
  *
  ******************************************************************************/
 static BtmDevice* btm_find_oldest_dev_rec(void) {
-  if (!com_android_bluetooth_flags_device_record_wipe_ranking()) {
-    return btm_find_oldest_dev_rec_();
-  }
-
   BtmDevice* oldest = nullptr;            // Oldest non-bonded, non-connected device
   BtmDevice* oldest_connected = nullptr;  // Oldest non-bonded, connected device
   BtmDevice* oldest_bonded = nullptr;     // Oldest bonded device

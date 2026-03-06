@@ -156,7 +156,6 @@ static jmethodID method_onClientCharacteristicsUnoffloaded;
 static jmethodID method_onServerRegistered;
 static jmethodID method_onClientConnected;
 static jmethodID method_onServiceAdded;
-static jmethodID method_onServiceStopped;
 static jmethodID method_onServiceDeleted;
 static jmethodID method_onResponseSendCompleted;
 static jmethodID method_onServerReadCharacteristic;
@@ -621,17 +620,6 @@ static void btgatts_service_added_cb(int status, int server_if, const btgatt_db_
                                array.get());
 }
 
-static void btgatts_service_stopped_cb(int status, int server_if, int srvc_handle) {
-  std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) {
-    return;
-  }
-  sPrivateGattServerManager->RemoveService(server_if, srvc_handle);
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServiceStopped, status, server_if,
-                               srvc_handle);
-}
-
 static void btgatts_service_deleted_cb(int status, int server_if, int srvc_handle) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
@@ -808,7 +796,6 @@ static const btgatt_server_callbacks_t sGattServerCallbacks = {
         btgatts_register_app_cb,
         btgatts_connection_cb,
         btgatts_service_added_cb,
-        btgatts_service_stopped_cb,
         btgatts_service_deleted_cb,
         btgatts_request_read_characteristic_cb,
         btgatts_request_read_descriptor_cb,
@@ -1514,14 +1501,6 @@ static void gattServerAddServiceNative(JNIEnv* env, jobject /* object */, jint s
   sGattIf->server->add_service(server_if, db.data(), db.size());
 }
 
-static void gattServerStopServiceNative(JNIEnv* /* env */, jobject /* object */, jint server_if,
-                                        jint svc_handle) {
-  if (!sGattIf) {
-    return;
-  }
-  sGattIf->server->stop_service(server_if, svc_handle);
-}
-
 static void gattServerDeleteServiceNative(JNIEnv* /* env */, jobject /* object */, jint server_if,
                                           jint svc_handle) {
   if (!sGattIf) {
@@ -2169,7 +2148,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
            (void*)gattServerSetPreferredPhyNative},
           {"gattServerReadPhyNative", "(ILjava/lang/String;)V", (void*)gattServerReadPhyNative},
           {"gattServerAddServiceNative", "(ILjava/util/List;)V", (void*)gattServerAddServiceNative},
-          {"gattServerStopServiceNative", "(II)V", (void*)gattServerStopServiceNative},
           {"gattServerDeleteServiceNative", "(II)V", (void*)gattServerDeleteServiceNative},
           {"gattServerSendIndicationNative", "(III[B)V", (void*)gattServerSendIndicationNative},
           {"gattServerSendNotificationNative", "(III[B)V", (void*)gattServerSendNotificationNative},
@@ -2230,7 +2208,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"onServerRegistered", "(IIJJ)V", &method_onServerRegistered},
           {"onClientConnected", "(Ljava/lang/String;IZII)V", &method_onClientConnected},
           {"onServiceAdded", "(IILjava/util/List;)V", &method_onServiceAdded},
-          {"onServiceStopped", "(III)V", &method_onServiceStopped},
           {"onServiceDeleted", "(III)V", &method_onServiceDeleted},
           {"onResponseSendCompleted", "(II)V", &method_onResponseSendCompleted},
           {"onServerReadCharacteristic", "(Ljava/lang/String;IIIIZ)V",

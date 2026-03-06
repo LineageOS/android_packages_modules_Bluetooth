@@ -20,6 +20,7 @@
 
 #include <base/functional/callback.h>
 
+#include "hci/hci_packets.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 
@@ -45,7 +46,7 @@
 typedef struct packet_fragmenter_t packet_fragmenter_t;
 typedef uint16_t command_opcode_t;
 
-typedef void (*command_complete_cb)(BT_HDR* response, void* context);
+typedef void (*command_complete_cb)(bluetooth::hci::CommandCompleteView view, void* context);
 typedef void (*command_status_cb)(uint8_t status, BT_HDR* command, void* context);
 
 typedef struct hci_t {

@@ -147,8 +147,8 @@ static bool prop2cfg(const RawAddress* addr, bt_property_t* prop) {
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_TIMESTAMP, static_cast<int>(time(NULL)));
       break;
     case BT_PROPERTY_BDNAME: {
-      if (com_android_bluetooth_flags_set_name_in_system_server() && !addr) {
-        log::fatal("Invalid set/get name within native config under set from system server flag");
+      if (!addr) {
+        log::fatal("Invalid set/get name within native config");
       }
       int name_length = prop->len > BD_NAME_LEN ? BD_NAME_LEN : prop->len;
       strncpy(value, reinterpret_cast<char*>(prop->val), name_length);
@@ -257,8 +257,8 @@ static bool cfg2prop(const RawAddress* addr, bt_property_t* prop) {
       }
       break;
     case BT_PROPERTY_BDNAME: {
-      if (com_android_bluetooth_flags_set_name_in_system_server() && !addr) {
-        log::fatal("Invalid set/get name within native config under set from system server flag");
+      if (!addr) {
+        log::fatal("Invalid set/get name within native config");
       }
       int len = prop->len;
       if (addr) {
@@ -1046,13 +1046,6 @@ bt_status_t btif_storage_load_bonded_devices(void) {
     // Add BT_PROPERTY_BDADDR property into list only when successful.
     // Otherwise, skip this property entry.
     if (status == BT_STATUS_SUCCESS) {
-      num_props++;
-    }
-
-    if (!com_android_bluetooth_flags_set_name_in_system_server()) {
-      /* BD_NAME */
-      btif_storage_get_adapter_prop(BT_PROPERTY_BDNAME, &name, sizeof(name),
-                                    &adapter_props[num_props]);
       num_props++;
     }
 

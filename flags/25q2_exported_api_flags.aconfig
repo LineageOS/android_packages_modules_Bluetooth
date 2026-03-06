@@ -1,0 +1,128 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+# Parking api flags that released with 25Q2.
+# We cannot remove api flags like any flags.
+# This requires more investigation and making sure there are no usage at all
+
+# Do not add any flag to this file
+
+flag {
+    name: "aics_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Expose new API to control AICS data"
+    bug: "372328699"
+}
+
+flag {
+    name:"channel_sounding_25q2_apis"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add new APIs for channel sounding"
+    bug: "367409858"
+}
+
+flag {
+    name: "directed_advertising_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add new API for directed advertising"
+    bug: "378230500"
+}
+
+flag {
+    name: "hci_vendor_specific_extension"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Vendor-specific Commands/Events extension"
+    bug: "360925496"
+}
+
+flag {
+    name: "encryption_change_broadcast"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Broadcast when remote device encryption changes"
+    bug: "369753860"
+}
+
+flag {
+    name: "identity_address_type_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add a new API to BluetoothDevice to retrieve Identity Address Type"
+    bug: "377171798"
+}
+
+flag {
+    name: "key_missing_public"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Make BluetoothDevice.ACTION_KEY_MISSING into public API"
+    bug: "379729762"
+}
+
+flag {
+    name: "leaudio_add_opus_codec_type"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add OPUS codec type"
+    bug: "380029892"
+}
+
+flag {
+    name: "leaudio_broadcast_api_get_local_metadata"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "API to get broadcast assistant local metadata"
+    bug: "375423982"
+}
+
+flag {
+    name: "leaudio_broadcast_api_manage_primary_group"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "API to manage broadcast primary group"
+    bug: "375422410"
+}
+
+flag {
+    name: "leaudio_mono_location_errata_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add mono location as per Bluetooth Assigned Numbers to API"
+    bug: "372840605"
+}
+
+flag {
+    name: "metadata_api_microphone_for_call_enabled"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "API to get and set microphone for call enable status"
+    bug: "372395197"
+}
+
+flag {
+    name: "socket_settings_api"
+    namespace: "bluetooth"
+    description: "Adds new socket settings interface which allows creation of encryption only socket"
+    bug: "374358112"
+    is_exported: true
+}
+
+flag {
+    name: "support_bluetooth_quality_report_v6"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Enhanced Bluetooth Framework Support for Accessing Bluetooth Quality Report v6 Information"
+    bug: "364517559"
+}
+
+flag {
+    name: "support_metadata_device_types_apis"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Support more device types in bt device metadata"
+    bug: "289584302"
+}

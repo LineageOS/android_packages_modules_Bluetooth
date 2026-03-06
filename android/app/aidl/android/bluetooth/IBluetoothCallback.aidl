@@ -20,7 +20,6 @@ package android.bluetooth;
 @JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothCallback {
     void onBluetoothStateChange(int prevState, int newState);
-    void onAdapterNameChange(String name);
     void onAdapterAddressChange(String address);
     void setAdapterServiceBinder(in IBinder adapterServiceBinder);
     void onMediaProfileConnectionChange(boolean connected);

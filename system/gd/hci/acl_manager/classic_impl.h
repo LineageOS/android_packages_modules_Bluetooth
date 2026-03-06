@@ -363,20 +363,6 @@ public:
                     connection->GetEventCallbacks(
                             [this](uint16_t handle) { this->connections.invalidate(handle); }));
 
-    if (!com_android_bluetooth_flags_remove_fake_role_change_event()) {
-      connections.execute(address, [=, this](ConnectionManagementCallbacks* callbacks) {
-        if (delayed_role_change_ == nullptr) {
-          log::info("Sending fake role change for {}", address);
-          callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
-        } else if (delayed_role_change_->GetBdAddr() == address) {
-          log::info("Sending delayed role change for {}", delayed_role_change_->GetBdAddr());
-          callbacks->OnRoleChange(delayed_role_change_->GetStatus(),
-                                  delayed_role_change_->GetNewRole());
-          delayed_role_change_.reset();
-        }
-      });
-    }
-
     if (delayed_role_change_ != nullptr && delayed_role_change_->IsValid() &&
         delayed_role_change_->GetBdAddr() == address) {
       current_role = delayed_role_change_->GetNewRole();

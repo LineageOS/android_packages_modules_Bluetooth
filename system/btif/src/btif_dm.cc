@@ -138,12 +138,6 @@ static constinit Uuid UUID_GMAP("1858");
 #endif
 
 #define NUM_TIMEOUT_RETRIES 5
-#ifndef PROPERTY_DEFAULT_DEVICE_NAME
-#define PROPERTY_DEFAULT_DEVICE_NAME "bluetooth.device.default_name"
-#endif
-#ifndef PROPERTY_PRODUCT_MODEL
-#define PROPERTY_PRODUCT_MODEL "ro.product.model"
-#endif
 #define DEFAULT_LOCAL_NAME_MAX 31
 #if (DEFAULT_LOCAL_NAME_MAX > BD_NAME_LEN)
 #error "default btif local name size exceeds stack supported length"
@@ -296,8 +290,6 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req);
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req);
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type);
 static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type);
-
-static const char* btif_get_default_local_name();
 
 static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_function_t function,
                                       bt_bond_state_t state);
@@ -2413,28 +2405,8 @@ void btif_remove_local_irk_from_resolving_list() {
 void BTIF_dm_enable(const std::string local_name) {
   btif_storage_prune_devices();
 
-  if (com_android_bluetooth_flags_set_name_in_system_server()) {
-    log::debug("Adapter local name is {}", local_name);
-    BTA_DmSetDeviceName(local_name.c_str());
-  } else {
-    BD_NAME bdname;
-    bt_property_t prop{
-            .type = BT_PROPERTY_BDNAME,
-            .len = BD_NAME_LEN,
-            .val = (void*)bdname,
-    };
-
-    bt_status_t status = btif_storage_get_adapter_property(&prop);
-    if (status == BT_STATUS_SUCCESS) {
-      /* A name exists in the storage. Make this the device name */
-      BTA_DmSetDeviceName((const char*)prop.val);
-    } else {
-      /* Storage does not have a name yet.
-       * Use the default name and write it to the chip
-       */
-      BTA_DmSetDeviceName(btif_get_default_local_name());
-    }
-  }
+  log::debug("Adapter local name is {}", local_name);
+  BTA_DmSetDeviceName(local_name.c_str());
 
   /* Enable or disable local privacy */
   bool ble_privacy_enabled = osi_property_get_bool(PROPERTY_BLE_PRIVACY_ENABLED, /*default=*/true);
@@ -3286,17 +3258,6 @@ DEV_CLASS btif_dm_get_local_class_of_device() {
 bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
   log::verbose("type=0x{:x}", prop->type);
   switch (prop->type) {
-    case BT_PROPERTY_BDNAME: {
-      if (com_android_bluetooth_flags_set_name_in_system_server()) {
-        log::fatal("Invalid set/get name within native config under set from system server flag");
-      }
-      bt_bdname_t* bd_name = (bt_bdname_t*)prop->val;
-      strncpy((char*)bd_name->name, (char*)btif_get_default_local_name(),
-              sizeof(bd_name->name) - 1);
-      bd_name->name[sizeof(bd_name->name) - 1] = 0;
-      prop->len = strlen((char*)bd_name->name);
-    } break;
-
     case BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT: {
       uint32_t* tmt = (uint32_t*)prop->val;
       *tmt = 120; /* default to 120s, if not found in NV */
@@ -3712,10 +3673,8 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
                      pairing_cb.pairing_type);
   pairing_cb.is_ssp = false;
 
-  if (com_android_bluetooth_flags_passkey_entry_pairing_approval()) {
-    pairing_cb.is_le_only = true;
-    pairing_cb.is_le_nc = false;
-  }
+  pairing_cb.is_le_only = true;
+  pairing_cb.is_le_nc = false;
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
@@ -4310,33 +4269,6 @@ void btif_dm_on_disable() {
  *
  ******************************************************************************/
 void btif_dm_read_energy_info() { BTA_DmBleGetEnergyInfo(bta_energy_info_cb); }
-
-static const char* btif_get_default_local_name() {
-  using bluetooth::common::StringTrim;
-  static std::string default_name = "";
-
-  if (default_name.empty()) {
-    std::string name = StringTrim(os::GetSystemProperty(PROPERTY_DEFAULT_DEVICE_NAME).value_or(""));
-    if (name.size() > BD_NAME_LEN) {
-      name.resize(BD_NAME_LEN);
-    }
-    default_name = name;
-  }
-
-  if (default_name.empty()) {
-    std::string name = StringTrim(os::GetSystemProperty(PROPERTY_PRODUCT_MODEL).value_or(""));
-    if (name.size() > BD_NAME_LEN) {
-      name.resize(BD_NAME_LEN);
-    }
-    default_name = name;
-  }
-
-  if (default_name.empty()) {
-    default_name = "Android";
-  }
-
-  return default_name.c_str();
-}
 
 static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_function_t function,
                                       bt_bond_state_t state) {

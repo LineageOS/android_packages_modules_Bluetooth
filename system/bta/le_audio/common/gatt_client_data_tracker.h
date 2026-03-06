@@ -99,40 +99,36 @@ public:
    *
    * @param p_data Pointer to the GATT server event data for the read request.
    */
-  void OnGattReadDescriptor(tBTA_GATTS* p_data) {
-    auto const conn_id = p_data->req_data.conn_id;
-    auto const& read_req = p_data->req_data.p_data->read_req;
-
-    log::info("conn_id:{}, read_req.handle:0x{:04x}", conn_id, read_req.handle);
+  void OnGattReadDescriptor(tCONN_ID conn_id, uint32_t trans_id, uint16_t handle, uint16_t offset,
+                            bool /*is_long*/) {
+    log::info("conn_id:{}, read_req.handle:0x{:04x}", conn_id, handle);
 
     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
-    p_msg->attr_value.handle = read_req.handle;
-    p_msg->attr_value.offset = read_req.offset;
+    p_msg->attr_value.handle = handle;
+    p_msg->attr_value.offset = offset;
     p_msg->attr_value.len = 0;
 
     auto device = FindConnectedDevice(conn_id);
     if (!device || device->is_stale) {
       log::error("Device unavailable for conn_id:{}, att_handle:{}, has_device_data_block:{}",
-                 conn_id, read_req.handle, device.get() != nullptr);
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INTERNAL_ERROR, std::move(p_msg));
+                 conn_id, handle, device.get() != nullptr);
+      BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INTERNAL_ERROR, std::move(p_msg));
       return;
     }
 
     // Read response
-    if (device->descriptor_value_by_handle_.count(read_req.handle)) {
-      auto const& descriptor_value = device->descriptor_value_by_handle_.at(read_req.handle);
+    if (device->descriptor_value_by_handle_.count(handle)) {
+      auto const& descriptor_value = device->descriptor_value_by_handle_.at(handle);
 
-      if (read_req.offset > descriptor_value.size()) {
-        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_OFFSET,
-                          std::move(p_msg));
+      if (offset > descriptor_value.size()) {
+        BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INVALID_OFFSET, std::move(p_msg));
         return;
       }
 
       p_msg->attr_value.len =
-              std::min(descriptor_value.size() - read_req.offset, sizeof(p_msg->attr_value.value));
-      std::copy(descriptor_value.begin() + read_req.offset,
-                descriptor_value.begin() + read_req.offset + p_msg->attr_value.len,
-                p_msg->attr_value.value);
+              std::min(descriptor_value.size() - offset, sizeof(p_msg->attr_value.value));
+      std::copy(descriptor_value.begin() + offset,
+                descriptor_value.begin() + offset + p_msg->attr_value.len, p_msg->attr_value.value);
     } else {
       p_msg->attr_value.len = 2;
       p_msg->attr_value.value[0] = 0;
@@ -141,7 +137,7 @@ public:
 
     log::verbose("Send response with value {}",
                  base::HexEncode(p_msg->attr_value.value, p_msg->attr_value.len));
-    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
+    BTA_GATTS_SendRsp(conn_id, trans_id, GATT_SUCCESS, std::move(p_msg));
   }
 
   /**
@@ -151,40 +147,35 @@ public:
    *
    * @param p_data Pointer to the GATT server event data for the write request.
    */
-  void OnGattWriteDescriptor(tBTA_GATTS* p_data) {
-    auto const conn_id = p_data->req_data.conn_id;
-    auto const& write_req = p_data->req_data.p_data->write_req;
-
-    log::info("conn_id:{}, write_req.handle:0x{:04x}, len:{}", conn_id, write_req.handle,
-              write_req.len);
+  void OnGattWriteDescriptor(tCONN_ID conn_id, uint32_t trans_id, uint16_t handle, uint16_t offset,
+                             uint16_t len, bool need_rsp, bool /*is_prep*/, const uint8_t* value) {
+    log::info("conn_id:{}, write_req.handle:0x{:04x}, len:{}", conn_id, handle, len);
 
     std::unique_ptr<tGATTS_RSP> p_msg = std::make_unique<tGATTS_RSP>();
-    p_msg->handle = write_req.handle;
+    p_msg->handle = handle;
 
     auto device = FindConnectedDevice(conn_id);
     if (!device || device->is_stale) {
       log::error("Device unavailable for conn_id:{}, has_device_data_block:{}", conn_id,
                  device.get() != nullptr);
-      if (write_req.need_rsp) {
-        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INTERNAL_ERROR,
-                          std::move(p_msg));
+      if (need_rsp) {
+        BTA_GATTS_SendRsp(conn_id, trans_id, GATT_INTERNAL_ERROR, std::move(p_msg));
       }
       return;
     }
 
-    if (device->descriptor_value_by_handle_.count(write_req.handle) == 0) {
-      device->descriptor_value_by_handle_[write_req.handle] = std::vector<uint8_t>();
+    if (device->descriptor_value_by_handle_.count(handle) == 0) {
+      device->descriptor_value_by_handle_[handle] = std::vector<uint8_t>();
     }
 
     // Resize and fill the buffer
-    auto& dest = device->descriptor_value_by_handle_[write_req.handle];
-    dest.resize(write_req.offset + write_req.len);
-    std::copy(write_req.value, write_req.value + write_req.len, dest.data() + write_req.offset);
+    auto& dest = device->descriptor_value_by_handle_[handle];
+    dest.resize(offset + len);
+    std::copy(value, value + len, dest.data() + offset);
 
-    log::info("offset: {}, value: {}", write_req.offset,
-              base::HexEncode(write_req.value + write_req.offset, write_req.len));
-    if (write_req.need_rsp) {
-      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, std::move(p_msg));
+    log::info("offset: {}, value: {}", offset, base::HexEncode(value + offset, len));
+    if (need_rsp) {
+      BTA_GATTS_SendRsp(conn_id, trans_id, GATT_SUCCESS, std::move(p_msg));
     }
   }
 
@@ -201,21 +192,17 @@ public:
    * @return A shared pointer to the newly created `DeviceEntry`, or nullptr if
    *         the connection is invalid or not of the expected type.
    */
-  std::shared_ptr<DeviceEntry> OnGattConnectedEventHandler(tBTA_GATTS* p_data, T&& init_data) {
-    if (p_data == nullptr) {
-      log::error("Invalid p_data");
+  std::shared_ptr<DeviceEntry> OnGattConnectedEventHandler(tCONN_ID conn_id,
+                                                           const RawAddress& pseudo_addr,
+                                                           tBT_TRANSPORT transport, T&& init_data) {
+    if (conn_id == GATT_INVALID_CONN_ID) {
+      log::warn("Invalid conn_id: {}", conn_id);
       return nullptr;
     }
 
-    if (p_data->conn.conn_id == GATT_INVALID_CONN_ID) {
-      log::warn("Invalid conn_id: {}", p_data->conn.conn_id);
-      return nullptr;
-    }
+    log::debug("Address: {}, conn_id:{}", pseudo_addr, conn_id);
 
-    auto pseudo_addr = p_data->conn.remote_bda;
-    log::debug("Address: {}, conn_id:{}", pseudo_addr, p_data->conn.conn_id);
-
-    if (p_data->conn.transport == BT_TRANSPORT_BR_EDR) {
+    if (transport == BT_TRANSPORT_BR_EDR) {
       log::warn("Skipping BR/EDR connection, only LE is supported for LE Audio.");
       return nullptr;
     }
@@ -226,13 +213,13 @@ public:
     if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_PERIPHERAL) {
       log::warn("Unicast server is not available for this connection. {}, status: {}, AclRole: {}",
                 pseudo_addr, btm_status_text(role_status), hci_role_text(role));
-      BTA_GATTS_Close(p_data->conn.conn_id);
+      BTA_GATTS_Close(conn_id);
       return nullptr;
     }
 
-    connected_devices_[p_data->conn.conn_id] =
+    connected_devices_[conn_id] =
             std::make_shared<DeviceEntry>(false, pseudo_addr, std::move(init_data));
-    return connected_devices_.at(p_data->conn.conn_id);
+    return connected_devices_.at(conn_id);
   }
 
   /**
@@ -245,20 +232,15 @@ public:
    *         use this to inspect the final state of the device. Returns
    *         nullptr if the connection ID was not found.
    */
-  std::shared_ptr<DeviceEntry> OnGattDisconnectedEventHandler(tBTA_GATTS* p_data) {
-    if (p_data == nullptr) {
-      log::warn("invalid p_data");
-      return nullptr;
-    }
-
-    auto it = connected_devices_.find(p_data->conn.conn_id);
+  std::shared_ptr<DeviceEntry> OnGattDisconnectedEventHandler(tCONN_ID conn_id,
+                                                              const RawAddress& pseudo_addr) {
+    auto it = connected_devices_.find(conn_id);
     if (it == connected_devices_.end()) {
-      log::error("Unknown conn_id:{}", p_data->conn.conn_id);
+      log::error("Unknown conn_id:{}", conn_id);
       return nullptr;
     }
 
-    auto pseudo_addr = p_data->conn.remote_bda;
-    log::debug("Address: {}, conn_id:{}", pseudo_addr, p_data->conn.conn_id);
+    log::debug("Address: {}, conn_id:{}", pseudo_addr, conn_id);
 
     auto result = it->second;
     result->is_stale = true;

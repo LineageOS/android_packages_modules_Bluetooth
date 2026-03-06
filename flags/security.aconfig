@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "passkey_entry_pairing_approval"
-    namespace: "bluetooth"
-    description: "Don't auto approve passkey entry pairing"
-    bug: "446268763"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_sec_dev_rec_access"
     namespace: "bluetooth"
     description: "Fix the issue where the security device record is accessed after cleanup"

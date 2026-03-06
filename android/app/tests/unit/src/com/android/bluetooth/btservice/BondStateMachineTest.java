@@ -45,7 +45,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.ParcelUuid;
-import android.os.UserHandle;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
@@ -57,7 +56,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -707,30 +705,14 @@ public class BondStateMachineTest {
 
         // Check for bond state Intent status.
         if (shouldBroadcast) {
-            if (Flags.onlyBroadcastToLocalUser()) {
-                verify(mAdapterService, times(++mVerifyCount))
-                        .sendBroadcast(
-                                intentArgument.capture(), eq(BLUETOOTH_CONNECT), any(Bundle.class));
-            } else {
-                verify(mAdapterService, times(++mVerifyCount))
-                        .sendBroadcastAsUser(
-                                intentArgument.capture(), eq(UserHandle.ALL),
-                                eq(BLUETOOTH_CONNECT), any(Bundle.class));
-            }
+            verify(mAdapterService, times(++mVerifyCount))
+                    .sendBroadcast(
+                            intentArgument.capture(), eq(BLUETOOTH_CONNECT), any(Bundle.class));
             verifyBondStateChangeIntent(
                     broadcastOldState, broadcastNewState, intentArgument.getValue());
         } else {
-            if (Flags.onlyBroadcastToLocalUser()) {
-                verify(mAdapterService, times(mVerifyCount))
-                        .sendBroadcast(any(Intent.class), anyString(), any(Bundle.class));
-            } else {
-                verify(mAdapterService, times(mVerifyCount))
-                        .sendBroadcastAsUser(
-                                any(Intent.class),
-                                any(UserHandle.class),
-                                anyString(),
-                                any(Bundle.class));
-            }
+            verify(mAdapterService, times(mVerifyCount))
+                    .sendBroadcast(any(Intent.class), anyString(), any(Bundle.class));
         }
 
         if (shouldDelayMessageExist) {

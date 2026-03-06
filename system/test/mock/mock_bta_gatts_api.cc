@@ -34,8 +34,8 @@
 
 void BTA_GATTS_Disable(void) { inc_func_call_count(__func__); }
 void BTA_GATTS_AppDeregister(tGATT_IF /* server_if */) { inc_func_call_count(__func__); }
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */, tBTA_GATTS_CBACK* /* p_cback */,
-                           bool /* eatt_support */) {
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */,
+                           const tBTA_GATTS_CBACK* /* p_cback */, bool /* eatt_support */) {
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_CancelOpen(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,
@@ -61,7 +61,6 @@ void BTA_GATTS_SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_ST
                        std::unique_ptr<tGATTS_RSP> /* p_msg */) {
   inc_func_call_count(__func__);
 }
-void BTA_GATTS_StopService(uint16_t /* service_id */) { inc_func_call_count(__func__); }
 void BTA_GATTS_InitBonded(void) { inc_func_call_count(__func__); }
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID /* conn_id */,
                                       std::vector<btgatt_db_element_t> /* service */,

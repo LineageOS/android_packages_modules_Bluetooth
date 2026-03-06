@@ -24,7 +24,7 @@
 
 namespace bluetooth::vcp {
 
-enum class GattConnectionState { DISCONNECTED = 0, CONNECTED };
+enum class GattConnectionState { DISCONNECTED = 0, CONNECTING, CONNECTED, DISCONNECTING };
 enum class MuteState { NOT_MUTED = 0, MUTED };
 enum class VolumeSettingPersisted : uint8_t {
   RESET_VOLUME_SETTING = 0,

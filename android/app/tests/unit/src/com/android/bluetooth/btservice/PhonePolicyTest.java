@@ -64,7 +64,9 @@ import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.mcp.McpClientService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
@@ -87,7 +89,8 @@ import java.util.Optional;
 @RunWith(AndroidJUnit4.class)
 public class PhonePolicyTest {
     @Rule
-    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
+    public final StaticMockitoRule mMockitoRule =
+            new StaticMockitoRule(SystemProperties.class, McpClientService.class);
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final TemporaryFolder mTempFolder = new TemporaryFolder();
@@ -100,6 +103,7 @@ public class PhonePolicyTest {
     @Mock private HearingAidService mHearingAidService;
     @Mock private ApplicationInfo mMockApplicationInfo;
     @Mock private HapClientService mHapClientService;
+    @Mock private McpClientService mMcpClientService;
 
     private static final int MAX_CONNECTED_AUDIO_DEVICES = 5;
 
@@ -141,11 +145,14 @@ public class PhonePolicyTest {
         doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
         doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        doReturn(Optional.of(mMcpClientService)).when(mAdapterService).getMcpClientService();
 
         // Most common default
         doReturn(CONNECTION_POLICY_UNKNOWN).when(mHeadsetService).getConnectionPolicy(any());
         doReturn(CONNECTION_POLICY_UNKNOWN).when(mA2dpService).getConnectionPolicy(any());
         doReturn(CONNECTION_POLICY_UNKNOWN).when(mLeAudioService).getConnectionPolicy(any());
+        doReturn(CONNECTION_POLICY_UNKNOWN).when(mMcpClientService).getConnectionPolicy(any());
+        ExtendedMockito.doReturn(true).when(() -> McpClientService.isEnabled());
         doReturn(STATE_DISCONNECTED).when(mA2dpService).getConnectionState(any());
         doReturn(STATE_DISCONNECTED).when(mHeadsetService).getConnectionState(any());
         doReturn(Collections.emptyList()).when(mA2dpService).getConnectedDevices();
@@ -193,6 +200,16 @@ public class PhonePolicyTest {
         verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_ALLOWED);
+    }
+
+    @Test
+    public void testProcessInitProfilePriorities_McpClient() {
+        mPhonePolicy.mAutoConnectProfilesSupported = true;
+
+        ParcelUuid[] uuids = {BluetoothUuid.GENERIC_MEDIA_CONTROL};
+        mPhonePolicy.onUuidsDiscovered(mDevice1, uuids);
+
+        verify(mMcpClientService).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
     }
 
     private void processInitProfilePriorities_LeAudioOnlyHelper(

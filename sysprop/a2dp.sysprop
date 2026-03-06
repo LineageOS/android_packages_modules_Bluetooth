@@ -1,17 +1,12 @@
 module: "android.sysprop.bluetooth.A2dp"
 owner: Platform
 
-prop {
-    api_name: "src_sink_coexist"
-    type: Boolean
-    scope: Internal
-    access: Readonly
-    prop_name: "bluetooth.a2dp.src_sink_coexist.enabled"
-}
-
+# Time to wait for open from SNK when signaling is initiated from SNK.
+# If not, we abort and try to initiate the connection as SRC.
 prop {
     api_name: "avdt_accept_open_timeout_ms"
     type: Integer
+    default_value: "10000"
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.a2dp.avdt_accept_open_timeout_ms"

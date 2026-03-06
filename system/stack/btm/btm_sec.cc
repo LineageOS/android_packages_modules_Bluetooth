@@ -593,8 +593,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
   /* Other security process is in progress */
   if (BtmSecurity::Get().pairing_state_ != BTM_PAIR_STATE_IDLE) {
-    if (com_android_bluetooth_flags_pairing_collision_with_same_device() &&
-        BtmSecurity::Get().link_spec_.addrt.bda == bd_addr) {
+    if (BtmSecurity::Get().link_spec_.addrt.bda == bd_addr) {
       log::warn("Already pairing with {}", BtmSecurity::Get().link_spec_);
       return tBTM_STATUS::BTM_CMD_STARTED;
     } else {
@@ -3368,8 +3367,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
       log::warn("Unable to get link policy role peer:{}", p_device->bd_addr);
     }
 
-    if (com_android_bluetooth_flags_role_switch_after_encryption() &&
-        p_device->role_switch_pending != BtmDevice::RoleSwitchPending::kNone &&
+    if (p_device->role_switch_pending != BtmDevice::RoleSwitchPending::kNone &&
         role == HCI_ROLE_PERIPHERAL) {
       if (btm_sec_use_smp_br_chnl(p_device)) {
         /* Role switch request might prevent remote central device from initiating CTKD */
@@ -4387,8 +4385,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_AUTH_COMPLETE:
-      if (com_android_bluetooth_flags_passkey_entry_pairing_approval() &&
-          (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_LE_ACTIVE)) {
+      if (BtmSecurity::Get().pairing_flags_ & BTM_PAIR_FLAGS_LE_ACTIVE) {
         SMP_PairCancel(BtmSecurity::Get().link_spec_.addrt.bda);
       }
       ABSL_FALLTHROUGH_INTENDED;
@@ -5325,8 +5322,6 @@ void btm_update_bond_lost(const RawAddress& bd_addr, bool bond_lost) {
 
 uint8_t btm_sec_get_min_enc_key_size() {
   static uint8_t min_key_size = (uint8_t)std::min(
-          std::max(android::sysprop::bluetooth::Gap::min_key_size().value_or(MIN_KEY_SIZE_DEFAULT),
-                   MIN_KEY_SIZE),
-          MAX_KEY_SIZE);
+          std::max(android::sysprop::bluetooth::Gap::min_key_size(), MIN_KEY_SIZE), MAX_KEY_SIZE);
   return min_key_size;
 }

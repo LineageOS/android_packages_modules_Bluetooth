@@ -372,16 +372,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_cancel_stream_request_when_invalid_group"
-    namespace: "bluetooth"
-    description: "Cancel stream request when active group is invalid"
-    bug: "447083886"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_broadcast_sink_feature"
     namespace: "bluetooth"
     description: "LE Audio Broadcast Sink Feature"
@@ -400,16 +390,6 @@ flag {
     namespace: "bluetooth"
     description: "Use burst buffer with pool rotation"
     bug: "453508454"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "coordinated_remove_bond"
-    namespace: "bluetooth"
-    description: "Remove all coordinated set members when any member is requested to be removed"
-    bug: "454419225"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
