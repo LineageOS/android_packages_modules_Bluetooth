@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Remote device manager. This class is currently mostly used for HF and AG remote devices. */
 public class RemoteDevices {
@@ -1154,6 +1155,85 @@ public class RemoteDevices {
             synchronized (mObject) {
                 return mLastBondedInitiator;
             }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            synchronized (mObject) {
+                String address = mDevice.getAddress();
+                String identityAddress = mIdentityAddress.getAddress();
+                String anonAddress = toAnonymizedAddress(address);
+                String anonIdentityAddress =
+                        identityAddress != null
+                                ? toAnonymizedAddress(identityAddress)
+                                : "XX:XX:XX:XX:XX:XX";
+                int identityAddressType = mIdentityAddress.getAddressType();
+
+                boolean connectedBrEdr = mBredrLink != null;
+                boolean connectedLe = mLeLink != null;
+
+                sb.append("    ")
+                        .append(anonAddress)
+                        .append("(")
+                        .append(Util.addressTypeToString(mDevice.getAddressType()))
+                        .append(")")
+                        .append(" => ")
+                        .append(anonIdentityAddress)
+                        .append("(")
+                        .append(Util.addressTypeToString(identityAddressType))
+                        .append(")")
+                        .append(" [")
+                        .append(Util.deviceTypeToString(mDeviceType))
+                        .append("] [0x")
+                        .append(String.format("%06X", mBluetoothClass))
+                        .append("] [Pairing Algorithm BR/EDR: ")
+                        .append(mBredrBond != null ? mBredrBond.getPairingAlgorithm() : "N/A")
+                        .append(" LE: ")
+                        .append(mLeBond != null ? mLeBond.getPairingAlgorithm() : "N/A")
+                        .append("] [ACL BR/EDR:")
+                        .append(connectedBrEdr ? "Y" : "N")
+                        .append(" LE:")
+                        .append(connectedLe ? "Y" : "N")
+                        .append("] [ Encryption status(BR/EDR): ")
+                        .append(connectedBrEdr ? mBredrLink.getEncryptionStatus() : "N/A")
+                        .append(" LE: ")
+                        .append(connectedLe ? mLeLink.getEncryptionStatus() : "N/A")
+                        .append("] ")
+                        .append(mName);
+
+                if (Utils.isAutonomousRepairingSupported() && mLastBondLossReason.isPresent()) {
+                    sb.append("[Latest bond-loss reason: ")
+                            .append(mLastBondLossReason.get())
+                            .append("]");
+                }
+                sb.append("\n");
+
+                if (mUuidsBrEdr != null) {
+                    sb.append("        [BR/EDR UUIDs]: ")
+                            .append(
+                                    Arrays.stream(mUuidsBrEdr)
+                                            .map(ParcelUuid::toString)
+                                            .collect(Collectors.joining(" ")))
+                            .append("\n");
+                }
+
+                if (mUuidsLe != null) {
+                    sb.append("        [LE UUIDs    ]: ")
+                            .append(
+                                    Arrays.stream(mUuidsLe)
+                                            .map(ParcelUuid::toString)
+                                            .collect(Collectors.joining(" ")))
+                            .append("\n");
+                }
+
+                if (!mPackages.isEmpty()) {
+                    sb.append("        [Packages    ]: ")
+                            .append(Arrays.toString(mPackages.toArray()))
+                            .append("\n");
+                }
+            }
+            return sb.toString();
         }
     }
 
@@ -2540,83 +2620,8 @@ public class RemoteDevices {
             }
 
             boolean bonded = deviceProperties.getBondState() == BluetoothDevice.BOND_BONDED;
-            String identityAddress = deviceProperties.getIdentityAddress().getAddress();
-            String anonAddress = toAnonymizedAddress(address);
-            String anonIdentityAddress =
-                    identityAddress != null
-                            ? toAnonymizedAddress(identityAddress)
-                            : "XX:XX:XX:XX:XX:XX";
-            int identityAddressType = deviceProperties.getIdentityAddress().getAddressType();
-
-            BondStatus bredrBondStatus = deviceProperties.getBondStatus(TRANSPORT_BREDR);
-            BondStatus leBondStatus = deviceProperties.getBondStatus(TRANSPORT_LE);
-            boolean connectedBrEdr =
-                    deviceProperties.getConnectionHandle(TRANSPORT_BREDR) != BluetoothDevice.ERROR;
-            boolean connectedLe =
-                    deviceProperties.getConnectionHandle(TRANSPORT_LE) != BluetoothDevice.ERROR;
-
             StringBuilder sb = bonded ? sbBonded : sbKnown;
-            sb.append("    ")
-                    .append(anonAddress)
-                    .append("(")
-                    .append(Util.addressTypeToString(deviceProperties.getDevice().getAddressType()))
-                    .append(")")
-                    .append(" => ")
-                    .append(anonIdentityAddress)
-                    .append("(")
-                    .append(Util.addressTypeToString(identityAddressType))
-                    .append(")")
-                    .append(" [")
-                    .append(Util.deviceTypeToString(deviceProperties.getDeviceType()))
-                    .append("] [0x")
-                    .append(String.format("%06X", deviceProperties.getBluetoothClass()))
-                    .append("] [Pairing Algorithm BR/EDR: ")
-                    .append(bredrBondStatus == null ? "N/A" : bredrBondStatus.getPairingAlgorithm())
-                    .append(" LE: ")
-                    .append(leBondStatus == null ? "N/A" : leBondStatus.getPairingAlgorithm())
-                    .append("] [ACL BR/EDR:")
-                    .append(connectedBrEdr ? "Y" : "N")
-                    .append(" LE:")
-                    .append(connectedLe ? "Y" : "N")
-                    .append("] [ Encryption status(BR/EDR): ")
-                    .append(deviceProperties.getEncryptionStatus(TRANSPORT_BREDR))
-                    .append(" LE: ")
-                    .append(deviceProperties.getEncryptionStatus(TRANSPORT_LE))
-                    .append("] ")
-                    .append(deviceProperties.getName());
-
-            if (Utils.isAutonomousRepairingSupported()
-                    && deviceProperties.getLastBondLossReason().isPresent()) {
-                sb.append("[Latest bond-loss reason: ")
-                        .append(deviceProperties.getLastBondLossReason().get())
-                        .append("]");
-            }
-            sb.append("\n");
-
-            ParcelUuid[] uuidsBrEdr = deviceProperties.getUuidsBrEdr();
-            if (uuidsBrEdr != null) {
-                sb.append("        [BR/EDR UUIDs]: ");
-                for (ParcelUuid uuid : deviceProperties.getUuidsBrEdr()) {
-                    sb.append(uuid.toString()).append(" ");
-                }
-                sb.append("\n");
-            }
-
-            ParcelUuid[] uuidsLe = deviceProperties.getUuidsLe();
-            if (uuidsLe != null) {
-                sb.append("        [LE UUIDs    ]: ");
-                for (ParcelUuid uuid : deviceProperties.getUuidsLe()) {
-                    sb.append(uuid.toString()).append(" ");
-                }
-                sb.append("\n");
-            }
-
-            String[] packages = deviceProperties.getPackages();
-            if (packages.length > 0) {
-                sb.append("        [Packages    ]: ")
-                        .append(Arrays.toString(packages))
-                        .append("\n");
-            }
+            sb.append(deviceProperties);
 
             if (bonded) {
                 bondedCount++;
