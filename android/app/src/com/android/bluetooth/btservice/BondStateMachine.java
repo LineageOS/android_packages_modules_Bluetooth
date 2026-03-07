@@ -282,6 +282,8 @@ public final class BondStateMachine extends StateMachine {
                         }
                         if (mDevices.isEmpty()) {
                             transitionTo(mStateIdle);
+                        } else {
+                            logD("Can't transition to idle, pending devices: " + mDevices);
                         }
                     } else if (!mDevices.contains(dev)) {
                         result = true;
@@ -355,7 +357,9 @@ public final class BondStateMachine extends StateMachine {
                     return false;
             }
             if (result) {
-                mDevices.add(dev);
+                if (mDevices.add(dev)) {
+                    logD("StateBonding: Updated tracked devices list:" + mDevices);
+                }
             }
             return true;
         }
