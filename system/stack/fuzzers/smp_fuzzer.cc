@@ -17,8 +17,6 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
-#include <functional>
-#include <vector>
 
 #include "common/message_loop_thread.h"
 #include "hci/controller_mock.h"

@@ -20,7 +20,6 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 #include "bt_status.h"
