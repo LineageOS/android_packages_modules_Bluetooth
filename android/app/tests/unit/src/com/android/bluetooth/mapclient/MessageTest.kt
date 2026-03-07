@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,99 +14,94 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.mapclient;
+package com.android.bluetooth.mapclient
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.HashMap;
-
-/** Test cases for {@link Message}. */
+/** Test cases for [Message]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class MessageTest {
-
+@RunWith(AndroidJUnit4::class)
+class MessageTest {
     @Test
-    public void constructor() throws Exception {
-        HashMap<String, String> attrs = new HashMap<>();
+    fun constructor() {
+        val attrs = HashMap<String, String>()
 
-        String handle = "FFAB";
-        attrs.put("handle", handle);
+        val handle = "FFAB"
+        attrs["handle"] = handle
 
-        String subject = "test_subject";
-        attrs.put("subject", subject);
+        val subject = "test_subject"
+        attrs["subject"] = subject
 
-        String dateTime = "20221220T165048";
-        attrs.put("datetime", dateTime);
+        val dateTime = "20221220T165048"
+        attrs["datetime"] = dateTime
 
-        String senderName = "test_sender_name";
-        attrs.put("sender_name", senderName);
+        val senderName = "test_sender_name"
+        attrs["sender_name"] = senderName
 
-        String senderAddr = "test_sender_addressing";
-        attrs.put("sender_addressing", senderAddr);
+        val senderAddr = "test_sender_addressing"
+        attrs["sender_addressing"] = senderAddr
 
-        String replytoAddr = "test_replyto_addressing";
-        attrs.put("replyto_addressing", replytoAddr);
+        val replytoAddr = "test_replyto_addressing"
+        attrs["replyto_addressing"] = replytoAddr
 
-        String recipientName = "test_recipient_name";
-        attrs.put("recipient_name", recipientName);
+        val recipientName = "test_recipient_name"
+        attrs["recipient_name"] = recipientName
 
-        String recipientAddr = "test_recipient_addressing";
-        attrs.put("recipient_addressing", recipientAddr);
+        val recipientAddr = "test_recipient_addressing"
+        attrs["recipient_addressing"] = recipientAddr
 
-        String type = "MMS";
-        attrs.put("type", type);
+        val type = "MMS"
+        attrs["type"] = type
 
-        int size = 23;
-        attrs.put("size", Integer.toString(size));
+        val size = 23
+        attrs["size"] = size.toString()
 
-        String text = "yes";
-        attrs.put("text", text);
+        val text = "yes"
+        attrs["text"] = text
 
-        String receptionStatus = "notification";
-        attrs.put("reception_status", receptionStatus);
+        val receptionStatus = "notification"
+        attrs["reception_status"] = receptionStatus
 
-        int attachmentSize = 15;
-        attrs.put("attachment_size", Integer.toString(attachmentSize));
+        val attachmentSize = 15
+        attrs["attachment_size"] = attachmentSize.toString()
 
-        String isPriority = "yes";
-        attrs.put("priority", isPriority);
+        val isPriority = "yes"
+        attrs["priority"] = isPriority
 
-        String isRead = "yes";
-        attrs.put("read", isRead);
+        val isRead = "yes"
+        attrs["read"] = isRead
 
-        String isSent = "yes";
-        attrs.put("sent", isSent);
+        val isSent = "yes"
+        attrs["sent"] = isSent
 
-        String isProtected = "yes";
-        attrs.put("protected", isProtected);
+        val isProtected = "yes"
+        attrs["protected"] = isProtected
 
-        Message msg = new Message(attrs);
+        val msg = Message(attrs)
 
-        assertThat(msg.getHandle()).isEqualTo(handle);
-        assertThat(msg.getSubject()).isEqualTo(subject);
+        assertThat(msg.handle).isEqualTo(handle)
+        assertThat(msg.subject).isEqualTo(subject)
         // TODO: Compare the Date class properly.
-        // assertThat(msg.getDateTime()).isEqualTo(expectedTime);
-        assertThat(msg.getDateTime()).isNotNull();
-        assertThat(msg.getSenderName()).isEqualTo(senderName);
-        assertThat(msg.getSenderAddressing()).isEqualTo(senderAddr);
-        assertThat(msg.getReplytoAddressing()).isEqualTo(replytoAddr);
-        assertThat(msg.getRecipientName()).isEqualTo(recipientName);
-        assertThat(msg.getRecipientAddressing()).isEqualTo(recipientAddr);
-        assertThat(msg.getType()).isEqualTo(Message.Type.MMS);
-        assertThat(msg.getSize()).isEqualTo(size);
-        assertThat(msg.getReceptionStatus()).isEqualTo(Message.ReceptionStatus.NOTIFICATION);
-        assertThat(msg.getAttachmentSize()).isEqualTo(attachmentSize);
-        assertThat(msg.isText()).isTrue();
-        assertThat(msg.isPriority()).isTrue();
-        assertThat(msg.isRead()).isTrue();
-        assertThat(msg.isSent()).isTrue();
-        assertThat(msg.isProtected()).isTrue();
-        assertThat(msg.toString()).isNotEmpty();
+        // assertThat(msg.dateTime).isEqualTo(expectedTime);
+        assertThat(msg.dateTime).isNotNull()
+        assertThat(msg.senderName).isEqualTo(senderName)
+        assertThat(msg.senderAddressing).isEqualTo(senderAddr)
+        assertThat(msg.replytoAddressing).isEqualTo(replytoAddr)
+        assertThat(msg.recipientName).isEqualTo(recipientName)
+        assertThat(msg.recipientAddressing).isEqualTo(recipientAddr)
+        assertThat(msg.type).isEqualTo(Message.Type.MMS)
+        assertThat(msg.size).isEqualTo(size)
+        assertThat(msg.receptionStatus).isEqualTo(Message.ReceptionStatus.NOTIFICATION)
+        assertThat(msg.attachmentSize).isEqualTo(attachmentSize)
+        assertThat(msg.isText).isTrue()
+        assertThat(msg.isPriority).isTrue()
+        assertThat(msg.isRead).isTrue()
+        assertThat(msg.isSent).isTrue()
+        assertThat(msg.isProtected).isTrue()
+        assertThat(msg.toString()).isNotEmpty()
     }
 }
