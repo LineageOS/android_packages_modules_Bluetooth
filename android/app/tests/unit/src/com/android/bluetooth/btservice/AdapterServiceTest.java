@@ -28,6 +28,9 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,11 +52,13 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.State;
 import android.companion.CompanionDeviceManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
@@ -64,6 +69,7 @@ import android.media.AudioManager;
 import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.ParcelUuid;
 import android.os.IpcDataCache;
 import android.os.Looper;
 import android.os.Message;
@@ -101,6 +107,8 @@ import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
+import org.hamcrest.Matcher;
+import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -172,6 +180,7 @@ public class AdapterServiceTest {
     private static class MockAdapterService extends AdapterService {
         private final LeAudioService mTestLeAudio;
         int mSetProfileServiceStateCounter = 0;
+        int mSendUuidsInternalCounter = 0;
 
         MockAdapterService(
                 Looper looper,
@@ -211,6 +220,12 @@ public class AdapterServiceTest {
         @Override
         void setProfileServiceState(int profileId, int state) {
             mSetProfileServiceStateCounter++;
+        }
+
+        @Override
+        void sendUuidsInternal(BluetoothDevice device, ParcelUuid[] uuids) {
+            mSendUuidsInternalCounter++;
+            super.sendUuidsInternal(device, uuids);
         }
     }
 
@@ -929,6 +944,143 @@ public class AdapterServiceTest {
         assertThat(result).isEqualTo(deviceAddressBytes);
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateOn_broadcastsIntent() {
+        initTest();
+        doEnable(false); // State will be STATE_ON
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(1);
+
+        verifyIntentSent(
+                hasAction(BluetoothDevice.ACTION_UUID),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice1));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateOn_fails_broadcastsIntent() {
+        initTest();
+        doEnable(false); // State will be STATE_ON
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, false);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(0);
+
+        verifyIntentSent(
+                hasAction(BluetoothDevice.ACTION_UUID),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice1));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateBleOn_doesNotBroadcastIntent() {
+        initTest();
+        offToBleOn(); // State will be STATE_BLE_ON
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(1);
+
+        verify(mContext, never()).sendBroadcast(any(), any(), any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateBleTurningOn_doesNotBroadcastIntent() {
+        initTest();
+        mAdapter.offToBleOn(false, "default");
+        syncHandler(0); // `init` need to be run first
+        if (isAdapterSuspendFeatureEnabled()) {
+            syncHandler(-2); // Init AdapterSuspendStateMachine
+        }
+        syncHandler(AdapterState.BLE_TURN_ON);
+
+        assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_ON);
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(1);
+
+        verify(mContext, never()).sendBroadcast(any(), any(), any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateTurningOn_doesNotBroadcastIntent() {
+        initTest();
+        offToBleOn(); // State will be STATE_BLE_ON
+
+        mAdapter.bleOnToOn();
+        syncHandler(AdapterState.USER_TURN_ON);
+
+        assertThat(mAdapter.getState()).isEqualTo(State.TURNING_ON);
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(1);
+
+        verify(mContext, never()).sendBroadcast(any(), any(), any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateOff_dropsUpdate() {
+        initTest(); // State is STATE_OFF
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(0);
+
+        verify(mContext, never()).sendBroadcast(any(), any(), any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateTurningOff_dropsUpdate() {
+        initTest();
+        doEnable(false); // State will be STATE_ON
+
+        mAdapter.onToBleOn();
+        syncHandler(AdapterState.USER_TURN_OFF);
+
+        assertThat(mAdapter.getState()).isEqualTo(State.TURNING_OFF);
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(0);
+
+        verify(mContext, never()).sendBroadcast(any(), any(), any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
+    public void deviceUuidsUpdated_inStateBleTurningOff_dropsUpdate() {
+        initTest();
+        offToBleOn(); // State will be STATE_BLE_ON
+
+        mAdapter.bleOnToOff();
+        syncHandler(AdapterState.BLE_TURN_OFF);
+
+        assertThat(mAdapter.getState()).isEqualTo(State.BLE_TURNING_OFF);
+
+        ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
+        mAdapter.deviceUuidsUpdated(mDevice1, sampleUuids, true);
+
+        assertThat(mAdapter.mSendUuidsInternalCounter).isEqualTo(0);
+
+        verify(mContext, never()).sendBroadcast(any(), any(), any());
+    }
+
     /**
      * Test: Get id for null address Check if returned value from {@link
      * AdapterService#getMetricId(BluetoothDevice)} is 0 when device address is null
@@ -1388,5 +1540,14 @@ public class AdapterServiceTest {
 
         assertThat(result).isEqualTo(BluetoothStatusCodes.SUCCESS);
         verify(mNativeInterface, never()).disconnectAllAcls(any(BluetoothDevice.class));
+    }
+
+    @SafeVarargs
+    private void verifyIntentSent(Matcher<Intent>... matchers) {
+        verify(mContext)
+                .sendBroadcast(
+                        org.mockito.hamcrest.MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                        any(),
+                        any());
     }
 }

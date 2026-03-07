@@ -3265,10 +3265,16 @@ public class AdapterService extends Service {
      */
     public void deviceUuidsUpdated(BluetoothDevice device, ParcelUuid[] uuids, boolean success) {
         int state = getState();
-        if (state != BluetoothAdapter.STATE_ON && state != BluetoothAdapter.STATE_BLE_ON) {
+        if (state != BluetoothAdapter.STATE_ON
+                && state != BluetoothAdapter.STATE_BLE_ON
+                && state != BluetoothAdapter.STATE_TURNING_ON
+                && state != BluetoothAdapter.STATE_BLE_TURNING_ON) {
             // Silently dropping UUIDs and with no intent
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
-            Log.e(TAG, "deviceUuidsUpdated: Adapter State:" + state);
+            Log.e(
+                    TAG,
+                    "deviceUuidsUpdated: Ignoring UUID update in adapter state: "
+                            + nameForState(state));
             return;
         }
 
@@ -3280,10 +3286,13 @@ public class AdapterService extends Service {
             sendUuidsInternal(device, uuids);
         }
 
-        if (state == BluetoothAdapter.STATE_BLE_ON) {
+        if (state != BluetoothAdapter.STATE_ON) {
             MetricsLogger.getInstance()
                     .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
-            Log.w(TAG, "deviceUuidsUpdated: Adapter State: BLE_ON, not sending intent");
+            Log.w(
+                    TAG,
+                    "deviceUuidsUpdated: Not broadcasting ACTION_UUID in adapter state: "
+                            + nameForState(state));
             return;
         }
 
