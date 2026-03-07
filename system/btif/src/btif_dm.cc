@@ -3772,6 +3772,8 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     pairing_cb.pairing_type.algorithm = PairingAlgorithm::SC;
   }
 
+  pairing_cb.fail_reason = p_auth_cmpl->fail_reason;
+
   /* Clear OOB data */
   memset(&oob_cb, 0, sizeof(oob_cb));
 

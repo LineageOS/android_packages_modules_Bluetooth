@@ -256,7 +256,8 @@ public class BondStateMachineTest {
                 0,
                 0,
                 AbstractionLayer.BT_PAIRING_INITIATOR_APP,
-                TEST_BOND_REASON);
+                TEST_BOND_REASON,
+                0);
 
         RemoteDevices.DeviceProperties testDeviceProperties =
                 mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
@@ -607,7 +608,8 @@ public class BondStateMachineTest {
                 0, // pairingAlgorithm
                 0, // pairingVariant
                 AbstractionLayer.BT_PAIRING_INITIATOR_APP, // pairingInitiator
-                TEST_BOND_REASON);
+                TEST_BOND_REASON,
+                0); // hciReason
 
         // Verify that the key missing count is reset. This is crucial for scenarios like
         // autonomous repair, where a failed pairing attempt (BONDING -> NONE) should clear
@@ -694,7 +696,8 @@ public class BondStateMachineTest {
                         0,
                         0,
                         AbstractionLayer.BT_PAIRING_INITIATOR_APP,
-                        TEST_BOND_REASON);
+                        TEST_BOND_REASON,
+                        0);
             }
         } catch (IllegalArgumentException e) {
             // Do nothing.
