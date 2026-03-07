@@ -180,7 +180,10 @@ class ScanClientTest {
         filters: List<ScanFilter> = listOf(ScanFilter.Builder().build()),
     ) =
         ScanClient(
-            mock<ScannerApp> { doReturn(filters).whenever(it).filters },
+            mock<ScannerApp> {
+                doReturn(filters).whenever(it).filters
+                doReturn(mock<AppScanStats>()).whenever(it).appScanStats
+            },
             settings,
             mock<UserHandle>(),
             eligibleForSanitizedExposureNotification = false,

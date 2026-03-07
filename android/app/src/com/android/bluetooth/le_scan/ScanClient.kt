@@ -22,7 +22,6 @@ import android.os.UserHandle
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanUtil.toBuilder
 import java.util.Objects
-import java.util.function.Consumer
 
 /** Helper class identifying a client that has requested LE scan results. */
 class ScanClient
@@ -43,6 +42,7 @@ private constructor(
     val hasDisavowedLocation: Boolean = false,
     val associatedDevices: List<String> = emptyList(),
 ) {
+    val appScanStats = app.appScanStats
     val isFiltered: Boolean
         get() =
             if (Flags.treatEmptyFiltersAsUnfiltered()) hasNonEmptyFilters else filters.isNotEmpty()
@@ -53,7 +53,6 @@ private constructor(
 
     var started = false
     var appDied = false
-    var appScanStats: AppScanStats? = null
 
     constructor(
         app: ScannerApp,
@@ -139,12 +138,8 @@ private constructor(
     }
 
     override fun toString() =
-        "ScanClient(" +
-            (appScanStats?.let { "${it.name}, " } ?: "") +
+        "ScanClient(${appScanStats.name}" +
             "id=$scannerId, mode[${ScanMode(scanModeApp)}, used=${ScanMode(settings.scanMode)}])"
-
-    fun ifAppScanStatsPresent(action: Consumer<AppScanStats>) =
-        appScanStats?.let { action.accept(it) }
 
     /**
      * Update scan settings with the new scan mode.

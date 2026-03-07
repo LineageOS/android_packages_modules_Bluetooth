@@ -630,7 +630,7 @@ public class ScanController {
             return;
         }
         client.setAppDied(true);
-        client.ifAppScanStatsPresent(stats -> stats.setAppDead(true));
+        client.getAppScanStats().setAppDead(true);
         stopScan(client.getScannerId());
     }
 
@@ -1048,23 +1048,20 @@ public class ScanController {
     }
 
     private void dispatchStartScan(ScanClient client) {
-        var appScanStats = mScannerMap.getAppScanStatsById(client.getScannerId());
-        if (appScanStats != null) {
-            client.setAppScanStats(appScanStats);
-            mScanManager.fetchAppForegroundState(client);
-            boolean isCallbackScan = false;
-            var app = mScannerMap.getById(client.getScannerId());
-            if (app != null) {
-                isCallbackScan = app.getCallback() != null;
-            }
-            appScanStats.recordScanStart(
-                    client.getSettings(),
-                    client.getFilters(),
-                    client.isFiltered(),
-                    isCallbackScan,
-                    client.getScannerId(),
-                    app == null ? null : app.getAttributionTag());
+        mScanManager.fetchAppForegroundState(client);
+        boolean isCallbackScan = false;
+        var app = mScannerMap.getById(client.getScannerId());
+        if (app != null) {
+            isCallbackScan = app.getCallback() != null;
         }
+        client.getAppScanStats()
+                .recordScanStart(
+                        client.getSettings(),
+                        client.getFilters(),
+                        client.isFiltered(),
+                        isCallbackScan,
+                        client.getScannerId(),
+                        app == null ? null : app.getAttributionTag());
         mScanManager.startScan(client);
     }
 
@@ -1147,18 +1144,15 @@ public class ScanController {
     @VisibleForTesting
     void dispatchPendingIntentStartScan(ScannerApp app) {
         var client = new ScanClient(app);
-        var appScanStats = mScannerMap.getAppScanStatsById(app.getScannerId());
-        if (appScanStats != null) {
-            client.setAppScanStats(appScanStats);
-            mScanManager.fetchAppForegroundState(client);
-            appScanStats.recordScanStart(
-                    app.getSettings(),
-                    app.getFilters(),
-                    client.isFiltered(),
-                    false,
-                    app.getScannerId(),
-                    app.getAttributionTag());
-        }
+        mScanManager.fetchAppForegroundState(client);
+        client.getAppScanStats()
+                .recordScanStart(
+                        app.getSettings(),
+                        app.getFilters(),
+                        client.isFiltered(),
+                        false,
+                        app.getScannerId(),
+                        app.getAttributionTag());
         mScanManager.startScan(client);
     }
 

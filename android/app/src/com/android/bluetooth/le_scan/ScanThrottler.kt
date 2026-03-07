@@ -178,10 +178,7 @@ class ScanThrottler(
     }
 
     fun downgradeScanModeFromMaxDuty(client: ScanClient): Boolean {
-        if (
-            client.appScanStats == null ||
-                adapterService.scanDowngradeDuration == java.time.Duration.ZERO
-        ) {
+        if (adapterService.scanDowngradeDuration == java.time.Duration.ZERO) {
             return false
         }
 
@@ -192,7 +189,7 @@ class ScanThrottler(
                 applyAllowanceThrottling(client, updatedScanMode)
             else client.updateScanMode(updatedScanMode)
         if (isUpdated) {
-            client.appScanStats!!.setScanDowngrade(client.scannerId, true)
+            client.appScanStats.setScanDowngrade(client.scannerId, true)
             Log.d(
                 TAG,
                 "downgradeScanModeFromMaxDuty(): for $client to=${scanModeToString(updatedScanMode)}",
@@ -207,7 +204,7 @@ class ScanThrottler(
         if (!isDowngradedScanClient(client)) {
             return false
         }
-        client.ifAppScanStatsPresent { stats -> stats.setScanDowngrade(client.scannerId, false) }
+        client.appScanStats.setScanDowngrade(client.scannerId, false)
         Log.d(TAG, "revertDowngradeScanModeFromMaxDuty() for $client")
         return if (isScreenOn) {
             throttleScanModeScreenOn(client)
@@ -217,10 +214,7 @@ class ScanThrottler(
     }
 
     fun applyAllowanceThrottling(client: ScanClient, targetScanMode: Int): Boolean {
-        val ledger = client.appScanStats?.scanAllowanceLedger
-        if (ledger == null) {
-            return client.updateScanMode(targetScanMode)
-        }
+        val ledger = client.appScanStats.scanAllowanceLedger
         if (scanManager.hasPrivilegedPermission(client)) {
             return client.updateScanMode(targetScanMode)
         }

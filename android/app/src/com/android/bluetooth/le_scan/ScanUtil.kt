@@ -362,15 +362,15 @@ object ScanUtil {
         isTimeoutScanClient(client) || isDowngradedScanClient(client)
 
     private fun isTimeoutScanClient(client: ScanClient) =
-        client.appScanStats?.isScanTimeout(client.scannerId) ?: false
+        client.appScanStats.isScanTimeout(client.scannerId)
 
     @JvmStatic
     fun isDowngradedScanClient(client: ScanClient) =
-        client.appScanStats?.isScanDowngraded(client.scannerId) ?: false
+        client.appScanStats.isScanDowngraded(client.scannerId)
 
     @JvmStatic
     fun isAutoBatchScanClientEnabled(client: ScanClient) =
-        client.appScanStats?.isAutoBatchScan(client.scannerId) ?: false
+        client.appScanStats.isAutoBatchScan(client.scannerId)
 
     @JvmStatic
     fun getAggressiveClient(
@@ -430,7 +430,7 @@ object ScanUtil {
         val scanMode = ScanMode(SCAN_MODE_SCREEN_OFF)
         Log.d(TAG, "setAutoBatchScanClient($client): Update scan mode to $scanMode")
         client.updateScanMode(SCAN_MODE_SCREEN_OFF)
-        client.appScanStats?.setAutoBatchScan(client.scannerId, true)
+        client.appScanStats.setAutoBatchScan(client.scannerId, true)
     }
 
     @JvmStatic
@@ -441,7 +441,7 @@ object ScanUtil {
         val scanMode = ScanMode(client.scanModeApp)
         Log.d(TAG, "clearAutoBatchScanClient($client): Update scan mode to $scanMode")
         client.updateScanMode(client.scanModeApp)
-        client.appScanStats?.setAutoBatchScan(client.scannerId, false)
+        client.appScanStats.setAutoBatchScan(client.scannerId, false)
     }
 
     // EN format defined here:

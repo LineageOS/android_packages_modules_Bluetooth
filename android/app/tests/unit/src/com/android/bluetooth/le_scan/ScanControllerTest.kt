@@ -179,7 +179,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 scanSettings,
                 hasNetworkSettingsPermission = true, // Bypass permission checks
             )
-        scanClient.appScanStats = appScanStats
         doReturn(TEST_ADDRESS).whenever(adapterService).getIdentityAddress(any<String>())
         doReturn(setOf(scanClient)).whenever(scanManager).regularScanQueue
         doReturn(app).whenever(scannerMap).getById(scanClient.scannerId)
@@ -247,45 +246,46 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val matchingSettings =
             ScanSettings.Builder().setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES).build()
         val matchingFilters = listOf(ScanFilter.Builder().setDeviceName("TestDevice").build())
+        val matchingCallback = mock<IScannerCallback>()
+        val matchingAppScanStats = mock<AppScanStats>()
+        val matchingApp =
+            mock<ScannerApp> {
+                doReturn(1000).whenever(it).uid
+                doReturn(matchingScannerId).whenever(it).scannerId
+                doReturn(matchingFilters).whenever(it).filters
+                doReturn(matchingCallback).whenever(it).callback
+                doReturn(matchingAppScanStats).whenever(it).appScanStats
+            }
         val matchingClient =
             createScanClient(
-                mock<ScannerApp> {
-                    doReturn(1000).whenever(it).uid
-                    doReturn(matchingScannerId).whenever(it).scannerId
-                    doReturn(matchingFilters).whenever(it).filters
-                },
+                matchingApp,
                 matchingSettings,
                 hasNetworkSettingsPermission = true, // Bypass permission checks
             )
-
-        val matchingApp = mock<ScannerApp>()
-        val matchingCallback = mock<IScannerCallback>()
-        val matchingAppScanStats = mock<AppScanStats>()
-        doReturn(matchingCallback).whenever(matchingApp).callback
-        doReturn(matchingAppScanStats).whenever(matchingApp).appScanStats
-        matchingClient.appScanStats = matchingAppScanStats
 
         // Setup non-matching client
         val nonMatchingScannerId = 2
         val nonMatchingSettings =
             ScanSettings.Builder().setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES).build()
         val nonMatchingFilters = listOf(ScanFilter.Builder().setDeviceName("OtherDevice").build())
+        val nonMatchingCallback = mock<IScannerCallback>()
+        val nonMatchingAppScanStats = mock<AppScanStats>()
+        val nonMatchingApp =
+            mock<ScannerApp> {
+                doReturn(1001).whenever(it).uid
+                doReturn(nonMatchingScannerId).whenever(it).scannerId
+                doReturn(nonMatchingFilters).whenever(it).filters
+                doReturn(nonMatchingCallback).whenever(it).callback
+                doReturn(nonMatchingAppScanStats).whenever(it).appScanStats
+            }
         val nonMatchingClient =
             createScanClient(
-                mock<ScannerApp> {
-                    doReturn(1001).whenever(it).uid
-                    doReturn(nonMatchingScannerId).whenever(it).scannerId
-                    doReturn(nonMatchingFilters).whenever(it).filters
-                },
+                nonMatchingApp,
                 nonMatchingSettings,
                 hasNetworkSettingsPermission = true, // Bypass permission checks
             )
-        val nonMatchingApp = mock<ScannerApp>()
-        val nonMatchingCallback = mock<IScannerCallback>()
-        val nonMatchingAppScanStats = mock<AppScanStats>()
         doReturn(nonMatchingCallback).whenever(nonMatchingApp).callback
         doReturn(nonMatchingAppScanStats).whenever(nonMatchingApp).appScanStats
-        nonMatchingClient.appScanStats = nonMatchingAppScanStats
 
         // Mock dependencies
         doReturn(setOf(matchingClient, nonMatchingClient)).whenever(scanManager).regularScanQueue
@@ -324,15 +324,16 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val uuidMsb = 67890L
         val uuid = UUID(uuidMsb, uuidLsb)
         val callback = mock<IScannerCallback>()
+        val appScanStats = mock<AppScanStats>()
         val app =
             mock<ScannerApp> {
                 doReturn(callback).whenever(it).callback
                 doReturn(ScanSettings.Builder().build()).whenever(it).settings
                 doReturn(listOf<ScanFilter>()).whenever(it).filters
                 doReturn(source).whenever(it).source
+                doReturn(appScanStats).whenever(it).appScanStats
             }
         doReturn(app).whenever(scannerMap).getByUuid(uuid)
-
         scanController.onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID, uuid)
 
         verify(app).linkToDeath(any())
@@ -632,13 +633,14 @@ class ScanControllerTest(flags: FlagsWrapper) {
     fun dispatchPendingIntentStartScan() {
         val filters = emptyList<ScanFilter>()
         val settings = ScanSettings.Builder().build()
+        val appScanStats = mock<AppScanStats>()
         val app =
             mock<ScannerApp> {
                 doReturn(TEST_SCANNER_ID).whenever(it).scannerId
                 doReturn(settings).whenever(it).settings
                 doReturn(filters).whenever(it).filters
+                doReturn(appScanStats).whenever(it).appScanStats
             }
-        val appScanStats = mock<AppScanStats>()
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
         scanController.dispatchPendingIntentStartScan(app)
         verify(appScanStats).recordScanStart(settings, filters, false, false, TEST_SCANNER_ID, null)
@@ -650,15 +652,15 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val filters = emptyList<ScanFilter>()
         val uid = 123
         val settings = ScanSettings.Builder().build()
+        val appScanStats = mock<AppScanStats>()
         val app =
             mock<ScannerApp> {
                 doReturn(TEST_SCANNER_ID).whenever(it).scannerId
                 doReturn(uid).whenever(it).uid
                 doReturn(settings).whenever(it).settings
                 doReturn(filters).whenever(it).filters
+                doReturn(appScanStats).whenever(it).appScanStats
             }
-        val appScanStats = mock<AppScanStats>()
-        doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
         scanController.dispatchPendingIntentStartScan(app)
         verify(appScanStats).recordScanStart(settings, filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(argThat { client -> uid == client.appUid })
