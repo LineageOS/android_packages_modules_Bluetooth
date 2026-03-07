@@ -17,9 +17,14 @@
 package com.android.bluetooth.mcp
 
 import android.bluetooth.BluetoothProfile
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.TestUtils
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.media_audio.sink.MediaAudioServer
+import com.android.bluetooth.media_audio.sink.MediaSource
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
@@ -29,8 +34,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -38,9 +45,11 @@ import org.mockito.kotlin.whenever
 @RunWith(AndroidJUnit4::class)
 class McpClientStateMachineTest {
     @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val setFlagsRule = SetFlagsRule()
 
     @Mock private lateinit var service: McpClientService
     @Mock private lateinit var nativeInterface: McpClientNativeInterface
+    @Mock private lateinit var mediaAudioServer: MediaAudioServer
 
     private lateinit var stateMachine: McpClientStateMachine
     private lateinit var looper: TestLooper
@@ -53,7 +62,8 @@ class McpClientStateMachineTest {
         // Default: Service allows connections
         doReturn(true).whenever(service).okToConnect(any())
 
-        stateMachine = McpClientStateMachine(service, device, nativeInterface, looper.looper)
+        stateMachine =
+            McpClientStateMachine(service, device, nativeInterface, mediaAudioServer, looper.looper)
         looper.dispatchAll() // Enter Initial State
     }
 
@@ -254,21 +264,152 @@ class McpClientStateMachineTest {
     }
 
     @Test
-    fun stackEvent_doesNotCrash() {
-        transitionToConnected()
-
-        val event = McpStackEvent(McpStackEvent.EVENT_TYPE_MEDIA_PLAYER_NAME_CHANGED)
-        event.device = device
-        event.valueInt1 = 1
-
-        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, event)
-        // No crash implies success
-    }
-
-    @Test
     fun dump_doesNotCrash() {
         transitionToConnected()
         stateMachine.dump(StringBuilder())
+    }
+
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    @Test
+    fun transitionToConnected_registersMediaSource() {
+        transitionToConnected()
+
+        verify(mediaAudioServer).registerMediaSource(any())
+    }
+
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    @Test
+    fun transitionToDisconnected_unregistersMediaSource() {
+        transitionToConnected()
+
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_DISCONNECT)
+        // Move to Disconnecting...
+        sendAndDispatchMessage(
+            McpClientStateMachine.MESSAGE_CONNECTION_STATE_CHANGED,
+            BluetoothProfile.STATE_DISCONNECTED,
+        )
+
+        verify(mediaAudioServer).unregisterMediaSource(any())
+    }
+
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    @Test
+    fun mediaSource_callbacks_triggerNativeInterface() {
+        transitionToConnected()
+
+        val captor = argumentCaptor<MediaSource>()
+        verify(mediaAudioServer).registerMediaSource(captor.capture())
+        val registeredSource = captor.firstValue
+
+        registeredSource.onPlay()
+        verify(nativeInterface).play(device, GMCS_ID)
+
+        registeredSource.onPause()
+        verify(nativeInterface).pause(device, GMCS_ID)
+
+        registeredSource.onSkipToNext()
+        verify(nativeInterface).nextTrack(device, GMCS_ID)
+
+        registeredSource.onSkipToPrevious()
+        verify(nativeInterface).previousTrack(device, GMCS_ID)
+
+        registeredSource.onFastForward()
+        verify(nativeInterface).fastForward(device, GMCS_ID)
+
+        registeredSource.onRewind()
+        verify(nativeInterface).fastRewind(device, GMCS_ID)
+
+        registeredSource.onStop()
+        verify(nativeInterface).stop(device, GMCS_ID)
+
+        registeredSource.onSetRepeatMode(MediaSource.RepeatMode.ONE)
+        // Default PlayingOrder is IN_ORDER_ONCE. resolvePlayingOrder(IN_ORDER_ONCE, ONE, null) ->
+        // SINGLE_REPEAT
+        verify(nativeInterface)
+            .setPlayingOrder(eq(device), eq(GMCS_ID), eq(PlayingOrder.SINGLE_REPEAT))
+
+        registeredSource.onSetShuffleMode(MediaSource.ShuffleMode.ALL)
+        // Default IN_ORDER_ONCE. resolvePlayingOrder(IN_ORDER_ONCE, null, ALL) -> SHUFFLE_ONCE
+        verify(nativeInterface)
+            .setPlayingOrder(eq(device), eq(GMCS_ID), eq(PlayingOrder.SHUFFLE_ONCE))
+    }
+
+    @EnableFlags(Flags.FLAG_MEDIA_AUDIO_SERVER)
+    @Test
+    fun stackEvent_updatesMediaSource_Metadata_and_PlaybackStatus() {
+        transitionToConnected()
+
+        val captor = argumentCaptor<MediaSource>()
+        verify(mediaAudioServer).registerMediaSource(captor.capture())
+        val registeredSource = captor.firstValue
+
+        // 1. Update Title
+        val titleEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_TRACK_TITLE_CHANGED)
+        titleEvent.device = device
+        titleEvent.valueInt1 = GMCS_ID
+        titleEvent.valueString1 = "New Title"
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, titleEvent)
+        assertThat(registeredSource.getMetadata()?.title).isEqualTo("New Title")
+
+        // 2. Update Duration
+        val durationEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_TRACK_DURATION_CHANGED)
+        durationEvent.device = device
+        durationEvent.valueInt1 = GMCS_ID
+        durationEvent.valueInt2 = 60000 // ms
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, durationEvent)
+        assertThat(registeredSource.getMetadata()?.duration).isEqualTo(60000L)
+
+        // 3. Update State (Playing)
+        val stateEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_MEDIA_STATE_CHANGED)
+        stateEvent.device = device
+        stateEvent.valueInt1 = GMCS_ID
+        stateEvent.valueInt2 = MediaState.PLAYING.value
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, stateEvent)
+        assertThat(registeredSource.getPlaybackStatus()?.state)
+            .isEqualTo(MediaSource.PlaybackState.PLAYING)
+
+        // 4. Update Position
+        val posEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_TRACK_POSITION_CHANGED)
+        posEvent.device = device
+        posEvent.valueInt1 = GMCS_ID
+        posEvent.valueInt2 = 5000 // ms
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, posEvent)
+        assertThat(registeredSource.getPlaybackStatus()?.playbackPosition).isEqualTo(5000L)
+
+        // 5. Update Playback Speed
+        val speedEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_PLAYBACK_SPEED_CHANGED)
+        speedEvent.device = device
+        speedEvent.valueInt1 = GMCS_ID
+        speedEvent.valueInt2 = 150 // 1.5x
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, speedEvent)
+        assertThat(registeredSource.getPlaybackStatus()?.playbackSpeed).isEqualTo(1.5f)
+
+        // 6. Update Supported Opcodes -> PlayerActions
+        val opcodeEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_OPCODES_SUPPORTED_CHANGED)
+        opcodeEvent.device = device
+        opcodeEvent.valueInt1 = GMCS_ID
+        // Enable PLAY(bit 0), PAUSE(bit 1), STOP(bit 4)
+        opcodeEvent.valueInt2 =
+            (1 shl McpOpcode.PLAY.supportedOpcodeBit) or
+                (1 shl McpOpcode.PAUSE.supportedOpcodeBit) or
+                (1 shl McpOpcode.STOP.supportedOpcodeBit)
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, opcodeEvent)
+        val actions = registeredSource.getPlaybackStatus()?.availableActions
+        assertThat(actions).contains(MediaSource.PlayerAction.PLAY)
+        assertThat(actions).contains(MediaSource.PlayerAction.PAUSE)
+        assertThat(actions).contains(MediaSource.PlayerAction.STOP)
+        assertThat(actions).doesNotContain(MediaSource.PlayerAction.NEXT)
+
+        // 7. Update Playing Order -> Shuffle/Repeat Mode
+        val orderEvent = McpStackEvent(McpStackEvent.EVENT_TYPE_PLAYING_ORDER_CHANGED)
+        orderEvent.device = device
+        orderEvent.valueInt1 = GMCS_ID
+        orderEvent.valueInt2 = PlayingOrder.SHUFFLE_REPEAT.value
+        sendAndDispatchMessage(McpClientStateMachine.MESSAGE_STACK_EVENT, orderEvent)
+        assertThat(registeredSource.getPlaybackStatus()?.shuffleMode)
+            .isEqualTo(MediaSource.ShuffleMode.ALL)
+        assertThat(registeredSource.getPlaybackStatus()?.repeatMode)
+            .isEqualTo(MediaSource.RepeatMode.ALL)
     }
 
     private fun transitionToConnected() {
@@ -279,6 +420,7 @@ class McpClientStateMachineTest {
         )
         assertThat(stateMachine.getConnectionState()).isEqualTo(BluetoothProfile.STATE_CONNECTED)
         clearInvocations(nativeInterface) // Reset mocks for clean state
+        // NOTE: We do NOT clear mediaAudioServer here, as registration verification depends on it
     }
 
     private fun sendAndDispatchMessage(what: Int) {

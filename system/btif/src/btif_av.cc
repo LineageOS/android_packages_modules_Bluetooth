@@ -523,14 +523,12 @@ public:
       return true;  // Nothing has changed
     }
 
-    if (com_android_bluetooth_flags_a2dp_reject_sho_request()) {
-      if (!peer_address.IsEmpty() && peer && (peer->IsSink() && AllowedToConnect(peer_address)) &&
-          !active_peer_.IsEmpty() && active_peer &&
-          active_peer->CheckFlags(BtifAvPeer::kFlagPendingStart)) {
-        log::error("Pending Start Response on {}, Return Fail",
-                   peer_address.ToRedactedStringForLogging());
-        return false;
-      }
+    if (!peer_address.IsEmpty() && peer && (peer->IsSink() && AllowedToConnect(peer_address)) &&
+        !active_peer_.IsEmpty() && active_peer &&
+        active_peer->CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+      log::error("Pending Start Response on {}, Return Fail",
+                 peer_address.ToRedactedStringForLogging());
+      return false;
     }
 
     if (peer_address.IsEmpty()) {

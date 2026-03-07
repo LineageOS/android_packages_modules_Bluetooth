@@ -87,7 +87,6 @@ import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.content.Intent;
 import android.os.Looper;
 import android.os.Message;
@@ -134,7 +133,6 @@ public class BassClientStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    @Mock private PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     @Mock private AdapterService mAdapterService;
     @Mock private BassClientService mBassClientService;
     @Mock private MetricsLogger mMetricsLogger;
@@ -185,7 +183,6 @@ public class BassClientStateMachineTest {
                         mBassClientService,
                         mAdapterService,
                         mScanController,
-                        mPeriodicAdvertisingManager,
                         mLooper.getLooper());
         mStateMachine.start();
     }
@@ -1039,12 +1036,7 @@ public class BassClientStateMachineTest {
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
-        if (Flags.leaudioBroadcastImproveSourceOperations()) {
-            verify(mScanController).transferSync(any(), eq(serviceData), eq(syncHandle));
-        } else {
-            verify(mPeriodicAdvertisingManager)
-                    .transferSync(any(), eq(serviceData), eq(syncHandle));
-        }
+        verify(mScanController).transferSync(any(), eq(serviceData), eq(syncHandle));
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -1065,12 +1057,7 @@ public class BassClientStateMachineTest {
         serviceData = serviceData << 8;
         // Address we set in the Source Address can differ from the address in the air
         serviceData = serviceData | BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS;
-        if (Flags.leaudioBroadcastImproveSourceOperations()) {
-            verify(mScanController).transferSetInfo(any(), eq(serviceData), anyInt(), any());
-        } else {
-            verify(mPeriodicAdvertisingManager)
-                    .transferSetInfo(any(), eq(serviceData), anyInt(), any());
-        }
+        verify(mScanController).transferSetInfo(any(), eq(serviceData), anyInt(), any());
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -1766,12 +1753,7 @@ public class BassClientStateMachineTest {
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
-        if (Flags.leaudioBroadcastImproveSourceOperations()) {
-            verify(mScanController).transferSync(any(), eq(serviceData), eq(syncHandle));
-        } else {
-            verify(mPeriodicAdvertisingManager)
-                    .transferSync(any(), eq(serviceData), eq(syncHandle));
-        }
+        verify(mScanController).transferSync(any(), eq(serviceData), eq(syncHandle));
     }
 
     @Test
@@ -3047,14 +3029,12 @@ public class BassClientStateMachineTest {
                 BassClientService service,
                 AdapterService adapterService,
                 ScanController scanController,
-                PeriodicAdvertisingManager periodicAdvertisingManager,
                 Looper looper) {
             super(
                     device,
                     service,
                     adapterService,
                     scanController,
-                    periodicAdvertisingManager,
                     looper);
         }
 

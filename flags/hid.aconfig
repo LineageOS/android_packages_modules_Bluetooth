@@ -52,16 +52,6 @@ flag {
 }
 
 flag {
-    name: "hogp_mtu_exchange"
-    namespace: "bluetooth"
-    description: "HOGP host must exchange ATT MTU on GATT connection"
-    bug: "444476206"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hogp_fix_reconnection"
     namespace: "bluetooth"
     description: "Always remove background connection when hogp disconnected so it can be re-armed later"

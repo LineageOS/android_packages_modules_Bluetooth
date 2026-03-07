@@ -48,10 +48,10 @@ import org.mockito.Mockito.after
 import org.mockito.Mockito.any
 import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.eq
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.mock
 import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
@@ -118,7 +118,7 @@ class LeScanningTest {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
                 .build()
-        val mockScanCallback = mock(ScanCallback::class.java)
+        val mockScanCallback = mock<ScanCallback>()
 
         leScanner.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
         verify(mockScanCallback, after(TIMEOUT_SCANNING_MS).never()).onScanFailed(anyInt())
@@ -136,7 +136,7 @@ class LeScanningTest {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_MATCH_LOST)
                 .build()
-        val mockScanCallback = mock(ScanCallback::class.java)
+        val mockScanCallback = mock<ScanCallback>()
 
         leScanner.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
         verify(mockScanCallback, after(TIMEOUT_SCANNING_MS).never()).onScanFailed(anyInt())
@@ -145,7 +145,7 @@ class LeScanningTest {
 
     @Test
     fun startBleScan_withPendingIntentAndDynamicReceiverAndCallbackTypeAllMatches() {
-        val mockReceiver = mock(BroadcastReceiver::class.java)
+        val mockReceiver = mock<BroadcastReceiver>()
         val intentFilter = IntentFilter(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT)
         context.registerReceiver(mockReceiver, intentFilter, Context.RECEIVER_EXPORTED)
 
@@ -237,13 +237,13 @@ class LeScanningTest {
                 .build()
         val scanCallbacks =
             (1..maxNumScans).map {
-                val mockScanCallback = mock(ScanCallback::class.java)
+                val mockScanCallback = mock<ScanCallback>()
                 leScanner.startScan(scanFilters, scanSettings, mockScanCallback)
                 mockScanCallback
             }
 
         // This last scan should fail
-        val lastMockScanCallback = mock(ScanCallback::class.java)
+        val lastMockScanCallback = mock<ScanCallback>()
         leScanner.startScan(scanFilters, scanSettings, lastMockScanCallback)
 
         // We expect an error only for the last scan, which was over the maximum active scans limit.

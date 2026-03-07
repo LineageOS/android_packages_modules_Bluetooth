@@ -1738,10 +1738,8 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       A2DP_AdjustCodec(result_sep_cfg.codec_info);
     }
 
-    if (com_android_bluetooth_flags_a2dp_cancel_acceptor_alarm_for_avdt_init()) {
-      /* ensure stack does not initiate AVDT configuration after timeout */
-      alarm_cancel(p_scb->accept_signalling_timer);
-    }
+    /* ensure stack does not initiate AVDT configuration after timeout */
+    alarm_cancel(p_scb->accept_signalling_timer);
 
     /* open the stream */
     AVDT_OpenReq(p_scb->seps[p_scb->sep_idx].av_handle, p_scb->PeerAddress(), p_scb->hdi,
@@ -1800,12 +1798,10 @@ void bta_av_setconfig_rej(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_discover_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
-  if (com_android_bluetooth_flags_a2dp_cancel_acceptor_alarm_for_avdt_init()) {
-    /* ensure stack does not initiate AVDT configuration after timeout */
-    alarm_cancel(p_scb->accept_signalling_timer);
-  }
-  /* send avdtp discover request */
+  /* ensure stack does not initiate AVDT configuration after timeout */
+  alarm_cancel(p_scb->accept_signalling_timer);
 
+  /* send avdtp discover request */
   AVDT_DiscoverReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sep_info, BTA_AV_NUM_SEPS,
                    &bta_av_proc_stream_evt);
 }

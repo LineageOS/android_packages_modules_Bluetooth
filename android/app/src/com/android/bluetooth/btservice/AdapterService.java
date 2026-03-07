@@ -3846,11 +3846,7 @@ public class AdapterService extends Service {
         }
         disconnectEnabledProfile(BluetoothProfile.HEADSET, device);
         disconnectEnabledProfile(BluetoothProfile.HEADSET_CLIENT, device);
-        if (Flags.a2dpDelayDisconnect()) {
-            disconnectEnabledA2dpProfile(device);
-        } else {
-            disconnectEnabledProfile(BluetoothProfile.A2DP, device);
-        }
+        disconnectEnabledA2dpProfile(device);
         disconnectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         disconnectEnabledProfile(BluetoothProfile.MAP_CLIENT, device);
         disconnectEnabledProfile(BluetoothProfile.MAP, device);
@@ -4133,6 +4129,15 @@ public class AdapterService extends Service {
         return mAdapterProperties.isLeConnectedIsochronousStreamPeripheralSupported();
     }
 
+    /**
+     * Check if the LE BIG Channel Classification feature is supported.
+     *
+     * @return true, if the LE BIG Channel Classification is supported
+     */
+    public boolean isLeBigSetChannelClassificationSupported() {
+        return mAdapterProperties.isLeBigSetChannelClassificationSupported();
+    }
+
     public int getLeMaximumAdvertisingDataLength() {
         return mAdapterProperties.getLeMaximumAdvertisingDataLength();
     }
@@ -4302,7 +4307,7 @@ public class AdapterService extends Service {
      *
      * @return {@code BluetoothStatusCodes.FEATURE_SUPPORTED} if supported
      */
-    int getOffloadedTransportDiscoveryDataScanSupported() {
+    public int getOffloadedTransportDiscoveryDataScanSupported() {
         if (mAdapterProperties.isOffloadedTransportDiscoveryDataScanSupported()) {
             return BluetoothStatusCodes.FEATURE_SUPPORTED;
         }

@@ -5388,8 +5388,10 @@ packet LeGetVendorCapabilitiesComplete105 : LeGetVendorCapabilitiesComplete104 {
 
 // HCI v1.06
 packet LeGetVendorCapabilitiesComplete106 : LeGetVendorCapabilitiesComplete105 {
+  big_set_channel_map_classification_support : 16,
   vendor_connection_handle_min : 16,
   vendor_connection_handle_max : 16,
+  _payload_,
 }
 
 enum SubOcf : 8 {

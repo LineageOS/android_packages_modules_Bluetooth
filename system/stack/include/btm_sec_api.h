@@ -609,112 +609,122 @@ std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address);
  *  SECURITY MANAGEMENT FUNCTIONS
  ****************************************************************************/
 
-typedef struct {
-  void (*BTM_Sec_Init)();
-  void (*BTM_Sec_Free)();
+class SecurityClientInterface {
+public:
+  virtual ~SecurityClientInterface() = default;
 
-  void (*BTM_SetPinType)(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len);
+  virtual void BTM_Sec_Init() const = 0;
+  virtual void BTM_Sec_Free() const = 0;
 
-  tBTM_LINK_KEY_TYPE (*BTM_SecGetDeviceLinkKeyType)(const RawAddress& bd_addr);
+  virtual void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) const = 0;
 
-  void (*BTM_ConfirmReqReply)(tBTM_STATUS res, const RawAddress& bd_addr);
+  virtual tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr) const = 0;
 
-  void (*BTM_PasskeyReqReply)(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey);
+  virtual void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) const = 0;
 
-  void (*BTM_ReadLocalOobData)(void);
+  virtual void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
+                                   uint32_t passkey) const = 0;
 
-  bool (*BTM_PeerSupportsSecureConnections)(const RawAddress& bd_addr);
+  virtual void BTM_ReadLocalOobData(void) const = 0;
 
-  bool (*BTM_SecRegister)(const BtmAppReg& app_reg);
+  virtual bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr) const = 0;
 
-  void (*BTM_BleLoadLocalKeys)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
+  virtual bool BTM_SecRegister(const BtmAppReg& app_reg) const = 0;
+
+  virtual void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) const = 0;
 
   // Update/Query in-memory device records
-  void (*BTM_SecAddDevice)(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
-                           const PairingType& pairing_type, const LinkKey& link_key,
-                           uint8_t key_type, uint8_t pin_length);
-  void (*BTM_SecAddBleDevice)(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
-                              tBLE_ADDR_TYPE addr_type);
+  virtual void BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                                const PairingType& pairing_type, const LinkKey& link_key,
+                                uint8_t key_type, uint8_t pin_length) const = 0;
+  virtual void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
+                                   tBLE_ADDR_TYPE addr_type) const = 0;
 
-  bool (*BTM_SecDeleteDevice)(const RawAddress& bd_addr);
+  virtual bool BTM_SecDeleteDevice(const RawAddress& bd_addr) const = 0;
 
-  void (*BTM_SecAddBleKey)(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-                           const tBTM_LE_KEY_VALUE& key);
+  virtual void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                                const tBTM_LE_KEY_VALUE& key) const = 0;
 
-  void (*BTM_SecClearSecurityFlags)(const RawAddress& bd_addr);
+  virtual void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) const = 0;
 
-  tBTM_STATUS (*BTM_SetEncryption)(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                                   tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
-                                   tBTM_BLE_SEC_ACT sec_act);
-  bool (*BTM_IsEncrypted)(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-  bool (*BTM_SecIsLeSecurityPending)(const RawAddress& bd_addr);
-  bool (*BTM_IsBonded)(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+  virtual tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                                        tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
+                                        tBTM_BLE_SEC_ACT sec_act) const = 0;
+  virtual bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) const = 0;
+  virtual bool BTM_SecIsLeSecurityPending(const RawAddress& bd_addr) const = 0;
+  virtual bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) const = 0;
 
   // Secure service management
-  bool (*BTM_SetSecurityLevel)(bool outgoing, const char* p_name, uint8_t service_id,
-                               uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
-                               uint32_t mx_chan_id);
-  uint8_t (*BTM_SecClrService)(uint8_t service_id);
-  uint8_t (*BTM_SecClrServiceByPsm)(uint16_t psm);
+  virtual bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id,
+                                    uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
+                                    uint32_t mx_chan_id) const = 0;
+  virtual uint8_t BTM_SecClrService(uint8_t service_id) const = 0;
+  virtual uint8_t BTM_SecClrServiceByPsm(uint16_t psm) const = 0;
 
   // Pairing related APIs
-  tBTM_STATUS (*BTM_SecBond)(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                             tBT_TRANSPORT transport);
-  tBTM_STATUS (*BTM_SecBondCancel)(const RawAddress& bd_addr);
+  virtual tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                                  tBT_TRANSPORT transport) const = 0;
+  virtual tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) const = 0;
 
-  void (*BTM_RemoteOobDataReply)(tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c,
-                                 const Octet16& r);
-  void (*BTM_PINCodeReply)(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
-                           PinCode pin_code);
-  void (*BTM_SecConfirmReqReply)(tBTM_STATUS res, tBT_TRANSPORT transport,
-                                 const RawAddress bd_addr);
-  void (*BTM_BleSirkConfirmDeviceReply)(const RawAddress& bd_addr, tBTM_STATUS res);
+  virtual void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr, const Octet16& c,
+                                      const Octet16& r) const = 0;
+  virtual void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                                PinCode pin_code) const = 0;
+  virtual void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
+                                      const RawAddress bd_addr) const = 0;
+  virtual void BTM_BleSirkConfirmDeviceReply(const RawAddress& bd_addr, tBTM_STATUS res) const = 0;
 
-  void (*BTM_BlePasskeyReply)(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t passkey);
+  virtual void BTM_BlePasskeyReply(const RawAddress& bd_addr, tBTM_STATUS res,
+                                   uint32_t passkey) const = 0;
 
-  uint8_t (*BTM_BleReadSecKeySize)(const RawAddress& bd_addr);
+  virtual uint8_t BTM_BleReadSecKeySize(const RawAddress& bd_addr) const = 0;
 
-  void (*BTM_SecHciDeleteStoredLinkKey)(const RawAddress& bd_addr);
+  virtual void BTM_SecHciDeleteStoredLinkKey(const RawAddress& bd_addr) const = 0;
 
   // other misc APIs
-  uint8_t (*BTM_GetSecurityMode)();
+  virtual uint8_t BTM_GetSecurityMode() const = 0;
 
   // remote name request related APIs
   // TODO: remove them from this structure
-  const char* (*BTM_SecReadDevName)(const RawAddress& bd_addr);
-  DEV_CLASS (*BTM_SecReadDevClass)(const RawAddress& bd_addr);
+  virtual const char* BTM_SecReadDevName(const RawAddress& bd_addr) const = 0;
+  virtual DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr) const = 0;
 
-  tBTM_STATUS (*BTM_SecReportBondLoss)(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+  virtual tBTM_STATUS BTM_SecReportBondLoss(const RawAddress& bd_addr,
+                                            tBT_TRANSPORT transport) const = 0;
 
   // BLE related APIs
-  const Octet16& (*BTM_GetDeviceEncRoot)();
-  const Octet16& (*BTM_GetDeviceIDRoot)();
-  const Octet16& (*BTM_GetDeviceDHK)();
-  void (*BTM_SecurityGrant)(const RawAddress& bd_addr, tBTM_STATUS res);
-  void (*BTM_BleConfirmReply)(const RawAddress& bd_addr, tBTM_STATUS res);
-  void (*BTM_BleOobDataReply)(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t len,
-                              uint8_t* p_data);
-  void (*BTM_BleSecureConnectionOobDataReply)(const RawAddress& bd_addr, uint8_t* p_c,
-                                              uint8_t* p_r);
-  bool (*BTM_BleDataSignature)(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
-                               BLE_SIGNATURE signature);
-  bool (*BTM_BleVerifySignature)(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
-                                 uint32_t counter, uint8_t* p_comp);
-  std::optional<Octet16> (*BTM_BleGetPeerLTK)(const RawAddress address);
-  std::optional<Octet16> (*BTM_BleGetPeerIRK)(const RawAddress address);
-  std::optional<tBLE_BD_ADDR> (*BTM_BleGetIdentityAddress)(const RawAddress address);
+  virtual const Octet16& BTM_GetDeviceEncRoot() const = 0;
+  virtual const Octet16& BTM_GetDeviceIDRoot() const = 0;
+  virtual const Octet16& BTM_GetDeviceDHK() const = 0;
+  virtual void BTM_SecurityGrant(const RawAddress& bd_addr, tBTM_STATUS res) const = 0;
+  virtual void BTM_BleConfirmReply(const RawAddress& bd_addr, tBTM_STATUS res) const = 0;
+  virtual void BTM_BleOobDataReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t len,
+                                   uint8_t* p_data) const = 0;
+  virtual void BTM_BleSecureConnectionOobDataReply(const RawAddress& bd_addr, uint8_t* p_c,
+                                                   uint8_t* p_r) const = 0;
+  virtual bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
+                                    BLE_SIGNATURE signature) const = 0;
+  virtual bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
+                                      uint32_t counter, uint8_t* p_comp) const = 0;
+  virtual std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) const = 0;
+  virtual std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) const = 0;
+  virtual std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) const = 0;
 
-  tBTM_BLE_SEC_REQ_ACT (*BTM_BleLinkSecCheck)(const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req);
-  void (*BTM_BleLtkRequestReply)(const RawAddress& bda, bool use_stk, const Octet16& stk);
-  tBTM_STATUS (*BTM_BleStartEncrypt)(const RawAddress& bda, bool use_stk, Octet16* p_stk);
-  tBTM_STATUS (*BTM_BleStartSecCheck)(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
-                                      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
-  bool (*BTM_GetLocalDiv)(const RawAddress& bd_addr, uint16_t* p_div);
-  bool (*BTM_BleGetEncKeyType)(const RawAddress& bd_addr, uint8_t* p_key_types);
-  void (*BTM_SecSaveLeKey)(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-                           const tBTM_LE_KEY_VALUE& key, bool pass_to_application);
-  void (*BTM_BleUpdateSecKeySize)(const RawAddress& bd_addr, uint8_t enc_key_size);
-  void (*BTM_BleResetId)(void);
-} SecurityClientInterface;
+  virtual tBTM_BLE_SEC_REQ_ACT BTM_BleLinkSecCheck(const RawAddress& bd_addr,
+                                                   tBTM_LE_AUTH_REQ auth_req) const = 0;
+  virtual void BTM_BleLtkRequestReply(const RawAddress& bda, bool use_stk,
+                                      const Octet16& stk) const = 0;
+  virtual tBTM_STATUS BTM_BleStartEncrypt(const RawAddress& bda, bool use_stk,
+                                          Octet16* p_stk) const = 0;
+  virtual tBTM_STATUS BTM_BleStartSecCheck(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
+                                           tBTM_SEC_CALLBACK* p_callback,
+                                           void* p_ref_data) const = 0;
+  virtual bool BTM_GetLocalDiv(const RawAddress& bd_addr, uint16_t* p_div) const = 0;
+  virtual bool BTM_BleGetEncKeyType(const RawAddress& bd_addr, uint8_t* p_key_types) const = 0;
+  virtual void BTM_SecSaveLeKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                                const tBTM_LE_KEY_VALUE& key, bool pass_to_application) const = 0;
+  virtual void BTM_BleUpdateSecKeySize(const RawAddress& bd_addr, uint8_t enc_key_size) const = 0;
+  virtual void BTM_BleResetId(void) const = 0;
+};
 
 const SecurityClientInterface& get_security_client_interface();

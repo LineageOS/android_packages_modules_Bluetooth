@@ -21,6 +21,9 @@ import android.bluetooth.BluetoothProfile
 import android.os.Looper
 import android.os.Message
 import android.util.Log
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.media_audio.sink.MediaAudioServer
+import com.android.bluetooth.media_audio.sink.MediaSource
 import com.android.internal.util.State
 import com.android.internal.util.StateMachine
 import java.time.Duration
@@ -30,6 +33,8 @@ class McpClientStateMachine(
     private val service: McpClientService,
     private val device: BluetoothDevice,
     private val nativeInterface: McpClientNativeInterface,
+    // TODO(Flags.mediaAudioServer): Remove ? when flag is cleaned up
+    private val mediaAudioServer: MediaAudioServer?,
     looper: Looper,
 ) : StateMachine(TAG, looper) {
 
@@ -40,6 +45,7 @@ class McpClientStateMachine(
 
     private var connectionState = BluetoothProfile.STATE_DISCONNECTED
     private val mediaPlayers = HashMap<Int, MediaPlayerState>()
+    private val mediaSource = McpClientMediaSource()
 
     init {
         addState(disconnected)
@@ -180,10 +186,14 @@ class McpClientStateMachine(
             setMostRecentState(BluetoothProfile.STATE_CONNECTED)
             logi("Enter: ${messageWhatToString(currentMessage?.what)}")
             removeDeferredMessages(MESSAGE_CONNECT)
+            // TODO(Flags.mediaAudioServer): Remove ? when flag is cleaned up
+            mediaAudioServer?.registerMediaSource(mediaSource)
         }
 
         override fun exit() {
             logi("Exit: ${messageWhatToString(currentMessage?.what)}")
+            // TODO(Flags.mediaAudioServer): Remove ? when flag is cleaned up
+            mediaAudioServer?.unregisterMediaSource(mediaSource)
         }
 
         override fun processMessage(message: Message): Boolean {
@@ -322,6 +332,10 @@ class McpClientStateMachine(
             McpStackEvent.EVENT_TYPE_OPCODES_SUPPORTED_CHANGED ->
                 state.supportedOpcodes = event.valueInt2
         }
+
+        if (id == GMCS_ID) {
+            updateMediaSource(state)
+        }
     }
 
     private fun setMostRecentState(newState: Int) {
@@ -407,5 +421,221 @@ class McpClientStateMachine(
             var state: MediaState? = null,
             var supportedOpcodes: Int? = null,
         )
+    }
+
+    private fun updateMediaSource(state: MediaPlayerState) {
+        if (!Flags.mediaAudioServer()) {
+            return
+        }
+
+        val metadata =
+            MediaSource.Metadata(
+                title = state.trackTitle,
+                artist = null,
+                album = null,
+                trackNumber = 0,
+                totalNumberOfTracks = 0,
+                genre = null,
+                duration = state.trackDuration?.toLong() ?: 0L,
+                imageUri = null,
+            )
+        if (metadata != mediaSource.getMetadata()) {
+            mediaSource.setMetadata(metadata)
+        }
+
+        val playbackStatus =
+            MediaSource.PlaybackStatus(
+                state =
+                    state.state?.let { mediaStateToPlaybackState(it) }
+                        ?: MediaSource.PlaybackState.UNKNOWN,
+                playbackPosition = state.trackPosition?.toLong() ?: 0L,
+                playbackSpeed = (state.playbackSpeed?.toFloat() ?: 100f) / 100f,
+                activeQueueId = -1L,
+                availableActions = getAvailableActions(state),
+                shuffleMode =
+                    state.playingOrder?.let { playingOrderToShuffleMode(it) }
+                        ?: MediaSource.ShuffleMode.OFF,
+                repeatMode =
+                    state.playingOrder?.let { playingOrderToRepeatMode(it) }
+                        ?: MediaSource.RepeatMode.OFF,
+            )
+        if (playbackStatus != mediaSource.getPlaybackStatus()) {
+            mediaSource.setPlaybackStatus(playbackStatus)
+        }
+    }
+
+    private fun mediaStateToPlaybackState(state: MediaState): MediaSource.PlaybackState {
+        return when (state) {
+            MediaState.INACTIVE -> MediaSource.PlaybackState.STOPPED
+            MediaState.PLAYING -> MediaSource.PlaybackState.PLAYING
+            MediaState.PAUSED -> MediaSource.PlaybackState.PAUSED
+            MediaState.SEEKING -> MediaSource.PlaybackState.FAST_FORWARDING
+        }
+    }
+
+    private fun getAvailableActions(state: MediaPlayerState): List<MediaSource.PlayerAction> {
+        val actions = mutableListOf<MediaSource.PlayerAction>()
+        val opcodes = state.supportedOpcodes ?: 0
+        if (opcodes and (1 shl McpOpcode.PLAY.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.PLAY)
+        if (opcodes and (1 shl McpOpcode.PAUSE.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.PAUSE)
+        if (opcodes and (1 shl McpOpcode.FAST_REWIND.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.REWIND)
+        if (opcodes and (1 shl McpOpcode.FAST_FORWARD.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.FAST_FORWARD)
+        if (opcodes and (1 shl McpOpcode.STOP.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.STOP)
+        if (opcodes and (1 shl McpOpcode.NEXT_TRACK.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.NEXT)
+        if (opcodes and (1 shl McpOpcode.PREVIOUS_TRACK.supportedOpcodeBit) != 0)
+            actions.add(MediaSource.PlayerAction.PREVIOUS)
+
+        val playingOrders = state.supportedPlayingOrders ?: 0
+        val repeatMask =
+            (1 shl (PlayingOrder.SINGLE_REPEAT.value - 1)) or
+                (1 shl (PlayingOrder.IN_ORDER_REPEAT.value - 1)) or
+                (1 shl (PlayingOrder.OLDEST_REPEAT.value - 1)) or
+                (1 shl (PlayingOrder.NEWEST_REPEAT.value - 1)) or
+                (1 shl (PlayingOrder.SHUFFLE_REPEAT.value - 1))
+        if (playingOrders and repeatMask != 0) {
+            actions.add(MediaSource.PlayerAction.REPEAT)
+        }
+        val shuffleMask =
+            (1 shl (PlayingOrder.SHUFFLE_ONCE.value - 1)) or
+                (1 shl (PlayingOrder.SHUFFLE_REPEAT.value - 1))
+        if (playingOrders and shuffleMask != 0) {
+            actions.add(MediaSource.PlayerAction.SHUFFLE)
+        }
+        return actions
+    }
+
+    private fun playingOrderToShuffleMode(order: PlayingOrder): MediaSource.ShuffleMode {
+        return when (order) {
+            PlayingOrder.SHUFFLE_ONCE,
+            PlayingOrder.SHUFFLE_REPEAT -> MediaSource.ShuffleMode.ALL
+            else -> MediaSource.ShuffleMode.OFF
+        }
+    }
+
+    private fun playingOrderToRepeatMode(order: PlayingOrder): MediaSource.RepeatMode {
+        return when (order) {
+            PlayingOrder.SINGLE_REPEAT -> MediaSource.RepeatMode.ONE
+            PlayingOrder.IN_ORDER_REPEAT,
+            PlayingOrder.OLDEST_REPEAT,
+            PlayingOrder.NEWEST_REPEAT,
+            PlayingOrder.SHUFFLE_REPEAT -> MediaSource.RepeatMode.ALL
+            else -> MediaSource.RepeatMode.OFF
+        }
+    }
+
+    private fun resolvePlayingOrder(
+        current: PlayingOrder,
+        reqRepeat: MediaSource.RepeatMode?,
+        reqShuffle: MediaSource.ShuffleMode?,
+    ): PlayingOrder {
+        var isRepeatOne = false
+        var isRepeatAll = false
+        var isShuffle = false
+
+        if (reqRepeat != null) {
+            isRepeatOne = (reqRepeat == MediaSource.RepeatMode.ONE)
+            isRepeatAll =
+                (reqRepeat == MediaSource.RepeatMode.ALL ||
+                    reqRepeat == MediaSource.RepeatMode.GROUP)
+
+            isShuffle =
+                when (current) {
+                    PlayingOrder.SHUFFLE_ONCE,
+                    PlayingOrder.SHUFFLE_REPEAT -> true
+                    else -> false
+                }
+        } else if (reqShuffle != null) {
+            isShuffle =
+                (reqShuffle == MediaSource.ShuffleMode.ALL ||
+                    reqShuffle == MediaSource.ShuffleMode.GROUP)
+
+            isRepeatOne = current == PlayingOrder.SINGLE_REPEAT
+            isRepeatAll =
+                when (current) {
+                    PlayingOrder.IN_ORDER_REPEAT,
+                    PlayingOrder.OLDEST_REPEAT,
+                    PlayingOrder.NEWEST_REPEAT,
+                    PlayingOrder.SHUFFLE_REPEAT -> true
+                    else -> false
+                }
+        }
+
+        if (isRepeatOne) return PlayingOrder.SINGLE_REPEAT
+        if (isShuffle) {
+            return if (isRepeatAll) PlayingOrder.SHUFFLE_REPEAT else PlayingOrder.SHUFFLE_ONCE
+        }
+        return if (isRepeatAll) PlayingOrder.IN_ORDER_REPEAT else PlayingOrder.IN_ORDER_ONCE
+    }
+
+    private inner class McpClientMediaSource :
+        MediaSource(device, MediaSource.Protocol.MCP_CLIENT) {
+        override fun onPrepare() {
+            logd("MediaSource: onPrepare; not used")
+        }
+
+        override fun onPlay() {
+            logd("MediaSource: onPlay")
+            nativeInterface.play(device, GMCS_ID)
+        }
+
+        override fun onPause() {
+            logd("MediaSource: onPause")
+            nativeInterface.pause(device, GMCS_ID)
+        }
+
+        override fun onSkipToNext() {
+            logd("MediaSource: onSkipToNext")
+            nativeInterface.nextTrack(device, GMCS_ID)
+        }
+
+        override fun onSkipToPrevious() {
+            logd("MediaSource: onSkipToPrevious")
+            nativeInterface.previousTrack(device, GMCS_ID)
+        }
+
+        override fun onSkipToQueueItem(id: Long) {
+            logd("MediaSource: onSkipToQueueItem id=$id; not supported")
+            // Not supported by McpClientNativeInterface
+        }
+
+        override fun onStop() {
+            logd("MediaSource: onStop")
+            nativeInterface.stop(device, GMCS_ID)
+        }
+
+        override fun onFastForward() {
+            logd("MediaSource: onFastForward")
+            nativeInterface.fastForward(device, GMCS_ID)
+        }
+
+        override fun onRewind() {
+            logd("MediaSource: onRewind")
+            nativeInterface.fastRewind(device, GMCS_ID)
+        }
+
+        override fun onPlayFromMediaId(id: String) {
+            logd("MediaSource: onPlayFromMediaId id=$id; not supported")
+            // Not supported by McpClientNativeInterface
+        }
+
+        override fun onSetRepeatMode(mode: MediaSource.RepeatMode) {
+            logd("MediaSource: onSetRepeatMode mode=$mode")
+            val currentOrder = mediaPlayers[GMCS_ID]?.playingOrder ?: PlayingOrder.IN_ORDER_ONCE
+            val newOrder = resolvePlayingOrder(currentOrder, mode, null)
+            nativeInterface.setPlayingOrder(device, GMCS_ID, newOrder)
+        }
+
+        override fun onSetShuffleMode(mode: MediaSource.ShuffleMode) {
+            logd("MediaSource: onSetShuffleMode mode=$mode")
+            val currentOrder = mediaPlayers[GMCS_ID]?.playingOrder ?: PlayingOrder.IN_ORDER_ONCE
+            val newOrder = resolvePlayingOrder(currentOrder, null, mode)
+            nativeInterface.setPlayingOrder(device, GMCS_ID, newOrder)
+        }
     }
 }

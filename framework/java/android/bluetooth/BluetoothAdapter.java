@@ -62,7 +62,6 @@ import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.DistanceMeasurementManager;
-import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
@@ -791,7 +790,6 @@ public final class BluetoothAdapter {
 
     private BluetoothLeScanner mBluetoothLeScanner;
     private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
-    private PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     private DistanceMeasurementManager mDistanceMeasurementManager;
 
     private final IBluetoothManager mManagerService;
@@ -1163,34 +1161,6 @@ public final class BluetoothAdapter {
                 mBluetoothLeAdvertiser = new BluetoothLeAdvertiser(this);
             }
             return mBluetoothLeAdvertiser;
-        }
-    }
-
-    /**
-     * Returns a {@link PeriodicAdvertisingManager} object for Bluetooth LE Periodic Advertising
-     * operations. Will return null if Bluetooth is turned off or if Bluetooth LE Periodic
-     * Advertising is not supported on this device.
-     *
-     * <p>Use {@link #isEnabled()} to check if Bluetooth is currently enabled. Use {@link
-     * #isLePeriodicAdvertisingSupported()} to check whether LE Periodic Advertising is supported on
-     * this device before calling this method.
-     */
-    @Hide
-    @RequiresNoPermission
-    public @Nullable PeriodicAdvertisingManager getPeriodicAdvertisingManager() {
-        if (!getLeAccess()) {
-            return null;
-        }
-
-        if (!isLePeriodicAdvertisingSupported()) {
-            return null;
-        }
-
-        synchronized (mLock) {
-            if (mPeriodicAdvertisingManager == null) {
-                mPeriodicAdvertisingManager = new PeriodicAdvertisingManager(this);
-            }
-            return mPeriodicAdvertisingManager;
         }
     }
 

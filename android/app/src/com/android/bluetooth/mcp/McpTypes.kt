@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.mcp
 
+const val GMCS_ID = 0
+
 enum class MediaState(val value: Int) {
     INACTIVE(0x00),
     PLAYING(0x01),
@@ -76,4 +78,28 @@ enum class MediaControlResult(val value: Int) {
             return entries.firstOrNull { it.value == value }
         }
     }
+}
+
+enum class McpOpcode(val value: Int, val supportedOpcodeBit: Int) {
+    PLAY(0x01, 0),
+    PAUSE(0x02, 1),
+    FAST_REWIND(0x03, 2),
+    FAST_FORWARD(0x04, 3),
+    STOP(0x05, 4),
+    MOVE_RELATIVE(0x10, 5),
+    PREVIOUS_SEGMENT(0x20, 6),
+    NEXT_SEGMENT(0x21, 7),
+    FIRST_SEGMENT(0x22, 8),
+    LAST_SEGMENT(0x23, 9),
+    GOTO_SEGMENT(0x24, 10),
+    PREVIOUS_TRACK(0x30, 11),
+    NEXT_TRACK(0x31, 12),
+    FIRST_TRACK(0x32, 13),
+    LAST_TRACK(0x33, 14),
+    GOTO_TRACK(0x34, 15),
+    PREVIOUS_GROUP(0x40, 16),
+    NEXT_GROUP(0x41, 17),
+    FIRST_GROUP(0x42, 18),
+    LAST_GROUP(0x43, 19),
+    GOTO_GROUP(0x44, 20),
 }

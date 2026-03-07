@@ -37,50 +37,10 @@ flag {
 }
 
 flag {
-    name: "a2dp_reject_sho_request"
-    namespace: "bluetooth"
-    description: "Reject SHO request when rsp pending from active device"
-    bug: "440286060"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_delay_disconnect"
-    namespace: "bluetooth"
-    description: "Delay A2DP profile disconnection to fix interoperability issues"
-    bug: "440507683"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_cancel_acceptor_alarm_for_avdt_init"
-    namespace: "bluetooth"
-    description: "Cancel unnecessary timer for signalling as ACP"
-    bug: "440264270"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_clear_pending_status_before_binder_call"
     namespace: "bluetooth"
     description: "Clear the a2dp AIDL pending cmd status before performing a binder call"
     bug: "448196961"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_control_codec_state_reports"
-    namespace: "bluetooth"
-    description: "Control codec state reports invocations from upper layers"
-    bug: "452544619"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -154,16 +114,6 @@ flag {
     namespace: "bluetooth"
     description: "Add logic to flush the FMQ when the A2dp stream is stopped"
     bug: "479794467"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_transport_mutex"
-    namespace: "bluetooth"
-    description: "Add mutex to A2dpTransport to protect pending cmd status"
-    bug: "483900386"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

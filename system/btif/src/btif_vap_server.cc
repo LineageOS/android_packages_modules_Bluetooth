@@ -31,8 +31,6 @@ using base::Unretained;
 using bluetooth::vap::VapServerCallbacks;
 using bluetooth::vap::VapServerInterface;
 
-using bluetooth::vap::VapServer;
-
 namespace {
 std::unique_ptr<VapServerInterface> vap_server_instance;
 

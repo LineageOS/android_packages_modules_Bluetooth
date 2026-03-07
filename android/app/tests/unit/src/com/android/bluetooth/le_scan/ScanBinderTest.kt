@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.app.PendingIntent
+import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.State
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
@@ -25,6 +26,7 @@ import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FA
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.TransportBlockFilter
 import android.content.AttributionSource
 import android.content.Intent
 import android.os.WorkSource
@@ -35,6 +37,7 @@ import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import java.util.function.Supplier
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -287,5 +290,38 @@ class ScanBinderTest {
     fun numHwTrackFiltersAvailable() {
         binder.numHwTrackFiltersAvailable(source)
         verify(scanController).numHwTrackFiltersAvailable()
+    }
+
+    @Test
+    fun registerAndStartScan_withTdsFilterAndSupported_doesNotThrow() {
+        doReturn(BluetoothStatusCodes.FEATURE_SUPPORTED)
+            .whenever(adapterService)
+            .offloadedTransportDiscoveryDataScanSupported
+
+        val callback = mock<IScannerCallback>()
+        val settings = ScanSettings.Builder().build()
+        val transportBlockFilter = mock<TransportBlockFilter>()
+        val filter = ScanFilter.Builder().setTransportBlockFilter(transportBlockFilter).build()
+        val filters = listOf(filter)
+
+        binder.registerAndStartScan(callback, settings, filters, null, source)
+        verify(scanController).registerAndStartScan(callback, null, source, true, settings, filters)
+    }
+
+    @Test
+    fun registerAndStartScan_withTdsFilterAndNotSupported_throwsException() {
+        doReturn(BluetoothStatusCodes.FEATURE_NOT_SUPPORTED)
+            .whenever(adapterService)
+            .offloadedTransportDiscoveryDataScanSupported
+
+        val callback = mock<IScannerCallback>()
+        val settings = ScanSettings.Builder().build()
+        val transportBlockFilter = mock<TransportBlockFilter>()
+        val filter = ScanFilter.Builder().setTransportBlockFilter(transportBlockFilter).build()
+        val filters = listOf(filter)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            binder.registerAndStartScan(callback, settings, filters, null, source)
+        }
     }
 }
