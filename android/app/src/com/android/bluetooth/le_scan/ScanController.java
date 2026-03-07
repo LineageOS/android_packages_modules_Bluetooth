@@ -565,7 +565,7 @@ public class ScanController {
             unregisterScanner(scannerId);
             return;
         }
-        app.setId(scannerId);
+        app.setScannerId(scannerId);
         // If app is callback based, setup a death recipient and start scan.
         // Otherwise, if PendingIntent based, start the scan directly.
         if (app.getCallback() != null) {
@@ -1207,11 +1207,10 @@ public class ScanController {
             Log.e(TAG, "stopScan(PendingIntent): App not found for intent=" + intent);
             return;
         }
-        var scannerId = app.getId();
-        Log.v(TAG, "stopScan(PendingIntent): For " + app + " with scannerId=" + scannerId);
+        Log.v(TAG, "stopScan(PendingIntent): For " + app + " with scannerId=" + app.getScannerId());
         intent.removeCancelListener(mScanIntentCancelListener);
-        stopScan(scannerId);
-        unregisterScanner(scannerId);
+        stopScan(app.getScannerId());
+        unregisterScanner(app.getScannerId());
     }
 
     /**************************************************************************

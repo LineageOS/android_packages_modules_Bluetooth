@@ -83,7 +83,7 @@ class ScannerMapTest {
                 adapterService,
                 batteryStatsManager,
             )
-        app.id = SCANNER_ID
+        app.scannerId = SCANNER_ID
 
         assertThat(scannerMap.getById(SCANNER_ID)?.name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getByUuid(uuid)?.name).isEqualTo(APP_NAME)
@@ -114,7 +114,7 @@ class ScannerMapTest {
                 adapterService,
                 batteryStatsManager,
             )
-        app.id = SCANNER_ID
+        app.scannerId = SCANNER_ID
 
         val scannerMapById = scannerMap.getById(SCANNER_ID)
         assertThat(scannerMapById?.name).isEqualTo(APP_NAME)
@@ -146,7 +146,7 @@ class ScannerMapTest {
                 adapterService,
                 batteryStatsManager,
             )
-        app.id = SCANNER_ID
+        app.scannerId = SCANNER_ID
 
         assertThat(scannerMap.getById(SCANNER_ID)?.name).isEqualTo(APP_NAME)
 

@@ -426,7 +426,7 @@ class AppScanStats(
         if (isRegistered) {
             for (app in apps) {
                 fun tag() = app.attributionTag?.let { ", Tag: $it" } ?: ""
-                appendLine("  Application ID: ${app.id}, UUID: ${app.uuid}${tag()}")
+                appendLine("  Scanner ID: ${app.scannerId}, UUID: ${app.uuid}${tag()}")
             }
         }
 

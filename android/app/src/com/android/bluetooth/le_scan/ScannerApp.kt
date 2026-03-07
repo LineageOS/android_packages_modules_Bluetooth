@@ -40,7 +40,7 @@ class ScannerApp(
     val info: ScanController.PendingIntentInfo?, // Context information
     val isInternal: Boolean,
 ) {
-    var id = 0
+    var scannerId = 0
     var hasLocationPermission = false
     var hasNetworkSettingsPermission = false
     var hasNetworkSetupWizardPermission = false
@@ -62,7 +62,7 @@ class ScannerApp(
                 cb.asBinder().linkToDeath(recipient, 0)
                 deathRecipient = recipient
             } catch (_: RemoteException) {
-                Log.e(TAG, "Unable to link deathRecipient for app id=$id")
+                Log.e(TAG, "Failed to linkToDeath for $this with scannerId=$scannerId")
                 cleanup()
             }
         }
@@ -75,7 +75,7 @@ class ScannerApp(
                 try {
                     cb.asBinder().unlinkToDeath(recipient, 0)
                 } catch (_: NoSuchElementException) {
-                    Log.e(TAG, "Unable to unlink deathRecipient for app id=$id")
+                    Log.e(TAG, "Failed to unlinkToDeath for $this with scannerId=$scannerId")
                 }
             }
         }

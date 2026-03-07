@@ -152,7 +152,7 @@ class ScannerMap {
         return app
     }
 
-    fun remove(id: Int) = removeBy("id=$id") { it.id == id }
+    fun remove(id: Int) = removeBy("id=$id") { it.scannerId == id }
 
     fun remove(uuid: UUID) = removeBy("UUID=$uuid") { it.uuid == uuid }
 
@@ -178,7 +178,7 @@ class ScannerMap {
 
     fun getAppScanStatsById(id: Int): AppScanStats? = getById(id)?.appScanStats
 
-    fun getById(id: Int) = findBy("ID=$id") { it.id == id }
+    fun getById(id: Int) = findBy("ID=$id") { it.scannerId == id }
 
     fun getByUuid(uuid: UUID) = findBy("UUID=$uuid") { it.uuid == uuid }
 
@@ -200,7 +200,7 @@ class ScannerMap {
                 mutableListOf<Column<ScannerApp>>(
                     Column("UID", width = 5) { it.uid },
                     Column("PID", width = 5) { it.pid },
-                    Column("ID", width = 2) { it.id },
+                    Column("ID", width = 2) { it.scannerId },
                     Column("PACKAGE") { it.name },
                 )
 
@@ -211,7 +211,7 @@ class ScannerMap {
             if (settingsMap.values.any { it.reportDelayMillis > 0 }) {
                 columns.add(
                     Column("REPORT_DELAY_MS", width = 15) { app ->
-                        val delay = settingsMap[app.id]?.reportDelayMillis ?: 0
+                        val delay = settingsMap[app.scannerId]?.reportDelayMillis ?: 0
                         if (delay > 0) delay.toString() else ""
                     }
                 )

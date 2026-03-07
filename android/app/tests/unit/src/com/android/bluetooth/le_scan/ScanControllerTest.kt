@@ -333,7 +333,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
         verify(app).linkToDeath(any())
         verify(callback).onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID)
-        verify(app).id = TEST_SCANNER_ID
+        verify(app).scannerId = TEST_SCANNER_ID
     }
 
     @Test

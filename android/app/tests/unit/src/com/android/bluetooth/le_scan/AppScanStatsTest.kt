@@ -87,12 +87,12 @@ class AppScanStatsTest {
             )
 
         val app1 = mock<ScannerApp>()
-        doReturn(101).whenever(app1).id
+        doReturn(101).whenever(app1).scannerId
         doReturn(UUID.randomUUID()).whenever(app1).uuid
         doReturn("appTag1").whenever(app1).attributionTag
 
         val app2 = mock<ScannerApp>()
-        doReturn(102).whenever(app2).id
+        doReturn(102).whenever(app2).scannerId
         doReturn(UUID.randomUUID()).whenever(app2).uuid
         doReturn(null).whenever(app2).attributionTag
 
