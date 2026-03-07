@@ -2006,7 +2006,12 @@ public class RemoteDevices {
             }
         }
 
-        Log.i(TAG, "removeDeviceProperties: " + toAnonymizedAddress(address));
+        Log.i(
+                TAG,
+                "removeDeviceProperties: "
+                        + (deviceProperties != null
+                                ? deviceProperties
+                                : toAnonymizedAddress(address)));
 
         synchronized (mDevices) {
             mDevices.remove(address);
