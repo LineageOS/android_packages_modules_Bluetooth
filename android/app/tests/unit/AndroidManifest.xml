@@ -71,7 +71,10 @@
             tools:node="merge">
             <intent-filter tools:node="removeAll" />
         </activity>
-
+        <activity android:name="com.android.bluetooth.auracast.NfcAuracastActivity"
+            tools:node="merge">
+            <intent-filter tools:node="removeAll" />
+        </activity>
     </application>
     <!--
     This declares that this application uses the instrumentation test runner targeting
