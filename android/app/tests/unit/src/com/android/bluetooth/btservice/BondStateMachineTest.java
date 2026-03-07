@@ -1005,4 +1005,40 @@ public class BondStateMachineTest {
         assertThat(intent.getIntExtra(BluetoothDevice.EXTRA_UNBOND_REASON, -1))
                 .isEqualTo(BluetoothDevice.UNBOND_REASON_REMOVED);
     }
+
+    @Test
+    @EnableFlags(Flags.FLAG_REMOVE_BOND_IN_IDLE_STATE)
+    public void testDuplicateRemoveBondRequests_doesNotBlockCreateBond() {
+        // Set up a device that is bonded
+        RemoteDevices.DeviceProperties deviceProperties =
+                mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
+        BluetoothDevice device = mRemoteDevices.getDevice(TEST_BT_ADDR_BYTES);
+        deviceProperties.mBondState = BOND_BONDED;
+
+        doReturn(true).when(mNativeInterface).removeBond(any(byte[].class));
+        doReturn(true).when(mNativeInterface).createBond(any(byte[].class), anyInt(), anyInt());
+
+        // Send first remove bond message
+        sendAndDispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, device);
+        verify(mNativeInterface).removeBond(eq(TEST_BT_ADDR_BYTES));
+
+        // Send second remove bond message (duplicate)
+        sendAndDispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, device);
+        verify(mNativeInterface, times(2)).removeBond(eq(TEST_BT_ADDR_BYTES));
+
+        // Verify state is still Idle
+        assertThat(mStateMachine.getCurrentState().getName()).isEqualTo("StateIdle");
+
+        // Now send create bond for another device.
+        // We do NOT simulate a bond state change callback for the remove operations.
+        // This simulates the "native stack does not respond" scenario.
+        RemoteDevices.DeviceProperties deviceProperties2 =
+                mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES_2);
+        BluetoothDevice device2 = deviceProperties2.getDevice();
+
+        sendAndDispatchMessage(BondStateMachine.MESSAGE_CREATE_BOND, device2);
+
+        // Verify createBond is called immediately
+        verify(mNativeInterface).createBond(eq(TEST_BT_ADDR_BYTES_2), anyInt(), anyInt());
+    }
 }
