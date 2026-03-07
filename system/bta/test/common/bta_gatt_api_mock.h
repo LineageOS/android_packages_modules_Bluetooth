@@ -119,7 +119,7 @@ public:
   virtual void Close(uint16_t /* conn_id */) = 0;
   virtual void AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
                           BTA_GATTS_AddServiceCb /* cb */) = 0;
-  virtual void DeleteService(uint16_t /* service_id */) = 0;
+  virtual void DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */) = 0;
   virtual void HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
                                      std::vector<uint8_t> /* value */, bool /* need_confirm */) = 0;
   virtual void SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,
@@ -146,7 +146,7 @@ public:
               (tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
                BTA_GATTS_AddServiceCb cb),
               (override));
-  MOCK_METHOD((void), DeleteService, (uint16_t service_id));
+  MOCK_METHOD((void), DeleteService, (tGATT_IF server_if, uint16_t service_id));
   MOCK_METHOD((void), HandleValueIndication,
               (uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value, bool need_confirm));
 

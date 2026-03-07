@@ -924,6 +924,8 @@ void GATTS_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service
  ******************************************************************************/
 void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id);
 
+std::optional<bluetooth::Uuid> GATTS_LookupServiceUuidByStartHandle(uint16_t start_handle);
+
 /******************************************************************************/
 /* GATT Profile Client Functions */
 /******************************************************************************/

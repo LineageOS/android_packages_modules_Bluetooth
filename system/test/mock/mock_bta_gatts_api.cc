@@ -47,7 +47,9 @@ void BTA_GATTS_AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_elemen
                           BTA_GATTS_AddServiceCb /* cb */) {
   inc_func_call_count(__func__);
 }
-void BTA_GATTS_DeleteService(uint16_t /* service_id */) { inc_func_call_count(__func__); }
+void BTA_GATTS_DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */) {
+  inc_func_call_count(__func__);
+}
 void BTA_GATTS_HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
                                      std::vector<uint8_t> /* value */, bool /* need_confirm */) {
   inc_func_call_count(__func__);

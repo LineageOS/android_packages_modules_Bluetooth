@@ -245,19 +245,24 @@ void bta_gatts_deregister(tGATT_IF server_if) {
   }
 }
 
-void bta_gatts_delete_service(uint16_t service_id) {
-  tBTA_GATTS_SRVC_CB* p_srvc_cb = bta_gatts_find_srvc_cb_by_srvc_id(&bta_gatts_cb, service_id);
-  if (p_srvc_cb == NULL) {
-    log::error("can't delete service - no srvc_cb found");
+void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id) {
+  std::optional<Uuid> svc_uuid = GATTS_LookupServiceUuidByStartHandle(service_id);
+  if (!svc_uuid) {
+    log::error("can't delete service - no service {} found", service_id);
     return;
   }
 
-  tBTA_GATTS_RCB* p_rcb = &bta_gatts_cb.rcb[p_srvc_cb->rcb_idx];
-  tGATT_STATUS status;
+  tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
+  if (!p_rcb) {
+    /* this is only useful thing of BTA layer, we ensure BTA apps can't stop internal services, if
+     * they just guess the service_id (start_handle) */
+    log::error("gatt_if={} not found", gatt_if);
+    return;
+  }
 
-  if (GATTS_DeleteService(p_rcb->gatt_if, &p_srvc_cb->service_uuid, p_srvc_cb->service_id)) {
+  tGATT_STATUS status;
+  if (GATTS_DeleteService(p_rcb->gatt_if, &(svc_uuid.value()), service_id)) {
     status = GATT_SUCCESS;
-    memset(p_srvc_cb, 0, sizeof(tBTA_GATTS_SRVC_CB));
   } else {
     status = GATT_ERROR;
   }
@@ -276,12 +281,6 @@ void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status
 
 void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
                                bool need_confirm) {
-  tBTA_GATTS_SRVC_CB* p_srvc_cb = bta_gatts_find_srvc_cb_by_attr_id(&bta_gatts_cb, attr_id);
-  if (!p_srvc_cb) {
-    log::error("Not an registered servce attribute ID: 0x{:x}", attr_id);
-    return;
-  }
-
   tGATT_IF gatt_if;
   RawAddress remote_bda;
   tBT_TRANSPORT transport;
@@ -291,6 +290,10 @@ void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<u
   }
 
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
+  if (!p_rcb) {
+    log::error("server_if={} not found", gatt_if);
+    return;
+  }
 
   tGATT_STATUS status;
   if (need_confirm) {
@@ -305,10 +308,13 @@ void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<u
     bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
   }
 
-  if ((status != GATT_SUCCESS || !need_confirm) && p_rcb &&
-      bta_gatts_cb.rcb[p_srvc_cb->rcb_idx].p_cback &&
-      bta_gatts_cb.rcb[p_srvc_cb->rcb_idx].p_cback->p_conf_cb) {
-    bta_gatts_cb.rcb[p_srvc_cb->rcb_idx].p_cback->p_conf_cb(conn_id, status);
+  if (status == GATT_SUCCESS && need_confirm) {
+    // in this case we will call p_conf_cb when handling GATTS_REQ_TYPE_CONF
+    return;
+  }
+
+  if (p_rcb->p_cback && p_rcb->p_cback->p_conf_cb) {
+    p_rcb->p_cback->p_conf_cb(conn_id, status);
   }
 }
 
