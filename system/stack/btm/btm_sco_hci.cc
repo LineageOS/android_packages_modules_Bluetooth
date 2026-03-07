@@ -30,6 +30,10 @@
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sco.h"
 
+#if TARGET_FLOSS
+#include "udrv/include/uipc.h"
+#endif
+
 /* Per Bluetooth Core v5.0 and HFP 1.9 specification. */
 #define BTM_MSBC_H2_HEADER_0 0x01
 #define BTM_MSBC_H2_HEADER_LEN 2
