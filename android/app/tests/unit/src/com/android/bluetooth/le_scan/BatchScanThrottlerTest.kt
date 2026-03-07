@@ -32,6 +32,7 @@ import kotlin.time.ExperimentalTime
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 
 /** Test cases for [BatchScanThrottler]. */
 @OptIn(ExperimentalTime::class)
@@ -157,6 +158,7 @@ class BatchScanThrottlerTest {
 
     private fun createBatchScanClient(isFiltered: Boolean) =
         ScanClient(
+            mock<ScannerApp>(),
             appUid = 1001,
             scannerId = 1,
             settings =

@@ -92,7 +92,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.clearInvocations
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -2574,6 +2573,7 @@ class ScanManagerTest() {
                 }
         val scannerIdForClient = scannerIdPar ?: ++scannerId
         return ScanClient(
+                mock<ScannerApp>(),
                 appUid = uid,
                 scannerId = scannerIdForClient,
                 settings = settings,

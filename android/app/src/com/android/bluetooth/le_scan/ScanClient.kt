@@ -27,6 +27,7 @@ import java.util.function.Consumer
 /** Helper class identifying a client that has requested LE scan results. */
 class ScanClient
 private constructor(
+    val app: ScannerApp,
     val appUid: Int,
     val scannerId: Int,
     var settings: ScanSettings,
@@ -55,6 +56,7 @@ private constructor(
     var appScanStats: AppScanStats? = null
 
     constructor(
+        app: ScannerApp,
         appUid: Int,
         scannerId: Int,
         settings: ScanSettings = ScanSettings.Builder().build(),
@@ -68,6 +70,7 @@ private constructor(
         hasScanWithoutLocationPermission: Boolean = false,
         associatedDevices: List<String> = emptyList(),
     ) : this(
+        app = app,
         appUid = appUid,
         scannerId = scannerId,
         settings = settings,
@@ -85,6 +88,7 @@ private constructor(
 
     // Constructor to be used for internal clients only
     constructor(
+        app: ScannerApp,
         appUid: Int,
         scannerId: Int,
         settings: ScanSettings = ScanSettings.Builder().build(),
@@ -94,6 +98,7 @@ private constructor(
         hasNetworkSetupWizardPermission: Boolean,
         hasScanWithoutLocationPermission: Boolean,
     ) : this(
+        app = app,
         appUid = appUid,
         scannerId = scannerId,
         settings = settings,
@@ -107,10 +112,11 @@ private constructor(
     )
 
     constructor(
+        app: ScannerApp,
         scannerId: Int,
         pendingIntentInfo: ScanController.PendingIntentInfo,
-        app: ScannerApp,
     ) : this(
+        app = app,
         appUid = pendingIntentInfo.callingUid,
         scannerId = scannerId,
         settings = pendingIntentInfo.settings,

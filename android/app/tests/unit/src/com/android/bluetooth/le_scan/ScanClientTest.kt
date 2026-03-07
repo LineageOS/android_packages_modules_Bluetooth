@@ -42,6 +42,8 @@ class ScanClientTest {
     @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
+    private val app = mock<ScannerApp>()
+
     @Test
     fun constructor_external() {
         val id = 5
@@ -50,7 +52,7 @@ class ScanClientTest {
             ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         val userHandle = UserHandle.getUserHandleForUid(uid)
 
-        val client = ScanClient(uid, id, settings, emptyList(), userHandle)
+        val client = ScanClient(app, uid, id, settings, emptyList(), userHandle)
 
         assertThat(client.scannerId).isEqualTo(id)
         assertThat(client.appUid).isEqualTo(uid)
@@ -68,6 +70,7 @@ class ScanClientTest {
 
         val client =
             ScanClient(
+                app,
                 uid,
                 id,
                 settings,
@@ -111,7 +114,7 @@ class ScanClientTest {
         doReturn(true).whenever(app).eligibleForSanitizedExposureNotification
         doReturn(false).whenever(app).hasDisavowedLocation
 
-        val client = ScanClient(id, piInfo, app)
+        val client = ScanClient(app, id, piInfo)
 
         assertThat(client.scannerId).isEqualTo(id)
         assertThat(client.appUid).isEqualTo(uid)
@@ -126,6 +129,7 @@ class ScanClientTest {
     fun updateScanMode() {
         val client =
             ScanClient(
+                app,
                 1000,
                 1,
                 ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build(),
@@ -144,7 +148,7 @@ class ScanClientTest {
     fun isFiltered_allEmptyFiltersIsFiltered() {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
-        val client = ScanClient(1000, 1, settings, filters)
+        val client = ScanClient(app, 1000, 1, settings, filters)
 
         assertThat(client.isFiltered).isTrue()
     }
@@ -154,7 +158,7 @@ class ScanClientTest {
     fun isFiltered_allEmptyFiltersIsUnfiltered() {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
-        val client = ScanClient(1000, 1, settings, filters)
+        val client = ScanClient(app, 1000, 1, settings, filters)
 
         assertThat(client.isFiltered).isFalse()
     }
@@ -164,14 +168,14 @@ class ScanClientTest {
     fun isFiltered_anyFieldSetFiltersIsFiltered() {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().setDeviceName("TestName").build())
-        val client = ScanClient(1000, 1, settings, filters)
+        val client = ScanClient(app, 1000, 1, settings, filters)
 
         assertThat(client.isFiltered).isTrue()
     }
 
     @Test
     fun toString_doesNotCrash() {
-        val scanClient = ScanClient(1000, 1, ScanSettings.Builder().build(), emptyList())
+        val scanClient = ScanClient(app, 1000, 1, ScanSettings.Builder().build(), emptyList())
         scanClient.toString()
     }
 }

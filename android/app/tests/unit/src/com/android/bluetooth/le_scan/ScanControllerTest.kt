@@ -169,6 +169,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 .build()
         val scanClient =
             ScanClient(
+                mock<ScannerApp>(),
                 appUid,
                 TEST_SCANNER_ID,
                 scanSettings,
@@ -249,6 +250,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val matchingFilters = listOf(ScanFilter.Builder().setDeviceName("TestDevice").build())
         val matchingClient =
             ScanClient(
+                mock<ScannerApp>(),
                 1000,
                 matchingScannerId,
                 matchingSettings,
@@ -270,6 +272,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val nonMatchingFilters = listOf(ScanFilter.Builder().setDeviceName("OtherDevice").build())
         val nonMatchingClient =
             ScanClient(
+                mock<ScannerApp>(),
                 1001,
                 nonMatchingScannerId,
                 nonMatchingSettings,
@@ -488,6 +491,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val hasScanWithoutLocationPermission = expectResults && isTruncated.not()
         val scanClient =
             ScanClient(
+                mock<ScannerApp>(),
                 appUid,
                 TEST_SCANNER_ID,
                 hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
@@ -542,6 +546,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val appUid = 1234
         val scanClient =
             ScanClient(
+                mock<ScannerApp>(),
                 appUid,
                 TEST_SCANNER_ID,
                 hasNetworkSettingsPermission = true, // Bypass permission checks
@@ -639,7 +644,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val appScanStats = mock<AppScanStats>()
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
 
-        scanController.dispatchPendingIntentStartScan(TEST_SCANNER_ID, app)
+        scanController.dispatchPendingIntentStartScan(app, TEST_SCANNER_ID)
         verify(appScanStats)
             .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(any())
@@ -661,7 +666,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val appScanStats = mock<AppScanStats>()
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
 
-        scanController.dispatchPendingIntentStartScan(TEST_SCANNER_ID, app)
+        scanController.dispatchPendingIntentStartScan(app, TEST_SCANNER_ID)
         verify(appScanStats)
             .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(argThat { client -> pii.callingUid == client.appUid })
@@ -671,7 +676,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
     fun flushPendingBatchResults() {
         val scanClientSet = mutableSetOf<ScanClient>()
         val appUid = 1234
-        val scanClient = ScanClient(appUid, TEST_SCANNER_ID)
+        val scanClient = ScanClient(mock<ScannerApp>(), appUid, TEST_SCANNER_ID)
         scanClientSet.add(scanClient)
         doReturn(scanClientSet).whenever(scanManager).batchScanQueue
 
@@ -761,7 +766,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
         val settings = ScanSettings.Builder().setRssiThreshold(rssiThreshold).build()
         val appUid = 1234
-        val client = ScanClient(appUid, TEST_SCANNER_ID, settings)
+        val client = ScanClient(mock<ScannerApp>(), appUid, TEST_SCANNER_ID, settings)
 
         val mockScanRecord = mock<ScanRecord>()
         val resultAboveThreshold =
@@ -783,7 +788,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val mockScanRecord = mock<ScanRecord>()
 
         val appUid = 1234
-        val client = ScanClient(appUid, TEST_SCANNER_ID, settings, filters)
+        val client = ScanClient(mock<ScannerApp>(), appUid, TEST_SCANNER_ID, settings, filters)
         val scanResult = ScanResult(device, 0, 0, 0, 0, 0, 0, 0, mockScanRecord, 0)
 
         assertThat(ScanController.matchesFilters(client, scanResult, originalAddress)).isTrue()

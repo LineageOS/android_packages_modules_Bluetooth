@@ -573,12 +573,12 @@ public class ScanController {
             Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
             app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
             if (app.isInternal()) {
-                startScanInternal(scannerId, app.getSettings(), app.getFilters());
+                startScanInternal(app, scannerId, app.getSettings(), app.getFilters());
             } else {
-                startScan(scannerId, app.getSettings(), app.getFilters(), app.getSource());
+                startScan(app, scannerId, app.getSettings(), app.getFilters(), app.getSource());
             }
         } else {
-            dispatchPendingIntentStartScan(scannerId, app);
+            dispatchPendingIntentStartScan(app, scannerId);
         }
     }
 
@@ -997,6 +997,7 @@ public class ScanController {
     }
 
     private void startScan(
+            ScannerApp app,
             int scannerId,
             ScanSettings settings,
             List<ScanFilter> filters,
@@ -1023,6 +1024,7 @@ public class ScanController {
         }
         var client =
                 new ScanClient(
+                        app,
                         uid,
                         scannerId,
                         settings,
@@ -1039,10 +1041,12 @@ public class ScanController {
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    private void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
+    private void startScanInternal(
+            ScannerApp app, int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         var client =
                 new ScanClient(
+                        app,
                         Binder.getCallingUid(),
                         scannerId,
                         settings,
@@ -1152,9 +1156,9 @@ public class ScanController {
     }
 
     @VisibleForTesting
-    void dispatchPendingIntentStartScan(int scannerId, ScannerApp app) {
+    void dispatchPendingIntentStartScan(ScannerApp app, int scannerId) {
         final PendingIntentInfo piInfo = app.getInfo();
-        var client = new ScanClient(scannerId, piInfo, app);
+        var client = new ScanClient(app, scannerId, piInfo);
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
             client.setAppScanStats(appScanStats);
