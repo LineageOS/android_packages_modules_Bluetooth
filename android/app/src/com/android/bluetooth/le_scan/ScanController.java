@@ -573,12 +573,12 @@ public class ScanController {
             Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
             app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
             if (app.isInternal()) {
-                startScanInternal(app, scannerId, app.getSettings(), app.getFilters());
+                startScanInternal(app);
             } else {
-                startScan(app, scannerId, app.getSettings(), app.getFilters(), app.getSource());
+                startScan(app);
             }
         } else {
-            dispatchPendingIntentStartScan(app, scannerId);
+            dispatchPendingIntentStartScan(app);
         }
     }
 
@@ -996,39 +996,35 @@ public class ScanController {
         return Collections.emptyList();
     }
 
-    private void startScan(
-            ScannerApp app,
-            int scannerId,
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            AttributionSource source) {
-        Log.d(TAG, "startScan(scannerId=" + scannerId + ")");
-        String callingPackage = source.getPackageName();
-        settings = BatchScanUtil.enforceReportDelayFloor(settings);
-        final int uid = source.getUid();
-        mAppOps.checkPackage(uid, callingPackage);
+    private void startScan(ScannerApp app) {
+        Log.d(TAG, "startScan(app=" + app + " with scannerId=" + app.getScannerId() + ")");
+        String callingPackage = app.getSource().getPackageName();
+        var settings = BatchScanUtil.enforceReportDelayFloor(app.getSettings());
+        mAppOps.checkPackage(app.getUid(), callingPackage);
         var hasDisavowedLocation =
-                Util.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
-        var isQApp = checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q);
+                Util.hasDisavowedLocationForScan(
+                        mAdapterService, app.getSource(), mTestModeEnabled);
+        var isQApp = checkCallerTargetSdk(mAdapterService, app.getSource(), Build.VERSION_CODES.Q);
         var userHandle = Binder.getCallingUserHandle();
         var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
         if (!hasDisavowedLocation) {
             if (isQApp) {
                 hasLocationPermission =
-                        Util.checkCallerHasFineLocation(mAdapterService, source, userHandle);
+                        Util.checkCallerHasFineLocation(
+                                mAdapterService, app.getSource(), userHandle);
             } else {
                 hasLocationPermission =
                         Util.checkCallerHasCoarseOrFineLocation(
-                                mAdapterService, source, userHandle);
+                                mAdapterService, app.getSource(), userHandle);
             }
         }
         var client =
                 new ScanClient(
                         app,
-                        uid,
-                        scannerId,
+                        app.getUid(),
+                        app.getScannerId(),
                         settings,
-                        filters,
+                        app.getFilters(),
                         userHandle,
                         callingPackage.equals(mExposureNotificationPackage),
                         hasDisavowedLocation,
@@ -1041,16 +1037,15 @@ public class ScanController {
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    private void startScanInternal(
-            ScannerApp app, int scannerId, ScanSettings settings, List<ScanFilter> filters) {
+    private void startScanInternal(ScannerApp app) {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         var client =
                 new ScanClient(
                         app,
                         Binder.getCallingUid(),
-                        scannerId,
-                        settings,
-                        filters,
+                        app.getScannerId(),
+                        app.getSettings(),
+                        app.getFilters(),
                         Binder.getCallingUserHandle(),
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
@@ -1156,10 +1151,10 @@ public class ScanController {
     }
 
     @VisibleForTesting
-    void dispatchPendingIntentStartScan(ScannerApp app, int scannerId) {
+    void dispatchPendingIntentStartScan(ScannerApp app) {
         final PendingIntentInfo piInfo = app.getInfo();
-        var client = new ScanClient(app, scannerId, piInfo);
-        var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
+        var client = new ScanClient(app, app.getScannerId(), piInfo);
+        var appScanStats = mScannerMap.getAppScanStatsById(app.getScannerId());
         if (appScanStats != null) {
             client.setAppScanStats(appScanStats);
             mScanManager.fetchAppForegroundState(client);
@@ -1168,7 +1163,7 @@ public class ScanController {
                     piInfo.filters,
                     client.isFiltered(),
                     false,
-                    scannerId,
+                    app.getScannerId(),
                     app.getAttributionTag());
         }
         mScanManager.startScan(client);

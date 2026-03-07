@@ -643,8 +643,8 @@ class ScanControllerTest(flags: FlagsWrapper) {
         doReturn(pii).whenever(app).info
         val appScanStats = mock<AppScanStats>()
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
-
-        scanController.dispatchPendingIntentStartScan(app, TEST_SCANNER_ID)
+        doReturn(TEST_SCANNER_ID).whenever(app).scannerId
+        scanController.dispatchPendingIntentStartScan(app)
         verify(appScanStats)
             .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(any())
@@ -665,8 +665,8 @@ class ScanControllerTest(flags: FlagsWrapper) {
         doReturn(pii).whenever(app).info
         val appScanStats = mock<AppScanStats>()
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
-
-        scanController.dispatchPendingIntentStartScan(app, TEST_SCANNER_ID)
+        doReturn(TEST_SCANNER_ID).whenever(app).scannerId
+        scanController.dispatchPendingIntentStartScan(app)
         verify(appScanStats)
             .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(argThat { client -> pii.callingUid == client.appUid })
