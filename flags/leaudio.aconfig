@@ -449,3 +449,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_auracast_credential_extension"
+    namespace: "bluetooth"
+    description: "Extending Auracast credential sharing"
+    bug: "490092067"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
