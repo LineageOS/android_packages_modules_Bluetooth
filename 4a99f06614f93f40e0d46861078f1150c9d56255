@@ -16,6 +16,23 @@
       "message": "a2dp is dead w/o this patch on parrot66.",
       "revId": "4a99f06614f93f40e0d46861078f1150c9d56255",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38004239_dafc72f6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 10067
+      },
+      "writtenOn": "2026-03-07T18:42:53Z",
+      "side": 1,
+      "message": "also for extra context, log msg: 03-07 19:22:58.243  4788  4807 E BTAudioCodecStatusAIDL: system/audio_hal_interface/aidl/a2dp/codec_status_aidl.cc:571 UpdateOffloadingCapabilities: Unknown codec_type\u003d1000000",
+      "revId": "4a99f06614f93f40e0d46861078f1150c9d56255",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
