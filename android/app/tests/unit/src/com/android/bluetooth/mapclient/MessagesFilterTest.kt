@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,102 +14,98 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.mapclient;
+package com.android.bluetooth.mapclient
 
-import static com.google.common.truth.Truth.assertThat;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import java.util.Calendar
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.Calendar;
-
-/** Test cases for {@link MessagesFilter}. */
+/** Test cases for [MessagesFilter]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class MessagesFilterTest {
-
+@RunWith(AndroidJUnit4::class)
+class MessagesFilterTest {
     @Test
-    public void setOriginator() {
-        MessagesFilter filter = new MessagesFilter();
+    fun setOriginator() {
+        val filter = MessagesFilter()
 
-        String originator = "test_originator";
-        filter.setOriginator(originator);
-        assertThat(filter.originator).isEqualTo(originator);
+        val originator = "test_originator"
+        filter.setOriginator(originator)
+        assertThat(filter.originator).isEqualTo(originator)
 
-        filter.setOriginator("");
-        assertThat(filter.originator).isNull(); // Empty string is stored as null
+        filter.setOriginator("")
+        assertThat(filter.originator).isNull() // Empty string is stored as null
 
-        filter.setOriginator(null);
-        assertThat(filter.originator).isNull();
+        filter.setOriginator(null)
+        assertThat(filter.originator).isNull()
     }
 
     @Test
-    public void setPriority() {
-        MessagesFilter filter = new MessagesFilter();
+    fun setPriority() {
+        val filter = MessagesFilter()
 
-        byte priority = 5;
-        filter.setPriority(priority);
+        val priority: Byte = 5
+        filter.setPriority(priority)
 
-        assertThat(filter.priority).isEqualTo(priority);
+        assertThat(filter.priority).isEqualTo(priority)
     }
 
     @Test
-    public void setReadStatus() {
-        MessagesFilter filter = new MessagesFilter();
+    fun setReadStatus() {
+        val filter = MessagesFilter()
 
-        byte readStatus = 5;
-        filter.setReadStatus(readStatus);
+        val readStatus: Byte = 5
+        filter.setReadStatus(readStatus)
 
-        assertThat(filter.readStatus).isEqualTo(readStatus);
+        assertThat(filter.readStatus).isEqualTo(readStatus)
     }
 
     @Test
-    public void setRecipient() {
-        MessagesFilter filter = new MessagesFilter();
+    fun setRecipient() {
+        val filter = MessagesFilter()
 
-        String recipient = "test_originator";
-        filter.setRecipient(recipient);
-        assertThat(filter.recipient).isEqualTo(recipient);
+        val recipient = "test_originator"
+        filter.setRecipient(recipient)
+        assertThat(filter.recipient).isEqualTo(recipient)
 
-        filter.setRecipient("");
-        assertThat(filter.recipient).isNull(); // Empty string is stored as null
+        filter.setRecipient("")
+        assertThat(filter.recipient).isNull() // Empty string is stored as null
 
-        filter.setRecipient(null);
-        assertThat(filter.recipient).isNull();
+        filter.setRecipient(null)
+        assertThat(filter.recipient).isNull()
     }
 
     /** Test Builder creates and sets everything correctly. */
     @Test
-    public void testBuilder() {
-        String originator = "test_originator";
-        String recipient = "test_recipient";
-        byte excludedMessageTypes = MessagesFilter.MESSAGE_TYPE_EMAIL;
-        byte readStatus = MessagesFilter.READ_STATUS_READ;
-        byte priority = MessagesFilter.PRIORITY_HIGH;
-        Calendar begin = Calendar.getInstance();
-        begin.add(Calendar.DATE, -14);
-        Calendar end = Calendar.getInstance();
-        end.add(Calendar.DATE, -7);
+    fun testBuilder() {
+        val originator = "test_originator"
+        val recipient = "test_recipient"
+        val excludedMessageTypes = MessagesFilter.MESSAGE_TYPE_EMAIL
+        val readStatus = MessagesFilter.READ_STATUS_READ
+        val priority = MessagesFilter.PRIORITY_HIGH
+        val begin = Calendar.getInstance()
+        begin.add(Calendar.DATE, -14)
+        val end = Calendar.getInstance()
+        end.add(Calendar.DATE, -7)
 
-        MessagesFilter filter =
-                new MessagesFilter.Builder()
-                        .setOriginator(originator)
-                        .setRecipient(recipient)
-                        .setExcludedMessageTypes(excludedMessageTypes)
-                        .setReadStatus(readStatus)
-                        .setPriority(priority)
-                        .setPeriod(begin.getTime(), end.getTime())
-                        .build();
+        val filter =
+            MessagesFilter.Builder()
+                .setOriginator(originator)
+                .setRecipient(recipient)
+                .setExcludedMessageTypes(excludedMessageTypes)
+                .setReadStatus(readStatus)
+                .setPriority(priority)
+                .setPeriod(begin.getTime(), end.getTime())
+                .build()
 
-        assertThat(filter.originator).isEqualTo(originator);
-        assertThat(filter.recipient).isEqualTo(recipient);
-        assertThat(filter.excludedMessageTypes).isEqualTo(excludedMessageTypes);
-        assertThat(filter.readStatus).isEqualTo(readStatus);
-        assertThat(filter.priority).isEqualTo(priority);
-        assertThat(filter.periodBegin).isEqualTo((new ObexTime(begin.getTime())).toString());
-        assertThat(filter.periodEnd).isEqualTo((new ObexTime(end.getTime())).toString());
+        assertThat(filter.originator).isEqualTo(originator)
+        assertThat(filter.recipient).isEqualTo(recipient)
+        assertThat(filter.excludedMessageTypes).isEqualTo(excludedMessageTypes)
+        assertThat(filter.readStatus).isEqualTo(readStatus)
+        assertThat(filter.priority).isEqualTo(priority)
+        assertThat(filter.periodBegin).isEqualTo((ObexTime(begin.getTime())).toString())
+        assertThat(filter.periodEnd).isEqualTo((ObexTime(end.getTime())).toString())
     }
 }
