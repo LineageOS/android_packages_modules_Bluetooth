@@ -34,6 +34,7 @@ import android.os.Binder
 import android.os.Bundle
 import android.os.ParcelUuid
 import android.os.SystemProperties
+import android.os.UserHandle
 import android.os.WorkSource
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
@@ -2573,11 +2574,13 @@ class ScanManagerTest() {
                 }
         val scannerIdForClient = scannerIdPar ?: ++scannerId
         return ScanClient(
-                mock<ScannerApp>(),
-                appUid = uid,
-                scannerId = scannerIdForClient,
-                settings = settings,
-                filters = filters,
+                mock<ScannerApp> {
+                    doReturn(scannerIdForClient).whenever(it).scannerId
+                    doReturn(uid).whenever(it).uid
+                    doReturn(filters).whenever(it).filters
+                },
+                settings,
+                mock<UserHandle>(),
             )
             .apply {
                 appScanStats = appScanStatsPar

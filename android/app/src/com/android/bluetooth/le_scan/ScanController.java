@@ -1021,10 +1021,7 @@ public class ScanController {
         var client =
                 new ScanClient(
                         app,
-                        app.getUid(),
-                        app.getScannerId(),
                         settings,
-                        app.getFilters(),
                         userHandle,
                         callingPackage.equals(mExposureNotificationPackage),
                         hasDisavowedLocation,
@@ -1043,9 +1040,6 @@ public class ScanController {
                 new ScanClient(
                         app,
                         Binder.getCallingUid(),
-                        app.getScannerId(),
-                        app.getSettings(),
-                        app.getFilters(),
                         Binder.getCallingUserHandle(),
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
@@ -1152,15 +1146,14 @@ public class ScanController {
 
     @VisibleForTesting
     void dispatchPendingIntentStartScan(ScannerApp app) {
-        final PendingIntentInfo piInfo = app.getInfo();
-        var client = new ScanClient(app, app.getScannerId(), piInfo);
+        var client = new ScanClient(app);
         var appScanStats = mScannerMap.getAppScanStatsById(app.getScannerId());
         if (appScanStats != null) {
             client.setAppScanStats(appScanStats);
             mScanManager.fetchAppForegroundState(client);
             appScanStats.recordScanStart(
-                    piInfo.settings,
-                    piInfo.filters,
+                    app.getSettings(),
+                    app.getFilters(),
                     client.isFiltered(),
                     false,
                     app.getScannerId(),
