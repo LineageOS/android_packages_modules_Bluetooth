@@ -23,15 +23,12 @@
 
 #include <bluetooth/log.h>
 
-#include <set>
-
 #include "bluetooth/metrics/os_metrics.h"
 #include "common/time_util.h"
 #include "gd/os/rand.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
 #include "stack/gatt/gatt_int.h"
-#include "stack/include/btm_client_interface.h"
 #include "stack/include/main_thread.h"
 
 using namespace bluetooth;
