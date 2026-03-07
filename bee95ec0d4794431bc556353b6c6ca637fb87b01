@@ -69,6 +69,24 @@
       "message": "Better name:\n\n```suggestion\n            any @ flag_val: [\"-DBLE_LC3_DEFAULT_BITS\u003d\" + flag_val],\n```",
       "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cdf9e504_2f91169c",
+        "filename": "system/bta/Android.bp",
+        "patchSetId": 6
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2026-03-07T14:00:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94e00f90_ee4719ee",
+      "revId": "bee95ec0d4794431bc556353b6c6ca637fb87b01",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
