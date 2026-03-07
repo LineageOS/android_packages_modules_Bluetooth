@@ -45,7 +45,6 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/hci_layer.h"
 #include "osi/include/allocator.h"
-#include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_hdr.h"
