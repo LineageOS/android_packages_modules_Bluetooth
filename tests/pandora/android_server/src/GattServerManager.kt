@@ -39,7 +39,7 @@ class GattServerManager(
 
     val services = mutableMapOf<UUID, BluetoothGattService>()
     val serviceFlow = MutableSharedFlow<BluetoothGattService>()
-    var negociatedMtu = -1
+    var negotiatedMtu = -1
 
     val callback =
         object : BluetoothGattServerCallback() {
@@ -51,7 +51,7 @@ class GattServerManager(
 
             override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
                 Log.i(TAG, "onMtuChanged mtu=$mtu")
-                negociatedMtu = mtu
+                negotiatedMtu = mtu
             }
 
             override fun onCharacteristicReadRequest(
@@ -61,13 +61,13 @@ class GattServerManager(
                 characteristic: BluetoothGattCharacteristic,
             ) {
                 Log.i(TAG, "onCharacteristicReadRequest requestId=$requestId")
-                if (negociatedMtu != -1) {
+                if (negotiatedMtu != -1) {
                     server.sendResponse(
                         device,
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         offset,
-                        ByteArray(negociatedMtu),
+                        ByteArray(negotiatedMtu),
                     )
                 } else {
                     server.sendResponse(
