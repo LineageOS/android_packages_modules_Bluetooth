@@ -586,7 +586,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
           log::info("{} conn_id=0x{:x} Service discovery in progress, will not load database.",
                     p_clcb->bda, p_clcb->bta_conn_id);
           p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
-          p_clcb->state = BTA_GATTC_DISCOVER_ST;
+          bta_gattc_set_state(p_clcb, BTA_GATTC_DISCOVER_ST);
         }
       }
 
@@ -614,7 +614,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
         }
       }
     } else { /* cache is building */
-      p_clcb->state = BTA_GATTC_DISCOVER_ST;
+      bta_gattc_set_state(p_clcb, BTA_GATTC_DISCOVER_ST);
     }
   } else {
     /* a pending service handle change indication */
@@ -749,7 +749,7 @@ void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data
        p_clcb->request_during_discovery == BTA_GATTC_DISCOVER_REQ_READ_DB_HASH_FOR_SVC_CHG)) {
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
   } else {
-    p_clcb->state = BTA_GATTC_CONN_ST;
+    bta_gattc_set_state(p_clcb, BTA_GATTC_CONN_ST);
   }
 
   // This function only gets called as the result of a BTA_GATTC_API_CLOSE_EVT
@@ -772,7 +772,7 @@ static void bta_gattc_set_discover_st(tBTA_GATTC_SERV* p_srcb) {
       break;
     }
     p_clcb->status = GATT_SUCCESS;
-    p_clcb->state = BTA_GATTC_DISCOVER_ST;
+    bta_gattc_set_state(p_clcb.get(), BTA_GATTC_DISCOVER_ST);
     p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
   }
 }
@@ -907,7 +907,7 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /*
     p_clcb->auto_update = BTA_GATTC_DISC_WAITING;
 
     if (p_clcb->p_srcb->state == BTA_GATTC_SERV_IDLE) {
-      p_clcb->state = BTA_GATTC_CONN_ST; /* set clcb state */
+      bta_gattc_set_state(p_clcb, BTA_GATTC_CONN_ST);
     }
   }
 }
@@ -1411,7 +1411,7 @@ void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
             "callback yet",
             p_clcb->bta_conn_id, p_clcb->p_srcb->server_bda);
     bta_gattc_enqueue(p_clcb, p_data);
-    p_clcb->state = BTA_GATTC_DISCOVER_ST;
+    bta_gattc_set_state(p_clcb, BTA_GATTC_DISCOVER_ST);
     return;
   }
 
