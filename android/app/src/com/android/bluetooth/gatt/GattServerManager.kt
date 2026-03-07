@@ -140,7 +140,6 @@ class GattServerManager(
                 }
             }
         }
-        handleMap.setStarted(serverIf, srvcHandle, true)
 
         val app = serverMap.getById(serverIf) ?: return
         callbackToApp { app.callback.onServiceAdded(status, svc) }
