@@ -5224,6 +5224,7 @@ packet LeCsSetChannelClassification : DistanceMeasurementCommand (op_code = LE_C
 }
 
 packet LeCsSetChannelClassificationComplete : CommandComplete (command_op_code = LE_CS_SET_CHANNEL_CLASSIFICATION) {
+  status : ErrorCode,
 }
 
 enum CsPhy : 8 {
