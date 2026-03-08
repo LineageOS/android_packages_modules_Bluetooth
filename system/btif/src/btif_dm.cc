@@ -69,6 +69,7 @@
 #include "device/include/interop.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
+#include "hci/hci_packets.h"
 #include "hci/le_rand_callback.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
@@ -4215,32 +4216,31 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
           req_oob_type->bd_addr, oob_data_to_use.c, oob_data_to_use.r);
 }
 
-static void btif_dm_ble_tx_test_cback(void* p) {
-  char* p_param = (char*)p;
-  uint8_t status;
-  STREAM_TO_UINT8(status, p_param);
-  GetInterfaceToProfiles()->events->invoke_le_test_mode_cb(
-          (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0);
-}
-
-static void btif_dm_ble_rx_test_cback(void* p) {
-  char* p_param = (char*)p;
-  uint8_t status;
-  STREAM_TO_UINT8(status, p_param);
-  GetInterfaceToProfiles()->events->invoke_le_test_mode_cb(
-          (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0);
-}
-
-static void btif_dm_ble_test_end_cback(void* p) {
-  char* p_param = (char*)p;
-  uint8_t status;
-  uint16_t count = 0;
-  STREAM_TO_UINT8(status, p_param);
-  if (status == 0) {
-    STREAM_TO_UINT16(count, p_param);
+static void btif_dm_ble_tx_test_cback(bluetooth::hci::CommandCompleteView view) {
+  auto complete_view = bluetooth::hci::LeTransmitterTestCompleteView::Create(view);
+  bt_status_t status = BT_STATUS_FAIL;
+  if (complete_view.IsValid() && complete_view.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
+    status = BT_STATUS_SUCCESS;
   }
-  GetInterfaceToProfiles()->events->invoke_le_test_mode_cb(
-          (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, count);
+  GetInterfaceToProfiles()->events->invoke_le_test_mode_cb(status, 0);
+}
+
+static void btif_dm_ble_rx_test_cback(bluetooth::hci::CommandCompleteView view) {
+  auto complete_view = bluetooth::hci::LeReceiverTestCompleteView::Create(view);
+  bt_status_t status = BT_STATUS_FAIL;
+  if (complete_view.IsValid() && complete_view.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
+    status = BT_STATUS_SUCCESS;
+  }
+  GetInterfaceToProfiles()->events->invoke_le_test_mode_cb(status, 0);
+}
+
+static void btif_dm_ble_test_end_cback(bluetooth::hci::CommandCompleteView view) {
+  auto complete_view = bluetooth::hci::LeTestEndCompleteView::Create(view);
+  bt_status_t status = BT_STATUS_FAIL;
+  if (complete_view.IsValid() && complete_view.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
+    status = BT_STATUS_SUCCESS;
+  }
+  GetInterfaceToProfiles()->events->invoke_le_test_mode_cb(status, 0);
 }
 
 void btif_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len, uint8_t packet_payload) {

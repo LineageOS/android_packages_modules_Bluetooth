@@ -245,9 +245,9 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, boo
   return test::mock::stack_btm_ble::btm_ble_start_sec_check(bd_addr, psm, outgoing, p_callback,
                                                             p_ref_data);
 }
-void btm_ble_test_command_complete(uint8_t* p) {
+void btm_ble_test_command_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::btm_ble_test_command_complete(p);
+  test::mock::stack_btm_ble::btm_ble_test_command_complete(view);
 }
 void btm_ble_update_sec_key_size(const RawAddress& bd_addr, uint8_t enc_key_size) {
   inc_func_call_count(__func__);

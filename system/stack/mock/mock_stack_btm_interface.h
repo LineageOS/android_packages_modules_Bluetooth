@@ -63,11 +63,11 @@ public:
   MOCK_METHOD(void, BTM_unblock_sniff_mode_for, (const RawAddress& peer_addr));
   MOCK_METHOD(void, BTM_WritePageTimeout, (uint16_t timeout));
   MOCK_METHOD(tBTM_STATUS, BTM_GetLinkSuperTout, (const RawAddress& bd_addr, uint16_t* p_timeout));
-  MOCK_METHOD(tBTM_STATUS, BTM_ReadRSSI, (const RawAddress& bd_addr, tBTM_CMPL_CB* p_cb));
+  MOCK_METHOD(tBTM_STATUS, BTM_ReadRSSI, (const RawAddress& bd_addr, tBTM_READ_RSSI_CB* p_cb));
   MOCK_METHOD(tBTM_STATUS, BTM_BleGetEnergyInfo, (tBTM_BLE_ENERGY_INFO_CBACK* callback));
   MOCK_METHOD(tBTM_STATUS, BTM_BleObserve,
               (bool start, uint8_t duration, tBTM_INQ_RESULTS_CB* p_results_cb,
-               tBTM_CMPL_CB* p_cmpl_cb));
+               tBTM_INQUIRY_CMPL_CB* p_cmpl_cb));
   MOCK_METHOD(tBTM_STATUS, BTM_SetBleDataLength,
               (const RawAddress& bd_addr, uint16_t tx_pdu_length, bool is_privileged_client));
   MOCK_METHOD(void, BTM_BleReadControllerFeatures, (tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback));

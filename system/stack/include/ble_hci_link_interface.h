@@ -20,13 +20,14 @@
 #include <cstdint>
 #include <vector>
 
+#include "hci/hci_packets.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/rnr_interface.h"
 
 // This header contains functions for HCI-ble to invoke
 void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length);
 void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv);
-void btm_ble_test_command_complete(uint8_t* p);
+void btm_ble_test_command_complete(bluetooth::hci::CommandCompleteView view);
 void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_len);
 void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len);
 void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len);

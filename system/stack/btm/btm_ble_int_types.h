@@ -207,7 +207,7 @@ public:
 
   /* observer callback and timer */
   tBTM_INQ_RESULTS_CB* p_obs_results_cb;
-  tBTM_CMPL_CB* p_obs_cmpl_cb;
+  tBTM_INQUIRY_CMPL_CB* p_obs_cmpl_cb;
   alarm_t* observer_timer;
 
   /* opportunistic observer */

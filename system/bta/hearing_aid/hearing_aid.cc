@@ -141,7 +141,7 @@ constinit Uuid VOLUME_UUID("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
 constinit Uuid LE_PSM_UUID("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
 // clang-format on
 
-static void read_rssi_callback(void* p_void);
+static void read_rssi_callback(tBTM_STATUS status, uint8_t rssi, RawAddress address);
 static void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 static void encryption_callback(RawAddress, tBT_TRANSPORT, void*, tBTM_STATUS);
 
@@ -1077,8 +1077,7 @@ public:
     log::info("read PSM: bd_addr={} psm=0x{:x}", hearingDevice->address, psm);
 
     if (hearingDevice->gap_handle == GAP_INVALID_HANDLE &&
-        get_security_client_interface().BTM_IsEncrypted(hearingDevice->address,
-                                                            BT_TRANSPORT_LE)) {
+        get_security_client_interface().BTM_IsEncrypted(hearingDevice->address, BT_TRANSPORT_LE)) {
       ConnectSocket(hearingDevice, psm);
     }
   }
@@ -2116,15 +2115,13 @@ private:
   }
 };
 
-static void read_rssi_callback(void* p_void) {
-  tBTM_RSSI_RESULT* p_result = (tBTM_RSSI_RESULT*)p_void;
-
-  if (!p_result) {
-    return;
+static void read_rssi_callback(tBTM_STATUS status, uint8_t rssi, RawAddress address) {
+  if (status != tBTM_STATUS::BTM_SUCCESS) {
+    log::error("Read RSSI failed with status {}", status);
   }
 
-  if ((instance) && (p_result->status == tBTM_STATUS::BTM_SUCCESS)) {
-    instance->OnReadRssiComplete(p_result->rem_bda, p_result->rssi);
+  if (instance) {
+    instance->OnReadRssiComplete(address, rssi);
   }
 }
 

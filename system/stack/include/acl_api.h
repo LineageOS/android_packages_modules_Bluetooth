@@ -128,7 +128,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr);
  *                  tBTM_STATUS::BTM_BUSY if command is already in progress
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb);
+tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_READ_RSSI_CB* p_cb);
 
 /*******************************************************************************
  *

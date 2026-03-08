@@ -118,3 +118,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_l2cap_collision_coverage"
+    namespace: "bluetooth"
+    description: "Handle A2DP L2CAP connection collision process"
+    bug: "490239784"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

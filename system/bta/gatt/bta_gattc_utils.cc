@@ -498,6 +498,18 @@ bool bta_gattc_is_data_queued(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_
   auto it = std::find(p_clcb->p_q_cmd_queue.begin(), p_clcb->p_q_cmd_queue.end(), p_data);
   return it != p_clcb->p_q_cmd_queue.end();
 }
+
+void bta_gattc_set_state(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_STATE state) {
+  if (!p_clcb || p_clcb->state == state) {
+    return;
+  }
+  auto in_state = p_clcb->state;
+  p_clcb->state = state;
+
+  log::verbose("{}: GATTC State Change: [{} ({:#x})] -> [{} ({:#x})]", p_clcb->bda,
+               bta_clcb_state_text(in_state), in_state, bta_clcb_state_text(p_clcb->state),
+               p_clcb->state);
+}
 /*******************************************************************************
  *
  * Function         bta_gattc_enqueue
