@@ -3529,13 +3529,30 @@ public class AdapterService extends Service {
     }
 
     public int getConnectionState(BluetoothDevice device) {
-        final String address = device.getAddress();
-        int connectionState = mNativeInterface.getConnectionState(getBytesFromAddress(address));
-        final String identityAddress = getIdentityAddress(address);
-        if (identityAddress != null) {
-            connectionState |=
-                    mNativeInterface.getConnectionState(getBytesFromAddress(identityAddress));
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        if (deviceProp == null) {
+            return BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
         }
+
+        int connectionState = 0;
+        DeviceProperties.LinkState leLinkState =
+                deviceProp.getLinkState(BluetoothDevice.TRANSPORT_LE);
+        if (leLinkState != null) {
+            connectionState |= BluetoothDevice.CONNECTION_STATE_CONNECTED;
+            if (leLinkState.getEncryptionStatus() != null) {
+                connectionState |= BluetoothDevice.CONNECTION_STATE_ENCRYPTED_LE;
+            }
+        }
+
+        DeviceProperties.LinkState bredrLinkState =
+                deviceProp.getLinkState(BluetoothDevice.TRANSPORT_BREDR);
+        if (bredrLinkState != null) {
+            connectionState |= BluetoothDevice.CONNECTION_STATE_CONNECTED;
+            if (bredrLinkState.getEncryptionStatus() != null) {
+                connectionState |= BluetoothDevice.CONNECTION_STATE_ENCRYPTED_BREDR;
+            }
+        }
+
         return connectionState;
     }
 

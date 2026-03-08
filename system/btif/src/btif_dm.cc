@@ -895,6 +895,7 @@ static void btif_dm_cb_create_bond_le(const RawAddress bd_addr, tBLE_ADDR_TYPE a
   }
 }
 
+#ifdef TARGET_FLOSS
 /*******************************************************************************
  *
  * Function         btif_dm_get_connection_state
@@ -921,42 +922,7 @@ uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr) {
   }
   return rc;
 }
-
-static uint16_t btif_dm_get_resolved_connection_state(tBLE_BD_ADDR ble_bd_addr) {
-  uint16_t rc = 0;
-  if (maybe_resolve_address(&ble_bd_addr.bda, &ble_bd_addr.type)) {
-    if (BTA_DmGetConnectionState(ble_bd_addr.bda)) {
-      rc = 0x0001;
-      if (get_security_client_interface().BTM_IsEncrypted(ble_bd_addr.bda,
-                                                              BT_TRANSPORT_BR_EDR)) {
-        rc |= ENCRYPTED_BREDR;
-      }
-      if (get_security_client_interface().BTM_IsEncrypted(ble_bd_addr.bda, BT_TRANSPORT_LE)) {
-        rc |= ENCRYPTED_LE;
-      }
-    }
-  }
-  return rc;
-}
-
-uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
-  std::promise<uint16_t> promise;
-  std::future future = promise.get_future();
-
-  auto status = do_in_main_thread(base::BindOnce(
-          [](const RawAddress bd_addr, std::promise<uint16_t> promise) {
-            // Experiment to try with maybe resolved address
-            uint16_t state = btif_dm_get_resolved_connection_state({
-                    .type = BLE_ADDR_RANDOM,
-                    .bda = bd_addr,
-            });
-            state |= btif_dm_get_connection_state(bd_addr);
-            promise.set_value(state);
-          },
-          bd_addr, std::move(promise)));
-  log::assert_that(status, "assert failed: status is success");
-  return future.get();
-}
+#endif
 
 /******************************************************************************
  *
