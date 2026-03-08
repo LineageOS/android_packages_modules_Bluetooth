@@ -185,6 +185,8 @@ inline std::string btm_inquiry_cmpl_status_text(const tBTM_INQUIRY_CMPL::STATUS&
   }
 }
 
+using tBTM_INQUIRY_CMPL_CB = void(tBTM_INQUIRY_CMPL*);
+
 struct tBTM_INQUIRY_VAR_ST {
   alarm_t* classic_inquiry_timer;
 
@@ -197,7 +199,7 @@ struct tBTM_INQUIRY_VAR_ST {
   uint16_t inq_scan_type;
   uint16_t page_scan_type; /* current page scan type */
 
-  tBTM_CMPL_CB* p_inq_cmpl_cb;
+  tBTM_INQUIRY_CMPL_CB* p_inq_cmpl_cb;
   tBTM_INQ_RESULTS_CB* p_inq_results_cb;
   uint32_t inq_counter; /* Counter incremented each time an inquiry completes */
   /* Used for determining whether or not duplicate devices */

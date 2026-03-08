@@ -646,7 +646,7 @@ static tBTM_STATUS BTM_StartLeScan() {
  *                  tBTM_STATUS::BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_CMPL_CB* p_cmpl_cb) {
+tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_INQUIRY_CMPL_CB* p_cmpl_cb) {
   /* Only one active inquiry is allowed in this implementation.
      Also do not allow an inquiry if the inquiry filter is being updated */
   if (btm_cb.btm_inq_vars.inq_active) {
@@ -902,7 +902,6 @@ static void btm_clear_all_pending_le_entry(void) {
  ******************************************************************************/
 void btm_inq_db_reset(void) {
   tBTM_REMOTE_DEV_NAME rem_name = {};
-  uint8_t num_responses;
   uint8_t temp_inq_active;
 
   log::debug("Resetting inquiry database");
@@ -917,8 +916,10 @@ void btm_inq_db_reset(void) {
      * caller */
     if (temp_inq_active == BTM_GENERAL_INQUIRY) {
       if (btm_cb.btm_inq_vars.p_inq_cmpl_cb) {
-        num_responses = 0;
-        (*btm_cb.btm_inq_vars.p_inq_cmpl_cb)(&num_responses);
+        tBTM_INQUIRY_CMPL cmpl_data = {};
+        cmpl_data.status = tBTM_INQUIRY_CMPL::CANCELED;
+        cmpl_data.num_resp = 0;
+        (*btm_cb.btm_inq_vars.p_inq_cmpl_cb)(&cmpl_data);
       }
     }
   }

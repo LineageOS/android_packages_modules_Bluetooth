@@ -85,39 +85,53 @@ static void decode_controller_support();
  *
  ******************************************************************************/
 void BTM_db_reset(void) {
-  tBTM_CMPL_CB* p_cb;
-
   btm_inq_db_reset();
 
   if (btm_cb.devcb.p_rln_cmpl_cb) {
-    p_cb = btm_cb.devcb.p_rln_cmpl_cb;
+    std::vector<uint8_t> packet = {
+            static_cast<uint8_t>(bluetooth::hci::EventCode::COMMAND_COMPLETE),
+            252,  // Param len
+            1,    // Num HCI Cmd Packets
+            static_cast<uint8_t>(bluetooth::hci::OpCode::READ_LOCAL_NAME) & 0xFF,
+            (static_cast<uint8_t>(bluetooth::hci::OpCode::READ_LOCAL_NAME) >> 8) & 0xFF,
+            static_cast<uint8_t>(bluetooth::hci::ErrorCode::HARDWARE_FAILURE),  // Status
+    };
+    packet.insert(packet.end(), 248, 0);  // Local Name
+    auto packet_ptr = std::make_shared<std::vector<uint8_t>>(std::move(packet));
+    auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet_ptr);
+    auto event_view = bluetooth::hci::EventView::Create(packet_view);
+    auto view = bluetooth::hci::CommandCompleteView::Create(event_view);
+    (*btm_cb.devcb.p_rln_cmpl_cb)(view);
     btm_cb.devcb.p_rln_cmpl_cb = NULL;
-
-    if (p_cb) {
-      (*p_cb)(nullptr);
-    }
   }
 
   if (btm_cb.devcb.p_rssi_cmpl_cb) {
-    p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
+    tBTM_READ_RSSI_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
+    (*p_cb)(tBTM_STATUS::BTM_DEV_RESET, 0, RawAddress::kEmpty);
     btm_cb.devcb.p_rssi_cmpl_cb = NULL;
-
-    if (p_cb) {
-      tBTM_RSSI_RESULT btm_rssi_result;
-      btm_rssi_result.status = tBTM_STATUS::BTM_DEV_RESET;
-      (*p_cb)(&btm_rssi_result);
-    }
   }
 
   if (btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb) {
-    p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
+    std::vector<uint8_t> packet = {
+            static_cast<uint8_t>(bluetooth::hci::EventCode::COMMAND_COMPLETE),
+            8,  // Param len
+            1,  // Num HCI Cmd Packets
+            static_cast<uint8_t>(bluetooth::hci::OpCode::READ_AUTOMATIC_FLUSH_TIMEOUT) & 0xFF,
+            (static_cast<uint8_t>(bluetooth::hci::OpCode::READ_AUTOMATIC_FLUSH_TIMEOUT) >> 8) &
+                    0xFF,
+            static_cast<uint8_t>(bluetooth::hci::ErrorCode::HARDWARE_FAILURE),  // Status
+            0,                                                                  // Handle
+            0,                                                                  // Handle
+            0,                                                                  // Flush Timeout
+            0,                                                                  // Flush Timeout
+    };
+    auto packet_ptr = std::make_shared<std::vector<uint8_t>>(std::move(packet));
+    auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet_ptr);
+    auto event_view = bluetooth::hci::EventView::Create(packet_view);
+    auto view = bluetooth::hci::CommandCompleteView::Create(event_view);
+    tBTM_READ_AUTOMATIC_FLUSH_TIMEOUT_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
+    (*p_cb)(view, RawAddress::kEmpty);
     btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = NULL;
-
-    if (p_cb) {
-      tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT btm_automatic_flush_timeout_result;
-      btm_automatic_flush_timeout_result.status = tBTM_STATUS::BTM_DEV_RESET;
-      (*p_cb)(&btm_automatic_flush_timeout_result);
-    }
   }
 }
 

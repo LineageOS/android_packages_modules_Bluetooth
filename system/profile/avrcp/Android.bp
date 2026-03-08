@@ -27,6 +27,7 @@ cc_library_static {
     static_libs: [
         "bluetooth_flags_c_lib",
         "lib-bt-packets",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
         "libosi",

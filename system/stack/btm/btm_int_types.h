@@ -45,17 +45,19 @@ extern bluetooth::common::TimestamperInMilliseconds timestamper_in_milliseconds;
 /* Define the Device Management control structure
  */
 typedef struct tBTM_DEVCB {
-  tBTM_CMPL_CB* p_rln_cmpl_cb;    /* Callback function to be called when  */
-                                  /* read local name function complete    */
+  tBTM_CMPL_CB* p_rln_cmpl_cb; /* Callback function to be called when  */
+                               /* read local name function complete    */
 
-  alarm_t* read_rssi_timer;     /* Read RSSI timer */
-  tBTM_CMPL_CB* p_rssi_cmpl_cb; /* Callback function to be called when  */
-                                /* read RSSI function completes */
+  alarm_t* read_rssi_timer;          /* Read RSSI timer */
+  tBTM_READ_RSSI_CB* p_rssi_cmpl_cb; /* Callback function to be called when  */
+                                     /* read RSSI function completes */
 
   alarm_t* read_automatic_flush_timeout_timer;     /* Read Automatic Flush Timeout */
                                                    /* timer */
-  tBTM_CMPL_CB* p_automatic_flush_timeout_cmpl_cb; /* Callback function to be */
-  /* called when read Automatic Flush Timeout function completes */
+  tBTM_READ_AUTOMATIC_FLUSH_TIMEOUT_CB*
+          p_automatic_flush_timeout_cmpl_cb; /* Callback function to be */
+                                             /* called when read Automatic Flush Timeout function
+                                                completes */
 
   DEV_CLASS dev_class; /* Local device class                   */
 

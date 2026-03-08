@@ -51,8 +51,8 @@ bool bta_dm_read_remote_device_name(const RawAddress& bd_addr, tBT_TRANSPORT tra
 tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
 void bta_dm_discover_next_device();
 void bta_dm_inq_cmpl();
-void bta_dm_inq_cmpl_cb(void* p_result);
-void bta_dm_observe_cmpl_cb(void* p_result);
+void bta_dm_inq_cmpl_cb(tBTM_INQUIRY_CMPL* p_result);
+void bta_dm_observe_cmpl_cb(tBTM_INQUIRY_CMPL* p_result);
 void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir, uint16_t eir_len);
 void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
                                              uint16_t eir_len);

@@ -2474,6 +2474,9 @@ cc_library_static {
         "libchrome",
         "libgmock",
     ],
+    export_static_lib_headers: [
+        "libbluetooth_hci_pdl",
+    ],
     header_libs: [
         "libbluetooth_headers",
     ],

@@ -270,6 +270,7 @@ cc_test {
         "android.hardware.common-V2-ndk",
         "android.hardware.common.fmq-V1-ndk",
         "bluetooth_flags_c_lib_for_test",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
         "libbt-bta",
