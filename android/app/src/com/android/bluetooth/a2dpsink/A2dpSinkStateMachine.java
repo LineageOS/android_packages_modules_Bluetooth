@@ -32,6 +32,9 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
+import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.media_audio.sink.AudioSource;
+import com.android.bluetooth.media_audio.sink.MediaAudioServer;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -54,12 +57,24 @@ class A2dpSinkStateMachine extends StateMachine {
     static final int MESSAGE_AUDIO_STATE_CHANGED = 201;
     static final int MESSAGE_AUDIO_CONFIG_CHANGED = 202;
 
+    private static final int STREAM_STATE_UNKNOWN = -1;
+    private static final int STREAM_STATE_IDLE = 0;
+    private static final int STREAM_STATE_CONFIGURED = 1;
+    private static final int STREAM_STATE_OPEN = 2;
+    private static final int STREAM_STATE_STREAMING = 3;
+    private static final int STREAM_STATE_RELEASING = 4;
+
     static final int CONNECT_TIMEOUT_MS = 10000;
     static final int DISCONNECT_TIMEOUT_MS = 4000;
 
     protected final BluetoothDevice mDevice;
     protected final A2dpSinkService mService;
     protected final A2dpSinkNativeInterface mNativeInterface;
+
+    // TODO(Flags.mediaAudioServer): Make this final on flag cleanup, as they're not optional
+    private MediaAudioServer mMediaAudioServer;
+    private A2dpSinkAudioSource mAudioSource;
+
     protected final Disconnected mDisconnected;
     protected final Connecting mConnecting;
     protected final Connected mConnected;
@@ -70,12 +85,18 @@ class A2dpSinkStateMachine extends StateMachine {
     A2dpSinkStateMachine(
             A2dpSinkService service,
             BluetoothDevice device,
+            MediaAudioServer mediaAudioServer,
             Looper looper,
             A2dpSinkNativeInterface nativeInterface) {
         super(TAG, looper);
         mDevice = device;
         mService = service;
         mNativeInterface = nativeInterface;
+
+        if (Flags.mediaAudioServer()) {
+            mMediaAudioServer = mediaAudioServer;
+            mAudioSource = new A2dpSinkAudioSource();
+        }
 
         mDisconnected = new Disconnected();
         mConnecting = new Connecting();
@@ -133,6 +154,17 @@ class A2dpSinkStateMachine extends StateMachine {
         mService.connectionStateChanged(mDevice, mMostRecentState, currentState);
         mMostRecentState = currentState;
         mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
+    }
+
+    public boolean isPlaying() {
+        if (!Flags.mediaAudioServer()) {
+            return false;
+        }
+        // TODO(Flags.mediaAudioServer): Remove this null check when source is final/non-null
+        if (mAudioSource == null) {
+            return false;
+        }
+        return mAudioSource.getA2dpStreamState() == STREAM_STATE_STREAMING;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -268,6 +300,10 @@ class A2dpSinkStateMachine extends StateMachine {
         public void enter() {
             debug("Enter");
             removeMessages(CLEANUP);
+            if (Flags.mediaAudioServer()) {
+                mMediaAudioServer.registerAudioSource(mAudioSource);
+                mAudioSource.setA2dpStreamState(STREAM_STATE_IDLE);
+            }
             setMostRecentState(STATE_CONNECTED);
         }
 
@@ -295,6 +331,9 @@ class A2dpSinkStateMachine extends StateMachine {
                 case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
                 case STATE_DISCONNECTED -> {
                     setMostRecentState(STATE_DISCONNECTING);
+                    if (Flags.mediaAudioServer()) {
+                        mAudioSource.setA2dpStreamState(STREAM_STATE_RELEASING);
+                    }
                     transitionTo(mDisconnected);
                 }
                 default -> {} // Nothing to do
@@ -305,10 +344,38 @@ class A2dpSinkStateMachine extends StateMachine {
             debug(
                     "Audio state changed, event="
                             + A2dpSinkNativeInterface.audioStateToString(event));
+
+            if (!Flags.mediaAudioServer()) {
+                return;
+            }
+
+            switch (event) {
+                case A2dpSinkNativeInterface.AUDIO_STATE_STOPPED,
+                        A2dpSinkNativeInterface.AUDIO_STATE_REMOTE_SUSPEND -> {
+                    mAudioSource.setA2dpStreamState(STREAM_STATE_OPEN);
+                }
+                case A2dpSinkNativeInterface.AUDIO_STATE_STARTED -> {
+                    mAudioSource.setA2dpStreamState(STREAM_STATE_STREAMING);
+                }
+                default -> {} // Nothing to do
+            }
         }
 
         void processAudioConfigEvent(int rate, int channels) {
             debug("Config changed, sampleRate=" + rate + ", channelCount=" + channels);
+            if (Flags.mediaAudioServer()) {
+                mAudioSource.setA2dpStreamState(STREAM_STATE_CONFIGURED);
+                mAudioSource.setA2dpStreamState(STREAM_STATE_OPEN);
+            }
+        }
+
+        @Override
+        public void exit() {
+            debug("Exit");
+            if (Flags.mediaAudioServer()) {
+                // Will cause us to release any stream if MediaAudioServer thinks we're active
+                mMediaAudioServer.unregisterAudioSource(mAudioSource);
+            }
         }
     }
 
@@ -317,6 +384,9 @@ class A2dpSinkStateMachine extends StateMachine {
         public void enter() {
             debug("Enter");
             setMostRecentState(STATE_DISCONNECTING);
+            if (Flags.mediaAudioServer()) {
+                mAudioSource.setA2dpStreamState(STREAM_STATE_RELEASING);
+            }
             sendMessageDelayed(MESSAGE_DISCONNECT_TIMEOUT, DISCONNECT_TIMEOUT_MS);
         }
 
@@ -354,6 +424,97 @@ class A2dpSinkStateMachine extends StateMachine {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // Audio Source
+    // ---------------------------------------------------------------------------------------------
+
+    private class A2dpSinkAudioSource extends AudioSource {
+        private int mA2dpStreamState;
+        private boolean mPrepared = false;
+
+        private A2dpSinkAudioSource() {
+            super(mDevice, AudioSource.Protocol.A2DP_SINK);
+            setA2dpStreamState(STREAM_STATE_UNKNOWN);
+        }
+
+        // -----------------------------------------------------------------------------------------
+        // Stream State
+        // -----------------------------------------------------------------------------------------
+
+        private void setA2dpStreamState(int state) {
+            mA2dpStreamState = state;
+            setStreamState(a2dpStreamStateToStreamState(state));
+        }
+
+        private int getA2dpStreamState() {
+            return mA2dpStreamState;
+        }
+
+        private boolean isPrepared() {
+            return mPrepared;
+        }
+
+        // -----------------------------------------------------------------------------------------
+        // Stream Control
+        // -----------------------------------------------------------------------------------------
+
+        // TODO: These functions must be synchronous in nature to avoid races with other A2DP Sink
+        // AudioSources from other devices. The below is good enough for now, but ideally we would
+        // be able to put these events on the state machine to help assert state, OR be able to hand
+        // to quickly to native and trust that it could manage events from multiple devices. In
+        // particular, I would like to be able to release a specific device instead of *all* devices
+        // like we are now.
+
+        @Override
+        public void prepare() {
+            debug("prepareStream(): set " + mDevice + " as active");
+            mPrepared = true;
+            mNativeInterface.setActiveDevice(mDevice);
+        }
+
+        @Override
+        public void start() {
+            debug("startStream(): Set gain to 1.0 and notify focus GAIN");
+            mNativeInterface.informAudioTrackGain(1.0f);
+            mNativeInterface.informAudioFocusState(A2dpSinkNativeInterface.STATE_FOCUS_GRANTED);
+        }
+
+        @Override
+        public void suspend() {
+            debug("suspendStream(): Set gain to 0.0 and notify focus LOST");
+            mNativeInterface.informAudioTrackGain(0.0f);
+            mNativeInterface.informAudioFocusState(A2dpSinkNativeInterface.STATE_FOCUS_LOST);
+        }
+
+        @Override
+        public void release() {
+            debug("releaseStream(): suspend stream and set active device to null");
+            if (!mPrepared) {
+                return;
+            }
+
+            mNativeInterface.informAudioTrackGain(0.0f);
+            mNativeInterface.informAudioFocusState(A2dpSinkNativeInterface.STATE_FOCUS_LOST);
+            mNativeInterface.setActiveDevice(null);
+            mPrepared = false;
+        }
+
+        // -----------------------------------------------------------------------------------------
+        // Data Conversions
+        // -----------------------------------------------------------------------------------------
+
+        private static AudioSource.StreamState a2dpStreamStateToStreamState(int state) {
+            return switch (state) {
+                case STREAM_STATE_IDLE -> AudioSource.StreamState.IDLE;
+                case STREAM_STATE_CONFIGURED -> AudioSource.StreamState.CONFIGURED;
+                case STREAM_STATE_OPEN -> AudioSource.StreamState.OPEN;
+                case STREAM_STATE_STREAMING -> AudioSource.StreamState.STREAMING;
+                case STREAM_STATE_RELEASING -> AudioSource.StreamState.RELEASING;
+                default -> AudioSource.StreamState.UNKNOWN;
+            };
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Utilities
     // ---------------------------------------------------------------------------------------------
 
@@ -386,6 +547,19 @@ class A2dpSinkStateMachine extends StateMachine {
      * @param sb output string
      */
     public void dump(StringBuilder sb) {
-        ProfileService.println(sb, "mDevice: " + mDevice + " " + this.toString());
+        if (Flags.mediaAudioServer()) {
+            ProfileService.println(
+                    sb,
+                    "mDevice: "
+                            + mDevice
+                            + " Active: "
+                            + mAudioSource.isPrepared()
+                            + " Source: "
+                            + mAudioSource
+                            + " "
+                            + this.toString());
+        } else {
+            ProfileService.println(sb, "mDevice: " + mDevice + " " + this.toString());
+        }
     }
 }

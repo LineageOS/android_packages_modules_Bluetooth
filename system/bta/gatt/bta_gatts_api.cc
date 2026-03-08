@@ -62,34 +62,18 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
 
 static void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
                                        BTA_GATTS_AddServiceCb cb) {
-  uint8_t rcb_idx = bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
-
-  log::info("rcb_idx={}", rcb_idx);
-
-  if (rcb_idx == BTA_GATTS_INVALID_APP) {
-    std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
-    return;
-  }
-
-  uint8_t srvc_idx = bta_gatts_alloc_srvc_cb(&bta_gatts_cb, rcb_idx);
-  if (srvc_idx == BTA_GATTS_INVALID_APP) {
+  auto p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
+  if (!p_rcb) {
     std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
     return;
   }
 
   tGATT_STATUS status = GATTS_AddService(server_if, service.data(), service.size());
   if (status != GATT_SERVICE_STARTED) {
-    memset(&bta_gatts_cb.srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
     log::error("service creation failed.");
     std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
     return;
   }
-
-  bta_gatts_cb.srvc_cb[srvc_idx].service_uuid = service[0].uuid;
-
-  // service_id is equal to service start handle
-  bta_gatts_cb.srvc_cb[srvc_idx].service_id = service[0].attribute_handle;
-  bta_gatts_cb.srvc_cb[srvc_idx].idx = srvc_idx;
 
   std::move(cb).Run(GATT_SUCCESS, server_if, std::move(service));
   return;
@@ -101,8 +85,8 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
                                    std::move(cb)));
 }
 
-void BTA_GATTS_DeleteService(uint16_t service_id) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_delete_service, service_id));
+void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id) {
+  do_in_main_thread(base::BindOnce(&bta_gatts_delete_service, server_if, service_id));
 }
 
 void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,

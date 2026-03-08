@@ -427,9 +427,9 @@ static BtStatus btif_gatts_add_service(int server_if, const btgatt_db_element_t*
           BindOnce(&add_service_impl, server_if, std::vector(service, service + service_count)));
 }
 
-static BtStatus btif_gatts_delete_service(int /* server_if */, int service_handle) {
+static BtStatus btif_gatts_delete_service(int server_if, int service_handle) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&BTA_GATTS_DeleteService, service_handle));
+  return do_in_jni_thread(BindOnce(&BTA_GATTS_DeleteService, server_if, service_handle));
 }
 
 static BtStatus btif_gatts_send_indication(int /* server_if */, int attribute_handle, int conn_id,

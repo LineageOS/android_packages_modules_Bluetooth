@@ -726,6 +726,19 @@ void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
   gatt_unoffload_session(conn_id, session_id);
 }
 
+std::optional<bluetooth::Uuid> GATTS_LookupServiceUuidByStartHandle(uint16_t start_handle) {
+  auto end_it = gatt_cb.hdl_list_info->end();
+  for (auto it = gatt_cb.hdl_list_info->begin(); it != end_it; ++it) {
+    if (it->asgn_range.s_handle != start_handle) {
+      continue;
+    }
+    return it->asgn_range.svc_uuid;
+  }
+
+  // No match found
+  return std::nullopt;
+}
+
 /******************************************************************************/
 /* GATT Profile Srvr Functions */
 /******************************************************************************/

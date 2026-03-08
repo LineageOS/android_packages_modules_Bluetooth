@@ -44,9 +44,6 @@
 /* max number of application allowed on device */
 #define BTA_GATTS_MAX_APP_NUM GATT_MAX_SR_PROFILES
 
-/* max number of services allowed in the device */
-#define BTA_GATTS_MAX_SRVC_NUM GATT_MAX_SR_PROFILES
-
 /* application registration control block */
 typedef struct {
   bool in_use;
@@ -55,20 +52,10 @@ typedef struct {
   tGATT_IF gatt_if;
 } tBTA_GATTS_RCB;
 
-/* service registration control block */
-typedef struct {
-  bluetooth::Uuid service_uuid; /* service UUID */
-  uint16_t service_id;          /* service start handle */
-  uint8_t rcb_idx;
-  uint8_t idx; /* self index of serviec CB */
-  bool in_use;
-} tBTA_GATTS_SRVC_CB;
-
 /* GATT server control block */
 typedef struct {
   bool enabled;
   tBTA_GATTS_RCB rcb[BTA_GATTS_MAX_APP_NUM];
-  tBTA_GATTS_SRVC_CB srvc_cb[BTA_GATTS_MAX_SRVC_NUM];
 } tBTA_GATTS_CB;
 
 /*****************************************************************************
@@ -86,7 +73,7 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
                         bool eatt_support);
 void bta_gatts_start_if(tGATT_IF server_if);
 void bta_gatts_deregister(tGATT_IF server_if);
-void bta_gatts_delete_service(uint16_t service_id);
+void bta_gatts_delete_service(tGATT_IF server_if, uint16_t service_id);
 
 void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
                         std::unique_ptr<tGATTS_RSP> rsp);
@@ -101,7 +88,5 @@ void bta_gatts_close(uint16_t conn_id);
 tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tGATT_IF server_if);
 uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb, tGATT_IF server_if);
 uint8_t bta_gatts_alloc_srvc_cb(tBTA_GATTS_CB* p_cb, uint8_t rcb_idx);
-tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_srvc_id(tBTA_GATTS_CB* p_cb, uint16_t service_id);
-tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_attr_id(tBTA_GATTS_CB* p_cb, uint16_t attr_id);
 
 #endif /* BTA_GATTS_INT_H */

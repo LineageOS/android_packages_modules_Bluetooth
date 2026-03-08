@@ -108,12 +108,12 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     @Override
     public void onBluetoothStateChange(int prevState, int newState) {
-        // Only act if the adapter has actually changed state from non-ON to ON.
-        // NOTE: ON is the state depicting BREDR ON and not just BLE ON.
-        if (newState == State.ON) {
-            resetStates();
-            autoConnect();
+        if (newState != State.ON) {
+            // Only act if the adapter has actually changed state from non-ON to ON.
+            return;
         }
+        resetStates();
+        autoConnect();
     }
 
     public void profileConnectionStateChanged(

@@ -106,6 +106,8 @@ public class MetricsLogger {
     private static final long BLUETOOTH_COUNTER_METRICS_ACTION_DURATION_MILLIS = 6L * 3600L * 1000L;
     private static final int MAX_WORDS_ALLOWED_IN_DEVICE_NAME = 7;
 
+    private static final int BTA_DM_AUTH_FAIL_BASE = 78;
+
     HashMap<Integer, Long> mCounters = new HashMap<>();
     private static volatile MetricsLogger sInstance = null;
     private AdapterService mAdapterService = null;
@@ -809,13 +811,18 @@ public class MetricsLogger {
     }
 
     /** Logs Bond State Machine event */
-    public void logBondStateMachineEvent(BluetoothDevice device, int bondState) {
+    public void logBondStateMachineEvent(
+            BluetoothDevice device,
+            int bondState,
+            int frameworkReason,
+            int smpHciReason) {
         switch (bondState) {
             case BluetoothDevice.BOND_NONE -> {
+                int bondStateEnum = getBondStateEnum(frameworkReason, smpHciReason);
                 logBluetoothEvent(
                         device,
                         BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__BOND,
-                        BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE,
+                        bondStateEnum,
                         0);
             }
             case BluetoothDevice.BOND_BONDED -> {
@@ -940,5 +947,54 @@ public class MetricsLogger {
                 transferSpeed,
                 mimeType,
                 getRemoteDeviceInfoProto(device, false));
+    }
+
+     static private int getBondStateEnum(int frameworkReason, int smpHciReason) {
+        if (smpHciReason == -1) {
+            return BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_CREATE_BOND_FAILED;
+        }
+
+
+        if (smpHciReason == 0x04) {
+            return BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_HCI_PAGE_TIMEOUT;
+        } else if (smpHciReason == 0x08) {
+            return BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_HCI_CONNECTION_TIMEOUT;
+        } else if (smpHciReason == 0x22) {
+            return BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_HCI_LMP_RESPONSE_TIMEOUT;
+        } else if (smpHciReason == 0x3E) {
+            return BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_HCI_CONNECTION_FAILED_ESTABLISHMENT;
+        } else if (smpHciReason == 0x3D) {
+            return BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_HCI_CONN_TERMINATED_DUE_TO_MIC_FAILURE;
+        }
+
+        // SMP Error Codes are shifted by BTA_DM_AUTH_FAIL_BASE (78) in native code
+        // to avoid colliding with standard HCI Error Codes.
+        // So SMP reason 0x01 (Passkey Entry Failed) arrives as 79.
+        if (smpHciReason > BTA_DM_AUTH_FAIL_BASE) {
+            int smpReason = smpHciReason - BTA_DM_AUTH_FAIL_BASE;
+            return switch (smpReason) {
+                case 0x01 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_PASSKEY_ENTRY_FAIL;
+                case 0x02 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_OOB_FAIL;
+                case 0x03 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_PAIR_AUTH_FAIL;
+                case 0x04 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_CONFIRM_VALUE_ERR;
+                case 0x05 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_PAIR_NOT_SUPPORT;
+                case 0x08 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_PAIR_FAIL_UNKNOWN;
+                case 0x1B -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_SMP_CONN_TOUT;
+                default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE;
+            };
+        }
+
+        return switch (frameworkReason) {
+            case BluetoothDevice.UNBOND_REASON_REMOVED -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_REMOVED;
+            case BluetoothDevice.UNBOND_REASON_REPEATED_ATTEMPTS -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_REPEATED_ATTEMPTS;
+            case BluetoothDevice.UNBOND_REASON_AUTH_TIMEOUT -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_AUTH_TIMEOUT;
+            case BluetoothDevice.UNBOND_REASON_AUTH_FAILED -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_AUTH_FAILED;
+            case BluetoothDevice.UNBOND_REASON_AUTH_REJECTED -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_AUTH_REJECTED;
+            case BluetoothDevice.UNBOND_REASON_AUTH_CANCELED -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_AUTH_CANCELED;
+            case BluetoothDevice.UNBOND_REASON_REMOTE_DEVICE_DOWN -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_REMOTE_DEVICE_DOWN;
+            case BluetoothDevice.UNBOND_REASON_DISCOVERY_IN_PROGRESS -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_DISCOVERY_IN_PROGRESS;
+            case BluetoothDevice.UNBOND_REASON_REMOTE_AUTH_CANCELED -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE_REASON_REMOTE_AUTH_CANCELED;
+            default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE;
+        };
     }
 }

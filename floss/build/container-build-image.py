@@ -84,13 +84,13 @@ class ContainerImageBuilder:
             ['mkdir', '-p', '/tmp/libchrome', '/tmp/modpb64'],
 
             # Run the dpkg builder for modp_b64
-            [f'{SRC_MOUNT}/system/build/dpkg/modp_b64/gen-src-pkg.sh', '/tmp/modpb64'],
+            [f'{SRC_MOUNT}/floss/build/dpkg/modp_b64/gen-src-pkg.sh', '/tmp/modpb64'],
 
             # Install modp_b64 since libchrome depends on it
             ['find', '/tmp/modpb64', '-name', 'modp*.deb', '-exec', 'dpkg', '-i', '{}', '+'],
 
             # Run the dpkg builder for libchrome
-            [f'{SRC_MOUNT}/system/build/dpkg/libchrome/gen-src-pkg.sh', '/tmp/libchrome'],
+            [f'{SRC_MOUNT}/floss/build/dpkg/libchrome/gen-src-pkg.sh', '/tmp/libchrome'],
 
             # Install libchrome.
             [
@@ -99,7 +99,7 @@ class ContainerImageBuilder:
             ],
 
             # Run the dpkg builder for sysprop
-            [f'{SRC_MOUNT}/system/build/dpkg/sysprop/gen-src-pkg.sh', '/tmp/sysprop'],
+            [f'{SRC_MOUNT}/floss/build/dpkg/sysprop/gen-src-pkg.sh', '/tmp/sysprop'],
 
             # Install sysprop.
             ['find', '/tmp/sysprop', '-name', 'sysprop_*.deb', '-exec', 'dpkg', '-i', '{}', '+'],

@@ -33,6 +33,8 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.media_audio.sink.MediaAudioServer;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.GuardedBy;
@@ -46,6 +48,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Provides Bluetooth A2DP Sink profile, as a service in the Bluetooth application. */
 public class A2dpSinkService extends ConnectableProfile {
     private static final String TAG = A2dpSinkService.class.getSimpleName();
+
+    private MediaAudioServer mMediaAudioServer;
 
     // This is also used as a lock for shared data in {@link A2dpSinkService}
     @GuardedBy("mDeviceStateMap")
@@ -84,6 +88,11 @@ public class A2dpSinkService extends ConnectableProfile {
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.A2DP_SINK, adapterService);
         var nativeCallback = new A2dpSinkNativeCallback(getAdapterService(), this);
+
+        if (Flags.mediaAudioServer()) {
+            mMediaAudioServer = requireNonNull(adapterService.getMediaAudioServer().orElse(null));
+        }
+
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -92,9 +101,14 @@ public class A2dpSinkService extends ConnectableProfile {
         mHandler = new Handler(mLooper);
         mMaxConnectedAudioDevices = getAdapterService().getMaxConnectedAudioDevices();
         mNativeInterface.init(mMaxConnectedAudioDevices);
-        synchronized (mStreamHandlerLock) {
-            mA2dpSinkStreamHandler =
-                    new A2dpSinkStreamHandler(getAdapterService(), mNativeInterface);
+
+        if (Flags.mediaAudioServer()) {
+            mA2dpSinkStreamHandler = null;
+        } else {
+            synchronized (mStreamHandlerLock) {
+                mA2dpSinkStreamHandler =
+                        new A2dpSinkStreamHandler(getAdapterService(), mNativeInterface);
+            }
         }
     }
 
@@ -109,8 +123,10 @@ public class A2dpSinkService extends ConnectableProfile {
             }
             mDeviceStateMap.clear();
         }
-        synchronized (mStreamHandlerLock) {
-            mA2dpSinkStreamHandler.cleanup();
+        if (!Flags.mediaAudioServer()) {
+            synchronized (mStreamHandlerLock) {
+                mA2dpSinkStreamHandler.cleanup();
+            }
         }
     }
 
@@ -197,6 +213,12 @@ public class A2dpSinkService extends ConnectableProfile {
     /** Request audio focus such that the designated device can stream audio */
     public void requestAudioFocus(BluetoothDevice device, boolean request) {
         Log.i(TAG, "requestAudioFocus(device=" + device + ", focus=" + request + ")");
+
+        if (Flags.mediaAudioServer()) {
+            Log.w(TAG, "MediaAudioServer owns focus requests, not A2DP");
+            return;
+        }
+
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.requestAudioFocus(request);
         }
@@ -207,6 +229,7 @@ public class A2dpSinkService extends ConnectableProfile {
      *
      * @return AudioManager.AUDIOFOCUS_* states on success, or AudioManager.ERROR on error
      */
+    // TODO(Flags.mediaAudioServer): Remove after flag clean up
     public int getFocusState() {
         synchronized (mStreamHandlerLock) {
             return mA2dpSinkStreamHandler.getFocusState();
@@ -289,6 +312,17 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     boolean isA2dpPlaying(BluetoothDevice device) {
+        if (Flags.mediaAudioServer()) {
+            synchronized (mDeviceStateMap) {
+                for (A2dpSinkStateMachine stateMachine : mDeviceStateMap.values()) {
+                    if (stateMachine.isPlaying()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         synchronized (mStreamHandlerLock) {
             return mA2dpSinkStreamHandler.isPlaying();
         }
@@ -341,6 +375,11 @@ public class A2dpSinkService extends ConnectableProfile {
 
         stateMachine.onAudioStateChanged(state);
 
+        // New code doesn't use the stream handler
+        if (Flags.mediaAudioServer()) {
+            return;
+        }
+
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.onAudioStateChanged(state);
         }
@@ -377,7 +416,9 @@ public class A2dpSinkService extends ConnectableProfile {
             if (sm != null) {
                 return sm;
             }
-            sm = new A2dpSinkStateMachine(this, device, mLooper, mNativeInterface);
+            sm =
+                    new A2dpSinkStateMachine(
+                            this, device, mMediaAudioServer, mLooper, mNativeInterface);
             mDeviceStateMap.put(device, sm);
             return sm;
         }
