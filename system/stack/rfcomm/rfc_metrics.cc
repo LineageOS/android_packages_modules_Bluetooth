@@ -22,10 +22,7 @@
 #include <bluetooth/types/address.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/rfcomm/enums.pb.h>
 
-#include "bta/include/bta_jv_api.h"
-#include "common/time_util.h"
-#include "stack/btm/btm_device_record.h"
-#include "stack/include/btm_sec_api_types.h"
+#include "stack/btm/btm_security_record.h"
 #include "stack/include/port_api.h"
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_event.h"
