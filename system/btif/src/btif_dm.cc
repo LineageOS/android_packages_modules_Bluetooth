@@ -3027,6 +3027,14 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
     }
     if (!get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
       log::warn("Device is not bonded on any transport, skipping remove bond!!");
+      // TODO (b/489217572): Remove when the flag remove_bond_in_idle_state is shipped
+      // Without the flag remove_bond_in_idle_state, BondStateMachine tracks each remove bond
+      // request separately and expects a bond state changed callback for each remove bond request.
+      // If duplicate remove bond requests are received in quick succession, not sending bond state
+      // changed callback for each request may leave the BondStateMachine stuck in BONDING state.
+      GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+              BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_AUTO, BT_BOND_STATE_NONE, kPairingTypeNone,
+              HCI_SUCCESS, PairingInitiator::APP);
       return;
     }
   }
