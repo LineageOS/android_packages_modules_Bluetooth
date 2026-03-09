@@ -38,6 +38,7 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.whenever
 
 private const val CONTEXT_TYPE_CONVERSATIONAL = 0x0002
 private const val CONTEXT_TYPE_MEDIA = 0x0004
@@ -71,7 +72,7 @@ class PeripheralPolicyManagerTest {
                 policyManager.activeSinkDevice = device
                 null // doAnswer requires a return value
             }
-            .`when`(service)
+            .whenever(service)
             .updateActiveSinkDevice(any(), any())
 
         doAnswer { invocation ->
@@ -79,7 +80,7 @@ class PeripheralPolicyManagerTest {
                 policyManager.activeSourceDevice = device
                 null // doAnswer requires a return value
             }
-            .`when`(service)
+            .whenever(service)
             .updateActiveSourceDevice(any(), any())
 
         // Get a test device

@@ -42,8 +42,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.any
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.whenever
 
 @EnableFlags(Flags.FLAG_LEAUDIO_PERIPHERAL_FEATURE)
 @SmallTest
@@ -85,7 +85,7 @@ class AudioProxyTest {
     @Before
     @Suppress("DEPRECATION")
     fun setUp() {
-        `when`(context.getSystemService(AudioManager::class.java)).thenReturn(audioManager)
+        whenever(context.getSystemService(AudioManager::class.java)).thenReturn(audioManager)
         testLooper = TestLooper()
         audioProxy =
             AudioProxyTestable(context, Handler(testLooper.looper), adapterService, policyManager)
@@ -97,23 +97,23 @@ class AudioProxyTest {
 
         // Setup test device
         testDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("00:01:02:03:04:05")
-        `when`(adapterService.getDeviceFromByte(any())).thenReturn(testDevice)
+        whenever(adapterService.getDeviceFromByte(any())).thenReturn(testDevice)
 
         // Setup mock audio devices
-        `when`(mockPlaybackDeviceInfo.type).thenReturn(AudioDeviceInfo.TYPE_BLE_HEADSET)
-        `when`(mockPlaybackDeviceInfo.address).thenReturn(testDevice.address)
-        `when`(mockPlaybackDeviceInfo.isSource).thenReturn(true)
-        `when`(mockPlaybackDeviceInfo.isSink).thenReturn(false)
+        whenever(mockPlaybackDeviceInfo.type).thenReturn(AudioDeviceInfo.TYPE_BLE_HEADSET)
+        whenever(mockPlaybackDeviceInfo.address).thenReturn(testDevice.address)
+        whenever(mockPlaybackDeviceInfo.isSource).thenReturn(true)
+        whenever(mockPlaybackDeviceInfo.isSink).thenReturn(false)
 
-        `when`(mockRecordingDeviceInfo.type).thenReturn(AudioDeviceInfo.TYPE_BLE_HEADSET)
-        `when`(mockRecordingDeviceInfo.address).thenReturn(testDevice.address)
-        `when`(mockRecordingDeviceInfo.isSource).thenReturn(false)
-        `when`(mockRecordingDeviceInfo.isSink).thenReturn(true)
+        whenever(mockRecordingDeviceInfo.type).thenReturn(AudioDeviceInfo.TYPE_BLE_HEADSET)
+        whenever(mockRecordingDeviceInfo.address).thenReturn(testDevice.address)
+        whenever(mockRecordingDeviceInfo.isSource).thenReturn(false)
+        whenever(mockRecordingDeviceInfo.isSink).thenReturn(true)
 
         // Stub the fallback path for microphone discovery
-        `when`(audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS))
+        whenever(audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS))
             .thenReturn(arrayOf(mockBuiltInMicDeviceInfo))
-        `when`(mockBuiltInMicDeviceInfo.type).thenReturn(AudioDeviceInfo.TYPE_BUILTIN_MIC)
+        whenever(mockBuiltInMicDeviceInfo.type).thenReturn(AudioDeviceInfo.TYPE_BUILTIN_MIC)
     }
 
     @After
@@ -133,7 +133,7 @@ class AudioProxyTest {
 
     @Test
     fun testOnDeviceAdded_forPlayback_createsHwAudioSource() {
-        `when`(policyManager.activeSinkDevice).thenReturn(testDevice)
+        whenever(policyManager.activeSinkDevice).thenReturn(testDevice)
         deviceCallbackCaptor.value.onAudioDevicesAdded(arrayOf(mockPlaybackDeviceInfo))
         testLooper.dispatchAll()
 
@@ -143,7 +143,7 @@ class AudioProxyTest {
 
     @Test
     fun testOnDeviceAdded_forRecording_createsHwAudioSource() {
-        `when`(policyManager.activeSourceDevice).thenReturn(testDevice)
+        whenever(policyManager.activeSourceDevice).thenReturn(testDevice)
         deviceCallbackCaptor.value.onAudioDevicesAdded(arrayOf(mockRecordingDeviceInfo))
         testLooper.dispatchAll()
 
@@ -153,7 +153,7 @@ class AudioProxyTest {
 
     @Test
     fun testRendezvous_Playback_StreamReadyFirst() {
-        `when`(policyManager.activeSinkDevice).thenReturn(testDevice)
+        whenever(policyManager.activeSinkDevice).thenReturn(testDevice)
 
         // Action 1: Stream becomes ready
         audioProxy.onSinkStreamReady(testDevice)
@@ -170,7 +170,7 @@ class AudioProxyTest {
 
     @Test
     fun testRendezvous_Recording_StreamReadyFirst() {
-        `when`(policyManager.activeSourceDevice).thenReturn(testDevice)
+        whenever(policyManager.activeSourceDevice).thenReturn(testDevice)
 
         // Action 1: Stream becomes ready
         audioProxy.onSourceStreamReady(testDevice)
