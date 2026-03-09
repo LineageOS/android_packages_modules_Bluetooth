@@ -2131,7 +2131,11 @@ public class RemoteDevices {
             // If the create bond procedure fails, that will be detected in
             // BondStateMachine.createBond(). ACL disconnect will be initiated from that place
             // instead.
-            mAdapterService.sendCreateBondMessage(device, TRANSPORT_AUTO, null, null);
+            if (reason == BluetoothDevice.BOND_LOSS_REASON_BREDR_AUTH_FAILURE) {
+                mAdapterService.sendCreateBondMessage(device, TRANSPORT_BREDR, null, null);
+            } else {
+                mAdapterService.sendCreateBondMessage(device, TRANSPORT_LE, null, null);
+            }
         }
     }
 
