@@ -28,12 +28,14 @@
 
 #include "btif_gatt.h"
 
+#include <base/functional/bind.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <string.h>
 
 #include "bta/include/bta_gatt_api.h"
+#include "btif/include/btif_jni_task.h"
 #include "btif_status.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/le_advertising_manager.h"
@@ -65,12 +67,24 @@ static BtStatus btif_gatt_init(const btgatt_callbacks_t* callbacks) {
  *
  ******************************************************************************/
 static void btif_gatt_cleanup(void) {
-  if (bt_gatt_callbacks) {
-    bt_gatt_callbacks = NULL;
-  }
+  std::promise<void> cleanup_promise;
+  std::future<void> cleanup_future = cleanup_promise.get_future();
 
-  BTA_GATTC_Disable();
-  BTA_GATTS_Disable();
+  do_in_jni_thread(base::BindOnce(
+          [](std::promise<void> cleanup_promise) {
+            if (bt_gatt_callbacks) {
+              bluetooth::log::info("btif_gatt_cleanup clearing bt_gatt_callbacks");
+              bt_gatt_callbacks = NULL;
+            }
+
+            BTA_GATTC_Disable();
+            BTA_GATTS_Disable();
+            cleanup_promise.set_value();
+          },
+          std::move(cleanup_promise)));
+
+  cleanup_future.wait();
+  bluetooth::log::info("btif_gatt_cleanup finished");
 }
 
 static btgatt_interface_t btgattInterface = {
