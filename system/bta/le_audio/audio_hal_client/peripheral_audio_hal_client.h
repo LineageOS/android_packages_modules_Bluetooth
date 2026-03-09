@@ -39,7 +39,7 @@ struct audio_channel_info {
     sstream << ", codec_id: " << codec_id;
     sstream << ", codec_config: " << codec_config.size();
     sstream << ", pres_delay: " << pres_delay;
-    sstream << ", target_phy: " << target_phy;
+    sstream << ", target_phy: " << static_cast<int>(target_phy);
     sstream << ", metadata: " << metadata.size();
     return sstream.str();
   }

@@ -1982,7 +1982,7 @@ std::ostream& operator<<(std::ostream& out, const Device& d) {
   if (d.uids_changed_.first) {
     out << "        UIDs Changed\n";
   }
-  out << "    Last Play State: " << d.last_play_status_.state << std::endl;
+  out << "    Last Play State: " << static_cast<int>(d.last_play_status_.state) << std::endl;
   out << "    Last Song Sent ID: \"" << d.last_song_info_.media_id << "\"\n";
   out << "    Current Folder: \"" << d.CurrentFolder() << "\"\n";
   out << "    MTU Sizes: CTRL=" << d.ctrl_mtu_ << " BROWSE=" << d.browse_mtu_ << std::endl;
