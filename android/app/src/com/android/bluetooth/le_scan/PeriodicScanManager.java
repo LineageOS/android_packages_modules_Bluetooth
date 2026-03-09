@@ -87,34 +87,6 @@ public class PeriodicScanManager {
             ActionOnDeathRecipient deathRecipient,
             IPeriodicAdvertisingCallback callback) {}
 
-    private Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
-        return mSyncTransfers.entrySet().stream()
-                .filter(e -> e.getValue().address.equals(address))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private Map.Entry<IBinder, SyncInfo> findSync(int syncHandle) {
-        return mSyncs.entrySet().stream()
-                .filter(e -> e.getValue().id == syncHandle)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private Map.Entry<IBinder, SyncInfo> findMatchingSync(int advSid, String address) {
-        return mSyncs.entrySet().stream()
-                .filter(e -> e.getValue().advSid == advSid && e.getValue().address.equals(address))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private List<IPeriodicAdvertisingCallback> getAllCallbacks(int syncHandle) {
-        return mSyncs.values().stream()
-                .filter(v -> v.id == syncHandle)
-                .map(v -> v.callback)
-                .collect(Collectors.toList());
-    }
-
     void onSyncStarted(
             int regId,
             int syncHandle,
@@ -218,13 +190,13 @@ public class PeriodicScanManager {
         }
     }
 
-    public void startSync(
+    void startSync(
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         mScanController.enforceScanThread();
         startSync(scanResult.getDevice(), scanResult.getAdvertisingSid(), skip, timeout, callback);
     }
 
-    public void startSync(
+    void startSync(
             BluetoothDevice device,
             int sid,
             int skip,
@@ -285,7 +257,7 @@ public class PeriodicScanManager {
         mNativeInterface.startSync(sid, address, addressType, skip, timeout, cbId);
     }
 
-    public void stopSync(IPeriodicAdvertisingCallback callback) {
+    void stopSync(IPeriodicAdvertisingCallback callback) {
         mScanController.enforceScanThread();
         IBinder binder = callback.asBinder();
         Log.d(TAG, "stopSync(): Binder=" + binder);
@@ -328,7 +300,7 @@ public class PeriodicScanManager {
         }
     }
 
-    public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
+    void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
         mScanController.enforceScanThread();
         Log.d(TAG, "transferSync()");
         Map.Entry<IBinder, SyncInfo> entry = findSync(syncHandle);
@@ -342,7 +314,7 @@ public class PeriodicScanManager {
         mNativeInterface.syncTransfer(bda, serviceData, syncHandle);
     }
 
-    public void transferSetInfo(
+    void transferSetInfo(
             BluetoothDevice bda,
             int serviceData,
             int advHandle,
@@ -361,6 +333,34 @@ public class PeriodicScanManager {
 
     void doOnScanThread(Runnable r) {
         mScanController.doOnScanThread(r);
+    }
+
+    private Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
+        return mSyncTransfers.entrySet().stream()
+                .filter(e -> e.getValue().address.equals(address))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Map.Entry<IBinder, SyncInfo> findSync(int syncHandle) {
+        return mSyncs.entrySet().stream()
+                .filter(e -> e.getValue().id == syncHandle)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Map.Entry<IBinder, SyncInfo> findMatchingSync(int advSid, String address) {
+        return mSyncs.entrySet().stream()
+                .filter(e -> e.getValue().advSid == advSid && e.getValue().address.equals(address))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<IPeriodicAdvertisingCallback> getAllCallbacks(int syncHandle) {
+        return mSyncs.values().stream()
+                .filter(v -> v.id == syncHandle)
+                .map(v -> v.callback)
+                .collect(Collectors.toList());
     }
 
     private ActionOnDeathRecipient syncDeathRecipient(IPeriodicAdvertisingCallback callback) {
