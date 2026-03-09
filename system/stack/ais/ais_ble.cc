@@ -19,7 +19,6 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
-#include <string.h>
 
 #include <array>
 
