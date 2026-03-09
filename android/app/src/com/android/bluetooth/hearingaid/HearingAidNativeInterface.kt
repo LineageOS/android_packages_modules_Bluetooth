@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,22 @@
  * limitations under the License.
  */
 
-/*
- * Defines the native interface that is used by state machine/service to
- * send or receive messages from the native stack. This file is registered
- * for the native methods in the corresponding JNI C++ file.
- */
+package com.android.bluetooth.hearingaid
 
-package com.android.bluetooth.hearingaid;
+import android.bluetooth.BluetoothDevice
+import com.android.bluetooth.Utils
+import com.android.bluetooth.profile.NativeInterface
+import com.android.internal.annotations.VisibleForTesting
 
-import static java.util.Objects.requireNonNull;
+class HearingAidNativeInterface(nativeCallback: HearingAidNativeCallback) :
+    NativeInterface<HearingAidNativeCallback>(nativeCallback) {
 
-import android.bluetooth.BluetoothDevice;
-
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.profile.NativeInterface;
-import com.android.internal.annotations.VisibleForTesting;
-
-public class HearingAidNativeInterface extends NativeInterface<HearingAidNativeCallback> {
-
-    HearingAidNativeInterface(HearingAidNativeCallback nativeCallback) {
-        super(requireNonNull(nativeCallback));
+    fun init() {
+        initNative()
     }
 
-    void init() {
-        initNative();
-    }
-
-    @Override
-    public void cleanup() {
-        cleanupNative();
+    override fun cleanup() {
+        cleanupNative()
     }
 
     /**
@@ -51,8 +38,8 @@ public class HearingAidNativeInterface extends NativeInterface<HearingAidNativeC
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    boolean connectHearingAid(BluetoothDevice device) {
-        return connectHearingAidNative(getByteAddress(device));
+    fun connectHearingAid(device: BluetoothDevice?): Boolean {
+        return connectHearingAidNative(getByteAddress(device))
     }
 
     /**
@@ -61,8 +48,8 @@ public class HearingAidNativeInterface extends NativeInterface<HearingAidNativeC
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    boolean disconnectHearingAid(BluetoothDevice device) {
-        return disconnectHearingAidNative(getByteAddress(device));
+    fun disconnectHearingAid(device: BluetoothDevice?): Boolean {
+        return disconnectHearingAidNative(getByteAddress(device))
     }
 
     /**
@@ -71,32 +58,32 @@ public class HearingAidNativeInterface extends NativeInterface<HearingAidNativeC
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    boolean addToAcceptlist(BluetoothDevice device) {
-        return addToAcceptlistNative(getByteAddress(device));
+    fun addToAcceptlist(device: BluetoothDevice?): Boolean {
+        return addToAcceptlistNative(getByteAddress(device))
     }
 
     /** Sets the HearingAid volume */
-    void setVolume(int volume) {
-        setVolumeNative(volume);
+    fun setVolume(volume: Int) {
+        setVolumeNative(volume)
     }
 
     @VisibleForTesting
-    byte[] getByteAddress(BluetoothDevice device) {
+    fun getByteAddress(device: BluetoothDevice?): ByteArray {
         if (device == null) {
-            return Utils.getBytesFromAddress("00:00:00:00:00:00");
+            return Utils.getBytesFromAddress("00:00:00:00:00:00")
         }
-        return Utils.getBytesFromAddress(device.getAddress());
+        return Utils.getBytesFromAddress(device.address)
     }
 
-    private native void initNative();
+    private external fun initNative()
 
-    private native void cleanupNative();
+    private external fun cleanupNative()
 
-    private native boolean connectHearingAidNative(byte[] address);
+    private external fun connectHearingAidNative(address: ByteArray): Boolean
 
-    private native boolean disconnectHearingAidNative(byte[] address);
+    private external fun disconnectHearingAidNative(address: ByteArray): Boolean
 
-    private native boolean addToAcceptlistNative(byte[] address);
+    private external fun addToAcceptlistNative(address: ByteArray): Boolean
 
-    private native void setVolumeNative(int volume);
+    private external fun setVolumeNative(volume: Int)
 }
