@@ -20,8 +20,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <string>
-
 #include "common/time_util.h"
 #include "internal_include/bt_target.h"
 #include "mmc/codec_client/codec_client.h"
