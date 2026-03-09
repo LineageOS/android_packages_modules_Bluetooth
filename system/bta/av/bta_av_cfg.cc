@@ -50,11 +50,14 @@ const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
 
 static uint16_t get_bta_avk_rc_supf_ct() {
   uint16_t controller_sup_features = AVRC_SUPF_CT_CAT1;
-  controller_sup_features |= AVRC_SUPF_CT_BROWSE;
 
   if (avrcp_controller_cover_art_enabled()) {
     controller_sup_features |= AVRC_SUPF_CT_COVER_ART_GET_IMAGE;
     controller_sup_features |= AVRC_SUPF_CT_COVER_ART_GET_IMAGE_PROP;
+  }
+
+  if (avrcp_controller_browsing_enabled()) {
+    controller_sup_features |= AVRC_SUPF_CT_BROWSE;
   }
   return controller_sup_features;
 }
