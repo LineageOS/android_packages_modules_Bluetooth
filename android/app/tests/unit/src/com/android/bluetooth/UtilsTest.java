@@ -30,10 +30,12 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.util.Text;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,6 +91,12 @@ public class UtilsTest {
         } catch (SecurityException e) {
             // SecurityException could happen.
         }
+    }
+
+    @Test
+    public void enforceCallingUidIsNotPcc_whenNotPccUid_doesNotThrow() {
+        Assume.assumeTrue(SdkLevel.isAtLeastC());
+        Util.enforceCallingUidIsNotPcc("testMethod");
     }
 
     @Test

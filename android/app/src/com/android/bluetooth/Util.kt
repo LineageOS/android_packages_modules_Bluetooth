@@ -59,6 +59,7 @@ import android.provider.DeviceConfig
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
+import com.android.modules.utils.build.SdkLevel
 
 private const val TAG = Util.BT_PREFIX + "Util"
 
@@ -777,6 +778,31 @@ object Util {
         } else {
             Log.w(TAG, msg)
             return false
+        }
+    }
+
+    /**
+     * Checks if the calling UID is a Private Compute Core (PCC) UID.
+     *
+     * PCC UIDs are restricted from performing certain egress operations to maintain data privacy
+     * boundaries.
+     *
+     * @param methodName the name of the method being checked, used for the exception message
+     * @throws SecurityException if the caller is a PCC UID
+     */
+    @JvmStatic
+    fun enforceCallingUidIsNotPcc(methodName: String) {
+        if (
+            SdkLevel.isAtLeastC() &&
+                com.android.bluetooth.jarjar.android.app.privatecompute.flags.Flags
+                    .enablePccFrameworkSupport()
+        ) {
+            val callingUid = Binder.getCallingUid()
+            if (Process.isPrivateComputeCoreUid(callingUid)) {
+                throw SecurityException(
+                    "PCC UIDs are not allowed to perform Bluetooth egress operation: $methodName"
+                )
+            }
         }
     }
 
