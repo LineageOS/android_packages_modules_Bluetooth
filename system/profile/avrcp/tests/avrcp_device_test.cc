@@ -28,6 +28,7 @@
 #include "btif/include/btif_av.h"
 #include "device.h"
 #include "internal_include/stack_config.h"
+#include "stack/include/avrc_defs.h"
 #include "tests/avrcp/avrcp_test_packets.h"
 #include "tests/packet_test_helper.h"
 
@@ -1302,8 +1303,8 @@ TEST_F(AvrcpDeviceTest, playPushedActiveDeviceTest) {
   // Pretend the device is active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(test_device->GetAddress()));
 
-  auto play_pushed = PassThroughPacketBuilder::MakeBuilder(false, true, 0x44);
-  auto play_pushed_response = PassThroughPacketBuilder::MakeBuilder(true, true, 0x44);
+  auto play_pushed = PassThroughPacketBuilder::MakeBuilder(false, true, AVRC_ID_PLAY);
+  auto play_pushed_response = PassThroughPacketBuilder::MakeBuilder(true, true, AVRC_ID_PLAY);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(play_pushed_response)))).Times(1);
 
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
@@ -1311,7 +1312,7 @@ TEST_F(AvrcpDeviceTest, playPushedActiveDeviceTest) {
     std::move(cb).Run(status);
   }));
 
-  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(1);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, AVRC_ID_PLAY, KeyState::PUSHED)).Times(1);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
   play_pushed->Serialize(play_pushed_pkt);
@@ -1329,8 +1330,8 @@ TEST_F(AvrcpDeviceTest, playPushedInactiveDeviceTest) {
   // Pretend the device is not active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(RawAddress::kEmpty));
 
-  auto play_pushed = PassThroughPacketBuilder::MakeBuilder(false, true, 0x44);
-  auto play_pushed_response = PassThroughPacketBuilder::MakeBuilder(true, true, 0x44);
+  auto play_pushed = PassThroughPacketBuilder::MakeBuilder(false, true, AVRC_ID_PLAY);
+  auto play_pushed_response = PassThroughPacketBuilder::MakeBuilder(true, true, AVRC_ID_PLAY);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(play_pushed_response)))).Times(1);
 
   // Expect that the device will try to set itself as active
@@ -1341,7 +1342,7 @@ TEST_F(AvrcpDeviceTest, playPushedInactiveDeviceTest) {
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(WithArg<0>([&](auto cb) {
     std::move(cb).Run(status);
   }));
-  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(0);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, AVRC_ID_PLAY, KeyState::PUSHED)).Times(0);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
   play_pushed->Serialize(play_pushed_pkt);
@@ -1359,13 +1360,13 @@ TEST_F(AvrcpDeviceTest, mediaKeyActiveDeviceTest) {
   // Pretend the device is active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(test_device->GetAddress()));
 
-  auto play_released = PassThroughPacketBuilder::MakeBuilder(false, false, 0x44);
-  auto play_released_response = PassThroughPacketBuilder::MakeBuilder(true, false, 0x44);
+  auto play_released = PassThroughPacketBuilder::MakeBuilder(false, false, AVRC_ID_PLAY);
+  auto play_released_response = PassThroughPacketBuilder::MakeBuilder(true, false, AVRC_ID_PLAY);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(play_released_response)))).Times(1);
 
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
 
-  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::RELEASED)).Times(1);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, AVRC_ID_PLAY, KeyState::RELEASED)).Times(1);
 
   auto play_released_pkt = TestAvrcpPacket::Make();
   play_released->Serialize(play_released_pkt);
@@ -1383,14 +1384,14 @@ TEST_F(AvrcpDeviceTest, mediaKeyInactiveDeviceTest) {
   // Pretend the device is not active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(RawAddress::kEmpty));
 
-  auto play_released = PassThroughPacketBuilder::MakeBuilder(false, false, 0x44);
-  auto play_released_response = PassThroughPacketBuilder::MakeBuilder(true, false, 0x44);
+  auto play_released = PassThroughPacketBuilder::MakeBuilder(false, false, AVRC_ID_PLAY);
+  auto play_released_response = PassThroughPacketBuilder::MakeBuilder(true, false, AVRC_ID_PLAY);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(play_released_response)))).Times(1);
 
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
 
   // Expect that the key event wont be sent to the media interface
-  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::RELEASED)).Times(0);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, AVRC_ID_PLAY, KeyState::RELEASED)).Times(0);
 
   auto play_released_pkt = TestAvrcpPacket::Make();
   play_released->Serialize(play_released_pkt);
