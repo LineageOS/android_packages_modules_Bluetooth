@@ -33,7 +33,6 @@
 
 #include "avrc_int.h"
 #include "avrcp.sysprop.h"
-#include "btif/include/btif_av.h"
 #include "btif/include/btif_config.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
