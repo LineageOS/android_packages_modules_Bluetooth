@@ -53,9 +53,7 @@ class HandleMap {
         val serviceHandle: Int = 0,
         val charHandle: Int = 0,
         val advertisePreferred: Boolean = false,
-    ) {
-        var started = false
-    }
+    )
 
     data class RequestData(val connId: Int, val handle: Int)
 
@@ -127,19 +125,6 @@ class HandleMap {
                 charHandle = lastCharacteristic,
             )
         )
-    }
-
-    fun setStarted(serverIf: Int, handle: Int, started: Boolean) {
-        for (entry in entries) {
-            if (
-                entry.type != Type.SERVICE || entry.serverIf != serverIf || entry.handle != handle
-            ) {
-                continue
-            }
-
-            entry.started = started
-            return
-        }
     }
 
     fun getByHandle(handle: Int): Entry? {
@@ -247,7 +232,7 @@ class HandleMap {
         for (entry in entries) {
             sb.append("    ${entry.serverIf}: [${entry.handle.toString().padStart(3, ' ')}] ")
             when (entry.type) {
-                Type.SERVICE -> sb.appendLine("Service ${entry.uuid}, started ${entry.started}")
+                Type.SERVICE -> sb.appendLine("Service ${entry.uuid}")
                 Type.CHARACTERISTIC -> sb.appendLine("  Characteristic ${entry.uuid}")
                 Type.DESCRIPTOR -> sb.appendLine("    Descriptor ${entry.uuid}")
             }
