@@ -262,16 +262,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_improve_unicast_monitor"
-    namespace: "bluetooth"
-    description: "Improve unicast monitor mode robustness"
-    bug: "440506873"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_broadcast_stop_big_monitoring_based_on_bis_sync"
     namespace: "bluetooth"
     description: "Disable BIG monitoring when no BIS are selected to be synced to."
