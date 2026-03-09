@@ -599,11 +599,19 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
       return true;
     }
 
-    // This is to match existing GD connection manager behavior - if multiple apps try direct
-    // connect at same time, only 1st request is fully processed
     if (!info.doing_direct_conn.empty()) {
-      log::info("app_id=0x{:x}: attempt from other app already in progress, will merge {}", app_id,
-                address_with_type);
+      log::info("app_id=0x{:x}: attempt from other app in progress {}", app_id, address_with_type);
+      if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close()) {
+        // Add it to direct connection queue so that device is not removed from direct connection
+        // list until all clients triggers cancel
+        uint32_t connection_timeout =
+                os::GetSystemPropertyUint32(kPropertyDirectConnTimeout, kCreateConnectionTimeoutMs);
+        alarm_t* timeout = alarm_new("direct_connect_tout_30s");
+        alarm_set_closure(timeout, connection_timeout,
+                          base::BindOnce(&wl_direct_connect_timeout_cb, app_id, address));
+        bgconn_dev[address].doing_direct_conn.emplace(app_id,
+                                                      unique_alarm_ptr(timeout, &alarm_free));
+      }
       return true;
     }
 
@@ -666,6 +674,12 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
 
   // this will free the alarm
   it->second.doing_direct_conn.erase(app_it);
+
+  if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close() &&
+      !it->second.doing_direct_conn.empty()) {
+    log::verbose("some app is still interested in direct connection ");
+    return true;
+  }
 
   if (is_anyone_interested_to_use_accept_list(it)) {
     log::debug("There is somebody interested in accept list for {}", address);
