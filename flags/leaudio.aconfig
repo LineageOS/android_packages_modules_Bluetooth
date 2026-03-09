@@ -232,36 +232,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_creation_timeout_fix"
-    namespace: "bluetooth"
-    description: "Properly clean up state after a broadcast creation timeout"
-    bug: "443811487"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_sync_handle_to_device_fix"
-    namespace: "bluetooth"
-    description: "Fix updating sync handle to device map for the same device"
-    bug: "444365749"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_reactivate_autonomously_inactivated_group_by_broadcast"
-    namespace: "bluetooth"
-    description: "Reactivate group autonomously deactivated due to broadcast sync"
-    bug: "439502201"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_broadcast_treat_empty_rs_explicitly"
     namespace: "bluetooth"
     description: "Treat remote source removal as a final state for broadcast assistant"

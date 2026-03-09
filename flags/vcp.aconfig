@@ -2,36 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "vcp_skip_redundant_operation_writes"
-    namespace: "bluetooth"
-    description: "Skip redundant volume/mute writes to avoid pending operations"
-    bug: "448577346"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "vcp_skip_ignoring_volume_during_broadcast"
-    namespace: "bluetooth"
-    description: "Skip ignore-volume flag as broadcast prevents device activation"
-    bug: "454221602"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "vcp_store_volume_per_stream_type"
-    namespace: "bluetooth"
-    description: "Store volume/mute per stream type for each group/device"
-    bug: "454236522"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "vcp_notify_volume_on_each_device_connection"
     namespace: "bluetooth"
     description: "On each device connection, notify its volume to registered clients"
