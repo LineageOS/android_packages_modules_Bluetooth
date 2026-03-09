@@ -30,6 +30,7 @@
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_acl_interface.h"
+#include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/gatt_api.h"

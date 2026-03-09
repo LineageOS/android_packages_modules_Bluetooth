@@ -21,9 +21,7 @@
 #include <bluetooth/types/ble_address_with_type.h>
 
 #include <optional>
-#include <string>
 
-#include "macros.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"

@@ -21,7 +21,6 @@
 
 #include <bluetooth/types/address.h>
 
-#include "macros.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/btm_ble_api_types.h"

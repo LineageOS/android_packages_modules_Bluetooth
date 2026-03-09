@@ -22,8 +22,6 @@
 #include <string.h>
 
 #include "btm_ble_api.h"
-#include "stack/btm/btm_int_types.h"
-#include "stack/btm/internal/btm_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 
