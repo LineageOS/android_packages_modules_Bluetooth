@@ -107,3 +107,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reject_invalid_eatt_channels_in_response"
+    namespace: "bluetooth"
+    description: "Reject the invalid EATT channels in connection response"
+    bug: "491136966"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
