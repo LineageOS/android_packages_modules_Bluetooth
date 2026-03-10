@@ -233,3 +233,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_ppcp_behavior"
+    namespace: "bluetooth"
+    description: "Distinguish app-requested connection params from PPCP, and other behavior changes (go/fix-ppcp-behavior)"
+    bug: "491294532"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
