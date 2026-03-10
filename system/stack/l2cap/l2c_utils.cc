@@ -1558,8 +1558,7 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
   tL2C_LCB* p_lcb = p_ccb->p_lcb;
   tL2C_RCB* p_rcb = p_ccb->p_rcb;
 
-  log::verbose("l2cu_release_ccb: cid 0x{:04x}  in_use: {} triggered_le_acl_conn: {}",
-               p_ccb->local_cid, p_ccb->in_use, p_lcb->triggered_le_acl_conn);
+  log::verbose("l2cu_release_ccb: cid 0x{:04x}  in_use: {}", p_ccb->local_cid, p_ccb->in_use);
 
   /* If already released, could be race condition */
   if (!p_ccb->in_use) {
@@ -1645,6 +1644,8 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
           log::warn("disconnecting the LE link");
           l2cu_no_dynamic_ccbs(p_lcb);
         }
+        log::verbose("l2cu_release_ccb: triggered_le_acl_conn: {}",
+                p_lcb->triggered_le_acl_conn);
         if (p_lcb->triggered_le_acl_conn > 0) {
           p_lcb->triggered_le_acl_conn--;
           if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close() &&
