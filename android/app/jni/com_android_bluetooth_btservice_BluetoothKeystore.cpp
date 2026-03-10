@@ -24,7 +24,9 @@
 #include <shared_mutex>
 #include <string>
 
+#include "btif/include/btif_keystore.h"
 #include "com_android_bluetooth.h"
+#include "gd/os/parameter_provider.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_keystore.h"
 
@@ -116,13 +118,13 @@ static void initNative(JNIEnv* env, jobject object) {
     log::fatal("Failed to allocate Global Ref for BluetoothKeystore Callbacks");
   }
 
-  sBluetoothKeystoreInterface =
-          (BluetoothKeystoreInterface*)btInf->get_profile_interface(BT_KEYSTORE_ID);
+  sBluetoothKeystoreInterface = bluetooth::bluetooth_keystore::getBluetoothKeystoreInterface();
   if (sBluetoothKeystoreInterface == nullptr) {
     log::error("Failed to get BluetoothKeystore Interface");
     return;
   }
 
+  bluetooth::os::ParameterProvider::SetBtKeystoreInterface(sBluetoothKeystoreInterface);
   sBluetoothKeystoreInterface->init(&sBluetoothKeystoreCallbacks);
 }
 
