@@ -390,10 +390,16 @@ static void bta_dm_wait_for_acl_to_drain_cback(void* data) {
     log::info("Ensuring all ACL connections have been properly flushed");
     bluetooth::shim::ACL_Shutdown();
 
+    // disable the power management module
+    bta_dm_disable_pm();
+
     bta_dm_cb.disabling = false;
 
     bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
     BTIF_dm_disable();
+
+    log::info("Stack device manager shutdown completed");
+    future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
   }
 }
 
