@@ -28,3 +28,13 @@ prop {
     access: Readonly
     prop_name: "bluetooth.avrcp.controller.coverart.enabled"
 }
+
+# Is browsing feature for AVRCP controller enabled
+prop {
+    api_name: "isAvrcpControllerBrowsingEnabled"
+    type: Boolean
+    default_value: "true"
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.avrcp.controller.browsing.enabled"
+}

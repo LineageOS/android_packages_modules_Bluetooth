@@ -1421,16 +1421,15 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   void start_sync(uint8_t sid, const AddressWithType& address_with_type, uint16_t skip,
-                  uint16_t timeout, int request_id) {
+                  uint16_t timeout, int reg_id) {
     if (!is_periodic_advertising_sync_transfer_sender_supported_) {
       log::warn("PAST sender not supported on this device");
       int status = static_cast<int>(ErrorCode::UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE);
-      scanning_callbacks_->OnPeriodicSyncStarted(request_id, status, -1, sid, address_with_type, 0,
-                                                 0);
+      scanning_callbacks_->OnPeriodicSyncStarted(reg_id, status, -1, sid, address_with_type, 0, 0);
       return;
     }
     PeriodicSyncStates request{
-            .request_id = request_id,
+            .reg_id = reg_id,
             .advertiser_sid = sid,
             .address_with_type = address_with_type,
             .sync_handle = 0,
@@ -1914,7 +1913,7 @@ LeScanningManagerImpl::LeScanningManagerImpl(os::Handler* handler, hci::HciInter
 
 LeScanningManagerImpl::~LeScanningManagerImpl() {
   log::verbose("LeScanningManager module stopped !!");
-};
+}
 
 void LeScanningManagerImpl::RegisterScanner(Uuid app_uuid) {
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::register_scanner, app_uuid);

@@ -771,13 +771,7 @@ public class BassClientService extends ConnectableProfile {
             }
             if (syncHandle != BassConstants.INVALID_SYNC_HANDLE
                     && syncHandle != BassConstants.PENDING_SYNC_HANDLE) {
-                if (!Flags.leaudioBroadcastSyncHandleToDeviceFix()) {
-                    mSyncHandleToDeviceMap
-                            .entrySet()
-                            .removeIf(entry -> entry.getValue().equals(device));
-                } else {
-                    mSyncHandleToDeviceMap.remove(BassConstants.PENDING_SYNC_HANDLE);
-                }
+                mSyncHandleToDeviceMap.remove(BassConstants.PENDING_SYNC_HANDLE);
                 mSyncHandleToDeviceMap.put(syncHandle, device);
                 paRes.updateSyncHandle(syncHandle);
                 if (paRes.getBroadcastId() != LeAudioConstants.INVALID_BROADCAST_ID) {
@@ -1240,10 +1234,6 @@ public class BassClientService extends ConnectableProfile {
     }
 
     private void startReactivateGroupMonitor(BluetoothDevice device, boolean inactivated) {
-        if (!Flags.leaudioReactivateAutonomouslyInactivatedGroupByBroadcast()) {
-            return;
-        }
-
         final var leAudio = getAdapterService().getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.d(TAG, "startReactivateGroupMonitor: LeAudioService is not available");

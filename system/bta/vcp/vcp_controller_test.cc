@@ -444,8 +444,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com_android_bluetooth_flags_reset_flags();
 
-    set_com_android_bluetooth_flags_vcp_skip_redundant_operation_writes(true);
-
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     MockDeviceGroups::SetMockInstanceForTesting(&mock_groups_module_);
     gatt::SetMockBtaGattInterface(&gatt_interface);

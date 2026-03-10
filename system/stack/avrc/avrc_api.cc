@@ -119,6 +119,19 @@ bool avrcp_controller_cover_art_enabled() {
 
 /******************************************************************************
  *
+ * Function         avrcp_controller_browsing_enabled
+ *
+ * Description      Check if Browsing is enabled in config
+ *
+ * Returns          return true if Browsing is enabled
+ *
+ *****************************************************************************/
+bool avrcp_controller_browsing_enabled() {
+  return android::sysprop::bluetooth::Avrcp::isAvrcpControllerBrowsingEnabled();
+}
+
+/******************************************************************************
+ *
  * Function         avrc_ctrl_cback
  *
  * Description      This is the callback function used by AVCTP to report
