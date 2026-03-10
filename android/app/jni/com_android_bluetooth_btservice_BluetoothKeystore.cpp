@@ -49,8 +49,7 @@ public:
   bool set_encrypt_key_or_remove_key(std::string prefix, std::string decryptedString) override {
     log::verbose("prefix: {}", prefix);
 
-    // Save the value into a map.
-    key_map[prefix] = decryptedString;
+    cache_[prefix] = decryptedString;
 
     do_in_jni_thread(base::BindOnce(setEncryptKeyOrRemoveKeyCallback, prefix, decryptedString));
     return true;
@@ -59,30 +58,24 @@ public:
   std::string get_key(std::string prefix) override {
     log::verbose("prefix: {}", prefix);
 
-    std::string decryptedString;
-    // try to find the key.
-    std::map<std::string, std::string>::iterator iter = key_map.find(prefix);
-    if (iter == key_map.end()) {
-      decryptedString = getKeyCallback(prefix);
-      // Save the value into a map.
-      key_map[prefix] = decryptedString;
-      log::verbose("get key from bluetoothkeystore.");
-    } else {
-      decryptedString = iter->second;
+    auto it = cache_.find(prefix);
+    if (it != cache_.end()) {
+      return it->second;
     }
+
+    std::string decryptedString = getKeyCallback(prefix);
+    cache_[prefix] = decryptedString;
+    log::verbose("get key from bluetoothkeystore.");
     return decryptedString;
   }
 
   void clear_map() override {
     log::verbose("");
-
-    std::map<std::string, std::string> empty_map;
-    key_map.swap(empty_map);
-    key_map.clear();
+    cache_.clear();
   }
 
 private:
-  std::map<std::string, std::string> key_map;
+  std::unordered_map<std::string, std::string> cache_;
 };
 
 static jmethodID method_setEncryptKeyOrRemoveKeyCallback;
@@ -141,21 +134,15 @@ static void initNative(JNIEnv* env, jobject object) {
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   std::unique_lock<std::shared_timed_mutex> callbacks_lock(callbacks_mutex);
 
-  const bt_interface_t* btInf = getBluetoothInterface();
-  if (btInf == nullptr) {
-    log::error("Bluetooth module is not loaded");
-    return;
-  }
-
   if (mCallbacksObj != nullptr) {
     log::info("Cleaning up BluetoothKeystore callback object");
     env->DeleteGlobalRef(mCallbacksObj);
     mCallbacksObj = nullptr;
   }
 
-  if ((mCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
-    log::fatal("Failed to allocate Global Ref for BluetoothKeystore Callbacks");
-  }
+  mCallbacksObj = env->NewGlobalRef(object);
+  log::assert_that(mCallbacksObj != nullptr,
+                   "Failed to allocate Global Ref for BluetoothKeystore Callbacks");
 
   if (bluetoothKeystoreInstance == nullptr) {
     bluetoothKeystoreInstance = std::make_unique<BluetoothKeystoreInterfaceImpl>();
@@ -170,12 +157,6 @@ static void initNative(JNIEnv* env, jobject object) {
 static void cleanupNative(JNIEnv* env, jobject /* object */) {
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   std::unique_lock<std::shared_timed_mutex> callbacks_lock(callbacks_mutex);
-
-  const bt_interface_t* btInf = getBluetoothInterface();
-  if (btInf == nullptr) {
-    log::error("Bluetooth module is not loaded");
-    return;
-  }
 
   if (mCallbacksObj != nullptr) {
     env->DeleteGlobalRef(mCallbacksObj);
@@ -208,4 +189,5 @@ int register_com_android_bluetooth_btservice_BluetoothKeystore(JNIEnv* env) {
 
   return 0;
 }
+
 }  // namespace android
