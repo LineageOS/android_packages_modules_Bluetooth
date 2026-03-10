@@ -501,7 +501,7 @@ provider::get_a2dp_configuration(
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
                 remote_seps,
         btav_a2dp_codec_config_t const& user_preferences,
-        ::bluetooth::a2dp::CodecId user_preferred_codec_id, bool is_source) {
+        std::optional<::bluetooth::a2dp::CodecId> user_preferred_codec_id, bool is_source) {
   using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
   using ::aidl::android::hardware::bluetooth::audio::CodecId;
 
@@ -633,11 +633,9 @@ provider::get_a2dp_configuration(
       hint.audioContext.bitmask = AudioContext::UNSPECIFIED;
       break;
   }
-
-  auto aidl_codec_id = convertCodecId(user_preferred_codec_id);
-  log::assert_that(aidl_codec_id.has_value(), "convertCodecId failed");
-  hint.codecId = aidl_codec_id.value();
-
+  hint.codecId = user_preferred_codec_id.has_value()
+                         ? convertCodecId(user_preferred_codec_id.value())
+                         : std::nullopt;
   log::info("local: {}, remote capabilities:", is_source ? "source" : "sink");
   for (auto const& sep : a2dp_remote_capabilities) {
     log::info("- {}", sep.toString());
