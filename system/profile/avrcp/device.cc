@@ -39,6 +39,7 @@
 #include "packet/avrcp/set_absolute_volume.h"
 #include "packet/avrcp/set_addressed_player.h"
 #include "packet/avrcp/set_player_application_setting_value.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/main_thread.h"
 
 template <>
@@ -974,8 +975,7 @@ void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
               pass_through_packet->GetOperationId());
       send_message(label, false, std::move(response));
 
-      // TODO (apanicke): Use an enum for media key ID's
-      if (pass_through_packet->GetOperationId() == 0x44 &&
+      if (pass_through_packet->GetOperationId() == AVRC_ID_PLAY &&
           pass_through_packet->GetKeyState() == KeyState::PUSHED) {
         // We need to get the play status since we need to know
         // what the actual playstate is without being modified
@@ -996,7 +996,7 @@ void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
                     }
                   }
 
-                  d->media_interface_->SendKeyEvent(d->address_, 0x44, KeyState::PUSHED);
+                  d->media_interface_->SendKeyEvent(d->address_, AVRC_ID_PLAY, KeyState::PUSHED);
                 },
                 weak_ptr_factory_.GetWeakPtr()));
         return;
