@@ -124,7 +124,9 @@ import platform.test.runner.parameterized.Parameters;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Test cases for {@link AdapterService}. */
@@ -181,6 +183,7 @@ public class AdapterServiceTest {
         private final LeAudioService mTestLeAudio;
         int mSetProfileServiceStateCounter = 0;
         int mSendUuidsInternalCounter = 0;
+        final Map<BluetoothDevice, Integer> mConnectionStateOverlay = new HashMap<>();
 
         MockAdapterService(
                 Looper looper,
@@ -226,6 +229,14 @@ public class AdapterServiceTest {
         void sendUuidsInternal(BluetoothDevice device, ParcelUuid[] uuids) {
             mSendUuidsInternalCounter++;
             super.sendUuidsInternal(device, uuids);
+        }
+
+        @Override
+        public int getConnectionState(BluetoothDevice device) {
+            if (mConnectionStateOverlay.containsKey(device)) {
+                return mConnectionStateOverlay.get(device);
+            }
+            return super.getConnectionState(device);
         }
     }
 
@@ -1117,9 +1128,10 @@ public class AdapterServiceTest {
         doReturn(returnOnGetConnectionStateLeAudio)
                 .when(mMockLeAudioService)
                 .getConnectionState(any());
-        doReturn(returnOnGetConnectionStateAdapter)
-                .when(mNativeInterface)
-                .getConnectionState(any());
+
+        for (BluetoothDevice device : devices) {
+            mAdapter.mConnectionStateOverlay.put(device, returnOnGetConnectionStateAdapter);
+        }
 
         doReturn(returnOnSetAutoActiveModeState)
                 .when(mMockLeAudioService)

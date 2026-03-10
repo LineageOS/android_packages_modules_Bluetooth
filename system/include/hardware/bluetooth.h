@@ -946,12 +946,14 @@ typedef struct {
 
   bool (*pairing_is_busy)();
 
+#ifdef TARGET_FLOSS
   /**
    * Get the connection status for a given remote device.
    * return value of 0 means the device is not connected,
    * non-zero return status indicates an active connection.
    */
   int (*get_connection_state)(RawAddress bd_addr);
+#endif
 
   /** BT Legacy PinKey Reply */
   /** If accept==FALSE, then pin_len and pin_code shall be 0x0 */
