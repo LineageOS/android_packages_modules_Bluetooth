@@ -50,8 +50,6 @@ static const std::string* get_pts_broadcast_audio_config_options(void) {
   return &kBroadcastAudioConfigOptions;
 }
 static bool get_pts_le_audio_disable_ases_before_stopping(void) { return false; }
-struct config_t;
-static config_t* get_all(void) { return nullptr; }
 struct packet_fragmenter_t;
 const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
 
@@ -79,7 +77,6 @@ stack_config_t mock_stack_config{
         .get_pts_broadcast_audio_config_options = get_pts_broadcast_audio_config_options,
         .get_pts_le_audio_disable_ases_before_stopping =
                 get_pts_le_audio_disable_ases_before_stopping,
-        .get_all = get_all,
 };
 
 const stack_config_t* stack_config_get_interface(void) { return &mock_stack_config; }

@@ -22,6 +22,7 @@
 
 #include <bluetooth/log.h>
 
+#include "osi/include/config.h"
 #include "osi/include/future.h"
 
 using namespace bluetooth;
@@ -181,8 +182,6 @@ static bool get_pts_le_audio_disable_ases_before_stopping(void) {
   return config_get_bool(*config, CONFIG_DEFAULT_SECTION, PTS_LE_AUDIO_SUSPEND_STREAMING, false);
 }
 
-static config_t* get_all(void) { return config.get(); }
-
 const stack_config_t interface = {get_pts_avrcp_test,
                                   get_pts_secure_only_mode,
                                   get_pts_conn_updates_disabled,
@@ -203,7 +202,6 @@ const stack_config_t interface = {get_pts_avrcp_test,
                                   get_pts_l2cap_ecoc_send_num_of_sdu,
                                   get_pts_l2cap_ecoc_reconfigure,
                                   get_pts_broadcast_audio_config_options,
-                                  get_pts_le_audio_disable_ases_before_stopping,
-                                  get_all};
+                                  get_pts_le_audio_disable_ases_before_stopping};
 
 const stack_config_t* stack_config_get_interface(void) { return &interface; }

@@ -111,47 +111,21 @@ std::string StringJoin(const std::vector<std::string>& strings, const std::strin
 }
 
 std::optional<int64_t> Int64FromString(const std::string& str) {
-  char* ptr = nullptr;
-  errno = 0;
-  int64_t value = std::strtoll(str.c_str(), &ptr, 10);
-  if (errno != 0) {
-    log::info("cannot parse string '{}' with error '{}'", str, strerror(errno));
-    return std::nullopt;
-  }
-  if (ptr == str.c_str()) {
-    log::info("string '{}' is empty or has wrong format", str);
-    return std::nullopt;
-  }
-  if (ptr != (str.c_str() + str.size())) {
-    log::info("cannot parse whole string '{}'", str);
-    return std::nullopt;
-  }
-  return value;
+  int64_t output{};
+  char const* first = str.data();
+  char const* last = str.data() + str.size();
+  auto [ptr, ec] = std::from_chars(first, last, output);
+  return ptr == last && ec == std::errc() ? std::make_optional<int64_t>(output) : std::nullopt;
 }
 
 std::string ToString(int64_t value) { return std::to_string(value); }
 
 std::optional<uint64_t> Uint64FromString(const std::string& str) {
-  if (str.find('-') != std::string::npos) {
-    log::info("string '{}' contains minus sign, this function is for unsigned", str);
-    return std::nullopt;
-  }
-  char* ptr = nullptr;
-  errno = 0;
-  uint64_t value = std::strtoull(str.c_str(), &ptr, 10);
-  if (errno != 0) {
-    log::info("cannot parse string '{}' with error '{}'", str, strerror(errno));
-    return std::nullopt;
-  }
-  if (ptr == str.c_str()) {
-    log::info("string '{}' is empty or has wrong format", str);
-    return std::nullopt;
-  }
-  if (ptr != (str.c_str() + str.size())) {
-    log::info("cannot parse whole string '{}'", str);
-    return std::nullopt;
-  }
-  return value;
+  uint64_t output{};
+  char const* first = str.data();
+  char const* last = str.data() + str.size();
+  auto [ptr, ec] = std::from_chars(first, last, output);
+  return ptr == last && ec == std::errc() ? std::make_optional<uint64_t>(output) : std::nullopt;
 }
 
 std::string ToString(uint64_t value) { return std::to_string(value); }
