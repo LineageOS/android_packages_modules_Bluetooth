@@ -904,8 +904,7 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
-        var uid = source.getUid();
-        var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
+        var appScanStats = mScannerMap.getAppScanStatsByUid(source.getUid());
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
                 && !hasPrivilegedPermission) {
@@ -918,7 +917,7 @@ public class ScanController {
             return;
         }
         registerAndStartScan(
-                uid, callback, workSource, source, settings, filters, /* isInternal */ false);
+                callback, workSource, source, settings, filters, /* isInternal */ false);
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
@@ -928,18 +927,17 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
-        final int uid = source.getUid();
-        registerAndStartScan(uid, callback, null, source, settings, filters, /* isInternal */ true);
+        registerAndStartScan(callback, null, source, settings, filters, /* isInternal */ true);
     }
 
     private void registerAndStartScan(
-            int uid,
             IScannerCallback callback,
             WorkSource workSource,
             AttributionSource source,
             ScanSettings settings,
             List<ScanFilter> filters,
             boolean isInternal) {
+        final int uid = source.getUid();
         final int pid = source.getPid();
         final var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var uuid = UUID.randomUUID();
