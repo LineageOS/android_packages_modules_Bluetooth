@@ -72,17 +72,3 @@ bool acl_peer_supports_ble_connection_subrating_host(const RawAddress& random_ps
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
   return btm_interface->AclPeerSupportsBleConnectionSubratingHost(random_pseudo);
 }
-
-tBTM_INQ_INFO* BTM_InqDbFirst(void) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_InqDbFirst();
-}
-tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_InqDbNext(p_cur);
-}
-
-tBTM_STATUS BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport, tHCI_ROLE* role) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_GetRole(address, transport, role);
-}

@@ -1,4 +1,4 @@
-/*
+/*le_audio_client_
  * Copyright 2021 HIMSA II K/S - www.himsa.com.
  * Represented by EHIMA - www.ehima.com
  *
@@ -774,6 +774,17 @@ protected:
       ASSERT_NE(conn_id, GATT_INVALID_CONN_ID);
       InjectDisconnectedEvent(conn_id);
     }));
+
+    set_mock_btm_client_interface(&mock_btm_client_interface_);
+    ON_CALL(mock_btm_client_interface_, BTM_GetHCIConnHandle(_, _))
+            .WillByDefault([this](const RawAddress& address, tBT_TRANSPORT /*transport*/) {
+              for (auto const& it : peer_devices) {
+                if (it.second->addr == address) {
+                  return it.first;
+                }
+              }
+              return (uint16_t)HCI_INVALID_HANDLE;
+            });
 
     // default Characteristic read handler dispatches requests to service mocks
     ON_CALL(mock_gatt_queue_, ReadCharacteristic(_, _, _, _))
@@ -3178,7 +3189,7 @@ protected:
     EXPECT_CALL(mock_hal_2_1_verifier, Call()).Times(1);
     EXPECT_CALL(mock_storage_load, Call()).Times(1);
 
-    ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+    ON_CALL(mock_btm_client_interface_, BTM_GetRole(_, _, _))
             .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
               *role = HCI_ROLE_CENTRAL;
               return tBTM_STATUS::BTM_SUCCESS;
@@ -3709,7 +3720,7 @@ TEST_F(UnicastTest, ConnectAsPeripheral) {
                                 true,                                /*add_pacs*/
                                 default_ase_cnt /*add_ascs*/);
 
-  ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+  ON_CALL(mock_btm_client_interface_, BTM_GetRole(_, _, _))
           .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
             *role = HCI_ROLE_PERIPHERAL;
             return tBTM_STATUS::BTM_SUCCESS;
@@ -4482,9 +4493,6 @@ TEST_F(UnicastTestNoInit, ConnectFailedDueToInvalidParameters) {
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
 
-  ON_CALL(mock_btm_interface_, GetSecurityFlagsByTransport(test_address0, NotNull(), _))
-          .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(true)));
-
   std::vector<::bluetooth::le_audio::btle_audio_codec_config_t> framework_encode_preference;
 
   // Initialize
@@ -4596,9 +4604,6 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsBroakenStorage) {
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
-
-  ON_CALL(mock_btm_interface_, GetSecurityFlagsByTransport(test_address0, NotNull(), _))
-          .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(true)));
 
   std::vector<::bluetooth::le_audio::btle_audio_codec_config_t> framework_encode_preference;
 
@@ -4740,9 +4745,6 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsCsisGrouped) {
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
-
-  ON_CALL(mock_btm_interface_, GetSecurityFlagsByTransport(test_address0, NotNull(), _))
-          .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(true)));
 
   std::vector<::bluetooth::le_audio::btle_audio_codec_config_t> framework_encode_preference;
 
@@ -4994,9 +4996,6 @@ TEST_F(UnicastTestNoInit, ServiceChangedBeforeServiceIsConnected) {
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address0, _)).WillByDefault(DoAll(Return(true)));
 
   ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(DoAll(Return(group_id)));
-
-  ON_CALL(mock_btm_interface_, GetSecurityFlagsByTransport(test_address0, NotNull(), _))
-          .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(true)));
 
   std::vector<::bluetooth::le_audio::btle_audio_codec_config_t> framework_encode_preference;
 
