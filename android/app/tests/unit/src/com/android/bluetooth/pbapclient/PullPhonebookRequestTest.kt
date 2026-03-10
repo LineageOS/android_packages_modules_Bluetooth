@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,142 +14,131 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbapclient;
+package com.android.bluetooth.pbapclient
 
-import static com.google.common.truth.Truth.assertThat;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.android.bluetooth.FakeObexServer;
-import com.android.obex.ClientSession;
-import com.android.obex.HeaderSet;
-import com.android.obex.Operation;
-import com.android.obex.ResponseCodes;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.FakeObexServer
+import com.android.obex.ClientSession
+import com.android.obex.HeaderSet
+import com.android.obex.Operation
+import com.android.obex.ResponseCodes
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
 /** Test cases for {@link PullPhonebookRequestTest}. */
-@RunWith(AndroidJUnit4.class)
-public class PullPhonebookRequestTest {
+@RunWith(AndroidJUnit4::class)
+class PullPhonebookRequestTest {
 
-    private static final String PHONEBOOK_NAME = "phonebook";
-
-    private FakePbapObexServer mServer;
-    private ClientSession mSession;
-
-    private PullPhonebookRequest mRequest;
+    private lateinit var server: FakePbapObexServer
+    private lateinit var session: ClientSession
+    private lateinit var request: PullPhonebookRequest
 
     @Before
-    public void setUp() throws IOException {
-        mServer = new FakePbapObexServer();
-        mSession = mServer.getClientSession();
+    fun setUp() {
+        server = FakePbapObexServer()
+        session = server.getClientSession()
 
-        PbapApplicationParameters params =
-                new PbapApplicationParameters(
-                        PbapApplicationParameters.PROPERTIES_ALL,
-                        PbapPhonebook.FORMAT_VCARD_30,
-                        PbapApplicationParameters.MAX_PHONEBOOK_SIZE,
-                        /* startOffset= */ 0);
-        mRequest = new PullPhonebookRequest(PHONEBOOK_NAME, params);
+        val params =
+            PbapApplicationParameters(
+                PbapApplicationParameters.PROPERTIES_ALL,
+                PbapPhonebook.FORMAT_VCARD_30,
+                PbapApplicationParameters.MAX_PHONEBOOK_SIZE,
+                /* startOffset= */ 0,
+            )
+        request = PullPhonebookRequest(PHONEBOOK_NAME, params)
     }
 
     @Test
-    public void getType_returnsTypeMetadataRequest() {
-        assertThat(mRequest.getType()).isEqualTo(PbapClientRequest.TYPE_PULL_PHONEBOOK);
+    fun getType_returnsTypeMetadataRequest() {
+        assertThat(request.type).isEqualTo(PbapClientRequest.TYPE_PULL_PHONEBOOK)
     }
 
     @Test
-    public void getResponseCode_beforeExecutingRequest_returnsNegativeOne() {
-        assertThat(mRequest.getResponseCode()).isEqualTo(-1);
+    fun getResponseCode_beforeExecutingRequest_returnsNegativeOne() {
+        assertThat(request.responseCode).isEqualTo(-1)
     }
 
     @Test
-    public void executeRequest_sessionConnectedWithContacts_returnsContacts() throws IOException {
-        mSession.connect(null);
+    fun executeRequest_sessionConnectedWithContacts_returnsContacts() {
+        session.connect(null)
 
-        String vcard =
-                Utils.createVcard(
-                        Utils.VERSION_30,
-                        "Foo",
-                        "Bar",
-                        "+1-234-567-8901",
-                        "111 Test Street;Test Town;CA;90210;USA",
-                        "Foo@email.com");
-        mServer.addContact(vcard);
+        val vcard =
+            Utils.createVcard(
+                Utils.VERSION_30,
+                "Foo",
+                "Bar",
+                "+1-234-567-8901",
+                "111 Test Street;Test Town;CA;90210;USA",
+                "Foo@email.com",
+            )
+        server.addContact(vcard)
 
-        mRequest.execute(mSession);
+        request.execute(session)
 
-        assertThat(mRequest.getResponseCode()).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
-        assertThat(mRequest.getPhonebook()).isEqualTo(PHONEBOOK_NAME);
+        assertThat(request.responseCode).isEqualTo(ResponseCodes.OBEX_HTTP_OK)
+        assertThat(request.phonebook).isEqualTo(PHONEBOOK_NAME)
 
-        PbapPhonebook phonebook = mRequest.getContacts();
-        assertThat(phonebook).isNotNull();
-        assertThat(phonebook.getPhonebook()).isEqualTo(PHONEBOOK_NAME);
-        assertThat(phonebook.getOffset()).isEqualTo(0);
-        assertThat(phonebook.getCount()).isEqualTo(1);
-        assertThat(phonebook.getList()).isNotEmpty();
+        val phonebook = request.contacts
+        assertThat(phonebook).isNotNull()
+        assertThat(phonebook.phonebook).isEqualTo(PHONEBOOK_NAME)
+        assertThat(phonebook.offset).isEqualTo(0)
+        assertThat(phonebook.count).isEqualTo(1)
+        assertThat(phonebook.list).isNotEmpty()
     }
 
     @Test
-    public void execute_sessionConnectedAndResponseBad_returnsEmptyPhonebook() throws IOException {
-        mSession.connect(null);
-        mServer.setResponseCode(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
+    fun execute_sessionConnectedAndResponseBad_returnsEmptyPhonebook() {
+        session.connect(null)
+        server.setResponseCode(ResponseCodes.OBEX_HTTP_BAD_REQUEST)
 
-        mRequest.execute(mSession);
+        request.execute(session)
 
-        assertThat(mRequest.getResponseCode()).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
-        assertThat(mRequest.getPhonebook()).isEqualTo(PHONEBOOK_NAME);
+        assertThat(request.responseCode).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST)
+        assertThat(request.phonebook).isEqualTo(PHONEBOOK_NAME)
 
-        PbapPhonebook phonebook = mRequest.getContacts();
-        assertThat(phonebook).isNotNull();
-        assertThat(phonebook.getPhonebook()).isEqualTo(PHONEBOOK_NAME);
-        assertThat(phonebook.getOffset()).isEqualTo(0);
-        assertThat(phonebook.getCount()).isEqualTo(0);
-        assertThat(phonebook.getList()).isEmpty();
+        val phonebook = request.contacts
+        assertThat(phonebook).isNotNull()
+        assertThat(phonebook.phonebook).isEqualTo(PHONEBOOK_NAME)
+        assertThat(phonebook.offset).isEqualTo(0)
+        assertThat(phonebook.count).isEqualTo(0)
+        assertThat(phonebook.list).isEmpty()
     }
 
     // *********************************************************************************************
     // * Fake PBAP Server
     // *********************************************************************************************
 
-    private static class FakePbapObexServer extends FakeObexServer {
-        private static final String TAG = FakePbapObexServer.class.getSimpleName();
+    private class FakePbapObexServer : FakeObexServer() {
+        private var responseCode = ResponseCodes.OBEX_HTTP_OK
+        private val phonebook = mutableListOf<String>()
 
-        private int mResponseCode = ResponseCodes.OBEX_HTTP_OK;
-        private final List<String> mPhonebook = new ArrayList<>();
-
-        FakePbapObexServer() throws IOException {
-            super();
+        fun setResponseCode(responseCode: Int) {
+            this.responseCode = responseCode
         }
 
-        void setResponseCode(int responseCode) {
-            mResponseCode = responseCode;
+        fun addContact(vcard: String) {
+            phonebook.add(vcard)
         }
 
-        void addContact(String vcard) {
-            mPhonebook.add(vcard);
-        }
-
-        @Override
-        public int onGet(final Operation op) {
-            if (mResponseCode != ResponseCodes.OBEX_HTTP_OK) {
-                return mResponseCode;
+        override fun onGet(op: Operation): Int {
+            if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
+                return responseCode
             }
 
-            byte[] contacts = null;
-            if (mPhonebook.size() > 0) {
-                String phonebook = Utils.createPhonebook(mPhonebook);
-                contacts = phonebook.getBytes();
+            var contacts: ByteArray? = null
+            if (phonebook.isNotEmpty()) {
+                val phonebookString = Utils.createPhonebook(phonebook)
+                contacts = phonebookString.toByteArray()
             }
 
-            HeaderSet replyHeaders = new HeaderSet();
-            return sendResponse(op, replyHeaders, contacts);
+            val replyHeaders = HeaderSet()
+            return sendResponse(op, replyHeaders, contacts)
         }
+    }
+
+    companion object {
+        private const val PHONEBOOK_NAME = "phonebook"
     }
 }
