@@ -128,3 +128,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_offload_user_codec_selection"
+    namespace: "bluetooth"
+    description: "Fix user codec selection for offloaded codecs"
+    bug: "490357867"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
