@@ -885,26 +885,6 @@ BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         btm_get_bond_type_dev
- *
- * Description      Get the bond type for a device in the device database
- *                  with specified BD address
- *
- * Returns          The device bond type if known, otherwise BOND_TYPE_UNKNOWN
- *
- ******************************************************************************/
-tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr) {
-  const BtmDevice* p_device = btm_find_dev(bd_addr);
-
-  if (p_device == nullptr) {
-    return BOND_TYPE_UNKNOWN;
-  }
-
-  return p_device->sec_rec.bond_type;
-}
-
-/*******************************************************************************
- *
  * Function         btm_set_bond_type_dev
  *
  * Description      Set the bond type for a device in the device database

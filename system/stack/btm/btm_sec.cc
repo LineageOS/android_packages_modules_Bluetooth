@@ -618,7 +618,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
   /* Finished if connection is active and already paired */
   if (!com_android_bluetooth_flags_check_bond_status_before_pairing()) {
     if (transport == BT_TRANSPORT_BR_EDR && p_device->hci_handle != HCI_INVALID_HANDLE &&
-        btm_get_bond_type_dev(bd_addr) == BOND_TYPE_PERSISTENT &&
+        p_device->sec_rec.bond_type == BOND_TYPE_PERSISTENT &&
         (p_device->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) {
       log::warn("Already Paired");
       return tBTM_STATUS::BTM_SUCCESS;
