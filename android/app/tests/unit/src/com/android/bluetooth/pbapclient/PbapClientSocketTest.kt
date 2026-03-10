@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,90 +14,81 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbapclient;
+package com.android.bluetooth.pbapclient
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import android.bluetooth.BluetoothSocket
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.io.InputStream
+import java.io.OutputStream
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.verify
 
 /** Test cases for {@link PbapClientSocket}. */
-@RunWith(AndroidJUnit4.class)
-public class PbapClientSocketTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class PbapClientSocketTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    private static final int TEST_L2CAP_PSM = 4098;
-    private static final int TEST_RFCOMM_CHANNEL_ID = 3;
-
-    private final BluetoothDevice mDevice = getTestDevice(1);
+    private val device = getTestDevice(1)
 
     // This class is used to wrap the otherwise unmockable/untestable BluetoothSocket class. As such
     // its difficult to test that socket operations work in a unit test when we can't mock the
     // underlying socket framework. The best we can do test-wise is to test the injection framework
-    @Mock private InputStream mInjectedInput;
-    @Mock private OutputStream mInjectedOutput;
+    @Mock private lateinit var injectedInput: InputStream
+    @Mock private lateinit var injectedOutput: OutputStream
 
     @Before
-    public void setUp() throws IOException {
-        PbapClientSocket.inject(mInjectedInput, mInjectedOutput);
+    fun setUp() {
+        PbapClientSocket.inject(injectedInput, injectedOutput)
     }
 
     @Test
-    public void testCreateSocketWithInjection_usingL2cap() throws IOException {
-        PbapClientSocket socket = PbapClientSocket.getL2capSocketForDevice(mDevice, TEST_L2CAP_PSM);
+    fun testCreateSocketWithInjection_usingL2cap() {
+        val socket = PbapClientSocket.getL2capSocketForDevice(device, TEST_L2CAP_PSM)
 
-        assertThat(socket.getRemoteDevice()).isEqualTo(mDevice);
-        assertThat(socket.getConnectionType()).isEqualTo(BluetoothSocket.TYPE_L2CAP);
-        assertThat(socket.getMaxTransmitPacketSize()).isEqualTo(255);
-        assertThat(socket.getMaxReceivePacketSize()).isEqualTo(255);
-        assertThat(socket.getInputStream()).isEqualTo(mInjectedInput);
-        assertThat(socket.getOutputStream()).isEqualTo(mInjectedOutput);
+        assertThat(socket.remoteDevice).isEqualTo(device)
+        assertThat(socket.connectionType).isEqualTo(BluetoothSocket.TYPE_L2CAP)
+        assertThat(socket.maxTransmitPacketSize).isEqualTo(255)
+        assertThat(socket.maxReceivePacketSize).isEqualTo(255)
+        assertThat(socket.inputStream).isEqualTo(injectedInput)
+        assertThat(socket.outputStream).isEqualTo(injectedOutput)
 
-        assertThat(socket.toString()).isNotNull();
-        assertThat(socket.toString()).isNotEmpty();
+        assertThat(socket.toString()).isNotNull()
+        assertThat(socket.toString()).isNotEmpty()
     }
 
     @Test
-    public void testCreateSocketWithInjection_usingRfcomm() throws IOException {
-        PbapClientSocket socket =
-                PbapClientSocket.getRfcommSocketForDevice(mDevice, TEST_RFCOMM_CHANNEL_ID);
+    fun testCreateSocketWithInjection_usingRfcomm() {
+        val socket = PbapClientSocket.getRfcommSocketForDevice(device, TEST_RFCOMM_CHANNEL_ID)
 
-        assertThat(socket.getRemoteDevice()).isEqualTo(mDevice);
-        assertThat(socket.getConnectionType()).isEqualTo(BluetoothSocket.TYPE_RFCOMM);
-        assertThat(socket.getMaxTransmitPacketSize()).isEqualTo(255);
-        assertThat(socket.getMaxReceivePacketSize()).isEqualTo(255);
-        assertThat(socket.getInputStream()).isEqualTo(mInjectedInput);
-        assertThat(socket.getOutputStream()).isEqualTo(mInjectedOutput);
+        assertThat(socket.remoteDevice).isEqualTo(device)
+        assertThat(socket.connectionType).isEqualTo(BluetoothSocket.TYPE_RFCOMM)
+        assertThat(socket.maxTransmitPacketSize).isEqualTo(255)
+        assertThat(socket.maxReceivePacketSize).isEqualTo(255)
+        assertThat(socket.inputStream).isEqualTo(injectedInput)
+        assertThat(socket.outputStream).isEqualTo(injectedOutput)
 
-        assertThat(socket.toString()).isNotNull();
-        assertThat(socket.toString()).isNotEmpty();
+        assertThat(socket.toString()).isNotNull()
+        assertThat(socket.toString()).isNotEmpty()
     }
 
     @Test
-    public void testCloseSocketWithInjection() throws IOException {
-        PbapClientSocket socket = PbapClientSocket.getL2capSocketForDevice(mDevice, TEST_L2CAP_PSM);
+    fun testCloseSocketWithInjection() {
+        val socket = PbapClientSocket.getL2capSocketForDevice(device, TEST_L2CAP_PSM)
+        socket.close()
 
-        socket.close();
+        verify(injectedInput).close()
+        verify(injectedOutput).close()
+    }
 
-        verify(mInjectedInput).close();
-        verify(mInjectedOutput).close();
+    companion object {
+        private const val TEST_L2CAP_PSM = 4098
+        private const val TEST_RFCOMM_CHANNEL_ID = 3
     }
 }
