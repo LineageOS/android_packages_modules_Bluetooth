@@ -272,7 +272,14 @@ static tGATT_STATUS read_attr_value(tCONN_ID conn_id, uint16_t handle, tGATT_VAL
       handle == gatt_cb.handle_of_srv_changed_cccd) {
     /* GATT_UUID_GATT_SRV_CHGD CCCD*/
     log::verbose("Read: cccd of service changed");
-    return GATT_READ_NOT_PERMIT;
+    uint8_t* p = p_value->value;
+    /** Service changed for CCCD is always notified for all bonded devices regardless of the
+     * value of the CCCD. return it as 1 as if we are reaching here, It should be from
+     * a bonded device.
+     */
+    UINT16_TO_STREAM(p, 0x0001);
+    p_value->len = 2;
+    return GATT_SUCCESS;
   }
 
   return GATT_NOT_FOUND;
