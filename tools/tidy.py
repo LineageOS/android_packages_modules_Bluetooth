@@ -57,6 +57,14 @@ def run(fix: bool, modules: List[str]):
     environ = os.environ
     args = ["-k"]
 
+    if not environ.get("ANDROID_BUILD_TOP"):
+        print(
+            "tidy.py must be run within an android build environment."
+            + " Run build/envsetup.sh, lunch first.",
+            file=sys.stderr,
+        )
+        sys.exit(-1)
+
     if fix:
         environ["WITH_TIDY_FLAGS"] = "--fix"
         args.append("-j1")
