@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include "os/bt_keystore.h"
+#include "hardware/bt_keystore.h"
 
 namespace bluetooth {
 namespace os {
