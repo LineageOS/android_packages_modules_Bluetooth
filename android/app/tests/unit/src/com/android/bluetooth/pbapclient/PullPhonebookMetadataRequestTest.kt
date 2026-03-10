@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,117 +14,111 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.pbapclient;
+package com.android.bluetooth.pbapclient
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.FakeObexServer
+import com.android.obex.ApplicationParameter
+import com.android.obex.ClientSession
+import com.android.obex.HeaderSet
+import com.android.obex.Operation
+import com.android.obex.ResponseCodes
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import java.io.IOException
+import java.nio.ByteBuffer
+import org.junit.Assert.assertThrows
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import static org.junit.Assert.assertThrows;
+@RunWith(AndroidJUnit4::class)
+class PullPhonebookMetadataRequestTest {
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.android.bluetooth.FakeObexServer;
-import com.android.obex.ApplicationParameter;
-import com.android.obex.ClientSession;
-import com.android.obex.HeaderSet;
-import com.android.obex.Operation;
-import com.android.obex.ResponseCodes;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-@RunWith(AndroidJUnit4.class)
-public class PullPhonebookMetadataRequestTest {
-    private static final String PHONEBOOK_NAME = "phonebook";
-    private static final short PHONEBOOK_SIZE = 200;
-
-    private FakePbapObexServer mServer;
-    private ClientSession mSession;
-    private PullPhonebookMetadataRequest mRequest;
+    private lateinit var server: FakePbapObexServer
+    private lateinit var session: ClientSession
+    private lateinit var request: PullPhonebookMetadataRequest
 
     @Before
-    public void setUp() throws IOException {
-        mServer = new FakePbapObexServer();
-        mSession = mServer.getClientSession();
+    fun setUp() {
+        server = FakePbapObexServer()
+        session = server.getClientSession()
 
-        PbapApplicationParameters params =
-                new PbapApplicationParameters(
-                        PbapApplicationParameters.PROPERTIES_ALL,
-                        PbapPhonebook.FORMAT_VCARD_30,
-                        PbapApplicationParameters.MAX_PHONEBOOK_SIZE,
-                        /* startOffset= */ 0);
-        mRequest = new PullPhonebookMetadataRequest(PHONEBOOK_NAME, params);
+        val params =
+            PbapApplicationParameters(
+                PbapApplicationParameters.PROPERTIES_ALL,
+                PbapPhonebook.FORMAT_VCARD_30,
+                PbapApplicationParameters.MAX_PHONEBOOK_SIZE,
+                /* startOffset= */ 0,
+            )
+        request = PullPhonebookMetadataRequest(PHONEBOOK_NAME, params)
     }
 
     @Test
-    public void getType_returnsTypeMetadataRequest() {
-        assertThat(mRequest.getType()).isEqualTo(PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA);
+    fun getType_returnsTypeMetadataRequest() {
+        assertThat(request.type).isEqualTo(PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA)
     }
 
     @Test
-    public void getResponseCode_beforeExecutingRequest_returnsNegativeOne() {
-        assertThat(mRequest.getResponseCode()).isEqualTo(-1);
+    fun getResponseCode_beforeExecutingRequest_returnsNegativeOne() {
+        assertThat(request.responseCode).isEqualTo(-1)
     }
 
     @Test
-    public void execute_sessionConnectedAndResponseOk_returnsMetadata() throws IOException {
-        mSession.connect(null);
-        mServer.setSize(PHONEBOOK_SIZE);
+    fun execute_sessionConnectedAndResponseOk_returnsMetadata() {
+        session.connect(null)
+        server.setSize(PHONEBOOK_SIZE)
 
-        mRequest.execute(mSession);
+        request.execute(session)
 
-        assertThat(mRequest.getResponseCode()).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
-        assertThat(mRequest.getPhonebook()).isEqualTo(PHONEBOOK_NAME);
+        assertThat(request.responseCode).isEqualTo(ResponseCodes.OBEX_HTTP_OK)
+        assertThat(request.phonebook).isEqualTo(PHONEBOOK_NAME)
 
-        PbapPhonebookMetadata metadata = mRequest.getMetadata();
-        assertThat(metadata.phonebook()).isEqualTo(PHONEBOOK_NAME);
-        assertThat(metadata.size()).isEqualTo(200);
+        val metadata = request.metadata
+        assertThat(metadata.phonebook()).isEqualTo(PHONEBOOK_NAME)
+        assertThat(metadata.size()).isEqualTo(200)
         assertThat(metadata.databaseIdentifier())
-                .isEqualTo(PbapPhonebookMetadata.INVALID_DATABASE_IDENTIFIER);
+            .isEqualTo(PbapPhonebookMetadata.INVALID_DATABASE_IDENTIFIER)
         assertThat(metadata.primaryVersionCounter())
-                .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER);
+            .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER)
         assertThat(metadata.secondaryVersionCounter())
-                .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER);
+            .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER)
     }
 
     @Test
-    public void execute_sessionConnectedAndResponseBad_returnsEmptyMetadata() throws IOException {
-        mSession.connect(null);
-        mServer.setResponseCode(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
-        mRequest.execute(mSession);
+    fun execute_sessionConnectedAndResponseBad_returnsEmptyMetadata() {
+        session.connect(null)
+        server.setResponseCode(ResponseCodes.OBEX_HTTP_BAD_REQUEST)
+        request.execute(session)
 
-        assertThat(mRequest.getResponseCode()).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
-        assertThat(mRequest.getPhonebook()).isEqualTo(PHONEBOOK_NAME);
+        assertThat(request.responseCode).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST)
+        assertThat(request.phonebook).isEqualTo(PHONEBOOK_NAME)
 
-        PbapPhonebookMetadata metadata = mRequest.getMetadata();
-        assertThat(metadata.phonebook()).isEqualTo(PHONEBOOK_NAME);
-        assertThat(metadata.size()).isEqualTo(PbapPhonebookMetadata.INVALID_SIZE);
+        val metadata = request.metadata
+        assertThat(metadata.phonebook()).isEqualTo(PHONEBOOK_NAME)
+        assertThat(metadata.size()).isEqualTo(PbapPhonebookMetadata.INVALID_SIZE)
         assertThat(metadata.databaseIdentifier())
-                .isEqualTo(PbapPhonebookMetadata.INVALID_DATABASE_IDENTIFIER);
+            .isEqualTo(PbapPhonebookMetadata.INVALID_DATABASE_IDENTIFIER)
         assertThat(metadata.primaryVersionCounter())
-                .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER);
+            .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER)
         assertThat(metadata.secondaryVersionCounter())
-                .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER);
+            .isEqualTo(PbapPhonebookMetadata.INVALID_VERSION_COUNTER)
     }
 
     @Test
-    public void execute_sessionNotConnected_throwsIOException() throws IOException {
-        assertThrows(IOException.class, () -> mRequest.execute(mSession));
-        assertThat(mRequest.getResponseCode()).isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
+    fun execute_sessionNotConnected_throwsIOException() {
+        assertThrows(IOException::class.java) { request.execute(session) }
+        assertThat(request.responseCode).isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR)
     }
 
     @Test
-    public void readResponseHeaders() {
+    fun readResponseHeaders() {
         try {
-            HeaderSet headerSet = new HeaderSet();
-            mRequest.readResponseHeaders(headerSet);
-            assertThat(mRequest.getMetadata().size()).isEqualTo(PbapPhonebookMetadata.INVALID_SIZE);
-        } catch (Exception e) {
-            assertWithMessage("Exception should not happen.").fail();
+            val headerSet = HeaderSet()
+            request.readResponseHeaders(headerSet)
+            assertThat(request.metadata.size()).isEqualTo(PbapPhonebookMetadata.INVALID_SIZE)
+        } catch (e: Exception) {
+            assertWithMessage("Exception should not happen.").fail()
         }
     }
 
@@ -132,45 +126,45 @@ public class PullPhonebookMetadataRequestTest {
     // * Fake PBAP Server
     // *********************************************************************************************
 
-    private static class FakePbapObexServer extends FakeObexServer {
-        private static final byte SIZE_BYTES = 2;
+    private class FakePbapObexServer : FakeObexServer() {
+        private var responseCode = ResponseCodes.OBEX_HTTP_OK
+        private var size: Short = 0
 
-        private int mResponseCode = ResponseCodes.OBEX_HTTP_OK;
-        private short mSize = 0;
-
-        FakePbapObexServer() throws IOException {
-            super();
+        fun setResponseCode(responseCode: Int) {
+            this.responseCode = responseCode
         }
 
-        void setResponseCode(int responseCode) {
-            mResponseCode = responseCode;
+        fun setSize(size: Short) {
+            this.size = size
         }
 
-        void setSize(short size) {
-            mSize = size;
-        }
-
-        @Override
-        public int onGet(final Operation op) {
-            if (mResponseCode != ResponseCodes.OBEX_HTTP_OK) {
-                return mResponseCode;
+        override fun onGet(op: Operation): Int {
+            if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
+                return responseCode
             }
 
-            ApplicationParameter params = new ApplicationParameter();
+            val params = ApplicationParameter()
             params.addTriplet(
-                    PbapApplicationParameters.OAP_PHONEBOOK_SIZE,
-                    SIZE_BYTES,
-                    shortToByteArray(mSize));
+                PbapApplicationParameters.OAP_PHONEBOOK_SIZE,
+                SIZE_BYTES,
+                shortToByteArray(size),
+            )
 
-            HeaderSet replyHeaders = new HeaderSet();
-            replyHeaders.setHeader(HeaderSet.APPLICATION_PARAMETER, params.getHeader());
-            return sendResponse(op, replyHeaders, null);
+            val replyHeaders = HeaderSet()
+            replyHeaders.setHeader(HeaderSet.APPLICATION_PARAMETER, params.header)
+            return sendResponse(op, replyHeaders, null)
         }
 
-        static byte[] shortToByteArray(short s) {
-            ByteBuffer ret = ByteBuffer.allocate(2);
-            ret.putShort(s);
-            return ret.array();
+        private fun shortToByteArray(s: Short) =
+            ByteBuffer.allocate(2).apply { putShort(s) }.array()
+
+        companion object {
+            private const val SIZE_BYTES: Byte = 2
         }
+    }
+
+    companion object {
+        private const val PHONEBOOK_NAME = "phonebook"
+        private const val PHONEBOOK_SIZE: Short = 200
     }
 }
