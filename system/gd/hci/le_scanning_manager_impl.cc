@@ -30,6 +30,8 @@
 #include "hci/le_periodic_sync_manager.h"
 #include "hci/le_scanning_interface.h"
 #include "hci/le_scanning_reassembler.h"
+#include "hci/msft.h"
+#include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"
 #include "os/handler.h"
@@ -69,6 +71,10 @@ constexpr uint8_t kDataStatusBits = 5;
 constexpr uint8_t kLeJavaScanActive = 0x10;   // 0b00010000
 constexpr uint8_t kLeDiscoveryActive = 0x20;  // 0b00100000
 constexpr uint8_t kLeCsisScanActive = 0x40;   // 0b01000000
+
+// Error codes for toggling MSFT-based scanning
+constexpr uint8_t MSFT_FILTER_ENABLE_SUCCESS = 0x00;
+constexpr uint8_t MSFT_FILTER_ENABLE_CMD_DISALLOWED = 0x0c;
 
 // system properties
 const std::string kLeRxPathLossCompProperty = "bluetooth.hardware.radio.le_rx_path_loss_comp_db";
@@ -183,6 +189,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
             handler_->BindOn(this, &LeScanningManagerImpl::impl::handle_scan_results));
     periodic_sync_manager_.Init(le_scanning_interface_, handler_);
+    scanner_ = bluetooth::shim::get_ble_scanner_instance();
     /* Check to see if the opcode is supported and C19 (support for extended advertising). */
     if (controller_->IsSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS) &&
         controller->SupportsBleExtendedAdvertising()) {
@@ -1862,6 +1869,41 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   bool is_coded_phy_configured() { return phy_ & kCodedPhyMask; }
   bool is_1m_phy_configured() { return phy_ & k1mPhyMask; }
 
+  void msft_adv_monitor_enable(bool enable, bool restart_scan) {
+    if (!should_use_msft_filtering()) {
+      return;
+    }
+
+    log::debug("MSFT: {} advertisement monitor", enable ? "Enabling" : "Disabling");
+    scanner_->MsftAdvMonitorEnable(enable, base::BindOnce(&impl::msft_adv_monitor_enable_cb,
+                                                          base::Unretained(this), restart_scan));
+  }
+
+  bool should_use_msft_filtering() {
+    return !is_filter_supported_ &&
+           bluetooth::shim::GetMsftExtensionManager()->SupportsMsftExtensions();
+  }
+
+  void msft_adv_monitor_enable_cb(bool restart_scan, bool enable, uint8_t status) {
+    if (status == MSFT_FILTER_ENABLE_CMD_DISALLOWED) {
+      log::warn("MSFT: Advertisement monitor is already {}", enable ? "enabled" : "disabled");
+    } else if (status != MSFT_FILTER_ENABLE_SUCCESS) {
+      log::error("MSFT: {} advertisement monitor failed with status: {}",
+                 enable ? "Enabling" : "Disabling", status);
+      return;
+    } else {
+      log::debug("MSFT: Advertisement monitor {}", enable ? "enabled" : "disabled");
+    }
+
+    // To retain the correct command sequencing, only re-enable LE scanning now that we know MSFT
+    // filtered scanning has been re-enabled
+    if (!restart_scan) {
+      return;
+    }
+    log::debug("MSFT: Restarting LE scan");
+    start_scan();
+  }
+
   os::Handler* handler_;
   HciInterface* hci_layer_;
   Controller* controller_;
@@ -1875,6 +1917,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   ScanningCallback* scanning_callbacks_ = &null_scanning_callback_;
   PeriodicSyncManager periodic_sync_manager_{&null_scanning_callback_};
   std::vector<Scanner> scanners_;
+  BleScannerInterface* scanner_;
   bool is_scanning_ = false;
   bool scan_on_resume_ = false;
   bool paused_ = false;
