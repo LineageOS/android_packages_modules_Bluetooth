@@ -24,15 +24,8 @@
 #include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
-#include <string>
-
 #include "hci/controller.h"
-#include "internal_include/bt_target.h"
-#include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
-#include "main/shim/helpers.h"
-#include "osi/include/allocator.h"
-#include "stack/arbiter/acl_arbiter.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/gatt/gatt_int.h"

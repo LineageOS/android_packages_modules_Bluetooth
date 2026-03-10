@@ -46,7 +46,6 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"

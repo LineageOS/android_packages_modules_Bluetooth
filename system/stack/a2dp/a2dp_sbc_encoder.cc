@@ -31,12 +31,10 @@
 
 #include "common/time_util.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
-#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/a2dp_api.h"
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/a2dp_sbc.h"
-#include "stack/include/a2dp_sbc_constants.h"
 #include "stack/include/a2dp_sbc_up_sample.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"

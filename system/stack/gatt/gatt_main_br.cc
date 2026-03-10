@@ -25,11 +25,9 @@
 #include <bluetooth/log.h>
 
 #include "osi/include/allocator.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_psm_types.h"
-#include "stack/include/btm_client_interface.h"
-#include "stack/include/l2cap_acl_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
 

@@ -33,7 +33,6 @@
 
 #include "gd/hci/acl_manager/acl_manager_le.h"
 #include "gd/hci/controller.h"
-#include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"

@@ -31,7 +31,6 @@
 
 #include "gatt_int.h"
 #include "hardware/bt_gatt_types.h"
-#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/arbiter/acl_arbiter.h"
 #include "stack/eatt/eatt.h"

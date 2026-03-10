@@ -26,17 +26,14 @@
 #include <vector>
 
 #include "hci/controller.h"
-#include "include/bind_helpers.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
-#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"

@@ -40,7 +40,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_addr.h"
-#include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/stack_app.h"
 #include "stack/include/stack_le_connection.h"

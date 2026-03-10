@@ -27,11 +27,10 @@
 #include <vector>
 
 #include "stack/btm/btm_ble_int.h"
-#include "stack/btm/btm_ble_int_types.h"
+#include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_status.h"
-#include "stack/include/hci_error_code.h"
 #include "stack/include/rnr_interface.h"
 #include "test/common/mock_functions.h"
 

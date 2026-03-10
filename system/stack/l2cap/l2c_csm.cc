@@ -232,12 +232,12 @@ static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb) {
  ******************************************************************************/
 void l2c_csm_execute(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
   if (p_ccb == nullptr) {
-    log::warn("CCB is null for event ({})", event);
+    log::warn("CCB is null for event ({})", l2c_csm_get_event_name(event));
     return;
   }
 
   if (!l2cu_is_ccb_active(p_ccb)) {
-    log::warn("CCB not in use, event ({}) cannot be processed", event);
+    log::warn("CCB not in use, event ({}) cannot be processed", l2c_csm_get_event_name(event));
     return;
   }
 

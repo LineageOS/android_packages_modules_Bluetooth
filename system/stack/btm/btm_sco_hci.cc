@@ -23,14 +23,12 @@
 #include <unistd.h>
 
 #include <cfloat>
-#include <memory>
 
 #include "bta/ag/bta_ag_int.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sco.h"
-#include "udrv/include/uipc.h"
 
 /* Per Bluetooth Core v5.0 and HFP 1.9 specification. */
 #define BTM_MSBC_H2_HEADER_0 0x01

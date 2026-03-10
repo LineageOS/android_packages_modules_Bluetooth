@@ -28,10 +28,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 
-#include "stack/btm/btm_ble_int_types.h"
 #include "stack/btm/btm_device_record.h"
-#include "stack/include/ble_hci_link_interface.h"
-#include "stack/include/hci_error_code.h"
 
 void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint16_t scan_win_1m,
                                   uint16_t scan_int_coded, uint16_t scan_win_coded,

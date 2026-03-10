@@ -26,6 +26,7 @@
 #include <optional>
 
 #include "stack/btm/btm_ble_int.h"
+#include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_sec_api.h"

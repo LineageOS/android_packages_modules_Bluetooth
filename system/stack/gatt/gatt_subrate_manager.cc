@@ -24,12 +24,10 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
-#include <cmath>
 #include <cstdint>
 #include "gatt_int.h"
 
 #include "hci/controller.h"
-#include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "stack/include/acl_api.h"
 #include "stack/btm/btm_dev.h"

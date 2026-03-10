@@ -31,7 +31,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_types.h"
 
-using bluetooth::Uuid;
 using namespace bluetooth;
 
 /*******************************************************************************
