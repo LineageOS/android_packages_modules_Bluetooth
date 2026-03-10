@@ -56,15 +56,17 @@ class ScannerMapTest {
     @Mock private lateinit var packageManager: PackageManager
     @Mock private lateinit var scannerCallback: IScannerCallback
 
+    private lateinit var scannerMap: ScannerMap
+
     @Before
     fun setUp() {
         adapterService.mockPackageManager(packageManager)
         doReturn(APP_NAME).whenever(packageManager).getNameForUid(any())
+        scannerMap = ScannerMap(adapterService, batteryStatsManager)
     }
 
     @Test
     fun getByMethodsWithPii() {
-        val scannerMap = ScannerMap()
         val context = InstrumentationRegistry.getInstrumentation().context
         val intent = PendingIntent.getBroadcast(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
         val info = ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID, PID)
@@ -80,8 +82,6 @@ class ScannerMapTest {
                 info,
                 scanSettings,
                 filters,
-                adapterService,
-                batteryStatsManager,
             )
         app.scannerId = SCANNER_ID
 
@@ -94,7 +94,6 @@ class ScannerMapTest {
 
     @Test
     fun getByMethodsWithoutPii() {
-        val scannerMap = ScannerMap()
         val uuid = UUID.randomUUID()
         val appUid = Binder.getCallingUid()
         val appPid = Binder.getCallingPid()
@@ -111,8 +110,6 @@ class ScannerMapTest {
                 scannerCallback,
                 scanSettings,
                 filters,
-                adapterService,
-                batteryStatsManager,
             )
         app.scannerId = SCANNER_ID
 
@@ -126,7 +123,6 @@ class ScannerMapTest {
 
     @Test
     fun removeById() {
-        val scannerMap = ScannerMap()
         val uuid = UUID.randomUUID()
         val appUid = 1234
         val appPid = Binder.getCallingPid()
@@ -143,8 +139,6 @@ class ScannerMapTest {
                 scannerCallback,
                 scanSettings,
                 filters,
-                adapterService,
-                batteryStatsManager,
             )
         app.scannerId = SCANNER_ID
 
@@ -157,7 +151,6 @@ class ScannerMapTest {
     @Test
     fun dump_doesNotCrash() {
         val sb = StringBuilder()
-        val scannerMap = ScannerMap()
         val appUid = 1234
         val appPid = Binder.getCallingPid()
         val scanSettings = ScanSettings.Builder().build()
@@ -172,10 +165,8 @@ class ScannerMapTest {
             scannerCallback,
             scanSettings,
             filters,
-            adapterService,
-            batteryStatsManager,
         )
-        scannerMap.dump(sb, emptyMap())
+        scannerMap.dump(sb)
     }
 
     companion object {
