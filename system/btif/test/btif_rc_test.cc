@@ -31,6 +31,7 @@
 #include "btif_status.h"
 #include "common/message_loop_thread.h"
 #include "device/include/interop.h"
+#include "include/bt_status.h"
 #include "include/hardware/bt_rc.h"
 #include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
@@ -233,7 +234,7 @@ protected:
   void SetUp() override {
     BtifRcTest::SetUp();
     btrc_ctrl_callbacks = default_btrc_ctrl_callbacks;
-    init_ctrl(&btrc_ctrl_callbacks);
+    ASSERT_TRUE(btif_rc_ctrl_get_interface()->init(&btrc_ctrl_callbacks).isSuccess());
     jni_thread.StartUp();
     btrc_ctrl_callbacks.getrcfeatures_cb = [](const RawAddress& bd_addr, int features) {
       rc_feature_cb_t rc_feature = {
@@ -255,7 +256,7 @@ protected:
 
   void TearDown() override {
     jni_thread.Suspend();
-    bt_rc_ctrl_callbacks->getrcfeatures_cb = [](const RawAddress& /*bd_addr*/, int /*features*/) {};
+    btif_rc_ctrl_get_interface()->cleanup();
     btrc_ctrl_callbacks = default_btrc_ctrl_callbacks;
     set_btif_av_src_sink_coexist_enabled(true);
     BtifRcTest::TearDown();
@@ -264,18 +265,19 @@ protected:
 
 TEST_F(BtifRcWithCallbacksTest, send_groupnavigation_cmd_test) {
   btif_rc_cb.rc_multi_cb[0].rc_features = BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCTG;
-  BtStatus status = send_groupnavigation_cmd(kDeviceAddress, 0, 0);
+  BtStatus status = btif_rc_ctrl_get_interface()->send_group_navigation_cmd(kDeviceAddress, 0, 0);
   ASSERT_EQ(status, BtifStatus());
   ASSERT_EQ(1, get_func_call_count("BTA_AvRemoteVendorUniqueCmd"));
 }
 TEST_F(BtifRcWithCallbacksTest, volume_change_notification_rsp_test) {
-  volume_change_notification_rsp(kDeviceAddress, BTRC_NOTIFICATION_TYPE_INTERIM, 1, true);
-  // no assert as mock returns 0
+  BtStatus status = btif_rc_ctrl_get_interface()->register_abs_vol_rsp(
+          kDeviceAddress, BTRC_NOTIFICATION_TYPE_INTERIM, 1, true);
+  ASSERT_EQ(status, BtifStatus());
 }
 
 TEST_F(BtifRcWithCallbacksTest, set_volume_rsp_test) {
-  set_volume_rsp(kDeviceAddress, 100, 1);
-  // no assert as mock returns 0
+  BtStatus status = btif_rc_ctrl_get_interface()->set_volume_rsp(kDeviceAddress, 100, 1);
+  ASSERT_EQ(status, BtifStatus());
 }
 
 TEST_F(BtifRcWithCallbacksTest, get_play_status_cmd_test) {
@@ -309,7 +311,7 @@ TEST_F(BtifRcWithCallbacksTest, get_player_app_setting_attr_text_cmd_test) {
 
 TEST_F(BtifRcWithCallbacksTest, play_item_cmd_test) {
   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0, 0};
-  BtStatus status = play_item_cmd(kDeviceAddress, 0, uid, 0);
+  BtStatus status = btif_rc_ctrl_get_interface()->play_item_cmd(kDeviceAddress, 0, uid, 0);
   ASSERT_EQ(status, BtifStatus(NOT_READY));
 }
 
@@ -321,13 +323,13 @@ TEST_F(BtifRcWithCallbacksTest, get_folder_items_cmd_test) {
 
 TEST_F(BtifRcWithCallbacksTest, set_addressed_player_cmd_test) {
   btif_rc_cb.rc_multi_cb[0].br_connected = true;
-  BtStatus status = set_addressed_player_cmd(kDeviceAddress, 1);
+  BtStatus status = btif_rc_ctrl_get_interface()->set_addressed_player_cmd(kDeviceAddress, 1);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }
 
 TEST_F(BtifRcWithCallbacksTest, set_browsed_player_cmd_test) {
   btif_rc_cb.rc_multi_cb[0].br_connected = true;
-  BtStatus status = set_browsed_player_cmd(kDeviceAddress, 1);
+  BtStatus status = btif_rc_ctrl_get_interface()->set_browsed_player_cmd(kDeviceAddress, 1);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }
 
@@ -845,7 +847,7 @@ class BtifRcConnectionTest : public BtifRcTest {
 protected:
   void SetUp() override {
     BtifRcTest::SetUp();
-    init_ctrl(&btrc_ctrl_callbacks);
+    ASSERT_EQ(btif_rc_ctrl_get_interface()->init(&btrc_ctrl_callbacks), BtifStatus());
     jni_thread.StartUp();
     g_btrc_connection_state_promise = std::promise<rc_connection_state_cb_t>();
     g_btrc_connection_state_future = g_btrc_connection_state_promise.get_future();
@@ -862,8 +864,9 @@ protected:
 
   void TearDown() override {
     jni_thread.Suspend();
-    bt_rc_ctrl_callbacks->connection_state_cb = [](bool /*rc_state*/, bool /*bt_state*/,
-                                                   const RawAddress& /*bd_addr*/) {};
+    btrc_ctrl_callbacks.connection_state_cb = [](bool /*rc_state*/, bool /*bt_state*/,
+                                                 const RawAddress& /*bd_addr*/) {};
+    btif_rc_ctrl_get_interface()->cleanup();
     BtifRcTest::TearDown();
   }
   std::future<rc_connection_state_cb_t> g_btrc_connection_state_future;
@@ -1002,7 +1005,7 @@ class BtifTrackChangeCBTest : public BtifRcTest {
 protected:
   void SetUp() override {
     BtifRcTest::SetUp();
-    init_ctrl(&btrc_ctrl_callbacks);
+    ASSERT_EQ(btif_rc_ctrl_get_interface()->init(&btrc_ctrl_callbacks), BtifStatus());
     jni_thread.StartUp();
     btrc_ctrl_callbacks.track_changed_cb = [](const RawAddress& bd_addr, uint8_t /*num_attr*/,
                                               btrc_element_attr_val_t* /*p_attrs*/) {
@@ -1014,6 +1017,7 @@ protected:
     jni_thread.Suspend();
     btrc_ctrl_callbacks.track_changed_cb = [](const RawAddress& /*bd_addr*/, uint8_t /*num_attr*/,
                                               btrc_element_attr_val_t* /*p_attrs*/) {};
+    btif_rc_ctrl_get_interface()->cleanup();
     BtifRcTest::TearDown();
   }
 };
@@ -2185,7 +2189,8 @@ TEST_F(BtifRcWithCallbacksTest, send_passthrough_cmd_test) {
     btif_rc_cb.rc_multi_cb[0].transaction_set.transaction[i].in_use = false;
     btif_rc_cb.rc_multi_cb[0].transaction_set.transaction[i].label = i;
   }
-  BtStatus status = send_passthrough_cmd(kDeviceAddress, AVRC_ID_PLAY, 0);
+  BtStatus status =
+          btif_rc_ctrl_get_interface()->send_pass_through_cmd(kDeviceAddress, AVRC_ID_PLAY, 0);
   ASSERT_EQ(status, BtifStatus());
 }
 
@@ -2201,7 +2206,8 @@ TEST_F(BtifRcWithCallbacksTest, change_folder_path_cmd_test) {
     btif_rc_cb.rc_multi_cb[0].transaction_set.transaction[i].label = i;
   }
   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0, 1};
-  BtStatus status = change_folder_path_cmd(kDeviceAddress, AVRC_DIR_DOWN, uid);
+  BtStatus status =
+          btif_rc_ctrl_get_interface()->change_folder_path_cmd(kDeviceAddress, AVRC_DIR_DOWN, uid);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }
 
@@ -2213,7 +2219,8 @@ TEST_F(BtifRcWithCallbacksTest, change_folder_path_cmd_not_ready_test) {
   btif_rc_cb.rc_multi_cb[0].br_connected = false;  // Not ready for browsing
 
   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0, 1};
-  BtStatus status = change_folder_path_cmd(kDeviceAddress, AVRC_DIR_DOWN, uid);
+  BtStatus status =
+          btif_rc_ctrl_get_interface()->change_folder_path_cmd(kDeviceAddress, AVRC_DIR_DOWN, uid);
   ASSERT_EQ(status, BtifStatus(NOT_READY));
 }
 
@@ -2400,7 +2407,7 @@ TEST_F(BtifRcWithCallbacksTest, get_current_metadata_cmd_test) {
     p_dev->transaction_set.transaction[i].in_use = false;
     p_dev->transaction_set.transaction[i].label = i;
   }
-  BtStatus status = get_current_metadata_cmd(kDeviceAddress);
+  BtStatus status = btif_rc_ctrl_get_interface()->get_current_metadata_cmd(kDeviceAddress);
   ASSERT_EQ(status, BtifStatus());
 }
 TEST_F(BtifRcWithCallbacksTest, get_current_metadata_cmd_test_error) {
@@ -2416,7 +2423,7 @@ TEST_F(BtifRcWithCallbacksTest, get_current_metadata_cmd_test_error) {
   }
 
   const RawAddress unknown_address = RawAddress("de:ad:be:ef:12:34");
-  BtStatus status = get_current_metadata_cmd(unknown_address);
+  BtStatus status = btif_rc_ctrl_get_interface()->get_current_metadata_cmd(unknown_address);
   ASSERT_EQ(status, BtifStatus(DEVICE_NOT_FOUND));
 }
 
@@ -2431,7 +2438,7 @@ TEST_F(BtifRcWithCallbacksTest, get_playback_state_cmd_test) {
     p_dev->transaction_set.transaction[i].in_use = false;
     p_dev->transaction_set.transaction[i].label = i;
   }
-  BtStatus status = get_playback_state_cmd(kDeviceAddress);
+  BtStatus status = btif_rc_ctrl_get_interface()->get_playback_state_cmd(kDeviceAddress);
   ASSERT_EQ(status, BtifStatus());
 }
 
@@ -2447,7 +2454,8 @@ TEST_F(BtifRcWithCallbacksTest, get_now_playing_list_cmd_test) {
     p_dev->transaction_set.transaction[i].in_use = false;
     p_dev->transaction_set.transaction[i].label = i;
   }
-  BtStatus status = get_now_playing_list_cmd(kDeviceAddress, 0, 0xFFFFFFFF);
+  BtStatus status =
+          btif_rc_ctrl_get_interface()->get_now_playing_list_cmd(kDeviceAddress, 0, 0xFFFFFFFF);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }
 
@@ -2463,6 +2471,7 @@ TEST_F(BtifRcWithCallbacksTest, get_folder_list_cmd_test) {
     p_dev->transaction_set.transaction[i].in_use = false;
     p_dev->transaction_set.transaction[i].label = i;
   }
-  BtStatus status = get_folder_list_cmd(kDeviceAddress, 0, 0xFFFFFFFF);
+  BtStatus status =
+          btif_rc_ctrl_get_interface()->get_folder_list_cmd(kDeviceAddress, 0, 0xFFFFFFFF);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }

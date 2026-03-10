@@ -3699,3 +3699,106 @@ void btif_debug_rc_dump(int fd) {
     }
   }
 }
+
+namespace bluetooth::testing::avrc {
+
+static btif_rc_interface interface = {
+        /*************************************************************************
+         * Group 1: Command Transmission & Infrastructure
+         *************************************************************************/
+        .build_and_send_browsing_cmd = ::build_and_send_browsing_cmd,
+        .build_and_send_vendor_cmd = ::build_and_send_vendor_cmd,
+        .btif_rc_ctrl_upstreams_rsp_cmd = ::btif_rc_ctrl_upstreams_rsp_cmd,
+        .send_reject_response = ::send_reject_response,
+
+        /*************************************************************************
+         * Group 2: Player Metadata & Status Tracking
+         *************************************************************************/
+        .get_element_attribute_cmd = ::get_element_attribute_cmd,
+        .get_metadata_attribute_cmd = ::get_metadata_attribute_cmd,
+        .get_play_status_cmd = ::get_play_status_cmd,
+        .get_player_app_setting_attr_text_cmd = ::get_player_app_setting_attr_text_cmd,
+        .get_player_app_setting_cmd = ::get_player_app_setting_cmd,
+        .get_player_app_setting_value_text_cmd = ::get_player_app_setting_value_text_cmd,
+        .list_player_app_setting_attrib_cmd = ::list_player_app_setting_attrib_cmd,
+        .list_player_app_setting_value_cmd = ::list_player_app_setting_value_cmd,
+        .handle_app_attr_response = ::handle_app_attr_response,
+        .handle_app_attr_txt_response = ::handle_app_attr_txt_response,
+        .handle_app_attr_val_txt_response = ::handle_app_attr_val_txt_response,
+        .handle_app_cur_val_response = ::handle_app_cur_val_response,
+        .handle_app_val_response = ::handle_app_val_response,
+        .handle_get_metadata_attr_response = ::handle_get_metadata_attr_response,
+        .handle_get_playstatus_response = ::handle_get_playstatus_response,
+        .handle_set_app_attr_val_response = ::handle_set_app_attr_val_response,
+        .cleanup_app_attr_val_txt_response = ::cleanup_app_attr_val_txt_response,
+        .rc_is_track_id_valid = ::rc_is_track_id_valid,
+
+        /*************************************************************************
+         * Group 3: Player & Feature Discovery
+         *************************************************************************/
+        .getcapabilities_cmd = ::getcapabilities_cmd,
+        .handle_get_capability_response = ::handle_get_capability_response,
+        .handle_rc_browse_connect = ::handle_rc_browse_connect,
+        .handle_rc_connect = ::handle_rc_connect,
+        .handle_rc_ctrl_features = ::handle_rc_ctrl_features,
+        .handle_rc_ctrl_features_all = ::handle_rc_ctrl_features_all,
+        .handle_rc_ctrl_psm = ::handle_rc_ctrl_psm,
+        .handle_rc_disconnect = ::handle_rc_disconnect,
+        .handle_set_addressed_player_response = ::handle_set_addressed_player_response,
+        .handle_set_browsed_player_response = ::handle_set_browsed_player_response,
+        .dump_peer_features = ::dump_peer_features,
+        .get_requested_attributes_list_size = ::get_requested_attributes_list_size,
+
+        /*************************************************************************
+         * Group 4: Device & Transaction Management
+         *************************************************************************/
+        .alloc_device = ::alloc_device,
+        .btif_rc_get_device_by_bda = ::btif_rc_get_device_by_bda,
+        .btif_rc_get_device_by_handle = ::btif_rc_get_device_by_handle,
+        .get_connected_device = ::get_connected_device,
+        .get_transaction = ::get_transaction,
+        .get_transaction_by_lbl = ::get_transaction_by_lbl,
+        .initialize_device = ::initialize_device,
+        .init_all_transactions = ::init_all_transactions,
+        .initialize_transaction = ::initialize_transaction,
+        .release_transaction = ::release_transaction,
+        .dump_transaction = ::dump_transaction,
+
+        /*************************************************************************
+         * Group 5: Browsing & Content Navigation
+         *************************************************************************/
+        .get_folder_items_cmd = ::get_folder_items_cmd,
+        .get_item_attribute_cmd = ::get_item_attribute_cmd,
+        .handle_change_path_response = ::handle_change_path_response,
+        .handle_get_folder_items_response = ::handle_get_folder_items_response,
+        .get_folder_item_type_folder = ::get_folder_item_type_folder,
+        .get_folder_item_type_media = ::get_folder_item_type_media,
+        .get_folder_item_type_player = ::get_folder_item_type_player,
+        .cleanup_btrc_folder_items = ::cleanup_btrc_folder_items,
+
+        /*************************************************************************
+         * Group 6: Event Notification & Timeout Handling
+         *************************************************************************/
+        .register_notification_cmd = ::register_notification_cmd,
+        .register_for_event_notification = ::register_for_event_notification,
+        .handle_notification_response = ::handle_notification_response,
+        .iterate_supported_event_list_for_interim_rsp =
+                ::iterate_supported_event_list_for_interim_rsp,
+        .rc_notification_interim_timeout = ::rc_notification_interim_timeout,
+        .rc_ctrl_procedure_complete = ::rc_ctrl_procedure_complete,
+        .start_transaction_timer = ::start_transaction_timer,
+        .clear_cmd_timeout = ::clear_cmd_timeout,
+        .passthru_cmd_timeout_handler = ::passthru_cmd_timeout_handler,
+        .vendor_cmd_timeout_handler = ::vendor_cmd_timeout_handler,
+        .browse_cmd_timeout_handler = ::browse_cmd_timeout_handler,
+        .btif_rc_transaction_timer_timeout = ::btif_rc_transaction_timer_timeout,
+        .btif_rc_transaction_timeout_handler = ::btif_rc_transaction_timeout_handler,
+        .handle_rc_passthrough_rsp = ::handle_rc_passthrough_rsp,
+        .handle_rc_vendorunique_rsp = ::handle_rc_vendorunique_rsp,
+        .handle_avk_rc_metamsg_cmd = ::handle_avk_rc_metamsg_cmd,
+        .handle_avk_rc_metamsg_rsp = ::handle_avk_rc_metamsg_rsp,
+};
+
+btif_rc_interface* btif_rc_ctrl_get_interface() { return &interface; }
+
+}  // namespace bluetooth::testing::avrc
