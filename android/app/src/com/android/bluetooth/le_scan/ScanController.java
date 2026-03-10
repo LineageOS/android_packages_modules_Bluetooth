@@ -105,7 +105,6 @@ public class ScanController {
 
     private final AdapterService mAdapterService;
     private final AppOpsManager mAppOps;
-    private final BatteryStatsManager mBatteryStatsManager;
     private final CompanionDeviceManager mCompanionManager;
     private final ScanBinder mBinder;
     private final ScannerMap mScannerMap;
@@ -126,19 +125,18 @@ public class ScanController {
     private Handler mTestModeHandler;
 
     public ScanController(
-            AdapterService service,
+            AdapterService adapterService,
             ScanNativeInterface scanNativeInterface,
             PeriodicScanNativeInterface periodicScanNativeInterface,
             BatteryStatsManager batteryStatsManager,
             CompanionDeviceManager companionDeviceManager) {
         this(
-                service,
+                adapterService,
                 null,
                 scanNativeInterface,
                 null,
                 periodicScanNativeInterface,
-                new ScannerMap(),
-                batteryStatsManager,
+                new ScannerMap(adapterService, batteryStatsManager),
                 companionDeviceManager,
                 null,
                 TimeProvider.getSystemClock());
@@ -146,20 +144,18 @@ public class ScanController {
 
     @VisibleForTesting
     ScanController(
-            AdapterService service,
+            AdapterService adapterService,
             ScanManager scanManager,
             ScanNativeInterface scanNativeInterface,
             PeriodicScanManager periodicScanManager,
             PeriodicScanNativeInterface periodicScanNativeInterface,
             ScannerMap scannerMap,
-            BatteryStatsManager batteryStatsManager,
             CompanionDeviceManager companionDeviceManager,
             @Nullable Looper looper,
             TimeProvider timeProvider) {
         Log.i(TAG, "Created");
-        mAdapterService = requireNonNull(service);
+        mAdapterService = requireNonNull(adapterService);
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
-        mBatteryStatsManager = batteryStatsManager;
         mCompanionManager = companionDeviceManager;
         mBinder = new ScanBinder(mAdapterService, this);
         mScannerMap = scannerMap;
@@ -932,7 +928,7 @@ public class ScanController {
 
     private void registerAndStartScan(
             IScannerCallback callback,
-            WorkSource workSource,
+            @Nullable WorkSource workSource,
             AttributionSource source,
             ScanSettings settings,
             List<ScanFilter> filters,
@@ -956,8 +952,6 @@ public class ScanController {
                 callback,
                 settings,
                 filters,
-                mAdapterService,
-                mBatteryStatsManager,
                 isInternal);
         mScanManager.registerScanner(uuid);
     }
@@ -1099,9 +1093,7 @@ public class ScanController {
                         source,
                         piInfo,
                         settings,
-                        filters,
-                        mAdapterService,
-                        mBatteryStatsManager);
+                        filters);
         mAppOps.checkPackage(uid, callingPackage);
         app.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));
