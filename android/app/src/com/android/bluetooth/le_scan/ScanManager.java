@@ -74,7 +74,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.time.Duration;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,7 +84,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /** Class that handles Bluetooth LE scan related operations. */
 public class ScanManager {
@@ -289,12 +287,6 @@ public class ScanManager {
         } catch (IllegalArgumentException e) {
             Log.w(TAG, "exception when invoking unregisterReceiver(mLocationReceiver)", e);
         }
-    }
-
-    Map<Integer, ScanSettings> getSettingsMap() {
-        return Stream.of(mRegularScanClients, mBatchClients, mSuspendedScanClients)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toMap(ScanClient::getScannerId, ScanClient::getSettings));
     }
 
     @VisibleForTesting

@@ -1325,6 +1325,6 @@ public class ScanController {
 
     public void dump(StringBuilder sb) {
         enforceScanThread();
-        mScannerMap.dump(sb, mScanManager.getSettingsMap());
+        mScannerMap.dump(sb);
     }
 }

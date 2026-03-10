@@ -186,7 +186,7 @@ class ScannerMap(
         return app
     }
 
-    fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
+    fun dump(sb: StringBuilder) {
         sb.appendLine("LE Scanner:")
         if (apps.isNotEmpty()) {
             val columns =
@@ -199,15 +199,6 @@ class ScannerMap(
 
             if (apps.any { !it.attributionTag.isNullOrEmpty() }) {
                 columns.add(Column("TAG") { it.attributionTag ?: "" })
-            }
-
-            if (settingsMap.values.any { it.reportDelayMillis > 0 }) {
-                columns.add(
-                    Column("REPORT_DELAY_MS", width = 15) { app ->
-                        val delay = settingsMap[app.scannerId]?.reportDelayMillis ?: 0
-                        if (delay > 0) delay.toString() else ""
-                    }
-                )
             }
 
             sb.appendLine(apps.toTable(columns).indent("  "))

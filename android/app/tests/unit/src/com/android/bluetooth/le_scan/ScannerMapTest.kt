@@ -166,7 +166,7 @@ class ScannerMapTest {
             scanSettings,
             filters,
         )
-        scannerMap.dump(sb, emptyMap())
+        scannerMap.dump(sb)
     }
 
     companion object {
