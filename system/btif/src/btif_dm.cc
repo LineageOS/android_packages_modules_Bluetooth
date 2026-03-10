@@ -3826,6 +3826,9 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
                 bd_addr, pairing_cb.gatt_over_le);
       }
     }
+  } else if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) {
+    log::info("Re-pairing failed for {}, will not remove the keys", bd_addr);
+    status = BT_STATUS_AUTH_FAILURE;  // this will be overwritten by the bond_state_changed anyways.
   } else {
     /* Map the HCI fail reason  to  bt status  */
     // TODO This is not a proper use of the type
