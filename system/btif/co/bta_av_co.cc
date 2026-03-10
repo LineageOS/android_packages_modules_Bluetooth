@@ -625,7 +625,7 @@ void BtaAvCo::ProcessStart(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_ad
 BT_HDR* BtaAvCo::GetNextSourceDataPacket(const uint8_t* p_codec_info, uint32_t* p_timestamp) {
   BT_HDR* p_buf;
 
-  log::debug("codec: {}", A2DP_CodecName(p_codec_info));
+  log::verbose("codec: {}", A2DP_CodecName(p_codec_info));
 
   p_buf = btif_a2dp_source_audio_readbuf();
   if (p_buf == nullptr) {

@@ -372,8 +372,13 @@ void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr, uint8_t e
   tBTA_AV_SCB* p_scb = bta_av_cb.p_scb[scb_index];
   uint16_t sec_len = 0;
 
-  log::debug("peer_address: {} avdt_handle: {} event=0x{:x} scb_index={} p_scb={}", bd_addr, handle,
-             event, scb_index, std::format_ptr(p_scb));
+  if (event == AVDT_WRITE_CFM_EVT) {
+    log::verbose("peer_address={} avdt_handle={} event=0x{:x} scb_index={} p_scb={}", bd_addr,
+                 handle, event, scb_index, std::format_ptr(p_scb));
+  } else {
+    log::debug("peer_address={} avdt_handle={} event=0x{:x} scb_index={} p_scb={}", bd_addr, handle,
+               event, scb_index, std::format_ptr(p_scb));
+  }
 
   if (p_data) {
     if (event == AVDT_SECURITY_IND_EVT) {
@@ -391,10 +396,8 @@ void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr, uint8_t e
 
     /* copy event data, bd addr, and handle to event message buffer */
     p_msg->hdr.offset = 0;
-
     p_msg->bd_addr = bd_addr;
     p_msg->scb_index = scb_index;
-    log::debug("stream event bd_addr: {} scb_index: {}", p_msg->bd_addr, scb_index);
 
     if (p_data != NULL) {
       memcpy(&p_msg->msg, p_data, sizeof(tAVDT_CTRL));
@@ -444,7 +447,6 @@ void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr, uint8_t e
       p_msg->initiator = true;
     }
 
-    log::debug("bta_handle:0x{:x} avdt_handle:{}", p_scb->hndl, handle);
     p_msg->hdr.layer_specific = p_scb->hndl;
     p_msg->handle = handle;
     p_msg->avdt_event = event;
@@ -2496,7 +2498,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_clr_cong(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
-  log::debug("");
+  log::verbose("");
   if (p_scb->co_started) {
     p_scb->cong = false;
   }

@@ -913,8 +913,8 @@ static void btif_a2dp_source_audio_handle_timer(void) {
 
   {
     static uint64_t previous_timestamp_us = 0;
-    log::debug("timestamp_us={} delta_us={:08} tx_queue_len={}", timestamp_us,
-               timestamp_us - previous_timestamp_us, tx_queue_len);
+    log::verbose("timestamp_us={} delta_us={:08} tx_queue_len={}", timestamp_us,
+                 timestamp_us - previous_timestamp_us, tx_queue_len);
     previous_timestamp_us = timestamp_us;
   }
 
@@ -944,7 +944,7 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
   }
 
   uint32_t bytes_read = bluetooth::audio::a2dp::read(p_buf, len);
-  log::debug("wanted={} read={}", len, bytes_read);
+  log::verbose("wanted={} read={}", len, bytes_read);
 
   if (bytes_read < len) {
     log::warn("UNDERFLOW: ONLY READ {} BYTES OUT OF {}", bytes_read, len);
