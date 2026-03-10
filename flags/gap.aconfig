@@ -50,16 +50,6 @@ flag {
 }
 
 flag {
-    name: "handle_encryption_fail_before_sdp_when_paring"
-    namespace: "bluetooth"
-    description: "handle encryption failure before SDP when pairing cause no SDP records but bonded"
-    bug: "418212151"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "l2c_not_cancel_timeout"
     namespace: "bluetooth"
     description: "Do not cancel timeout alarm if l2cap is connecting"
