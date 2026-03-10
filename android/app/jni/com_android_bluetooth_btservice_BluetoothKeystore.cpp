@@ -20,6 +20,7 @@
 #include <jni.h>
 
 #include <cstring>
+#include <future>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -63,7 +64,21 @@ public:
       return it->second;
     }
 
-    std::string decryptedString = getKeyCallback(prefix);
+    std::string decryptedString;
+
+    if (is_on_jni_thread()) {
+      decryptedString = getKeyCallback(prefix);
+    } else {
+      std::promise<std::string> promise;
+      std::future<std::string> future = promise.get_future();
+      do_in_jni_thread(base::BindOnce(
+              [](std::string prefix, std::promise<std::string> promise) {
+                promise.set_value(getKeyCallback(prefix));
+              },
+              prefix, std::move(promise)));
+      decryptedString = future.get();
+    }
+
     cache_[prefix] = decryptedString;
     log::verbose("get key from bluetoothkeystore.");
     return decryptedString;
