@@ -139,7 +139,7 @@ static void a2dp_sdp_cback(const RawAddress& /* bd_addr */, tSDP_STATUS status) 
       if (get_legacy_stack_sdp_api()->SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_AVDTP,
                                                                     &elem)) {
         a2dp_svc.avdt_version = elem.params[0];
-        log::verbose("avdt_version: 0x{:x}", a2dp_svc.avdt_version);
+        log::debug("avdt_version: 0x{:x}", a2dp_svc.avdt_version);
       }
 
       /* we've got everything, we're done */
@@ -195,7 +195,7 @@ bool A2DP_AddRecord(uint16_t service_uuid, char* p_service_name, char* p_provide
   uint8_t* p;
   tSDP_PROTOCOL_ELEM proto_list[A2DP_NUM_PROTO_ELEMS];
 
-  log::verbose("uuid: 0x{:x}", service_uuid);
+  log::debug("uuid: 0x{:x}", service_uuid);
 
   if ((sdp_handle == 0) ||
       (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK)) {

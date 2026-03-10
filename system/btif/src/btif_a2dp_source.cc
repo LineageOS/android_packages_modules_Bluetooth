@@ -349,7 +349,7 @@ class A2dpStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {
 
     // Check if the stream has already been started.
     if (btif_av_stream_started_ready(A2dpType::kSource)) {
-      log::verbose("stream is already started");
+      log::debug("stream is already started");
       return Status::SUCCESS;
     }
 
@@ -378,7 +378,7 @@ class A2dpStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {
     // Check if the stream is already suspended.
     if (!btif_av_stream_started_ready(A2dpType::kSource)) {
       btif_av_clear_remote_suspend_flag(A2dpType::kSource);
-      log::verbose("stream is already suspended");
+      log::debug("stream is already suspended");
       return Status::SUCCESS;
     }
 
@@ -392,7 +392,7 @@ class A2dpStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {
     // Check if the stream is already suspended.
     if (!btif_av_stream_started_ready(A2dpType::kSource)) {
       btif_av_clear_remote_suspend_flag(A2dpType::kSource);
-      log::verbose("stream is already stopped");
+      log::debug("stream is already stopped");
       return Status::SUCCESS;
     }
 
@@ -552,7 +552,7 @@ static void btif_a2dp_source_start_session_delayed(const RawAddress& peer_addres
     };
     a2dp_codec_config->copyOutOtaCodecConfig(config.codec_specific_information_elements);
 
-    log::verbose("{}", config.ToString());
+    log::debug("{}", config.ToString());
 
     bluetooth::audio::a2dp::setup_codec(config);
   }
@@ -913,8 +913,8 @@ static void btif_a2dp_source_audio_handle_timer(void) {
 
   {
     static uint64_t previous_timestamp_us = 0;
-    log::verbose("timestamp_us={} delta_us={:08} tx_queue_len={}", timestamp_us,
-                 timestamp_us - previous_timestamp_us, tx_queue_len);
+    log::debug("timestamp_us={} delta_us={:08} tx_queue_len={}", timestamp_us,
+               timestamp_us - previous_timestamp_us, tx_queue_len);
     previous_timestamp_us = timestamp_us;
   }
 
@@ -944,7 +944,7 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
   }
 
   uint32_t bytes_read = bluetooth::audio::a2dp::read(p_buf, len);
-  log::verbose("wanted={} read={}", len, bytes_read);
+  log::debug("wanted={} read={}", len, bytes_read);
 
   if (bytes_read < len) {
     log::warn("UNDERFLOW: ONLY READ {} BYTES OUT OF {}", bytes_read, len);
@@ -965,7 +965,7 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
 
   // Check if the transmission queue has been flushed.
   if (btif_a2dp_source_cb.tx_flush) {
-    log::verbose("tx suspended, discarded frame");
+    log::debug("tx suspended, discarded frame");
 
     btif_a2dp_source_cb.stats.tx_queue_total_flushed_messages +=
             fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue);

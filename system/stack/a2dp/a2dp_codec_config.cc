@@ -317,7 +317,7 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
           }
         }
         p_a2dp_offload->codec_info[7] = codec_config[10];  // LDAC specific channel mode
-        log::verbose("Ldac specific channelmode ={}", p_a2dp_offload->codec_info[7]);
+        log::debug("Ldac specific channelmode ={}", p_a2dp_offload->codec_info[7]);
       }
       break;
 #endif
@@ -596,7 +596,7 @@ void A2dpCodecConfig::debug_codec_dump(int fd) {
 int A2DP_IotGetPeerSinkCodecType(const uint8_t* p_codec_info) {
   int peer_codec_type = 0;
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
-  log::verbose("codec_type = 0x{:x}", codec_type);
+  log::debug("codec_type = 0x{:x}", codec_type);
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
       peer_codec_type = IOT_CONF_VAL_A2DP_CODECTYPE_SBC;
@@ -606,8 +606,8 @@ int A2DP_IotGetPeerSinkCodecType(const uint8_t* p_codec_info) {
       uint16_t codec_id = A2DP_VendorCodecGetCodecId(p_codec_info);
       uint32_t vendor_id = A2DP_VendorCodecGetVendorId(p_codec_info);
 
-      log::verbose("codec_id = {}", codec_id);
-      log::verbose("vendor_id = {:x}", vendor_id);
+      log::debug("codec_id = {}", codec_id);
+      log::debug("vendor_id = {:x}", vendor_id);
 
       if (codec_id == A2DP_APTX_CODEC_ID_BLUETOOTH && vendor_id == A2DP_APTX_VENDOR_ID) {
         peer_codec_type = IOT_CONF_VAL_A2DP_CODECTYPE_APTX;
@@ -1622,7 +1622,7 @@ const char* A2DP_CodecIndexStr(btav_a2dp_codec_index_t codec_index) {
 }
 
 bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p_cfg) {
-  log::verbose("codec {}", A2DP_CodecIndexStr(codec_index));
+  log::debug("codec {}", A2DP_CodecIndexStr(codec_index));
 
   /* Default: no content protection info */
   p_cfg->num_protect = 0;

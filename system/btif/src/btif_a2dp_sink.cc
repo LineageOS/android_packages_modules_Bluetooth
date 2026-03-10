@@ -219,8 +219,8 @@ static bool btif_a2dp_sink_initialize_a2dp_control_block(const RawAddress& peer_
     return false;
   }
   uint8_t* codec_config = bta_av_co_get_codec_config(peer_address);
-  log::verbose("p_codec_info[{:x}:{:x}:{:x}:{:x}:{:x}:{:x}]", codec_config[1], codec_config[2],
-               codec_config[3], codec_config[4], codec_config[5], codec_config[6]);
+  log::debug("p_codec_info[{:x}:{:x}:{:x}:{:x}:{:x}:{:x}]", codec_config[1], codec_config[2],
+             codec_config[3], codec_config[4], codec_config[5], codec_config[6]);
 
   btif_a2dp_sink_cb.decoder_interface = A2DP_GetDecoderInterface(codec_config);
 
@@ -403,8 +403,8 @@ static void btif_a2dp_sink_cleanup_delayed() {
 
 void btif_a2dp_sink_update_decoder(const RawAddress& peer_address, const uint8_t* p_codec_info) {
   log::info("peer_address {}", peer_address);
-  log::verbose("p_codec_info[{:x}:{:x}:{:x}:{:x}:{:x}:{:x}]", p_codec_info[1], p_codec_info[2],
-               p_codec_info[3], p_codec_info[4], p_codec_info[5], p_codec_info[6]);
+  log::debug("p_codec_info[{:x}:{:x}:{:x}:{:x}:{:x}:{:x}]", p_codec_info[1], p_codec_info[2],
+             p_codec_info[3], p_codec_info[4], p_codec_info[5], p_codec_info[6]);
 
   std::array<uint8_t, AVDT_CODEC_SIZE> codec_info;
   std::copy(p_codec_info, p_codec_info + AVDT_CODEC_SIZE, codec_info.begin());
@@ -517,7 +517,7 @@ static void btif_a2dp_sink_audio_handle_start_decoding() {
 // Must be called while locked.
 static void btif_a2dp_sink_handle_inc_media(BT_HDR* p_msg) {
   if ((btif_av_get_peer_sep(A2dpType::kSink) == AVDT_TSEP_SNK) || (btif_a2dp_sink_cb.rx_flush)) {
-    log::verbose("state changed happened in this tick");
+    log::debug("state changed happened in this tick");
     return;
   }
 
@@ -533,13 +533,13 @@ static void btif_a2dp_sink_avk_handle_timer() {
 
   BT_HDR* p_msg;
   if (fixed_queue_is_empty(btif_a2dp_sink_cb.rx_audio_queue)) {
-    log::verbose("empty queue");
+    log::debug("empty queue");
     return;
   }
 
   /* Don't do anything in case of focus not granted */
   if (btif_a2dp_sink_cb.rx_focus_state == BTIF_A2DP_SINK_FOCUS_NOT_GRANTED) {
-    log::verbose("skipping frames since focus is not present");
+    log::debug("skipping frames since focus is not present");
     return;
   }
   /* Play only in BTIF_A2DP_SINK_FOCUS_GRANTED case */
@@ -548,20 +548,20 @@ static void btif_a2dp_sink_avk_handle_timer() {
     return;
   }
 
-  log::verbose("process frames begin");
+  log::debug("process frames begin");
   while (true) {
     p_msg = (BT_HDR*)fixed_queue_try_dequeue(btif_a2dp_sink_cb.rx_audio_queue);
     if (p_msg == NULL) {
       break;
     }
-    log::verbose("number of packets in queue {}",
-                 fixed_queue_length(btif_a2dp_sink_cb.rx_audio_queue));
+    log::debug("number of packets in queue {}",
+               fixed_queue_length(btif_a2dp_sink_cb.rx_audio_queue));
 
     /* Queue packet has less frames */
     btif_a2dp_sink_handle_inc_media(p_msg);
     osi_free(p_msg);
   }
-  log::verbose("process frames end");
+  log::debug("process frames end");
 }
 
 /* when true media task discards any rx frames */
@@ -583,11 +583,11 @@ static void btif_a2dp_sink_decoder_update_event(RawAddress peer_address,
                                                 std::array<uint8_t, AVDT_CODEC_SIZE> codec_info) {
   log::info("");
   LockGuard lock(g_mutex);
-  log::verbose("p_codec_info[{:x}:{:x}:{:x}:{:x}:{:x}:{:x}]", codec_info[1], codec_info[2],
-               codec_info[3], codec_info[4], codec_info[5], codec_info[6]);
+  log::debug("p_codec_info[{:x}:{:x}:{:x}:{:x}:{:x}:{:x}]", codec_info[1], codec_info[2],
+             codec_info[3], codec_info[4], codec_info[5], codec_info[6]);
 
   btif_a2dp_sink_cb.rx_flush = false;
-  log::verbose("reset to Sink role");
+  log::debug("reset to Sink role");
 
   bta_av_co_save_codec(peer_address, codec_info.data());
   log::info("codec = {}", A2DP_CodecInfoString(codec_info.data()));
@@ -599,7 +599,7 @@ uint8_t btif_a2dp_sink_enqueue_buf(BT_HDR* p_pkt) {
     return fixed_queue_length(btif_a2dp_sink_cb.rx_audio_queue);
   }
 
-  log::verbose("+");
+  log::debug("+");
 
   /* Allocate and queue this buffer */
   BT_HDR* p_msg = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(*p_msg) + p_pkt->len));
@@ -610,14 +610,14 @@ uint8_t btif_a2dp_sink_enqueue_buf(BT_HDR* p_pkt) {
 
   /* If the queue is full, pop the front off to make room for the new data */
   if (fixed_queue_length(btif_a2dp_sink_cb.rx_audio_queue) == MAX_INPUT_A2DP_FRAME_QUEUE_SZ) {
-    log::verbose("Audio data buffer has reached max size. Dropping front packet");
+    log::debug("Audio data buffer has reached max size. Dropping front packet");
     osi_free(fixed_queue_try_dequeue(btif_a2dp_sink_cb.rx_audio_queue));
   }
 
   /* Check to see if we need to start decoding */
   if (btif_a2dp_sink_cb.decode_alarm == nullptr &&
       fixed_queue_length(btif_a2dp_sink_cb.rx_audio_queue) >= MAX_A2DP_DELAYED_START_FRAME_COUNT) {
-    log::verbose("Can initiate decoding, focus_state={}", btif_a2dp_sink_cb.rx_focus_state);
+    log::debug("Can initiate decoding, focus_state={}", btif_a2dp_sink_cb.rx_focus_state);
     if (btif_a2dp_sink_cb.rx_focus_state == BTIF_A2DP_SINK_FOCUS_GRANTED) {
       log::info("Request to begin decoding");
       btif_a2dp_sink_audio_handle_start_decoding();
@@ -651,7 +651,7 @@ static void btif_a2dp_sink_set_focus_state_event(btif_a2dp_sink_focus_state_t st
   log::info("state={}", state);
   LockGuard lock(g_mutex);
 
-  log::verbose("setting focus state to {}", state);
+  log::debug("setting focus state to {}", state);
   btif_a2dp_sink_cb.rx_focus_state = state;
   if (btif_a2dp_sink_cb.rx_focus_state == BTIF_A2DP_SINK_FOCUS_NOT_GRANTED) {
     fixed_queue_flush(btif_a2dp_sink_cb.rx_audio_queue, osi_free);
