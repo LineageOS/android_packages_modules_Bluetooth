@@ -378,10 +378,11 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
 
         self.refs[1].device.sdp_service_records = {
             _HFP_AG_SDP_HANDLE:
-                hfp.make_ag_sdp_records(
+                hfp_ext.AudioGatewaySdpRecord(
                     service_record_handle=_HFP_AG_SDP_HANDLE,
                     rfcomm_channel=rfcomm.Server(self.refs[1].device).listen(on_dlc),
-                    configuration=ag_configuration,
+                    version=hfp.ProfileVersion.V1_8,
+                    supported_features=hfp_ext.make_ag_sdp_features(ag_configuration),
                 )
         }
 
@@ -703,9 +704,7 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
     """
         if self.dut.bt.maxConnectedAudioDevices() < 2:
             self.skipTest("[DUT] Multi-device LEA is not supported.")
-
-        if (self.dut.getprop(_AndroidProperty.BAP_UNICAST_CLIENT_ENABLED) != "true" or
-                self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true"):
+        if not self.dut.is_le_audio_supported:
             self.skipTest("[DUT] Unicast client is not enabled")
 
         for ref in self.refs:
@@ -826,12 +825,12 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
             ref_ag_protocols.put_nowait(hfp.AgProtocol(dlc, hfp_ext.make_ag_configuration()))
 
         self.refs[1].device.sdp_service_records = {
-            _HFP_AG_SDP_HANDLE:
-                hfp.make_ag_sdp_records(
-                    service_record_handle=_HFP_AG_SDP_HANDLE,
-                    rfcomm_channel=rfcomm.Server(self.refs[1].device).listen(on_dlc),
-                    configuration=hfp_ext.make_ag_configuration(),
-                )
+            _HFP_AG_SDP_HANDLE: (hfp_ext.AudioGatewaySdpRecord(
+                service_record_handle=_HFP_AG_SDP_HANDLE,
+                rfcomm_channel=rfcomm.Server(self.refs[1].device).listen(on_dlc),
+                version=hfp.ProfileVersion.V1_8,
+                supported_features=hfp_ext.make_ag_sdp_features(hfp_ext.make_ag_configuration()),
+            ).to_service_attributes())
         }
 
         dut_ag_cb = self.dut.bl4a.register_callback(_Module.HFP_AG)

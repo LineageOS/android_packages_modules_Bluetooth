@@ -64,9 +64,12 @@ class Property(enum.StrEnum):
     # LE Audio.
     LEAUDIO_BYPASS_ALLOW_LIST = "persist.bluetooth.leaudio.bypass_allow_list"
     LEAUDIO_ALLOW_LIST = "persist.bluetooth.leaudio.allow_list"
+    LEAUDIO_LE_AUDIO_CONNECTION_BY_DEFAULT = ("ro.bluetooth.leaudio.le_audio_connection_by_default")
     # HFP.
     SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio"
     SW_PATH_ENABLED = "bluetooth.hfp.software_datapath.enabled"
+    # AVRCP
+    AVRCP_VERSION = "persist.bluetooth.avrcpversion"
 
 
 class Transport(enum.IntEnum):
@@ -215,6 +218,26 @@ class A2dpCodecType(enum.IntEnum):
     INVALID = 1000 * 1000
 
 
+class A2dpSampleRate(enum.IntFlag):
+    RATE_44100 = 1 << 0
+    RATE_48000 = 1 << 1
+    RATE_88200 = 1 << 2
+    RATE_96000 = 1 << 3
+    RATE_176400 = 1 << 4
+    RATE_192000 = 1 << 5
+
+
+class A2dpBitsPerSample(enum.IntFlag):
+    BITS_16 = 1 << 0
+    BITS_24 = 1 << 1
+    BITS_32 = 1 << 2
+
+
+class A2dpChannelMode(enum.IntFlag):
+    MONO = 1 << 0
+    STEREO = 1 << 1
+
+
 class ScoState(enum.IntEnum):
     """android.bluetooth.BluetoothHeadset.STATE_AUDIO_*."""
 
@@ -224,11 +247,25 @@ class ScoState(enum.IntEnum):
 
 
 class RepeatMode(enum.IntEnum):
-    """androidx.media3.common.Player.RepeatMode."""
+    """androidx.media3.common.Player.RepeatMode.
 
+  Also: androidx.media3.session.legacy.PlaybackStateCompat.RepeatMode.
+  """
+
+    INVALID = -1
     OFF = 0
     ONE = 1
     ALL = 2
+    GROUP = 3  # Only available in legacy PlaybackStateCompat.
+
+
+class ShuffleMode(enum.IntEnum):
+    """androidx.media3.session.legacy.PlaybackStateCompat.ShuffleMode."""
+
+    INVALID = -1
+    OFF = 0
+    ALL = 1
+    GROUP = 2
 
 
 class GattStatus(enum.IntEnum):
@@ -280,6 +317,13 @@ class GattStatus(enum.IntEnum):
     PRC_IN_PROGRESS = 0xFE
     OUT_OF_RANGE = 0xFF
     FAILURE = 0x101
+
+
+class GattServiceType(enum.IntEnum):
+    """android.bluetooth.BluetoothGattService.SERVICE_TYPE_*."""
+
+    PRIMARY = 0x00
+    SECONDARY = 0x01
 
 
 class GattWriteType(enum.IntEnum):

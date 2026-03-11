@@ -14,10 +14,12 @@
 
 import asyncio
 import datetime
+from typing import Any
 from unittest import mock
 
 from bumble import core
 from bumble import hci
+from bumble import sdp
 from mobly import test_runner
 
 from navi.tests import navi_test_base
@@ -25,7 +27,91 @@ from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import pyee_extensions
 
+_Profile = android_constants.Profile
 _DEFAULT_DISCOVER_TIMEOUT = 15
+_DEFAULT_TIMEOUT = 10.0
+_PROFILE_ID_TO_UUIDS: dict[int, set[core.UUID]] = {
+    _Profile.HEADSET: {
+        core.BT_HEADSET_AUDIO_GATEWAY_SERVICE,
+        core.BT_HANDSFREE_AUDIO_GATEWAY_SERVICE,
+        core.BT_GENERIC_AUDIO_SERVICE,
+    },
+    _Profile.HEADSET_CLIENT: {
+        core.BT_HANDSFREE_SERVICE,
+        core.BT_GENERIC_AUDIO_SERVICE,
+    },
+    _Profile.A2DP: {core.BT_AUDIO_SOURCE_SERVICE},
+    _Profile.A2DP_SINK: {core.BT_AUDIO_SINK_SERVICE},
+    _Profile.AVRCP: {core.BT_AV_REMOTE_CONTROL_TARGET_SERVICE},
+    _Profile.AVRCP_CONTROLLER: {
+        core.BT_AV_REMOTE_CONTROL_SERVICE,
+        core.BT_AV_REMOTE_CONTROL_CONTROLLER_SERVICE,
+    },
+    _Profile.MAP: {core.BT_MESSAGE_ACCESS_SERVER_SERVICE},
+    _Profile.PBAP: {core.BT_PHONEBOOK_ACCESS_PSE_SERVICE},
+    _Profile.OPP: {core.BT_OBEX_OBJECT_PUSH_SERVICE},
+    _Profile.PAN: {
+        core.BT_PANU_SERVICE,
+        core.BT_NAP_SERVICE,
+    },
+    _Profile.SAP: {core.BT_SIM_ACCESS_SERVICE},
+}
+
+_CLASSIC_PROFILES = (
+    core.BT_AUDIO_SOURCE_SERVICE,  # A2DP
+    core.BT_AUDIO_SINK_SERVICE,  # A2DP Sink
+    # AVRCP (Android doesn't broadcast CT/TG specific UUIDs).
+    core.BT_AV_REMOTE_CONTROL_SERVICE,
+    core.BT_HEADSET_SERVICE,  # HSP
+    core.BT_HEADSET_AUDIO_GATEWAY_SERVICE,  # HSP AG
+    core.BT_HANDSFREE_SERVICE,  # HFP
+    core.BT_HANDSFREE_AUDIO_GATEWAY_SERVICE,  # HFP AG
+    core.BT_OBEX_OBJECT_PUSH_SERVICE,  # OPP
+    core.BT_PANU_SERVICE,  # PANU
+    core.BT_NAP_SERVICE,  # NAP
+    core.BT_GN_SERVICE,  # GN
+    core.BT_SIM_ACCESS_SERVICE,  # SAP
+    core.BT_HUMAN_INTERFACE_DEVICE_SERVICE,  # HID
+    core.BT_PHONEBOOK_ACCESS_PSE_SERVICE,  # PBAP PSE
+    core.BT_PHONEBOOK_ACCESS_PCE_SERVICE,  # PBAP PCE
+    core.BT_MESSAGE_ACCESS_SERVER_SERVICE,  # MAS
+    core.BT_MESSAGE_NOTIFICATION_SERVER_SERVICE,  # MNS
+)
+
+
+# TODO: Remove these once eq is implemented for SDP classes.
+def _compare_service_attribute(self: sdp.ServiceAttribute, other: Any) -> bool:
+    if not isinstance(other, sdp.ServiceAttribute):
+        return False
+    return self.id == other.id and self.value == other.value
+
+
+def _compare_data_element(self: sdp.DataElement, other: Any) -> bool:
+    if not isinstance(other, sdp.DataElement):
+        return False
+    return (self.type == other.type and self.value == other.value and
+            self.value_size == other.value_size)
+
+
+sdp.ServiceAttribute.__eq__ = _compare_service_attribute  # type: ignore
+sdp.DataElement.__eq__ = _compare_data_element  # type: ignore
+
+
+def _make_sdp_service_record(profile_uuid: core.UUID,) -> list[sdp.ServiceAttribute]:
+    return [
+        sdp.ServiceAttribute(
+            sdp.SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID,
+            sdp.DataElement.sequence([sdp.DataElement.uuid(profile_uuid)]),
+        ),
+        sdp.ServiceAttribute(
+            sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+            sdp.DataElement.sequence([
+                sdp.DataElement.sequence([
+                    sdp.DataElement.uuid(core.BT_L2CAP_PROTOCOL_ID),
+                ]),
+            ]),
+        ),
+    ]
 
 
 class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
@@ -120,7 +206,11 @@ class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[DUT] Wait for DUT discovered.")
             await dut_cb.wait_for_event(
-                bl4a_api.DeviceFound(address=self.ref.address, name=mock.ANY))
+                bl4a_api.DeviceFound(
+                    address=self.ref.address,
+                    name=mock.ANY,
+                    rssi=mock.ANY,
+                ))
 
     async def test_discoverable(self) -> None:
         """Test ref discover DUT.
@@ -173,6 +263,101 @@ class ClassicHostTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Wait for DUT discover timeout.")
             async with self.assert_timeout(_DEFAULT_DISCOVER_TIMEOUT):
                 await inquiry.wait()
+
+    async def test_sdp_discovery_from_ref(self) -> None:
+        """Test SDP discovery from REF.
+
+    This is basic validation of:
+      1. SDP can be connected.
+      2. All declared profiles can be found in SDP.
+      3. SDP attributes are the same as the ones returned by
+      ServiceAttributeRequest.
+
+    Further validation is performed in profile specific tests.
+
+    Test steps:
+      1. Connect and pair Classic ACL from DUT.
+      2. Connect SDP client from REF.
+      3. Search services and attributes from REF.
+    """
+
+        ref_dut_acl = await self.classic_connect_and_pair()
+
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
+            sdp_client = sdp.Client(ref_dut_acl)
+            self.logger.info("[REF] Connect SDP client to DUT.")
+            await sdp_client.connect()
+
+        expected_profile_uuids = set().union(*[
+            profile_uuids for profile_id in self.dut.bt.getSupportedProfiles()
+            if (profile_uuids := _PROFILE_ID_TO_UUIDS.get(profile_id))
+        ])
+
+        # Validate that all declared profiles can be found in SDP.
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
+            self.logger.info("[REF] Search for profiles.")
+            attributes_list = await sdp_client.search_attributes(
+                [core.BT_L2CAP_PROTOCOL_ID],
+                [sdp.SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID],
+            )
+            actual_profile_uuids = set()
+            for attributes in attributes_list:
+                for attribute in attributes:
+                    for element in attribute.value.value:
+                        actual_profile_uuids.add(element.value)
+            self.assertContainsSubset(
+                expected_profile_uuids,
+                actual_profile_uuids,
+                "Service class ID list attributes are not the same as expected.",
+            )
+
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
+            self.logger.info("[REF] Search services.")
+            handles = await sdp_client.search_services([core.BT_L2CAP_PROTOCOL_ID])
+            self.assertNotEmpty(handles, "No handles found for L2CAP.")
+            self.logger.info("[REF] Get attributes for handles: %s", handles)
+            attributes_list = [
+                await sdp_client.get_attributes(handle, [sdp.SDP_ALL_ATTRIBUTES_RANGE])
+                for handle in handles
+            ]
+            # Make sure that the attributes are the same as the ones returned by
+            # ServiceAttributeRequest.
+            self.logger.info("[REF] Validate attributes.")
+            self.assertCountEqual(
+                attributes_list,
+                await sdp_client.search_attributes([core.BT_L2CAP_PROTOCOL_ID],
+                                                   [sdp.SDP_ALL_ATTRIBUTES_RANGE]),
+                "Service attributes are not the same as returned by"
+                " ServiceAttributeRequest.",
+            )
+
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
+            self.logger.info("[REF] Disconnect SDP client.")
+            await sdp_client.disconnect()
+
+    async def test_sdp_discovery_from_dut(self) -> None:
+        """Test SDP discovery from DUT."""
+
+        self.ref.device.sdp_service_records = {
+            i + 1: _make_sdp_service_record(profile_uuid)
+            for i, profile_uuid in enumerate(_CLASSIC_PROFILES)
+        }
+
+        with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
+            await self.classic_connect_and_pair()
+
+            self.logger.info("[DUT] Wait for UUID changed.")
+            event = await dut_cb.wait_for_event(
+                bl4a_api.UuidChanged(
+                    address=self.ref.address,
+                    uuids=mock.ANY,
+                ),)
+            # TODO: Remove to_bytes() once hash is implemented for UUID.
+            self.assertCountEqual(
+                [core.UUID(uuid).to_bytes(force_128=True) for uuid in event.uuids or []],
+                [uuid.to_bytes(force_128=True) for uuid in _CLASSIC_PROFILES],
+                "Service UUIDs are not the same as expected.",
+            )
 
 
 if __name__ == "__main__":

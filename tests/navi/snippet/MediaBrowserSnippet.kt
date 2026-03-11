@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.os.Handler
 import androidx.media3.session.legacy.MediaBrowserCompat
 import androidx.media3.session.legacy.MediaControllerCompat
+import androidx.media3.session.legacy.MediaMetadataCompat
 import androidx.media3.session.legacy.PlaybackStateCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.mobly.snippet.Snippet
@@ -148,6 +149,44 @@ class MediaBrowserSnippet : Snippet {
                         )
                     }
                 }
+
+                override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+                    Utils.postSnippetEvent(
+                        callbackId,
+                        SnippetConstants.MEDIA_CONTROLLER_METADATA_CHANGE,
+                    ) {
+                        putString(
+                            SnippetConstants.FIELD_TITLE,
+                            metadata?.getString(MediaMetadataCompat.METADATA_KEY_TITLE),
+                        )
+                        putString(
+                            SnippetConstants.FIELD_ARTIST,
+                            metadata?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST),
+                        )
+                        putString(
+                            SnippetConstants.FIELD_ALBUM,
+                            metadata?.getString(MediaMetadataCompat.METADATA_KEY_ALBUM),
+                        )
+                    }
+                }
+
+                override fun onRepeatModeChanged(repeatMode: Int) {
+                    Utils.postSnippetEvent(
+                        callbackId,
+                        SnippetConstants.PLAYER_REPEAT_MODE_CHANGED,
+                    ) {
+                        putInt(SnippetConstants.MODE, repeatMode)
+                    }
+                }
+
+                override fun onShuffleModeChanged(shuffleMode: Int) {
+                    Utils.postSnippetEvent(
+                        callbackId,
+                        SnippetConstants.PLAYER_SHUFFLE_MODE_ENABLED_CHANGED,
+                    ) {
+                        putInt(SnippetConstants.MODE, shuffleMode)
+                    }
+                }
             }
         getMediaController(cookie).registerCallback(callback, handler)
     }
@@ -199,6 +238,20 @@ class MediaBrowserSnippet : Snippet {
     @Rpc(description = "Skip to previous media controller")
     fun skipToPreviousMediaController(cookie: String) {
         getMediaController(cookie).transportControls.skipToPrevious()
+    }
+
+    /** Set repeat mode media controller. */
+    @RunOnUiThread
+    @Rpc(description = "Set repeat mode media controller")
+    fun setMediaControllerRepeatMode(cookie: String, repeatMode: Int) {
+        getMediaController(cookie).transportControls.setRepeatMode(repeatMode)
+    }
+
+    /** Set shuffle mode media controller. */
+    @RunOnUiThread
+    @Rpc(description = "Set shuffle mode media controller")
+    fun setMediaControllerShuffleMode(cookie: String, shuffleMode: Int) {
+        getMediaController(cookie).transportControls.setShuffleMode(shuffleMode)
     }
 
     private companion object {

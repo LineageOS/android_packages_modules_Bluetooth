@@ -142,7 +142,6 @@ class BluetoothGattServerSnippet : Snippet {
     private val context = instrumentation.targetContext
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val bluetoothAdapter = bluetoothManager.adapter
-    internal val servers = mutableMapOf<String, BluetoothGattServer>()
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
@@ -225,5 +224,6 @@ class BluetoothGattServerSnippet : Snippet {
 
     companion object {
         const val TAG = "BluetoothGattServerSnippet"
+        internal val servers = mutableMapOf<String, BluetoothGattServer>()
     }
 }
