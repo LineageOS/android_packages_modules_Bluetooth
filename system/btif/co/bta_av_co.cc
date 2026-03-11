@@ -788,7 +788,7 @@ bool BtaAvCo::SetCodecUserConfig(const RawAddress& peer_address,
   bool config_updated = false;
   bool success = true;
 
-  log::debug("peer_address={} codec_user_config={{}}", peer_address, codec_user_config.ToString());
+  log::debug("peer_address={} codec_user_config={}", peer_address, codec_user_config.ToString());
 
   *p_restart_output = false;
 
@@ -981,7 +981,7 @@ bool BtaAvCo::ReportSourceCodecState(BtaAvCoPeer* p_peer) {
             p_peer->addr);
     return false;
   }
-  log::info("peer {} codec_config={{}}", p_peer->addr, codec_config.ToString());
+  log::info("peer {} codec_config={}", p_peer->addr, codec_config.ToString());
   btif_av_report_source_codec_state(p_peer->addr, codec_config, codecs_local_capabilities,
                                     codecs_selectable_capabilities);
   return true;
