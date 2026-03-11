@@ -112,12 +112,7 @@ StorageModule::StorageModule(os::Handler* handler, std::string config_file_path,
   pimpl_ = std::make_unique<impl>(handler_, std::move(config.value()), temp_devices_capacity_);
   pimpl_->cache_.SetPersistentConfigChangedCallback(
           [this] { handler_->CallOn(this, &StorageModule::SaveDelayed); });
-
   pimpl_->cache_.FixDeviceTypeInconsistencies();
-  if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {
-    bluetooth::os::ParameterProvider::GetBtKeystoreInterface()
-            ->ConvertEncryptOrDecryptKeyIfNeeded();
-  }
 
   if (save_needed) {
     SaveDelayed();

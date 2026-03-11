@@ -48,15 +48,7 @@ public:
     this->callbacks = callbacks;
 
     bluetooth::os::ParameterProvider::SetCommonCriteriaConfigCompareResult(CONFIG_COMPARE_ALL_PASS);
-    ConvertEncryptOrDecryptKeyIfNeeded();
-  }
 
-  void ConvertEncryptOrDecryptKeyIfNeeded() {
-    log::verbose("");
-    if (!callbacks) {
-      log::info("callback isn't ready.");
-      return;
-    }
     do_in_jni_thread(base::BindOnce(
             []() { bluetooth::shim::BtifConfigInterface::ConvertEncryptOrDecryptKeyIfNeeded(); }));
   }

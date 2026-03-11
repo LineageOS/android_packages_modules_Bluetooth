@@ -39,9 +39,6 @@ public:
   /** Register the bluetooth keystore callbacks */
   virtual void init(BluetoothKeystoreCallbacks* callbacks) = 0;
 
-  /** Get bonded devices number to get all bonded devices key */
-  virtual void ConvertEncryptOrDecryptKeyIfNeeded() = 0;
-
   /** Interface for key encrypt or remove key */
   virtual bool set_encrypt_key_or_remove_key(std::string prefix, std::string encryptedString) = 0;
 
