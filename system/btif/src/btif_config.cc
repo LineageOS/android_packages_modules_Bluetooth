@@ -34,7 +34,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "btif_keystore.h"
 #include "common/address_obfuscator.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"

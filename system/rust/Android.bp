@@ -25,7 +25,16 @@ rust_defaults {
     min_sdk_version: "36",
     rustlibs: [
         "libbytes",
+        "libcxx",
+        "libfutures",
+        "liblog_rust",
         "libpdl_runtime",
+        "libthiserror",
+        "libtokio",
+        "libtokio_stream",
+    ],
+    whole_static_libs: [
+        "libbluetooth_le_audio_rs_bridge",
     ],
     apex_available: [
         "//apex_available:platform",
@@ -64,4 +73,16 @@ rust_test {
             ],
         },
     },
+    rustlibs: [
+        "libgoogletest_rust",
+        "libmockall",
+    ],
+    static_libs: [
+        "libbase",
+        "libbluetooth_le_audio_rs_test_mocks",
+        "libbluetooth_log",
+        "libbluetooth_types",
+        "libchrome",
+        "liblog",
+    ],
 }

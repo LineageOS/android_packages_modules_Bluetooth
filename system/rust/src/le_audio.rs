@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-#include <../include/hardware/bt_keystore.h>
+//! LE Audio Rust implementation module.
+//!
+//! This module contains the core logic for LE Audio features.
 
-namespace bluetooth {
-namespace bluetooth_keystore {
-
-BluetoothKeystoreInterface* getBluetoothKeystoreInterface();
-
-}  // namespace bluetooth_keystore
-}  // namespace bluetooth
+pub mod periodic_sync;

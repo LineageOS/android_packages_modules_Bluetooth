@@ -72,10 +72,6 @@ BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
   return nullptr;
 }
-tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& /* bd_addr */) {
-  inc_func_call_count(__func__);
-  return BOND_TYPE_UNKNOWN;
-}
 void btm_consolidate_dev(BtmDevice* /* p_target_rec */) { inc_func_call_count(__func__); }
 void btm_dev_consolidate_existing_connections(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);

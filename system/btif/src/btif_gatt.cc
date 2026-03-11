@@ -57,6 +57,15 @@ static BtStatus btif_gatt_init(const btgatt_callbacks_t* callbacks) {
   return BtifStatus();
 }
 
+static void btif_gatt_cleanup_impl() {
+  if (bt_gatt_callbacks) {
+    bluetooth::log::info("btif_gatt_cleanup clearing bt_gatt_callbacks");
+    bt_gatt_callbacks = NULL;
+  }
+
+  BTA_GATTC_Disable();
+  BTA_GATTS_Disable();
+}
 /*******************************************************************************
  *
  * Function         btif_gatt_cleanup
@@ -67,24 +76,12 @@ static BtStatus btif_gatt_init(const btgatt_callbacks_t* callbacks) {
  *
  ******************************************************************************/
 static void btif_gatt_cleanup(void) {
-  std::promise<void> cleanup_promise;
-  std::future<void> cleanup_future = cleanup_promise.get_future();
-
-  do_in_jni_thread(base::BindOnce(
-          [](std::promise<void> cleanup_promise) {
-            if (bt_gatt_callbacks) {
-              bluetooth::log::info("btif_gatt_cleanup clearing bt_gatt_callbacks");
-              bt_gatt_callbacks = NULL;
-            }
-
-            BTA_GATTC_Disable();
-            BTA_GATTS_Disable();
-            cleanup_promise.set_value();
-          },
-          std::move(cleanup_promise)));
-
-  cleanup_future.wait();
-  bluetooth::log::info("btif_gatt_cleanup finished");
+  BtStatus status = do_in_jni_thread(base::BindOnce(&btif_gatt_cleanup_impl));
+  if (status != BtifStatus(SUCCESS)) {
+    bluetooth::log::warn("can't post cleanup to JNI");
+    return;
+  }
+  bluetooth::log::info("btif_gatt_cleanup finished success");
 }
 
 static btgatt_interface_t btgattInterface = {

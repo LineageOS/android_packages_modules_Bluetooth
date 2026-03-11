@@ -80,7 +80,6 @@
 #include "btif/include/btif_hf.h"
 #include "btif/include/btif_hf_client.h"
 #include "btif/include/btif_hh.h"
-#include "btif/include/btif_keystore.h"
 #include "btif/include/btif_le_audio.h"
 #include "btif/include/btif_le_audio_peripheral.h"
 #include "btif/include/btif_pan.h"
@@ -453,8 +452,6 @@ void bluetooth_init(bt_callbacks_t* callbacks, bool start_restricted, bool is_co
 
   restricted_mode = start_restricted;
 
-  bluetooth::os::ParameterProvider::SetBtKeystoreInterface(
-          bluetooth::bluetooth_keystore::getBluetoothKeystoreInterface());
   bluetooth::os::ParameterProvider::SetCommonCriteriaMode(is_common_criteria_mode);
   if (is_bluetooth_uid() && is_common_criteria_mode) {
     bluetooth::os::ParameterProvider::SetCommonCriteriaConfigCompareResult(config_compare_result);
@@ -1035,10 +1032,6 @@ static const void* get_profile_interface(const char* profile_id) {
 
   if (is_profile(profile_id, BT_PROFILE_HAP_CLIENT_ID)) {
     return btif_has_client_get_interface();
-  }
-
-  if (is_profile(profile_id, BT_KEYSTORE_ID)) {
-    return bluetooth::bluetooth_keystore::getBluetoothKeystoreInterface();
   }
 
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_ID)) {

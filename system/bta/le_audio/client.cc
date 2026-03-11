@@ -2768,7 +2768,8 @@ public:
 
     /* To be a Unicast Source device, this device shall be a Central device. */
     tHCI_ROLE role;
-    auto role_status = BTM_GetRole(address, BT_TRANSPORT_LE, &role);
+    auto role_status =
+            get_btm_client_interface().link_policy.BTM_GetRole(address, BT_TRANSPORT_LE, &role);
     if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_CENTRAL) {
       log::warn("Unicast client is not available for this connection. {}, status: {}, AclRole: {}",
                 address, btm_status_text(role_status), hci_role_text(role));
@@ -6753,21 +6754,10 @@ public:
           HandlePendingDeviceDisconnection(group);
         }
 
-        if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
-          log::info(" Status Idle: NotifyVaSessionStopped");
-          if (group) {
-            bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
-                    GetGroupDevices(group->group_id_), true);
-          }
-        } else {
-          auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
-          if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
-            log::info(" Status Idle: NotifyVaSessionStopped");
-            if (group) {
-              bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
-                      GetGroupDevices(group->group_id_), true);
-            }
-          }
+        log::info(" Status Idle: NotifyVaSessionStopped");
+        if (group) {
+          bluetooth::vap::GetVapServer()->NotifyVaSessionStopped(
+                  GetGroupDevices(group->group_id_), true);
         }
 
         break;

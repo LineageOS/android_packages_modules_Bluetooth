@@ -35,6 +35,7 @@
 #include "mock_codec_manager.h"
 #include "mock_csis_client.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
 #include "stack/mock/mock_stack_le_connection.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -116,17 +117,20 @@ protected:
     set_com_android_bluetooth_flags_leaudio_fix_allocation_in_codec_config(true);
     devices_ = new LeAudioDevices();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
+    set_mock_btm_client_interface(&mock_btm_client_interface);
     bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
   }
 
   void TearDown() override {
     bluetooth::manager::SetMockBtmInterface(nullptr);
+    reset_mock_btm_client_interface();
     bluetooth::storage::SetMockBtifStorageInterface(nullptr);
     delete devices_;
   }
 
   LeAudioDevices* devices_ = nullptr;
   bluetooth::manager::MockBtmInterface btm_interface;
+  MockBtmClientInterface mock_btm_client_interface;
   bluetooth::storage::MockBtifStorageInterface mock_btif_storage_;
 };
 
@@ -529,6 +533,7 @@ protected:
 
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
 
+    set_mock_btm_client_interface(&mock_btm_client_interface_);
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
 
@@ -743,6 +748,7 @@ protected:
 
   void TearDown() override {
     bluetooth::manager::SetMockBtmInterface(nullptr);
+    reset_mock_btm_client_interface();
     devices_.clear();
     addresses_.clear();
     delete group_;
@@ -1432,6 +1438,7 @@ protected:
   std::vector<RawAddress> addresses_;
   LeAudioDeviceGroup* group_ = nullptr;
   bluetooth::manager::MockBtmInterface btm_interface_;
+  MockBtmClientInterface mock_btm_client_interface_;
   MockCsisClient mock_csis_client_module_;
 
   bluetooth::le_audio::CodecManager* codec_manager_;

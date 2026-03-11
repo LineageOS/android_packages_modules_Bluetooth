@@ -28,13 +28,13 @@
 #include "bta_gatt_api_mock.h"
 #include "bta_le_audio_api.h"
 #include "bta_le_audio_server_api.h"
-#include "btm_api_mock.h"
 #include "hardware/bt_le_audio.h"
 #include "hardware/bt_le_audio_server.h"
 #include "hci/controller_mock.h"
 #include "main/shim/entry.h"
 #include "main/shim/le_advertising_manager.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
 
 using testing::_;
@@ -169,7 +169,7 @@ protected:
     shim::mock_ble_advertiser_interface_ = new shim::MockBleAdvertiserInterface();
     hci::testing::mock_controller_ =
             std::make_unique<testing::NiceMock<hci::testing::MockController>>();
-    bluetooth::manager::SetMockBtmInterface(&mock_btm_interface_);
+    set_mock_btm_client_interface(&mock_btm_interface_);
     gatt::SetMockBtaGattServerInterface(&mock_gatt_server_if_);
 
     // New mock setup
@@ -251,11 +251,11 @@ protected:
     mock_audio_in_ = nullptr;
     mock_audio_out_ = nullptr;
     hci::testing::mock_controller_.reset();
-    bluetooth::manager::SetMockBtmInterface(nullptr);
+    reset_mock_btm_client_interface();
     gatt::SetMockBtaGattServerInterface(nullptr);
   }
 
-  testing::NiceMock<bluetooth::manager::MockBtmInterface> mock_btm_interface_;
+  testing::NiceMock<MockBtmClientInterface> mock_btm_interface_;
   testing::NiceMock<gatt::MockBtaGattServerInterface> mock_gatt_server_if_;
   MockLeAudioServerCallbacks mock_callbacks_;
   std::shared_ptr<le_audio::MockLeAudioServerConfigManager> mock_config_manager_;

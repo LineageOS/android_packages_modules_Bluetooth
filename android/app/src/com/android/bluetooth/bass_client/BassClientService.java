@@ -25,6 +25,7 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
 import static java.util.Objects.requireNonNull;
 
+import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeAudioCodecConfigMetadata;
@@ -62,6 +63,8 @@ import android.util.Pair;
 
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Util;
+import com.android.bluetooth.auracast.AuracastUtils;
+import com.android.bluetooth.auracast.BroadcastStreamInfo;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioConstants;
@@ -162,6 +165,8 @@ public class BassClientService extends ConnectableProfile {
     private final Map<Integer, Integer> mBisDiscoveryCounterMap = new HashMap<>();
     private final List<AddSourceData> mPendingSourcesToAdd = new ArrayList<>();
 
+    private final List<AddSourceByNameData> mPendingSourcesToAddByName = new ArrayList<>();
+
     private final Map<BluetoothDevice, List<Pair<Integer, Object>>> mPendingGroupOp =
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, List<Integer>> mGroupManagedSources =
@@ -187,10 +192,14 @@ public class BassClientService extends ConnectableProfile {
     private final HandlerThread mCallbackHandlerThread;
     private final Callbacks mCallbacks;
 
+    @VisibleForTesting final Set<BluetoothDevice> mPendingNfcJoiningDevices = new HashSet<>();
+
     private DialingOutTimeoutEvent mDialingOutTimeoutEvent = null;
     private final Map<Integer, ReactivateGroupMonitor> mReactivateGroupMonitors =
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Boolean> mEncryptionStates = new ConcurrentHashMap<>();
+
+    private record AddSourceByNameData(BluetoothDevice sink, String name, List<Byte> code) {}
 
     @VisibleForTesting
     final BroadcastReceiver mEncryptionStateReceiver =
@@ -242,6 +251,53 @@ public class BassClientService extends ConnectableProfile {
                             }
                         }
                     }
+                }
+            };
+
+    @VisibleForTesting
+    final BroadcastReceiver mNfcJoinReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+
+                    if (!AuracastUtils.ACTION_CONNECT_STREAM.equals(action)) {
+                        return;
+                    }
+
+                    String metadataStr = intent.getStringExtra(AuracastUtils.EXTRA_METADATA);
+                    if (metadataStr == null) return;
+
+                    // Directly parse the string for Name (BN) and Code (BC)
+                    BroadcastStreamInfo info = AuracastUtils.parseBroadcastNameAndCode(metadataStr);
+
+                    if (info == null) {
+                        Log.e(TAG, "URI is missing Broadcast_Name. Cannot join.");
+                        return;
+                    }
+
+                    String bName = info.getName();
+                    byte[] bCode = info.getCode();
+
+                    final var leAudio = getAdapterService().getLeAudioService();
+                    if (leAudio.isEmpty()) {
+                        Log.e(TAG, "No available LeAudioService to determine primary device.");
+                        return;
+                    }
+
+                    // Track pending devices and initiate the search/join
+                    List<BluetoothDevice> connectedSinks = getConnectedDevices();
+                    for (BluetoothDevice sink : connectedSinks) {
+                        // Only trigger the group operation on the primary device
+                        if (leAudio.get().isPrimaryDevice(sink)) {
+                            addSourceByBroadcastName(sink, bName, bCode);
+                            mPendingNfcJoiningDevices.addAll(leAudio.get().getGroupDevices(sink));
+                            break;
+                        }
+                    }
+
+                    NotificationManager nm = context.getSystemService(NotificationManager.class);
+                    nm.cancel(AuracastUtils.NOTIFICATION_ID);
                 }
             };
 
@@ -390,6 +446,38 @@ public class BassClientService extends ConnectableProfile {
                 return;
             }
 
+            BluetoothDevice targetDeviceFound = null;
+            BluetoothLeBroadcastMetadata basicMetadata = null;
+            String broadcastName = BassUtils.getBroadcastName(result.getScanRecord());
+            if (broadcastName != null) {
+                synchronized (mPendingSourcesToAddByName) {
+                    Iterator<AddSourceByNameData> iterator = mPendingSourcesToAddByName.iterator();
+                    while (iterator.hasNext()) {
+                        AddSourceByNameData pending = iterator.next();
+                        if (pending.name().equals(broadcastName)) {
+                            Log.i(
+                                    TAG,
+                                    "onScanResult: Matched pending name search: " + broadcastName);
+
+                            byte[] codeArray = null;
+                            if (pending.code() != null) {
+                                codeArray = new byte[pending.code().size()];
+                                for (int i = 0; i < pending.code().size(); i++) {
+                                    codeArray[i] = pending.code().get(i);
+                                }
+                            }
+                            targetDeviceFound = pending.sink();
+                            // Build the basic metadata from the scan
+                            basicMetadata =
+                                    buildBasicMetadataFromScanResult(
+                                            result, pending.name(), codeArray);
+                            iterator.remove();
+                            break;
+                        }
+                    }
+                }
+            }
+
             Log.d(TAG, "Broadcast Source Found:" + result.getDevice());
 
             synchronized (mSearchScanCallbackLock) {
@@ -419,6 +507,10 @@ public class BassClientService extends ConnectableProfile {
                     if (shouldSync(broadcastId)) {
                         addSelectSourceRequest(broadcastId, /* hasPriority */ true);
                     }
+                }
+
+                if (targetDeviceFound != null && basicMetadata != null) {
+                    addSource(targetDeviceFound, basicMetadata, true);
                 }
             }
         }
@@ -644,6 +736,11 @@ public class BassClientService extends ConnectableProfile {
         if (Flags.leaudioBassReadCharacteristicsAfterEncryption())
             adapterService.registerReceiver(
                     mEncryptionStateReceiver, filter, BLUETOOTH_CONNECT, null);
+
+        IntentFilter nfcFilter = new IntentFilter(AuracastUtils.ACTION_CONNECT_STREAM);
+        if (Flags.leaudioAuracastCredentialExtension()) {
+            registerReceiver(mNfcJoinReceiver, nfcFilter, Context.RECEIVER_NOT_EXPORTED);
+        }
     }
 
     public static boolean isEnabled() {
@@ -888,6 +985,14 @@ public class BassClientService extends ConnectableProfile {
 
         if (Flags.leaudioBassReadCharacteristicsAfterEncryption()) {
             getAdapterService().unregisterReceiver(mEncryptionStateReceiver);
+        }
+
+        if (Flags.leaudioAuracastCredentialExtension()) {
+            try {
+                unregisterReceiver(mNfcJoinReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "mNfcJoinReceiver not registered");
+            }
         }
         mEncryptionStates.clear();
         mReactivateGroupMonitors.forEach((k, v) -> mHandler.removeCallbacks(v));
@@ -1652,12 +1757,50 @@ public class BassClientService extends ConnectableProfile {
         if (Flags.leaudioFallbackGroupSelection()) {
             updateDefaultBroadcastToUnicastFallbackGroup();
         }
+
+        if (Flags.leaudioAuracastCredentialExtension()) {
+            Log.i(TAG, "Source successfully added. Clearing wait state.");
+            mPendingNfcJoiningDevices.clear();
+        }
     }
 
     private void localNotifySourceAddFailed(
             BluetoothDevice sink, BluetoothLeBroadcastMetadata source) {
         removeSinkMetadata(sink, source.getBroadcastId());
         stopBackgroundSearching();
+
+        if (!Flags.leaudioAuracastCredentialExtension()) {
+            return;
+        }
+
+        if (!mPendingNfcJoiningDevices.remove(sink)) {
+            Log.d(
+                    TAG,
+                    "Ignoring SOURCE_ADD_FAILED because the user did not initiate a join or it"
+                            + " was already handled.");
+            return;
+        }
+
+        Log.i(TAG, "Failure caught while waiting for join. Updating UI.");
+
+        // Only show the error notification if ALL connected devices failed.
+        // If the other earbud succeeded, the Set would already be empty.
+        if (mPendingNfcJoiningDevices.isEmpty()) {
+            String streamName =
+                    source.getBroadcastName() != null ? source.getBroadcastName() : "Nearby";
+            // TODO: (b/491294522): use getAlias() or getName() for notification
+            String deviceName = "devices";
+
+            NotificationManager nm =
+                    getAdapterService().getSystemService(NotificationManager.class);
+            String text =
+                    "Failed to connect to "
+                            + streamName
+                            + " audio stream on your "
+                            + deviceName
+                            + ".";
+            AuracastUtils.showNotification(this, nm, streamName, text, null);
+        }
     }
 
     private void setSourceGroupManaged(BluetoothDevice sink, int sourceId, boolean isGroupOp) {
@@ -4142,6 +4285,82 @@ public class BassClientService extends ConnectableProfile {
             message.obj = sourceMetadata;
             stateMachine.sendMessage(message);
         }
+    }
+
+    /**
+     * Add a Broadcast Source using only the Broadcast Name (e.g., from an incomplete URI). It scans
+     * for the name, retrieves the missing metadata, and completes the addSource operation.
+     */
+    @VisibleForTesting
+    void addSourceByBroadcastName(
+            BluetoothDevice sink, String broadcastName, byte[] broadcastCode) {
+        if (broadcastName == null || broadcastName.isEmpty()) {
+            Log.e(TAG, "addSourceByBroadcastName: broadcastName cannot be null or empty");
+            return;
+        }
+
+        Log.d(TAG, "addSourceByBroadcastName: Searching for name = " + broadcastName);
+
+        java.util.List<Byte> codeList = null;
+        if (broadcastCode != null) {
+            codeList = new java.util.ArrayList<>(broadcastCode.length);
+            for (byte b : broadcastCode) {
+                codeList.add(b);
+            }
+        }
+
+        synchronized (mPendingSourcesToAddByName) {
+            mPendingSourcesToAddByName.add(new AddSourceByNameData(sink, broadcastName, codeList));
+        }
+
+        synchronized (mSearchScanCallbackLock) {
+            Log.i(TAG, "addSourceByBroadcastName: Starting scanner.");
+            startSearchingForSources(Collections.emptyList(), /* foreground= */ true);
+        }
+    }
+
+    private static BluetoothLeBroadcastMetadata buildBasicMetadataFromScanResult(
+            ScanResult scanResult, String name, byte[] code) {
+        BluetoothDevice device = scanResult.getDevice();
+        int broadcastId = LeAudioUtils.getBroadcastId(scanResult.getScanRecord());
+
+        BluetoothLeBroadcastMetadata.Builder builder =
+                new BluetoothLeBroadcastMetadata.Builder()
+                        .setBroadcastName(name)
+                        .setBroadcastId(broadcastId)
+                        .setSourceDevice(device, device.getAddressType())
+                        .setSourceAdvertisingSid(scanResult.getAdvertisingSid())
+                        .setPaSyncInterval(scanResult.getPeriodicAdvertisingInterval())
+                        .setPresentationDelayMicros(0xFFFF);
+
+        if (code != null && code.length > 0) {
+            builder.setEncrypted(true);
+            builder.setBroadcastCode(code);
+        } else {
+            builder.setEncrypted(false);
+        }
+
+        // Create a Dummy Channel (Index 1 is standard for the first channel)
+        BluetoothLeBroadcastChannel dummyChannel =
+                new BluetoothLeBroadcastChannel.Builder()
+                        .setChannelIndex(1)
+                        .setCodecMetadata(new BluetoothLeAudioCodecConfigMetadata.Builder().build())
+                        .build();
+
+        // Create a Dummy Subgroup and attach the Dummy Channel
+        BluetoothLeBroadcastSubgroup dummySubgroup =
+                new BluetoothLeBroadcastSubgroup.Builder()
+                        .setCodecId(0x06)
+                        .setCodecSpecificConfig(
+                                new BluetoothLeAudioCodecConfigMetadata.Builder().build())
+                        .setContentMetadata(
+                                BluetoothLeAudioContentMetadata.fromRawBytes(new byte[0]))
+                        .addChannel(dummyChannel)
+                        .build();
+
+        // Add the Dummy Subgroup to the main Metadata Builder
+        builder.addSubgroup(dummySubgroup);
+        return builder.build();
     }
 
     private static boolean isAnyChannelSelected(BluetoothLeBroadcastMetadata metadata) {

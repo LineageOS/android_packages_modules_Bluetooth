@@ -18,3 +18,13 @@ flag {
     description: "Include remote TX power and reflector RSSI in DistanceMeasurementResult"
     bug: "462311235"
 }
+
+flag {
+    name: "enforce_security_for_ranging"
+    namespace: "bluetooth"
+    description: "Makes sure that the link is encrypted with LE Secure Connections before starting distance measurement session"
+    bug: "487455955"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

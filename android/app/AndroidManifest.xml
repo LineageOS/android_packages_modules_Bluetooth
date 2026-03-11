@@ -303,5 +303,17 @@
                 <action android:name="com.android.bluetooth.backup.ACTION_BACKUP_DATA" />
             </intent-filter>
         </receiver>
+
+        <activity android:name="com.android.bluetooth.auracast.NfcAuracastActivity"
+                android:theme="@android:style/Theme.NoDisplay"
+                android:exported="true"
+                android:excludeFromRecents="true"
+                android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

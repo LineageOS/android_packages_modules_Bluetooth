@@ -41,6 +41,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/le_advertising_manager.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/main_thread.h"
 
@@ -241,7 +242,8 @@ public:
 
     /* To be a Unicast Sink device, this device shall be a Peripheral device. */
     tHCI_ROLE role;
-    auto role_status = BTM_GetRole(address, BT_TRANSPORT_LE, &role);
+    auto role_status =
+            get_btm_client_interface().link_policy.BTM_GetRole(address, BT_TRANSPORT_LE, &role);
     if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_PERIPHERAL) {
       log::warn("Unicast server is not available for this connection. {}, status: {}, AclRole: {}",
                 address, btm_status_text(role_status), hci_role_text(role));

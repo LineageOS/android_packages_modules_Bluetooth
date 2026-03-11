@@ -50,40 +50,10 @@ flag {
 }
 
 flag {
-    name: "handle_encryption_fail_before_sdp_when_paring"
-    namespace: "bluetooth"
-    description: "handle encryption failure before SDP when pairing cause no SDP records but bonded"
-    bug: "418212151"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "l2c_not_cancel_timeout"
     namespace: "bluetooth"
     description: "Do not cancel timeout alarm if l2cap is connecting"
     bug: "436736160"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "reset_service_change_ind_counter"
-    namespace: "bluetooth"
-    description: "Resets service change indication counter when fail to start discover"
-    bug: "438099407"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "ensure_acl_connection_is_removed_from_pending_list"
-    namespace: "bluetooth"
-    description: "Fix that ACL connection is left in the pending list when advertiser is removed right before connection is established."
-    bug: "441211531"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -104,16 +74,6 @@ flag {
     namespace: "bluetooth"
     description: "Delay the transition to the idle state for JV PM connection"
     bug: "440618134"
-}
-
-flag {
-    name: "ignore_service_change_indication"
-    namespace: "bluetooth"
-    description: "Do not handle service change indication for specific devices"
-    bug: "448557918"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -219,6 +179,16 @@ flag {
     namespace: "bluetooth"
     description: "Pause clients before adding or removing device from the resolving list"
     bug: "488175554"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_ppcp_behavior"
+    namespace: "bluetooth"
+    description: "Distinguish app-requested connection params from PPCP, and other behavior changes (go/fix-ppcp-behavior)"
+    bug: "491294532"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

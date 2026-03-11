@@ -25,6 +25,8 @@ import static android.content.pm.PackageManager.FEATURE_BLUETOOTH_LE_CHANNEL_SOU
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BondStatus;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.le.ChannelSoundingParams;
 import android.bluetooth.le.DistanceMeasurementMethod;
@@ -185,35 +187,35 @@ public class DistanceMeasurementManager {
             DistanceMeasurementParams params,
             IDistanceMeasurementCallback callback) {
         enforceThread();
+        final BluetoothDevice device = params.getDevice();
 
         if (mIsTurnedOff) {
             Log.d(TAG, "startDistanceMeasurement(): BT is turned off, no new requests are allowed");
-            invokeStartFail(
-                    callback, params.getDevice(), BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+            invokeStartFail(callback, device, BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
             return;
         }
         Log.i(
                 TAG,
-                ("startDistanceMeasurement(): device=" + params.getDevice())
+                ("startDistanceMeasurement(): device=" + device)
                         + (", method=" + params.getMethodId()));
-        if (!mAdapterService.isConnected(params.getDevice())) {
-            Log.e(TAG, "Device " + params.getDevice() + " is not connected");
-            invokeStartFail(
-                    callback, params.getDevice(), BluetoothStatusCodes.ERROR_NO_LE_CONNECTION);
+
+        int status = checkLinkRequirements(device);
+        if (status != BluetoothStatusCodes.SUCCESS) {
+            invokeStartFail(callback, device, status);
             return;
         }
-        String address = mAdapterService.getIdentityAddress(params.getDevice().getAddress());
+
+        String address = mAdapterService.getIdentityAddress(device.getAddress());
         if (address == null) {
-            address = params.getDevice().getAddress();
+            address = device.getAddress();
         }
         logd(
                 "startDistanceMeasurement(): Get identityAddress: "
-                        + (params.getDevice() + " => " + toAnonymizedAddress(address)));
+                        + (device + " => " + toAnonymizedAddress(address)));
 
         int interval = getIntervalValue(params.getFrequency(), params.getMethodId());
         if (interval == -1) {
-            invokeStartFail(
-                    callback, params.getDevice(), BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
+            invokeStartFail(callback, device, BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
             return;
         }
 
@@ -228,29 +230,61 @@ public class DistanceMeasurementManager {
                 if (!mHasChannelSoundingFeature
                         || !mAdapterService.isLeChannelSoundingSupported()) {
                     Log.e(TAG, "Channel Sounding is not supported");
-                    invokeStartFail(
-                            callback,
-                            params.getDevice(),
-                            BluetoothStatusCodes.FEATURE_NOT_SUPPORTED);
+                    invokeStartFail(callback, device, BluetoothStatusCodes.FEATURE_NOT_SUPPORTED);
                     return;
                 }
-                if (mAdapterService.getBondState(params.getDevice())
-                        != BluetoothDevice.BOND_BONDED) {
+                if (mAdapterService.getBondState(device) != BluetoothDevice.BOND_BONDED) {
                     Log.e(TAG, "startDistanceMeasurement(): Target device is not bonded");
-                    invokeStartFail(
-                            callback,
-                            params.getDevice(),
-                            BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
+                    invokeStartFail(callback, device, BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
                     return;
                 }
                 startCsTracker(tracker);
             }
-            default ->
-                    invokeStartFail(
-                            callback,
-                            params.getDevice(),
-                            BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
+            default -> invokeStartFail(callback, device, BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
         }
+    }
+
+    private int checkLinkRequirements(BluetoothDevice device) {
+        if (!Flags.enforceSecurityForRanging()) {
+            if (!mAdapterService.isConnected(device)) {
+                Log.e(TAG, "checkLinkRequirements(): Device " + device + " is not connected");
+                return BluetoothStatusCodes.ERROR_NO_LE_CONNECTION;
+            }
+            return BluetoothStatusCodes.SUCCESS;
+        }
+
+        if (mAdapterService.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            Log.e(TAG, "checkLinkRequirements(): " + device + " is not bonded");
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
+
+        BondStatus bondStatus = mAdapterService.getBondStatus(device, BluetoothDevice.TRANSPORT_LE);
+        // BondStatus is null when pairing algorithm is unknown. That can happen for the devices
+        // which were bonded before caching of pairing algorithm was introduced in Android Bluetooth
+        if (bondStatus != null
+                && bondStatus.getPairingAlgorithm() != BluetoothDevice.PAIRING_ALGORITHM_SC) {
+            Log.e(TAG, "checkLinkRequirements(): " + device + " is not Secure Connections bonded");
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
+
+        EncryptionStatus encryptionStatus =
+                mAdapterService.getEncryptionStatus(device, BluetoothDevice.TRANSPORT_LE);
+        if (encryptionStatus == null) {
+            Log.e(TAG, "checkLinkRequirements(): " + device + " is not connected over LE");
+            return BluetoothStatusCodes.ERROR_NO_LE_CONNECTION;
+        }
+
+        if (encryptionStatus.getAlgorithm() != BluetoothDevice.ENCRYPTION_ALGORITHM_AES) {
+            Log.e(TAG, "checkLinkRequirements(): " + device + " is not encrypted with AES");
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
+
+        if (encryptionStatus.getKeySize() < 16) {
+            Log.e(TAG, "checkLinkRequirements(): " + device + " encryption key size is too small");
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
+
+        return BluetoothStatusCodes.SUCCESS;
     }
 
     private void startRssiTracker(DistanceMeasurementTracker tracker) {

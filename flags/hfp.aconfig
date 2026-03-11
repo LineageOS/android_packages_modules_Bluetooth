@@ -156,3 +156,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "sco_close_after_rfcomm_disconnect"
+    namespace: "bluetooth"
+    description: "Inform to BTA_AV about SCO closed after rfcomm disconnected"
+    bug: "476898825"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

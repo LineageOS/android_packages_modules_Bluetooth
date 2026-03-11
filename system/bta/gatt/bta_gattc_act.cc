@@ -1570,18 +1570,16 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   log::info("{} service changed s_handle=0x{:x}, e_handle=0x{:x}", p_srcb->server_bda, s_handle,
             e_handle);
 
-  if (com_android_bluetooth_flags_ignore_service_change_indication()) {
-    char remote_name[BD_NAME_LEN] = "";
-    btif_storage_get_stored_remote_name(p_srcb->server_bda, remote_name);
-    if (interop_match_name(INTEROP_IGNORE_SERVICE_CHANGED_IND, remote_name)) {
-      if (GATTC_SendHandleValueConfirm(conn_id, p_notify->cid) != GATT_SUCCESS) {
-        log::warn("Unable to send GATT client handle value confirmation conn_id:{} cid:{}", conn_id,
-                  p_notify->cid);
-      }
-
-      log::warn("ignore service changed ind");
-      return true;
+  char remote_name[BD_NAME_LEN] = "";
+  btif_storage_get_stored_remote_name(p_srcb->server_bda, remote_name);
+  if (interop_match_name(INTEROP_IGNORE_SERVICE_CHANGED_IND, remote_name)) {
+    if (GATTC_SendHandleValueConfirm(conn_id, p_notify->cid) != GATT_SUCCESS) {
+      log::warn("Unable to send GATT client handle value confirmation conn_id:{} cid:{}", conn_id,
+                p_notify->cid);
     }
+
+    log::warn("ignore service changed ind");
+    return true;
   }
 
   if (com_android_bluetooth_flags_gatt_offload_api()) {
@@ -1637,9 +1635,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
     } else {
       log::warn("No clcb is available to handle service change indication");
       // To respond to the next service change indication
-      if (com_android_bluetooth_flags_reset_service_change_ind_counter()) {
-        p_srcb->update_count = 0;
-      }
+      p_srcb->update_count = 0;
     }
   }
 

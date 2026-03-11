@@ -105,7 +105,6 @@ public class ScanController {
 
     private final AdapterService mAdapterService;
     private final AppOpsManager mAppOps;
-    private final BatteryStatsManager mBatteryStatsManager;
     private final CompanionDeviceManager mCompanionManager;
     private final ScanBinder mBinder;
     private final ScannerMap mScannerMap;
@@ -126,19 +125,18 @@ public class ScanController {
     private Handler mTestModeHandler;
 
     public ScanController(
-            AdapterService service,
+            AdapterService adapterService,
             ScanNativeInterface scanNativeInterface,
             PeriodicScanNativeInterface periodicScanNativeInterface,
             BatteryStatsManager batteryStatsManager,
             CompanionDeviceManager companionDeviceManager) {
         this(
-                service,
+                adapterService,
                 null,
                 scanNativeInterface,
                 null,
                 periodicScanNativeInterface,
-                new ScannerMap(),
-                batteryStatsManager,
+                new ScannerMap(adapterService, batteryStatsManager),
                 companionDeviceManager,
                 null,
                 TimeProvider.getSystemClock());
@@ -146,20 +144,18 @@ public class ScanController {
 
     @VisibleForTesting
     ScanController(
-            AdapterService service,
+            AdapterService adapterService,
             ScanManager scanManager,
             ScanNativeInterface scanNativeInterface,
             PeriodicScanManager periodicScanManager,
             PeriodicScanNativeInterface periodicScanNativeInterface,
             ScannerMap scannerMap,
-            BatteryStatsManager batteryStatsManager,
             CompanionDeviceManager companionDeviceManager,
             @Nullable Looper looper,
             TimeProvider timeProvider) {
         Log.i(TAG, "Created");
-        mAdapterService = requireNonNull(service);
+        mAdapterService = requireNonNull(adapterService);
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
-        mBatteryStatsManager = batteryStatsManager;
         mCompanionManager = companionDeviceManager;
         mBinder = new ScanBinder(mAdapterService, this);
         mScannerMap = scannerMap;
@@ -904,8 +900,7 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
-        var uid = source.getUid();
-        var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
+        var appScanStats = mScannerMap.getAppScanStatsByUid(source.getUid());
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
                 && !hasPrivilegedPermission) {
@@ -918,7 +913,7 @@ public class ScanController {
             return;
         }
         registerAndStartScan(
-                uid, callback, workSource, source, settings, filters, /* isInternal */ false);
+                callback, workSource, source, settings, filters, /* isInternal */ false);
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
@@ -928,18 +923,17 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
-        final int uid = source.getUid();
-        registerAndStartScan(uid, callback, null, source, settings, filters, /* isInternal */ true);
+        registerAndStartScan(callback, null, source, settings, filters, /* isInternal */ true);
     }
 
     private void registerAndStartScan(
-            int uid,
             IScannerCallback callback,
-            WorkSource workSource,
+            @Nullable WorkSource workSource,
             AttributionSource source,
             ScanSettings settings,
             List<ScanFilter> filters,
             boolean isInternal) {
+        final int uid = source.getUid();
         final int pid = source.getPid();
         final var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var uuid = UUID.randomUUID();
@@ -958,8 +952,6 @@ public class ScanController {
                 callback,
                 settings,
                 filters,
-                mAdapterService,
-                mBatteryStatsManager,
                 isInternal);
         mScanManager.registerScanner(uuid);
     }
@@ -1101,9 +1093,7 @@ public class ScanController {
                         source,
                         piInfo,
                         settings,
-                        filters,
-                        mAdapterService,
-                        mBatteryStatsManager);
+                        filters);
         mAppOps.checkPackage(uid, callingPackage);
         app.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));
@@ -1335,6 +1325,6 @@ public class ScanController {
 
     public void dump(StringBuilder sb) {
         enforceScanThread();
-        mScannerMap.dump(sb, mScanManager.getSettingsMap());
+        mScannerMap.dump(sb);
     }
 }

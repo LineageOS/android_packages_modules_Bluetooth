@@ -16,9 +16,8 @@
 
 //! Crate root for the Unified Bluetooth Rust Stack.
 
-/// PDL generated packets.
+pub mod le_audio;
 pub mod pdl;
-/// Common Bluetooth data types.
 pub mod types;
 
 pub use types::*;

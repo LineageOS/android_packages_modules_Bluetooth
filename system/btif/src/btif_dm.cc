@@ -2986,6 +2986,11 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
 void btif_dm_remove_bond(const RawAddress bd_addr) {
   log::verbose("bd_addr={}", bd_addr);
 
+  // reset the bond lost status first
+  if (is_autonomous_repairing_supported()) {
+    btm_update_bond_lost(bd_addr, false);
+  }
+
   if (com_android_bluetooth_flags_cancel_pairing_while_remove_bond()) {
     if (is_bonding_or_sdp() && pairing_cb.bd_addr == bd_addr) {
       log::warn("Ongoing pairing/sdp detected, cancelling it first before removing bond.");
@@ -3007,9 +3012,6 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Remove bond");
 
-  if (is_autonomous_repairing_supported()) {
-    btm_update_bond_lost(bd_addr, false);  // reset the bond lost status
-  }
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND, pairing_cb.state);
 
   // special handling for HID devices
@@ -3671,14 +3673,6 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
           static_cast<int>(pairing_cb.pairing_type.algorithm));
 }
 
-static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
-  if (btm_get_bond_type_dev(bd_addr) == BOND_TYPE_TEMPORARY) {
-    return ctkd;
-  }
-
-  return false;
-}
-
 static bool btif_model_name_known(const RawAddress& bd_addr) {
   bt_property_t prop;
   bt_bdname_t model_name;
@@ -3764,33 +3758,25 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       btif_storage_set_remote_addr_type(bd_addr, p_auth_cmpl->addr_type);
     }
 
-    /* Test for temporary bonding */
-    if (btif_dm_ble_is_temp_pairing(bd_addr, p_auth_cmpl->is_ctkd)) {
-      log::debug("sending BT_BOND_STATE_NONE for Temp pairing");
-      btif_storage_remove_bonded_device(bd_addr);
-      state = BT_BOND_STATE_NONE;
+    btif_dm_save_ble_keys(bd_addr);
+
+    if (is_le_audio_capable_during_service_discovery(bd_addr) && !btif_model_name_known(bd_addr) &&
+        get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+      log::info("Read model name for le audio capable device");
+      if (!DIS_ReadDISInfo(bd_addr, read_dis_cback, DIS_ATTR_MODEL_NUM_BIT)) {
+        log::warn("Read DIS failed");
+      }
+    }
+
+    if (pairing_cb.gatt_over_le == btif_dm_pairing_cb_t::ServiceDiscoveryState::NOT_STARTED) {
+      log::info("scheduling GATT discovery over LE for {}", bd_addr);
+      pairing_cb.gatt_over_le = btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED;
+      btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_LE);
     } else {
-      btif_dm_save_ble_keys(bd_addr);
-
-      if (is_le_audio_capable_during_service_discovery(bd_addr) &&
-          !btif_model_name_known(bd_addr) &&
-          get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-        log::info("Read model name for le audio capable device");
-        if (!DIS_ReadDISInfo(bd_addr, read_dis_cback, DIS_ATTR_MODEL_NUM_BIT)) {
-          log::warn("Read DIS failed");
-        }
-      }
-
-      if (pairing_cb.gatt_over_le == btif_dm_pairing_cb_t::ServiceDiscoveryState::NOT_STARTED) {
-        log::info("scheduling GATT discovery over LE for {}", bd_addr);
-        pairing_cb.gatt_over_le = btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED;
-        btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_LE);
-      } else {
-        log::info(
-                "skipping GATT discovery over LE - was already scheduled or "
-                "finished for {}, state: {}",
-                bd_addr, pairing_cb.gatt_over_le);
-      }
+      log::info(
+              "skipping GATT discovery over LE - was already scheduled or "
+              "finished for {}, state: {}",
+              bd_addr, pairing_cb.gatt_over_le);
     }
   } else if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) {
     log::info("Re-pairing failed for {}, will not remove the keys", bd_addr);
