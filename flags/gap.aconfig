@@ -70,13 +70,6 @@ flag {
 }
 
 flag {
-    name: "delay_jv_pm_idle"
-    namespace: "bluetooth"
-    description: "Delay the transition to the idle state for JV PM connection"
-    bug: "440618134"
-}
-
-flag {
     name: "migrate_btm_scan_to_gd"
     namespace: "bluetooth"
     description: "Migrate btm scan logic to gd le scanning manager"
