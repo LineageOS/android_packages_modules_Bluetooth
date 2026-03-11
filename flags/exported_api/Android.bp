@@ -1,0 +1,30 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+    default_visibility: ["//visibility:private"],
+}
+
+aconfig_declarations {
+    name: "bluetooth_aconfig_flags-export",
+    package: "android.bluetooth.flags",
+    container: "com.android.bt",
+    exportable: true,
+    srcs: ["*.aconfig"],
+}
+
+// Uncomment when adding the first exported flag
+// java_aconfig_library {
+//     name: "bluetooth_flags_java_lib-export",
+//     aconfig_declarations: "bluetooth_aconfig_flags-export",
+//     defaults: ["framework-minus-apex-aconfig-java-defaults"],
+//     min_sdk_version: "33",
+//     mode: "exported",
+//     visibility: [
+//         // Only add packages that needs to depend on Bluetooth flags
+//         "//cts/tests/tests/bluetooth:__subpackages__",
+//         "//packages/modules/Bluetooth:__subpackages__",
+//     ],
+//     apex_available: [
+//         "//apex_available:platform",
+//         "com.android.bt",
+//     ],
+// }
