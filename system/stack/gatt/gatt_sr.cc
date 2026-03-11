@@ -915,12 +915,11 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len, ui
 
   bluetooth::shim::arbiter::GetArbiter().OnIncomingMtuReq(tcb.tcb_idx, tcb.payload_size);
 
-  /* Notify all registered application with new MTU size. Use a transaction ID */
-  /* of 0, as no response is allowed from applications */
+  /* Notify all registered application with new MTU size. */
   for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
     if (p_reg->in_use && p_reg->app_cb.p_req_cb) {
       tCONN_ID conn_id = gatt_create_conn_id(tcb.tcb_idx, p_reg->gatt_if);
-      p_reg->app_cb.p_req_cb->mtu_changed_cb(conn_id, 0, tcb.peer_bda, tcb.payload_size);
+      p_reg->app_cb.p_req_cb->mtu_changed_cb(conn_id, tcb.peer_bda, tcb.payload_size);
     }
   }
 }

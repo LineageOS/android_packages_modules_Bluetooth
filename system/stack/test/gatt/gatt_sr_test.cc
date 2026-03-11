@@ -154,10 +154,10 @@ static void ApplicationExecWriteCallback(tCONN_ID conn_id, uint32_t trans_id,
   mock_exec_write_cb.Call(conn_id, trans_id, remote_bda, exec_write);
 }
 
-MockFunction<void(tCONN_ID, uint32_t, const RawAddress&, uint16_t)> mock_mtu_changed_cb;
-static void ApplicationMtuChangedCallback(tCONN_ID conn_id, uint32_t trans_id,
-                                          const RawAddress& remote_bda, uint16_t mtu) {
-  mock_mtu_changed_cb.Call(conn_id, trans_id, remote_bda, mtu);
+MockFunction<void(tCONN_ID, const RawAddress&, uint16_t)> mock_mtu_changed_cb;
+static void ApplicationMtuChangedCallback(tCONN_ID conn_id, const RawAddress& remote_bda,
+                                          uint16_t mtu) {
+  mock_mtu_changed_cb.Call(conn_id, remote_bda, mtu);
 }
 
 MockFunction<void(tCONN_ID, uint32_t, const RawAddress&)> mock_conf_cb;

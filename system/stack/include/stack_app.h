@@ -51,8 +51,7 @@ struct tGATT_REQ_CBACK {
                               uint8_t* value, uint16_t len);
   void (&exec_write_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
                         tGATT_EXEC_FLAG exec_write);
-  void (&mtu_changed_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
-                         uint16_t mtu);
+  void (&mtu_changed_cb)(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu);
   void (&conf_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
 };
 /* channel congestion/uncongestion callback */

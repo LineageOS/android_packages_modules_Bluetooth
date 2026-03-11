@@ -64,8 +64,8 @@ static void ais_write_characteristic_or_descriptor_cback(tCONN_ID /*conn_id*/,
 static void ais_exec_write_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
                                  const RawAddress& /*remote_bda*/, tGATT_EXEC_FLAG /*exec_write*/) {
 }
-static void ais_mtu_changed_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
-                                  const RawAddress& /*remote_bda*/, uint16_t /*mtu*/) {}
+static void ais_mtu_changed_cback(tCONN_ID /*conn_id*/, const RawAddress& /*remote_bda*/,
+                                  uint16_t /*mtu*/) {}
 static void ais_conf_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
                            const RawAddress& /*remote_bda*/) {}
 

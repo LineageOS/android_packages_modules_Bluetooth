@@ -79,7 +79,7 @@ static void gatt_write_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint
                                                           bool need_rsp, bool is_prep,
                                                           uint8_t* value, uint16_t len);
 static void gatt_exec_write_cback(tCONN_ID, uint32_t, const RawAddress&, tGATT_EXEC_FLAG) {}
-static void gatt_mtu_changed_cback(tCONN_ID, uint32_t, const RawAddress&, uint16_t) {}
+static void gatt_mtu_changed_cback(tCONN_ID, const RawAddress&, uint16_t) {}
 static void gatt_conf_cback(tCONN_ID, uint32_t, const RawAddress&) {}
 
 static stack::tGATT_REQ_CBACK gatt_profile_req_cback = {

@@ -318,8 +318,7 @@ typedef struct {
                                 uint8_t* value, uint16_t len);
   void (*p_exec_write_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
                           tGATT_EXEC_FLAG exec_write);
-  void (*p_mtu_changed_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
-                           uint16_t mtu);
+  void (*p_mtu_changed_cb)(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu);
   void (*p_conf_cb)(tCONN_ID conn_id, tGATT_STATUS status);
   void (*p_congestion_cb)(tCONN_ID conn_id, bool congested);
   void (*p_phy_update_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint8_t tx_phy, uint8_t rx_phy,
