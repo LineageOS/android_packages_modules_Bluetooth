@@ -49,7 +49,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -213,7 +212,7 @@ public final class BondStateMachine extends StateMachine {
     }
 
     private class StateBonding extends State {
-        private final ArrayList<BluetoothDevice> mDevices = new ArrayList<>();
+        private final Set<BluetoothDevice> mDevices = new HashSet<>();
 
         @Override
         public void enter() {
