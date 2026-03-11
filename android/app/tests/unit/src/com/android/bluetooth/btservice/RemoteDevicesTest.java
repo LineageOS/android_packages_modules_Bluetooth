@@ -558,22 +558,17 @@ public class RemoteDevicesTest {
 
         // Verify that the battery level persists
         mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ true);
-        if (Flags.consistentBatteryLevel()) {
-            verifyNoMoreInteractions(mAdapterService);
+        verifyNoMoreInteractions(mAdapterService);
 
-            // We lost both connection and battery level is reset
-            mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ false);
-            verifyBatteryLevelUpdate(BATTERY_LEVEL_UNKNOWN);
-        } else {
-            verifyBatteryLevelUpdate(batteryLevelHfp);
-        }
+        // We lost both connection and battery level is reset
+        mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(BATTERY_LEVEL_UNKNOWN);
 
         doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
         verifyNoMoreInteractions(mAdapterService);
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_CONSISTENT_BATTERY_LEVEL)
     public void testUpdateBatteryLevelWithHfp_overridesUnknownBasBatteryLevel() {
         int batteryLevelHfp = 10;
         int batteryLevelBas = 15;
@@ -607,7 +602,6 @@ public class RemoteDevicesTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_CONSISTENT_BATTERY_LEVEL)
     public void testResetBasBatteryLevel_withNoHfpLevel_resetsInstantly() {
         int batteryLevelBas = 50;
 
