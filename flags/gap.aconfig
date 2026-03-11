@@ -60,16 +60,6 @@ flag {
 }
 
 flag {
-    name: "reset_service_change_ind_counter"
-    namespace: "bluetooth"
-    description: "Resets service change indication counter when fail to start discover"
-    bug: "438099407"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "l2cap_improve_segmented_sdu"
     namespace: "bluetooth"
     description: "Improve sending segmented sdu"
