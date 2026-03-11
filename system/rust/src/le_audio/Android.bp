@@ -71,3 +71,23 @@ cc_library_static {
     apex_available: ["com.android.bt"],
     min_sdk_version: "36",
 }
+
+cc_library_static {
+    name: "libbluetooth_le_audio_rs_test_mocks",
+    host_supported: true,
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
+    ],
+    srcs: [
+        ":TestCommonMockFunctions",
+        ":TestMockMainShimLeScanning",
+    ],
+    static_libs: [
+        "libbase",
+        "libbluetooth_log",
+        "libbluetooth_types",
+        "libchrome",
+        "liblog",
+    ],
+}
