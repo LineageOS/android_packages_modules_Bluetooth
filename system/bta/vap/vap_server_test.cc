@@ -58,6 +58,9 @@ static uint16_t GetCharacteristicHandle(const bluetooth::Uuid& uuid) {
   if (uuid == ::vap::uuid::kVaSessionStateCharacteristic) {
     return 0x0009;
   }
+  if (uuid == ::vap::uuid::kVaSupportedFeaturesCharacteristic) {
+    return 0x000B;
+  }
   return 0xFFFF;
 }
 

@@ -41,6 +41,8 @@
        return "VA CCID";
      case kVaSessionStateCharacteristic16bit:
        return "VA Session State";
+     case kVaSupportedFeaturesCharacteristic16bit:
+       return "VA Supported Features";
      case kClientCharacteristicConfiguration16bit:
        return "Client Characteristic Configuration";
      default:
@@ -160,6 +162,7 @@
      case kVasControlPointCharacteristic16bit:
      case kVaCcidCharacteristic16bit:
      case kVaSessionStateCharacteristic16bit:
+     case kVaSupportedFeaturesCharacteristic16bit:
        return true;
      default:
        return false;
