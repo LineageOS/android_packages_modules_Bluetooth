@@ -43,16 +43,6 @@ flag {
 }
 
 flag {
-    name: "l2cap_improve_segmented_sdu"
-    namespace: "bluetooth"
-    description: "Improve sending segmented sdu"
-    bug: "437272601"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "migrate_btm_scan_to_gd"
     namespace: "bluetooth"
     description: "Migrate btm scan logic to gd le scanning manager"
