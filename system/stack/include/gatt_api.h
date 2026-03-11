@@ -509,51 +509,6 @@ typedef union {
 #define GATT_PREP_WRITE_EXEC 0x01
 typedef uint8_t tGATT_EXEC_FLAG;
 
-/* read request always based on UUID */
-typedef struct {
-  uint16_t handle;
-  uint16_t offset;
-  bool is_long;
-  bt_gatt_db_attribute_type_t gatt_type; /* are we writing characteristic or descriptor */
-} tGATT_READ_REQ;
-
-/* write request data */
-typedef struct {
-  uint16_t handle;                       /* attribute handle */
-  uint16_t offset;                       /* attribute value offset, if no offset is needed for the
-                                            command, ignore it */
-  uint16_t len;                          /* length of attribute value */
-  uint8_t value[GATT_MAX_ATTR_LEN];      /* the actual attribute value */
-  bool need_rsp;                         /* need write response */
-  bool is_prep;                          /* is prepare write */
-  bt_gatt_db_attribute_type_t gatt_type; /* are we writing characteristic or descriptor */
-} tGATT_WRITE_REQ;
-
-/* callback data for server access request from client */
-typedef union {
-  tGATT_READ_REQ read_req; /* read request, read by Type, read blob */
-
-  tGATT_WRITE_REQ write_req;  /* write */
-                              /* prepare write */
-                              /* write blob */
-  uint16_t handle;            /* handle value confirmation */
-  uint16_t mtu;               /* MTU exchange request */
-  tGATT_EXEC_FLAG exec_write; /* execute write */
-} tGATTS_DATA;
-
-typedef uint8_t tGATT_SERV_IF; /* GATT Service Interface */
-
-enum {
-  GATTS_REQ_TYPE_READ_CHARACTERISTIC = 1, /* Char read request */
-  GATTS_REQ_TYPE_READ_DESCRIPTOR,         /* Desc read request */
-  GATTS_REQ_TYPE_WRITE_CHARACTERISTIC,    /* Char write request */
-  GATTS_REQ_TYPE_WRITE_DESCRIPTOR,        /* Desc write request */
-  GATTS_REQ_TYPE_WRITE_EXEC,              /* Execute write */
-  GATTS_REQ_TYPE_MTU,                     /* MTU exchange information */
-  GATTS_REQ_TYPE_CONF                     /* handle value confirmation */
-};
-typedef uint8_t tGATTS_REQ_TYPE;
-
 /* Client Used Data Structure
  */
 /* definition of different discovery types */
