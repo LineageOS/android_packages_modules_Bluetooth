@@ -109,11 +109,8 @@ class AppScanStats(
     var isAppDead = false
     var isRegistered = false
     var appImportance = IMPORTANCE_CACHED
-        @Synchronized get
-        @Synchronized set
 
     var scanAllowanceLedger = ScanAllowanceLedger()
-        @Synchronized get
 
     private var scansStarted = 0
     private var scansStopped = 0
@@ -137,9 +134,8 @@ class AppScanStats(
 
     override fun toString() = "AppScanStats(uid=$uid, name=$name)"
 
-    @Synchronized fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
+    fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
 
-    @Synchronized
     fun addResults(scannerId: Int, numberOfNewResults: Int, isBatch: Boolean) {
         val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
@@ -176,18 +172,14 @@ class AppScanStats(
         )
     }
 
-    @Synchronized fun isScanning() = ongoingScans.isNotEmpty()
+    fun isScanning() = ongoingScans.isNotEmpty()
 
-    @Synchronized
     fun isScanTimeout(scannerId: Int) = getScanFromScannerId(scannerId)?.isTimeout ?: false
 
-    @Synchronized
     fun isScanDowngraded(scannerId: Int) = getScanFromScannerId(scannerId)?.isDowngraded ?: false
 
-    @Synchronized
     fun isAutoBatchScan(scannerId: Int) = getScanFromScannerId(scannerId)?.isAutoBatchScan ?: false
 
-    @Synchronized
     fun recordScanStart(
         settings: ScanSettings,
         filters: List<ScanFilter>,
@@ -243,7 +235,6 @@ class AppScanStats(
         ongoingScans[scannerId] = scan
     }
 
-    @Synchronized
     fun recordScanStop(scannerId: Int) {
         val scan = getScanFromScannerId(scannerId) ?: return
         scansStopped++
@@ -282,19 +273,16 @@ class AppScanStats(
         )
     }
 
-    @Synchronized
     fun recordScanTimeoutCountMetrics(scannerId: Int, scanTimeoutMillis: Long) {
         val scan = getScanFromScannerId(scannerId)
         scanMetricsReporter.recordScanTimeoutCount(scan, scanTimeoutMillis)
     }
 
-    @Synchronized
     fun recordHwFilterNotAvailableCountMetrics(scannerId: Int, numOfFilterSupported: Long) {
         val scan = getScanFromScannerId(scannerId)
         scanMetricsReporter.recordHwFilterNotAvailableCount(scan, numOfFilterSupported)
     }
 
-    @Synchronized
     fun recordScanSuspend(scannerId: Int) {
         val scan = getScanFromScannerId(scannerId)
         if (scan == null || scan.isSuspended) {
@@ -304,7 +292,6 @@ class AppScanStats(
         scan.isSuspended = true
     }
 
-    @Synchronized
     fun recordScanResume(scannerId: Int) {
         val scan = getScanFromScannerId(scannerId)
         if (scan == null || !scan.isSuspended) {
@@ -317,7 +304,6 @@ class AppScanStats(
         totalSuspendTime += suspendDuration
     }
 
-    @Synchronized
     fun setScanTimeout(scannerId: Int) {
         if (!isScanning()) {
             return
@@ -325,7 +311,6 @@ class AppScanStats(
         getScanFromScannerId(scannerId)?.isTimeout = true
     }
 
-    @Synchronized
     fun setScanDowngrade(scannerId: Int, isDowngrade: Boolean) {
         if (!isScanning()) {
             return
@@ -333,12 +318,10 @@ class AppScanStats(
         getScanFromScannerId(scannerId)?.isDowngraded = isDowngrade
     }
 
-    @Synchronized
     fun setAutoBatchScan(scannerId: Int, isBatchScan: Boolean) {
         getScanFromScannerId(scannerId)?.isAutoBatchScan = isBatchScan
     }
 
-    @Synchronized
     fun isScanningTooFrequently(): Boolean {
         if (lastScans.size < adapterService.scanQuotaCount) {
             return false
@@ -348,7 +331,6 @@ class AppScanStats(
             adapterService.scanQuotaWindow
     }
 
-    @Synchronized
     fun isScanningTooLong(): Boolean {
         if (!isScanning()) {
             return false
@@ -357,7 +339,6 @@ class AppScanStats(
             adapterService.scanTimeout
     }
 
-    @Synchronized
     fun hasRecentScan(): Boolean {
         if (!isScanning() || lastScans.isEmpty()) {
             return false
@@ -366,7 +347,6 @@ class AppScanStats(
         return (timeProvider.elapsedRealtime() - lastScan.endTimestamp) < LARGE_SCAN_TIME_GAP_MS
     }
 
-    @Synchronized
     fun recordBatchAlarmScheduled() {
         scheduledBatchAlarmCount++
     }
@@ -374,7 +354,6 @@ class AppScanStats(
     fun getAttributionTagFromScannerId(scannerId: Int): String =
         getScanFromScannerId(scannerId)?.attributionTag ?: ""
 
-    @Synchronized
     fun dump(apps: List<ScannerApp>) = buildString {
         val currentTime = System.currentTimeMillis()
         val elapsedTime = timeProvider.elapsedRealtime()
