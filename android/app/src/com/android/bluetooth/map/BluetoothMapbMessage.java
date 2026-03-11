@@ -18,7 +18,6 @@ package com.android.bluetooth.map;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -698,16 +697,9 @@ public abstract class BluetoothMapbMessage {
                 // Read until we receive END:MSG as some carkits send bad message lengths
                 StringBuilder data = new StringBuilder();
                 String messageLine = "";
-                if (Flags.mapBmessageIncludeNewline()) {
-                    while (!messageLine.endsWith("END:MSG\r\n")) {
-                        data.append(messageLine);
-                        messageLine = reader.getLineEnforce(/* includeNewline= */ true);
-                    }
-                } else {
-                    while (!messageLine.equals("END:MSG")) {
-                        data.append(messageLine);
-                        messageLine = reader.getLineEnforce();
-                    }
+                while (!messageLine.endsWith("END:MSG\r\n")) {
+                    data.append(messageLine);
+                    messageLine = reader.getLineEnforce(/* includeNewline= */ true);
                 }
 
                 // The MAP spec says that all END:MSG strings in the body
