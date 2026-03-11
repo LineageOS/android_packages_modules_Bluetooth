@@ -157,7 +157,7 @@ public class ScanController {
         mAdapterService = requireNonNull(adapterService);
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = companionDeviceManager;
-        mBinder = new ScanBinder(mAdapterService, this);
+        mBinder = new ScanBinder(mAdapterService, this, mTestModeEnabled);
         mScannerMap = new ScannerMap(mAdapterService, batteryStatsManager);
         mScanRadioStats = new ScanRadioStats(timeProvider);
         mExposureNotificationPackage =
