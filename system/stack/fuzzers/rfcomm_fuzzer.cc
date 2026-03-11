@@ -20,19 +20,14 @@
 #include <gmock/gmock.h>
 
 #include <cstdint>
-#include <iostream>
-#include <string>
 
-#include "common/time_util.h"
 #include "hal/snoop_logger.h"
 #include "osi/include/allocator.h"
 #include "stack/include/port_api.h"
 #include "stack/include/rfcdefs.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
-#include "stack/mock/mock_stack_l2cap_ble.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
-#include "stack/test/common/stack_test_packet_utils.h"
 #include "stack_rfcomm_test_utils.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"

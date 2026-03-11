@@ -105,6 +105,11 @@ bool direct_connect_add(uint8_t /* id */, const RawAddress& /* bd_addr */,
   return true;
 }
 
+bool direct_connect_remove(uint8_t /* app_id */, const RawAddress& /* address */,
+                           bool connection_timeout = false) {
+  return true;
+}
+
 void on_connection_complete(const RawAddress& /* address */) {}
 }  // namespace connection_manager
 

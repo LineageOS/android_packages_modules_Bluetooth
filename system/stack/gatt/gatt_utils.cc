@@ -33,11 +33,9 @@
 
 #include "hardware/bt_gatt_types.h"
 #include "internal_include/bt_target.h"
-#include "main/shim/acl_api.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
-#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_utils.h"
 #include "stack/connection_manager/connection_manager.h"

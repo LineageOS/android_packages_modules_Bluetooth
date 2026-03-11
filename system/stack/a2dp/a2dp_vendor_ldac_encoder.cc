@@ -543,7 +543,7 @@ static uint16_t adjust_effective_mtu(const tA2DP_ENCODER_INIT_PEER_PARAMS& peer_
   if (mtu_size > peer_params.peer_mtu) {
     mtu_size = peer_params.peer_mtu;
   }
-  log::verbose("original AVDTP MTU size: {}", mtu_size);
+  log::debug("original AVDTP MTU size: {}", mtu_size);
   return mtu_size;
 }
 

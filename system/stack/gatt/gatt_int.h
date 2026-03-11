@@ -25,8 +25,6 @@
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
-#include <deque>
-#include <list>
 #include <map>
 #include <unordered_set>
 #include <vector>

@@ -232,12 +232,12 @@ static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb) {
  ******************************************************************************/
 void l2c_csm_execute(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
   if (p_ccb == nullptr) {
-    log::warn("CCB is null for event ({})", event);
+    log::warn("CCB is null for event ({})", l2c_csm_get_event_name(event));
     return;
   }
 
   if (!l2cu_is_ccb_active(p_ccb)) {
-    log::warn("CCB not in use, event ({}) cannot be processed", event);
+    log::warn("CCB not in use, event ({}) cannot be processed", l2c_csm_get_event_name(event));
     return;
   }
 
@@ -328,6 +328,11 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
 
     case L2CEVT_LP_CONNECT_CFM: /* Link came up         */
       if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
+        if (p_ccb->p_lcb->triggered_le_acl_conn > 0) {
+          log::warn("ON CONN CFM :: triggered_le_acl_conn decr: {}",
+                    p_ccb->p_lcb->triggered_le_acl_conn);
+          p_ccb->p_lcb->triggered_le_acl_conn--;
+        }
         p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm, true,
                              &l2c_link_sec_comp, p_ccb);
@@ -505,6 +510,11 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
     case L2CEVT_SEC_RE_SEND_CMD: /* BTM has enough info to proceed */
     case L2CEVT_LP_CONNECT_CFM:  /* Link came up         */
       if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
+        if (p_ccb->p_lcb->triggered_le_acl_conn > 0) {
+          log::warn("ON W4  SEC CFM :: triggered_le_acl_conn decr: {}",
+                    p_ccb->p_lcb->triggered_le_acl_conn);
+          p_ccb->p_lcb->triggered_le_acl_conn--;
+        }
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm, false,
                              &l2c_link_sec_comp, p_ccb);
       } else {

@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
+import android.os.UserHandle
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.le_scan.BatchScanThrottler.Companion.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT
 import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
@@ -32,6 +33,9 @@ import kotlin.time.ExperimentalTime
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 /** Test cases for [BatchScanThrottler]. */
 @OptIn(ExperimentalTime::class)
@@ -157,16 +161,20 @@ class BatchScanThrottlerTest {
 
     private fun createBatchScanClient(isFiltered: Boolean) =
         ScanClient(
-            appUid = 1001,
-            scannerId = 1,
-            settings =
-                ScanSettings.Builder()
-                    .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
-                    .setReportDelay(DEFAULT_REPORT_DELAY_FLOOR_MS)
-                    .build(),
-            filters =
-                if (isFiltered) listOf(ScanFilter.Builder().setDeviceName("TestName").build())
-                else emptyList(),
+            mock<ScannerApp> {
+                doReturn(
+                        if (isFiltered)
+                            listOf(ScanFilter.Builder().setDeviceName("TestName").build())
+                        else emptyList()
+                    )
+                    .whenever(it)
+                    .filters
+            },
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                .setReportDelay(DEFAULT_REPORT_DELAY_FLOOR_MS)
+                .build(),
+            mock<UserHandle>(),
         )
 
     private fun advanceTime(amountToAdvanceMillis: Int) =

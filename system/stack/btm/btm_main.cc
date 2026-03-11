@@ -27,7 +27,6 @@
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
-#include <future>
 #include <memory>
 #include <string>
 
@@ -38,7 +37,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
-#include "stack/include/security_client_callbacks.h"
 
 using namespace bluetooth;
 

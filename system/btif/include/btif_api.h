@@ -261,14 +261,13 @@ void btif_dm_cancel_bond(const RawAddress bd_addr);
  ******************************************************************************/
 void btif_dm_remove_bond(const RawAddress bd_addr);
 
+#ifdef TARGET_FLOSS
 /*******************************************************************************
  *
  * Function         btif_dm_get_connection_state
- *                  btif_dm_get_connection_state_sync
  *
  * Description      Returns bitmask on remote device connection state indicating
- *                  connection and encryption.  The `_sync` version properly
- *                  synchronizes the state and is the preferred mechanism.
+ *                  connection and encryption.
  *                  NOTE: Currently no address resolution is attempted upon
  *                  LE random addresses.
  *
@@ -285,7 +284,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr);
  *
  ******************************************************************************/
 uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr);
-uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr);
+#endif
 
 /*******************************************************************************
  *

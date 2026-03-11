@@ -240,7 +240,7 @@ int BTA_AvObtainPeerChannelIndex(const RawAddress& peer_address) {
     if (p_scb->PeerAddress().IsEmpty()) {
       const RawAddress& btif_addr = btif_av_find_by_handle(p_scb->hndl);
       if (!btif_addr.IsEmpty() && btif_addr != peer_address) {
-        log::verbose("btif_addr = {}, index={}!", btif_addr.ToString(), index);
+        log::debug("btif_addr = {}, index={}!", btif_addr.ToString(), index);
         continue;
       }
       return p_scb->hdi;
@@ -317,7 +317,7 @@ static tBTA_AV_SCB* bta_av_find_scb(tBTA_AV_CHNL chnl, uint8_t app_id) {
   for (int xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
     if ((bta_av_cb.p_scb[xx] != nullptr) && (bta_av_cb.p_scb[xx]->chnl == chnl) &&
         (bta_av_cb.p_scb[xx]->app_id == app_id)) {
-      log::verbose("found at: {}", xx);
+      log::debug("found at: {}", xx);
       return bta_av_cb.p_scb[xx];
     }
   }
@@ -385,7 +385,7 @@ void bta_av_conn_cback(uint8_t /* handle */, const RawAddress& bd_addr, uint8_t 
     if (event == AVDT_DISCONNECT_IND_EVT) {
       p_scb = bta_av_addr_to_scb(bd_addr);
     } else if (event == AVDT_CONNECT_IND_EVT) {
-      log::verbose("CONN_IND is ACP:{}", p_data->hdr.err_param);
+      log::debug("CONN_IND is ACP:{}", p_data->hdr.err_param);
     }
 
     tBTA_AV_STR_MSG* p_msg = (tBTA_AV_STR_MSG*)osi_malloc(sizeof(tBTA_AV_STR_MSG));
@@ -395,7 +395,7 @@ void bta_av_conn_cback(uint8_t /* handle */, const RawAddress& bd_addr, uint8_t 
     p_msg->bd_addr = bd_addr;
     p_msg->scb_index = scb_index;
     if (p_scb) {
-      log::verbose("bta_handle x{:x}, role x{:x}", p_scb->hndl, p_scb->role);
+      log::debug("bta_handle x{:x}, role x{:x}", p_scb->hndl, p_scb->role);
     }
     log::info("conn_cback bd_addr: {}, scb_index: {}", bd_addr, scb_index);
     bta_sys_sendmsg(p_msg);
@@ -470,7 +470,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
     }
   }
 
-  log::verbose("profile: 0x{:x}", profile_initialized);
+  log::debug("profile: 0x{:x}", profile_initialized);
   if (p_bta_av_cfg == NULL) {
     log::error("AV configuration is null!");
     return;
@@ -538,7 +538,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
     if (!(bta_av_cb.features & BTA_AV_FEAT_PROTECT)) {
       avdtp_stream_config.nsc_mask |= AvdtpStreamConfig::AVDT_NSC_SECURITY;
     }
-    log::verbose("nsc_mask: 0x{:x}", avdtp_stream_config.nsc_mask);
+    log::debug("nsc_mask: 0x{:x}", avdtp_stream_config.nsc_mask);
 
     if (p_data->api_reg.p_service_name[0] == 0) {
       p_service_name = NULL;
@@ -672,7 +672,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       }
     }
     bta_av_cb.reg_audio |= BTA_AV_HNDL_TO_MSK(p_scb->hdi);
-    log::verbose("reg_audio: 0x{:x}", bta_av_cb.reg_audio);
+    log::debug("reg_audio: 0x{:x}", bta_av_cb.reg_audio);
   } while (0);
 
   if (btif_av_src_sink_coexist_enabled()) {
@@ -686,7 +686,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       p_bta_av_cfg = &bta_av_cfg;
 
       if (avrcp_version == AVRC_REV_1_3) {  // ver if need
-        log::verbose("AVRCP 1.3 capabilites used");
+        log::debug("AVRCP 1.3 capabilites used");
         p_bta_av_cfg = &bta_av_cfg_compatibility;
       }
     }
@@ -807,7 +807,7 @@ void bta_av_restore_switch(void) {
   int i;
   uint8_t mask;
 
-  log::verbose("reg_audio: 0x{:x}", bta_av_cb.reg_audio);
+  log::debug("reg_audio: 0x{:x}", bta_av_cb.reg_audio);
   for (i = 0; i < BTA_AV_NUM_STRS; i++) {
     mask = BTA_AV_HNDL_TO_MSK(i);
     if (p_cb->conn_audio == mask) {
@@ -836,8 +836,8 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
   tHCI_ROLE cur_role;
   uint8_t peer_idx = 0;
 
-  log::verbose("peer {} new_role:{} hci_status:0x{:x} bta_av_cb.rs_idx:{}", peer_addr, new_role,
-               hci_status, bta_av_cb.rs_idx);
+  log::debug("peer {} new_role:{} hci_status:0x{:x} bta_av_cb.rs_idx:{}", peer_addr, new_role,
+             hci_status, bta_av_cb.rs_idx);
 
   for (i = 0; i < BTA_AV_NUM_STRS; i++) {
     /* loop through all the SCBs to find matching peer addresses and report the
@@ -846,8 +846,8 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
     p_scb = bta_av_cb.p_scb[i];
     if (p_scb && p_scb->PeerAddress() == peer_addr) {
       tBTA_AV_ROLE_RES* p_buf = (tBTA_AV_ROLE_RES*)osi_malloc(sizeof(tBTA_AV_ROLE_RES));
-      log::verbose("peer {} found: new_role:{}, hci_status:0x{:x} bta_handle:0x{:x}", peer_addr,
-                   new_role, hci_status, p_scb->hndl);
+      log::debug("peer {} found: new_role:{}, hci_status:0x{:x} bta_handle:0x{:x}", peer_addr,
+                 new_role, hci_status, p_scb->hndl);
       p_buf->hdr.event = BTA_AV_ROLE_CHANGE_EVT;
       p_buf->hdr.layer_specific = p_scb->hndl;
       p_buf->new_role = new_role;
@@ -874,8 +874,8 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
       p_scb = bta_av_cb.p_scb[bta_av_cb.rs_idx - 1];
     }
     if (p_scb && p_scb->q_tag == BTA_AV_Q_TAG_OPEN) {
-      log::verbose("peer {} rs_idx:{}, bta_handle:0x{:x} q_tag:{}", p_scb->PeerAddress(),
-                   bta_av_cb.rs_idx, p_scb->hndl, p_scb->q_tag);
+      log::debug("peer {} rs_idx:{}, bta_handle:0x{:x} q_tag:{}", p_scb->PeerAddress(),
+                 bta_av_cb.rs_idx, p_scb->hndl, p_scb->q_tag);
 
       if (HCI_SUCCESS == hci_status || HCI_ERR_NO_CONNECTION == hci_status) {
         p_scb->q_info.open.switch_res = BTA_AV_RS_OK;
@@ -924,7 +924,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t num_sco_li
       p_scb = bta_av_cb.p_scb[i];
 
       if (p_scb && p_scb->co_started && (!p_scb->sco_suspend)) {
-        log::verbose("suspending scb:{}", i);
+        log::debug("suspending scb:{}", i);
         /* scb is used and started, not suspended automatically */
         p_scb->sco_suspend = true;
         stop.flush = false;
@@ -946,7 +946,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t num_sco_li
 
       if (p_scb && p_scb->sco_suspend) /* scb is used and suspended for SCO */
       {
-        log::verbose("starting scb:{}", i);
+        log::debug("starting scb:{}", i);
         bta_av_ssm_execute(p_scb, BTA_AV_AP_START_EVT, NULL);
       }
     }
@@ -1046,6 +1046,12 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB* p_scb, BT_HDR* p_buf) {
 }
 
 static void bta_av_non_state_machine_event(uint16_t event, tBTA_AV_DATA* p_data) {
+  if (event == BTA_AV_CI_SRC_DATA_READY_EVT) {
+    log::verbose("AV nsm event=0x{:x}({})", event, bta_av_evt_code(event));
+  } else {
+    log::debug("AV nsm event=0x{:x}({})", event, bta_av_evt_code(event));
+  }
+
   switch (event) {
     case BTA_AV_API_ENABLE_EVT:
       bta_av_api_enable(p_data);
@@ -1099,8 +1105,8 @@ static void bta_av_non_state_machine_event(uint16_t event, tBTA_AV_DATA* p_data)
 }
 
 void bta_av_sm_execute(tBTA_AV_CB* p_cb, uint16_t event, tBTA_AV_DATA* p_data) {
-  log::verbose("AV event=0x{:x}({}) state={}({})", event, bta_av_evt_code(event), p_cb->state,
-               bta_av_st_code(p_cb->state));
+  log::debug("AV event=0x{:x}({}) state={}({})", event, bta_av_evt_code(event), p_cb->state,
+             bta_av_st_code(p_cb->state));
   switch (p_cb->state) {
     case BTA_AV_INIT_ST:
       switch (event) {
@@ -1169,14 +1175,11 @@ bool bta_av_hdl_event(const BT_HDR_RIGID* p_msg) {
     return true; /* to free p_msg */
   }
   if (p_msg->event >= BTA_AV_FIRST_NSM_EVT) {
-    log::verbose("AV nsm event=0x{:x}({})", p_msg->event, bta_av_evt_code(p_msg->event));
     bta_av_non_state_machine_event(p_msg->event, (tBTA_AV_DATA*)p_msg);
   } else if (p_msg->event >= BTA_AV_FIRST_SM_EVT && p_msg->event <= BTA_AV_LAST_SM_EVT) {
-    log::verbose("AV sm event=0x{:x}({})", p_msg->event, bta_av_evt_code(p_msg->event));
     /* state machine events */
     bta_av_sm_execute(&bta_av_cb, p_msg->event, (tBTA_AV_DATA*)p_msg);
   } else {
-    log::verbose("bta_handle=0x{:x}", p_msg->layer_specific);
     /* stream state machine events */
     bta_av_ssm_execute(bta_av_hndl_to_scb(p_msg->layer_specific), p_msg->event,
                        (tBTA_AV_DATA*)p_msg);

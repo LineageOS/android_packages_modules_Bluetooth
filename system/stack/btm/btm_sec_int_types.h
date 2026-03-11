@@ -23,7 +23,6 @@
 
 #include <cstdint>
 
-#include "stack/include/btm_api_types.h"  // tBTM_CMPL_CB
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
 

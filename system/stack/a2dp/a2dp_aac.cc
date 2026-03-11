@@ -297,14 +297,13 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAac(const tA2DP_AAC_CIE* p_ca
 
   /* verify that each parameter is in range */
 
-  log::verbose("Object Type peer: 0x{:x}, capability 0x{:x}", cfg_cie.objectType,
-               p_cap->objectType);
-  log::verbose("Sample Rate peer: {}, capability {}", cfg_cie.sampleRate, p_cap->sampleRate);
-  log::verbose("Channel Mode peer: 0x{:x}, capability 0x{:x}", cfg_cie.channelMode,
-               p_cap->channelMode);
-  log::verbose("Variable Bit Rate Support peer: 0x{:x}, capability 0x{:x}",
-               cfg_cie.variableBitRateSupport, p_cap->variableBitRateSupport);
-  log::verbose("Bit Rate peer: {}, capability {}", cfg_cie.bitRate, p_cap->bitRate);
+  log::debug("Object Type peer: 0x{:x}, capability 0x{:x}", cfg_cie.objectType, p_cap->objectType);
+  log::debug("Sample Rate peer: {}, capability {}", cfg_cie.sampleRate, p_cap->sampleRate);
+  log::debug("Channel Mode peer: 0x{:x}, capability 0x{:x}", cfg_cie.channelMode,
+             p_cap->channelMode);
+  log::debug("Variable Bit Rate Support peer: 0x{:x}, capability 0x{:x}",
+             cfg_cie.variableBitRateSupport, p_cap->variableBitRateSupport);
+  log::debug("Bit Rate peer: {}, capability {}", cfg_cie.bitRate, p_cap->bitRate);
 
   /* Object Type */
   if ((cfg_cie.objectType & p_cap->objectType) == 0) {

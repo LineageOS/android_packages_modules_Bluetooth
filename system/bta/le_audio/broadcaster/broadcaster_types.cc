@@ -303,9 +303,9 @@ std::ostream& operator<<(std::ostream& os,
   os << config.data_path << std::endl;
   os << ", sduIntervalUs=" << config.sduIntervalUs;
   os << ", maxSduOctets=" << config.maxSduOctets;
-  os << ", phy=" << config.phy;
-  os << ", packing=" << config.packing;
-  os << ", framing=" << config.framing;
+  os << ", phy=" << static_cast<int>(config.phy);
+  os << ", packing=" << static_cast<int>(config.packing);
+  os << ", framing=" << static_cast<int>(config.framing);
   os << "}" << std::endl;
 
   return os;

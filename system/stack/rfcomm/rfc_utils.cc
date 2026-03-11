@@ -31,7 +31,6 @@
 #include <cstdint>
 
 #include "common/time_util.h"
-#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/rfcomm/rfc_int.h"

@@ -700,6 +700,7 @@ static bool pairing_is_busy() {
   return false;
 }
 
+#ifdef TARGET_FLOSS
 static int get_connection_state(const RawAddress bd_addr) {
   if (!interface_ready()) {
     return 0;
@@ -707,6 +708,7 @@ static int get_connection_state(const RawAddress bd_addr) {
 
   return btif_dm_get_connection_state(bd_addr);
 }
+#endif
 
 static int pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len,
                      bt_pin_code_t* pin_code) {
@@ -1247,7 +1249,9 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .remove_bond = remove_bond,
         .cancel_bond = cancel_bond,
         .pairing_is_busy = pairing_is_busy,
+#ifdef TARGET_FLOSS
         .get_connection_state = get_connection_state,
+#endif
         .pin_reply = pin_reply,
         .ssp_reply = ssp_reply,
         .get_profile_interface = get_profile_interface,

@@ -34,6 +34,7 @@ import android.os.Binder
 import android.os.Bundle
 import android.os.ParcelUuid
 import android.os.SystemProperties
+import android.os.UserHandle
 import android.os.WorkSource
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
@@ -92,7 +93,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.clearInvocations
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -2165,32 +2165,6 @@ class ScanManagerTest() {
     }
 
     @Test
-    fun testDowngradeWithNullClientAppScanStats() {
-        // Set filtered scan flag
-        val isFiltered = true
-
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(adapterService)
-            .scanDowngradeDuration
-
-        // Turn off screen
-        setScreenOn(false)
-        // Create scan client
-        val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_LATENCY)
-        // Start Scan
-        startScan(client)
-        assertThat(scanManager.regularScanQueue).contains(client)
-        assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
-        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
-        // Set AppScanStats to empty
-        client.appScanStats = null
-        // Set connecting state
-        setConnectingState(true)
-        // Since AppScanStats is null, no downgrade takes place for scan mode
-        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
-    }
-
-    @Test
     fun profileConnectionStateChanged_sendStartConnectionMessage() {
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
             .whenever(adapterService)
@@ -2574,14 +2548,17 @@ class ScanManagerTest() {
                 }
         val scannerIdForClient = scannerIdPar ?: ++scannerId
         return ScanClient(
-                appUid = uid,
-                scannerId = scannerIdForClient,
-                settings = settings,
-                filters = filters,
+                mock<ScannerApp> {
+                    doReturn(scannerIdForClient).whenever(it).scannerId
+                    doReturn(uid).whenever(it).uid
+                    doReturn(filters).whenever(it).filters
+                    doReturn(appScanStatsPar).whenever(it).appScanStats
+                },
+                settings,
+                mock<UserHandle>(),
             )
             .apply {
-                appScanStats = appScanStatsPar
-                appScanStats!!.recordScanStart(
+                appScanStats.recordScanStart(
                     settings,
                     filters,
                     isFiltered,

@@ -896,6 +896,7 @@ static void btif_dm_cb_create_bond_le(const RawAddress bd_addr, tBLE_ADDR_TYPE a
   }
 }
 
+#ifdef TARGET_FLOSS
 /*******************************************************************************
  *
  * Function         btif_dm_get_connection_state
@@ -922,42 +923,7 @@ uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr) {
   }
   return rc;
 }
-
-static uint16_t btif_dm_get_resolved_connection_state(tBLE_BD_ADDR ble_bd_addr) {
-  uint16_t rc = 0;
-  if (maybe_resolve_address(&ble_bd_addr.bda, &ble_bd_addr.type)) {
-    if (BTA_DmGetConnectionState(ble_bd_addr.bda)) {
-      rc = 0x0001;
-      if (get_security_client_interface().BTM_IsEncrypted(ble_bd_addr.bda,
-                                                              BT_TRANSPORT_BR_EDR)) {
-        rc |= ENCRYPTED_BREDR;
-      }
-      if (get_security_client_interface().BTM_IsEncrypted(ble_bd_addr.bda, BT_TRANSPORT_LE)) {
-        rc |= ENCRYPTED_LE;
-      }
-    }
-  }
-  return rc;
-}
-
-uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
-  std::promise<uint16_t> promise;
-  std::future future = promise.get_future();
-
-  auto status = do_in_main_thread(base::BindOnce(
-          [](const RawAddress bd_addr, std::promise<uint16_t> promise) {
-            // Experiment to try with maybe resolved address
-            uint16_t state = btif_dm_get_resolved_connection_state({
-                    .type = BLE_ADDR_RANDOM,
-                    .bda = bd_addr,
-            });
-            state |= btif_dm_get_connection_state(bd_addr);
-            promise.set_value(state);
-          },
-          bd_addr, std::move(promise)));
-  log::assert_that(status, "assert failed: status is success");
-  return future.get();
-}
+#endif
 
 /******************************************************************************
  *
@@ -3027,6 +2993,14 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
     }
     if (!get_security_client_interface().BTM_IsBonded(bd_addr, BT_TRANSPORT_AUTO)) {
       log::warn("Device is not bonded on any transport, skipping remove bond!!");
+      // TODO (b/489217572): Remove when the flag remove_bond_in_idle_state is shipped
+      // Without the flag remove_bond_in_idle_state, BondStateMachine tracks each remove bond
+      // request separately and expects a bond state changed callback for each remove bond request.
+      // If duplicate remove bond requests are received in quick succession, not sending bond state
+      // changed callback for each request may leave the BondStateMachine stuck in BONDING state.
+      GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+              BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_AUTO, BT_BOND_STATE_NONE, kPairingTypeNone,
+              HCI_SUCCESS, PairingInitiator::APP);
       return;
     }
   }
@@ -3818,6 +3792,9 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
                 bd_addr, pairing_cb.gatt_over_le);
       }
     }
+  } else if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) {
+    log::info("Re-pairing failed for {}, will not remove the keys", bd_addr);
+    status = BT_STATUS_AUTH_FAILURE;  // this will be overwritten by the bond_state_changed anyways.
   } else {
     /* Map the HCI fail reason  to  bt status  */
     // TODO This is not a proper use of the type

@@ -479,6 +479,10 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
               bta_av_evt_code(event), previous_state, bta_av_sst_code(previous_state), p_scb->state,
               bta_av_sst_code(p_scb->state));
 
+  } else if (event != BTA_AV_SRC_DATA_READY_EVT && event != BTA_AV_STR_WRITE_CFM_EVT) {
+    log::debug("peer {} p_scb={:#x}({}) AV event=0x{:x}({}) state={}({})", p_scb->PeerAddress(),
+               p_scb->hndl, std::format_ptr(p_scb), event, bta_av_evt_code(event), p_scb->state,
+               bta_av_sst_code(p_scb->state));
   } else {
     log::verbose("peer {} p_scb={:#x}({}) AV event=0x{:x}({}) state={}({})", p_scb->PeerAddress(),
                  p_scb->hndl, std::format_ptr(p_scb), event, bta_av_evt_code(event), p_scb->state,
@@ -558,9 +562,9 @@ void bta_av_set_scb_sst_init(tBTA_AV_SCB* p_scb) {
 
   uint8_t next_state = BTA_AV_INIT_SST;
 
-  log::verbose("peer {} AV (hndl=0x{:x}) state={}({}) next state={}({}) p_scb={}",
-               p_scb->PeerAddress(), p_scb->hndl, p_scb->state, bta_av_sst_code(p_scb->state),
-               next_state, bta_av_sst_code(next_state), std::format_ptr(p_scb));
+  log::debug("peer {} AV (hndl=0x{:x}) state={}({}) next state={}({}) p_scb={}",
+             p_scb->PeerAddress(), p_scb->hndl, p_scb->state, bta_av_sst_code(p_scb->state),
+             next_state, bta_av_sst_code(next_state), std::format_ptr(p_scb));
 
   p_scb->state = next_state;
 }

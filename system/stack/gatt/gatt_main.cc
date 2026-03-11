@@ -31,7 +31,6 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/gatt_int.h"
@@ -41,7 +40,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
 

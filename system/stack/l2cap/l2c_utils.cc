@@ -39,6 +39,7 @@
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
@@ -46,7 +47,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
-#include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cap_interface.h"
@@ -1558,7 +1558,8 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
   tL2C_LCB* p_lcb = p_ccb->p_lcb;
   tL2C_RCB* p_rcb = p_ccb->p_rcb;
 
-  log::verbose("l2cu_release_ccb: cid 0x{:04x}  in_use: {}", p_ccb->local_cid, p_ccb->in_use);
+  log::verbose("l2cu_release_ccb: cid 0x{:04x}  in_use: {} triggered_le_acl_conn: {}",
+               p_ccb->local_cid, p_ccb->in_use, p_lcb->triggered_le_acl_conn);
 
   /* If already released, could be race condition */
   if (!p_ccb->in_use) {
@@ -1643,6 +1644,19 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
         if (p_lcb->transport == BT_TRANSPORT_LE && p_ccb->local_cid == L2CAP_ATT_CID) {
           log::warn("disconnecting the LE link");
           l2cu_no_dynamic_ccbs(p_lcb);
+        }
+        if (p_lcb->triggered_le_acl_conn > 0) {
+          p_lcb->triggered_le_acl_conn--;
+          if (com_android_bluetooth_flags_cancel_pending_le_conn_on_socket_close() &&
+                p_lcb->triggered_le_acl_conn == 0) {
+            if (!connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP,
+                                                           p_lcb->remote_bd_addr)) {
+              log::debug("Error removing direct connect entry for {}", p_lcb->remote_bd_addr);
+            } else {
+              // On Successful removal, clean up the LCB
+              l2cu_release_lcb(p_lcb);
+            }
+          }
         }
       }
     }

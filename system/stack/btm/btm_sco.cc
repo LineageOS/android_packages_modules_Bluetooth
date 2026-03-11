@@ -42,9 +42,8 @@
 #include "device/include/device_iot_config.h"
 #include "hci/class_of_device.h"
 #include "hci/controller.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
-#include "hci/include/hci_layer.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -52,7 +51,6 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_dev_class.h"
@@ -63,7 +61,6 @@
 #include "stack/include/hcimsgs.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sco_hci_link_interface.h"
-#include "stack/include/sdpdefs.h"
 
 /* Default to allow enhanced connections where supported. */
 constexpr bool kDefaultDisableEnhancedConnection = false;

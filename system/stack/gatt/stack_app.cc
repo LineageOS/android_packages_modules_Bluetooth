@@ -22,14 +22,8 @@
 
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
-#include "main/shim/helpers.h"
-#include "osi/include/allocator.h"
-#include "stack/arbiter/acl_arbiter.h"
-#include "stack/btm/btm_dev.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
-#include "stack/include/bt_uuid16.h"
-#include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 
 using namespace bluetooth;

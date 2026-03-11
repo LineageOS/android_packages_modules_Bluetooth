@@ -20,15 +20,12 @@
 
 #include <bluetooth/log.h>
 #include <dlfcn.h>
-#include <inttypes.h>
 #include <lhdcv5BT.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "common/time_util.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
-#include "stack/include/a2dp_vendor.h"
 #include "stack/include/a2dp_vendor_lhdcv5.h"
 
 using namespace bluetooth;
@@ -575,8 +572,8 @@ void a2dp_vendor_lhdcv5_feeding_reset(void) {
   mcpsStat_all_time_dur_ms_lhdcv5 = 0;
 #endif
 
-  log::verbose("PCM bytes per tick {}, reset timestamp",
-               a2dp_lhdc_encoder_cb.lhdc_feeding_state.bytes_per_tick);
+  log::debug("PCM bytes per tick {}, reset timestamp",
+             a2dp_lhdc_encoder_cb.lhdc_feeding_state.bytes_per_tick);
 }
 
 // tA2DP_ENCODER_INTERFACE::(feeding_flush)
@@ -587,10 +584,10 @@ void a2dp_vendor_lhdcv5_feeding_flush(void) {
 
 // tA2DP_ENCODER_INTERFACE::(get_encoder_interval_ms)
 uint64_t a2dp_vendor_lhdcv5_get_encoder_interval_ms(void) {
-  log::verbose("A2DP_LHDC_ENCODER_INTERVAL_MS {}",
-               a2dp_lhdc_encoder_cb.lhdc_encoder_params.isLLEnabled
-                       ? A2DP_LHDC_ENCODER_SHORT_INTERVAL_MS
-                       : A2DP_LHDC_ENCODER_INTERVAL_MS);
+  log::debug("A2DP_LHDC_ENCODER_INTERVAL_MS {}",
+             a2dp_lhdc_encoder_cb.lhdc_encoder_params.isLLEnabled
+                     ? A2DP_LHDC_ENCODER_SHORT_INTERVAL_MS
+                     : A2DP_LHDC_ENCODER_INTERVAL_MS);
 
   if (a2dp_lhdc_encoder_cb.lhdc_encoder_params.isLLEnabled) {
     return A2DP_LHDC_ENCODER_SHORT_INTERVAL_MS;
@@ -607,7 +604,7 @@ void a2dp_vendor_lhdcv5_send_frames(uint64_t timestamp_us) {
   uint8_t nb_iterations = 0;
 
   a2dp_lhdcv5_get_num_frame_iteration(&nb_iterations, &nb_frame, timestamp_us);
-  log::verbose("Sending {} frames per iteration, {} iterations", nb_frame, nb_iterations);
+  log::debug("Sending {} frames per iteration, {} iterations", nb_frame, nb_iterations);
 
   if (nb_frame == 0) {
     return;
@@ -658,8 +655,8 @@ static void a2dp_lhdcv5_get_num_frame_iteration(uint8_t* num_of_iterations, uint
   a2dp_lhdc_encoder_cb.lhdc_feeding_state.counter -= result * pcm_bytes_per_frame;
   nof = result;
 
-  log::verbose("samples_per_frame={} pcm_bytes_per_frame={} nb_frame={}", samples_per_frame,
-               pcm_bytes_per_frame, nof);
+  log::debug("samples_per_frame={} pcm_bytes_per_frame={} nb_frame={}", samples_per_frame,
+             pcm_bytes_per_frame, nof);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;
@@ -744,7 +741,7 @@ static void a2dp_lhdcV5_encode_frames(uint8_t nb_frame) {
         a2dp_lhdc_encoder_cb.bytes_read += temp_bytes_read;
         packet = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
 
-        log::verbose("nb_frame({}) to encode...", nb_frame);
+        log::debug("nb_frame({}) to encode...", nb_frame);
         // to encode
 
 #ifdef MCPS_FRAME_ENCODE
@@ -781,13 +778,13 @@ static void a2dp_lhdcV5_encode_frames(uint8_t nb_frame) {
 #endif
 #endif
 
-        log::verbose("nb_frame({}) - written:{}, out_frames:{}", nb_frame, written, out_frames);
+        log::debug("nb_frame({}) - written:{}, out_frames:{}", nb_frame, written, out_frames);
         p_buf->len += written;
         all_send_bytes += written;
         nb_frame--;
         written_frame += out_frames;  // added a frame to the buffer
       } else {
-        log::verbose("nb_frame({}) - underflow", nb_frame);
+        log::debug("nb_frame({}) - underflow", nb_frame);
         a2dp_lhdc_encoder_cb.lhdc_feeding_state.counter +=
                 nb_frame * samples_per_frame * a2dp_lhdc_encoder_cb.feeding_params.channel_count *
                 a2dp_lhdc_encoder_cb.feeding_params.bits_per_sample / 8;
@@ -806,18 +803,18 @@ static void a2dp_lhdcV5_encode_frames(uint8_t nb_frame) {
       p_buf->layer_specific |= (written_frame << A2DP_LHDC_HDR_NUM_SHIFT);
 
       *((uint32_t*)(p_buf + 1)) = a2dp_lhdc_encoder_cb.timestamp;
-      log::verbose("Timestamp ({})", a2dp_lhdc_encoder_cb.timestamp);
+      log::debug("Timestamp ({})", a2dp_lhdc_encoder_cb.timestamp);
 
       a2dp_lhdc_encoder_cb.timestamp += (written_frame * samples_per_frame);
 
       remain_nb_frame = nb_frame;
-      log::verbose("nb_frame({}) - remain_nb_frame:{}", nb_frame + 1, remain_nb_frame);
+      log::debug("nb_frame({}) - remain_nb_frame:{}", nb_frame + 1, remain_nb_frame);
 
       mtu_usage += ((float)p_buf->len) / max_mtu_len;
       mtu_usage_cnt++;
 
-      log::verbose("Bytes read for pkt({})", a2dp_lhdc_encoder_cb.bytes_read);
-      log::verbose("Output frames({}) encoded pkt len({})", written_frame, p_buf->len);
+      log::debug("Bytes read for pkt({})", a2dp_lhdc_encoder_cb.bytes_read);
+      log::debug("Output frames({}) encoded pkt len({})", written_frame, p_buf->len);
       bytes_read = a2dp_lhdc_encoder_cb.bytes_read;
       a2dp_lhdc_encoder_cb.bytes_read = 0;
 
@@ -825,7 +822,7 @@ static void a2dp_lhdcV5_encode_frames(uint8_t nb_frame) {
         return;
       }
     } else {
-      log::verbose("free buffer len({})", p_buf->len);
+      log::debug("free buffer len({})", p_buf->len);
       a2dp_lhdc_encoder_cb.stats.media_read_total_dropped_packets++;
       osi_free(p_buf);
     }
@@ -915,7 +912,7 @@ static bool a2dp_lhdcv5_read_feeding(uint8_t* read_buffer, uint32_t* bytes_read)
 
   /* Read Data from UIPC channel */
   nb_byte_read = a2dp_lhdc_encoder_cb.read_callback(read_buffer, read_size);
-  log::verbose("expected read bytes {}, actual read bytes {}", read_size, nb_byte_read);
+  log::debug("expected read bytes {}, actual read bytes {}", read_size, nb_byte_read);
 
   // TODO: what to do if not alignment?
   if ((nb_byte_read % bytes_per_sample) != 0) {

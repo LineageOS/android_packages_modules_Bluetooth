@@ -3306,10 +3306,9 @@ static void start_transaction_timer(btif_rc_device_cb_t* p_dev, uint8_t label,
     log::warn("Restarting timer that's already scheduled");
   }
 
-  std::stringstream ss;
-  ss << "btif_rc." << p_dev->rc_addr.ToRedactedStringForLogging() << "." << transaction->label;
+  std::string alarm_label = std::format("btif_rc.{}.{}", p_dev->rc_addr, transaction->label);
   alarm_free(transaction->timer);
-  transaction->timer = alarm_new(ss.str().c_str());
+  transaction->timer = alarm_new(alarm_label.c_str());
   alarm_set_on_mloop(transaction->timer, timeout_ms, btif_rc_transaction_timer_timeout,
                      &transaction->context);
 }
@@ -3371,8 +3370,8 @@ static std::string dump_transaction(const rc_transaction_t* const transaction) {
       ss << " pdu_id=" << dump_rc_pdu(context.command.browse.pdu_id);
       break;
     case AVRC_OP_PASS_THRU:
-      ss << " rc_id=" << context.command.passthru.rc_id;
-      ss << " key_state=" << context.command.passthru.key_state;
+      ss << " rc_id=" << static_cast<int>(context.command.passthru.rc_id);
+      ss << " key_state=" << static_cast<int>(context.command.passthru.key_state);
       break;
   }
   ss << ")";

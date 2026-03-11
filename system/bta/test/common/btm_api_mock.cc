@@ -38,11 +38,6 @@ void bluetooth::manager::SetMockBtmInterface(MockBtmInterface* mock_btm_interfac
   btm_interface = mock_btm_interface;
 }
 
-bool BTM_SecIsLeSecurityPending(const RawAddress& bd_addr) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->SecIsSecurityPending(bd_addr);
-}
-
 const BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
   return btm_interface->FindDevice(bd_addr);
@@ -85,21 +80,6 @@ tBTM_INQ_INFO* BTM_InqDbFirst(void) {
 tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur) {
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
   return btm_interface->BTM_InqDbNext(p_cur);
-}
-
-std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_BleGetPeerLTK(address);
-}
-
-std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_BleGetPeerIRK(address);
-}
-
-std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) {
-  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_BleGetIdentityAddress(address);
 }
 
 tBTM_STATUS BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport, tHCI_ROLE* role) {

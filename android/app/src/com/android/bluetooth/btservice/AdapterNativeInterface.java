@@ -121,10 +121,6 @@ public class AdapterNativeInterface {
         return sdpSearchNative(address, uuid);
     }
 
-    int getConnectionState(byte[] address) {
-        return getConnectionStateNative(address);
-    }
-
     boolean startDiscovery() {
         return startDiscoveryNative();
     }
@@ -321,8 +317,6 @@ public class AdapterNativeInterface {
     private native void generateLocalOobDataNative(int transport);
 
     private native boolean sdpSearchNative(byte[] address, byte[] uuid);
-
-    private native int getConnectionStateNative(byte[] address);
 
     private native boolean startDiscoveryNative();
 

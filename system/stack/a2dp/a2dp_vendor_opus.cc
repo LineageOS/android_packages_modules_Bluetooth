@@ -314,10 +314,10 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityOpus(const tA2DP_OPUS_CIE* p_
 
   /* verify that each parameter is in range */
 
-  log::verbose("SAMPLING FREQ peer: 0x{:x}, capability 0x{:x}", cfg_cie.sampleRate,
-               p_cap->sampleRate);
-  log::verbose("CH_MODE peer: 0x{:x}, capability 0x{:x}", cfg_cie.channelMode, p_cap->channelMode);
-  log::verbose("FRAMESIZE peer: 0x{:x}, capability 0x{:x}", cfg_cie.future1, p_cap->future1);
+  log::debug("SAMPLING FREQ peer: 0x{:x}, capability 0x{:x}", cfg_cie.sampleRate,
+             p_cap->sampleRate);
+  log::debug("CH_MODE peer: 0x{:x}, capability 0x{:x}", cfg_cie.channelMode, p_cap->channelMode);
+  log::debug("FRAMESIZE peer: 0x{:x}, capability 0x{:x}", cfg_cie.future1, p_cap->future1);
 
   /* sampling frequency */
   if ((cfg_cie.sampleRate & p_cap->sampleRate) == 0) {

@@ -2005,6 +2005,7 @@ TEST_F(BtifRcHandlerTest, handle_change_path_response_success) {
   tAVRC_CHG_PATH_RSP rsp = {.status = AVRC_STS_NO_ERROR, .num_items = 1};
   handle_change_path_response(&meta_msg, &rsp);
 
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
   ASSERT_EQ(res.raw_address, kDeviceAddress);
   ASSERT_EQ(res.count, 1u);
@@ -2029,6 +2030,7 @@ TEST_F(BtifRcHandlerTest, handle_set_browsed_player_success) {
   tAVRC_SET_BR_PLAYER_RSP rsp = {.status = AVRC_STS_NO_ERROR, .num_items = 1, .folder_depth = 1};
   handle_set_browsed_player_response(&meta_msg, &rsp);
 
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
   ASSERT_EQ(res.raw_address, kDeviceAddress);
   ASSERT_EQ(res.num_items, 1u);
@@ -2248,6 +2250,7 @@ TEST_F(BtifRcHandlerTest, btif_rc_ctrl_upstreams_rsp_cmd_test) {
 
   btif_rc_ctrl_upstreams_rsp_cmd(AVRC_PDU_SET_ABSOLUTE_VOLUME, &avrc_cmd, label, &p_dev);
 
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
   ASSERT_EQ(res.raw_address, kDeviceAddress);
   ASSERT_EQ(res.abs_vol, 0x5A);
@@ -2267,6 +2270,7 @@ TEST_F(BtifRcHandlerTest, btif_rc_ctrl_upstreams_rsp_cmd_test_reg_notif) {
 
   btif_rc_ctrl_upstreams_rsp_cmd(AVRC_PDU_REGISTER_NOTIFICATION, &avrc_cmd, label, &p_dev);
 
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
   ASSERT_EQ(res.raw_address, kDeviceAddress);
   ASSERT_EQ(res.label, label);

@@ -22,7 +22,7 @@
 #include <cstdint>
 #include <string>
 
-#include "btif_status.h"
+#include "bt_status.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"

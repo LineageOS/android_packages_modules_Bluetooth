@@ -428,7 +428,7 @@ void set_remote_delay(uint16_t delay_report) {
     remote_delay = delay_report;
     return;
   }
-  log::verbose("DELAY {} ms", static_cast<float>(delay_report / 10.0));
+  log::debug("DELAY {} ms", static_cast<float>(delay_report / 10.0));
   active_hal_interface->GetTransportInstance()->SetRemoteDelay(delay_report);
 }
 
@@ -501,7 +501,7 @@ provider::get_a2dp_configuration(
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
                 remote_seps,
         btav_a2dp_codec_config_t const& user_preferences,
-        ::bluetooth::a2dp::CodecId user_preferred_codec_id, bool is_source) {
+        std::optional<::bluetooth::a2dp::CodecId> user_preferred_codec_id, bool is_source) {
   using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
   using ::aidl::android::hardware::bluetooth::audio::CodecId;
 
@@ -633,11 +633,9 @@ provider::get_a2dp_configuration(
       hint.audioContext.bitmask = AudioContext::UNSPECIFIED;
       break;
   }
-
-  auto aidl_codec_id = convertCodecId(user_preferred_codec_id);
-  log::assert_that(aidl_codec_id.has_value(), "convertCodecId failed");
-  hint.codecId = aidl_codec_id.value();
-
+  hint.codecId = user_preferred_codec_id.has_value()
+                         ? convertCodecId(user_preferred_codec_id.value())
+                         : std::nullopt;
   log::info("local: {}, remote capabilities:", is_source ? "source" : "sink");
   for (auto const& sep : a2dp_remote_capabilities) {
     log::info("- {}", sep.toString());
@@ -724,7 +722,7 @@ std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
   for (auto& codec_info : source_provider_info->codecInfos) {
     auto source_codec = convertCodecInfo(codec_info);
     if (source_codec.has_value()) {
-      log::verbose("provider source codec: {}", source_codec.value().ToString());
+      log::debug("provider source codec: {}", source_codec.value().ToString());
       codecs_info.source_codecs.push_back(source_codec.value());
     }
   }
@@ -732,7 +730,7 @@ std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
   for (auto& codec_info : sink_provider_info->codecInfos) {
     auto sink_codec = convertCodecInfo(codec_info);
     if (sink_codec.has_value()) {
-      log::verbose("provider sink codec: {}", sink_codec.value().ToString());
+      log::debug("provider sink codec: {}", sink_codec.value().ToString());
       codecs_info.sink_codecs.push_back(sink_codec.value());
     }
   }

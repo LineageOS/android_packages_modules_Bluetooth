@@ -565,7 +565,7 @@ public class ScanController {
             unregisterScanner(scannerId);
             return;
         }
-        app.setId(scannerId);
+        app.setScannerId(scannerId);
         // If app is callback based, setup a death recipient and start scan.
         // Otherwise, if PendingIntent based, start the scan directly.
         if (app.getCallback() != null) {
@@ -573,12 +573,12 @@ public class ScanController {
             Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
             app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
             if (app.isInternal()) {
-                startScanInternal(scannerId, app.getSettings(), app.getFilters());
+                startScanInternal(app);
             } else {
-                startScan(scannerId, app.getSettings(), app.getFilters(), app.getSource());
+                startScan(app);
             }
         } else {
-            dispatchPendingIntentStartScan(scannerId, app);
+            dispatchPendingIntentStartScan(app);
         }
     }
 
@@ -630,7 +630,7 @@ public class ScanController {
             return;
         }
         client.setAppDied(true);
-        client.ifAppScanStatsPresent(stats -> stats.setAppDead(true));
+        client.getAppScanStats().setAppDead(true);
         stopScan(client.getScannerId());
     }
 
@@ -996,37 +996,32 @@ public class ScanController {
         return Collections.emptyList();
     }
 
-    private void startScan(
-            int scannerId,
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            AttributionSource source) {
-        Log.d(TAG, "startScan(scannerId=" + scannerId + ")");
-        String callingPackage = source.getPackageName();
-        settings = BatchScanUtil.enforceReportDelayFloor(settings);
-        final int uid = source.getUid();
-        mAppOps.checkPackage(uid, callingPackage);
+    private void startScan(ScannerApp app) {
+        Log.d(TAG, "startScan(app=" + app + " with scannerId=" + app.getScannerId() + ")");
+        String callingPackage = app.getSource().getPackageName();
+        var settings = BatchScanUtil.enforceReportDelayFloor(app.getSettings());
+        mAppOps.checkPackage(app.getUid(), callingPackage);
         var hasDisavowedLocation =
-                Util.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
-        var isQApp = checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q);
+                Util.hasDisavowedLocationForScan(
+                        mAdapterService, app.getSource(), mTestModeEnabled);
+        var isQApp = checkCallerTargetSdk(mAdapterService, app.getSource(), Build.VERSION_CODES.Q);
         var userHandle = Binder.getCallingUserHandle();
         var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
         if (!hasDisavowedLocation) {
             if (isQApp) {
                 hasLocationPermission =
-                        Util.checkCallerHasFineLocation(mAdapterService, source, userHandle);
+                        Util.checkCallerHasFineLocation(
+                                mAdapterService, app.getSource(), userHandle);
             } else {
                 hasLocationPermission =
                         Util.checkCallerHasCoarseOrFineLocation(
-                                mAdapterService, source, userHandle);
+                                mAdapterService, app.getSource(), userHandle);
             }
         }
         var client =
                 new ScanClient(
-                        uid,
-                        scannerId,
+                        app,
                         settings,
-                        filters,
                         userHandle,
                         callingPackage.equals(mExposureNotificationPackage),
                         hasDisavowedLocation,
@@ -1039,14 +1034,12 @@ public class ScanController {
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    private void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
+    private void startScanInternal(ScannerApp app) {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         var client =
                 new ScanClient(
+                        app,
                         Binder.getCallingUid(),
-                        scannerId,
-                        settings,
-                        filters,
                         Binder.getCallingUserHandle(),
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
@@ -1055,23 +1048,20 @@ public class ScanController {
     }
 
     private void dispatchStartScan(ScanClient client) {
-        var appScanStats = mScannerMap.getAppScanStatsById(client.getScannerId());
-        if (appScanStats != null) {
-            client.setAppScanStats(appScanStats);
-            mScanManager.fetchAppForegroundState(client);
-            boolean isCallbackScan = false;
-            var app = mScannerMap.getById(client.getScannerId());
-            if (app != null) {
-                isCallbackScan = app.getCallback() != null;
-            }
-            appScanStats.recordScanStart(
-                    client.getSettings(),
-                    client.getFilters(),
-                    client.isFiltered(),
-                    isCallbackScan,
-                    client.getScannerId(),
-                    app == null ? null : app.getAttributionTag());
+        mScanManager.fetchAppForegroundState(client);
+        boolean isCallbackScan = false;
+        var app = mScannerMap.getById(client.getScannerId());
+        if (app != null) {
+            isCallbackScan = app.getCallback() != null;
         }
+        client.getAppScanStats()
+                .recordScanStart(
+                        client.getSettings(),
+                        client.getFilters(),
+                        client.isFiltered(),
+                        isCallbackScan,
+                        client.getScannerId(),
+                        app == null ? null : app.getAttributionTag());
         mScanManager.startScan(client);
     }
 
@@ -1152,21 +1142,17 @@ public class ScanController {
     }
 
     @VisibleForTesting
-    void dispatchPendingIntentStartScan(int scannerId, ScannerApp app) {
-        final PendingIntentInfo piInfo = app.getInfo();
-        var client = new ScanClient(scannerId, piInfo, app);
-        var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
-        if (appScanStats != null) {
-            client.setAppScanStats(appScanStats);
-            mScanManager.fetchAppForegroundState(client);
-            appScanStats.recordScanStart(
-                    piInfo.settings,
-                    piInfo.filters,
-                    client.isFiltered(),
-                    false,
-                    scannerId,
-                    app.getAttributionTag());
-        }
+    void dispatchPendingIntentStartScan(ScannerApp app) {
+        var client = new ScanClient(app);
+        mScanManager.fetchAppForegroundState(client);
+        client.getAppScanStats()
+                .recordScanStart(
+                        app.getSettings(),
+                        app.getFilters(),
+                        client.isFiltered(),
+                        false,
+                        app.getScannerId(),
+                        app.getAttributionTag());
         mScanManager.startScan(client);
     }
 
@@ -1203,11 +1189,10 @@ public class ScanController {
             Log.e(TAG, "stopScan(PendingIntent): App not found for intent=" + intent);
             return;
         }
-        var scannerId = app.getId();
-        Log.v(TAG, "stopScan(PendingIntent): For " + app + " with scannerId=" + scannerId);
+        Log.v(TAG, "stopScan(PendingIntent): For " + app + " with scannerId=" + app.getScannerId());
         intent.removeCancelListener(mScanIntentCancelListener);
-        stopScan(scannerId);
-        unregisterScanner(scannerId);
+        stopScan(app.getScannerId());
+        unregisterScanner(app.getScannerId());
     }
 
     /**************************************************************************

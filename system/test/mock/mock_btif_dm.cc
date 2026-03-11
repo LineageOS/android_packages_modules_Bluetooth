@@ -51,10 +51,6 @@ bool is_le_audio_capable_during_service_discovery(const RawAddress& /* bd_addr *
   inc_func_call_count(__func__);
   return false;
 }
-uint16_t btif_dm_get_connection_state(const RawAddress& /* bd_addr */) {
-  inc_func_call_count(__func__);
-  return 0;
-}
 void BTIF_dm_disable() { inc_func_call_count(__func__); }
 void BTIF_dm_enable(const std::string) { inc_func_call_count(__func__); }
 void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE /* state */) {

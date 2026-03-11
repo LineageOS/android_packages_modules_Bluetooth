@@ -34,7 +34,6 @@
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/a2dp_vendor_opus.h"
 #include "stack/include/a2dp_vendor_opus_constants.h"
-#include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;

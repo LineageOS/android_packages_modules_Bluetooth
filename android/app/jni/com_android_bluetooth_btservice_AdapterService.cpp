@@ -1300,17 +1300,6 @@ static jboolean pairingIsBusyNative(JNIEnv* /*env*/, jobject /* obj */) {
   return sBluetoothInterface->pairing_is_busy();
 }
 
-static int getConnectionStateNative(JNIEnv* env, jobject /* obj */, jbyteArray address) {
-  log::verbose("");
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = addressFromJByteArray(env, address);
-  int ret = sBluetoothInterface->get_connection_state(bd_addr);
-  return ret;
-}
-
 static jboolean pinReplyNative(JNIEnv* env, jobject /* obj */, jbyteArray address, jboolean accept,
                                jint len, jbyteArray pinArray) {
   log::verbose("");
@@ -1922,7 +1911,6 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"pairingIsBusyNative", "()Z", reinterpret_cast<void*>(pairingIsBusyNative)},
           {"generateLocalOobDataNative", "(I)V",
            reinterpret_cast<void*>(generateLocalOobDataNative)},
-          {"getConnectionStateNative", "([B)I", reinterpret_cast<void*>(getConnectionStateNative)},
           {"pinReplyNative", "([BZI[B)Z", reinterpret_cast<void*>(pinReplyNative)},
           {"sspReplyNative", "([BIZI)Z", reinterpret_cast<void*>(sspReplyNative)},
           {"getRemoteServicesNative", "([BI)Z", reinterpret_cast<void*>(getRemoteServicesNative)},

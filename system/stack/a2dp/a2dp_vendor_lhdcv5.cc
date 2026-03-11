@@ -32,7 +32,6 @@
 #include "internal_include/bt_trace.h"
 #include "osi/include/osi.h"
 #include "stack/include/a2dp_constants.h"
-#include "stack/include/a2dp_vendor.h"
 #include "stack/include/a2dp_vendor_lhdcv5_encoder.h"
 
 using namespace bluetooth;

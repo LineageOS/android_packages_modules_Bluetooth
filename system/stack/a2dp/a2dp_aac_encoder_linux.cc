@@ -20,8 +20,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <string>
-
 #include "common/time_util.h"
 #include "internal_include/bt_target.h"
 #include "mmc/codec_client/codec_client.h"
@@ -265,7 +263,7 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations, uint8_t
   uint32_t pcm_bytes_per_frame = a2dp_aac_encoder_cb.pcm_samples_per_frame *
                                  a2dp_aac_encoder_cb.feeding_params.channel_count *
                                  a2dp_aac_encoder_cb.feeding_params.bits_per_sample / 8;
-  log::verbose("pcm_bytes_per_frame {}", pcm_bytes_per_frame);
+  log::debug("pcm_bytes_per_frame {}", pcm_bytes_per_frame);
 
   uint32_t us_this_tick = a2dp_aac_encoder_cb.encoder_interval_ms * 1000;
   uint64_t now_us = timestamp_us;
@@ -282,7 +280,7 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations, uint8_t
   a2dp_aac_encoder_cb.aac_feeding_state.counter -= result * pcm_bytes_per_frame;
   nof = result;
 
-  log::verbose("effective num of frames {}, iterations {}", nof, noi);
+  log::debug("effective num of frames {}, iterations {}", nof, noi);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;
@@ -379,12 +377,12 @@ static uint16_t adjust_effective_mtu(const tA2DP_ENCODER_INIT_PEER_PARAMS& peer_
   if (mtu_size > peer_params.peer_mtu) {
     mtu_size = peer_params.peer_mtu;
   }
-  log::verbose("original AVDTP MTU size: {}", mtu_size);
+  log::debug("original AVDTP MTU size: {}", mtu_size);
   if (peer_params.is_peer_edr && !peer_params.peer_supports_3mbps) {
     // This condition would be satisfied only if the remote device is
     // EDR and supports only 2 Mbps, but the effective AVDTP MTU size
     // exceeds the 2DH5 packet size.
-    log::verbose("The remote device is EDR but does not support 3 Mbps");
+    log::debug("The remote device is EDR but does not support 3 Mbps");
     if (mtu_size > MAX_2MBPS_AVDTP_MTU) {
       log::warn("Restricting AVDTP MTU size from {} to {}", mtu_size, MAX_2MBPS_AVDTP_MTU);
       mtu_size = MAX_2MBPS_AVDTP_MTU;

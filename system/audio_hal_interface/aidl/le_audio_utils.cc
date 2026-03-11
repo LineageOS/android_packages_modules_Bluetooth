@@ -550,7 +550,7 @@ static std::string StackTargetLatencyToString(uint8_t target_latency) {
     default:
       std::stringstream str;
       str << "TargetLatencyUnknown (" << std::hex << std::setw(2) << std::setfill('0')
-          << target_latency << ")";
+          << static_cast<int>(target_latency) << ")";
       return str.str();
   }
 }

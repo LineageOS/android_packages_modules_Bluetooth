@@ -19,14 +19,12 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 #include "osi/include/allocator.h"
 #include "stack/include/bnep_api.h"
 #include "stack/mock/mock_stack_acl.h"
 #include "stack/mock/mock_stack_btm_dev.h"
-#include "stack/mock/mock_stack_l2cap_ble.h"
 #include "stack/mock/mock_stack_l2cap_interface.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"

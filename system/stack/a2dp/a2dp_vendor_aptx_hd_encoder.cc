@@ -248,7 +248,7 @@ static void aptx_hd_update_framing_params(tAPTX_HD_FRAMING_PARAMS* framing_param
     }
   }
 
-  log::verbose(
+  log::debug(
           "sleep_time_ns={} aptx_hd_bytes={} pcm_bytes_per_read={} pcm_reads={} "
           "frame_size_counter={}",
           framing_params->sleep_time_ns, framing_params->aptx_hd_bytes,
