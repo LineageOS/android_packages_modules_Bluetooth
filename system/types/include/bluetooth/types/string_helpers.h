@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <bluetooth/log.h>
 #include <limits.h>
 #include <string.h>
 
@@ -30,8 +29,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-
-#include "common/type_helper.h"
 
 namespace bluetooth {
 namespace common {
@@ -127,12 +124,9 @@ std::string ToString(bool value);
 template <typename... Args>
 std::string StringFormat(const std::string& format, Args... args) {
   auto size = std::snprintf(nullptr, 0, format.c_str(), args...);
-  log::assert_that(size >= 0, "return value {}, error {}, text '{}'", size, errno, strerror(errno));
   // Add 1 for terminating null byte
   std::vector<char> buffer(size + 1);
-  auto actual_size = std::snprintf(buffer.data(), buffer.size(), format.c_str(), args...);
-  log::assert_that(size == actual_size, "asked size {}, actual size {}, error {}, text '{}'", size,
-                   actual_size, errno, strerror(errno));
+  std::snprintf(buffer.data(), buffer.size(), format.c_str(), args...);
   // Exclude the terminating null byte
   return std::string(buffer.data(), size);
 }

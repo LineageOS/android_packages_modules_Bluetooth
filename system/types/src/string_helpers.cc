@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#include "common/strings.h"
-
-#include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <algorithm>
 #include <charconv>
@@ -52,11 +50,9 @@ bool IsValidHexString(const std::string& str) {
 
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
   if (str.size() % 2 != 0) {
-    log::info("str size is not divisible by 2, size is {}", str.size());
     return std::nullopt;
   }
   if (std::find_if_not(str.begin(), str.end(), IsHexDigit{}) != str.end()) {
-    log::info("value contains none hex digit");
     return std::nullopt;
   }
   std::vector<uint8_t> value;
@@ -65,7 +61,6 @@ std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
     uint8_t v = 0;
     auto ret = std::from_chars(str.c_str() + i, str.c_str() + i + 2, v, 16);
     if (std::make_error_code(ret.ec)) {
-      log::info("failed to parse hex char at index {}", i);
       return std::nullopt;
     }
     value.push_back(v);
@@ -81,7 +76,9 @@ std::string StringTrim(std::string str) {
 
 std::vector<std::string> StringSplit(const std::string& str, const std::string& delim,
                                      size_t max_token) {
-  log::assert_that(!delim.empty(), "delim cannot be empty");
+  if (delim.empty()) {
+    std::abort();
+  }
   std::vector<std::string> tokens;
   // Use std::string::find and std::string::substr to avoid copying str into a stringstream
   std::string::size_type starting_index = 0;
@@ -136,7 +133,6 @@ std::optional<bool> BoolFromString(const std::string& str) {
   } else if (str == "false") {
     return false;
   } else {
-    log::info("string '{}' is neither true nor false", str);
     return std::nullopt;
   }
 }

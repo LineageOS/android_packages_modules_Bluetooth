@@ -18,13 +18,13 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <cstdint>
 #include <memory>
 #include <sstream>
 #include <vector>
 
-#include "common/strings.h"
 #include "mcp/mcp_types.h"
 #include "stack/include/gatt_api.h"
 

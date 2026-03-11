@@ -22,6 +22,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -42,7 +43,6 @@
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
 #include "common/le_conn_params.h"
-#include "common/strings.h"
 #include "hardware/bluetooth.h"
 #include "hci/controller.h"
 #include "internal_include/bt_trace.h"

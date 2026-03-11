@@ -17,13 +17,13 @@
 #include "audio_context_type_manager.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <hardware/bluetooth.h>
 
 #include <mutex>
 #include <utility>
 #include <vector>
 
-#include "common/strings.h"
 #include "le_audio_utils.h"
 
 using bluetooth::common::ToString;

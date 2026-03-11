@@ -17,12 +17,12 @@
 #include "storage/legacy_config_file.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <cerrno>
 #include <fstream>
 #include <sstream>
 
-#include "common/strings.h"
 #include "os/files.h"
 #include "storage/device.h"
 

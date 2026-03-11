@@ -17,12 +17,11 @@
 #include "os/system_properties.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <cutils/properties.h>
 
 #include <array>
 #include <cctype>
-
-#include "common/strings.h"
 
 namespace bluetooth {
 namespace os {

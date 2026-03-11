@@ -15,6 +15,7 @@
  */
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
@@ -26,7 +27,6 @@
 #include <memory>
 #include <string>
 
-#include "common/strings.h"
 #include "gd/os/rand.h"
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"

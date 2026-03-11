@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include "common/strings.h"
-
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -112,7 +111,7 @@ TEST(StringsTest, split_string_test) {
 }
 
 TEST(StringsDeathTest, split_string_test) {
-  ASSERT_DEATH({ StringSplit("1,2,3", ""); }, "delim cannot be empty");
+  ASSERT_DEATH({ StringSplit("1,2,3", ""); }, "");
 }
 
 TEST(StringsTest, join_string_test) {

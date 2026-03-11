@@ -18,6 +18,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <cstdint>
 #include <memory>
@@ -25,7 +26,6 @@
 #include <vector>
 
 #include "ccp_types.h"
-#include "common/strings.h"
 #include "hardware/bt_le_audio.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"

@@ -17,6 +17,7 @@
 #include "hci/distance_measurement_manager_impl.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <math.h>
@@ -28,7 +29,6 @@
 
 #include "acl_manager/assembler.h"
 #include "channel_sounding/cs_metrics.h"
-#include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"

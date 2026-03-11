@@ -17,6 +17,7 @@
 #include "content_control_id_keeper.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -24,7 +25,6 @@
 #include <memory>
 #include <vector>
 
-#include "common/strings.h"
 #include "le_audio_types.h"
 
 namespace {
