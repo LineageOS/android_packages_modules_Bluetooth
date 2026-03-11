@@ -24,13 +24,10 @@
 
 namespace testing {
 
-using bluetooth::common::BoolFromString;
 using bluetooth::common::FromHexString;
 using bluetooth::common::Int64FromString;
-using bluetooth::common::StringFormat;
 using bluetooth::common::StringFormatTime;
 using bluetooth::common::StringFormatTimeWithMilliseconds;
-using bluetooth::common::StringJoin;
 using bluetooth::common::StringSplit;
 using bluetooth::common::StringTrim;
 using bluetooth::common::ToHexString;
@@ -112,14 +109,6 @@ TEST(StringsTest, split_string_test) {
 
 TEST(StringsDeathTest, split_string_test) {
   ASSERT_DEATH({ StringSplit("1,2,3", ""); }, "");
-}
-
-TEST(StringsTest, join_string_test) {
-  ASSERT_THAT(StringJoin({{"1", "2", "3"}}, ","), StrEq("1,2,3"));
-  ASSERT_THAT(StringJoin({{}}, ","), StrEq(""));
-  ASSERT_THAT(StringJoin({{"1"}}, ","), StrEq("1"));
-  ASSERT_THAT(StringJoin({{"1", "2", "3"}}, ",,"), StrEq("1,,2,,3"));
-  ASSERT_THAT(StringJoin({{"1", ",", "3"}}, ",,"), StrEq("1,,,,,3"));
 }
 
 TEST(StringsTest, to_hex_string_test) {
@@ -215,21 +204,8 @@ TEST(StringsTest, uint64_from_and_to_string_test) {
 }
 
 TEST(StringsTest, bool_from_and_to_string_test) {
-  ASSERT_THAT(BoolFromString("true"), Optional(IsTrue()));
-  ASSERT_THAT(BoolFromString("false"), Optional(IsFalse()));
-  ASSERT_FALSE(BoolFromString("abc"));
-  ASSERT_FALSE(BoolFromString("FALSE"));
-  ASSERT_FALSE(BoolFromString("TRUE"));
-  ASSERT_FALSE(BoolFromString(""));
   ASSERT_THAT(ToString(true), StrEq("true"));
   ASSERT_THAT(ToString(false), StrEq("false"));
-}
-
-TEST(StringsTest, string_format_test) {
-  ASSERT_THAT(StringFormat("%s", "hello"), StrEq("hello"));
-  ASSERT_THAT(StringFormat("%d", 42), StrEq("42"));
-  ASSERT_THAT(StringFormat("%s world", "hello"), StrEq("hello world"));
-  ASSERT_THAT(StringFormat("%d %.1f 0x%02x", 42, 43.123, 0x8), StrEq("42 43.1 0x08"));
 }
 
 TEST(StringsTest, string_format_time_test) {

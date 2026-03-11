@@ -44,10 +44,6 @@ std::string ToHexString(const std::vector<uint8_t>& value) {
   return ToHexString(value.begin(), value.end());
 }
 
-bool IsValidHexString(const std::string& str) {
-  return std::find_if_not(str.begin(), str.end(), IsHexDigit{}) == str.end();
-}
-
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
   if (str.size() % 2 != 0) {
     return std::nullopt;
@@ -96,17 +92,6 @@ std::vector<std::string> StringSplit(const std::string& str, const std::string& 
   return tokens;
 }
 
-std::string StringJoin(const std::vector<std::string>& strings, const std::string& delim) {
-  std::stringstream ss;
-  for (auto it = strings.begin(); it != strings.end(); it++) {
-    ss << *it;
-    if (std::next(it) != strings.end()) {
-      ss << delim;
-    }
-  }
-  return ss.str();
-}
-
 std::optional<int64_t> Int64FromString(const std::string& str) {
   int64_t output{};
   char const* first = str.data();
@@ -126,17 +111,6 @@ std::optional<uint64_t> Uint64FromString(const std::string& str) {
 }
 
 std::string ToString(uint64_t value) { return std::to_string(value); }
-
-std::optional<bool> BoolFromString(const std::string& str) {
-  if (str == "true") {
-    return true;
-  } else if (str == "false") {
-    return false;
-  } else {
-    return std::nullopt;
-  }
-}
-
 std::string ToString(bool value) { return value ? "true" : "false"; }
 
 }  // namespace common

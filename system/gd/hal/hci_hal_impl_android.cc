@@ -21,6 +21,7 @@
 #include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
+#include <format>
 #include <future>
 #include <mutex>
 
@@ -36,9 +37,8 @@ namespace bluetooth::hal {
 
 template <class VecType>
 static std::string GetTimerText(const char* func_name, VecType vec) {
-  return common::StringFormat(
-          "%s: len %zu, 1st 5 bytes '%s'", func_name, vec.size(),
-          common::ToHexString(vec.begin(), std::min(vec.end(), vec.begin() + 5)).c_str());
+  return std::format("{}: len {}, 1st 5 bytes '{}'", func_name, vec.size(),
+                     common::ToHexString(vec.begin(), std::min(vec.end(), vec.begin() + 5)));
 }
 
 class HciCallbacksImpl : public HciBackendCallbacks {
