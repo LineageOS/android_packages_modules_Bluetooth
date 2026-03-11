@@ -87,16 +87,6 @@ flag {
 }
 
 flag {
-    name: "ignore_service_change_indication"
-    namespace: "bluetooth"
-    description: "Do not handle service change indication for specific devices"
-    bug: "448557918"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "migrate_btm_scan_to_gd"
     namespace: "bluetooth"
     description: "Migrate btm scan logic to gd le scanning manager"
