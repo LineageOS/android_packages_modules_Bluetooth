@@ -202,16 +202,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_vaps_improvements"
-    namespace: "bluetooth"
-    description: "LE Audio VAPS improvements"
-    bug: "444029563"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_always_use_group_size_to_check_audio_config"
     namespace: "bluetooth"
     description: "When checking support for audio configuration, take into account all the devices"
