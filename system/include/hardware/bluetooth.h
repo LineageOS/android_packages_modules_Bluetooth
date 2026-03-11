@@ -39,7 +39,6 @@
 
 /** Bluetooth profile interface IDs */
 #define BT_BQR_ID "bqr"
-#define BT_KEYSTORE_ID "bluetooth_keystore"
 #define BT_PROFILE_ADVANCED_AUDIO_ID "a2dp"
 #define BT_PROFILE_ADVANCED_AUDIO_SINK_ID "a2dp_sink"
 #define BT_PROFILE_AV_RC_CTRL_ID "avrcp_ctrl"
