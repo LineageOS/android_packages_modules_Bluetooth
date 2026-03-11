@@ -50,16 +50,6 @@ flag {
 }
 
 flag {
-    name: "l2c_not_cancel_timeout"
-    namespace: "bluetooth"
-    description: "Do not cancel timeout alarm if l2cap is connecting"
-    bug: "436736160"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "l2cap_improve_segmented_sdu"
     namespace: "bluetooth"
     description: "Improve sending segmented sdu"
