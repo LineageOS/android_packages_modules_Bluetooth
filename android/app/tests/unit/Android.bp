@@ -21,6 +21,7 @@ android_test {
         "framework-connectivity.stubs.module_lib",
         "framework-location.stubs.module_lib",
         "framework-mediaprovider.stubs.module_lib",
+        "framework-nfc.stubs.module_lib",
         "framework-telecom.stubs.module_lib",
         "framework-tethering.stubs.module_lib",
         "javax.obex.stubs",
