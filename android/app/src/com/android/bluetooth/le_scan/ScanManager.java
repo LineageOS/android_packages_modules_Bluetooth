@@ -17,6 +17,7 @@
 package com.android.bluetooth.le_scan;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
@@ -62,6 +63,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.SparseBooleanArray;
+import android.util.SparseIntArray;
 
 import androidx.annotation.Nullable;
 
@@ -89,13 +91,15 @@ import java.util.stream.Collectors;
 public class ScanManager {
     private static final String TAG = ScanUtil.TAG_PREFIX + ScanManager.class.getSimpleName();
 
-    private static final int FOREGROUND_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
+    private static final int FOREGROUND_SERVICE_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
+    private static final int FOREGROUND_UI_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND;
     private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
+    private static final boolean DEFAULT_UID_IS_FOREGROUND_UI = false;
     private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
     private static final boolean DEFAULT_UID_HAS_PRIVILEGED_PERMISSION = false;
 
     // Timeout for each controller operation.
-    private static final int MAX_IS_UID_FOREGROUND_MAP_SIZE = 500;
+    private static final int MAX_UID_IMPORTANCE_MAP_SIZE = 500;
 
     private static final int ALL_PASS_FILTER_INDEX_REGULAR_SCAN = 1;
     private static final int ALL_PASS_FILTER_INDEX_BATCH_SCAN = 2;
@@ -113,7 +117,7 @@ public class ScanManager {
     private final Set<ScanClient> mRegularScanClients = ConcurrentHashMap.newKeySet();
     private final Set<ScanClient> mBatchClients = ConcurrentHashMap.newKeySet();
     private final Set<ScanClient> mSuspendedScanClients = ConcurrentHashMap.newKeySet();
-    private final SparseBooleanArray mIsUidForegroundMap = new SparseBooleanArray();
+    private final SparseIntArray mUidImportanceMap = new SparseIntArray();
     private final SparseBooleanArray mIsUidPrivilegedPermissionMap = new SparseBooleanArray();
 
     // Filter indices that are available to user. It's sad we need to maintain filter index.
@@ -248,12 +252,18 @@ public class ScanManager {
                 });
         if (mActivityManager != null) {
             mActivityManager.addOnUidImportanceListener(
-                    mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);
+                    mForegroundServiceImportanceListener, FOREGROUND_SERVICE_IMPORTANCE_CUTOFF);
         }
         IntentFilter locationIntentFilter = new IntentFilter(LocationManager.MODE_CHANGED_ACTION);
         locationIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
         mScanThrottler = new ScanThrottler(this, mAdapterService, mHandler);
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            if (mActivityManager != null) {
+                mActivityManager.addOnUidImportanceListener(
+                        mForegroundUiImportanceListener, FOREGROUND_UI_IMPORTANCE_CUTOFF);
+            }
+        }
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
         Log.d(TAG, "MSFT: isSupported=" + mIsMsftSupported + ", useFiltering=" + mUseMsftFiltering);
@@ -268,7 +278,11 @@ public class ScanManager {
 
         if (mActivityManager != null) {
             try {
-                mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
+                mActivityManager.removeOnUidImportanceListener(
+                        mForegroundServiceImportanceListener);
+                if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+                    mActivityManager.removeOnUidImportanceListener(mForegroundUiImportanceListener);
+                }
             } catch (IllegalArgumentException e) {
                 Log.w(TAG, "exception when invoking removeOnUidImportanceListener", e);
             }
@@ -366,8 +380,7 @@ public class ScanManager {
         for (String packageName : packages) {
             importance = Math.min(importance, mActivityManager.getPackageImportance(packageName));
         }
-        boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
-        mIsUidForegroundMap.put(client.getAppUid(), isForeground);
+        mUidImportanceMap.put(client.getAppUid(), importance);
         client.getAppScanStats().setAppImportance(importance);
     }
 
@@ -686,6 +699,20 @@ public class ScanManager {
     }
 
     private void updateRegularScanClientsScreenOff() {
+        // use the scan_allowance_throttling_enabled flag to gate the screen off delayed
+        // throttling
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
+            if (!mRegularScanClients.isEmpty()) {
+                mScanThrottler.throttleAllScanModeScreenOffDelayed(
+                        mRegularScanClients,
+                        isUpdated -> {
+                            if (isUpdated) {
+                                configureRegularScanParams();
+                            }
+                        });
+            }
+            return;
+        }
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
             if (mScanThrottler.throttleScanModeScreenOff(client)) {
@@ -702,7 +729,17 @@ public class ScanManager {
      * background triggering onUidImportance().
      */
     boolean isAppForeground(ScanClient client) {
-        return mIsUidForegroundMap.get(client.getAppUid(), DEFAULT_UID_IS_FOREGROUND);
+        if (mUidImportanceMap.indexOfKey(client.getAppUid()) < 0) {
+            return DEFAULT_UID_IS_FOREGROUND;
+        }
+        return mUidImportanceMap.get(client.getAppUid()) <= IMPORTANCE_FOREGROUND_SERVICE;
+    }
+
+    boolean isAppForegroundUi(ScanClient client) {
+        if (mUidImportanceMap.indexOfKey(client.getAppUid()) < 0) {
+            return DEFAULT_UID_IS_FOREGROUND_UI;
+        }
+        return mUidImportanceMap.get(client.getAppUid()) <= IMPORTANCE_FOREGROUND;
     }
 
     boolean hasPrivilegedPermission(ScanClient client) {
@@ -781,35 +818,62 @@ public class ScanManager {
         final int importance = imp.importance;
         final boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
 
-        if (mIsUidForegroundMap.size() < MAX_IS_UID_FOREGROUND_MAP_SIZE) {
-            mIsUidForegroundMap.put(uid, isForeground);
+        // There can be multuple importance changed listeners registered to listen multiple cut
+        // point like IMPORTANCE_FOREGROUND_SERVICES and IMPORTANCE_FOREGROUND. Skip if
+        // importance is already up to date.
+        if (mUidImportanceMap.get(uid) == importance) {
+            return;
         }
 
+        if (mUidImportanceMap.size() < MAX_UID_IMPORTANCE_MAP_SIZE) {
+            mUidImportanceMap.put(uid, importance);
+        }
+
+        Set<ScanClient> uidScanClients =
+                mRegularScanClients.stream()
+                        .filter(
+                                client ->
+                                        client.getAppUid() == uid
+                                                && !isOpportunisticScanClient(client))
+                        .collect(Collectors.toSet());
+
+        if (uidScanClients.isEmpty()) return;
+
         boolean updatedScanParams = false;
-        for (ScanClient client : mRegularScanClients) {
-            if (client.getAppUid() != uid || isOpportunisticScanClient(client)) {
-                continue;
-            }
+        for (ScanClient client : uidScanClients) {
             client.getAppScanStats().setAppImportance(importance);
-            final var scanSettings = client.getSettings();
             if (isForeground) {
                 if (mScanThrottler.throttleScanModeForegroundUid(client, uid, mScreenOn)) {
                     updatedScanParams = true;
                 }
             } else {
-                if (mScanThrottler.throttleScanModeBackgroundUid(client, uid, mScreenOn)) {
+                // use the scan_allowance_throttling_enabled flag to gate the background uid
+                // delayed
+                // throttling. Background uid immediate throttling should be disabled when flag is
+                // on
+                if (!mScanThrottler.isScanAllowanceThrottlingEnabled()
+                        && mScanThrottler.throttleScanModeBackgroundUid(client, uid, mScreenOn)) {
                     updatedScanParams = true;
                 }
             }
-            Log.d(
-                    TAG,
-                    "handleImportanceChange(): "
-                            + ("for " + client + " uid=" + uid + " isForeground=" + isForeground)
-                            + (" scanMode=" + scanModeToString(scanSettings.getScanMode())));
         }
 
         if (updatedScanParams) {
             configureRegularScanParams();
+        }
+
+        // use the scan_allowance_throttling_enabled flag to gate the background uid delayed
+        // throttling
+        if (mScanThrottler.isScanAllowanceThrottlingEnabled() && !isForeground) {
+            mScanThrottler.throttleAllScanModeBackgroundUidDelayed(
+                    uid,
+                    mScreenOn,
+                    uidScanClients,
+                    isUpdated -> {
+                        if (isUpdated) {
+                            configureRegularScanParams();
+                        }
+                    });
         }
     }
 
@@ -1540,19 +1604,24 @@ public class ScanManager {
         else handleScreenOff();
     }
 
-    private final ActivityManager.OnUidImportanceListener mUidImportanceListener =
-            new ActivityManager.OnUidImportanceListener() {
-                @Override
-                public void onUidImportance(final int uid, final int importance) {
-                    mScanController.doOnScanThread(
-                            () -> {
-                                if (mScanController.getScannerMap().getAppScanStatsByUid(uid)
-                                        != null) {
-                                    handleImportanceChange(new UidImportance(uid, importance));
-                                }
-                            });
-                }
-            };
+    private final ActivityManager.OnUidImportanceListener mForegroundServiceImportanceListener =
+            getUidImportanceListener();
+    private final ActivityManager.OnUidImportanceListener mForegroundUiImportanceListener =
+            getUidImportanceListener();
+
+    private ActivityManager.OnUidImportanceListener getUidImportanceListener() {
+        return new ActivityManager.OnUidImportanceListener() {
+            @Override
+            public void onUidImportance(final int uid, final int importance) {
+                mScanController.doOnScanThread(
+                        () -> {
+                            if (mScanController.getScannerMap().getAppScanStatsByUid(uid) != null) {
+                                handleImportanceChange(new UidImportance(uid, importance));
+                            }
+                        });
+            }
+        };
+    }
 
     private final BroadcastReceiver mLocationReceiver =
             new BroadcastReceiver() {

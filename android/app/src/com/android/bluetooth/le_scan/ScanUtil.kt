@@ -52,6 +52,8 @@ object ScanUtil {
     @JvmField val DEFAULT_SCAN_TIMEOUT = 10.minutes.toJavaDuration()
     @JvmField val DEFAULT_SCAN_UPGRADE_DURATION = 6.seconds.toJavaDuration()
     @JvmField val DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING = 6.seconds.toJavaDuration()
+    // TODO(b/478349128): tune the value of DEFAULT_SCAN_THROTTLE_DELAY
+    val DEFAULT_SCAN_THROTTLE_DELAY = 2.seconds
 
     // Scan params corresponding to regular scan setting
     const val SCAN_MODE_LOW_POWER_WINDOW_MS = 140
