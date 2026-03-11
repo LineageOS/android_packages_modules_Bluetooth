@@ -2986,6 +2986,11 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
 void btif_dm_remove_bond(const RawAddress bd_addr) {
   log::verbose("bd_addr={}", bd_addr);
 
+  // reset the bond lost status first
+  if (is_autonomous_repairing_supported()) {
+    btm_update_bond_lost(bd_addr, false);
+  }
+
   if (com_android_bluetooth_flags_cancel_pairing_while_remove_bond()) {
     if (is_bonding_or_sdp() && pairing_cb.bd_addr == bd_addr) {
       log::warn("Ongoing pairing/sdp detected, cancelling it first before removing bond.");
@@ -3007,9 +3012,6 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Remove bond");
 
-  if (is_autonomous_repairing_supported()) {
-    btm_update_bond_lost(bd_addr, false);  // reset the bond lost status
-  }
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND, pairing_cb.state);
 
   // special handling for HID devices
