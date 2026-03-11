@@ -1,0 +1,73 @@
+//
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+package {
+    default_applicable_licenses: ["system_bt_license"],
+}
+
+filegroup {
+    name: "libbluetooth_le_audio_rs_ffi",
+    srcs: [
+        "periodic_sync/ffi.rs",
+    ],
+}
+
+gensrcs {
+    name: "libbluetooth_le_audio_rs_bridge_codegen_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: [":libbluetooth_le_audio_rs_ffi"],
+    output_extension: "rs.h",
+    export_include_dirs: ["."],
+}
+
+gensrcs {
+    name: "libbluetooth_le_audio_rs_bridge_codegen",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) > $(out)",
+    srcs: [":libbluetooth_le_audio_rs_ffi"],
+    output_extension: "cc",
+}
+
+cc_library_static {
+    name: "libbluetooth_le_audio_rs_bridge",
+    defaults: ["bluetooth_cflags"],
+    host_supported: true,
+    cflags: [
+        // The generated code triggers these warnings.
+        "-Wno-missing-prototypes",
+    ],
+    srcs: [
+        "periodic_sync/periodic_sync_shim.cc",
+    ],
+    static_libs: [
+        "libbase",
+        "libbluetooth_log",
+        "libbluetooth_types",
+        "libchrome",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
+    ],
+    generated_headers: [
+        "cxx-bridge-header",
+        "libbluetooth_le_audio_rs_bridge_codegen_header",
+    ],
+    generated_sources: ["libbluetooth_le_audio_rs_bridge_codegen"],
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "36",
+}

@@ -1,0 +1,150 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//! Periodic sync manager traits and event definitions.
+
+#[cfg(test)]
+use mockall::automock;
+use std::future::Future;
+use std::time::Duration;
+use thiserror::Error;
+#[cfg(test)]
+use tokio_stream::wrappers::ReceiverStream;
+
+use crate::pdl::hci::{AddressType, DataStatus, HciStatus};
+use crate::Address;
+
+/// Represents the parameters for starting PA sync.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PaCreateSyncParams {
+    /// The unique identifier for the broadcast source.
+    /// It would be used as registration id for native gd periodic synchronization.
+    pub broadcast_id: u32,
+    /// The advertising SID.
+    pub advertising_sid: u8,
+    /// The address of the broadcaster.
+    pub advertiser_addr: Address,
+    /// The address type of the broadcaster.
+    pub advertiser_addr_type: AddressType,
+    /// The skip interval (number of PA events that can be skipped).
+    pub skip: u16,
+    /// The synchronization timeout.
+    /// While the underlying Bluetooth HCI layer uses 10ms intervals, the unit used here is
+    /// milliseconds.
+    pub sync_timeout: Duration,
+}
+
+/// Information for Periodic Sync establishment.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PeriodicSyncInfo {
+    /// Registration ID.
+    pub reg_id: i32,
+    /// Completion status.
+    pub status: HciStatus,
+    /// Sync handle.
+    pub sync_handle: u16,
+    /// Advertising SID.
+    pub advertising_sid: u8,
+    /// Address type.
+    pub advertiser_addr_type: AddressType,
+    /// Address.
+    pub advertiser_addr: Address,
+    /// PHY.
+    pub phy: u8,
+    /// PA Interval.
+    pub sync_interval: u16,
+}
+
+/// Event types for Periodic Sync.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PeriodicSyncEvent {
+    /// Periodic sync report received.
+    PaReport {
+        /// Sync handle.
+        sync_handle: u16,
+        /// TX power.
+        tx_power: i8,
+        /// RSSI.
+        rssi: i8,
+        /// Data status.
+        data_status: DataStatus,
+        /// Data.
+        data: Vec<u8>,
+    },
+    /// Periodic sync lost.
+    PaSyncLost {
+        /// Sync handle.
+        sync_handle: u16,
+    },
+    /// BIG Info report received.
+    BigInfoReport {
+        /// Sync handle.
+        sync_handle: u16,
+        /// Encrypted.
+        encrypted: bool,
+    },
+}
+
+/// Errors returned by PeriodicSyncManager operations.
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
+pub enum PeriodicSyncError {
+    /// Operation timed out.
+    #[error("operation timed out")]
+    Timeout,
+    /// Internal error (e.g. channel closed unexpectedly).
+    #[error("internal error")]
+    Internal,
+    /// HCI Error status code.
+    #[error("HCI error: {0:?}")]
+    HciError(HciStatus),
+    /// Invalid handle provided.
+    #[error("invalid handle")]
+    InvalidHandle,
+}
+
+/// A specialized Result type for PeriodicSyncManager operations.
+pub type Result<T> = std::result::Result<T, PeriodicSyncError>;
+
+/// Trait defining the interface for Periodic Sync Manager.
+///
+/// TODO: b/488209682 - Refactor this into an object-oriented API where `start_sync` returns a
+/// `PeriodicSync` instance. This instance should implement a trait providing its own
+/// `reports()` stream and `lost()` future, enabling RAII for resource management
+/// and removing the need for manual handle-based event demuxing in the worker.
+#[cfg_attr(test, automock(type EventStream = ReceiverStream<PeriodicSyncEvent>;))]
+pub trait PeriodicSyncManager: Send + Sync {
+    /// The type of the stream returned by subscribe_events.
+    type EventStream: futures::Stream<Item = PeriodicSyncEvent> + Send + 'static;
+
+    /// Starts synchronization with a periodic advertiser.
+    /// This method is procedural: it waits for the synchronization to be physically
+    /// established on the radio (triggered by the `OnPeriodicSyncStarted` callback
+    /// with status success) or for the sync timeout to expire.
+    /// Returns the sync handle and other details on success.
+    fn start_sync(
+        &self,
+        params: PaCreateSyncParams,
+    ) -> impl Future<Output = Result<PeriodicSyncInfo>> + Send;
+
+    /// Stops a periodic synchronization.
+    /// This method only waits for the command status: it returns immediately once
+    /// the Bluetooth stack has accepted the request to stop. It DOES NOT wait
+    /// for a radio-level confirmation event.
+    fn stop_sync(&self, handle: u16) -> impl Future<Output = Result<()>> + Send;
+
+    /// Subscribes to periodic sync events.
+    fn subscribe_events(&self) -> Self::EventStream;
+}

@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-//! Crate root for the Unified Bluetooth Rust Stack.
+//! LE Audio Rust implementation module.
+//!
+//! This module contains the core logic for LE Audio features.
 
-pub mod le_audio;
-pub mod pdl;
-pub mod types;
-
-pub use types::*;
+pub mod periodic_sync;
