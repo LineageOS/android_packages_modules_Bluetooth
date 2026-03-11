@@ -35,15 +35,12 @@
 using bluetooth::bluetooth_keystore::BluetoothKeystoreCallbacks;
 using bluetooth::bluetooth_keystore::BluetoothKeystoreInterface;
 
-namespace bluetooth {
-namespace bluetooth_keystore {
+namespace android {
 
-class BluetoothKeystoreInterfaceImpl;
-static std::unique_ptr<BluetoothKeystoreInterface> bluetoothKeystoreInstance;
 const int CONFIG_COMPARE_ALL_PASS = 0b11;
 
-class BluetoothKeystoreInterfaceImpl
-    : public bluetooth::bluetooth_keystore::BluetoothKeystoreInterface {
+class BluetoothKeystoreInterfaceImpl : public BluetoothKeystoreInterface {
+public:
   ~BluetoothKeystoreInterfaceImpl() override = default;
 
   void init(BluetoothKeystoreCallbacks* callbacks) override {
@@ -61,7 +58,7 @@ class BluetoothKeystoreInterfaceImpl
       return;
     }
     do_in_jni_thread(base::BindOnce(
-            []() { shim::BtifConfigInterface::ConvertEncryptOrDecryptKeyIfNeeded(); }));
+            []() { bluetooth::shim::BtifConfigInterface::ConvertEncryptOrDecryptKeyIfNeeded(); }));
   }
 
   bool set_encrypt_key_or_remove_key(std::string prefix, std::string decryptedString) override {
@@ -116,22 +113,10 @@ private:
   std::map<std::string, std::string> key_map;
 };
 
-static BluetoothKeystoreInterface* getBluetoothKeystoreInterface() {
-  if (!bluetoothKeystoreInstance) {
-    bluetoothKeystoreInstance.reset(new BluetoothKeystoreInterfaceImpl());
-  }
-
-  return bluetoothKeystoreInstance.get();
-}
-
-}  // namespace bluetooth_keystore
-}  // namespace bluetooth
-
-namespace android {
 static jmethodID method_setEncryptKeyOrRemoveKeyCallback;
 static jmethodID method_getKeyCallback;
 
-static BluetoothKeystoreInterface* sBluetoothKeystoreInterface = nullptr;
+static std::unique_ptr<BluetoothKeystoreInterfaceImpl> bluetoothKeystoreInstance;
 static std::shared_timed_mutex interface_mutex;
 
 static jobject mCallbacksObj = nullptr;
@@ -198,11 +183,6 @@ static void initNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  if (sBluetoothKeystoreInterface != nullptr) {
-    log::info("Cleaning up BluetoothKeystore Interface before initializing...");
-    sBluetoothKeystoreInterface = nullptr;
-  }
-
   if (mCallbacksObj != nullptr) {
     log::info("Cleaning up BluetoothKeystore callback object");
     env->DeleteGlobalRef(mCallbacksObj);
@@ -213,14 +193,12 @@ static void initNative(JNIEnv* env, jobject object) {
     log::fatal("Failed to allocate Global Ref for BluetoothKeystore Callbacks");
   }
 
-  sBluetoothKeystoreInterface = bluetooth::bluetooth_keystore::getBluetoothKeystoreInterface();
-  if (sBluetoothKeystoreInterface == nullptr) {
-    log::error("Failed to get BluetoothKeystore Interface");
-    return;
+  if (bluetoothKeystoreInstance == nullptr) {
+    bluetoothKeystoreInstance = std::make_unique<BluetoothKeystoreInterfaceImpl>();
   }
 
-  bluetooth::os::ParameterProvider::SetBtKeystoreInterface(sBluetoothKeystoreInterface);
-  sBluetoothKeystoreInterface->init(&sBluetoothKeystoreCallbacks);
+  bluetooth::os::ParameterProvider::SetBtKeystoreInterface(bluetoothKeystoreInstance.get());
+  bluetoothKeystoreInstance->init(&sBluetoothKeystoreCallbacks);
 }
 
 static void cleanupNative(JNIEnv* env, jobject /* object */) {
@@ -231,10 +209,6 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
   if (btInf == nullptr) {
     log::error("Bluetooth module is not loaded");
     return;
-  }
-
-  if (sBluetoothKeystoreInterface != nullptr) {
-    sBluetoothKeystoreInterface = nullptr;
   }
 
   if (mCallbacksObj != nullptr) {
