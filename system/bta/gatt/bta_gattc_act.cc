@@ -1635,9 +1635,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
     } else {
       log::warn("No clcb is available to handle service change indication");
       // To respond to the next service change indication
-      if (com_android_bluetooth_flags_reset_service_change_ind_counter()) {
-        p_srcb->update_count = 0;
-      }
+      p_srcb->update_count = 0;
     }
   }
 
