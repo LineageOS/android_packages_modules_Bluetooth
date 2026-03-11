@@ -863,7 +863,7 @@ done:
   // Find the peer that is currently open
   BtaAvCoPeer* active_peer = bta_av_source_state_.getActivePeer();
   if (p_peer != nullptr && (!restart_output || !success || p_peer != active_peer)) {
-    return ReportSourceCodecState(p_peer);
+    ReportSourceCodecState(p_peer);
   }
 
   return success;
@@ -923,7 +923,7 @@ bool BtaAvCo::SetCodecAudioConfig(const btav_a2dp_codec_config_t& codec_audio_co
   if (config_updated) {
     // NOTE: Currently, the input is restarted by sending an upcall
     // and informing the Media Framework about the change of selected codec.
-    return ReportSourceCodecState(p_peer);
+    ReportSourceCodecState(p_peer);
   }
 
   return true;
