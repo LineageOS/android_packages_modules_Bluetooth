@@ -208,9 +208,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         mContactChangeObserver);
 
         mSessionStatusHandler.sendEmptyMessage(GET_LOCAL_TELEPHONY_DETAILS);
-        if (!Flags.pbapLazyLoadContacts()) {
-            mSessionStatusHandler.sendEmptyMessage(LOAD_CONTACTS);
-        }
         mSessionStatusHandler.sendEmptyMessage(START_LISTENER);
 
         mIsPseDynamicVersionUpgradeEnabled =
