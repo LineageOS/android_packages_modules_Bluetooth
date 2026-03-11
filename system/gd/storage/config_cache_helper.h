@@ -23,7 +23,6 @@
 #include <type_traits>
 
 #include "common/numbers.h"
-#include "common/type_helper.h"
 #include "hci/enum_helper.h"
 #include "storage/config_cache.h"
 
