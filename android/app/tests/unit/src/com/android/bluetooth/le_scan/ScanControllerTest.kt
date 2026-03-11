@@ -145,7 +145,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @Throws(Exception::class)
     fun onScanResult_remoteException_clientDied() {
         // scannable and scan response
         val eventType = 0x0A
@@ -203,7 +202,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @Throws(Exception::class)
     fun onScanResult_multipleClients_oneMatchesFilter() {
         // Setup common parameters for onScanResult
         val eventType = 0x1B // Connectable and scannable legacy advertising PDU
@@ -315,7 +313,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun onScannerRegistered_success_callback() {
         val uuidLsb = 12345L
         val uuidMsb = 67890L
@@ -339,25 +336,21 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun onBatchScanReportsInternal_deliverTruncatedBatchScan_expectResults() {
         verifyOnBatchScanReportsInternal(expectResults = true, isTruncated = true)
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun onBatchScanReportsInternal_deliverTruncatedBatchScan_noResults() {
         verifyOnBatchScanReportsInternal(expectResults = false, isTruncated = true)
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun onBatchScanReportsInternal_deliverFullBatchScan_expectResults() {
         verifyOnBatchScanReportsInternal(expectResults = true, isTruncated = false)
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun onBatchScanReportsInternal_deliverFullBatchScan_noResults() {
         verifyOnBatchScanReportsInternal(expectResults = false, isTruncated = false)
     }
@@ -431,7 +424,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
         verify(scannerMap, never()).getById(any<Int>())
     }
 
-    @Throws(RemoteException::class)
     private fun verifyOnBatchScanReportsInternal(expectResults: Boolean, isTruncated: Boolean) {
         val reportType =
             if (isTruncated) ScanUtil.SCAN_RESULT_TYPE_TRUNCATED else ScanUtil.SCAN_RESULT_TYPE_FULL
@@ -531,7 +523,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun onTrackAdvFoundLost() {
         val advPacketLen = 1
         val advPacket = byteArrayOf(0x02)

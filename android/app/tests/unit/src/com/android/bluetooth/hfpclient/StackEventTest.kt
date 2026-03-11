@@ -45,7 +45,6 @@ class StackEventTest {
     }
 
     @Test
-    @Throws(IllegalAccessException::class)
     fun toString_allEventFields_toStringMatchesName() {
         val stackEventClass = StackEvent::class.java
         for (field in stackEventClass.fields) {
