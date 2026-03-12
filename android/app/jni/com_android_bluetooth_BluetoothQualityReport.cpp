@@ -63,7 +63,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     ScopedLocalRef<jbyteArray> raw_data(sCallbackEnv.get(),
                                         sCallbackEnv->NewByteArray(bqr_raw_data.size()));
     if (!raw_data.get()) {

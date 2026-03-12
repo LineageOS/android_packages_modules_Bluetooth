@@ -70,7 +70,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, addr.get(),
                                  (jint)state);
   }

@@ -119,7 +119,7 @@ static void sdp_search_callback(BtStatus status, const RawAddress& bd_addr, cons
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   ScopedLocalRef<jbyteArray> uuid(sCallbackEnv.get(), sCallbackEnv->NewByteArray(sizeof(Uuid)));
   if (!uuid.get()) {

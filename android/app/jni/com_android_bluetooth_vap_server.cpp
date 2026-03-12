@@ -73,7 +73,7 @@
        return;
      }
 
-     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onStartVaSession, addr.get());
    }
 
@@ -86,7 +86,7 @@
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onStopVaSession, addr.get());
   }
  };

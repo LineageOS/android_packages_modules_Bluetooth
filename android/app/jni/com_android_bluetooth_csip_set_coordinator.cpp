@@ -92,7 +92,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, addr.get(),
                                  (jint)state);
   }
@@ -105,7 +105,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, addr.get(),
                                  (jint)group_id, (jint)group_size, (jint)rank, UUID_PARAMS(uuid));
   }
@@ -119,7 +119,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSetMemberAvailable, addr.get(),
                                  (jint)group_id);
   }

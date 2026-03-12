@@ -80,7 +80,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
                                  addr.get());
   }
@@ -95,7 +95,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVolumeStateChanged, (jint)volume,
                                  (jboolean)mute, (jint)flags, addr.get(), (jboolean)isAutonomous);
   }
@@ -124,7 +124,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, (jint)group_id,
                                  (jint)num_offsets, (jint)num_inputs, addr.get());
   }
@@ -139,7 +139,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioOutVolumeOffsetChanged,
                                  (jint)ext_output_id, (jint)offset, addr.get());
   }
@@ -154,7 +154,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioOutLocationChanged,
                                  (jint)ext_output_id, (jint)location, addr.get());
   }
@@ -169,7 +169,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     jstring description = sCallbackEnv->NewStringUTF(descr.c_str());
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioOutDescriptionChanged,
                                  (jint)ext_output_id, description, addr.get());
@@ -185,7 +185,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInStateChanged, (jint)ext_input_id,
                                  (jint)gain_setting, (jint)mute, (jint)gain_mode, addr.get());
   }
@@ -199,7 +199,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInSetGainSettingFailed,
                                  (jint)ext_input_id, addr.get());
   }
@@ -213,7 +213,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInSetMuteFailed,
                                  (jint)ext_input_id, addr.get());
   }
@@ -226,7 +226,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInSetGainModeFailed,
                                  (jint)ext_input_id, addr.get());
   }
@@ -241,7 +241,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInStatusChanged,
                                  (jint)ext_input_id, (jint)status, addr.get());
   }
@@ -256,7 +256,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInTypeChanged, (jint)ext_input_id,
                                  (jint)type, addr.get());
   }
@@ -271,7 +271,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInGainSettingPropertiesChanged,
                                  (jint)ext_input_id, (jint)unit, (jint)min, (jint)max, addr.get());
   }
@@ -286,7 +286,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     jstring jdescription = sCallbackEnv->NewStringUTF(description.c_str());
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onExtAudioInDescriptionChanged,
                                  (jint)ext_input_id, jdescription, (jboolean)is_writable,

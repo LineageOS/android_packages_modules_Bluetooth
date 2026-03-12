@@ -90,7 +90,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, jaddr.get(),
                                  (jint)state);
   }
@@ -102,7 +102,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, jaddr.get(),
                                  (jint)features);
   }
@@ -114,7 +114,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onFeaturesUpdate, jaddr.get(),
                                  (jint)features);
   }
@@ -126,7 +126,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelected, jaddr.get(),
                                  (jint)preset_index);
   }
@@ -152,7 +152,7 @@ public:
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
       ScopedLocalRef<jbyteArray> jaddr =
-              addressToJByteArray(sCallbackEnv.get(), std::get<RawAddress>(addr_or_group_id));
+              addressToJByteArray(sCallbackEnv, std::get<RawAddress>(addr_or_group_id));
       sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelectionFailed, jaddr.get(),
                                    (jint)error_code);
     } else {
@@ -197,7 +197,7 @@ public:
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
       ScopedLocalRef<jbyteArray> jaddr =
-              addressToJByteArray(sCallbackEnv.get(), std::get<RawAddress>(addr_or_group_id));
+              addressToJByteArray(sCallbackEnv, std::get<RawAddress>(addr_or_group_id));
       sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetInfo, jaddr.get(),
                                    (jint)info_reason, presets_array);
     } else {
@@ -227,7 +227,7 @@ public:
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
       ScopedLocalRef<jbyteArray> jaddr =
-              addressToJByteArray(sCallbackEnv.get(), std::get<RawAddress>(addr_or_group_id));
+              addressToJByteArray(sCallbackEnv, std::get<RawAddress>(addr_or_group_id));
       sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSetPresetNameFailed, jaddr.get(),
                                    (jint)preset_index, (jint)error_code);
     } else {
