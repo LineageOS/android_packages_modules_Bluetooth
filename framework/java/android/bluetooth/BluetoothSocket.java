@@ -743,6 +743,52 @@ public final class BluetoothSocket implements Closeable {
                 mSocketCreationLatencyNanos);
     }
 
+    private int setupSocketAfterBind(boolean isOffload) {
+        String methodName = isOffload ? "bindListenWithOffload" : "bindListen";
+        try {
+            synchronized (this) {
+                Log.d(TAG, methodName + "(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
+                if (mSocketState != SocketState.INIT) return EBADFD;
+                if (mPfd == null) return -1;
+                FileDescriptor fd = mPfd.getFileDescriptor();
+                if (fd == null) {
+                    Log.e(TAG, methodName + "(), null file descriptor");
+                    return -1;
+                }
+
+                Log.d(TAG, methodName + "(), Create LocalSocket");
+                mSocket = new LocalSocket(fd);
+                Log.d(TAG, methodName + "(), new LocalSocket.getInputStream()");
+                mSocketIS = mSocket.getInputStream();
+                mSocketOS = mSocket.getOutputStream();
+            }
+            Log.d(TAG, methodName + "(), readInt mSocketIS: " + mSocketIS);
+            int channel = readInt(mSocketIS);
+            synchronized (this) {
+                if (mSocketState == SocketState.INIT) {
+                    mSocketState = SocketState.LISTENING;
+                }
+            }
+            Log.d(TAG, methodName + "(): channel=" + channel + ", mPort=" + mPort);
+            if (mPort <= -1
+                    || (isOffload ? Flags.fixedPsmForOffloadSocket() : Flags.lecocWithFixedPsm())) {
+                mPort = channel;
+            }
+            return 0;
+        } catch (IOException e) {
+            if (mPfd != null) {
+                try {
+                    mPfd.close();
+                } catch (IOException e1) {
+                    Log.e(TAG, methodName + ", close mPfd: " + e1);
+                }
+                mPfd = null;
+            }
+            Log.e(TAG, methodName + ", fail to get port number, exception: " + e);
+            return -1;
+        }
+    }
+
     /**
      * Currently returns unix errno instead of throwing IOException, so that BluetoothAdapter can
      * check the error code for EADDRINUSE
@@ -750,7 +796,6 @@ public final class BluetoothSocket implements Closeable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     /*package*/ int bindListen() {
-        int ret;
         if (mSocketState == SocketState.CLOSED) return EBADFD;
         IBluetooth bluetoothProxy = mAdapter.getBluetoothService();
         if (bluetoothProxy == null) {
@@ -777,49 +822,7 @@ public final class BluetoothSocket implements Closeable {
             return -1;
         }
 
-        // read out port number
-        try {
-            synchronized (this) {
-                Log.d(TAG, "bindListen(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
-                if (mSocketState != SocketState.INIT) return EBADFD;
-                if (mPfd == null) return -1;
-                FileDescriptor fd = mPfd.getFileDescriptor();
-                if (fd == null) {
-                    Log.e(TAG, "bindListen(), null file descriptor");
-                    return -1;
-                }
-
-                Log.d(TAG, "bindListen(), Create LocalSocket");
-                mSocket = new LocalSocket(fd);
-                Log.d(TAG, "bindListen(), new LocalSocket.getInputStream()");
-                mSocketIS = mSocket.getInputStream();
-                mSocketOS = mSocket.getOutputStream();
-            }
-            Log.d(TAG, "bindListen(), readInt mSocketIS: " + mSocketIS);
-            int channel = readInt(mSocketIS);
-            synchronized (this) {
-                if (mSocketState == SocketState.INIT) {
-                    mSocketState = SocketState.LISTENING;
-                }
-            }
-            Log.d(TAG, "bindListen(): channel=" + channel + ", mPort=" + mPort);
-            if (mPort <= -1 || Flags.lecocWithFixedPsm()) {
-                mPort = channel;
-            }
-            ret = 0;
-        } catch (IOException e) {
-            if (mPfd != null) {
-                try {
-                    mPfd.close();
-                } catch (IOException e1) {
-                    Log.e(TAG, "bindListen, close mPfd: " + e1);
-                }
-                mPfd = null;
-            }
-            Log.e(TAG, "bindListen, fail to get port number, exception: " + e);
-            return -1;
-        }
-        return ret;
+        return setupSocketAfterBind(false);
     }
 
     /**
@@ -831,7 +834,6 @@ public final class BluetoothSocket implements Closeable {
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
     /*package*/ int bindListenWithOffload() {
-        int ret;
         if (mSocketState == SocketState.CLOSED) return EBADFD;
         IBluetooth bluetoothProxy = mAdapter.getBluetoothService();
         if (bluetoothProxy == null) {
@@ -863,54 +865,7 @@ public final class BluetoothSocket implements Closeable {
             return -1;
         }
 
-        // read out port number
-        try {
-            synchronized (this) {
-                Log.d(
-                        TAG,
-                        "bindListenWithOffload(), SocketState: "
-                                + mSocketState
-                                + ", mPfd: "
-                                + mPfd);
-                if (mSocketState != SocketState.INIT) return EBADFD;
-                if (mPfd == null) return -1;
-                FileDescriptor fd = mPfd.getFileDescriptor();
-                if (fd == null) {
-                    Log.e(TAG, "bindListenWithOffload(), null file descriptor");
-                    return -1;
-                }
-
-                Log.d(TAG, "bindListenWithOffload(), Create LocalSocket");
-                mSocket = new LocalSocket(fd);
-                Log.d(TAG, "bindListenWithOffload(), new LocalSocket.getInputStream()");
-                mSocketIS = mSocket.getInputStream();
-                mSocketOS = mSocket.getOutputStream();
-            }
-            Log.d(TAG, "bindListenWithOffload(), readInt mSocketIS: " + mSocketIS);
-            int channel = readInt(mSocketIS);
-            synchronized (this) {
-                if (mSocketState == SocketState.INIT) {
-                    mSocketState = SocketState.LISTENING;
-                }
-            }
-            Log.d(TAG, "bindListenWithOffload(): channel=" + channel + ", mPort=" + mPort);
-            if (mPort <= -1 || Flags.fixedPsmForOffloadSocket()) {
-                mPort = channel;
-            }
-            ret = 0;
-        } catch (IOException e) {
-            if (mPfd != null) {
-                try {
-                    mPfd.close();
-                } catch (IOException e1) {
-                    Log.e(TAG, "bindListenWithOffload, close mPfd: " + e1);
-                }
-                mPfd = null;
-            }
-            Log.e(TAG, "bindListenWithOffload, fail to get port number, exception: " + e);
-            return -1;
-        }
-        return ret;
+        return setupSocketAfterBind(true);
     }
 
     /*package*/ BluetoothSocket accept(int timeout) throws IOException {
