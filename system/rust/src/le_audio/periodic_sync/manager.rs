@@ -23,7 +23,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::timeout;
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 use crate::le_audio::periodic_sync::ffi::{inner_ffi as pa_ffi, PeriodicSyncCallbacks};
 use crate::le_audio::periodic_sync::traits::{
@@ -46,18 +46,15 @@ pub(super) struct SyncRegistry {
     // Currently established PA sync handles.
     pub active_handles: HashSet<u16>,
     // Active event subscribers.
-    pub event_subscribers: Vec<mpsc::Sender<PeriodicSyncEvent>>,
+    pub event_subscribers: Vec<mpsc::UnboundedSender<PeriodicSyncEvent>>,
 }
 
 impl SyncRegistry {
     // Broadcasts an event to all subscribers.
     pub fn broadcast_event(&mut self, event: PeriodicSyncEvent) {
-        self.event_subscribers.retain(|sender| match sender.try_send(event.clone()) {
+        self.event_subscribers.retain(|sender| match sender.send(event.clone()) {
             Ok(_) => true,
-            Err(mpsc::error::TrySendError::Closed(_)) => false,
-            Err(mpsc::error::TrySendError::Full(_)) => {
-                panic!("Event subscriber buffer full, client is stuck! Event: {:?}", event);
-            }
+            Err(mpsc::error::SendError(_)) => false,
         });
     }
 }
@@ -93,10 +90,9 @@ impl Default for PeriodicSyncManagerImpl {
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(2);
 const HCI_TIMEOUT_UNIT_MS: u128 = 10;
-const MPSC_CHANNEL_BUFFER_SIZE: usize = 10;
 
 impl PeriodicSyncManager for PeriodicSyncManagerImpl {
-    type EventStream = ReceiverStream<PeriodicSyncEvent>;
+    type EventStream = UnboundedReceiverStream<PeriodicSyncEvent>;
 
     async fn start_sync(&self, params: PaCreateSyncParams) -> Result<PeriodicSyncInfo> {
         // Use broadcast_id (which maps to reg_id in start_sync) for pending request tracking.
@@ -150,9 +146,9 @@ impl PeriodicSyncManager for PeriodicSyncManagerImpl {
     }
 
     fn subscribe_events(&self) -> Self::EventStream {
-        let (sender, receiver) = mpsc::channel(MPSC_CHANNEL_BUFFER_SIZE);
+        let (sender, receiver) = mpsc::unbounded_channel();
         self.sync_registry.lock().unwrap().event_subscribers.push(sender);
-        ReceiverStream::new(receiver)
+        UnboundedReceiverStream::new(receiver)
     }
 }
 
