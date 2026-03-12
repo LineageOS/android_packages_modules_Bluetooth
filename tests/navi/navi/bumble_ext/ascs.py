@@ -222,6 +222,8 @@ class AudioStreamEndpointCharacteristic(gatt.Characteristic):
              if cis_link.cig_id == self.cig_id and cis_link.cis_id == self.cis_id),
                 None,
         ):
+            # Notify state change to ENABLING before transferring to STREAMING.
+            await self.service.device.notify_subscribers(self, self.data_value)
             await self.on_cis_establishment(cis_link)
 
         return (ascs.AseResponseCode.SUCCESS, ascs.AseReasonCode.NONE)

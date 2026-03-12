@@ -53,6 +53,18 @@ _REPEAT_MODES = {
     avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT: (android_constants.RepeatMode.ALL),
     avrcp.ApplicationSetting.RepeatModeStatus.OFF: (android_constants.RepeatMode.OFF),
 }
+_AVRCP_VERSION_MAP = {
+    "avrcp13": (1, 3),
+    "avrcp14": (1, 4),
+    "avrcp15": (1, 5),
+    "avrcp16": (1, 6),
+}
+_AVRCP_TO_AVCTP_VERSION_MAP = {
+    (1, 3): (1, 2),
+    (1, 4): (1, 3),
+    (1, 5): (1, 4),
+    (1, 6): (1, 4),
+}
 
 _SAMPLE_TRACK = bl4a_api.MediaItem(
     id="/classic/k545.ogg",
@@ -212,6 +224,78 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[REF] Release %s.", key.name)
         await ref_avrcp_protocol.send_key_event(key, pressed=False)
+
+    async def test_sdp_discovery(self) -> None:
+        """Tests SDP discovery from REF.
+
+    Test steps:
+      1. Setup pairing between DUT and REF.
+      2. Discover A2DP source SDP records from REF.
+      3. Discover AVRCP target SDP records from REF.
+    """
+
+        ref_acl_connection = await self.classic_connect_and_pair()
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Discover A2DP source SDP records.")
+            a2dp_source_sdp_records = await a2dp_ext.SourceSdpRecord.find(ref_acl_connection)
+            self.assertLen(a2dp_source_sdp_records, 1)
+            a2dp_source_sdp_record = a2dp_source_sdp_records[0]
+            self.logger.info("[REF] Found A2DP source SDP records: %s.", a2dp_source_sdp_record)
+
+            # Check A2DP version.
+            if self.dut.bt.getSdkVersion() >= 36:
+                self.assertGreaterEqual(a2dp_source_sdp_record.a2dp_version, (1, 4))
+            else:
+                self.assertGreaterEqual(a2dp_source_sdp_record.a2dp_version, (1, 3))
+
+            # Check AVDTP version.
+            self.assertGreaterEqual(a2dp_source_sdp_record.avdtp_version, (1, 3))
+
+            # Check A2DP source features.
+            if a2dp_source_sdp_record.supported_features is None:
+                self.fail("No supported features found in A2DP source SDP record.")
+            self.assertIn(
+                a2dp_ext.SourceSdpRecord.Features.PLAYER,
+                a2dp_source_sdp_record.supported_features,
+            )
+
+            self.logger.info("[REF] Discover AVRCP target SDP records.")
+            avrcp_target_sdp_records = await avrcp.TargetServiceSdpRecord.find(ref_acl_connection)
+            self.assertLen(avrcp_target_sdp_records, 1)
+            avrcp_target_sdp_record = avrcp_target_sdp_records[0]
+            self.logger.info("[REF] Found AVRCP target SDP records: %s.", avrcp_target_sdp_record)
+
+            # Check AVRCP version.
+            expected_avrcp_version = _AVRCP_VERSION_MAP.get(
+                self.dut.getprop(android_constants.Property.AVRCP_VERSION))
+            if expected_avrcp_version:
+                # If the AVRCP version is set in the system property, verify it.
+                self.assertEqual(avrcp_target_sdp_record.avrcp_version, expected_avrcp_version)
+            else:
+                # Otherwise, verify the AVRCP version is at least 1.5.
+                self.assertGreaterEqual(avrcp_target_sdp_record.avrcp_version, (1, 5))
+
+            # Check AVCTP version.
+            self.assertEqual(
+                avrcp_target_sdp_record.avctp_version,
+                _AVRCP_TO_AVCTP_VERSION_MAP[avrcp_target_sdp_record.avrcp_version],
+            )
+
+            # Check AVRCP target features.
+            expected_features = [avrcp.TargetFeatures.CATEGORY_1]
+            if avrcp_target_sdp_record.avrcp_version > (1, 3):
+                expected_features.extend([
+                    avrcp.TargetFeatures.SUPPORTS_MULTIPLE_MEDIA_PLAYER_APPLICATIONS,
+                    avrcp.TargetFeatures.SUPPORTS_BROWSING,
+                    avrcp.TargetFeatures.PLAYER_APPLICATION_SETTINGS,
+                ])
+            if avrcp_target_sdp_record.avrcp_version >= (1, 6):
+                expected_features.append(avrcp.TargetFeatures.SUPPORTS_COVER_ART)
+            self.assertContainsSubset(
+                expected_features,
+                avrcp.TargetFeatures(avrcp_target_sdp_record.supported_features),
+            )
 
     @navi_test_base.parameterized(_Issuer.DUT, _Issuer.REF)
     async def test_set_absolute_volume(self, issuer: _Issuer) -> None:
@@ -537,43 +621,6 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
 
         self.assertGreater(second_position, first_position)
 
-    @navi_test_base.retry(3)
-    async def test_notification_on_now_playing_content_change(self) -> None:
-        """Tests notification on now playing content change.
-
-    Test steps:
-      1. Setup pairing between DUT and REF.
-      2. Start stream from DUT and check notification.
-      3. Add a media item to the player and check notification.
-    """
-        ref_avrcp_protocol, _ = await self._setup_a2dp_connection([_A2dpCodec.SBC])
-
-        self.logger.info("[DUT] Generate two wave files.")
-        for i in range(2):
-            self._generate_and_push_wave_file(
-                f"/data/media/{self.dut.adb.current_user_id}/Music/sample-{i}.mp3")
-
-        with self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER) as dut_player_cb:
-            self.logger.info("[DUT] Play the first track.")
-            self.dut.bl4a.play_media_item(
-                bl4a_api.MediaItem(uri="/storage/self/primary/Music/sample-0.mp3",))
-
-            self.logger.info("[DUT] Wait for playback started.")
-            await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
-
-            now_playing_content_changed_iter = (ref_avrcp_protocol.monitor_now_playing_content())
-            # First yield is from INTERIM response
-            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                await anext(now_playing_content_changed_iter)
-
-            self.logger.info("[DUT] Add a media item.")
-            self.dut.bl4a.add_media_item(
-                bl4a_api.MediaItem(uri="/storage/self/primary/Music/sample-1.mp3",))
-
-            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                self.logger.info("[REF] Wait for now playing content changed.")
-                await anext(now_playing_content_changed_iter)
-
     async def test_browsing(self) -> None:
         """Tests browsing over AVRCP.
 
@@ -619,7 +666,7 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
                 scope=avrcp.Scope(avrcp.Scope.MEDIA_PLAYER_LIST))
             self.assertLen(media_player_items, 1)
             player = media_player_items[0]
-            assert isinstance(player, avrcp.MediaPlayerItem)
+            assert isinstance(player, avrcp_ext.Player)
             self.assertEqual(player.displayable_name, "Bluetooth Player")
 
             self.logger.info("[REF] Set browsing player.")
@@ -633,7 +680,7 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
             browser_service = next(
                 (
                     browser_service for browser_service in browser_services
-                    if isinstance(browser_service, avrcp.FolderItem) and (
+                    if isinstance(browser_service, avrcp_ext.Folder) and (
                         # Bluetooth uses the app label (if available) or the package
                         # name of the media browser app as the display name of the
                         # media browser service.
@@ -657,7 +704,7 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
                 end_item=number_of_items,
             )
             folder_item = folder_items[0]
-            assert isinstance(folder_item, avrcp.FolderItem)
+            assert isinstance(folder_item, avrcp_ext.Folder)
             self.assertEqual(folder_item.displayable_name, _SAMPLE_FOLDER.title)
 
             self.logger.info("[REF] Change path to %s.", folder_item.displayable_name)
@@ -672,23 +719,134 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
                 start_item=0,
                 end_item=number_of_items,
             )
-            folder_item = folder_items[0]
-            assert isinstance(folder_item, avrcp.MediaElementItem)
-            self.assertEqual(folder_item.displayable_name, _SAMPLE_TRACK.title)
+            media_element = folder_items[0]
+            assert isinstance(media_element, avrcp_ext.MediaElement)
+            self.assertEqual(media_element.displayable_name, _SAMPLE_TRACK.title)
 
-            self.logger.info("[REF] Play %s.", folder_item.displayable_name)
+            self.logger.info("[REF] Play %s.", media_element.displayable_name)
             await ref_avrcp_protocol.send_avrcp_command(
                 avc.CommandFrame.CommandType.CONTROL,
                 avrcp.PlayItemCommand(
                     scope=avrcp.Scope(avrcp.Scope.MEDIA_PLAYER_VIRTUAL_FILESYSTEM),
-                    uid=folder_item.media_element_uid,
+                    uid=media_element.media_element_uid,
                     uid_counter=0,
                 ),
             )
 
             self.logger.info("[DUT] Wait for media item added.")
+            assert _SAMPLE_TRACK.id is not None
             await media_library_session.wait_for_event(
                 bl4a_api.MediaItemAdded(media_id=_SAMPLE_TRACK.id))
+
+    @navi_test_base.retry(3)
+    async def test_now_playing_items(self) -> None:
+        """Tests browsing now playing items over AVRCP.
+
+    Test steps:
+      1. Setup pairing between DUT and REF.
+      2. Connect to browsing channel.
+      3. Browse media player list.
+      4. Set addressed player.
+      5. Browse now playing items.
+      6. Add a media item to the player.
+      7. Validate the now playing items are updated.
+    """
+
+        # Default value for this property is true, need to set it explicitly.
+        if (self.dut.getprop(_PROPERTY_AVRCP_BROWSABLE_MEDIA_PLAYER_ENABLED) == "false"):
+            self.skipTest("Browsable media player is not enabled.")
+
+        player_cb = self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER)
+        self.test_case_context.enter_context(player_cb)
+        self._generate_and_push_wave_file(
+            f"/data/media/{self.dut.adb.current_user_id}/Music/sample.wav")
+        initial_media_item = bl4a_api.MediaItem(
+            title="sample-1",
+            artist="sample-artist",
+            album="sample-album",
+            uri="/storage/self/primary/Music/sample.wav",
+        )
+        self.dut.bl4a.play_media_item(initial_media_item)
+
+        self.logger.info("[DUT] Wait for playback started.")
+        await player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
+
+        ref_avrcp_protocol, _ = await self._setup_a2dp_connection(
+            [_A2dpCodec.SBC],
+            ref_features=(avrcp.ControllerFeatures.CATEGORY_1 |
+                          avrcp.ControllerFeatures.SUPPORTS_BROWSING),
+        )
+        ref_dut_connection = list(self.ref.device.connections.values())[0]
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Connect to browsing channel.")
+            browsing_channel = await avrcp_ext.BrowsingController.connect(ref_dut_connection)
+            self.logger.info("[REF] Browse media player list.")
+            media_player_items = await browsing_channel.get_folder_items(
+                scope=avrcp.Scope(avrcp.Scope.MEDIA_PLAYER_LIST))
+            self.assertLen(media_player_items, 1)
+            player = media_player_items[0]
+            assert isinstance(player, avrcp_ext.Player)
+            self.assertEqual(player.displayable_name, "Bluetooth Player")
+
+            self.logger.info("[REF] Set addressed player.")
+            await ref_avrcp_protocol.send_avrcp_command(
+                avc.CommandFrame.CommandType.CONTROL,
+                avrcp.SetAddressedPlayerCommand(player_id=player.player_id),
+            )
+
+            self.logger.info("[REF] Browse now playing.")
+            items = await browsing_channel.get_folder_items(scope=avrcp.Scope.NOW_PLAYING  # pytype: disable=wrong-arg-types
+                                                           )
+            self.assertLen(items, 1)
+            item = items[0]
+            assert isinstance(item, avrcp_ext.MediaElement)
+            self.assertEqual(item.displayable_name, initial_media_item.title)
+            self.assertEqual(
+                item.attributes[avrcp.MediaAttributeId.TITLE],
+                initial_media_item.title,
+            )
+            self.assertEqual(
+                item.attributes[avrcp.MediaAttributeId.ARTIST_NAME],
+                initial_media_item.artist,
+            )
+            self.assertEqual(
+                item.attributes[avrcp.MediaAttributeId.ALBUM_NAME],
+                initial_media_item.album,
+            )
+
+            now_playing_content_changed_iter = (ref_avrcp_protocol.monitor_now_playing_content())
+            # First yield is from INTERIM response
+            await anext(now_playing_content_changed_iter)
+
+            self.logger.info("[DUT] Add a media item.")
+            new_media_item = bl4a_api.MediaItem(
+                title="sample-2",
+                artist="sample-artist",
+                album="sample-album",
+                uri="/storage/self/primary/Music/sample.wav",
+            )
+            self.dut.bl4a.add_media_item(new_media_item)
+
+            self.logger.info("[REF] Wait for now playing content changed.")
+            await anext(now_playing_content_changed_iter)
+
+            self.logger.info("[REF] Browse now playing again.")
+            items = await browsing_channel.get_folder_items(scope=avrcp.Scope.NOW_PLAYING  # pytype: disable=wrong-arg-types
+                                                           )
+            self.assertLen(items, 2)
+            item = items[1]
+            assert isinstance(item, avrcp_ext.MediaElement)
+            self.assertEqual(item.displayable_name, new_media_item.title)
+            self.assertEqual(item.attributes[avrcp.MediaAttributeId.TITLE], new_media_item.title)
+            self.assertEqual(
+                item.attributes[avrcp.MediaAttributeId.ARTIST_NAME],
+                new_media_item.artist,
+            )
+            self.assertEqual(
+                item.attributes[avrcp.MediaAttributeId.ALBUM_NAME],
+                new_media_item.album,
+            )
 
     @navi_test_base.retry(3)
     async def test_list_player_application_setting_attributes(self) -> None:
@@ -707,83 +865,46 @@ class AvrcpTest(navi_test_base.TwoDevicesTestBase):
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             self.logger.info("[REF] Get player application setting attributes.")
-            response = await ref_avrcp_protocol.send_avrcp_command(
-                avc.CommandFrame.CommandType.STATUS,
-                avrcp.ListPlayerApplicationSettingAttributesCommand(),
-            )
-            list_app_setting_attributes_response = response.response
-            assert isinstance(
-                list_app_setting_attributes_response,
-                avrcp.ListPlayerApplicationSettingAttributesResponse,
-            )
-            self.logger.info(
-                "[REF] Player application setting attributes: %s",
-                list_app_setting_attributes_response,
-            )
-            # Android only supports REPEAT_MODE and SHUFFLE_ON_OFF.
+            supported_settings = (await ref_avrcp_protocol.list_supported_player_app_settings())
             self.assertContainsSubset(
-                (
-                    _AttributeId.REPEAT_MODE,
-                    _AttributeId.SHUFFLE_ON_OFF,
-                ),
-                list_app_setting_attributes_response.attribute,
+                [
+                    avrcp.ApplicationSetting.AttributeId.REPEAT_MODE,
+                    avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF,
+                ],
+                supported_settings.keys(),
+            )
+            self.assertContainsSubset(
+                [
+                    avrcp.ApplicationSetting.RepeatModeStatus.OFF,
+                    avrcp.ApplicationSetting.RepeatModeStatus.SINGLE_TRACK_REPEAT,
+                    avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT,
+                    avrcp.ApplicationSetting.RepeatModeStatus.GROUP_REPEAT,
+                ],
+                supported_settings[avrcp.ApplicationSetting.AttributeId.REPEAT_MODE],  # pytype: disable=unsupported-operands
+            )
+            self.assertContainsSubset(
+                [
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.ALL_TRACKS_SHUFFLE,
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.GROUP_SHUFFLE,
+                ],
+                supported_settings[avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF  # pytype: disable=unsupported-operands
+                                  ],
             )
 
-            for attribute, expected_supported_values, expected_mode in (
-                (
-                    _AttributeId.REPEAT_MODE,
-                    (
-                        avrcp.ApplicationSetting.RepeatModeStatus.OFF,
-                        avrcp.ApplicationSetting.RepeatModeStatus.SINGLE_TRACK_REPEAT,
-                        avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT,
-                        avrcp.ApplicationSetting.RepeatModeStatus.GROUP_REPEAT,
-                    ),
-                    avrcp.ApplicationSetting.RepeatModeStatus.OFF,
-                ),
-                (
-                    _AttributeId.SHUFFLE_ON_OFF,
-                    (
-                        avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
-                        avrcp.ApplicationSetting.ShuffleOnOffStatus.ALL_TRACKS_SHUFFLE,
-                        avrcp.ApplicationSetting.ShuffleOnOffStatus.GROUP_SHUFFLE,
-                    ),
-                    avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
-                ),
-            ):
-                # TODO: Simplify this part when Bumble has APIs for
-                # player application settings.
-                self.logger.info(
-                    "[REF] Get player application setting values for attribute: %r",
-                    attribute,
-                )
-                response = await ref_avrcp_protocol.send_avrcp_command(
-                    avc.CommandFrame.CommandType.STATUS,
-                    avrcp.ListPlayerApplicationSettingValuesCommand(attribute),
-                )
-                list_app_setting_values_response = response.response
-                assert isinstance(
-                    list_app_setting_values_response,
-                    avrcp.ListPlayerApplicationSettingValuesResponse,
-                )
-                self.logger.info(
-                    "[REF] Player application setting values: %s",
-                    list_app_setting_values_response,
-                )
-                self.assertContainsSubset(expected_supported_values,
-                                          list_app_setting_values_response.value)
-                response = await ref_avrcp_protocol.send_avrcp_command(
-                    avc.CommandFrame.CommandType.STATUS,
-                    avrcp.GetCurrentPlayerApplicationSettingValueCommand([attribute]),
-                )
-                get_current_player_app_setting_value_response = response.response
-                assert isinstance(
-                    get_current_player_app_setting_value_response,
-                    avrcp.GetCurrentPlayerApplicationSettingValueResponse,
-                )
-                self.assertSequenceEqual(
-                    get_current_player_app_setting_value_response.value,
-                    [expected_mode],
-                )
+            self.logger.info("[REF] Get current player application setting values.")
+            current_settings = await ref_avrcp_protocol.get_player_app_settings([
+                avrcp.ApplicationSetting.AttributeId.REPEAT_MODE,  # pytype: disable=wrong-arg-types
+                avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF,  # pytype: disable=wrong-arg-types
+            ])
+            self.assertEqual(
+                current_settings[avrcp.ApplicationSetting.AttributeId.REPEAT_MODE],
+                avrcp.ApplicationSetting.RepeatModeStatus.OFF,
+            )
+            self.assertEqual(
+                current_settings[avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF],
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
+            )
 
     @navi_test_base.retry(3)
     async def test_notification_on_player_application_setting_change(self,) -> None:

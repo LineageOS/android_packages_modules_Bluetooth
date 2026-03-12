@@ -97,13 +97,11 @@ class VapTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.device.is_emulator:
             self.setprop_for_class_context(_AndroidProperty.VAP_SERVER_ENABLED, "true")
 
+        if not self.dut.is_le_audio_supported:
+            raise signals.TestAbortClass("[DUT] Device does not support LE Audio.")
+
         if self.dut.getprop(_AndroidProperty.VAP_SERVER_ENABLED) != "true":
             raise signals.TestAbortClass("VAP server is not enabled")
-
-        if (self.dut.bt.getSdkVersion() >= 35 and android_constants.AudioDeviceType.BLE_HEADSET
-                not in self.dut.bt.getSupportedAudioDeviceTypes(
-                    android_constants.AudioDeviceRole.OUTPUT)):
-            raise signals.TestAbortClass("Device does not support LE Audio.")
 
         # Disable all other voice command apps to prevent choosing activities.
         self._disable_voice_command_apps_except_snippet()

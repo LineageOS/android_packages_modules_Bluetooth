@@ -174,13 +174,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
-        if self.dut.getprop(_AndroidProperty.BAP_UNICAST_CLIENT_ENABLED) != "true":
-            raise signals.TestAbortClass("Unicast client is not enabled")
-
-        if (self.dut.bt.getSdkVersion() >= 35 and android_constants.AudioDeviceType.BLE_HEADSET
-                not in self.dut.bt.getSupportedAudioDeviceTypes(
-                    android_constants.AudioDeviceRole.OUTPUT)):
-            raise signals.TestAbortClass("Device does not support LE Audio.")
+        if not self.dut.is_le_audio_supported:
+            raise signals.TestAbortClass("[DUT] Device does not support LE Audio.")
 
         self.ref.config.cis_enabled = True
         self.ref.device.cis_enabled = True
@@ -238,8 +233,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                           " yet.")
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_cb:
-            self.logger.info("[DUT] Disconnect REF")
-            self.dut.bt.disconnect(self.ref.random_address)
+            await self.disconnect_with_check(self.ref.random_address,
+                                             android_constants.Transport.LE)
 
             self.logger.info("[DUT] Wait for LE Audio disconnected")
             await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)
@@ -386,6 +381,12 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             for ase in self.ref_ascs.ase_state_machines.values():
                 await _wait_for_ase_state(ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
+        call = self.dut.bl4a.make_phone_call(
+            _CALLER_NAME,
+            _CALLER_NUMBER,
+            constants.Direction.OUTGOING,
+        )
+        self.test_case_context.push(call)
         self.logger.info("[DUT] Start gaming audio streaming")
         await asyncio.to_thread(self.dut.bt.audioPlaySine)
         self.logger.info("[DUT] Start communication audio streaming")
@@ -557,8 +558,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                           " yet.")
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_cb:
-            self.logger.info("[DUT] Disconnect REF")
-            self.dut.bt.disconnect(self.ref.random_address)
+            await self.disconnect_with_check(self.ref.random_address,
+                                             android_constants.Transport.LE)
 
             self.logger.info("[DUT] Wait for LE Audio disconnected")
             await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)

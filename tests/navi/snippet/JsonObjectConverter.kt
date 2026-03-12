@@ -16,6 +16,8 @@
 
 package com.google.android.bluetooth.snippet
 
+import android.bluetooth.BluetoothCodecConfig
+import android.bluetooth.BluetoothCodecType
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
@@ -50,6 +52,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Converter converts between Android objects and JSON objects. */
+@Suppress("DEPRECATION")
 class JsonObjectConverter : SnippetObjectConverter {
     val uiAutomatorObjectConverter = UiAutomatorObjectConverter()
 
@@ -71,7 +74,7 @@ class JsonObjectConverter : SnippetObjectConverter {
             )
         }
 
-    private fun BluetoothGattService.toJson() =
+    private fun BluetoothGattService.toJson(): JSONObject =
         JSONObject().also {
             it.put(SnippetConstants.FIELD_HANDLE, this.instanceId)
             it.put(SnippetConstants.FIELD_UUID, this.uuid.toString())
@@ -79,6 +82,10 @@ class JsonObjectConverter : SnippetObjectConverter {
             it.put(
                 SnippetConstants.GATT_FIELD_CHARACTERISTICS,
                 JSONArray(this.characteristics.map { characteristic -> characteristic.toJson() }),
+            )
+            it.put(
+                SnippetConstants.GATT_FIELD_INCLUDED_SERVICES,
+                JSONArray(this.includedServices.map { service -> service.toJson() }),
             )
         }
 
@@ -325,7 +332,7 @@ class JsonObjectConverter : SnippetObjectConverter {
                     ?.forEach { addDescriptor(it.toBluetoothGattDescriptor()) }
             }
 
-    private fun JSONObject.toBluetoothGattService() =
+    private fun JSONObject.toBluetoothGattService(): BluetoothGattService =
         BluetoothGattService(
                 UUID.fromString(optString(SnippetConstants.FIELD_UUID)),
                 optInt(SnippetConstants.GATT_FIELD_TYPE),
@@ -334,6 +341,13 @@ class JsonObjectConverter : SnippetObjectConverter {
                 optJSONArray(SnippetConstants.GATT_FIELD_CHARACTERISTICS)
                     ?.toList<JSONObject>()
                     ?.forEach { addCharacteristic(it.toBluetoothGattCharacteristic()) }
+                optJSONArray(SnippetConstants.GATT_FIELD_INCLUDED_SERVICES)
+                    ?.toList<JSONObject>()
+                    ?.forEach {
+                        if (!addService(it.toBluetoothGattService())) {
+                            throw RuntimeException("Failed to add included service")
+                        }
+                    }
             }
 
     private fun JSONObject.toScanFilter() =
@@ -510,6 +524,49 @@ class JsonObjectConverter : SnippetObjectConverter {
         return Utils.MediaNode(item, children)
     }
 
+    private fun JSONObject.toBluetoothCodecType(): BluetoothCodecType =
+        BluetoothCodecType(
+            getInt(SnippetConstants.CODEC_TYPE),
+            getLong(SnippetConstants.FIELD_ID),
+            getString(SnippetConstants.FIELD_NAME),
+        )
+
+    private fun JSONObject.toBluetoothCodecConfig(): BluetoothCodecConfig =
+        BluetoothCodecConfig.Builder()
+            .apply {
+                getOrNull<Int>(SnippetConstants.CODEC_TYPE)?.let {
+                    val unused = setCodecType(it)
+                }
+                getOrNull<Int>(SnippetConstants.CHANNEL_MODE)?.let {
+                    val unused = setChannelMode(it)
+                }
+                getOrNull<Int>(SnippetConstants.BITS_PER_SAMPLE)?.let {
+                    val unused = setBitsPerSample(it)
+                }
+                getOrNull<Int>(SnippetConstants.PRIORITY)?.let {
+                    val unused = setCodecPriority(it)
+                }
+                optJSONObject(SnippetConstants.EXTENDED_CODEC_TYPE)?.let {
+                    val unused = setExtendedCodecType(it.toBluetoothCodecType())
+                }
+                getOrNull<Int>(SnippetConstants.SAMPLE_RATE)?.let {
+                    val unused = setSampleRate(it)
+                }
+                getOrNull<Long>(SnippetConstants.CODEC_SPECIFIC_1)?.let {
+                    val unused = setCodecSpecific1(it)
+                }
+                getOrNull<Long>(SnippetConstants.CODEC_SPECIFIC_2)?.let {
+                    val unused = setCodecSpecific2(it)
+                }
+                getOrNull<Long>(SnippetConstants.CODEC_SPECIFIC_3)?.let {
+                    val unused = setCodecSpecific3(it)
+                }
+                getOrNull<Long>(SnippetConstants.CODEC_SPECIFIC_4)?.let {
+                    val unused = setCodecSpecific4(it)
+                }
+            }
+            .build()
+
     /**
      * Serializes JVM object [parameter] to a [JSONObject], or returns null if there is no viable
      * conversion.
@@ -537,6 +594,9 @@ class JsonObjectConverter : SnippetObjectConverter {
             return parameter.toJson()
         }
         if (parameter is MediaBrowserCompat.MediaItem) {
+            return parameter.toJson()
+        }
+        if (parameter is BluetoothCodecConfig) {
             return parameter.toJson()
         }
         return null
@@ -584,6 +644,9 @@ class JsonObjectConverter : SnippetObjectConverter {
         if (type === Utils.MediaNode::class.java) {
             return jsonObject?.toMediaNode()
         }
+        if (type === BluetoothCodecConfig::class.java) {
+            return jsonObject?.toBluetoothCodecConfig()
+        }
         return null
     }
 
@@ -605,6 +668,31 @@ class JsonObjectConverter : SnippetObjectConverter {
                 put(SnippetConstants.TITLE, this@toJson.description.title)
                 put(SnippetConstants.FIELD_BROWSABLE, this@toJson.isBrowsable)
                 put(SnippetConstants.FIELD_PLAYABLE, this@toJson.isPlayable)
+            }
+
+        private fun BluetoothCodecType.toJson(): JSONObject =
+            JSONObject().apply {
+                put(SnippetConstants.FIELD_ID, this@toJson.codecId)
+                put(SnippetConstants.FIELD_NAME, this@toJson.codecName)
+            }
+
+        private fun BluetoothCodecConfig.toJson(): JSONObject =
+            JSONObject().apply {
+                put(SnippetConstants.CODEC_TYPE, this@toJson.codecType)
+                put(SnippetConstants.CHANNEL_MODE, this@toJson.channelMode)
+                put(SnippetConstants.BITS_PER_SAMPLE, this@toJson.bitsPerSample)
+                put(SnippetConstants.PRIORITY, this@toJson.codecPriority)
+                if (Build.VERSION.SDK_INT >= 35) {
+                    put(
+                        SnippetConstants.EXTENDED_CODEC_TYPE,
+                        this@toJson.extendedCodecType?.toJson(),
+                    )
+                }
+                put(SnippetConstants.SAMPLE_RATE, this@toJson.sampleRate)
+                put(SnippetConstants.CODEC_SPECIFIC_1, this@toJson.codecSpecific1)
+                put(SnippetConstants.CODEC_SPECIFIC_2, this@toJson.codecSpecific2)
+                put(SnippetConstants.CODEC_SPECIFIC_3, this@toJson.codecSpecific3)
+                put(SnippetConstants.CODEC_SPECIFIC_4, this@toJson.codecSpecific4)
             }
     }
 }

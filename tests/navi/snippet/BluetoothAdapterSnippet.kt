@@ -38,6 +38,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
@@ -184,6 +185,7 @@ class BluetoothAdapterSnippet : Snippet {
                 addAction(BluetoothDevice.ACTION_BATTERY_LEVEL_CHANGED)
                 addAction(BluetoothDevice.ACTION_UUID)
                 addAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE)
+                addAction(BluetoothDevice.ACTION_KEY_MISSING)
                 addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
             }
         broadcastReceivers[callbackId] =
@@ -234,6 +236,13 @@ class BluetoothAdapterSnippet : Snippet {
                             postSnippetEvent(callbackId, SnippetConstants.DEVICE_FOUND) {
                                 putString(SnippetConstants.FIELD_DEVICE, device?.address)
                                 putString(SnippetConstants.FIELD_NAME, device?.name)
+                                putShort(
+                                    SnippetConstants.FIELD_RSSI,
+                                    intent.getShortExtra(
+                                        BluetoothDevice.EXTRA_RSSI,
+                                        Short.MIN_VALUE,
+                                    ),
+                                )
                             }
                         BluetoothDevice.ACTION_BATTERY_LEVEL_CHANGED ->
                             postSnippetEvent(callbackId, SnippetConstants.BATTERY_LEVEL_CHANGED) {
@@ -268,6 +277,11 @@ class BluetoothAdapterSnippet : Snippet {
                         BluetoothDevice.ACTION_ENCRYPTION_CHANGE ->
                             postSnippetEvent(callbackId, SnippetConstants.ENCRYPTION_CHANGE) {
                                 putString(SnippetConstants.FIELD_DEVICE, device?.address)
+                            }
+                        BluetoothDevice.ACTION_KEY_MISSING ->
+                            postSnippetEvent(callbackId, SnippetConstants.KEY_MISSING) {
+                                putString(SnippetConstants.FIELD_DEVICE, device?.address)
+                                putInt(SnippetConstants.FIELD_STATE, state)
                             }
                     }
                 }
@@ -305,6 +319,18 @@ class BluetoothAdapterSnippet : Snippet {
     @Rpc(description = "Get local Bluetooth public address")
     fun getAddress(): String {
         return bluetoothAdapter.address
+    }
+
+    /** Returns local Bluetooth name. */
+    @Rpc(description = "Get local Bluetooth name")
+    fun getName(): String {
+        return bluetoothAdapter.name
+    }
+
+    /** Sets local Bluetooth name and returns true if successful. */
+    @Rpc(description = "Set local Bluetooth name")
+    fun setName(name: String): Boolean {
+        return bluetoothAdapter.setName(name)
     }
 
     /** Sets device of [address]'s alias name to [aliasName] and return the status. */
@@ -554,6 +580,10 @@ class BluetoothAdapterSnippet : Snippet {
         @RpcOptional scanResponse: AdvertiseData?,
         @RpcOptional periodicAdvertisingParameters: PeriodicAdvertisingParameters?,
         @RpcOptional periodicAdvertisingData: AdvertiseData?,
+        @RpcDefault("0", converter = Utils.IntConverter::class) duration: Int = 0,
+        @RpcDefault("0", converter = Utils.IntConverter::class)
+        maxExtendedAdvertisingEvents: Int = 0,
+        @RpcOptional gattServer: String?,
     ): String = runBlocking {
         val deferred = CompletableDeferred<Unit>()
         val advertisingSetCallback =
@@ -579,11 +609,15 @@ class BluetoothAdapterSnippet : Snippet {
             scanResponse,
             periodicAdvertisingParameters,
             periodicAdvertisingData,
+            duration,
+            maxExtendedAdvertisingEvents,
+            gattServer?.let { BluetoothGattServerSnippet.servers[it] },
             advertisingSetCallback,
+            Handler(context.mainLooper),
         )
 
         withTimeoutOrNull(ADVERTISING_START_TIMEOUT) { deferred.await() }
-            ?: throw RuntimeException("Advertising didn't start after ${ADVERTISING_START_TIMEOUT}")
+            ?: throw RuntimeException("Advertising didn't start after $ADVERTISING_START_TIMEOUT")
         val cookie = UUID.randomUUID().toString()
         advertisingSets[cookie] = advertisingSetCallback
         cookie
@@ -725,6 +759,10 @@ class BluetoothAdapterSnippet : Snippet {
     @Rpc(description = "Is LE Periodic Advertising Supported")
     fun isLePeriodicAdvertisingSupported(): Boolean =
         bluetoothAdapter.isLePeriodicAdvertisingSupported
+
+    /** Returns the supported profiles. */
+    @Rpc(description = "Get supported profiles")
+    fun getSupportedProfiles(): List<Int> = bluetoothAdapter.supportedProfiles
 
     companion object {
         const val TAG = "BluetoothAdapterSnippet"

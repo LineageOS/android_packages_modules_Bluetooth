@@ -145,18 +145,6 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             predicate=lambda e: (e.state in states),
         )
 
-    async def _terminate_connection_from_dut(self) -> None:
-        with self.dut.bl4a.register_callback(_Module.ADAPTER) as adapter_cb:
-            self.logger.info("[DUT] Terminate connection.")
-            self.dut.bt.disconnect(self.ref.address)
-
-            self.logger.info("[DUT] Wait for ACL disconnected.")
-            await adapter_cb.wait_for_event(
-                bl4a_api.AclDisconnected(
-                    address=self.ref.address,
-                    transport=android_constants.Transport.CLASSIC,
-                ),)
-
     async def test_pair_and_connect(self) -> None:
         """Tests HFP connection after pairing.
 
@@ -193,7 +181,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         with self.dut.bl4a.register_callback(_Module.HFP_AG) as ag_cb:
             await self.test_pair_and_connect()
 
-            await self._terminate_connection_from_dut()
+            await self.disconnect_with_check(self.ref.address, android_constants.Transport.CLASSIC)
 
             self.logger.info("[DUT] Reconnect.")
             self.dut.bt.connect(self.ref.address)
@@ -224,7 +212,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         await self.test_pair_and_connect()
 
-        await self._terminate_connection_from_dut()
+        await self.disconnect_with_check(self.ref.address, android_constants.Transport.CLASSIC)
 
         self.logger.info("[REF] Reconnect.")
         dut_ref_acl = await self.ref.device.connect(
@@ -239,11 +227,11 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[REF] Encrypt connection.")
         await dut_ref_acl.encrypt()
 
-        rfcomm_channel = await rfcomm.find_rfcomm_channel_with_uuid(
-            dut_ref_acl, core.BT_HANDSFREE_AUDIO_GATEWAY_SERVICE)
-        if rfcomm_channel is None:
-            self.fail("No HFP RFCOMM channel found on REF.")
-        self.logger.info("[REF] Found HFP RFCOMM channel %s.", rfcomm_channel)
+        self.logger.info("[REF] Discover SDP records.")
+        sdp_records = await hfp_ext.AudioGatewaySdpRecord.find(dut_ref_acl)
+        self.logger.info("[REF] Found SDP records: %s.", sdp_records)
+        self.assertLen(sdp_records, 1)
+        rfcomm_channel = sdp_records[0].rfcomm_channel
 
         self.logger.info("[REF] Open RFCOMM Multiplexer.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
@@ -266,6 +254,48 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Wait for HFP disconnected.")
         await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)
+
+    async def test_sdp_discovery(self) -> None:
+        """Tests SDP discovery from REF.
+
+    Test steps:
+      1. Setup pairing between DUT and REF.
+      2. Discover SDP records from REF.
+      3. Verify SDP records.
+    """
+        ref_acl_connection = await self.classic_connect_and_pair(connect_profiles=False)
+
+        self.logger.info("[REF] Discover SDP records.")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            records = await hfp_ext.AudioGatewaySdpRecord.find(ref_acl_connection)
+            if not records:
+                self.fail("No SDP record found.")
+            self.logger.info("[REF] Found SDP records: %s.", records)
+
+        self.assertLen(records, 1)
+        record = records[0]
+        self.assertGreaterEqual(record.version, hfp.ProfileVersion.V1_6)
+        self.assertContainsSubset(
+            [
+                hfp.AgSdpFeature.THREE_WAY_CALLING,
+                hfp.AgSdpFeature.EC_NR,
+                hfp.AgSdpFeature.VOICE_RECOGNITION_FUNCTION,
+                hfp.AgSdpFeature.IN_BAND_RING_TONE_CAPABILITY,
+                hfp.AgSdpFeature.WIDE_BAND_SPEECH,
+            ],
+            record.supported_features,
+        )
+        if (self.dut.getprop(_PROPERTY_SWB_SUPPORTED) == "true" or
+                self.dut.getprop(android_constants.Property.SW_PATH_ENABLED) == "true"):
+            self.assertIn(
+                hfp.AgSdpFeature.SUPER_WIDE_BAND_SPEED_SPEECH,
+                record.supported_features,
+            )
+        else:
+            self.assertNotIn(
+                hfp.AgSdpFeature.SUPER_WIDE_BAND_SPEED_SPEECH,
+                record.supported_features,
+            )
 
     async def test_reconnect_bt_on_off(self) -> None:
         """Tests HFP connection after BT on/off.
@@ -506,7 +536,12 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         ref_rx_received_buffer = b"".join([
             # Drop header and padding.
-            packet.data[hfp_ext.SCO_H2_HEADER_SIZE:-1] for packet in ref_rx_received_packets
+            packet.data[hfp_ext.SCO_H2_HEADER_SIZE:-1]
+            for packet in ref_rx_received_packets
+            # Filter out invalid packets, or libsbc cannot decode them.
+            if (packet.packet_status == 0 and (
+                len(packet.data) == hfp_ext.ESCO_PARAMETERS_T2_TRANSPARENT.transmit_codec_frame_size
+            ) and (packet.data[:hfp_ext.SCO_H2_HEADER_SIZE] in hfp_ext.SCO_H2_HEADER))
         ])
         self.write_test_output_data("tx.sbc", ref_rx_received_buffer)
         self.write_test_output_data("rx.wav", dut_rx_received_buffer)

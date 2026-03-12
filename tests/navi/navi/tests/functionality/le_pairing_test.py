@@ -548,7 +548,7 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
                 await ref_dut.disconnect()
             case TestVariant.REJECTED:
                 smp_session = self.ref.device.smp_manager.sessions[ref_dut.handle]
-                smp_session.send_pairing_failed(smp.SMP_UNSPECIFIED_REASON_ERROR)
+                smp_session.send_pairing_failed(smp.ErrorCode.UNSPECIFIED_REASON)  # pytype: disable=wrong-arg-types
 
         self.logger.info('[DUT] Check final state.')
         expect_state = (android_constants.BondState.BONDED

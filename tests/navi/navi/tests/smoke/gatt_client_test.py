@@ -51,9 +51,22 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
       4. Discover GATT services from DUT.
       5. Check discovered services.
     """
+
         self.logger.info("[REF] Add GATT service.")
         service_uuid = str(uuid.uuid4())
-        self.ref.device.add_service(gatt.Service(uuid=service_uuid, characteristics=[]))
+        included_service_uuid = str(uuid.uuid4())
+        included_service = gatt.Service(
+            uuid=included_service_uuid,
+            primary=False,
+            characteristics=[],
+        )
+        self.ref.device.add_service(included_service)
+        self.ref.device.add_service(
+            gatt.Service(
+                uuid=service_uuid,
+                characteristics=[],
+                included_services=[included_service],
+            ))
 
         self.logger.info("[REF] Start advertising.")
         await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
@@ -69,8 +82,17 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         services = await gatt_client.discover_services()
 
         self.logger.info("[DUT] Check services.")
-        service_uuids = [service.uuid for service in services]
-        self.assertIn(service_uuid, service_uuids)
+        primary_service = next((service for service in services if service.uuid == service_uuid),
+                               None)
+        if not primary_service:
+            self.fail("Cannot find primary service.")
+
+        self.logger.info("[DUT] Check included services.")
+        self.assertNotEmpty(primary_service.included_services)
+        self.assertEqual(
+            primary_service.included_services[0].type,
+            android_constants.GattServiceType.SECONDARY,
+        )
 
     @navi_test_base.named_parameterized(
         no_requirements=gatt.Characteristic.Permissions.WRITEABLE,
@@ -301,8 +323,12 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
     Test steps:
       1. Connect GATT to REF from DUT.
       2. Discover services from DUT.
-      3. Notify service changed from REF.
-      4. Wait for service changed indication from DUT.
+      3. Add a new GATT service on REF.
+      4. Check services are cached correctly.
+      5. Notify service changed from REF.
+      6. Wait for service changed indication from DUT.
+      7. Re-discover services from DUT.
+      8. Check new service is discovered.
     """
         ref_gatt_service = self.ref.device.gatt_service
         assert isinstance(ref_gatt_service, gatt_service.GenericAttributeProfileService)
@@ -321,7 +347,22 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
         )
 
         self.logger.info("[DUT] Discover services.")
-        await gatt_client.discover_services()
+        services = await gatt_client.discover_services()
+
+        # When service changed characteristic is present, Android should cache
+        # the services and not re-discover them unless service changed indication
+        # is received.
+        self.logger.info("[REF] Add a new GATT service.")
+        new_service = gatt.Service(
+            uuid=str(uuid.uuid4()),
+            characteristics=[],
+        )
+        self.ref.device.add_service(new_service)
+        self.assertCountEqual(
+            services,
+            await gatt_client.discover_services(),
+            "Services are not cached correctly.",
+        )
 
         self.logger.info("[REF] Notify service changed.")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
@@ -337,6 +378,14 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Wait for service changed.")
         await gatt_client.wait_for_event(bl4a_api.GattServiceChanged)
+
+        self.logger.info("[DUT] Re-discover services.")
+        services = await gatt_client.discover_services()
+        self.assertIn(
+            new_service.uuid,
+            (service.uuid for service in services),
+            "New service is not discovered.",
+        )
 
     async def test_reconnect_after_disconnect(self) -> None:
         """Test disconnect connection.

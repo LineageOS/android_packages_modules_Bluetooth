@@ -183,8 +183,8 @@ class HidHeadtrackerTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
         if self.dut.device.adb.getprop(hid.PROPERTY_HID_HOST_SUPPORTED) != "true":
             raise signals.TestAbortClass("HID host is not supported on DUT")
-        if self.dut.getprop(_AndroidProperty.BAP_UNICAST_CLIENT_ENABLED) != "true":
-            raise signals.TestAbortClass("Unicast client is not enabled")
+        if not self.dut.is_le_audio_supported:
+            raise signals.TestAbortClass("[DUT] Unicast client is not enabled")
         if self.dut.getprop("ro.audio.spatializer_enabled") != "true":
             raise signals.TestAbortClass("Spatializer is not enabled")
 

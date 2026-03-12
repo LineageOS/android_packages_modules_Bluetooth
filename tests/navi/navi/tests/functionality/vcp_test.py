@@ -49,10 +49,8 @@ class VcpTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.getprop(_Property.VCP_CONTROLLER_ENABLED) != 'true':
             raise signals.TestAbortClass('VCP Controller is not enabled on DUT.')
 
-        if (self.dut.bt.getSdkVersion() >= 35 and android_constants.AudioDeviceType.BLE_HEADSET
-                not in self.dut.bt.getSupportedAudioDeviceTypes(
-                    android_constants.AudioDeviceRole.OUTPUT)):
-            raise signals.TestAbortClass('Device does not support LE Audio.')
+        if not self.dut.is_le_audio_supported:
+            raise signals.TestAbortClass('[DUT] Device does not support LE Audio.')
 
     async def _check_default_aics_properties(self, aics_cb: bl4a_api.AudioInputControl) -> None:
         """Checks default AICS properties."""
