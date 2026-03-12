@@ -270,7 +270,7 @@ mod test {
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
 
-        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
         let data = vec![1, 2, 3];
@@ -297,7 +297,7 @@ mod test {
         sync_registry.lock().unwrap().active_handles.insert(99);
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
 
-        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
         callbacks.on_periodic_sync_lost(99);
@@ -318,7 +318,7 @@ mod test {
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
 
-        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
         callbacks.on_big_info_report(88, true);
