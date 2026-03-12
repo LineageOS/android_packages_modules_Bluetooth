@@ -50,7 +50,6 @@ class PbapClientAccountAuthenticatorServiceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun bind() {
         val intent = Intent("android.accounts.AccountAuthenticator")
         intent.setClass(context, PbapClientAccountAuthenticatorService::class.java)
