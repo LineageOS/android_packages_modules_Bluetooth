@@ -22,7 +22,8 @@
 #include <log/log_event_list.h>
 #endif  // __ANDROID__
 
-#include "common/strings.h"
+#include <bluetooth/types/string_helpers.h>
+
 #include "hci/hci_status.h"
 
 namespace {

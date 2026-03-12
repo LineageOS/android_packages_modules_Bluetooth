@@ -18,6 +18,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <optional>
 #include <string>
@@ -49,9 +50,25 @@ bool isCallbackThread();
 
 class CallbackEnv {
 public:
-  CallbackEnv(const char* methodName) : mName(methodName) { mCallbackEnv = getCallbackEnv(); }
+  CallbackEnv(const char* methodName) : mName(methodName) {
+    mCallbackEnv = getCallbackEnv();
+    if (!com_android_bluetooth_flags_jni_batch_memory_management()) {
+      return;
+    }
+    log::assert_that(mCallbackEnv != nullptr && isCallbackThread(), "CallbackEnv is not valid");
+    log::assert_that(mCallbackEnv->PushLocalFrame(128) >= 0, "Failed to push local frame");
+  }
 
   ~CallbackEnv() {
+    if (com_android_bluetooth_flags_jni_batch_memory_management()) {
+      if (mCallbackEnv->ExceptionCheck()) {
+        log::error("An exception was thrown by callback '{}'.", mName);
+        jniLogException(mCallbackEnv, ANDROID_LOG_ERROR, LOG_TAG);
+        mCallbackEnv->ExceptionClear();
+      }
+      mCallbackEnv->PopLocalFrame(nullptr);
+      return;
+    }
     if (mCallbackEnv && mCallbackEnv->ExceptionCheck()) {
       log::error("An exception was thrown by callback '{}'.", mName);
       jniLogException(mCallbackEnv, ANDROID_LOG_ERROR, LOG_TAG);
@@ -59,7 +76,11 @@ public:
     }
   }
 
+  // Remove method and all usage when removing jni_batch_memory_management
   bool valid() const {
+    if (com_android_bluetooth_flags_jni_batch_memory_management()) {
+      return true;
+    }
     if (!mCallbackEnv || !isCallbackThread()) {
       log::error("{}: Callback env fail", mName);
       return false;

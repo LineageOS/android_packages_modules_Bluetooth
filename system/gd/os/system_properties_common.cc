@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/string_helpers.h>
+
 #include <string>
 
-#include "common/strings.h"
 #include "os/system_properties.h"
 
 namespace bluetooth {

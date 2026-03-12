@@ -38,9 +38,9 @@
 #endif
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
-#include "common/strings.h"
 #include "devices.h"
 #include "le_audio_log_history.h"
 #include "le_audio_types.h"

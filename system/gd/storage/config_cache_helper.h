@@ -15,14 +15,14 @@
  */
 #pragma once
 
+#include <bluetooth/types/string_helpers.h>
+
 #include <cstdint>
 #include <limits>
 #include <optional>
 #include <type_traits>
 
 #include "common/numbers.h"
-#include "common/strings.h"
-#include "common/type_helper.h"
 #include "hci/enum_helper.h"
 #include "storage/config_cache.h"
 

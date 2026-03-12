@@ -21,6 +21,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/string_helpers.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -43,7 +44,6 @@
 #include "btif/include/btif_profile_storage.h"
 #include "client_parser.h"
 #include "com_android_bluetooth_flags.h"
-#include "common/strings.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/controller.h"
 #include "internal_include/bt_trace.h"

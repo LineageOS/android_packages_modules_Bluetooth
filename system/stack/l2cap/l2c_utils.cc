@@ -2865,8 +2865,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
       l2cu_process_fixed_disc_cback(p_lcb);
       /* BTM SEC will make sure that link is release (probably after pairing is
        * done) */
-      if (com_android_bluetooth_flags_l2c_not_cancel_timeout() &&
-          p_lcb->link_state == LST_CONNECTING) {
+      if (p_lcb->link_state == LST_CONNECTING) {
         // If connecting, trigger alarm to release lcb right now since no callbacks are expected.
         start_timeout = true;
       } else {

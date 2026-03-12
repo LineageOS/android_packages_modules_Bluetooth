@@ -20,6 +20,7 @@
 #include <bind_helpers.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
@@ -39,7 +40,6 @@
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
 #include "bta/le_audio/codec_manager.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "common/strings.h"
 #include "hardware/ble_advertiser.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/le_advertising_manager.h"

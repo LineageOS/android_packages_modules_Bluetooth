@@ -23,6 +23,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
@@ -37,7 +38,6 @@
 #include "bta_gatt_queue.h"
 #include "client_parser.h"
 #include "codec_manager.h"
-#include "common/strings.h"
 #include "device_groups.h"
 #include "devices.h"
 #include "hardware/bt_le_audio.h"

@@ -23,16 +23,6 @@ flag {
 }
 
 flag {
-    name: "map_bmessage_include_newline"
-    namespace: "bluetooth"
-    description: "Do not remove newlines in bmessage"
-    bug: "445825437"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
   name: "message_upgrade"
   namespace: "bluetooth"
   description: "Use new platform APIs for sending text messages via the default messaging app"

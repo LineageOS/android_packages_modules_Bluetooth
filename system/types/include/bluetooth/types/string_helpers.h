@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <bluetooth/log.h>
 #include <limits.h>
 #include <string.h>
 
@@ -30,8 +29,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-
-#include "common/type_helper.h"
 
 namespace bluetooth {
 namespace common {
@@ -96,9 +93,6 @@ std::string ToHexString(InputIt first, InputIt last) {
 // 0xab})
 std::string ToHexString(const std::vector<uint8_t>& value);
 
-// Return true if |str| is a valid hex demical strings contains only hex decimal chars [0-9a-fA-F]
-bool IsValidHexString(const std::string& str);
-
 // Parse |str| into a vector of uint8_t, |str| must contains only hex decimal
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str);
 
@@ -110,32 +104,12 @@ std::string StringTrim(std::string str);
 std::vector<std::string> StringSplit(const std::string& str, const std::string& delim,
                                      size_t max_token = 0);
 
-// Join |strings| into a single string using |delim|
-std::string StringJoin(const std::vector<std::string>& strings, const std::string& delim);
-
 // Various number comparison functions, only base 10 is supported
 std::optional<int64_t> Int64FromString(const std::string& str);
 std::string ToString(int64_t value);
 std::optional<uint64_t> Uint64FromString(const std::string& str);
 std::string ToString(uint64_t value);
-std::optional<bool> BoolFromString(const std::string& str);
 std::string ToString(bool value);
-
-// Migrate this method to std::format when C++20 becomes available
-// printf like formatting to std::string
-// format must contains format information, to print a string use StringFormat("%s", str)
-template <typename... Args>
-std::string StringFormat(const std::string& format, Args... args) {
-  auto size = std::snprintf(nullptr, 0, format.c_str(), args...);
-  log::assert_that(size >= 0, "return value {}, error {}, text '{}'", size, errno, strerror(errno));
-  // Add 1 for terminating null byte
-  std::vector<char> buffer(size + 1);
-  auto actual_size = std::snprintf(buffer.data(), buffer.size(), format.c_str(), args...);
-  log::assert_that(size == actual_size, "asked size {}, actual size {}, error {}, text '{}'", size,
-                   actual_size, errno, strerror(errno));
-  // Exclude the terminating null byte
-  return std::string(buffer.data(), size);
-}
 
 inline std::string StringFormatTime(const std::string& format, const struct std::tm& tm) {
   std::ostringstream os;
@@ -150,7 +124,7 @@ inline std::string StringFormatTimeWithMilliseconds(
   auto millis = time_point.time_since_epoch() / std::chrono::milliseconds(1) % 1000;
   std::tm tm = *calendar_to_tm(&epoch_time);
   std::ostringstream os;
-  os << std::put_time(&tm, format.c_str()) << StringFormat(".%03u", millis);
+  os << std::put_time(&tm, format.c_str()) << std::format(".{:03}", millis);
   return os.str();
 }
 

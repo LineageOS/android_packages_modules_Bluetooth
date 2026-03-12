@@ -250,18 +250,20 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
                     }
                 } else {
+                    /* We want to deactivate other profiles, to avoid potential races in
+                     * the controller. However, HFP cannot be cleared here yet, because
+                     * when HFP device inactivates, and it's saved as active, we will look
+                     * for fallback, potentially activating it again, if it was the newest
+                     * device connected.
+                     */
                     if (Flags.admUseSetActiveDeviceHelpers()) {
                         setA2dpActiveDevice(null, /* stopAudio= */ false);
-                        setHfpActiveDevice(null);
                         setHearingAidActiveDevice(null, /* stopAudio= */ false);
                         setLeAudioActiveDevice(device, /* stopAudio= */ false);
                     } else {
                         if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
                             // TODO:  b/312396770
                             a2dp.get().removeActiveDevice(false);
-                        }
-                        if (headset.isPresent() && headset.get().getActiveDevice() != null) {
-                            headset.get().setActiveDevice(null);
                         }
                         if (hearingAid.isPresent()
                                 && (hearingAid.get().getActiveDevices().get(0) != null

@@ -958,8 +958,7 @@ public class RemoteDevices {
                     return mBatteryLevelFromBatteryService;
                 }
                 // Returns one from BAS to prevent battery level fluctuation.
-                if (Flags.consistentBatteryLevel()
-                        && mLastBatteryLevelFromBatteryService != BATTERY_LEVEL_UNKNOWN) {
+                if (mLastBatteryLevelFromBatteryService != BATTERY_LEVEL_UNKNOWN) {
                     return mLastBatteryLevelFromBatteryService;
                 }
 
@@ -989,8 +988,7 @@ public class RemoteDevices {
                 }
                 mBatteryLevelFromHfp = batteryLevel;
                 // The battery level from HFP is changed, now HFP value is reliable.
-                if (Flags.consistentBatteryLevel()
-                        && mBatteryLevelFromBatteryService == BATTERY_LEVEL_UNKNOWN) {
+                if (mBatteryLevelFromBatteryService == BATTERY_LEVEL_UNKNOWN) {
                     mLastBatteryLevelFromBatteryService = BATTERY_LEVEL_UNKNOWN;
                 }
             }
@@ -1001,9 +999,8 @@ public class RemoteDevices {
                 // Preserve the last battery level to prevent
                 // battery level fluctuation between BAS and HFP.
                 // We can safely reset it if there is no HFP.
-                if (Flags.consistentBatteryLevel()
-                        && (batteryLevel != BATTERY_LEVEL_UNKNOWN
-                                || mBatteryLevelFromHfp == BATTERY_LEVEL_UNKNOWN)) {
+                if (batteryLevel != BATTERY_LEVEL_UNKNOWN
+                        || mBatteryLevelFromHfp == BATTERY_LEVEL_UNKNOWN) {
                     mLastBatteryLevelFromBatteryService = batteryLevel;
                 }
                 mBatteryLevelFromBatteryService = batteryLevel;

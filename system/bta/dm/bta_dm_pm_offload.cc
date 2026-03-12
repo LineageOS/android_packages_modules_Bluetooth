@@ -24,10 +24,12 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <cstdint>
 #include <memory>
 
+#include "bluetooth/types/address.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/sniff_offload/sniff_offload.h"
 #include "bta/dm/sniff_offload/sniff_offload_config_reader.h"
@@ -35,14 +37,12 @@
 #include "bta/dm/sniff_offload/sniff_offload_vsc_sender.h"
 #include "bta/sys/bta_sys.h"
 #include "common/circular_buffer.h"
-#include "common/strings.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_client_interface.h"
-#include "bluetooth/types/address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::shim;

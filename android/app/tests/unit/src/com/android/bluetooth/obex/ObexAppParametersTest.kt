@@ -89,7 +89,6 @@ class ObexAppParametersTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun addToHeaderSet() {
         val length = 4
         val byteArray = byteArrayOf(KEY, length.toByte(), 0x12, 0x34, 0x56, 0x78)

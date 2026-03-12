@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <cstddef>
 #include <cstdio>
@@ -27,7 +28,6 @@
 #include <vector>
 
 #include "common/circular_buffer.h"
-#include "common/strings.h"
 #include "main/shim/dumpsys.h"
 
 using namespace bluetooth;

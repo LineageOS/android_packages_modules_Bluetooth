@@ -19,6 +19,7 @@ static_library("types") {
 
   sources = [
     "src/address.cc",
+    "src/string_helpers.cc",
     "src/uuid.cc",
   ]
 
@@ -31,6 +32,7 @@ if (use.test) {
   executable("net_test_types") {
     sources = [
       "test/address_unittest.cc",
+      "test/string_helpers_test.cc",
       "test/uuid_unittest.cc",
     ]
 

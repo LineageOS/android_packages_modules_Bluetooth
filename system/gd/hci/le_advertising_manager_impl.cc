@@ -16,6 +16,7 @@
 #include "hci/le_advertising_manager_impl.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <atomic>
@@ -23,7 +24,6 @@
 #include <memory>
 #include <mutex>
 
-#include "common/strings.h"
 #include "hardware/ble_advertiser.h"
 #include "hci/controller.h"
 #include "hci/event_checkers.h"

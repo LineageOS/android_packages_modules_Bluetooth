@@ -64,16 +64,6 @@ flag {
 }
 
 flag {
-    name: "gatt_not_send_service_change_indication_iop"
-    namespace: "bluetooth"
-    description: "Do not send service change indication to devices in the interop db"
-    bug: "447013679"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "send_service_changed_indication_upon_reconnection"
     namespace: "bluetooth"
     description: "Send service change indication upon reconnection if required"

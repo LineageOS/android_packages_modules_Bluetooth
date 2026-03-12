@@ -30,7 +30,6 @@ import android.content.AttributionSource
 import android.content.Context
 import android.os.Bundle
 import android.os.ParcelUuid
-import android.os.RemoteException
 import android.os.UserManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -192,7 +191,6 @@ class AdapterServiceBinderTest {
     }
 
     @Test
-    @Throws(RemoteException::class)
     fun requestActivityInfo() {
         val listener = mock<IBluetoothActivityEnergyInfoListener>()
         binder.requestActivityInfo(listener, source)

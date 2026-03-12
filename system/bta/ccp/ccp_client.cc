@@ -19,6 +19,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <list>
@@ -30,7 +31,6 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta_gatt_queue.h"
 #include "ccp/ccp_types.h"
-#include "common/strings.h"
 #include "hardware/bt_le_audio.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"

@@ -24,6 +24,7 @@
 #ifdef __ANDROID__
 #include <cutils/trace.h>
 #endif  // __ANDROID__
+#include <bluetooth/types/string_helpers.h>
 #include <sys/stat.h>
 
 #include <algorithm>
@@ -32,7 +33,6 @@
 #include <sstream>
 
 #include "common/circular_buffer.h"
-#include "common/strings.h"
 #include "hal/snoop_logger_common.h"
 #ifdef __ANDROID__
 #include "hal/snoop_logger_tracing.h"

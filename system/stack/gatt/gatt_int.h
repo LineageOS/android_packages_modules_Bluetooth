@@ -22,6 +22,7 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -30,7 +31,6 @@
 #include <vector>
 
 #include "common/circular_buffer.h"
-#include "common/strings.h"
 #include "hal/gatt_hal.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
