@@ -343,12 +343,6 @@ void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<u
     status = GATTS_HandleValueNotification(conn_id, attr_id, value.size(), value.data());
   }
 
-  /* if over BR_EDR, inform PM for mode change */
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
-    bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
-  }
-
   if (status == GATT_SUCCESS && need_confirm) {
     // in this case we will call p_conf_cb when handling GATTS_REQ_TYPE_CONF
     return;
@@ -435,105 +429,56 @@ void bta_gatts_close(uint16_t conn_id) {
     return;
   }
 
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
-  }
-
   if (p_rcb->p_cback && p_rcb->p_cback->p_close_cb) {
     p_rcb->p_cback->p_close_cb(status);
   }
 }
 
-static tBTA_GATTS_RCB* bta_gatts_get_rcb_and_inform_pm(tCONN_ID conn_id,
-                                                       const RawAddress& remote_bda) {
-  tGATT_IF gatt_if;
-  tBT_TRANSPORT transport;
-  RawAddress unused_bda;
-
-  if (!GATT_GetConnectionInfor(conn_id, &gatt_if, unused_bda, &transport)) {
-    log::error("request received on unknown conn_id=0x{:x}", conn_id);
-    return nullptr;
-  }
-
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
-
-  if (!p_rcb || !p_rcb->p_cback) {
-    log::error("connection request on gatt_if={} is not interested", gatt_if);
-    return nullptr;
-  }
-
-  /* if over BR_EDR, inform PM for mode change */
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
-    bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
-  }
-
-  return p_rcb;
-}
+static tGATT_IF get_gatt_if(tCONN_ID conn_id) { return static_cast<tGATT_IF>(conn_id); }
 
 static void bta_gatts_read_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
                                                 const RawAddress& remote_bda, uint16_t handle,
                                                 uint16_t offset, bool is_long) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_read_characteristic_cb) {
-    p_rcb->p_cback->p_read_characteristic_cb(conn_id, trans_id, remote_bda, handle, offset,
-                                             is_long);
-  }
+  CALL_REG_CB(get_gatt_if(conn_id), p_read_characteristic_cb, conn_id, trans_id, remote_bda, handle,
+              offset, is_long);
 }
 
 static void bta_gatts_read_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
                                             const RawAddress& remote_bda, uint16_t handle,
                                             uint16_t offset, bool is_long) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_read_descriptor_cb) {
-    p_rcb->p_cback->p_read_descriptor_cb(conn_id, trans_id, remote_bda, handle, offset, is_long);
-  }
+  CALL_REG_CB(get_gatt_if(conn_id), p_read_descriptor_cb, conn_id, trans_id, remote_bda, handle,
+              offset, is_long);
 }
 
 static void bta_gatts_write_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
                                                  const RawAddress& remote_bda, uint16_t handle,
                                                  uint16_t offset, bool need_rsp, bool is_prep,
                                                  uint8_t* value, uint16_t len) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_write_characteristic_cb) {
-    p_rcb->p_cback->p_write_characteristic_cb(conn_id, trans_id, remote_bda, handle, offset,
-                                              need_rsp, is_prep, value, len);
-  }
+  CALL_REG_CB(get_gatt_if(conn_id), p_write_characteristic_cb, conn_id, trans_id, remote_bda,
+              handle, offset, need_rsp, is_prep, value, len);
 }
 
 static void bta_gatts_write_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id,
                                              const RawAddress& remote_bda, uint16_t handle,
                                              uint16_t offset, bool need_rsp, bool is_prep,
                                              uint8_t* value, uint16_t len) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_write_descriptor_cb) {
-    p_rcb->p_cback->p_write_descriptor_cb(conn_id, trans_id, remote_bda, handle, offset, need_rsp,
-                                          is_prep, value, len);
-  }
+  CALL_REG_CB(get_gatt_if(conn_id), p_write_descriptor_cb, conn_id, trans_id, remote_bda, handle,
+              offset, need_rsp, is_prep, value, len);
 }
 
 static void bta_gatts_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id,
                                        const RawAddress& remote_bda, tGATT_EXEC_FLAG exec_write) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_exec_write_cb) {
-    p_rcb->p_cback->p_exec_write_cb(conn_id, trans_id, remote_bda, exec_write);
-  }
+  CALL_REG_CB(get_gatt_if(conn_id), p_exec_write_cb, conn_id, trans_id, remote_bda, exec_write);
 }
 
 static void bta_gatts_mtu_changed_cback(tCONN_ID conn_id, const RawAddress& remote_bda,
                                         uint16_t mtu) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_mtu_changed_cb) {
-    p_rcb->p_cback->p_mtu_changed_cb(conn_id, remote_bda, mtu);
-  }
+  CALL_REG_CB(get_gatt_if(conn_id), p_mtu_changed_cb, conn_id, remote_bda, mtu);
 }
 
-static void bta_gatts_conf_cback(tCONN_ID conn_id, uint32_t /*trans_id*/,
-                                 const RawAddress& remote_bda) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
-  if (p_rcb && p_rcb->p_cback->p_conf_cb) {
-    p_rcb->p_cback->p_conf_cb(conn_id, GATT_SUCCESS);
-  }
+static void bta_gatts_conf_cback(tCONN_ID conn_id, uint32_t /* trans_id */,
+                                 const RawAddress& /* remote_bda */) {
+  CALL_REG_CB(get_gatt_if(conn_id), p_conf_cb, conn_id, GATT_SUCCESS);
 }
 
 static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr, tCONN_ID conn_id,
@@ -545,15 +490,6 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr, tCO
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_OK);
   } else {
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, GATT_CONN_OK);
-  }
-
-  /* there is no RM for GATT */
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    if (connected) {
-      bta_sys_conn_open(BTA_ID_GATTS, BTA_ALL_APP_ID, bdaddr);
-    } else {
-      bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, bdaddr);
-    }
   }
 
   if (connected) {
@@ -595,4 +531,29 @@ static void bta_gatts_cong_cback(tCONN_ID conn_id, bool congested) {
 static void bta_gatts_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
                                                         uint32_t session_id, tGATT_STATUS status) {
   CALL_REG_CB(gatt_if, p_characteristics_unoffloaded_cb, conn_id, session_id, status);
+}
+
+static void notify_pm_br_gatt_conn_open(const RawAddress& bda) {
+  bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);
+  bta_sys_conn_open(BTA_ID_GATTS, BTA_ALL_APP_ID, bda);
+}
+
+static void notify_pm_br_gatt_conn_close(const RawAddress& bda) {
+  bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);
+  bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, bda);
+}
+
+static void notify_pm_br_gatt_client_op(const RawAddress& bda) {
+  bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);
+  bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);
+}
+
+static void notify_pm_br_gatt_server_op(const RawAddress& bda) {
+  bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, bda);
+  bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, bda);
+}
+
+void BTA_GATT_Init_gatt_pm_callbacks() {
+  gatt_set_br_pm_callbacks(notify_pm_br_gatt_conn_open, notify_pm_br_gatt_conn_close,
+                           notify_pm_br_gatt_client_op, notify_pm_br_gatt_server_op);
 }

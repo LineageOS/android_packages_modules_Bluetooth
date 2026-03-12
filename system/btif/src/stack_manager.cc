@@ -26,6 +26,7 @@
 #include <cstring>
 
 #include "bta/dm/bta_dm_int.h"
+#include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_ras_api.h"
 #include "bta/sys/bta_sys.h"
 #include "btcore/include/module.h"
@@ -189,6 +190,7 @@ void stack_enable(ProfileStartCallback startProfiles, const std::string local_na
   startProfiles();
 
   bta_sys_init();
+  BTA_GATT_Init_gatt_pm_callbacks();
 
   btif_init_ok();
   BTA_dm_init();

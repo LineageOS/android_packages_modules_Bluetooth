@@ -1211,6 +1211,9 @@ void gatt_tcb_dump(int fd);
 
 void gatt_offload_sessions_dump(int fd);
 
+void gatt_set_br_pm_callbacks(void (*open)(const RawAddress&), void (*close)(const RawAddress&),
+                              void (*client)(const RawAddress&), void (*server)(const RawAddress&));
+
 namespace std {
 template <>
 struct formatter<GattStatus> : enum_formatter<GattStatus> {};

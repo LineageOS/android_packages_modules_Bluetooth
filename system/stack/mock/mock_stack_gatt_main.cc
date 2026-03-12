@@ -80,3 +80,8 @@ void gatt_update_app_use_link_flag(tGATT_IF /* gatt_if */, tGATT_TCB* /* p_tcb *
 void gatt_tcb_dump(int /* fd */) { inc_func_call_count(__func__); }
 
 void gatt_offload_sessions_dump(int /* fd */) { inc_func_call_count(__func__); }
+
+void gatt_set_br_pm_callbacks(void (*)(const RawAddress&), void (*)(const RawAddress&),
+                              void (*)(const RawAddress&), void (*)(const RawAddress&)) {
+  inc_func_call_count(__func__);
+}
