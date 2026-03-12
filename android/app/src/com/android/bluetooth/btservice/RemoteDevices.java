@@ -2111,6 +2111,7 @@ public class RemoteDevices {
 
             Log.w(TAG, "Removing " + device + " on behalf of: " + Arrays.toString(packages));
             mAdapterService.syncPost(() -> mAdapterService.removeBond(device), false);
+            return;
         }
 
         if (!Utils.isAutonomousRepairingSupported()) {
