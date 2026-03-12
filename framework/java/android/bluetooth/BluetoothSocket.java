@@ -38,6 +38,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.modules.utils.build.SdkLevel;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
@@ -1001,10 +1002,9 @@ public final class BluetoothSocket implements Closeable {
         }
         if (ret < 0) {
             mSocketState = SocketState.CLOSED;
-            // TODO: remove strict SDK version check with isAtleastC() once availalble
             if (Flags.makeSocketReadBehaviorConsistent()
                     && CompatChanges.isChangeEnabled(MAKE_SOCKET_READ_BEHAVIOR_CONSISTENT)
-                    && Build.VERSION.SDK_INT >= 37) {
+                    && SdkLevel.isAtLeastC()) {
                 if (DBG) Log.d(TAG, "read(): EOF, returning -1");
                 return -1;
             }
