@@ -153,7 +153,6 @@ static btif_rc_device_cb_t* allocate_dev(
   if (p_dev != nullptr) {
     p_dev->rc_addr = bd_addr;
     p_dev->rc_state = state;
-    p_dev->rc_connected = (state == BTRC_CONNECTION_STATE_CONNECTED);
     p_dev->rc_handle = handle;
     for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
       p_dev->transaction_set.transaction[i].in_use = false;
@@ -186,8 +185,9 @@ static btrc_ctrl_callbacks_t default_btrc_ctrl_callbacks = {
         .passthrough_rsp_cb = [](const RawAddress& /* bd_addr */, int /* id */,
                                  int /* key_state */) { FAIL(); },
         .groupnavigation_rsp_cb = [](int /* id */, int /* key_state */) { FAIL(); },
-        .connection_state_cb = [](bool /* rc_connect */, bool /* bt_connect */,
-                                  const RawAddress& /* bd_addr */) { FAIL(); },
+        .connection_state_cb = [](const RawAddress& /* bd_addr */,
+                                  btrc_connection_state_t /* rc_state */,
+                                  btrc_connection_state_t /* browse_state */) { FAIL(); },
         .getrcfeatures_cb = [](const RawAddress& /* bd_addr */, int /* features */) { FAIL(); },
         .setplayerappsetting_rsp_cb = [](const RawAddress& /* bd_addr */,
                                          uint8_t /* accepted */) { FAIL(); },
@@ -228,8 +228,8 @@ static btrc_ctrl_callbacks_t default_btrc_ctrl_callbacks = {
 static btrc_ctrl_callbacks_t btrc_ctrl_callbacks = default_btrc_ctrl_callbacks;
 
 struct rc_connection_state_cb_t {
-  bool rc_state;
-  bool bt_state;
+  btrc_connection_state_t rc_state;
+  btrc_connection_state_t bt_state;
   RawAddress raw_address;
 };
 
@@ -333,7 +333,7 @@ TEST_F(BtifRcWithCallbacksTest, play_item_cmd_test) {
 
 TEST_F(BtifRcWithCallbacksTest, get_folder_items_cmd_test) {
   btif_rc_device_cb_t* p_dev = allocate_dev(0);
-  p_dev->br_connected = true;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   BtStatus status = bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_folder_items_cmd(
           kDeviceAddress, 0, 0, 0);
   ASSERT_EQ(status, BtifStatus(FAIL));
@@ -341,14 +341,14 @@ TEST_F(BtifRcWithCallbacksTest, get_folder_items_cmd_test) {
 
 TEST_F(BtifRcWithCallbacksTest, set_addressed_player_cmd_test) {
   btif_rc_device_cb_t* p_dev = allocate_dev(0);
-  p_dev->br_connected = true;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   BtStatus status = btif_rc_ctrl_get_interface()->set_addressed_player_cmd(kDeviceAddress, 1);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }
 
 TEST_F(BtifRcWithCallbacksTest, set_browsed_player_cmd_test) {
   btif_rc_device_cb_t* p_dev = allocate_dev(0);
-  p_dev->br_connected = true;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   BtStatus status = btif_rc_ctrl_get_interface()->set_browsed_player_cmd(kDeviceAddress, 1);
   ASSERT_EQ(status, BtifStatus(FAIL));
 }
@@ -361,7 +361,7 @@ TEST_F(BtifRcWithCallbacksTest, handle_rc_ctrl_features) {
   p_dev.peer_tg_features =
           (BTA_AV_FEAT_RCTG | BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCCT | BTA_AV_FEAT_METADATA |
            BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_BROWSE | BTA_AV_FEAT_COVER_ARTWORK);
-  p_dev.rc_connected = true;
+  p_dev.rc_state = BTRC_CONNECTION_STATE_CONNECTED;
 
   bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->handle_rc_ctrl_features(&p_dev);
 
@@ -397,7 +397,7 @@ TEST_F(BtifRcWithCallbacksTest, handle_rc_ctrl_features_coexist_disabled) {
 TEST_F(BtifRcTest, handle_track_change_notification_response) {
   btif_rc_device_cb_t* p_dev =
           allocate_dev(0, kDeviceAddress, BTRC_CONNECTION_STATE_CONNECTED, kRcHandle);
-  p_dev->br_connected = true;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   p_dev->rc_features = {};
   p_dev->rc_cover_art_psm = 0;
   p_dev->rc_volume = 0;
@@ -756,7 +756,6 @@ TEST_F(BtifRcWithCallbacksTest, handle_app_val_response) {
 
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   p_dev->rc_app_settings.attr_index = 0;
   p_dev->rc_app_settings.num_attrs = 1;
   p_dev->rc_app_settings.attrs[0].attr_id = 1;
@@ -791,7 +790,6 @@ TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_null_device) {
 TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_error_status) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   tBTA_AV_META_MSG meta_msg = {
           .rc_handle = kRcHandle,
   };
@@ -806,7 +804,6 @@ TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_error_status) {
 TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_multiple_attrs) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   p_dev->rc_app_settings.attr_index = 0;
   p_dev->rc_app_settings.num_attrs = 2;
   p_dev->rc_app_settings.attrs[0].attr_id = 1;
@@ -830,7 +827,6 @@ TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_multiple_attrs) {
 TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_with_ext_attrs) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   p_dev->rc_app_settings.attr_index = 0;
   p_dev->rc_app_settings.num_attrs = 1;
   p_dev->rc_app_settings.attrs[0].attr_id = 1;
@@ -858,7 +854,6 @@ TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_with_ext_attrs) {
 TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_ext_attrs_only) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   p_dev->rc_app_settings.attr_index = 0;
   p_dev->rc_app_settings.num_attrs = 0;
   p_dev->rc_app_settings.num_ext_attrs = 1;
@@ -884,7 +879,6 @@ TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_ext_attrs_only) {
 TEST_F(BtifRcWithCallbacksTest, handle_app_val_response_multiple_ext_attrs) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   p_dev->rc_app_settings.attr_index = 0;
   p_dev->rc_app_settings.num_attrs = 0;
   p_dev->rc_app_settings.num_ext_attrs = 2;
@@ -916,11 +910,12 @@ protected:
     jni_thread.StartUp();
     g_btrc_connection_state_promise = std::promise<rc_connection_state_cb_t>();
     g_btrc_connection_state_future = g_btrc_connection_state_promise.get_future();
-    btrc_ctrl_callbacks.connection_state_cb = [](bool rc_state, bool bt_state,
-                                                 const RawAddress& bd_addr) {
+    btrc_ctrl_callbacks.connection_state_cb = [](const RawAddress& bd_addr,
+                                                 btrc_connection_state_t rc_state,
+                                                 btrc_connection_state_t browse_state) {
       rc_connection_state_cb_t rc_connection_state = {
               .rc_state = rc_state,
-              .bt_state = bt_state,
+              .bt_state = browse_state,
               .raw_address = bd_addr,
       };
       g_btrc_connection_state_promise.set_value(rc_connection_state);
@@ -929,8 +924,9 @@ protected:
 
   void TearDown() override {
     jni_thread.Suspend();
-    btrc_ctrl_callbacks.connection_state_cb = [](bool /*rc_state*/, bool /*bt_state*/,
-                                                 const RawAddress& /*bd_addr*/) {};
+    btrc_ctrl_callbacks.connection_state_cb = [](const RawAddress& /*bd_addr*/,
+                                                 btrc_connection_state_t /*rc_state*/,
+                                                 btrc_connection_state_t /*browse_state*/) {};
     btif_rc_ctrl_get_interface()->cleanup();
     BtifRcTest::TearDown();
   }
@@ -949,7 +945,6 @@ TEST_F(BtifRcConnectionTest, handle_rc_browse_connect) {
   p_dev->rc_handle = 0;
   p_dev->rc_addr = RawAddress::kEmpty;
   p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
-  p_dev->rc_connected = false;
 
   /* process unit test  handle_rc_browse_connect */
   bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->handle_rc_browse_connect(&browse_data);
@@ -965,7 +960,6 @@ TEST_F(BtifRcConnectionTest, btif_rc_check_pending_cmd) {
   p_dev->rc_handle = 0xff;
   p_dev->rc_addr = kDeviceAddress;
   p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
-  p_dev->rc_connected = true;
   p_dev->launch_cmd_pending |=
           (RC_PENDING_ACT_REG_VOL | RC_PENDING_ACT_GET_CAP | RC_PENDING_ACT_REPORT_CONN);
 
@@ -1000,14 +994,14 @@ TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt) {
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
   p_dev->rc_handle = 0;
   p_dev->rc_addr = RawAddress::kEmpty;
-  p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
-  p_dev->rc_connected = false;
+  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
 
   btif_rc_handler(BTA_AV_RC_OPEN_EVT, &data);
 
-  ASSERT_TRUE(bluetooth::testing::avrc::btif_rc_ctrl_get_interface()
-                      ->get_device_cb(data.rc_open.rc_handle)
-                      ->rc_connected);
+  ASSERT_EQ(bluetooth::testing::avrc::btif_rc_ctrl_get_interface()
+                    ->get_device_cb(data.rc_open.rc_handle)
+                    ->rc_state,
+            BTRC_CONNECTION_STATE_CONNECTED);
   ASSERT_EQ(bluetooth::testing::avrc::btif_rc_ctrl_get_interface()
                     ->get_device_cb(data.rc_open.rc_handle)
                     ->rc_state,
@@ -1041,7 +1035,6 @@ TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt_coexist_disabled) {
   p_dev->rc_handle = 0;
   p_dev->rc_addr = RawAddress::kEmpty;
   p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
-  p_dev->rc_connected = true;
 
   btif_rc_handler(BTA_AV_RC_OPEN_EVT, &data);
   EXPECT_EQ(p_dev->launch_cmd_pending, 0);
@@ -1050,7 +1043,7 @@ TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt_coexist_disabled) {
   EXPECT_EQ(p_dev->rc_addr, RawAddress::kEmpty);
 }
 
-TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt_rc_connected) {
+TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt_rc_state_connected) {
   btrc_ctrl_callbacks.get_cover_art_psm_cb = [](const RawAddress& /* bd_addr */,
                                                 const uint16_t /* psm */) {};
   btrc_ctrl_callbacks.getrcfeatures_cb = [](const RawAddress& /* bd_addr */, int /* features */) {};
@@ -1073,8 +1066,7 @@ TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt_rc_connected) {
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
   p_dev->rc_handle = 0;
   p_dev->rc_addr = RawAddress::kEmpty;
-  p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
-  p_dev->rc_connected = true;
+  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
 
   btif_rc_handler(BTA_AV_RC_OPEN_EVT, &data);
   // no check as function just returns
@@ -1107,12 +1099,11 @@ TEST_F(BtifTrackChangeCBTest, handle_get_metadata_attr_response) {
   // Setup an already connected device
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = true;
-  p_dev->br_connected = false;
+  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
+  p_dev->br_state = BTRC_CONNECTION_STATE_DISCONNECTED;
   p_dev->rc_handle = kRcHandle;
   p_dev->rc_features = {};
   p_dev->rc_cover_art_psm = 0;
-  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
   p_dev->rc_addr = kDeviceAddress;
   p_dev->rc_volume = 0;
   p_dev->rc_vol_label = 0;
@@ -1177,7 +1168,6 @@ TEST_F(BtifRcConnectionTest, bt_av_rc_close_evt) {
   btif_rc_handler(BTA_AV_RC_CLOSE_EVT, &close_data);
 
   // Verify disconnected state
-  ASSERT_FALSE(p_dev->rc_connected);
   ASSERT_EQ(p_dev->rc_state, BTRC_CONNECTION_STATE_DISCONNECTED);
 
   // Verify callback
@@ -1315,9 +1305,10 @@ protected:
                                                  uint8_t count) {
       g_get_folder_items_promise.set_value({bd_addr, status, count});
     };
-    btrc_ctrl_callbacks.connection_state_cb = [](bool rc_state, bool bt_state,
-                                                 const RawAddress& bd_addr) {
-      g_btrc_connection_state_promise.set_value({rc_state, bt_state, bd_addr});
+    btrc_ctrl_callbacks.connection_state_cb = [](const RawAddress& bd_addr,
+                                                 btrc_connection_state_t rc_state,
+                                                 btrc_connection_state_t browse_state) {
+      g_btrc_connection_state_promise.set_value({rc_state, browse_state, bd_addr});
     };
     btrc_ctrl_callbacks.setplayerappsetting_rsp_cb = [](const RawAddress& bd_addr,
                                                         uint8_t accepted) {
@@ -1367,7 +1358,8 @@ protected:
     btrc_ctrl_callbacks.get_folder_items_cb =
             [](const RawAddress& /* bd_addr */, btrc_status_t /* status */,
                const btrc_folder_items_t* /* folder_items */, uint8_t /* count */) {};
-    btrc_ctrl_callbacks.connection_state_cb = [](bool, bool, const RawAddress&) {};
+    btrc_ctrl_callbacks.connection_state_cb = [](const RawAddress&, btrc_connection_state_t,
+                                                 btrc_connection_state_t) {};
     btrc_ctrl_callbacks.setplayerappsetting_rsp_cb = [](const RawAddress&, uint8_t) {};
     btrc_ctrl_callbacks.change_folder_path_cb = [](const RawAddress&, uint32_t) {};
     btrc_ctrl_callbacks.set_browsed_player_cb = [](const RawAddress&, uint8_t, uint8_t) {};
@@ -1624,7 +1616,6 @@ TEST_F(BtifRcHandlerTest, bt_av_rc_browse_open_evt) {
   p_dev->rc_handle = 0;
   p_dev->rc_addr = RawAddress::kEmpty;
   p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
-  p_dev->rc_connected = false;
 
   btif_rc_handler(BTA_AV_RC_BROWSE_OPEN_EVT, &data);
   ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(2)));
@@ -1965,8 +1956,6 @@ TEST_F(BtifRcHandlerTest, handle_app_cur_val_response_success) {
   auto future = g_playerapplicationsetting_changed_promise.get_future();
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_APP_SETTING setting = {.attr_id = 1, .attr_val = 2};
   tAVRC_GET_CUR_APP_VALUE_RSP rsp = {.status = AVRC_STS_NO_ERROR, .num_val = 1, .p_vals = &setting};
@@ -1988,7 +1977,6 @@ TEST_F(BtifRcHandlerTest, handle_app_cur_val_response_error_status) {
 TEST_F(BtifRcHandlerTest, handle_app_attr_txt_response_success) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   p_dev->rc_app_settings.num_ext_attrs = 1;
   p_dev->rc_app_settings.ext_attrs[0].attr_id = 1;
   p_dev->rc_app_settings.ext_attrs[0].num_val = 1;
@@ -2008,7 +1996,6 @@ TEST_F(BtifRcHandlerTest, handle_app_attr_txt_response_error_status) {
                                                        btrc_player_app_ext_attr_t*) {};
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_GET_APP_ATTR_TXT_RSP rsp = {.status = AVRC_STS_INTERNAL_ERR};
   bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->handle_app_attr_txt_response(&meta_msg,
@@ -2033,8 +2020,6 @@ TEST_F(BtifRcHandlerTest, handle_set_addressed_player_response_success) {
   auto future = g_set_addressed_player_promise.get_future();
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_RSP rsp = {.status = AVRC_STS_NO_ERROR};
@@ -2049,8 +2034,6 @@ TEST_F(BtifRcHandlerTest, handle_set_addressed_player_response_success) {
 TEST_F(BtifRcHandlerTest, handle_set_addressed_player_response_error_handle) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
   tBTA_AV_META_MSG meta_msg = {.rc_handle = 0};
   tAVRC_RSP rsp = {.status = AVRC_STS_NO_ERROR};
   bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->handle_set_addressed_player_response(
@@ -2060,8 +2043,6 @@ TEST_F(BtifRcHandlerTest, handle_set_addressed_player_response_error_handle) {
 TEST_F(BtifRcHandlerTest, handle_set_addressed_player_response_error) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_RSP rsp = {.status = AVRC_STS_INTERNAL_ERR};
@@ -2072,8 +2053,6 @@ TEST_F(BtifRcHandlerTest, handle_set_addressed_player_response_error) {
 TEST_F(BtifRcHandlerTest, handle_change_path_response_error_handle) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = 0};
   tAVRC_CHG_PATH_RSP rsp = {.status = AVRC_STS_NO_ERROR};
@@ -2086,8 +2065,6 @@ TEST_F(BtifRcHandlerTest, handle_change_path_response_success) {
   auto future = g_change_folder_path_promise.get_future();
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_CHG_PATH_RSP rsp = {.status = AVRC_STS_NO_ERROR, .num_items = 1};
@@ -2103,8 +2080,6 @@ TEST_F(BtifRcHandlerTest, handle_change_path_response_success) {
 TEST_F(BtifRcHandlerTest, handle_change_path_response_error) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_CHG_PATH_RSP rsp = {.status = AVRC_STS_INTERNAL_ERR};
@@ -2117,8 +2092,6 @@ TEST_F(BtifRcHandlerTest, handle_set_browsed_player_success) {
   auto future = g_set_browsed_player_promise.get_future();
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_SET_BR_PLAYER_RSP rsp = {.status = AVRC_STS_NO_ERROR, .num_items = 1, .folder_depth = 1};
@@ -2135,8 +2108,6 @@ TEST_F(BtifRcHandlerTest, handle_set_browsed_player_success) {
 TEST_F(BtifRcHandlerTest, handle_set_browsed_player_err_handle) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = 0};
   tAVRC_SET_BR_PLAYER_RSP rsp = {.status = AVRC_STS_NO_ERROR, .num_items = 1, .folder_depth = 1};
@@ -2147,8 +2118,6 @@ TEST_F(BtifRcHandlerTest, handle_set_browsed_player_err_handle) {
 TEST_F(BtifRcHandlerTest, handle_set_browsed_player_error) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_SET_BR_PLAYER_RSP rsp = {
@@ -2191,8 +2160,6 @@ TEST_F(BtifRcHandlerTest, handle_get_statusplay) {
 
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_GET_PLAY_STATUS_RSP rsp = {.status = AVRC_STS_NO_ERROR,
                                    .song_len = 1,
@@ -2219,8 +2186,6 @@ TEST_F(BtifRcHandlerTest, handle_get_folder_items_response_error_status_test) {
 
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
   tAVRC_GET_ITEMS_RSP rsp = {.status = AVRC_STS_INTERNAL_ERR};
@@ -2246,8 +2211,6 @@ TEST_F(BtifRcHandlerTest, handle_get_folder_items_response_success_zero_items_te
 
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
   p_dev->rc_features = 0;  // No app setting feature
 
   tBTA_AV_META_MSG meta_msg = {.rc_handle = kRcHandle};
@@ -2303,7 +2266,7 @@ TEST_F(BtifRcWithCallbacksTest, send_passthrough_cmd_test) {
 TEST_F(BtifRcWithCallbacksTest, change_folder_path_cmd_test) {
   btif_rc_device_cb_t* p_dev =
           allocate_dev(0, kDeviceAddress, BTRC_CONNECTION_STATE_CONNECTED, kRcHandle);
-  p_dev->br_connected = true;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   // Clear transactions
   for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
     p_dev->transaction_set.transaction[i].in_use = false;
@@ -2318,7 +2281,7 @@ TEST_F(BtifRcWithCallbacksTest, change_folder_path_cmd_test) {
 TEST_F(BtifRcWithCallbacksTest, change_folder_path_cmd_not_ready_test) {
   btif_rc_device_cb_t* p_dev =
           allocate_dev(0, kDeviceAddress, BTRC_CONNECTION_STATE_CONNECTED, kRcHandle);
-  p_dev->br_connected = false;  // Not ready for browsing
+  p_dev->br_state = BTRC_CONNECTION_STATE_DISCONNECTED;  // Not ready for browsing
 
   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0, 1};
   BtStatus status =
@@ -2329,7 +2292,6 @@ TEST_F(BtifRcWithCallbacksTest, change_folder_path_cmd_not_ready_test) {
 TEST_F(BtifRcTest, btif_rc_get_connected_peer_handle_success) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = true;
   p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
   p_dev->rc_addr = kDeviceAddress;
   p_dev->rc_handle = kRcHandle;
@@ -2340,7 +2302,7 @@ TEST_F(BtifRcTest, btif_rc_get_connected_peer_handle_success) {
 TEST_F(BtifRcTest, btif_rc_get_connected_peer_handle_not_found) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = false;
+  p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
   RawAddress unknown_address = RawAddress("de:ad:be:ef:12:34");
   ASSERT_EQ(btif_rc_get_connected_peer_handle(unknown_address), 0xFF);
 }
@@ -2468,9 +2430,6 @@ TEST_F(BtifRcTest, btif_debug_rc_dump_test) {
 TEST_F(BtifRcWithCallbacksTest, register_for_event_notification_test) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = true;
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
   // Clear transactions
   for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
     p_dev->transaction_set.transaction[i].in_use = false;
@@ -2498,9 +2457,6 @@ TEST_F(BtifRcHandlerTest, clear_cmd_timeout_test) {
 TEST_F(BtifRcWithCallbacksTest, list_player_app_setting_attrib_cmd_test) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = true;
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
   // Clear transactions
   for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
     p_dev->transaction_set.transaction[i].in_use = false;
@@ -2552,11 +2508,7 @@ TEST_F(BtifRcWithCallbacksTest, get_playback_state_cmd_test) {
 TEST_F(BtifRcWithCallbacksTest, get_now_playing_list_cmd_test) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = true;
-  p_dev->br_connected = true;
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
-  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   // Clear transactions
   for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
     p_dev->transaction_set.transaction[i].in_use = false;
@@ -2570,11 +2522,7 @@ TEST_F(BtifRcWithCallbacksTest, get_now_playing_list_cmd_test) {
 TEST_F(BtifRcWithCallbacksTest, get_folder_list_cmd_test) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
-  p_dev->rc_connected = true;
-  p_dev->br_connected = true;
-  p_dev->rc_handle = kRcHandle;
-  p_dev->rc_addr = kDeviceAddress;
-  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
+  p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
   // Clear transactions
   for (int i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
     p_dev->transaction_set.transaction[i].in_use = false;

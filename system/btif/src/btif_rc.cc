@@ -124,6 +124,11 @@ static std::string dump_peer_features(const uint16_t feats);
 /*****************************************************************************
  *  Static variables
  *****************************************************************************/
+constexpr btrc_connection_state_t kRcIsConnected = BTRC_CONNECTION_STATE_CONNECTED;
+constexpr btrc_connection_state_t kRcIsDisconnected = BTRC_CONNECTION_STATE_DISCONNECTED;
+constexpr btrc_connection_state_t kBrowseIsConnected = BTRC_CONNECTION_STATE_CONNECTED;
+constexpr btrc_connection_state_t kBrowseIsDisconnected = BTRC_CONNECTION_STATE_DISCONNECTED;
+
 static rc_cb_t btif_rc_cb;
 static btrc_ctrl_callbacks_t* bt_rc_ctrl_callbacks = NULL;
 
@@ -182,10 +187,10 @@ static btif_rc_device_cb_t* alloc_device() {
 
 static void dealloc_device(btif_rc_device_cb_t* p_dev) {
   CHECK(p_dev != nullptr);
-  p_dev->rc_connected = false;
   p_dev->rc_handle = 0;
   p_dev->rc_features = 0;
   p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
+  p_dev->br_state = BTRC_CONNECTION_STATE_DISCONNECTED;
   p_dev->rc_addr = RawAddress::kEmpty;
   p_dev->rc_volume = MAX_VOLUME;
   p_dev->rc_vol_label = MAX_LABEL;
@@ -200,7 +205,6 @@ static void initialize_device(btif_rc_device_cb_t* p_dev) {
   }
 
   dealloc_device(p_dev);
-  p_dev->br_connected = false;
   p_dev->rc_cover_art_psm = 0;
   for (int i = 0; i < MAX_CMD_QUEUE_LEN; ++i) {
     p_dev->rc_pdu_info[i].ctype = 0;
@@ -388,11 +392,12 @@ void btif_rc_check_pending_cmd(const RawAddress& peer_address) {
   }
 
   log::verbose(
-          "launch_cmd_pending={}, rc_connected={}, peer_ct_features=0x{:x}, "
+          "launch_cmd_pending={}, rc_state={}, peer_ct_features=0x{:x}, "
           "peer_tg_features=0x{:x}",
-          p_dev->launch_cmd_pending, p_dev->rc_connected, p_dev->peer_ct_features,
+          p_dev->launch_cmd_pending, p_dev->rc_state, p_dev->peer_ct_features,
           p_dev->peer_tg_features);
-  if (p_dev->launch_cmd_pending && p_dev->rc_connected) {
+
+  if (p_dev->launch_cmd_pending && p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED) {
     if ((p_dev->launch_cmd_pending & RC_PENDING_ACT_REG_VOL) &&
         btif_av_peer_is_sink(p_dev->rc_addr)) {
       if (bluetooth::avrcp::AvrcpService::Get() != nullptr) {
@@ -407,8 +412,8 @@ void btif_rc_check_pending_cmd(const RawAddress& peer_address) {
     if ((p_dev->launch_cmd_pending & RC_PENDING_ACT_REPORT_CONN) &&
         btif_av_peer_is_source(p_dev->rc_addr)) {
       if (bt_rc_ctrl_callbacks != NULL) {
-        do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, true, false,
-                                        p_dev->rc_addr));
+        do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, p_dev->rc_addr,
+                                        kRcIsConnected, kBrowseIsDisconnected));
       }
     }
   }
@@ -445,12 +450,12 @@ static void handle_rc_browse_connect(tBTA_AV_RC_BROWSE_OPEN* p_rc_br_open) {
    * to a browse when not connected to the control channel over AVRCP is
    * probably not preferred anyways. */
   if (p_rc_br_open->status == BTA_AV_SUCCESS) {
-    p_dev->br_connected = true;
+    p_dev->br_state = BTRC_CONNECTION_STATE_CONNECTED;
     if (btif_av_src_sink_coexist_enabled()) {
       if (btif_av_peer_is_connected_source(p_dev->rc_addr)) {
         if (bt_rc_ctrl_callbacks != NULL) {
-          do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, true, true,
-                                          p_dev->rc_addr));
+          do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, p_dev->rc_addr,
+                                          kRcIsConnected, kBrowseIsConnected));
         }
       } else {
         p_dev->launch_cmd_pending |= RC_PENDING_ACT_REPORT_CONN;
@@ -458,8 +463,8 @@ static void handle_rc_browse_connect(tBTA_AV_RC_BROWSE_OPEN* p_rc_br_open) {
       }
     } else {
       if (bt_rc_ctrl_callbacks != NULL) {
-        do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, true, true,
-                                        p_dev->rc_addr));
+        do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, p_dev->rc_addr,
+                                        kRcIsConnected, kBrowseIsConnected));
       } else {
         log::warn("bt_rc_ctrl_callbacks is null.");
       }
@@ -492,7 +497,7 @@ static void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
   }
 
   // check if already some RC is connected
-  if (p_dev->rc_connected) {
+  if (p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED) {
     log::error("Got RC OPEN in connected state, Connected RC: {} and Current RC: {}",
                p_dev->rc_handle, p_rc_open->rc_handle);
     if (p_dev->rc_handle != p_rc_open->rc_handle && p_dev->rc_addr != p_rc_open->peer_addr) {
@@ -515,7 +520,6 @@ static void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
           p_rc_open->peer_features, p_dev->rc_features, p_dev->peer_ct_features,
           p_dev->peer_tg_features, p_dev->rc_cover_art_psm);
 
-  p_dev->rc_connected = true;
   p_dev->rc_handle = p_rc_open->rc_handle;
   p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
 
@@ -527,8 +531,8 @@ static void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
     return;
   }
   if (bt_rc_ctrl_callbacks != NULL) {
-    do_in_jni_thread(
-            base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, true, false, p_dev->rc_addr));
+    do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, p_dev->rc_addr,
+                                    kRcIsConnected, kBrowseIsDisconnected));
     /* report connection state if remote device is AVRCP target */
     handle_rc_ctrl_features(p_dev);
 
@@ -563,8 +567,8 @@ static void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
 
   /* Report connection state if device is AVRCP target */
   if (bt_rc_ctrl_callbacks != NULL) {
-    do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, false, false,
-                                    p_dev->rc_addr));
+    do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, p_dev->rc_addr,
+                                    kRcIsDisconnected, kBrowseIsDisconnected));
   }
 
   // We'll re-initialize the device state back to what it looked like before
@@ -716,7 +720,7 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
       p_dev->peer_tg_features = p_data->rc_feat.peer_tg_features;
       p_dev->rc_features = p_data->rc_feat.peer_features;
 
-      if ((p_dev->rc_connected) && (bt_rc_ctrl_callbacks != NULL)) {
+      if ((p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED) && (bt_rc_ctrl_callbacks != NULL)) {
         handle_rc_ctrl_features(p_dev);
       }
     } break;
@@ -730,7 +734,7 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
       }
 
       p_dev->rc_cover_art_psm = p_data->rc_cover_art_psm.cover_art_psm;
-      if ((p_dev->rc_connected) && (bt_rc_ctrl_callbacks != NULL)) {
+      if ((p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED) && (bt_rc_ctrl_callbacks != NULL)) {
         handle_rc_ctrl_psm(p_dev);
       }
     } break;
@@ -776,7 +780,8 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
 bool btif_rc_is_connected_peer(const RawAddress& peer_addr) {
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     btif_rc_device_cb_t* p_dev = get_connected_device(idx);
-    if (p_dev != NULL && p_dev->rc_connected && peer_addr == p_dev->rc_addr) {
+    if (p_dev != NULL && p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED &&
+        peer_addr == p_dev->rc_addr) {
       return true;
     }
   }
@@ -2354,12 +2359,11 @@ static void handle_avk_rc_metamsg_cmd(tBTA_AV_META_MSG* pmeta_msg) {
  *
  **************************************************************************/
 static void reset_device(btif_rc_device_cb_t& dev) {
-  dev.rc_connected = {};
-  dev.br_connected = {};
   dev.rc_handle = {};
   dev.rc_features = {};
   dev.rc_cover_art_psm = {};
   dev.rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
+  dev.br_state = BTRC_CONNECTION_STATE_DISCONNECTED;
   dev.rc_addr = RawAddress::kEmpty;
   for (int i = 0; i < MAX_CMD_QUEUE_LEN; ++i) {
     dev.rc_pdu_info[i] = {};
@@ -2904,7 +2908,7 @@ static BtStatus get_metadata_attribute_cmd(uint8_t num_attribute, const uint32_t
   log::verbose("num_attribute: {} attribute_id: {}", num_attribute, p_attr_ids[0]);
 
   // If browsing is connected then send the command out that channel
-  if (p_dev->br_connected) {
+  if (p_dev->br_state == BTRC_CONNECTION_STATE_CONNECTED) {
     return get_item_attribute_cmd(p_dev->rc_playing_uid, AVRC_SCOPE_NOW_PLAYING, num_attribute,
                                   p_attr_ids, p_dev);
   }
@@ -3677,8 +3681,10 @@ void btif_debug_rc_dump(int fd) {
     if (p_dev->rc_state != BTRC_CONNECTION_STATE_DISCONNECTED) {
       dprintf(fd, "    %s:\n", p_dev->rc_addr.ToRedactedStringForLogging().c_str());
 
-      dprintf(fd, "      Control: %s\n", p_dev->rc_connected ? "connected" : "disconnected");
-      dprintf(fd, "      Browse: %s\n", p_dev->br_connected ? "connected" : "disconnected");
+      dprintf(fd, "      Control: %s\n",
+              (p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED) ? "connected" : "disconnected");
+      dprintf(fd, "      Browse: %s\n",
+              (p_dev->br_state == BTRC_CONNECTION_STATE_CONNECTED) ? "connected" : "disconnected");
       dprintf(fd, "      Cover Art PSM: %i\n", p_dev->rc_cover_art_psm);
 
       dprintf(fd, "      Peer Target Features:\n%s",
