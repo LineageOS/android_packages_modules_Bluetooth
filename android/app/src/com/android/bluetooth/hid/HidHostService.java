@@ -634,9 +634,7 @@ public class HidHostService extends ConnectableProfile {
             }
         }
 
-        if (Flags.hidDontReconnectOnUhidTimeout()
-                && state == STATE_DISCONNECTED
-                && status == BTHH_ERR_TOD_UNSPT) {
+        if (state == STATE_DISCONNECTED && status == BTHH_ERR_TOD_UNSPT) {
             Log.w(
                     TAG,
                     "handleMessageConnectStateChanged: Disabling HID connection for unsupported"

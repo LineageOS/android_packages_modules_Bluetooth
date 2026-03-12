@@ -16,14 +16,11 @@
 
 package com.android.bluetooth.btservice
 
-import android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE
-import android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothProfile
 import android.hardware.devicestate.DeviceStateManager
-import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -46,7 +43,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
@@ -100,41 +96,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
-    fun testSuspendWithoutFlagSuspendDiscoverability() {
-        doReturn(SCAN_MODE_CONNECTABLE).whenever(adapterService).scanMode
-        adapterSuspend.handleSuspend(true)
-
-        verify(adapterService).setScanMode(eq(SCAN_MODE_NONE), eq("handleSuspend"))
-        if (!Flags.leHidConnectionPolicySuspend()) {
-            verify(adapterNativeInterface).setDefaultEventMaskExcept(anyLong(), anyLong())
-            verify(adapterNativeInterface).disconnectAllAcls()
-            verify(adapterNativeInterface).clearFilterAcceptList()
-        } else {
-            verify(adapterNativeInterface).setSuspendState(true)
-        }
-        verify(adapterNativeInterface).clearEventFilter()
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
-    fun testResumeWithoutFlagSuspendDiscoverability() {
-        doReturn(SCAN_MODE_NONE).whenever(adapterService).scanMode
-        adapterSuspend.setLastScanModeForTest(SCAN_MODE_CONNECTABLE)
-        adapterSuspend.handleResume()
-
-        if (!Flags.leHidConnectionPolicySuspend()) {
-            verify(adapterNativeInterface).setDefaultEventMaskExcept(0, 0)
-            verify(adapterNativeInterface).restoreFilterAcceptList()
-        } else {
-            verify(adapterNativeInterface).setSuspendState(false)
-        }
-        verify(adapterNativeInterface).clearEventFilter()
-        verify(adapterService).setScanMode(eq(SCAN_MODE_CONNECTABLE), eq("handleResume"))
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
     fun testSuspendWithFlagSuspendDiscoverability() {
         adapterSuspend.handleSuspend(true)
 
@@ -150,7 +111,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
     fun testResumeWithFlagSuspendDiscoverability() {
         adapterSuspend.handleResume()
 
@@ -186,7 +146,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun testAdvertisementPauseAndResume() {
         adapterSuspend.handleSuspend(true)
         verify(advertiseManager).enterSuspend()
@@ -195,7 +154,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun testTwoTasksDisconnectionThenAdvertisement() {
         val audioDevices = listOf(bluetoothDevice)
         doReturn(audioDevices)
@@ -220,7 +178,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun testTwoTasksAdvertisementThenDisconnection() {
         val audioDevices = listOf(bluetoothDevice)
         doReturn(audioDevices)
