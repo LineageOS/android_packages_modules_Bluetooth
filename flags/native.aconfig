@@ -2,6 +2,16 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "jni_batch_memory_management"
+    namespace: "bluetooth"
+    description: "jni offer PushLocalFrame/PopLocalFrame to batch memory management"
+    bug: "491599972"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "replace_message_loop_thread_with_gd_handler"
     namespace: "bluetooth"
     description: "Use GD Handler and Reactor Thread instead of MessageLoopThread in legacy stack"
