@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#include "common/strings.h"
-
-#include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include <algorithm>
 #include <charconv>
@@ -46,17 +44,11 @@ std::string ToHexString(const std::vector<uint8_t>& value) {
   return ToHexString(value.begin(), value.end());
 }
 
-bool IsValidHexString(const std::string& str) {
-  return std::find_if_not(str.begin(), str.end(), IsHexDigit{}) == str.end();
-}
-
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
   if (str.size() % 2 != 0) {
-    log::info("str size is not divisible by 2, size is {}", str.size());
     return std::nullopt;
   }
   if (std::find_if_not(str.begin(), str.end(), IsHexDigit{}) != str.end()) {
-    log::info("value contains none hex digit");
     return std::nullopt;
   }
   std::vector<uint8_t> value;
@@ -65,7 +57,6 @@ std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
     uint8_t v = 0;
     auto ret = std::from_chars(str.c_str() + i, str.c_str() + i + 2, v, 16);
     if (std::make_error_code(ret.ec)) {
-      log::info("failed to parse hex char at index {}", i);
       return std::nullopt;
     }
     value.push_back(v);
@@ -81,7 +72,9 @@ std::string StringTrim(std::string str) {
 
 std::vector<std::string> StringSplit(const std::string& str, const std::string& delim,
                                      size_t max_token) {
-  log::assert_that(!delim.empty(), "delim cannot be empty");
+  if (delim.empty()) {
+    std::abort();
+  }
   std::vector<std::string> tokens;
   // Use std::string::find and std::string::substr to avoid copying str into a stringstream
   std::string::size_type starting_index = 0;
@@ -97,17 +90,6 @@ std::vector<std::string> StringSplit(const std::string& str, const std::string& 
     tokens.push_back(str.substr(starting_index));
   }
   return tokens;
-}
-
-std::string StringJoin(const std::vector<std::string>& strings, const std::string& delim) {
-  std::stringstream ss;
-  for (auto it = strings.begin(); it != strings.end(); it++) {
-    ss << *it;
-    if (std::next(it) != strings.end()) {
-      ss << delim;
-    }
-  }
-  return ss.str();
 }
 
 std::optional<int64_t> Int64FromString(const std::string& str) {
@@ -129,18 +111,6 @@ std::optional<uint64_t> Uint64FromString(const std::string& str) {
 }
 
 std::string ToString(uint64_t value) { return std::to_string(value); }
-
-std::optional<bool> BoolFromString(const std::string& str) {
-  if (str == "true") {
-    return true;
-  } else if (str == "false") {
-    return false;
-  } else {
-    log::info("string '{}' is neither true nor false", str);
-    return std::nullopt;
-  }
-}
-
 std::string ToString(bool value) { return value ? "true" : "false"; }
 
 }  // namespace common

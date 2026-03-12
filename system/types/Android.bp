@@ -17,6 +17,7 @@ cc_library_static {
     ],
     srcs: [
         "src/address.cc",
+        "src/string_helpers.cc",
         "src/uuid.cc",
     ],
     export_include_dirs: [
@@ -53,6 +54,7 @@ cc_test {
         "test/address_unittest.cc",
         "test/ble_address_with_type_unittest.cc",
         "test/bt_name_test.cc",
+        "test/string_helpers_test.cc",
         "test/uuid_unittest.cc",
     ],
     shared_libs: ["liblog"],

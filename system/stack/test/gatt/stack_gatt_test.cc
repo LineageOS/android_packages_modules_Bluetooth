@@ -15,6 +15,7 @@
  */
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
@@ -23,10 +24,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <memory>
 #include <string>
 
-#include "common/strings.h"
 #include "gd/os/rand.h"
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
@@ -117,7 +118,7 @@ TEST_F(StackGattTest, stack_AppRegister_Deregister) {
   tGATT_IF apps[GATT_MAX_APPS - 1];
 
   for (int i = 0; i < GATT_MAX_APPS - 1; i++) {
-    std::string name = bluetooth::common::StringFormat("name%02d", i);
+    std::string name = std::format("name{:02}", i);
 
     bluetooth::Uuid uuid = bluetooth::Uuid::From128BitBE(
             bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());

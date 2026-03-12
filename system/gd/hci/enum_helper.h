@@ -15,9 +15,10 @@
  */
 #pragma once
 
+#include <bluetooth/types/string_helpers.h>
+
 #include <type_traits>
 
-#include "common/strings.h"
 #include "hci/hci_packets.h"
 
 // Define new enums or parsers for existing enums

@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/types/string_helpers.h>
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -23,7 +25,6 @@
 #include <optional>
 #include <string>
 
-#include "common/strings.h"
 #include "packet/custom_field_fixed_size_interface.h"
 
 namespace bluetooth {

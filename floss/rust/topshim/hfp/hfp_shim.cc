@@ -18,7 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
-#include <common/strings.h>
+#include <bluetooth/types/string_helpers.h>
 #include <device/include/interop.h>
 #include <hardware/bt_hf.h>
 

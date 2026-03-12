@@ -19,6 +19,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/string_helpers.h>
 #include <string.h>
 
 #include <cctype>
@@ -29,7 +30,6 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta_ag_api.h"
 #include "btif_status.h"
-#include "common/strings.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_hf.h"
 #include "osi/include/alarm.h"

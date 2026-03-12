@@ -22,6 +22,7 @@
 #include <hardware/audio.h>
 #endif
 
+#include <bluetooth/types/string_helpers.h>
 #include <hardware/bt_le_audio.h>
 
 #include <bitset>
@@ -30,7 +31,6 @@
 
 #include "audio_hal_client/audio_hal_client.h"
 #include "bta_groups.h"
-#include "common/strings.h"
 #include "common/time_util.h"
 #include "le_audio_types.h"
 

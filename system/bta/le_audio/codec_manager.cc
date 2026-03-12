@@ -17,6 +17,7 @@
 #include "codec_manager.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
@@ -39,7 +40,6 @@
 #include "broadcaster/broadcast_configuration_provider.h"
 #include "broadcaster/broadcaster_types.h"
 #include "bta_le_audio_api.h"
-#include "common/strings.h"
 #include "gmap_client.h"
 #include "gmap_server.h"
 #include "hardware/bt_le_audio.h"

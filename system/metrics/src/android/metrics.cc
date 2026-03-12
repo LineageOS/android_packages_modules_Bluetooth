@@ -20,11 +20,11 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/string_helpers.h>
 #include <statslog_bt.h>
 
 #include "../metric_id_manager.h"
 #include "common/audit_log.h"
-#include "common/strings.h"
 #include "hardware/bt_av.h"
 #include "hci/hci_packets.h"
 #include "hci/hci_status.h"

@@ -36,6 +36,7 @@
 #include <bluetooth/metrics/metric_id_api.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/string_helpers.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
@@ -65,7 +66,6 @@
 #include "btif_storage.h"
 #include "btif_util.h"
 #include "common/lru_cache.h"
-#include "common/strings.h"
 #include "device/include/interop.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"

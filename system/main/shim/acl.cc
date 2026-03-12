@@ -22,6 +22,7 @@
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/string_helpers.h>
 #include <com_android_bluetooth_flags.h>
 #include <time.h>
 
@@ -40,7 +41,6 @@
 #include <vector>
 
 #include "common/bind.h"
-#include "common/strings.h"
 #include "common/sync_map_count.h"
 #include "hci/acl_manager/acl_connection.h"
 #include "hci/acl_manager/acl_manager_le.h"

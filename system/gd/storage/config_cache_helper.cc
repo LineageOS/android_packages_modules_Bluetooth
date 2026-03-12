@@ -17,9 +17,9 @@
 #include "storage/config_cache_helper.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/string_helpers.h>
 
 #include "common/numbers.h"
-#include "common/strings.h"
 
 namespace bluetooth {
 namespace storage {
