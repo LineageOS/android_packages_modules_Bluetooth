@@ -29,7 +29,6 @@ import android.content.Context
 import android.content.res.Resources
 import android.location.LocationManager
 import android.os.Binder
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Process
@@ -52,6 +51,7 @@ import com.android.bluetooth.mapclient.MapClientService
 import com.android.bluetooth.mockBluetoothManager
 import com.android.bluetooth.mockGetRemoteDevice
 import com.android.bluetooth.mockGetSystemService
+import com.android.modules.utils.build.SdkLevel
 import com.android.tests.bluetooth.FakeTimeProvider
 import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.MockitoRule
@@ -503,7 +503,7 @@ class GattServiceTest(flags: FlagsWrapper) {
     @EnableCompatChanges(DONOT_STEAL_AUDIO_ON_GATT_CONN)
     fun clientConnectOverLeFailed() {
         assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
-        assumeTrue(Build.VERSION.SDK_INT >= 37)
+        assumeTrue(SdkLevel.isAtLeastC())
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
         val transport = BluetoothDevice.TRANSPORT_LE
@@ -554,7 +554,7 @@ class GattServiceTest(flags: FlagsWrapper) {
     @EnableCompatChanges(DONOT_STEAL_AUDIO_ON_GATT_CONN)
     fun clientConnectDisconnectOverLe() {
         assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
-        assumeTrue(Build.VERSION.SDK_INT >= 37)
+        assumeTrue(SdkLevel.isAtLeastC())
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
         val transport = BluetoothDevice.TRANSPORT_LE
@@ -601,7 +601,7 @@ class GattServiceTest(flags: FlagsWrapper) {
     @EnableCompatChanges(DONOT_STEAL_AUDIO_ON_GATT_CONN)
     fun clientConnectOverLeDisconnectedByRemote() {
         assumeTrue(CompatChanges.isChangeEnabled(DONOT_STEAL_AUDIO_ON_GATT_CONN))
-        assumeTrue(Build.VERSION.SDK_INT >= 37)
+        assumeTrue(SdkLevel.isAtLeastC())
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
         val transport = BluetoothDevice.TRANSPORT_LE
