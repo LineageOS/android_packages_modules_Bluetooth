@@ -307,14 +307,12 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun shouldQueueCommand_inNormalState_returnsFalse() {
         // In the initial NORMAL state, shouldQueueCommand should be false.
         assertThat(advertiseSuspendManager.shouldQueueCommand()).isFalse()
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun onAdvertisingEnabled_forUnknownId_returnsFalse() {
         // When onAdvertisingEnabled is called for an advertiserId that is not tracked,
         // it should return false and not crash.
@@ -329,7 +327,6 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun onAdvertisingEnabled_resumeFails_returnsTrue() {
         // Start an advertisement
         advertiseSuspendManager.onStartAdvertisingSet(
