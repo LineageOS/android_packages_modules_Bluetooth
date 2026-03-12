@@ -19,16 +19,6 @@ flag {
 }
 
 flag {
-    name: "adapter_suspend_advertisement"
-    namespace: "bluetooth"
-    description: "Disable advertisement on adapter suspend and re-enable on resume"
-    bug: "433136730"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "adapter_suspend_discoverability"
     namespace: "bluetooth"
     description: "Set discoverability to none on adapter suspend and restore on resume"

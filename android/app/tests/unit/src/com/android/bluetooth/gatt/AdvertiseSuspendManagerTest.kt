@@ -19,12 +19,10 @@ package com.android.bluetooth.gatt
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
 import android.content.AttributionSource
-import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.btservice.AdapterSuspend
-import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -57,7 +55,6 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWithOngoingAdvertisement() {
         // Start an advertisement
         advertiseSuspendManager.onStartAdvertisingSet(
@@ -91,7 +88,6 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWithoutOngoingAdvertisement() {
         // Start an advertisement
         advertiseSuspendManager.onStartAdvertisingSet(
@@ -117,7 +113,6 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWhenCreatingAdvertisement() {
         val order = inOrder(advertiseManager)
 
@@ -186,7 +181,6 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWhenDisablingAdvertisement() {
         val order = inOrder(advertiseManager)
 
@@ -222,7 +216,6 @@ class AdvertiseSuspendManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendThenQueueFutureRequests() {
         val order = inOrder(advertiseManager)
 

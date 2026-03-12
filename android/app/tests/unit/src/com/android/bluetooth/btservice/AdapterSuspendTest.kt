@@ -186,7 +186,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun testAdvertisementPauseAndResume() {
         adapterSuspend.handleSuspend(true)
         verify(advertiseManager).enterSuspend()
@@ -195,7 +194,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun testTwoTasksDisconnectionThenAdvertisement() {
         val audioDevices = listOf(bluetoothDevice)
         doReturn(audioDevices)
@@ -220,7 +218,6 @@ class AdapterSuspendTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun testTwoTasksAdvertisementThenDisconnection() {
         val audioDevices = listOf(bluetoothDevice)
         doReturn(audioDevices)
