@@ -19,16 +19,6 @@ flag {
 }
 
 flag {
-    name: "adapter_suspend_discoverability"
-    namespace: "bluetooth"
-    description: "Set discoverability to none on adapter suspend and restore on resume"
-    bug: "435053102"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "dont_mask_disconnection_complete_on_suspend"
     namespace: "bluetooth"
     description: "Wait for disconnect complete events when suspending, instead of masking them out"

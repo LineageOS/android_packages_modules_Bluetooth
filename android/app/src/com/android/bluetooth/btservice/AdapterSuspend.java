@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.btservice;
 
-import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_DOCKED;
 import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_CLOSED;
@@ -41,7 +40,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Util;
 import com.android.bluetooth.flags.Flags;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -111,17 +109,11 @@ public class AdapterSuspend {
     private final boolean mStopLeScanOnSuspend;
     private final boolean mPauseAdvertisementOnSuspend;
 
-    private int mScanModeOnLastSuspend;
     private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
 
     private final Map<Integer, Set<BluetoothDevice>> mDisconnectProfileDevices = new HashMap<>();
     private boolean mAllowWakeByHid;
     private EnumSet<SuspendTasks> mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
-
-    @VisibleForTesting
-    void setLastScanModeForTest(int val) {
-        mScanModeOnLastSuspend = val;
-    }
 
     private final DeviceStateManager.DeviceStateCallback mDeviceStateCallback =
             new DeviceStateManager.DeviceStateCallback() {
@@ -238,12 +230,7 @@ public class AdapterSuspend {
         mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
         mAllowWakeByHid = allowWakeByHid;
         if (mScanModeNoneOnSuspend) {
-            if (Flags.adapterSuspendDiscoverability()) {
-                mAdapterService.setSuspendState(true /* suspend */);
-            } else if (mScanModeOnLastSuspend != SCAN_MODE_NONE) {
-                mScanModeOnLastSuspend = mAdapterService.getScanMode();
-                mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
-            }
+            mAdapterService.setSuspendState(true /* suspend */);
         }
 
         if (mStopLeScanOnSuspend) {
@@ -328,11 +315,7 @@ public class AdapterSuspend {
         }
 
         if (mScanModeNoneOnSuspend) {
-            if (Flags.adapterSuspendDiscoverability()) {
-                mAdapterService.setSuspendState(false /* suspend */);
-            } else if (mAdapterService.getScanMode() != mScanModeOnLastSuspend) {
-                mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
-            }
+            mAdapterService.setSuspendState(false /* suspend */);
         }
 
         if (mPauseAdvertisementOnSuspend) {
