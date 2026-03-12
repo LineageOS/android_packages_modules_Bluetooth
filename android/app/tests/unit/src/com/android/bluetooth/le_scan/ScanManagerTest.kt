@@ -123,6 +123,7 @@ class ScanManagerTest() {
     @Mock private lateinit var scanController: ScanController
 
     private val timeProvider = FakeTimeProvider()
+    private val scanRadioStats = ScanRadioStats(timeProvider)
 
     private lateinit var appScanStats: AppScanStats
     private lateinit var scanManager: ScanManager
@@ -180,8 +181,6 @@ class ScanManagerTest() {
         // Needed to mock Native call/callback when hw offload scan filter is enabled
         simulateIsOffloadFilteringSupported(true)
 
-        val scanRadioStats = ScanRadioStats(timeProvider)
-        doReturn(scanRadioStats).whenever(scanController).getScanRadioStats()
         MetricsLogger.setInstanceForTesting(metricsLogger)
         inOrder = Mockito.inOrder(metricsLogger)
 
@@ -196,6 +195,7 @@ class ScanManagerTest() {
                 scanController,
                 nativeCallback,
                 nativeInterface,
+                scanRadioStats,
                 looper.looper,
                 timeProvider,
             )
@@ -2570,6 +2570,7 @@ class ScanManagerTest() {
                 scanController,
                 nativeCallback,
                 nativeInterface,
+                scanRadioStats,
                 looper.looper,
                 timeProvider,
             )
@@ -2635,6 +2636,7 @@ class ScanManagerTest() {
                 scanController,
                 nativeCallback,
                 nativeInterface,
+                scanRadioStats,
                 looper.looper,
                 timeProvider,
             )
