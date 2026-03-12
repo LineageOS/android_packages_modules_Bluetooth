@@ -629,6 +629,11 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
                 "Incorrect response.expected num of channels = {} received num of "
                 "channels = {}",
                 num_of_channels, p_lcb->pending_ecoc_conn_cnt);
+        if (com_android_bluetooth_flags_reject_invalid_eatt_channels_in_response()) {
+            con_info.l2cap_result =
+              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_INVALID_PARAMETERS);
+            l2cble_handle_connect_rsp_neg(p_lcb, &con_info);
+        }
         return;
       }
 
