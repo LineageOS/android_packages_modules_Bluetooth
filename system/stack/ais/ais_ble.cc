@@ -32,6 +32,7 @@ using namespace bluetooth;
 
 using bluetooth::log::error;
 using bluetooth::log::warn;
+using stack::tGATT_REQ_CBACK;
 
 static const char kPropertyAndroidAPILevel[] = "ro.build.version.sdk";
 static const uint32_t kPropertyAndroidAPILevelDefault = 0;
@@ -69,7 +70,7 @@ static void ais_mtu_changed_cback(tCONN_ID /*conn_id*/, const RawAddress& /*remo
 static void ais_conf_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
                            const RawAddress& /*remote_bda*/) {}
 
-static stack::tGATT_REQ_CBACK ais_req_cback = {
+static tGATT_REQ_CBACK ais_req_cback = {
         .read_characteristic_cb = ais_read_characteristic_cback,
         .read_descriptor_cb = ais_read_descriptor_cback,
         .write_characteristic_cb = ais_write_characteristic_or_descriptor_cback,
@@ -77,6 +78,7 @@ static stack::tGATT_REQ_CBACK ais_req_cback = {
         .exec_write_cb = ais_exec_write_cback,
         .mtu_changed_cb = ais_mtu_changed_cback,
         .conf_cb = ais_conf_cback,
+        .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
 };
 
 static stack::tGATT_CBACK ais_cback = {

@@ -37,6 +37,7 @@ typedef void(tGATT_CMPL_CBACK)(tCONN_ID conn_id, tGATTC_OPTYPE op, tGATT_STATUS 
 typedef void(tGATT_CONN_CBACK)(tGATT_IF gatt_if, const RawAddress& bda, tCONN_ID conn_id,
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport);
+
 /* attribute request callback for ATT server */
 struct tGATT_REQ_CBACK {
   void (&read_characteristic_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
@@ -53,6 +54,11 @@ struct tGATT_REQ_CBACK {
                         tGATT_EXEC_FLAG exec_write);
   void (&mtu_changed_cb)(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu);
   void (&conf_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
+  void (&conf_send_fail_cb)(tCONN_ID conn_id, tGATT_STATUS status);
+
+  /* in case your server implementation needs to do nothing... */
+  template <typename... Args>
+  static void do_nothing(Args...) noexcept {}
 };
 /* channel congestion/uncongestion callback */
 typedef void(tGATT_CONGESTION_CBACK)(tCONN_ID conn_id, bool congested);

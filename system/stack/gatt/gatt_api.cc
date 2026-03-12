@@ -1412,8 +1412,6 @@ bool GATT_BR_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 tGATT_STATUS GATT_Disconnect(tCONN_ID conn_id) {
-  log::info("conn_id={}", conn_id);
-
   uint8_t tcb_idx = gatt_get_tcb_idx(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
   if (!p_tcb) {
@@ -1422,13 +1420,15 @@ tGATT_STATUS GATT_Disconnect(tCONN_ID conn_id) {
   }
 
   tGATT_IF gatt_if = gatt_get_gatt_if(conn_id);
+
+  log::info("gatt_if={}, remote_bda={}, transport={}", gatt_if, p_tcb->peer_bda, p_tcb->transport);
+
   gatt_update_app_use_link_flag(gatt_if, p_tcb, false, true);
 
   if (p_tcb->transport == BT_TRANSPORT_LE && p_tcb->app_hold_link.empty()) {
     bluetooth::metrics::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, false /* is_connect */,
                                                        false /* is_direct */);
   }
-
   return GATT_SUCCESS;
 }
 

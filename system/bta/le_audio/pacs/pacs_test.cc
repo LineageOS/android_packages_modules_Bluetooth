@@ -327,8 +327,8 @@ public:
         return;
       }
 
-      p_gatt_event_source_cb_->p_read_characteristic_cb(conn_id, gatt_trans_id_++, pseudo_addr,
-                                                        handle, 0, false);
+      p_gatt_event_source_cb_->server_cbacks->read_characteristic_cb(conn_id, gatt_trans_id_++,
+                                                                     pseudo_addr, handle, 0, false);
     }
   }
 
@@ -361,8 +361,8 @@ public:
         return;
       }
 
-      p_gatt_event_source_cb_->p_read_characteristic_cb(conn_id, gatt_trans_id_++, pseudo_addr,
-                                                        handle, offset, false);
+      p_gatt_event_source_cb_->server_cbacks->read_characteristic_cb(
+              conn_id, gatt_trans_id_++, pseudo_addr, handle, offset, false);
     }
   }
 
@@ -398,9 +398,9 @@ public:
         return;
       }
 
-      p_gatt_event_source_cb_->p_write_characteristic_cb(conn_id, gatt_trans_id_++, pseudo_addr,
-                                                         handle, 0, with_response, false,
-                                                         (uint8_t*)value.data(), value.size());
+      p_gatt_event_source_cb_->server_cbacks->write_characteristic_cb(
+              conn_id, gatt_trans_id_++, pseudo_addr, handle, 0, with_response, false,
+              (uint8_t*)value.data(), value.size());
     }
   }
 
@@ -441,8 +441,8 @@ public:
         return;
       }
 
-      p_gatt_event_source_cb_->p_read_descriptor_cb(conn_id, gatt_trans_id_++, pseudo_addr, handle,
-                                                    0, false);
+      p_gatt_event_source_cb_->server_cbacks->read_descriptor_cb(conn_id, gatt_trans_id_++,
+                                                                 pseudo_addr, handle, 0, false);
     }
   }
 
@@ -488,8 +488,8 @@ public:
       uint8_t* pp = value;
       UINT16_TO_STREAM(pp, cccd_value);
 
-      p_gatt_event_source_cb_->p_write_descriptor_cb(conn_id, gatt_trans_id_++, pseudo_addr, handle,
-                                                     0, true, false, value, sizeof(value));
+      p_gatt_event_source_cb_->server_cbacks->write_descriptor_cb(
+              conn_id, gatt_trans_id_++, pseudo_addr, handle, 0, true, false, value, sizeof(value));
     }
   }
 };
