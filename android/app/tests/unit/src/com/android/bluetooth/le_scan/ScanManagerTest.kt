@@ -2553,7 +2553,6 @@ class ScanManagerTest() {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testMsftScan() {
         doReturn(true).whenever(nativeInterface).isMsftSupported()
         simulateIsOffloadFilteringSupported(false)
@@ -2619,7 +2618,6 @@ class ScanManagerTest() {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testPreferApcfOverMsftScan() {
         doReturn(true).whenever(nativeInterface).isMsftSupported()
         simulateIsOffloadFilteringSupported(true)
