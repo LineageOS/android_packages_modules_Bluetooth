@@ -45,3 +45,12 @@ flag {
     bug: "478996075"
 }
 
+flag {
+    name: "early_reject_unauthorized_scans"
+    namespace: "bluetooth"
+    description: "Implements early validation for BLE scans to prevent unnecessary radio usage; ensures scans are immediately rejected if location requirements are not met"
+    bug: "491962438"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
