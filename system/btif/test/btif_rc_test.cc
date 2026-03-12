@@ -1333,6 +1333,7 @@ protected:
 };
 
 TEST_F(BtifRcHandlerTest, remote_rsp_passthrough) {
+  g_passthrough_rsp_promise = std::promise<passthrough_rsp_cb_t>();
   auto future = g_passthrough_rsp_promise.get_future();
 
   // Setup connected device
@@ -1769,6 +1770,8 @@ TEST_F(BtifRcHandlerTest, vendor_cmd_timeout_handler_unknown_pdu) {
 }
 
 TEST_F(BtifRcHandlerTest, transaction_timeout_handler_browse) {
+  g_get_folder_items_promise = std::promise<get_folder_items_cb_t>();
+
   // Setup connected device
   btif_rc_cb.rc_multi_cb[0].rc_connected = true;
   btif_rc_cb.rc_multi_cb[0].rc_handle = kRcHandle;
@@ -2316,6 +2319,7 @@ TEST_F(BtifRcWithCallbacksTest, send_reject_response_test) {
 }
 
 TEST_F(BtifRcHandlerTest, btif_rc_ctrl_upstreams_rsp_cmd_test) {
+  g_setabsvol_cmd_promise = std::promise<setabsvol_cmd_cb_t>();
   auto future = g_setabsvol_cmd_promise.get_future();
   btif_rc_device_cb_t p_dev = {};
   p_dev.rc_handle = kRcHandle;
@@ -2336,6 +2340,7 @@ TEST_F(BtifRcHandlerTest, btif_rc_ctrl_upstreams_rsp_cmd_test) {
 }
 
 TEST_F(BtifRcHandlerTest, btif_rc_ctrl_upstreams_rsp_cmd_test_reg_notif) {
+  g_registernotification_absvol_promise = std::promise<registernotification_absvol_cb_t>();
   auto future = g_registernotification_absvol_promise.get_future();
   btif_rc_device_cb_t p_dev = {};
   p_dev.rc_handle = kRcHandle;
