@@ -133,7 +133,6 @@ impl PeriodicSyncCallbacks {
             sync_registry.active_handles.insert(sync_handle);
             Ok(PeriodicSyncInfo {
                 reg_id,
-                status,
                 sync_handle,
                 advertising_sid,
                 advertiser_addr_type,
@@ -219,7 +218,6 @@ mod test {
             receiver.await,
             ok(ok(matches_pattern!(&PeriodicSyncInfo {
                 reg_id: eq(123),
-                status: eq(HciStatus::Success),
                 sync_handle: eq(1),
                 advertising_sid: eq(2),
                 advertiser_addr_type: eq(AddressType::RandomDeviceAddress),
