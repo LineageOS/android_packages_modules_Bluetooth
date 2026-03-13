@@ -114,10 +114,10 @@ void bta_gatts_api_disable() {
   memset(&bta_gatts_cb, 0, sizeof(tBTA_GATTS_CB));
 }
 
-void bta_gatts_register(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
-                        bool eatt_support,
-                        void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                         const bluetooth::Uuid& uuid)) {
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
+                           bool eatt_support,
+                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                            const bluetooth::Uuid& uuid)) {
   if (!bta_gatts_cb.enabled) {
     bta_gatts_enable();
   }
@@ -176,7 +176,7 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBAC
   }
 }
 
-void bta_gatts_start_if(tGATT_IF server_if) {
+static void bta_gatts_start_if(tGATT_IF server_if) {
   if (bta_gatts_find_app_rcb_by_app_if(server_if)) {
     stack::appStartIf(server_if);
   } else {
@@ -184,8 +184,7 @@ void bta_gatts_start_if(tGATT_IF server_if) {
   }
 }
 
-/* Deregister an application */
-void bta_gatts_deregister(tGATT_IF server_if) {
+void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   for (uint8_t i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
     if (bta_gatts_cb.rcb[i].in_use && bta_gatts_cb.rcb[i].gatt_if == server_if) {
       /* deregister the app */
@@ -198,9 +197,9 @@ void bta_gatts_deregister(tGATT_IF server_if) {
   }
 }
 
-void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id,
-                              void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                          uint16_t service_id)) {
+void BTA_GATTS_DeleteService(tGATT_IF gatt_if, uint16_t service_id,
+                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                         uint16_t service_id)) {
   std::optional<Uuid> svc_uuid = GATTS_LookupServiceUuidByStartHandle(service_id);
   if (!svc_uuid) {
     log::error("can't delete service - no service {} found", service_id);
@@ -227,15 +226,20 @@ void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id,
   }
 }
 
-void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                        std::unique_ptr<tGATTS_RSP> rsp) {
+void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+                       std::unique_ptr<tGATTS_RSP> rsp) {
   if (GATTS_SendRsp(conn_id, trans_id, status, rsp.get()) != GATT_SUCCESS) {
     log::error("Sending response failed");
   }
 }
 
-void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                               bool need_confirm) {
+void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
+                                     bool need_confirm) {
+  if (value.size() > GATT_MAX_ATTR_LEN) {
+    log::error("data to indicate is too long");
+    return;
+  }
+
   tGATT_IF gatt_if;
   RawAddress remote_bda;
   tBT_TRANSPORT transport;
@@ -271,7 +275,7 @@ void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<u
   }
 }
 
-void bta_gatts_open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
+void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     bool is_direct, tBT_TRANSPORT transport) {
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
   if (!p_rcb) {
@@ -290,7 +294,7 @@ void bta_gatts_open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_
   }
 }
 
-void bta_gatts_cancel_open(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
+void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
   if (!p_rcb) {
     log::error("Inavlid server_if={}", server_if);
@@ -302,7 +306,7 @@ void bta_gatts_cancel_open(tGATT_IF server_if, const RawAddress& remote_bda, boo
   }
 }
 
-void bta_gatts_close(uint16_t conn_id) { std::ignore = GATT_Disconnect(conn_id); }
+void BTA_GATTS_Close(uint16_t conn_id) { std::ignore = GATT_Disconnect(conn_id); }
 
 static void notify_pm_br_gatt_conn_open(const RawAddress& bda) {
   bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);

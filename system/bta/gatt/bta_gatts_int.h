@@ -69,24 +69,6 @@ extern tBTA_GATTS_CB bta_gatts_cb;
  *  Function prototypes
  ****************************************************************************/
 void bta_gatts_api_disable();
-void bta_gatts_register(const bluetooth::Uuid& app_uuid,
-                        const bluetooth::stack::tGATT_CBACK* p_cback, bool eatt_support,
-                        void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                         const bluetooth::Uuid& uuid));
-void bta_gatts_deregister(tGATT_IF server_if);
-void bta_gatts_delete_service(tGATT_IF server_if, uint16_t service_id,
-                              void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                          uint16_t service_id));
-
-void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                        std::unique_ptr<tGATTS_RSP> rsp);
-void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                               bool need_confirm);
-
-void bta_gatts_open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport);
-void bta_gatts_cancel_open(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct);
-void bta_gatts_close(uint16_t conn_id);
 
 tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tGATT_IF server_if);
 uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb, tGATT_IF server_if);

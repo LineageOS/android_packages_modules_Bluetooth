@@ -23,7 +23,6 @@
  ******************************************************************************/
 
 #include <base/functional/bind.h>
-#include <base/location.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
@@ -35,8 +34,6 @@
 
 #include "bta/gatt/bta_gatts_int.h"
 #include "internal_include/bt_target.h"
-#include "osi/include/allocator.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 
 using namespace bluetooth;
@@ -47,23 +44,12 @@ void BTA_GATTS_Disable(void) {
     return;
   }
 
-  do_in_main_thread(base::BindOnce(&bta_gatts_api_disable));
+  bta_gatts_api_disable();
   bta_sys_deregister(BTA_ID_GATTS);
 }
 
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
-                           bool eatt_support,
-                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                            const bluetooth::Uuid& uuid)) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_register, app_uuid, p_cback, eatt_support, p_reg_cb));
-}
-
-void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_deregister, server_if));
-}
-
-static void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                                       BTA_GATTS_AddServiceCb cb) {
+void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
+                          BTA_GATTS_AddServiceCb cb) {
   auto p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
   if (!p_rcb) {
     std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
@@ -81,51 +67,9 @@ static void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db
   return;
 }
 
-void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                          BTA_GATTS_AddServiceCb cb) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_add_service_impl, server_if, std::move(service),
-                                   std::move(cb)));
-}
-
-void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
-                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                         uint16_t service_id)) {
-  do_in_main_thread(
-          base::BindOnce(&bta_gatts_delete_service, server_if, service_id, p_delete_service_cb));
-}
-
-void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                                     bool need_confirm) {
-  if (value.size() > GATT_MAX_ATTR_LEN) {
-    log::error("data to indicate is too long");
-    return;
-  }
-  do_in_main_thread(
-          base::BindOnce(&bta_gatts_indicate_handle, conn_id, attr_id, value, need_confirm));
-}
-
-void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                       std::unique_ptr<tGATTS_RSP> rsp) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_send_rsp, conn_id, trans_id, status, std::move(rsp)));
-}
-
-void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport) {
-  do_in_main_thread(
-          base::BindOnce(&bta_gatts_open, server_if, remote_bda, addr_type, is_direct, transport));
-}
-
-void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_cancel_open, server_if, remote_bda, is_direct));
-}
-
-void BTA_GATTS_Close(uint16_t conn_id) {
-  do_in_main_thread(base::BindOnce(&bta_gatts_close, conn_id));
-}
-
 void BTA_GATTS_InitBonded(void) {
   log::info("");
-  do_in_main_thread(base::BindOnce(&gatt_load_bonded));
+  gatt_load_bonded();
 }
 
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
@@ -139,5 +83,5 @@ void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_el
 }
 
 void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id) {
-  do_in_main_thread(base::BindOnce(&GATTS_UnoffloadCharacteristics, conn_id, session_id));
+  GATTS_UnoffloadCharacteristics(conn_id, session_id);
 }
