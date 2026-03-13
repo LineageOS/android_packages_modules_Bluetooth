@@ -111,6 +111,31 @@ TEST_F(HandlerTest, callback_with_promise) {
   handler_->Clear();
 }
 
+// Check that the handler is correctly notified when a task is pushed while the thread is active
+// handling a different handler loop on the same thread (the same scenario would be reproduced
+// by using an Alarm instead).
+TEST_F(HandlerTest, regression_489590494) {
+  Handler* other_handler = new Handler(thread_);
+  std::promise<int> value_promise;
+  std::future<int> value_future = value_promise.get_future();
+
+  other_handler->Post(base::BindOnce(
+          [](Handler* handler, std::promise<int> value_promise) {
+            // Posting on the same thread, but a different handler.
+            handler->Post(base::BindOnce(
+                    [](std::promise<int> value_promise) { value_promise.set_value(42); },
+                    std::move(value_promise)));
+          },
+          handler_, std::move(value_promise)));
+
+  // The task posted on the original handler should execute within a reasonable delay.
+  EXPECT_EQ(value_future.wait_for(std::chrono::milliseconds(10)), std::future_status::ready);
+
+  other_handler->Clear();
+  handler_->Clear();
+  delete other_handler;
+}
+
 // For Death tests, all the threading needs to be done in the ASSERT_DEATH call
 class HandlerDeathTest : public ::testing::Test {
 protected:
