@@ -388,7 +388,7 @@ public class AdapterProperties {
             return;
         }
         try {
-            byte[] addrByte = Utils.getByteAddress(device);
+            byte[] addrByte = Util.getByteAddress(device);
             DeviceProperties prop = mRemoteDevices.getDeviceProperties(device);
             if (prop == null) {
                 prop = mRemoteDevices.addDeviceProperties(addrByte, device.getAddressType());

@@ -153,6 +153,9 @@ object Util {
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5])
     }
 
+    @JvmStatic
+    fun getByteAddress(device: BluetoothDevice) = Utils.getBytesFromAddress(device.address)
+
     /**
      * Converts HCI disconnect reasons to Android disconnect reasons.
      *

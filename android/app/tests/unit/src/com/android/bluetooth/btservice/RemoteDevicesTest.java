@@ -80,6 +80,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
@@ -308,7 +309,7 @@ public class RemoteDevicesTest {
         doReturn(State.ON).when(mAdapterService).getState();
         mRemoteDevices.aclStateChangeCallback(
                 0,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 0, // Public address type
                 transport,
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
@@ -875,7 +876,7 @@ public class RemoteDevicesTest {
         // Test ACL Connected
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 transport,
                 AbstractionLayer.BT_ACL_STATE_CONNECTED,
@@ -888,7 +889,7 @@ public class RemoteDevicesTest {
         // Test ACL Disconnected
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 transport,
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
@@ -908,7 +909,7 @@ public class RemoteDevicesTest {
         // Test ACL Connected
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 transport,
                 AbstractionLayer.BT_ACL_STATE_CONNECTED,
@@ -919,7 +920,7 @@ public class RemoteDevicesTest {
         // Test ACL Disconnected
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 transport,
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
@@ -943,7 +944,7 @@ public class RemoteDevicesTest {
         assertThat(deviceProp).isNotNull();
 
         // Then discovery result handler should be called
-        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        mRemoteDevices.deviceFoundCallback(Util.getByteAddress(mDevice));
         verify(mAdapterService).discoveryResultHandler(eq(deviceProp));
     }
 
@@ -953,7 +954,7 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
 
         // Then discovery result handler should not be called
-        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        mRemoteDevices.deviceFoundCallback(Util.getByteAddress(mDevice));
         verify(mAdapterService, never()).discoveryResultHandler(any());
     }
 
@@ -973,7 +974,7 @@ public class RemoteDevicesTest {
         assertThat(deviceProp.getName()).isNull();
 
         // Then discovery result handler should not be called
-        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        mRemoteDevices.deviceFoundCallback(Util.getByteAddress(mDevice));
         verify(mAdapterService, never()).discoveryResultHandler(any());
     }
 
@@ -992,7 +993,7 @@ public class RemoteDevicesTest {
         deviceProp.setName("Test Device");
 
         // Then discovery result handler should be called
-        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        mRemoteDevices.deviceFoundCallback(Util.getByteAddress(mDevice));
         verify(mAdapterService).discoveryResultHandler(eq(deviceProp));
     }
 
@@ -1010,7 +1011,7 @@ public class RemoteDevicesTest {
         // Simulate ACL disconnection for this device.
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 TRANSPORT_BREDR,
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
@@ -1037,7 +1038,7 @@ public class RemoteDevicesTest {
         // Simulate ACL disconnection for this device.
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 TRANSPORT_BREDR,
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
@@ -1064,7 +1065,7 @@ public class RemoteDevicesTest {
         // Simulate ACL disconnection during bonding.
         mRemoteDevices.aclStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS,
-                Utils.getByteAddress(mDevice),
+                Util.getByteAddress(mDevice),
                 mDevice.getAddressType(),
                 TRANSPORT_BREDR,
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
@@ -1097,7 +1098,7 @@ public class RemoteDevicesTest {
     @EnableFlags(Flags.FLAG_BROADCAST_UUIDS_FROM_MAIN_LOOPER)
     public void testTriggerUuidNotification() {
         // Make sure that the device is in the remote devices list
-        mRemoteDevices.addDeviceProperties(Utils.getByteAddress(mDevice), mDevice.getAddressType());
+        mRemoteDevices.addDeviceProperties(Util.getByteAddress(mDevice), mDevice.getAddressType());
 
         // Trigger the UUID notification
         mRemoteDevices.triggerUuidNotification(mDevice);
@@ -1126,7 +1127,7 @@ public class RemoteDevicesTest {
         verify(mNativeInterface).getRemoteServices(any(), anyInt());
 
         // Simulate devicePropertyChangedCallback from native stack.
-        byte[] address = Utils.getByteAddress(mDevice);
+        byte[] address = Util.getByteAddress(mDevice);
         int[] types = new int[] {AbstractionLayer.BT_PROPERTY_UUIDS};
         ParcelUuid[] sampleUuids = new ParcelUuid[] {BluetoothUuid.A2DP_SINK};
         byte[][] values = new byte[][] {Utils.uuidsToByteArray(sampleUuids)};
@@ -1176,7 +1177,7 @@ public class RemoteDevicesTest {
         // Verify that getRemoteServices is called
         verify(mNativeInterface)
                 .getRemoteServices(
-                        argThat(address -> Arrays.equals(address, Utils.getByteAddress(mDevice))),
+                        argThat(address -> Arrays.equals(address, Util.getByteAddress(mDevice))),
                         eq(BluetoothDevice.TRANSPORT_AUTO));
 
         // Second call should not start another discovery because a timeout message is pending

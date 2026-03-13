@@ -139,10 +139,6 @@ public final class Utils {
                 address[0], address[1], address[2], address[3], address[4], address[5]);
     }
 
-    public static byte[] getByteAddress(BluetoothDevice device) {
-        return getBytesFromAddress(device.getAddress());
-    }
-
     public static byte[] getBytesFromAddress(String address) {
         int i, j = 0;
         byte[] output = new byte[BD_ADDR_LEN];

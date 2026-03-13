@@ -29,6 +29,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService.SetBigChannelMapClassificationAction;
 import com.android.bluetooth.btservice.AdapterService;
@@ -230,7 +231,7 @@ public class LeAudioBroadcasterNativeInterface {
         if (action == SetBigChannelMapClassificationAction.CLEAR.getValue()) {
             sinkAddr = EMPTY_ADDRESS_BYTES;
         } else {
-            sinkAddr = Utils.getByteAddress(sink);
+            sinkAddr = Util.getByteAddress(sink);
         }
         setBigChannelMapClassificationNative(action, sinkAddr, broadcastId);
     }

@@ -97,6 +97,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -750,12 +751,12 @@ public class BassClientStateMachineTest {
                 new byte[] {
                     (byte) sourceId, // sourceId
                     (byte) (mSourceTestDevice.getAddressType() & 0xFF), // sourceAddressType
-                    Utils.getByteAddress(mSourceTestDevice)[5],
-                    Utils.getByteAddress(mSourceTestDevice)[4],
-                    Utils.getByteAddress(mSourceTestDevice)[3],
-                    Utils.getByteAddress(mSourceTestDevice)[2],
-                    Utils.getByteAddress(mSourceTestDevice)[1],
-                    Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
+                    Util.getByteAddress(mSourceTestDevice)[5],
+                    Util.getByteAddress(mSourceTestDevice)[4],
+                    Util.getByteAddress(mSourceTestDevice)[3],
+                    Util.getByteAddress(mSourceTestDevice)[2],
+                    Util.getByteAddress(mSourceTestDevice)[1],
+                    Util.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
                     (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
@@ -865,12 +866,12 @@ public class BassClientStateMachineTest {
                 new byte[] {
                     (byte) sourceId, // sourceId
                     (byte) (mSourceTestDevice.getAddressType() & 0xFF), // sourceAddressType
-                    Utils.getByteAddress(mSourceTestDevice)[5],
-                    Utils.getByteAddress(mSourceTestDevice)[4],
-                    Utils.getByteAddress(mSourceTestDevice)[3],
-                    Utils.getByteAddress(mSourceTestDevice)[2],
-                    Utils.getByteAddress(mSourceTestDevice)[1],
-                    Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
+                    Util.getByteAddress(mSourceTestDevice)[5],
+                    Util.getByteAddress(mSourceTestDevice)[4],
+                    Util.getByteAddress(mSourceTestDevice)[3],
+                    Util.getByteAddress(mSourceTestDevice)[2],
+                    Util.getByteAddress(mSourceTestDevice)[1],
+                    Util.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
                     (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
@@ -1475,12 +1476,12 @@ public class BassClientStateMachineTest {
                 new byte[] {
                     (byte) sourceId, // sourceId
                     (byte) (mSourceTestDevice.getAddressType() & 0xFF), // sourceAddressType
-                    Utils.getByteAddress(mSourceTestDevice)[5],
-                    Utils.getByteAddress(mSourceTestDevice)[4],
-                    Utils.getByteAddress(mSourceTestDevice)[3],
-                    Utils.getByteAddress(mSourceTestDevice)[2],
-                    Utils.getByteAddress(mSourceTestDevice)[1],
-                    Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
+                    Util.getByteAddress(mSourceTestDevice)[5],
+                    Util.getByteAddress(mSourceTestDevice)[4],
+                    Util.getByteAddress(mSourceTestDevice)[3],
+                    Util.getByteAddress(mSourceTestDevice)[2],
+                    Util.getByteAddress(mSourceTestDevice)[1],
+                    Util.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
                     (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
@@ -1599,12 +1600,12 @@ public class BassClientStateMachineTest {
                 new byte[] {
                     (byte) sourceId, // sourceId
                     (byte) (mSourceTestDevice.getAddressType() & 0xFF), // sourceAddressType
-                    Utils.getByteAddress(mSourceTestDevice)[5],
-                    Utils.getByteAddress(mSourceTestDevice)[4],
-                    Utils.getByteAddress(mSourceTestDevice)[3],
-                    Utils.getByteAddress(mSourceTestDevice)[2],
-                    Utils.getByteAddress(mSourceTestDevice)[1],
-                    Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
+                    Util.getByteAddress(mSourceTestDevice)[5],
+                    Util.getByteAddress(mSourceTestDevice)[4],
+                    Util.getByteAddress(mSourceTestDevice)[3],
+                    Util.getByteAddress(mSourceTestDevice)[2],
+                    Util.getByteAddress(mSourceTestDevice)[1],
+                    Util.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
                     (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
@@ -2148,12 +2149,12 @@ public class BassClientStateMachineTest {
                 new byte[] {
                     (byte) sourceId, // sourceId
                     (byte) (mSourceTestDevice.getAddressType() & 0xFF), // sourceAddressType
-                    Utils.getByteAddress(mSourceTestDevice)[5],
-                    Utils.getByteAddress(mSourceTestDevice)[4],
-                    Utils.getByteAddress(mSourceTestDevice)[3],
-                    Utils.getByteAddress(mSourceTestDevice)[2],
-                    Utils.getByteAddress(mSourceTestDevice)[1],
-                    Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
+                    Util.getByteAddress(mSourceTestDevice)[5],
+                    Util.getByteAddress(mSourceTestDevice)[4],
+                    Util.getByteAddress(mSourceTestDevice)[3],
+                    Util.getByteAddress(mSourceTestDevice)[2],
+                    Util.getByteAddress(mSourceTestDevice)[1],
+                    Util.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
                     (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
@@ -2895,12 +2896,12 @@ public class BassClientStateMachineTest {
                 new byte[] {
                     (byte) sourceId, // sourceId
                     (byte) (sourceDevice.getAddressType() & 0xFF), // sourceAddressType
-                    Utils.getByteAddress(sourceDevice)[5],
-                    Utils.getByteAddress(sourceDevice)[4],
-                    Utils.getByteAddress(sourceDevice)[3],
-                    Utils.getByteAddress(sourceDevice)[2],
-                    Utils.getByteAddress(sourceDevice)[1],
-                    Utils.getByteAddress(sourceDevice)[0], // sourceAddress
+                    Util.getByteAddress(sourceDevice)[5],
+                    Util.getByteAddress(sourceDevice)[4],
+                    Util.getByteAddress(sourceDevice)[3],
+                    Util.getByteAddress(sourceDevice)[2],
+                    Util.getByteAddress(sourceDevice)[1],
+                    Util.getByteAddress(sourceDevice)[0], // sourceAddress
                     (byte) sourceAdvSid, // sourceAdvSid
                     (byte) (TEST_BROADCAST_ID & 0xFF),
                     (byte) 0x00,
@@ -3030,12 +3031,7 @@ public class BassClientStateMachineTest {
                 AdapterService adapterService,
                 ScanController scanController,
                 Looper looper) {
-            super(
-                    device,
-                    service,
-                    adapterService,
-                    scanController,
-                    looper);
+            super(device, service, adapterService, scanController, looper);
         }
 
         @Override

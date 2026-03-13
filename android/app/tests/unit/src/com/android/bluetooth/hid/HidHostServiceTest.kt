@@ -33,7 +33,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.TestUtils
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.AdapterSuspend.AWAKE
 import com.android.bluetooth.btservice.AdapterSuspend.DEEP_SLEEP
@@ -140,7 +140,7 @@ class HidHostServiceTest {
         order
             .verify(nativeInterface)
             .disconnectHid(
-                eq(Utils.getByteAddress(device)),
+                eq(Util.getByteAddress(device)),
                 any(),
                 eq(TRANSPORT_LE),
                 eq(RECONNECT_ALLOWED),
@@ -174,7 +174,7 @@ class HidHostServiceTest {
         order
             .verify(nativeInterface)
             .disconnectHid(
-                eq(Utils.getByteAddress(device)),
+                eq(Util.getByteAddress(device)),
                 any(),
                 eq(TRANSPORT_LE),
                 eq(RECONNECT_NOT_ALLOWED_TEMPORARY),
@@ -195,7 +195,7 @@ class HidHostServiceTest {
         order
             .verify(nativeInterface)
             .disconnectHid(
-                eq(Utils.getByteAddress(device)),
+                eq(Util.getByteAddress(device)),
                 any(),
                 eq(TRANSPORT_LE),
                 eq(RECONNECT_NOT_ALLOWED_TEMPORARY),
@@ -228,7 +228,7 @@ class HidHostServiceTest {
         // Initiate background connection
         order
             .verify(nativeInterface)
-            .connectHid(eq(Utils.getByteAddress(device)), any(), eq(TRANSPORT_LE), eq(false))
+            .connectHid(eq(Util.getByteAddress(device)), any(), eq(TRANSPORT_LE), eq(false))
         order.verify(nativeInterface, never()).disconnectHid(any(), any(), any(), any())
     }
 
@@ -276,7 +276,7 @@ class HidHostServiceTest {
         order
             .verify(nativeInterface)
             .disconnectHid(
-                eq(Utils.getByteAddress(device)),
+                eq(Util.getByteAddress(device)),
                 any(),
                 eq(TRANSPORT_LE),
                 eq(RECONNECT_ALLOWED),
@@ -298,7 +298,7 @@ class HidHostServiceTest {
         order
             .verify(nativeInterface)
             .disconnectHid(
-                eq(Utils.getByteAddress(device)),
+                eq(Util.getByteAddress(device)),
                 any(),
                 eq(TRANSPORT_LE),
                 eq(RECONNECT_NOT_ALLOWED),
@@ -316,7 +316,7 @@ class HidHostServiceTest {
         TestUtils.syncHandler(looper, 17 /* MESSAGE_SET_PREFERRED_TRANSPORT */)
         verify(nativeInterface).connectHid(any(), any(), eq(TRANSPORT_BREDR), eq(true))
         service.onConnectStateChanged(
-            Utils.getByteAddress(device),
+            Util.getByteAddress(device),
             ADDRESS_TYPE_PUBLIC,
             TRANSPORT_BREDR,
             STATE_CONNECTED,
@@ -340,7 +340,7 @@ class HidHostServiceTest {
     @Test
     fun onConnectStateChanged_forUnknownDeviceAndNotAccepting_disconnects() {
         setupPeerWithUuids(BluetoothUuid.HOGP)
-        val byteAddress = Utils.getByteAddress(device)
+        val byteAddress = Util.getByteAddress(device)
 
         // Send a connect state changed for a device that the service does not know about
         service.onConnectStateChanged(
@@ -375,7 +375,7 @@ class HidHostServiceTest {
             .getProfileConnectionPolicy(any(), any())
         doReturn(uuids).whenever(adapterService).getRemoteUuids(any())
         doReturn(device).whenever(adapterService).getDeviceFromByte(any())
-        doReturn(Utils.getByteAddress(device)).whenever(adapterService).getByteBrEdrAddress(device)
+        doReturn(Util.getByteAddress(device)).whenever(adapterService).getByteBrEdrAddress(device)
     }
 
     private fun connectDevice(order: InOrder, transport: Int) {
@@ -384,7 +384,7 @@ class HidHostServiceTest {
         order.verify(nativeInterface).connectHid(any(), any(), any(), any())
 
         service.onConnectStateChanged(
-            Utils.getByteAddress(device),
+            Util.getByteAddress(device),
             ADDRESS_TYPE_PUBLIC,
             transport,
             STATE_CONNECTED,
@@ -399,7 +399,7 @@ class HidHostServiceTest {
         order.verify(nativeInterface).disconnectHid(any(), any(), any(), eq(RECONNECT_ALLOWED))
 
         service.onConnectStateChanged(
-            Utils.getByteAddress(device),
+            Util.getByteAddress(device),
             ADDRESS_TYPE_PUBLIC,
             transport,
             STATE_DISCONNECTED,
