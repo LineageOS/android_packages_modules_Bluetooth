@@ -351,7 +351,7 @@ struct iso_impl {
     }
   }
 
-  void on_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint8_t* stream, uint16_t len) {
+  void on_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_c_to_p, uint8_t* stream, uint16_t len) {
     uint8_t cis_cnt;
     uint16_t conn_handle;
     cig_create_cmpl_evt evt;
@@ -396,7 +396,7 @@ struct iso_impl {
         auto stream_ptr = std::make_unique<iso_stream>();
         stream_ptr->conn_handle = conn_handle;
         stream_ptr->group_id = cig_id;
-        stream_ptr->sdu_itv = sdu_itv_mtos;
+        stream_ptr->sdu_itv = sdu_itv_c_to_p;
         stream_ptr->sync_info = {.tx_seq_nb = 0, .rx_seq_nb = 0};
         stream_ptr->used_credits = 0;
         stream_ptr->state_flags = kStateFlagsNone;
@@ -428,11 +428,11 @@ struct iso_impl {
     }
 
     btsnd_hcic_ble_set_cig_params(
-            cig_id, cig_params.sdu_itv_mtos, cig_params.sdu_itv_stom, cig_params.sca,
-            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_mtos,
-            cig_params.max_trans_lat_stom, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
+            cig_id, cig_params.sdu_itv_c_to_p, cig_params.sdu_itv_p_to_c, cig_params.sca,
+            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_c_to_p,
+            cig_params.max_trans_lat_p_to_c, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
             base::BindOnce(&iso_impl::on_set_cig_params, weak_factory_.GetWeakPtr(), cig_id,
-                           cig_params.sdu_itv_mtos));
+                           cig_params.sdu_itv_c_to_p));
 
     BTM_LogHistory(kBtmLogTag, RawAddress::kEmpty, "CIG Create",
                    std::format("cig_id:0x{:02x}, size: {}", cig_id, cig_params.cis_cfgs.size()));
@@ -442,11 +442,11 @@ struct iso_impl {
     log::assert_that(IsCigKnown(cig_id), "No such cig: {}", cig_id);
 
     btsnd_hcic_ble_set_cig_params(
-            cig_id, cig_params.sdu_itv_mtos, cig_params.sdu_itv_stom, cig_params.sca,
-            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_mtos,
-            cig_params.max_trans_lat_stom, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
+            cig_id, cig_params.sdu_itv_c_to_p, cig_params.sdu_itv_p_to_c, cig_params.sca,
+            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_c_to_p,
+            cig_params.max_trans_lat_p_to_c, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
             base::BindOnce(&iso_impl::on_set_cig_params, weak_factory_.GetWeakPtr(), cig_id,
-                           cig_params.sdu_itv_mtos));
+                           cig_params.sdu_itv_c_to_p));
   }
 
   void on_remove_cig(uint8_t cig_id, uint8_t* stream, uint16_t len) {
@@ -1183,17 +1183,17 @@ struct iso_impl {
 
     STREAM_TO_UINT24(evt.cig_sync_delay, data);
     STREAM_TO_UINT24(evt.cis_sync_delay, data);
-    STREAM_TO_UINT24(evt.trans_lat_mtos, data);
-    STREAM_TO_UINT24(evt.trans_lat_stom, data);
-    STREAM_TO_UINT8(evt.phy_mtos, data);
-    STREAM_TO_UINT8(evt.phy_stom, data);
+    STREAM_TO_UINT24(evt.trans_lat_c_to_p, data);
+    STREAM_TO_UINT24(evt.trans_lat_p_to_c, data);
+    STREAM_TO_UINT8(evt.phy_c_to_p, data);
+    STREAM_TO_UINT8(evt.phy_p_to_c, data);
     STREAM_TO_UINT8(evt.nse, data);
-    STREAM_TO_UINT8(evt.bn_mtos, data);
-    STREAM_TO_UINT8(evt.bn_stom, data);
-    STREAM_TO_UINT8(evt.ft_mtos, data);
-    STREAM_TO_UINT8(evt.ft_stom, data);
-    STREAM_TO_UINT16(evt.max_pdu_mtos, data);
-    STREAM_TO_UINT16(evt.max_pdu_stom, data);
+    STREAM_TO_UINT8(evt.bn_c_to_p, data);
+    STREAM_TO_UINT8(evt.bn_p_to_c, data);
+    STREAM_TO_UINT8(evt.ft_c_to_p, data);
+    STREAM_TO_UINT8(evt.ft_p_to_c, data);
+    STREAM_TO_UINT16(evt.max_pdu_c_to_p, data);
+    STREAM_TO_UINT16(evt.max_pdu_p_to_c, data);
     STREAM_TO_UINT16(evt.iso_itv, data);
 
     stream_ptr->state_flags &= ~kStateFlagIsConnecting;

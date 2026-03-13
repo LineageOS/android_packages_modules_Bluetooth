@@ -21,19 +21,19 @@ static hcic::MockHcicInterface* hcic_interface = nullptr;
 
 void hcic::SetMockHcicInterface(hcic::MockHcicInterface* interface) { hcic_interface = interface; }
 
-void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
+void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_c_to_p, uint32_t sdu_itv_p_to_c,
                                    uint8_t sca, uint8_t packing, uint8_t framing,
-                                   uint16_t max_trans_lat_mtos, uint16_t max_trans_lat_stom,
+                                   uint16_t max_trans_lat_c_to_p, uint16_t max_trans_lat_p_to_c,
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   struct bluetooth::hci::iso_manager::cig_create_params cig_params = {
-          .sdu_itv_mtos = sdu_itv_mtos,
-          .sdu_itv_stom = sdu_itv_stom,
+          .sdu_itv_c_to_p = sdu_itv_c_to_p,
+          .sdu_itv_p_to_c = sdu_itv_p_to_c,
           .sca = sca,
           .packing = packing,
           .framing = framing,
-          .max_trans_lat_mtos = max_trans_lat_mtos,
-          .max_trans_lat_stom = max_trans_lat_stom,
+          .max_trans_lat_c_to_p = max_trans_lat_c_to_p,
+          .max_trans_lat_p_to_c = max_trans_lat_p_to_c,
           .cis_cfgs = std::vector(cis_cfg, cis_cfg + cis_cnt),
   };
   hcic_interface->SetCigParams(cig_id, std::move(cig_params), std::move(cb));

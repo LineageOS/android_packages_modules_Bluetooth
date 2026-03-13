@@ -221,17 +221,17 @@ protected:
                 UINT16_TO_STREAM(p, cis->cis_conn_handle);
                 UINT24_TO_STREAM(p, 0xEA);    // CIG sync delay
                 UINT24_TO_STREAM(p, 0xEB);    // CIS sync delay
-                UINT24_TO_STREAM(p, 0xEC);    // transport latency mtos
-                UINT24_TO_STREAM(p, 0xED);    // transport latency stom
-                UINT8_TO_STREAM(p, 0x01);     // phy mtos
-                UINT8_TO_STREAM(p, 0x02);     // phy stom
+                UINT24_TO_STREAM(p, 0xEC);    // transport latency c_to_p
+                UINT24_TO_STREAM(p, 0xED);    // transport latency p_to_c
+                UINT8_TO_STREAM(p, 0x01);     // phy c_to_p
+                UINT8_TO_STREAM(p, 0x02);     // phy p_to_c
                 UINT8_TO_STREAM(p, 0x01);     // nse
-                UINT8_TO_STREAM(p, 0x02);     // bn mtos
-                UINT8_TO_STREAM(p, 0x03);     // bn stom
-                UINT8_TO_STREAM(p, 0x04);     // ft mtos
-                UINT8_TO_STREAM(p, 0x05);     // ft stom
-                UINT16_TO_STREAM(p, 0x00FA);  // Max PDU mtos
-                UINT16_TO_STREAM(p, 0x00FB);  // Max PDU stom
+                UINT8_TO_STREAM(p, 0x02);     // bn c_to_p
+                UINT8_TO_STREAM(p, 0x03);     // bn p_to_c
+                UINT8_TO_STREAM(p, 0x04);     // ft c_to_p
+                UINT8_TO_STREAM(p, 0x05);     // ft p_to_c
+                UINT16_TO_STREAM(p, 0x00FA);  // Max PDU c_to_p
+                UINT16_TO_STREAM(p, 0x00FB);  // Max PDU p_to_c
                 UINT16_TO_STREAM(p, 0x0C60);  // ISO interval
 
                 IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_EST_EVT, buf.data(),
@@ -405,67 +405,67 @@ const bluetooth::hci::iso_manager::big_create_params IsoManagerTest::kDefaultBig
 };
 
 const bluetooth::hci::iso_manager::cig_create_params IsoManagerTest::kDefaultCigParams = {
-        .sdu_itv_mtos = 0x00002710,
-        .sdu_itv_stom = 0x00002711,
+        .sdu_itv_c_to_p = 0x00002710,
+        .sdu_itv_p_to_c = 0x00002711,
         .sca = bluetooth::hci::iso_manager::kIsoSca0To20Ppm,
         .packing = 0x00,
         .framing = 0x01,
-        .max_trans_lat_mtos = 0x0009,
-        .max_trans_lat_stom = 0x000A,
+        .max_trans_lat_c_to_p = 0x0009,
+        .max_trans_lat_p_to_c = 0x000A,
         .cis_cfgs =
                 {
                         // CIS #1
                         {
                                 .cis_id = 1,
-                                .max_sdu_size_mtos = 0x0028,
-                                .max_sdu_size_stom = 0x0027,
-                                .phy_mtos = 0x04,
-                                .phy_stom = 0x03,
-                                .rtn_mtos = 0x02,
-                                .rtn_stom = 0x01,
+                                .max_sdu_size_c_to_p = 0x0028,
+                                .max_sdu_size_p_to_c = 0x0027,
+                                .phy_c_to_p = 0x04,
+                                .phy_p_to_c = 0x03,
+                                .rtn_c_to_p = 0x02,
+                                .rtn_p_to_c = 0x01,
                         },
                         // CIS #2
                         {
                                 .cis_id = 2,
-                                .max_sdu_size_mtos = 0x0029,
-                                .max_sdu_size_stom = 0x002A,
-                                .phy_mtos = 0x09,
-                                .phy_stom = 0x08,
-                                .rtn_mtos = 0x07,
-                                .rtn_stom = 0x06,
+                                .max_sdu_size_c_to_p = 0x0029,
+                                .max_sdu_size_p_to_c = 0x002A,
+                                .phy_c_to_p = 0x09,
+                                .phy_p_to_c = 0x08,
+                                .rtn_c_to_p = 0x07,
+                                .rtn_p_to_c = 0x06,
                         },
                 },
 };
 
 const bluetooth::hci::iso_manager::cig_create_params IsoManagerTest::kDefaultCigParams2 = {
-        .sdu_itv_mtos = 0x00002709,
-        .sdu_itv_stom = 0x00002700,
+        .sdu_itv_c_to_p = 0x00002709,
+        .sdu_itv_p_to_c = 0x00002700,
         .sca = bluetooth::hci::iso_manager::kIsoSca0To20Ppm,
         .packing = 0x01,
         .framing = 0x00,
-        .max_trans_lat_mtos = 0x0006,
-        .max_trans_lat_stom = 0x000B,
+        .max_trans_lat_c_to_p = 0x0006,
+        .max_trans_lat_p_to_c = 0x000B,
         .cis_cfgs =
                 {
                         // CIS #1
                         {
                                 .cis_id = 1,
-                                .max_sdu_size_mtos = 0x0022,
-                                .max_sdu_size_stom = 0x0022,
-                                .phy_mtos = 0x01,
-                                .phy_stom = 0x02,
-                                .rtn_mtos = 0x02,
-                                .rtn_stom = 0x01,
+                                .max_sdu_size_c_to_p = 0x0022,
+                                .max_sdu_size_p_to_c = 0x0022,
+                                .phy_c_to_p = 0x01,
+                                .phy_p_to_c = 0x02,
+                                .rtn_c_to_p = 0x02,
+                                .rtn_p_to_c = 0x01,
                         },
                         // CIS #2
                         {
                                 .cis_id = 2,
-                                .max_sdu_size_mtos = 0x002A,
-                                .max_sdu_size_stom = 0x002B,
-                                .phy_mtos = 0x06,
-                                .phy_stom = 0x06,
-                                .rtn_mtos = 0x07,
-                                .rtn_stom = 0x07,
+                                .max_sdu_size_c_to_p = 0x002A,
+                                .max_sdu_size_p_to_c = 0x002B,
+                                .phy_c_to_p = 0x06,
+                                .phy_p_to_c = 0x06,
+                                .rtn_c_to_p = 0x07,
+                                .rtn_p_to_c = 0x07,
                         },
                 },
 };
@@ -479,17 +479,18 @@ protected:
 };
 
 static bool operator==(const EXT_CIS_CFG& x, const EXT_CIS_CFG& y) {
-  return (x.cis_id == y.cis_id) && (x.max_sdu_size_mtos == y.max_sdu_size_mtos) &&
-         (x.max_sdu_size_stom == y.max_sdu_size_stom) && (x.phy_mtos == y.phy_mtos) &&
-         (x.phy_stom == y.phy_stom) && (x.rtn_mtos == y.rtn_mtos) && (x.rtn_stom == y.rtn_stom);
+  return (x.cis_id == y.cis_id) && (x.max_sdu_size_c_to_p == y.max_sdu_size_c_to_p) &&
+         (x.max_sdu_size_p_to_c == y.max_sdu_size_p_to_c) && (x.phy_c_to_p == y.phy_c_to_p) &&
+         (x.phy_p_to_c == y.phy_p_to_c) && (x.rtn_c_to_p == y.rtn_c_to_p) &&
+         (x.rtn_p_to_c == y.rtn_p_to_c);
 }
 
 static bool operator==(const struct bluetooth::hci::iso_manager::cig_create_params& x,
                        const struct bluetooth::hci::iso_manager::cig_create_params& y) {
-  return (x.sdu_itv_mtos == y.sdu_itv_mtos) && (x.sdu_itv_stom == y.sdu_itv_stom) &&
+  return (x.sdu_itv_c_to_p == y.sdu_itv_c_to_p) && (x.sdu_itv_p_to_c == y.sdu_itv_p_to_c) &&
          (x.sca == y.sca) && (x.packing == y.packing) && (x.framing == y.framing) &&
-         (x.max_trans_lat_stom == y.max_trans_lat_stom) &&
-         (x.max_trans_lat_mtos == y.max_trans_lat_mtos) &&
+         (x.max_trans_lat_p_to_c == y.max_trans_lat_p_to_c) &&
+         (x.max_trans_lat_c_to_p == y.max_trans_lat_c_to_p) &&
          std::is_permutation(x.cis_cfgs.begin(), x.cis_cfgs.end(), y.cis_cfgs.begin());
 }
 
@@ -1305,17 +1306,17 @@ TEST_F(IsoManagerDeathTest, EstablishCisInvalidResponsePacket) {
               UINT16_TO_STREAM(p, handle);
               UINT24_TO_STREAM(p, 0xEA);    // CIG sync delay
               UINT24_TO_STREAM(p, 0xEB);    // CIS sync delay
-              UINT24_TO_STREAM(p, 0xEC);    // transport latency mtos
-              UINT24_TO_STREAM(p, 0xED);    // transport latency stom
-              UINT8_TO_STREAM(p, 0x01);     // phy mtos
-              UINT8_TO_STREAM(p, 0x02);     // phy stom
+              UINT24_TO_STREAM(p, 0xEC);    // transport latency c_to_p
+              UINT24_TO_STREAM(p, 0xED);    // transport latency p_to_c
+              UINT8_TO_STREAM(p, 0x01);     // phy c_to_p
+              UINT8_TO_STREAM(p, 0x02);     // phy p_to_c
               UINT8_TO_STREAM(p, 0x01);     // nse
-              UINT8_TO_STREAM(p, 0x02);     // bn mtos
-              UINT8_TO_STREAM(p, 0x03);     // bn stom
-              UINT8_TO_STREAM(p, 0x04);     // ft mtos
-              UINT8_TO_STREAM(p, 0x05);     // ft stom
-              UINT16_TO_STREAM(p, 0x00FA);  // Max PDU mtos
-              UINT16_TO_STREAM(p, 0x00FB);  // Max PDU stom
+              UINT8_TO_STREAM(p, 0x02);     // bn c_to_p
+              UINT8_TO_STREAM(p, 0x03);     // bn p_to_c
+              UINT8_TO_STREAM(p, 0x04);     // ft c_to_p
+              UINT8_TO_STREAM(p, 0x05);     // ft p_to_c
+              UINT16_TO_STREAM(p, 0x00FA);  // Max PDU c_to_p
+              UINT16_TO_STREAM(p, 0x00FB);  // Max PDU p_to_c
 
               IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_EST_EVT, buf.data(),
                                                         buf.size());
@@ -1382,17 +1383,17 @@ TEST_F(IsoManagerTest, EstablishCisInvalidStatus) {
               UINT16_TO_STREAM(p, handle);
               UINT24_TO_STREAM(p, 0xEA);    // CIG sync delay
               UINT24_TO_STREAM(p, 0xEB);    // CIS sync delay
-              UINT24_TO_STREAM(p, 0xEC);    // transport latency mtos
-              UINT24_TO_STREAM(p, 0xED);    // transport latency stom
-              UINT8_TO_STREAM(p, 0x01);     // phy mtos
-              UINT8_TO_STREAM(p, 0x02);     // phy stom
+              UINT24_TO_STREAM(p, 0xEC);    // transport latency c_to_p
+              UINT24_TO_STREAM(p, 0xED);    // transport latency p_to_c
+              UINT8_TO_STREAM(p, 0x01);     // phy c_to_p
+              UINT8_TO_STREAM(p, 0x02);     // phy p_to_c
               UINT8_TO_STREAM(p, 0x01);     // nse
-              UINT8_TO_STREAM(p, 0x02);     // bn mtos
-              UINT8_TO_STREAM(p, 0x03);     // bn stom
-              UINT8_TO_STREAM(p, 0x04);     // ft mtos
-              UINT8_TO_STREAM(p, 0x05);     // ft stom
-              UINT16_TO_STREAM(p, 0x00FA);  // Max PDU mtos
-              UINT16_TO_STREAM(p, 0x00FB);  // Max PDU stom
+              UINT8_TO_STREAM(p, 0x02);     // bn c_to_p
+              UINT8_TO_STREAM(p, 0x03);     // bn p_to_c
+              UINT8_TO_STREAM(p, 0x04);     // ft c_to_p
+              UINT8_TO_STREAM(p, 0x05);     // ft p_to_c
+              UINT16_TO_STREAM(p, 0x00FA);  // Max PDU c_to_p
+              UINT16_TO_STREAM(p, 0x00FB);  // Max PDU p_to_c
               UINT16_TO_STREAM(p, 0x0C60);  // ISO interval
 
               IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_EST_EVT, buf.data(),

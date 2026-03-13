@@ -369,9 +369,9 @@ void btsnd_hcic_ble_set_extended_scan_enable(uint8_t enable, uint8_t filter_dupl
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
+void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_c_to_p, uint32_t sdu_itv_p_to_c,
                                    uint8_t sca, uint8_t packing, uint8_t framing,
-                                   uint16_t max_trans_lat_mtos, uint16_t max_trans_lat_stom,
+                                   uint16_t max_trans_lat_c_to_p, uint16_t max_trans_lat_p_to_c,
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = HCIC_PARAM_SIZE_SET_CIG_PARAMS_BASE_LEN +
@@ -383,23 +383,23 @@ void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32
   uint8_t* pp = param;
 
   UINT8_TO_STREAM(pp, cig_id);
-  UINT24_TO_STREAM(pp, sdu_itv_mtos);
-  UINT24_TO_STREAM(pp, sdu_itv_stom);
+  UINT24_TO_STREAM(pp, sdu_itv_c_to_p);
+  UINT24_TO_STREAM(pp, sdu_itv_p_to_c);
   UINT8_TO_STREAM(pp, sca);
   UINT8_TO_STREAM(pp, packing);
   UINT8_TO_STREAM(pp, framing);
-  UINT16_TO_STREAM(pp, max_trans_lat_mtos);
-  UINT16_TO_STREAM(pp, max_trans_lat_stom);
+  UINT16_TO_STREAM(pp, max_trans_lat_c_to_p);
+  UINT16_TO_STREAM(pp, max_trans_lat_p_to_c);
   UINT8_TO_STREAM(pp, cis_cnt);
 
   for (int i = 0; i < cis_cnt; i++) {
     UINT8_TO_STREAM(pp, cis_cfg[i].cis_id);
-    UINT16_TO_STREAM(pp, cis_cfg[i].max_sdu_size_mtos);
-    UINT16_TO_STREAM(pp, cis_cfg[i].max_sdu_size_stom);
-    UINT8_TO_STREAM(pp, cis_cfg[i].phy_mtos);
-    UINT8_TO_STREAM(pp, cis_cfg[i].phy_stom);
-    UINT8_TO_STREAM(pp, cis_cfg[i].rtn_mtos);
-    UINT8_TO_STREAM(pp, cis_cfg[i].rtn_stom);
+    UINT16_TO_STREAM(pp, cis_cfg[i].max_sdu_size_c_to_p);
+    UINT16_TO_STREAM(pp, cis_cfg[i].max_sdu_size_p_to_c);
+    UINT8_TO_STREAM(pp, cis_cfg[i].phy_c_to_p);
+    UINT8_TO_STREAM(pp, cis_cfg[i].phy_p_to_c);
+    UINT8_TO_STREAM(pp, cis_cfg[i].rtn_c_to_p);
+    UINT8_TO_STREAM(pp, cis_cfg[i].rtn_p_to_c);
   }
 
   btu_hcif_send_cmd_with_cb(HCI_LE_SET_CIG_PARAMS, param, params_len,

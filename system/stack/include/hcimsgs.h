@@ -292,31 +292,31 @@ void btsnd_hcic_write_authenticated_payload_tout(uint16_t handle, uint16_t timeo
 
 struct EXT_CIS_CFG {
   uint8_t cis_id;
-  uint16_t max_sdu_size_mtos;
-  uint16_t max_sdu_size_stom;
-  uint8_t phy_mtos;
-  uint8_t phy_stom;
-  uint8_t rtn_mtos;
-  uint8_t rtn_stom;
+  uint16_t max_sdu_size_c_to_p;
+  uint16_t max_sdu_size_p_to_c;
+  uint8_t phy_c_to_p;
+  uint8_t phy_p_to_c;
+  uint8_t rtn_c_to_p;
+  uint8_t rtn_p_to_c;
 };
 
-void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
+void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_c_to_p, uint32_t sdu_itv_p_to_c,
                                    uint8_t sca, uint8_t packing, uint8_t framing,
-                                   uint16_t max_trans_lat_mtos, uint16_t max_trans_lat_stom,
+                                   uint16_t max_trans_lat_c_to_p, uint16_t max_trans_lat_p_to_c,
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 struct EXT_CIS_TEST_CFG {
   uint8_t cis_id;
   uint8_t nse;
-  uint16_t max_sdu_size_mtos;
-  uint16_t max_sdu_size_stom;
-  uint8_t max_pdu_mtos;
-  uint8_t max_pdu_stom;
-  uint8_t phy_mtos;
-  uint8_t phy_stom;
-  uint8_t bn_mtos;
-  uint8_t bn_stom;
+  uint16_t max_sdu_size_c_to_p;
+  uint16_t max_sdu_size_p_to_c;
+  uint8_t max_pdu_c_to_p;
+  uint8_t max_pdu_p_to_c;
+  uint8_t phy_c_to_p;
+  uint8_t phy_p_to_c;
+  uint8_t bn_c_to_p;
+  uint8_t bn_p_to_c;
 };
 
 struct EXT_CIS_CREATE_CFG {
