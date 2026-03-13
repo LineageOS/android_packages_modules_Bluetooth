@@ -71,8 +71,6 @@ class ScannerMap(
         )
 
     fun addWithPendingIntent(
-        appName: String,
-        userHandle: UserHandle,
         source: AttributionSource,
         piInfo: ScanController.PendingIntentInfo,
         settings: ScanSettings,
@@ -81,8 +79,8 @@ class ScannerMap(
         add(
             appUid = piInfo.callingUid(),
             appPid = piInfo.callingPid(),
-            appName = appName,
-            userHandle = userHandle,
+            appName = adapterService.appNameOrUnknown(source.uid),
+            userHandle = UserHandle.getUserHandleForUid(source.uid),
             source = source,
             workSource = null,
             callback = null,

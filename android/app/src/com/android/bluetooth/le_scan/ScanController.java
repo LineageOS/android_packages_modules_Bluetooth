@@ -51,7 +51,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.os.UserHandle;
 import android.os.WorkSource;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -1049,17 +1048,16 @@ public class ScanController {
         enforceScanThread();
         var header = "registerPiAndStartScan(): ";
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
-        String callingPackage = source.getPackageName();
-        int callingUid = source.getUid();
-        int callingPid = source.getPid();
+        var callingPackage = source.getPackageName();
         PendingIntentInfo piInfo =
                 new PendingIntentInfo(
-                        pendingIntent, settings, filters, callingPackage, callingUid, callingPid);
-        Log.d(
-                TAG,
-                header
-                        + ("source=" + source + ", package=" + callingPackage)
-                        + (", uid=" + callingUid + ", pid=" + callingPid));
+                        pendingIntent,
+                        settings,
+                        filters,
+                        callingPackage,
+                        source.getUid(),
+                        source.getPid());
+        Log.d(TAG, header + "source=" + source);
 
         // Don't start scan if the Pi scan already in mScannerMap.
         if (mScannerMap.getByPendingIntentInfo(pendingIntent) != null) {
@@ -1067,16 +1065,8 @@ public class ScanController {
             return;
         }
 
-        final int uid = source.getUid();
-        var app =
-                mScannerMap.addWithPendingIntent(
-                        Util.appNameOrUnknown(mAdapterService, callingUid),
-                        UserHandle.getUserHandleForUid(uid),
-                        source,
-                        piInfo,
-                        settings,
-                        filters);
-        mAppOps.checkPackage(uid, callingPackage);
+        var app = mScannerMap.addWithPendingIntent(source, piInfo, settings, filters);
+        mAppOps.checkPackage(source.getUid(), callingPackage);
         app.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));
         app.setHasDisavowedLocation(

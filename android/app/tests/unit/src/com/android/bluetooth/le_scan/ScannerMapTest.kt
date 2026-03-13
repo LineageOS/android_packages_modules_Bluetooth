@@ -24,7 +24,6 @@ import android.content.AttributionSource
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.BatteryStatsManager
-import android.os.UserHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 /** Test cases for [ScannerMap]. */
@@ -71,15 +69,7 @@ class ScannerMapTest {
         val info = ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID, PID)
         val scanSettings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
-        val app =
-            scannerMap.addWithPendingIntent(
-                APP_NAME,
-                mock<UserHandle>(),
-                source,
-                info,
-                scanSettings,
-                filters,
-            )
+        val app = scannerMap.addWithPendingIntent(source, info, scanSettings, filters)
         app.scannerId = SCANNER_ID
 
         assertThat(scannerMap.getById(SCANNER_ID)?.name).isEqualTo(APP_NAME)
