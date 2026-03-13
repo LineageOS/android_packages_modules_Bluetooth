@@ -40,16 +40,6 @@ flag {
 }
 
 flag {
-    name: "pbap_lazy_load_contacts"
-    namespace: "bluetooth"
-    description: "Load contacts when the first remote connects"
-    bug: "446565901"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "pbap_correct_filtered_index"
     namespace: "bluetooth"
     description: "Correct indexes for phonebook requests with filter"
