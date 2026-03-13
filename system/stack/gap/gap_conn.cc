@@ -879,11 +879,7 @@ static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
     p_ccb->rem_mtu_size = L2CAP_DEFAULT_MTU;
   } else {
     if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-      if (com_android_bluetooth_flags_l2cap_improve_segmented_sdu()) {
-        local_mtu_size = BT_ERTM_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET;
-      } else {
-        local_mtu_size = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET;
-      }
+      local_mtu_size = BT_ERTM_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET;
     } else {
       local_mtu_size = L2CAP_MTU_SIZE;
     }

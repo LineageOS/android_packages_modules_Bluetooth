@@ -1841,8 +1841,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
       }
 
-      if (com_android_bluetooth_flags_l2cap_improve_segmented_sdu() &&
-          p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE) {
+      if (p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE) {
         max_retrans_size = BT_ERTM_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET -
                            L2CAP_SDU_LEN_OFFSET - fcs_len;
       } else {
