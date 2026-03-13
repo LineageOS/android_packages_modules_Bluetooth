@@ -93,7 +93,7 @@ final class AdapterState extends StateMachine {
             throw new IllegalStateException("Bluetooth timeout properties are incorrect");
         }
         if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
-            defaultDelay = 8_000;
+            defaultDelay = 8_000 * HW_MULTIPLIER;
             BLE_START_TIMEOUT_DELAY = defaultDelay;
             BLE_STOP_TIMEOUT_DELAY = defaultDelay;
         } else {
