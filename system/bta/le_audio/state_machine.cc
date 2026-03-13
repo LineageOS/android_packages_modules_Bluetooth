@@ -1936,8 +1936,8 @@ private:
             .sca = sca,
             .packing = packing,
             .framing = framing,
-            .max_trans_lat_stom = max_trans_lat_stom,
             .max_trans_lat_mtos = max_trans_lat_mtos,
+            .max_trans_lat_stom = max_trans_lat_stom,
             .cis_cfgs = std::move(cis_cfgs),
     };
 

@@ -410,8 +410,8 @@ const bluetooth::hci::iso_manager::cig_create_params IsoManagerTest::kDefaultCig
         .sca = bluetooth::hci::iso_manager::kIsoSca0To20Ppm,
         .packing = 0x00,
         .framing = 0x01,
-        .max_trans_lat_stom = 0x000A,
         .max_trans_lat_mtos = 0x0009,
+        .max_trans_lat_stom = 0x000A,
         .cis_cfgs =
                 {
                         // CIS #1
@@ -443,8 +443,8 @@ const bluetooth::hci::iso_manager::cig_create_params IsoManagerTest::kDefaultCig
         .sca = bluetooth::hci::iso_manager::kIsoSca0To20Ppm,
         .packing = 0x01,
         .framing = 0x00,
-        .max_trans_lat_stom = 0x000B,
         .max_trans_lat_mtos = 0x0006,
+        .max_trans_lat_stom = 0x000B,
         .cis_cfgs =
                 {
                         // CIS #1

@@ -429,8 +429,8 @@ struct iso_impl {
 
     btsnd_hcic_ble_set_cig_params(
             cig_id, cig_params.sdu_itv_mtos, cig_params.sdu_itv_stom, cig_params.sca,
-            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_stom,
-            cig_params.max_trans_lat_mtos, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
+            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_mtos,
+            cig_params.max_trans_lat_stom, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
             base::BindOnce(&iso_impl::on_set_cig_params, weak_factory_.GetWeakPtr(), cig_id,
                            cig_params.sdu_itv_mtos));
 
@@ -443,8 +443,8 @@ struct iso_impl {
 
     btsnd_hcic_ble_set_cig_params(
             cig_id, cig_params.sdu_itv_mtos, cig_params.sdu_itv_stom, cig_params.sca,
-            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_stom,
-            cig_params.max_trans_lat_mtos, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
+            cig_params.packing, cig_params.framing, cig_params.max_trans_lat_mtos,
+            cig_params.max_trans_lat_stom, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
             base::BindOnce(&iso_impl::on_set_cig_params, weak_factory_.GetWeakPtr(), cig_id,
                            cig_params.sdu_itv_mtos));
   }

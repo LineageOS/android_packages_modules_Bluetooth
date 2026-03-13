@@ -95,8 +95,8 @@ struct cig_create_params {
   uint8_t sca;
   uint8_t packing;
   uint8_t framing;
-  uint16_t max_trans_lat_stom;
   uint16_t max_trans_lat_mtos;
+  uint16_t max_trans_lat_stom;
   std::vector<EXT_CIS_CFG> cis_cfgs;
 };
 

@@ -371,7 +371,7 @@ void btsnd_hcic_ble_set_extended_scan_enable(uint8_t enable, uint8_t filter_dupl
 
 void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
                                    uint8_t sca, uint8_t packing, uint8_t framing,
-                                   uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
+                                   uint16_t max_trans_lat_mtos, uint16_t max_trans_lat_stom,
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = HCIC_PARAM_SIZE_SET_CIG_PARAMS_BASE_LEN +

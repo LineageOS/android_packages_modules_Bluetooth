@@ -302,7 +302,7 @@ struct EXT_CIS_CFG {
 
 void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
                                    uint8_t sca, uint8_t packing, uint8_t framing,
-                                   uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
+                                   uint16_t max_trans_lat_mtos, uint16_t max_trans_lat_stom,
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
