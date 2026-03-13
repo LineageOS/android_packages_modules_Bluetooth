@@ -98,7 +98,7 @@ struct Pacs::service_impl {
   struct CtpRequest {
     uint32_t trans_id;
     tCONN_ID conn_id;
-    tGATT_WRITE_REQ write_req;
+    bool need_rsp;
   };
   std::map<RawAddress, CtpRequest> pending_request_by_address_;
 
@@ -573,16 +573,15 @@ struct Pacs::service_impl {
     }
   }
 
-  void OnWriteAudioLocationCharacteristic(tCONN_ID conn_id, uint32_t trans_id,
-                                          const tGATT_WRITE_REQ& write_req) {
-    auto char_uuid = char_metadata_by_value_handle_.at(write_req.handle).uuid;
+  void OnWriteAudioLocationCharacteristic(tCONN_ID conn_id, uint32_t trans_id, uint16_t handle,
+                                          bool need_rsp, uint8_t* value, uint16_t len) {
+    auto char_uuid = char_metadata_by_value_handle_.at(handle).uuid;
 
-    auto value = std::make_shared<std::vector<uint8_t>>(write_req.value,
-                                                        write_req.value + write_req.len);
-    auto char_view = pacs::AudioLocationsCharValueView::Create(packet::PacketView<true>(value));
+    auto value_vec = std::make_shared<std::vector<uint8_t>>(value, value + len);
+    auto char_view = pacs::AudioLocationsCharValueView::Create(packet::PacketView<true>(value_vec));
     if (!char_view.IsValid()) {
       log::warn("Invalid value for Audio Location write.");
-      if (write_req.need_rsp) {
+      if (need_rsp) {
         BTA_GATTS_SendRsp(conn_id, trans_id, GATT_WRITE_REQ_REJECTED, nullptr);
       }
       return;
@@ -593,7 +592,7 @@ struct Pacs::service_impl {
 
     if (pending_request_by_address_.count(pac_device->pseudo_addr)) {
       log::warn("Device {} has a pending request, rejecting new one.", pac_device->pseudo_addr);
-      if (write_req.need_rsp) {
+      if (need_rsp) {
         BTA_GATTS_SendRsp(conn_id, trans_id, GATT_BUSY, nullptr);
       }
       return;
@@ -605,13 +604,14 @@ struct Pacs::service_impl {
 
     AudioLocations new_locations(char_view.GetAudioLocations());
 
-    pending_request_by_address_[pac_device->pseudo_addr] = CtpRequest{trans_id, conn_id, write_req};
+    pending_request_by_address_[pac_device->pseudo_addr] = CtpRequest{trans_id, conn_id, need_rsp};
     callbacks_->OnAudioLocationsWritten(pac_device->pseudo_addr, direction, new_locations);
   }
 
   void OnGattWriteCharacteristic(tCONN_ID conn_id, uint32_t trans_id,
-                                 const RawAddress& /*remote_bda*/, uint16_t handle, uint16_t offset,
-                                 bool need_rsp, bool is_prep, uint8_t* value, uint16_t len) {
+                                 const RawAddress& /*remote_bda*/, uint16_t handle,
+                                 uint16_t /* offset */, bool need_rsp, bool /* is_prep */,
+                                 uint8_t* value, uint16_t len) {
     log::info("handle: 0x{:04x}", handle);
 
     if (char_metadata_by_value_handle_.count(handle) == 0) {
@@ -625,15 +625,7 @@ struct Pacs::service_impl {
     auto char_uuid = char_metadata_by_value_handle_.at(handle).uuid;
     if (char_uuid == uuid::kSinkAudioLocationCharacteristicUuid.As16Bit() ||
         char_uuid == uuid::kSourceAudioLocationCharacteristicUuid.As16Bit()) {
-      tGATT_WRITE_REQ write_req = {
-          .handle = handle,
-          .offset = offset,
-          .len = len,
-          .need_rsp = need_rsp,
-          .is_prep = is_prep,
-      };
-      memcpy(write_req.value, value, len);
-      OnWriteAudioLocationCharacteristic(conn_id, trans_id, write_req);
+      OnWriteAudioLocationCharacteristic(conn_id, trans_id, handle, need_rsp, value, len);
     } else {
       log::warn("Unhandled characteristic write request for handle 0x{:04x}, char_uuid: {}.",
                 handle, Uuid::From16Bit(char_uuid).ToString());
@@ -825,7 +817,7 @@ struct Pacs::service_impl {
     if (request != pending_request_by_address_.end()) {
       log::warn("Device {} has a pending request, rejecting new one.", pac_device->pseudo_addr);
       const auto& req = request->second;
-      if (req.write_req.need_rsp) {
+      if (req.need_rsp) {
         BTA_GATTS_SendRsp(req.conn_id, req.trans_id,
                           is_accepted ? GATT_SUCCESS : GATT_WRITE_REQ_REJECTED, nullptr);
       }

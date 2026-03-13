@@ -259,7 +259,7 @@ TEST_F(RasServerTest, GattMtuChanged) {
   uint16_t mtu = 512;
   // OnMtuChangedFromServer should be triggered after receiving BTA_GATTS_MTU_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnMtuChangedFromServer(test_address_, mtu)).Times(1);
-  captured_gatt_callback_->p_mtu_changed_cb(1, 0, test_address_, mtu);
+  captured_gatt_callback_->p_mtu_changed_cb(1, test_address_, mtu);
 }
 
 TEST_F(RasServerTest, ReadCharacteristic) {

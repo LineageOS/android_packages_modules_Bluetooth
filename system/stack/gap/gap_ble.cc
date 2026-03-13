@@ -77,8 +77,7 @@ static void gap_write_characteristic_or_descriptor_cback(tCONN_ID conn_id, uint3
                                                          uint8_t* value, uint16_t len);
 static void gap_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
                                  tGATT_EXEC_FLAG exec_write);
-static void gap_mtu_changed_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
-                                  uint16_t mtu);
+static void gap_mtu_changed_cback(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu);
 static void gap_conf_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
 
 static stack::tGATT_REQ_CBACK gap_req_cback = {
@@ -255,8 +254,8 @@ static void gap_exec_write_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
   log::verbose("Ignore GATTS_REQ_TYPE_WRITE_EXEC");
 }
 
-static void gap_mtu_changed_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
-                                  const RawAddress& /*remote_bda*/, uint16_t mtu) {
+static void gap_mtu_changed_cback(tCONN_ID /*conn_id*/, const RawAddress& /*remote_bda*/,
+                                  uint16_t mtu) {
   log::verbose("Get MTU exchange new mtu size: {}", mtu);
 }
 

@@ -69,8 +69,8 @@ static void bta_gatts_write_descriptor_cback(tCONN_ID conn_id, uint32_t trans_id
                                              uint8_t* value, uint16_t len);
 static void bta_gatts_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id,
                                        const RawAddress& remote_bda, tGATT_EXEC_FLAG exec_write);
-static void bta_gatts_mtu_changed_cback(tCONN_ID conn_id, uint32_t trans_id,
-                                        const RawAddress& remote_bda, uint16_t mtu);
+static void bta_gatts_mtu_changed_cback(tCONN_ID conn_id, const RawAddress& remote_bda,
+                                        uint16_t mtu);
 static void bta_gatts_conf_cback(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
 
 static stack::tGATT_REQ_CBACK bta_gatts_req_cback = {
@@ -520,11 +520,11 @@ static void bta_gatts_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id,
   }
 }
 
-static void bta_gatts_mtu_changed_cback(tCONN_ID conn_id, uint32_t trans_id,
-                                        const RawAddress& remote_bda, uint16_t mtu) {
+static void bta_gatts_mtu_changed_cback(tCONN_ID conn_id, const RawAddress& remote_bda,
+                                        uint16_t mtu) {
   tBTA_GATTS_RCB* p_rcb = bta_gatts_get_rcb_and_inform_pm(conn_id, remote_bda);
   if (p_rcb && p_rcb->p_cback->p_mtu_changed_cb) {
-    p_rcb->p_cback->p_mtu_changed_cb(conn_id, trans_id, remote_bda, mtu);
+    p_rcb->p_cback->p_mtu_changed_cb(conn_id, remote_bda, mtu);
   }
 }
 

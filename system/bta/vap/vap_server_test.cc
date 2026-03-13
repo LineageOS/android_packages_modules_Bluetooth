@@ -203,7 +203,7 @@ TEST_F(VapServerTest, init_start_stop_va_session) {
 
 TEST_F(VapServerTest, on_gatt_mtu_changed) {
   uint16_t new_mtu = 512;
-  captured_gatt_callback_->p_mtu_changed_cb(1, 0, test_address_, new_mtu);
+  captured_gatt_callback_->p_mtu_changed_cb(1, test_address_, new_mtu);
   SyncOnMainLoop();
 }
 

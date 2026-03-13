@@ -220,8 +220,8 @@ static void btapp_gatts_exec_write_cback(tCONN_ID conn_id, uint32_t trans_id,
           conn_id, trans_id, remote_bda, exec_write));
 }
 
-static void btapp_gatts_mtu_changed_cback(tCONN_ID conn_id, uint32_t /*trans_id*/,
-                                          const RawAddress& /*remote_bda*/, uint16_t mtu) {
+static void btapp_gatts_mtu_changed_cback(tCONN_ID conn_id, const RawAddress& /*remote_bda*/,
+                                          uint16_t mtu) {
   do_in_jni_thread(BindOnce(
           [](tCONN_ID conn_id, uint16_t mtu) {
             HAL_CBACK(bt_gatt_callbacks, server->mtu_changed_cb, conn_id, mtu);
