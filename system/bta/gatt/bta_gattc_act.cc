@@ -630,11 +630,6 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   }
 
   if (p_clcb->p_rcb) {
-    /* there is no RM for GATT */
-    if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
-      bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
-    }
-
     bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_SUCCESS, p_clcb->bda, p_clcb->bta_conn_id,
                               p_clcb->transport, p_clcb->p_srcb->mtu);
   }
@@ -678,9 +673,6 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (com_android_bluetooth_flags_le_subrate_manager()) {
     stack::leConnectionUpdateSubrateConfig(p_clcb->p_rcb->client_if, p_clcb->bda,
                                            GATT_SUBRATE_MODE_OFF, 0, 0, 0);
-  }
-  if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
-    bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
   }
 
   /* Disable notification registration for closed connection */
@@ -1146,17 +1138,11 @@ void bta_gattc_execute(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 }
 
 /** send handle value confirmation */
-void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
+void bta_gattc_confirm(tBTA_GATTC_CLCB* /*p_clcb*/, const tBTA_GATTC_DATA* p_data) {
   uint16_t cid = p_data->api_confirm.cid;
   auto conn_id = static_cast<tCONN_ID>(p_data->api_confirm.hdr.layer_specific);
   if (GATTC_SendHandleValueConfirm(conn_id, cid) != GATT_SUCCESS) {
     log::error("to cid=0x{:x} failed", cid);
-  } else {
-    /* if over BR_EDR, inform PM for mode change */
-    if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
-      bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
-      bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
-    }
   }
 }
 
@@ -1772,12 +1758,6 @@ static void bta_gattc_cmpl_cback(tCONN_ID conn_id, tGATTC_OPTYPE op, tGATT_STATU
   if (!p_clcb) {
     log::error("unknown conn_id=0x{:x} ignore data", conn_id);
     return;
-  }
-
-  /* if over BR_EDR, inform PM for mode change */
-  if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
-    bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
-    bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
   }
 
   bta_gattc_cmpl_sendmsg(conn_id, op, status, p_data);
