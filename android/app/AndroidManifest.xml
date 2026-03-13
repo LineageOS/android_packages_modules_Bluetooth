@@ -308,7 +308,8 @@
                 android:theme="@android:style/Theme.NoDisplay"
                 android:exported="true"
                 android:excludeFromRecents="true"
-                android:noHistory="true">
+                android:noHistory="true"
+                android:process="@string/process">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
