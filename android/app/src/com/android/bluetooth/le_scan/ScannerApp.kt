@@ -24,6 +24,7 @@ import android.os.RemoteException
 import android.os.UserHandle
 import android.util.Log
 import com.android.bluetooth.ActionOnDeathRecipient
+import com.android.internal.annotations.VisibleForTesting
 import java.util.UUID
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScannerApp"
@@ -48,7 +49,7 @@ class ScannerApp(
     var hasDisavowedLocation = false
     var eligibleForSanitizedExposureNotification = false
     var associatedDevices: MutableList<String>? = null
-    private var deathRecipient: ActionOnDeathRecipient? = null
+    @VisibleForTesting var deathRecipient: ActionOnDeathRecipient? = null
 
     val uid = appScanStats.uid
     val pid = appScanStats.pid
