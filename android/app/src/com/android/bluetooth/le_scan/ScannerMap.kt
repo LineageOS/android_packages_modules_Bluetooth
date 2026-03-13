@@ -59,7 +59,6 @@ class ScannerMap(
         add(
             appUid = source.uid,
             appPid = source.pid,
-            appName = adapterService.appNameOrUnknown(source.uid),
             userHandle = null,
             source = source,
             workSource = workSource,
@@ -79,7 +78,6 @@ class ScannerMap(
         add(
             appUid = piInfo.callingUid(),
             appPid = piInfo.callingPid(),
-            appName = adapterService.appNameOrUnknown(source.uid),
             userHandle = UserHandle.getUserHandleForUid(source.uid),
             source = source,
             workSource = null,
@@ -93,7 +91,6 @@ class ScannerMap(
     private fun add(
         appUid: Int,
         appPid: Int,
-        appName: String,
         userHandle: UserHandle?,
         source: AttributionSource,
         workSource: WorkSource?,
@@ -103,6 +100,7 @@ class ScannerMap(
         piInfo: ScanController.PendingIntentInfo?,
         isInternal: Boolean,
     ): ScannerApp {
+        val appName = adapterService.appNameOrUnknown(source.uid)
         val appScanStats =
             appScanStatsMap.getOrPut(appUid) {
                 // Bill the caller uid if the work source isn't passed through
