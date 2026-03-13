@@ -589,14 +589,14 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsByUid(Binder.getCallingUid())
+        // TODO(b/492326470) Make `ScannerMap` not mock in `ScanControllerTest`
+        val uuid = UUID.randomUUID()
+        val app = mock<ScannerApp> { doReturn(uuid).whenever(it).uuid }
+        doReturn(app).whenever(scannerMap).addWithCallback(any(), any(), any(), any(), any(), any())
 
         scanController.registerAndStartScan(callback, workSource, source, false, settings, filters)
         verify(scannerMap)
             .addWithCallback(
-                any<Int>(),
-                any<Int>(),
-                any<String>(),
-                any<UUID>(),
                 eq(source),
                 eq(workSource),
                 eq(callback),

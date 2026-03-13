@@ -929,27 +929,15 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters,
             boolean isInternal) {
-        final int uid = source.getUid();
-        final int pid = source.getPid();
-        final var appName = Util.appNameOrUnknown(mAdapterService, uid);
-        final var uuid = UUID.randomUUID();
         Log.d(
                 TAG,
-                ("registerAndStartScan(): uid=" + uid + ", pid=" + uid + ", app=" + appName)
-                        + (", UUID=" + uuid + ", settings=" + ScanUtil.toStringShort(settings))
+                ("registerAndStartScan(): source=" + source)
+                        + (", settings=" + ScanUtil.toStringShort(settings))
                         + (", filters=" + filters + ", isInternal=" + isInternal));
-        mScannerMap.addWithCallback(
-                uid,
-                pid,
-                appName,
-                uuid,
-                source,
-                workSource,
-                callback,
-                settings,
-                filters,
-                isInternal);
-        mScanManager.registerScanner(uuid);
+        var app =
+                mScannerMap.addWithCallback(
+                        source, workSource, callback, settings, filters, isInternal);
+        mScanManager.registerScanner(app.getUuid());
     }
 
     public void unregisterScanner(int scannerId) {
@@ -1061,7 +1049,6 @@ public class ScanController {
         enforceScanThread();
         var header = "registerPiAndStartScan(): ";
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
-        UUID uuid = UUID.randomUUID();
         String callingPackage = source.getPackageName();
         int callingUid = source.getUid();
         int callingPid = source.getPid();
@@ -1071,8 +1058,8 @@ public class ScanController {
         Log.d(
                 TAG,
                 header
-                        + ("UUID=" + uuid + " package=" + callingPackage)
-                        + (" uid=" + callingUid + " pid=" + callingPid));
+                        + ("source=" + source + ", package=" + callingPackage)
+                        + (", uid=" + callingUid + ", pid=" + callingPid));
 
         // Don't start scan if the Pi scan already in mScannerMap.
         if (mScannerMap.getByPendingIntentInfo(pendingIntent) != null) {
@@ -1084,7 +1071,6 @@ public class ScanController {
         var app =
                 mScannerMap.addWithPendingIntent(
                         Util.appNameOrUnknown(mAdapterService, callingUid),
-                        uuid,
                         UserHandle.getUserHandleForUid(uid),
                         source,
                         piInfo,
@@ -1119,7 +1105,7 @@ public class ScanController {
                 Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         app.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
-        mScanManager.registerScanner(uuid);
+        mScanManager.registerScanner(app.getUuid());
         // If this fails, we should stop the scan immediately.
         if (!pendingIntent.addCancelListener(Runnable::run, mScanIntentCancelListener)) {
             Log.d(TAG, header + "Stopping scan as the PI scan is already cancelled");

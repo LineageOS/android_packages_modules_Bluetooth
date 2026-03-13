@@ -25,6 +25,7 @@ import android.os.BatteryStatsManager
 import android.os.UserHandle
 import android.os.WorkSource
 import android.util.Log
+import com.android.bluetooth.Util.appNameOrUnknown
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
@@ -48,22 +49,17 @@ class ScannerMap(
     private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
     fun addWithCallback(
-        appUid: Int,
-        appPid: Int,
-        appName: String,
-        uuid: UUID,
         source: AttributionSource,
         workSource: WorkSource?,
         callback: IScannerCallback,
         settings: ScanSettings,
         filters: List<ScanFilter>,
         isInternal: Boolean = false,
-    ): ScannerApp =
+    ) =
         add(
-            appUid = appUid,
-            appPid = appPid,
-            appName = appName,
-            uuid = uuid,
+            appUid = source.uid,
+            appPid = source.pid,
+            appName = adapterService.appNameOrUnknown(source.uid),
             userHandle = null,
             source = source,
             workSource = workSource,
@@ -76,18 +72,16 @@ class ScannerMap(
 
     fun addWithPendingIntent(
         appName: String,
-        uuid: UUID,
         userHandle: UserHandle,
         source: AttributionSource,
         piInfo: ScanController.PendingIntentInfo,
         settings: ScanSettings,
         filters: List<ScanFilter>,
-    ): ScannerApp =
+    ) =
         add(
             appUid = piInfo.callingUid(),
             appPid = piInfo.callingPid(),
             appName = appName,
-            uuid = uuid,
             userHandle = userHandle,
             source = source,
             workSource = null,
@@ -102,7 +96,6 @@ class ScannerMap(
         appUid: Int,
         appPid: Int,
         appName: String,
-        uuid: UUID,
         userHandle: UserHandle?,
         source: AttributionSource,
         workSource: WorkSource?,
@@ -130,7 +123,7 @@ class ScannerMap(
         val app =
             ScannerApp(
                 appScanStats,
-                uuid,
+                UUID.randomUUID(),
                 userHandle,
                 source.getLastAttributionTag(),
                 callback,
