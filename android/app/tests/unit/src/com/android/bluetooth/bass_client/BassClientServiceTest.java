@@ -9815,4 +9815,44 @@ public class BassClientServiceTest {
         assertThat(text)
                 .isEqualTo("Failed to connect to TestName audio stream on your Test Alias.");
     }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByBroadcastName_ProcessAndAddSource() {
+        prepareConnectedDeviceGroup();
+
+        byte[] broadcastCode = new byte[] {1, 2, 3, 4};
+        String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
+
+        // 1. addSourceByBroadcastName triggers the initial background scan and queues the source
+        mBassClientService.addSourceByBroadcastName(mCurrentDevice, broadcastName, broadcastCode);
+
+        // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // 3. PA report triggers updateMetadata & processPendingAddSourceByName -> ADD_BCAST_SOURCE
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        // Verify the entire CSIP group receives the ADD_BCAST_SOURCE with combined metadata
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+            Message addSourceMsg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                            .findFirst()
+                            .orElse(null);
+
+            assertThat(addSourceMsg).isNotNull();
+            assertThat(addSourceMsg.obj).isInstanceOf(BluetoothLeBroadcastMetadata.class);
+
+            BluetoothLeBroadcastMetadata metadata = (BluetoothLeBroadcastMetadata) addSourceMsg.obj;
+            assertThat(metadata.getBroadcastName()).isEqualTo(broadcastName);
+            assertThat(metadata.getBroadcastCode()).isEqualTo(broadcastCode);
+            assertThat(metadata.getBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
+        }
+    }
 }
