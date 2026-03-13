@@ -139,14 +139,6 @@ public final class Utils {
                 address[0], address[1], address[2], address[3], address[4], address[5]);
     }
 
-    public static String getRedactedAddressStringFromByte(byte[] address) {
-        if (address == null || address.length != BD_ADDR_LEN) {
-            return null;
-        }
-
-        return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
-    }
-
     public static byte[] getByteAddress(BluetoothDevice device) {
         return getBytesFromAddress(device.getAddress());
     }

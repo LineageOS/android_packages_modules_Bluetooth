@@ -144,6 +144,15 @@ object Util {
             else -> "Unknown transport ($transport)"
         }
 
+    @JvmStatic
+    fun getRedactedAddressStringFromByte(address: ByteArray?): String? {
+        if (address == null || address.size != Utils.BD_ADDR_LEN) {
+            return null
+        }
+
+        return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5])
+    }
+
     /**
      * Converts HCI disconnect reasons to Android disconnect reasons.
      *

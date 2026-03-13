@@ -646,8 +646,7 @@ public final class BondStateMachine extends StateMachine {
         int deviceType = mRemoteDevices.getType(device);
         int deviceClass = mRemoteDevices.getBluetoothClass(device);
 
-        MetricsLogger.getInstance()
-                .logBondStateMachineEvent(device, newState, reason, hciReason);
+        MetricsLogger.getInstance().logBondStateMachineEvent(device, newState, reason, hciReason);
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_BOND_STATE_CHANGED,
                 mAdapterService.obfuscateAddress(device),
@@ -864,14 +863,14 @@ public final class BondStateMachine extends StateMachine {
                         "sspRequestCallback: Unknown pairing variant("
                                 + pairingVariant
                                 + ") for "
-                                + Utils.getRedactedAddressStringFromByte(address));
+                                + Util.getRedactedAddressStringFromByte(address));
                 return;
             }
         }
 
         logD(
                 "sspRequestCallback: "
-                        + Utils.getRedactedAddressStringFromByte(address)
+                        + Util.getRedactedAddressStringFromByte(address)
                         + " pairingVariant "
                         + pairingVariant
                         + " passkey: "

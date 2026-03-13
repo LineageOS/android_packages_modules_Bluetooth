@@ -1441,7 +1441,7 @@ public class RemoteDevices {
                     case AbstractionLayer.BT_PROPERTY_BDADDR ->
                             debugLog(
                                     "Remote Address is:"
-                                            + Utils.getRedactedAddressStringFromByte(val));
+                                            + Util.getRedactedAddressStringFromByte(val));
                     case AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE -> {
                         final int newBluetoothClass = Utils.byteArrayToInt(val);
                         if (newBluetoothClass == deviceProperties.getBluetoothClass()) {
@@ -1695,7 +1695,7 @@ public class RemoteDevices {
                 "addressConsolidateCallback device: "
                         + device
                         + ", secondaryAddress:"
-                        + Utils.getRedactedAddressStringFromByte(secondaryAddress));
+                        + Util.getRedactedAddressStringFromByte(secondaryAddress));
 
         deviceProperties.setIsConsolidated(true);
         deviceProperties.setDeviceType(BluetoothDevice.DEVICE_TYPE_DUAL);
@@ -1733,7 +1733,7 @@ public class RemoteDevices {
                 "leAddressAssociateCallback device: "
                         + device
                         + ", identityAddress:"
-                        + Utils.getRedactedAddressStringFromByte(identityAddress)
+                        + Util.getRedactedAddressStringFromByte(identityAddress)
                         + ", identityAddressType="
                         + identityAddressType);
 
@@ -1774,7 +1774,7 @@ public class RemoteDevices {
                             Log.w(
                                     TAG,
                                     "aclStateChangeCallback: Adding cache for unknown device "
-                                            + Utils.getRedactedAddressStringFromByte(address)
+                                            + Util.getRedactedAddressStringFromByte(address)
                                             + " ("
                                             + Util.addressTypeToString(addressType));
                             return addDeviceProperties(address, addressType).getDevice();
@@ -2058,7 +2058,7 @@ public class RemoteDevices {
         if (device == null) {
             errorLog(
                     "keyMissingCallback: device is NULL, address="
-                            + Utils.getRedactedAddressStringFromByte(address));
+                            + Util.getRedactedAddressStringFromByte(address));
             return;
         }
 
@@ -2150,7 +2150,7 @@ public class RemoteDevices {
         if (bluetoothDevice == null) {
             errorLog(
                     "encryptionChangeCallback: device is NULL, address="
-                            + Utils.getRedactedAddressStringFromByte(address));
+                            + Util.getRedactedAddressStringFromByte(address));
             return;
         }
         Log.d(
