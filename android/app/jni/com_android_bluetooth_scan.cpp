@@ -168,7 +168,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jstring> address = addressToJString(sCallbackEnv.get(), bda);
+    ScopedLocalRef<jstring> address = addressToJString(sCallbackEnv, bda);
     ScopedLocalRef<jbyteArray> jb(sCallbackEnv.get(), sCallbackEnv->NewByteArray(adv_data.size()));
     sCallbackEnv->SetByteArrayRegion(jb.get(), 0, adv_data.size(), (jbyte*)adv_data.data());
 
@@ -193,8 +193,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jstring> address =
-            addressToJString(sCallbackEnv.get(), track_info.advertiser_address);
+    ScopedLocalRef<jstring> address = addressToJString(sCallbackEnv, track_info.advertiser_address);
 
     ScopedLocalRef<jbyteArray> jb_adv_pkt(sCallbackEnv.get(),
                                           sCallbackEnv->NewByteArray(track_info.adv_packet_len));
@@ -258,7 +257,7 @@ public:
       log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
-    ScopedLocalRef<jstring> addr = addressToJString(sCallbackEnv.get(), address);
+    ScopedLocalRef<jstring> addr = addressToJString(sCallbackEnv, address);
 
     sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj, method_onSyncStarted, reg_id,
                                  sync_handle, sid, address_type, addr.get(), phy, interval, status);
@@ -299,7 +298,7 @@ public:
       log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
-    ScopedLocalRef<jstring> addr = addressToJString(sCallbackEnv.get(), address);
+    ScopedLocalRef<jstring> addr = addressToJString(sCallbackEnv, address);
 
     sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj, method_onSyncTransferredCallback,
                                  pa_source, status, addr.get());

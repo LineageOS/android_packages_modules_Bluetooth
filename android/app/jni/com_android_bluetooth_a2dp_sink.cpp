@@ -58,7 +58,7 @@ static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, jaddr.get(),
                                (jint)state);
 }
@@ -75,7 +75,7 @@ static void a2dp_sink_audio_state_callback(const RawAddress& bd_addr, btav_audio
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, jaddr.get(),
                                (jint)state);
 }
@@ -93,7 +93,7 @@ static void a2dp_sink_audio_config_callback(const RawAddress& bd_addr, uint32_t 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioConfigChanged, jaddr.get(),
                                (jint)sample_rate, (jint)channel_count);
 }

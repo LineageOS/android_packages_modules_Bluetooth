@@ -61,7 +61,7 @@ static void connection_state_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_ty
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, addr.get(),
                                (jint)addr_type, (jint)transport, (jint)state, (jint)hh_status);
 }
@@ -83,7 +83,7 @@ static void get_protocol_mode_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_t
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGetProtocolMode, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)mode);
 }
@@ -105,7 +105,7 @@ static void get_report_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   ScopedLocalRef<jbyteArray> data(sCallbackEnv.get(), sCallbackEnv->NewByteArray(rpt_size));
   if (!data.get()) {
@@ -131,7 +131,7 @@ static void virtual_unplug_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVirtualUnplug, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)hh_status);
 }
@@ -148,7 +148,7 @@ static void handshake_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onHandshake, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)hh_status);
 }
@@ -162,7 +162,7 @@ static void get_idle_time_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGetIdleTime, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)idle_time);
 }

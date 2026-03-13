@@ -86,7 +86,7 @@ static void btavrcp_connection_state_callback(bool rc_connect, bool br_connect,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onConnectionStateChanged, (jboolean)rc_connect,
                                (jboolean)br_connect, addr.get());
 }
@@ -103,7 +103,7 @@ static void btavrcp_get_rcfeatures_callback(const RawAddress& bd_addr, int featu
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onRemoteFeaturesChanged, addr.get(), features);
 }
 
@@ -127,7 +127,7 @@ static void btavrcp_playerapplicationsetting_callback(const RawAddress& bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   /* TODO ext attrs
    * Flattening defined attributes: <id,num_values,values[]>
@@ -172,7 +172,7 @@ static void btavrcp_playerapplicationsetting_changed_callback(const RawAddress& 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   int arraylen = vals.num_attr * 2;
   ScopedLocalRef<jbyteArray> playerattribs(sCallbackEnv.get(),
@@ -207,7 +207,7 @@ static void btavrcp_set_abs_vol_cmd_callback(const RawAddress& bd_addr, uint8_t 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onSetAbsoluteVolumeRequest, addr.get(),
                                (jbyte)abs_vol, (jbyte)label);
 }
@@ -225,7 +225,7 @@ static void btavrcp_register_notification_absvol_callback(const RawAddress& bd_a
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onRegisterAbsoluteVolumeNotification,
                                addr.get(), (jbyte)label);
 }
@@ -247,7 +247,7 @@ static void btavrcp_track_changed_callback(const RawAddress& bd_addr, uint8_t nu
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   ScopedLocalRef<jintArray> attribIds(sCallbackEnv.get(), sCallbackEnv->NewIntArray(num_attr));
   if (!attribIds.get()) {
@@ -291,7 +291,7 @@ static void btavrcp_play_position_changed_callback(const RawAddress& bd_addr, ui
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onPlaybackPositionChanged, addr.get(),
                                (jint)(song_len), (jint)song_pos);
 }
@@ -309,7 +309,7 @@ static void btavrcp_play_status_changed_callback(const RawAddress& bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onPlaybackStatusChanged, addr.get(),
                                (jbyte)play_status);
 }
@@ -332,7 +332,7 @@ static void btavrcp_get_folder_items_callback(const RawAddress& bd_addr, btrc_st
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   // Inspect if the first element is a folder/item or player listing. They are
   // always exclusive.
@@ -486,7 +486,7 @@ static void btavrcp_change_path_callback(const RawAddress& bd_addr, uint32_t cou
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onChangeFolderResponse, addr.get(),
                                (jint)count);
 }
@@ -504,7 +504,7 @@ static void btavrcp_set_browsed_player_callback(const RawAddress& bd_addr, uint8
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onSetBrowsedPlayerResponse, addr.get(),
                                (jint)num_items, (jint)depth);
 }
@@ -521,7 +521,7 @@ static void btavrcp_set_addressed_player_callback(const RawAddress& bd_addr, uin
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onSetAddressedPlayerResponse, addr.get(),
                                (jint)status);
 }
@@ -538,7 +538,7 @@ static void btavrcp_addressed_player_changed_callback(const RawAddress& bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onAddressedPlayerChanged, addr.get(),
                                (jint)id);
 }
@@ -551,7 +551,7 @@ static void btavrcp_now_playing_content_changed_callback(const RawAddress& bd_ad
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onNowPlayingContentChanged, addr.get());
 }
 
@@ -567,7 +567,7 @@ static void btavrcp_available_player_changed_callback(const RawAddress& bd_addr)
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onAvailablePlayersChanged, addr.get());
 }
 
@@ -583,7 +583,7 @@ static void btavrcp_get_rcpsm_callback(const RawAddress& bd_addr, uint16_t psm) 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onCoverArtPsmReceived, addr.get(), (jint)psm);
 }
 

@@ -66,7 +66,7 @@ static void connection_state_callback(btpan_connection_state_t state, BtStatus e
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, jaddr.get(),
                                (jint)state, (jint)error, (jint)local_role, (jint)remote_role);
 }
