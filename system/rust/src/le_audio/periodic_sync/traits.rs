@@ -52,8 +52,6 @@ pub struct PaCreateSyncParams {
 pub struct PeriodicSyncInfo {
     /// Registration ID.
     pub reg_id: i32,
-    /// Completion status.
-    pub status: HciStatus,
     /// Sync handle.
     pub sync_handle: u16,
     /// Advertising SID.
