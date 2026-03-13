@@ -670,6 +670,7 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint1
   }
 }
 
+// TODO(b/459944050): Delete msft related functions when scan multiplexing feature is done.
 /* Whether or not to use MSFT-based scan filtering */
 static bool use_msft_filtering() {
   // We prefer to use APCF-based filtering over MSFT if it's available, so only use MSFT
@@ -677,6 +678,7 @@ static bool use_msft_filtering() {
   return !BTM_BleIsFilteringSupported() && scanner->IsMsftSupported();
 }
 
+// TODO(b/459944050): Delete msft related functions when scan multiplexing feature is done.
 /* MSFT advertisement enable callback */
 static void msft_adv_mon_enable_cb(bool restart_scan, bool enable, uint8_t status) {
   if (status == MSFT_FILTER_ENABLE_CMD_DISALLOWED) {
