@@ -389,38 +389,39 @@ static void handle_rc_ctrl_features(btif_rc_device_cb_t* p_dev) {
   CTRL_HAL_CBACK(bt_rc_ctrl_callbacks->getrcfeatures_cb, p_dev->rc_addr, rc_features);
 }
 void btif_rc_check_pending_cmd(const RawAddress& peer_address) {
-  btif_rc_device_cb_t* p_dev = NULL;
-  p_dev = btif_rc_get_device_by_bda(peer_address);
-  if (p_dev == NULL) {
-    log::error("p_dev NULL");
+  btif_rc_device_cb_t* p_dev = btif_rc_get_device_by_bda(peer_address);
+  if (p_dev == nullptr) {
+    log::error("p_dev NULL for addr: {}", peer_address);
     return;
   }
 
   log::verbose(
-          "launch_cmd_pending={}, rc_state={}, peer_ct_features=0x{:x}, "
-          "peer_tg_features=0x{:x}",
+          "launch_cmd_pending={}, rc_state={}, peer_ct_features=0x{:x}, peer_tg_features=0x{:x}",
           p_dev->launch_cmd_pending, p_dev->rc_state, p_dev->peer_ct_features,
           p_dev->peer_tg_features);
 
-  if (p_dev->launch_cmd_pending && p_dev->rc_state == BTRC_CONNECTION_STATE_CONNECTED) {
-    if ((p_dev->launch_cmd_pending & RC_PENDING_ACT_REG_VOL) &&
-        btif_av_peer_is_sink(p_dev->rc_addr)) {
-      if (bluetooth::avrcp::AvrcpService::Get() != nullptr) {
-        bluetooth::avrcp::AvrcpService::Get()->RegisterVolChanged(peer_address);
-      }
-    }
-    if ((p_dev->launch_cmd_pending & RC_PENDING_ACT_GET_CAP) &&
-        btif_av_peer_is_source(p_dev->rc_addr)) {
-      p_dev->rc_features = p_dev->peer_tg_features;
-      getcapabilities_cmd(AVRC_CAP_COMPANY_ID, p_dev);
-    }
-    if ((p_dev->launch_cmd_pending & RC_PENDING_ACT_REPORT_CONN) &&
-        btif_av_peer_is_source(p_dev->rc_addr)) {
-      CTRL_HAL_CBACK(bt_rc_ctrl_callbacks->connection_state_cb, p_dev->rc_addr, kRcIsConnected,
-                     kBrowseIsDisconnected);
+  uint8_t pending_cmds = p_dev->launch_cmd_pending;
+  p_dev->launch_cmd_pending = 0;
+
+  if (p_dev->rc_state != BTRC_CONNECTION_STATE_CONNECTED || pending_cmds == 0) {
+    return;
+  }
+
+  if ((pending_cmds & RC_PENDING_ACT_REG_VOL) && btif_av_peer_is_sink(peer_address)) {
+    if (bluetooth::avrcp::AvrcpService::Get() != nullptr) {
+      bluetooth::avrcp::AvrcpService::Get()->RegisterVolChanged(peer_address);
     }
   }
-  p_dev->launch_cmd_pending = 0;
+
+  if ((pending_cmds & RC_PENDING_ACT_GET_CAP) && btif_av_peer_is_source(peer_address)) {
+    p_dev->rc_features = p_dev->peer_tg_features;
+    getcapabilities_cmd(AVRC_CAP_COMPANY_ID, p_dev);
+  }
+
+  if ((pending_cmds & RC_PENDING_ACT_REPORT_CONN) && btif_av_peer_is_source(peer_address)) {
+    CTRL_HAL_CBACK(bt_rc_ctrl_callbacks->connection_state_cb, peer_address, kRcIsConnected,
+                   kBrowseIsDisconnected);
+  }
 }
 
 static void handle_rc_ctrl_psm(btif_rc_device_cb_t* p_dev) {
