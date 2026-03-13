@@ -19,7 +19,7 @@ package com.android.bluetooth.vcp
 import android.bluetooth.BluetoothDevice
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.bluetooth.TestUtils
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.btservice.AdapterService
 import com.android.tests.bluetooth.MockitoRule
 import org.junit.Before
@@ -42,7 +42,7 @@ class VcpRendererNativeCallbackTest {
 
     private lateinit var nativeCallback: VcpRendererNativeCallback
     private val device: BluetoothDevice = TestUtils.getTestDevice(0)
-    private val deviceAddress: ByteArray = Utils.getBytesFromAddress(device.address)
+    private val deviceAddress: ByteArray = Util.getBytesFromAddress(device.address)
 
     @Before
     fun setUp() {

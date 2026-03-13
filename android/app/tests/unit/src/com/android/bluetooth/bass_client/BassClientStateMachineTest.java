@@ -98,7 +98,6 @@ import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioConstants;
@@ -165,7 +164,7 @@ public class BassClientStateMachineTest {
 
         doReturn(mEmptyTestDevice)
                 .when(mAdapterService)
-                .getDeviceFromByte(Utils.getBytesFromAddress(EMPTY_BLUETOOTH_DEVICE_ADDRESS));
+                .getDeviceFromByte(Util.getBytesFromAddress(EMPTY_BLUETOOTH_DEVICE_ADDRESS));
         doReturn(mAdapterService).when(mBassClientService).getBaseContext();
         mockGetBluetoothManager(mAdapterService);
 

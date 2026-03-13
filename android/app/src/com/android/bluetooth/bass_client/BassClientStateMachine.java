@@ -647,7 +647,7 @@ class BassClientStateMachine extends StateMachine {
 
         BluetoothLeBroadcastReceiveState recvState = null;
         if (receiverState.length == 0) {
-            byte[] emptyBluetoothDeviceAddress = Utils.getBytesFromAddress("00:00:00:00:00:00");
+            byte[] emptyBluetoothDeviceAddress = Util.getBytesFromAddress("00:00:00:00:00:00");
             if (previousSourceId != BassConstants.INVALID_SOURCE_ID) {
                 recvState =
                         new BluetoothLeBroadcastReceiveState(
@@ -1081,6 +1081,7 @@ class BassClientStateMachine extends StateMachine {
             sendMessage(m);
         }
     }
+
     /** Internal periodic Advertising manager callback */
     private static final class PACallback extends IPeriodicAdvertisingCallback.Stub {
         @Override
@@ -1403,7 +1404,7 @@ class BassClientStateMachine extends StateMachine {
         stream.write(metaData.getSourceAddressType());
 
         // Advertiser_Address
-        byte[] bcastSourceAddr = Utils.getBytesFromAddress(advSource.getAddress());
+        byte[] bcastSourceAddr = Util.getBytesFromAddress(advSource.getAddress());
         Utils.reverse(bcastSourceAddr);
         stream.write(bcastSourceAddr, 0, 6);
 

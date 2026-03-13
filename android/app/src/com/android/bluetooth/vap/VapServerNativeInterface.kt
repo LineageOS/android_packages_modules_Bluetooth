@@ -16,7 +16,7 @@
 package com.android.bluetooth.vap
 
 import android.bluetooth.BluetoothDevice
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.profile.NativeInterface
 import java.util.Objects
 
@@ -54,8 +54,8 @@ class VapServerNativeInterface(nativeCallback: VapServerNativeCallback) :
 
         private fun getByteAddress(device: BluetoothDevice?): ByteArray {
             return if (device == null) {
-                Utils.getBytesFromAddress("00:00:00:00:00:00")
-            } else Utils.getBytesFromAddress(device.address)
+                Util.getBytesFromAddress("00:00:00:00:00:00")
+            } else Util.getBytesFromAddress(device.address)
         }
     }
 }

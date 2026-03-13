@@ -32,8 +32,8 @@ import static com.android.bluetooth.ChangeIds.ENFORCE_CONNECT;
 import static com.android.bluetooth.Util.callerIsSystem;
 import static com.android.bluetooth.Util.callerIsSystemOrActiveOrManagedUser;
 import static com.android.bluetooth.Util.enforceConnectPermissionForDataDelivery;
+import static com.android.bluetooth.Util.getBytesFromAddress;
 import static com.android.bluetooth.Util.getUidPidString;
-import static com.android.bluetooth.Utils.getBytesFromAddress;
 
 import static java.util.Objects.requireNonNull;
 

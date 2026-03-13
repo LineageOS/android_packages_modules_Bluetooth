@@ -2248,7 +2248,7 @@ public class RemoteDevices {
                 mAdapterService
                         .getNative()
                         .getRemoteServices(
-                                Utils.getBytesFromAddress(device.getAddress()), TRANSPORT_LE);
+                                Util.getBytesFromAddress(device.getAddress()), TRANSPORT_LE);
                 startedLeServiceDiscovery = true;
             }
 
@@ -2256,7 +2256,7 @@ public class RemoteDevices {
                 mAdapterService
                         .getNative()
                         .getRemoteServices(
-                                Utils.getBytesFromAddress(device.getAddress()), TRANSPORT_BREDR);
+                                Util.getBytesFromAddress(device.getAddress()), TRANSPORT_BREDR);
                 startedBredrServiceDiscovery = true;
             }
 
@@ -2279,7 +2279,7 @@ public class RemoteDevices {
                         + transport);
         mAdapterService
                 .getNative()
-                .getRemoteServices(Utils.getBytesFromAddress(device.getAddress()), transport);
+                .getRemoteServices(Util.getBytesFromAddress(device.getAddress()), transport);
     }
 
     void triggerUuidNotification(BluetoothDevice device) {

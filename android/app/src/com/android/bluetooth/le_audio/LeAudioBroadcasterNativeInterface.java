@@ -79,7 +79,7 @@ public class LeAudioBroadcasterNativeInterface {
          * destination or peer device therefore this fake device was created.
          * For now it's only important that this device is a Bluetooth device.
          */
-        event.device = getDevice(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
+        event.device = getDevice(Util.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
         event.valueInt1 = broadcastId;
         event.valueInt2 = state;
         mService.messageFromNative(event);

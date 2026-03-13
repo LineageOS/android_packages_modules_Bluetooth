@@ -64,7 +64,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -753,7 +753,7 @@ public class CsipSetCoordinatorServiceTest {
 
     /** Helper function to get byte array for a device address */
     private static byte[] getByteAddress(BluetoothDevice device) {
-        return Utils.getBytesFromAddress(device.getAddress());
+        return Util.getBytesFromAddress(device.getAddress());
     }
 
     @SafeVarargs

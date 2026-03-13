@@ -2447,7 +2447,7 @@ public class LeAudioService extends ConnectableProfile {
                     continue;
                 }
 
-                byte[] addressBytes = Utils.getBytesFromAddress(address);
+                byte[] addressBytes = Util.getBytesFromAddress(address);
                 BluetoothDevice device = getAdapterService().getDeviceFromByte(addressBytes);
 
                 if (handleAudioDeviceAdded(
@@ -2478,7 +2478,7 @@ public class LeAudioService extends ConnectableProfile {
                     continue;
                 }
 
-                byte[] addressBytes = Utils.getBytesFromAddress(address);
+                byte[] addressBytes = Util.getBytesFromAddress(address);
                 BluetoothDevice device = getAdapterService().getDeviceFromByte(addressBytes);
 
                 handleAudioDeviceRemoved(
@@ -3117,8 +3117,7 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private BluetoothDevice getBroadcastBluetoothDevice() {
-        return getAdapterService()
-                .getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
+        return getAdapterService().getDeviceFromByte(Util.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
     }
 
     private void handleGroupTransitToInactive(int groupId) {
