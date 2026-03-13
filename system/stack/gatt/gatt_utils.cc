@@ -907,10 +907,53 @@ void gatt_sr_send_req_callback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_T
     return;
   }
 
-  if (p_reg->in_use && p_reg->app_cb.p_req_cb) {
-    (*p_reg->app_cb.p_req_cb)(conn_id, trans_id, type, p_data);
-  } else {
+  tTCB_IDX tcb_idx = gatt_get_tcb_idx(conn_id);
+  tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+  if (!p_tcb) {
+    log::error("p_tcb not found discard request");
+    return;
+  }
+  RawAddress remote_bda = p_tcb->peer_bda;
+
+  if (!p_reg->in_use || !p_reg->app_cb.p_req_cb) {
     log::warn("Call back not found for application conn_id={}", conn_id);
+    return;
+  }
+  switch (type) {
+    case GATTS_REQ_TYPE_READ_CHARACTERISTIC:
+      p_reg->app_cb.p_req_cb->read_characteristic_cb(
+              conn_id, trans_id, remote_bda, p_data->read_req.handle, p_data->read_req.offset,
+              p_data->read_req.is_long);
+      break;
+    case GATTS_REQ_TYPE_READ_DESCRIPTOR:
+      p_reg->app_cb.p_req_cb->read_descriptor_cb(conn_id, trans_id, remote_bda,
+                                                 p_data->read_req.handle, p_data->read_req.offset,
+                                                 p_data->read_req.is_long);
+      break;
+    case GATTS_REQ_TYPE_WRITE_CHARACTERISTIC:
+      p_reg->app_cb.p_req_cb->write_characteristic_cb(
+              conn_id, trans_id, remote_bda, p_data->write_req.handle, p_data->write_req.offset,
+              p_data->write_req.need_rsp, p_data->write_req.is_prep, p_data->write_req.value,
+              p_data->write_req.len);
+      break;
+    case GATTS_REQ_TYPE_WRITE_DESCRIPTOR:
+      p_reg->app_cb.p_req_cb->write_descriptor_cb(
+              conn_id, trans_id, remote_bda, p_data->write_req.handle, p_data->write_req.offset,
+              p_data->write_req.need_rsp, p_data->write_req.is_prep, p_data->write_req.value,
+              p_data->write_req.len);
+      break;
+    case GATTS_REQ_TYPE_WRITE_EXEC:
+      p_reg->app_cb.p_req_cb->exec_write_cb(conn_id, trans_id, remote_bda, p_data->exec_write);
+      break;
+    case GATTS_REQ_TYPE_MTU:
+      p_reg->app_cb.p_req_cb->mtu_changed_cb(conn_id, trans_id, remote_bda, p_data->mtu);
+      break;
+    case GATTS_REQ_TYPE_CONF:
+      p_reg->app_cb.p_req_cb->conf_cb(conn_id, trans_id, remote_bda);
+      break;
+    default:
+      log::error("Unknown req_type: {}", type);
+      break;
   }
 }
 
