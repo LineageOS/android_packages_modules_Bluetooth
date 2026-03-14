@@ -356,7 +356,7 @@ public class RemoteDevicesTest {
     @Test
     public void testOnVendorSpecificHeadsetEvent_testCorrectPlantronicsXEvent() {
         // Prepare the base device property
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         // Verify that correct ACTION_VENDOR_SPECIFIC_HEADSET_EVENT updates battery level
         mRemoteDevices.onVendorSpecificHeadsetEvent(
                 mDevice,
@@ -370,7 +370,7 @@ public class RemoteDevicesTest {
     @Test
     public void testOnVendorSpecificHeadsetEvent_testCorrectAppleBatteryVsc() {
         // Prepare the base device property
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         // Verify that correct ACTION_VENDOR_SPECIFIC_HEADSET_EVENT updates battery level
         mRemoteDevices.onVendorSpecificHeadsetEvent(
                 mDevice,
@@ -666,9 +666,9 @@ public class RemoteDevicesTest {
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
         DeviceProperties prop1 =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         DeviceProperties prop2 =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         assertThat(prop1).isEqualTo(prop2);
     }
 
@@ -677,7 +677,7 @@ public class RemoteDevicesTest {
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
 
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
 
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice);
         BluetoothSinkAudioPolicy policies =
@@ -701,7 +701,7 @@ public class RemoteDevicesTest {
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
 
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice);
         deviceProp.setIsCoordinatedSetMember(true);
@@ -716,7 +716,7 @@ public class RemoteDevicesTest {
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
 
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice);
         deviceProp.setIsCoordinatedSetMember(true);
@@ -843,7 +843,7 @@ public class RemoteDevicesTest {
 
         // Prepare the base device property
         if (mRemoteDevices.getDeviceProperties(mDevice) == null) {
-            mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+            mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         }
 
         // Validate the connected state
@@ -940,7 +940,7 @@ public class RemoteDevicesTest {
 
         // And device properties exist
         DeviceProperties deviceProp =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         assertThat(deviceProp).isNotNull();
 
         // Then discovery result handler should be called
@@ -969,7 +969,7 @@ public class RemoteDevicesTest {
 
         // And device properties exist but device name is null
         DeviceProperties deviceProp =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         assertThat(deviceProp).isNotNull();
         assertThat(deviceProp.getName()).isNull();
 
@@ -989,7 +989,7 @@ public class RemoteDevicesTest {
 
         // And device properties exist with a valid device name
         DeviceProperties deviceProp =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         deviceProp.setName("Test Device");
 
         // Then discovery result handler should be called
@@ -1001,7 +1001,7 @@ public class RemoteDevicesTest {
     public void aclStateChangeCallback_unbondedWithoutBondingAttempt_keepsProperties() {
         // Add a device. By default, its bond state is BOND_NONE and no bonding has been
         // initiated.
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).getBondingInitiator())
                 .isEqualTo(0); // BONDING_INITIATOR_NONE
@@ -1028,7 +1028,7 @@ public class RemoteDevicesTest {
         // Add a device and set its state to reflect a prior bonding attempt that failed,
         // resulting in BOND_NONE state.
         DeviceProperties deviceProp =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         deviceProp.setBondState(BluetoothDevice.BOND_NONE);
         deviceProp.setBondingInitiatedLocally(true); // Signifies a bonding attempt was made
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
@@ -1053,7 +1053,7 @@ public class RemoteDevicesTest {
     public void aclStateChangeCallback_bondingDevice_keepsPropertiesAndSendsCancel() {
         // Add a device and set its state to BOND_BONDING.
         DeviceProperties deviceProp =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         deviceProp.setBondState(BluetoothDevice.BOND_BONDING);
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
 
@@ -1082,7 +1082,7 @@ public class RemoteDevicesTest {
     public void setBondState_bondedWithUnknownIdentityAddress_setsIdentityAddress() {
         // Add a device, its properties will be created with an unknown identity address.
         DeviceProperties deviceProp =
-                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
         assertThat(deviceProp.getIdentityAddress()).isEqualTo(DeviceProperties.UNKNOWN_ADDRESS);
 
         // Set the bond state to BONDED.
@@ -1254,7 +1254,7 @@ public class RemoteDevicesTest {
     public void testAddDeviceProperties_addNewDevice() {
         // GIVEN a new device address
         String addressString = "00:11:22:33:44:55";
-        byte[] address = Utils.getBytesFromAddress(addressString);
+        byte[] address = Util.getBytesFromAddress(addressString);
         int addressType = BluetoothDevice.ADDRESS_TYPE_PUBLIC;
 
         // WHEN adding device properties
@@ -1275,7 +1275,7 @@ public class RemoteDevicesTest {
         for (int i = 0; i < maxDevices; i++) {
             String address = String.format("%02X:00:00:00:00:00", i);
             DeviceProperties prop =
-                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+                    mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(address));
             devices.add(prop.getDevice());
         }
 
@@ -1286,7 +1286,7 @@ public class RemoteDevicesTest {
 
         // WHEN adding another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(newAddress));
 
         // THEN the first device (LRU) should be evicted
         assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNull();
@@ -1305,7 +1305,7 @@ public class RemoteDevicesTest {
         for (int i = 0; i < maxDevices; i++) {
             String address = String.format("%02X:00:00:00:00:00", i);
             DeviceProperties prop =
-                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+                    mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(address));
             devices.add(prop.getDevice());
             if (i == 0) {
                 prop.setBondState(BluetoothDevice.BOND_BONDED);
@@ -1316,7 +1316,7 @@ public class RemoteDevicesTest {
 
         // WHEN adding another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(newAddress));
 
         // THEN the first (bonded) and second (connected) devices should NOT be evicted
         assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
@@ -1343,7 +1343,7 @@ public class RemoteDevicesTest {
 
         // WHEN adding the another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(newAddress));
 
         // THEN the first device (with package) should NOT be evicted
         assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
@@ -1370,7 +1370,7 @@ public class RemoteDevicesTest {
 
         // WHEN adding another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(newAddress));
 
         // THEN no device should be evicted
         for (BluetoothDevice device : devices) {
@@ -1398,7 +1398,7 @@ public class RemoteDevicesTest {
 
         // WHEN adding another device
         String newAddress = "FF:FF:FF:FF:FF:FF";
-        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(newAddress));
+        mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(newAddress));
 
         // THEN the first device (bonded) should NOT be evicted
         assertThat(mRemoteDevices.getDeviceProperties(devices.get(0))).isNotNull();
@@ -1416,7 +1416,7 @@ public class RemoteDevicesTest {
         for (int i = 0; i < count; i++) {
             String address = String.format("%02X:00:00:00:00:00", i);
             DeviceProperties prop =
-                    mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(address));
+                    mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(address));
             devices.add(prop.getDevice());
             if (propertySetter != null) {
                 propertySetter.accept(i, prop);

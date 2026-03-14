@@ -446,7 +446,7 @@ public class AdapterProperties {
             if (removeExisting) {
                 // Found an existing LE-only device with the same identity address but different
                 // pseudo address
-                if (mService.getNative().removeBond(Utils.getBytesFromAddress(existingAddress))) {
+                if (mService.getNative().removeBond(Util.getBytesFromAddress(existingAddress))) {
                     mBondedDevices.remove(existingDevice);
                     infoLog(
                             "Removing old bond"

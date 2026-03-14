@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.profile.NativeInterface;
 
 public class VolumeControlNativeInterface extends NativeInterface<VolumeControlNativeCallback> {
@@ -42,9 +42,9 @@ public class VolumeControlNativeInterface extends NativeInterface<VolumeControlN
 
     private static byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
-            return Utils.getBytesFromAddress("00:00:00:00:00:00");
+            return Util.getBytesFromAddress("00:00:00:00:00:00");
         }
-        return Utils.getBytesFromAddress(device.getAddress());
+        return Util.getBytesFromAddress(device.getAddress());
     }
 
     boolean connectVolumeControl(BluetoothDevice device) {

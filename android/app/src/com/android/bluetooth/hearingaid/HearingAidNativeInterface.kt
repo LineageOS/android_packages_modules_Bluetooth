@@ -17,7 +17,7 @@
 package com.android.bluetooth.hearingaid
 
 import android.bluetooth.BluetoothDevice
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.profile.NativeInterface
 import com.android.internal.annotations.VisibleForTesting
 
@@ -70,9 +70,9 @@ class HearingAidNativeInterface(nativeCallback: HearingAidNativeCallback) :
     @VisibleForTesting
     fun getByteAddress(device: BluetoothDevice?): ByteArray {
         if (device == null) {
-            return Utils.getBytesFromAddress("00:00:00:00:00:00")
+            return Util.getBytesFromAddress("00:00:00:00:00:00")
         }
-        return Utils.getBytesFromAddress(device.address)
+        return Util.getBytesFromAddress(device.address)
     }
 
     private external fun initNative()

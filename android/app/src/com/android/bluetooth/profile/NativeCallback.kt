@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.profile
 
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.btservice.AdapterService
 
 /**
@@ -27,7 +27,7 @@ import com.android.bluetooth.btservice.AdapterService
  */
 abstract class NativeCallback(internal val adapterService: AdapterService) {
 
-    fun getDevice(address: String) = getDevice(Utils.getBytesFromAddress(address))
+    fun getDevice(address: String) = getDevice(Util.getBytesFromAddress(address))
 
     fun getDevice(address: ByteArray) = adapterService.getDeviceFromByte(address)
 }

@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.NativeInterface;
 
@@ -92,7 +92,7 @@ public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallb
         if (device != null) {
             address = mAdapterService.getByteBrEdrAddress(device);
         } else {
-            address = Utils.getBytesFromAddress("00:00:00:00:00:00");
+            address = Util.getBytesFromAddress("00:00:00:00:00:00");
         }
         return setActiveDeviceNative(address);
     }

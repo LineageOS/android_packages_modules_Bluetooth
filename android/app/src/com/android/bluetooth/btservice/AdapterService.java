@@ -2919,7 +2919,7 @@ public class AdapterService extends Service {
     public byte[] getByteIdentityAddress(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp != null && deviceProp.getIdentityAddress().getAddress() != null) {
-            return Utils.getBytesFromAddress(deviceProp.getIdentityAddress().getAddress());
+            return Util.getBytesFromAddress(deviceProp.getIdentityAddress().getAddress());
         }
 
         // Return null if identity address unknown

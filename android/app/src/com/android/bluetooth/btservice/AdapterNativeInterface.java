@@ -22,7 +22,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.OobData;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 
 import java.io.FileDescriptor;
 import java.lang.annotation.Native;
@@ -226,7 +225,7 @@ public class AdapterNativeInterface {
     }
 
     void metadataChanged(BluetoothDevice device, int key, byte[] value) {
-        metadataChangedNative(Utils.getBytesFromAddress(device.getAddress()), key, value);
+        metadataChangedNative(Util.getBytesFromAddress(device.getAddress()), key, value);
     }
 
     boolean interopMatchAddrOrName(String featureName, String address) {
@@ -262,7 +261,7 @@ public class AdapterNativeInterface {
     }
 
     boolean disconnectAcl(BluetoothDevice device, int transport) {
-        return disconnectAclNative(Utils.getBytesFromAddress(device.getAddress()), transport);
+        return disconnectAclNative(Util.getBytesFromAddress(device.getAddress()), transport);
     }
 
     boolean allowWakeByHid() {

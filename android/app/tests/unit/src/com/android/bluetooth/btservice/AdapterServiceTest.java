@@ -93,7 +93,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.AdvertiseManagerNativeInterface;
@@ -860,12 +859,11 @@ public class AdapterServiceTest {
         initTest();
         doEnable(false); // Need BluetoothAdapter for mAdapter.getRemoteDevice
         RemoteDevices remoteDevices = mAdapter.getRemoteDevices();
-        remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
+        remoteDevices.addDeviceProperties(Util.getBytesFromAddress((TEST_BT_ADDR_1)));
 
         // Trigger address consolidate callback
         remoteDevices.addressConsolidateCallback(
-                Utils.getBytesFromAddress(TEST_BT_ADDR_1),
-                Utils.getBytesFromAddress(TEST_BT_ADDR_2));
+                Util.getBytesFromAddress(TEST_BT_ADDR_1), Util.getBytesFromAddress(TEST_BT_ADDR_2));
 
         // Verify we can get correct identity address
         String identityAddress = mAdapter.getIdentityAddress(TEST_BT_ADDR_1);
@@ -878,14 +876,14 @@ public class AdapterServiceTest {
         initTest();
         doEnable(false); // Need BluetoothAdapter for mAdapter.getRemoteDevice
         RemoteDevices remoteDevices = mAdapter.getRemoteDevices();
-        remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
+        remoteDevices.addDeviceProperties(Util.getBytesFromAddress((TEST_BT_ADDR_1)));
 
         int identityAddressTypePublic = 0x00; // Should map to BluetoothDevice.ADDRESS_TYPE_PUBLIC
         int identityAddressTypeRandom = 0x01; // Should map to BluetoothDevice.ADDRESS_TYPE_RANDOM
 
         remoteDevices.leAddressAssociateCallback(
-                Utils.getBytesFromAddress(TEST_BT_ADDR_1),
-                Utils.getBytesFromAddress(TEST_BT_ADDR_2),
+                Util.getBytesFromAddress(TEST_BT_ADDR_1),
+                Util.getBytesFromAddress(TEST_BT_ADDR_2),
                 identityAddressTypePublic);
 
         BluetoothDevice.BluetoothAddress bluetoothAddress =
@@ -895,8 +893,8 @@ public class AdapterServiceTest {
                 .isEqualTo(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
 
         remoteDevices.leAddressAssociateCallback(
-                Utils.getBytesFromAddress(TEST_BT_ADDR_1),
-                Utils.getBytesFromAddress(TEST_BT_ADDR_2),
+                Util.getBytesFromAddress(TEST_BT_ADDR_1),
+                Util.getBytesFromAddress(TEST_BT_ADDR_2),
                 identityAddressTypeRandom);
 
         bluetoothAddress = mAdapter.getIdentityAddressWithType(TEST_BT_ADDR_1);
@@ -923,12 +921,12 @@ public class AdapterServiceTest {
         RemoteDevices remoteDevices = mAdapter.getRemoteDevices();
         BluetoothDevice device = getTestDevice(0);
         String identityAddressString = "0A:0B:0C:0D:0E:0F";
-        byte[] identityAddressBytes = Utils.getBytesFromAddress(identityAddressString);
+        byte[] identityAddressBytes = Util.getBytesFromAddress(identityAddressString);
 
         // Set up the identity address for the device
-        remoteDevices.addDeviceProperties(Utils.getBytesFromAddress(device.getAddress()));
+        remoteDevices.addDeviceProperties(Util.getBytesFromAddress(device.getAddress()));
         remoteDevices.leAddressAssociateCallback(
-                Utils.getBytesFromAddress(device.getAddress()),
+                Util.getBytesFromAddress(device.getAddress()),
                 identityAddressBytes,
                 BluetoothDevice.ADDRESS_TYPE_PUBLIC);
 

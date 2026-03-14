@@ -17,7 +17,7 @@
 package com.android.bluetooth.mcp
 
 import android.bluetooth.BluetoothDevice
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.profile.NativeInterface
 
 /** Native interface for the MCP Client. */
@@ -89,7 +89,7 @@ class McpClientNativeInterface(nativeCallback: McpClientNativeCallback) :
     }
 
     private fun getByteAddress(device: BluetoothDevice): ByteArray {
-        return Utils.getBytesFromAddress(device.address)
+        return Util.getBytesFromAddress(device.address)
     }
 
     private external fun initNative()
