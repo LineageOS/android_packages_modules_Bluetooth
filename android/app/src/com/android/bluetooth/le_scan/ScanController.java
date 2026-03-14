@@ -111,9 +111,9 @@ public class ScanController {
     private final String mExposureNotificationPackage;
     private final Predicate<ScanResult> mLocationDenylistPredicate;
 
-    private final HandlerThread mScanThread;
-    private final Looper mScanLooper;
-    private final Handler mScanHandler;
+    private final HandlerThread mHandlerThread;
+    private final Looper mLooper;
+    private final Handler mHandler;
     private final ScanManager mScanManager;
     private final ScanSuspendManager mScanSuspendManager;
     private final PeriodicScanManager mPeriodicScanManager;
@@ -179,10 +179,10 @@ public class ScanController {
                     }
                     return false;
                 };
-        mScanThread = new HandlerThread("BluetoothScanManager");
-        mScanThread.start();
-        mScanLooper = requireNonNullElseGet(looper, mScanThread::getLooper);
-        mScanHandler = new Handler(mScanLooper);
+        mHandlerThread = new HandlerThread("BluetoothScanManager");
+        mHandlerThread.start();
+        mLooper = requireNonNullElseGet(looper, mHandlerThread::getLooper);
+        mHandler = new Handler(mLooper);
         mScanManager =
                 requireNonNullElseGet(
                         scanManager,
@@ -192,7 +192,7 @@ public class ScanController {
                                         this,
                                         scanNativeInterface,
                                         mScanRadioStats,
-                                        mScanLooper,
+                                        mLooper,
                                         timeProvider));
         mScanSuspendManager = new ScanSuspendManager(mScanManager);
         mPeriodicScanManager =
@@ -206,14 +206,14 @@ public class ScanController {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
         mIsAvailable = false;
-        mScanHandler.removeCallbacksAndMessages(null);
+        mHandler.removeCallbacksAndMessages(null);
         forceRunSyncOnScanThread(
                 () -> {
                     mBinder.cleanup();
                     mScannerMap.clear();
                     mScanManager.cleanup();
                     mPeriodicScanManager.cleanup();
-                    mScanThread.quitSafely();
+                    mHandlerThread.quitSafely();
                 });
     }
 
@@ -254,7 +254,7 @@ public class ScanController {
         synchronized (mTestModeLock) {
             if (mTestModeHandler == null) {
                 mTestModeHandler =
-                        new Handler(mScanLooper) {
+                        new Handler(mLooper) {
                             public void handleMessage(Message msg) {
                                 synchronized (mTestModeLock) {
                                     if (!mTestModeEnabled) {
@@ -1205,7 +1205,7 @@ public class ScanController {
     void enforceScanThread() {
         if (Util.isInstrumentationTestMode()) return;
 
-        if (!mScanHandler.getLooper().isCurrentThread()) {
+        if (!mHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Not on scan thread");
         }
     }
@@ -1213,14 +1213,14 @@ public class ScanController {
     private void enforceScanThreadIsNotUsed() {
         if (Util.isInstrumentationTestMode()) return;
 
-        if (mScanHandler.getLooper().isCurrentThread()) {
+        if (mHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Must NOT be on scan thread");
         }
     }
 
     public boolean isOnScanThread() {
         if (Util.isInstrumentationTestMode()) return false;
-        return mScanHandler.getLooper().isCurrentThread();
+        return mHandler.getLooper().isCurrentThread();
     }
 
     public void doOnScanThread(Runnable r) {
@@ -1229,7 +1229,7 @@ public class ScanController {
         if (!mIsAvailable) return;
 
         final var posted =
-                mScanHandler.post(
+                mHandler.post(
                         () -> {
                             if (mIsAvailable) {
                                 r.run();
@@ -1250,7 +1250,7 @@ public class ScanController {
 
         final var future = new CompletableFuture<>();
         final var posted =
-                mScanHandler.postAtFrontOfQueue(
+                mHandler.postAtFrontOfQueue(
                         () -> {
                             r.run();
                             future.complete(null);
@@ -1279,7 +1279,7 @@ public class ScanController {
                             }
                             return supplier.get();
                         });
-        if (!mScanHandler.post(task)) {
+        if (!mHandler.post(task)) {
             Log.w(TAG, "Failed to post async task\n" + Log.getStackTraceString(new Throwable()));
             return defaultValue;
         }
