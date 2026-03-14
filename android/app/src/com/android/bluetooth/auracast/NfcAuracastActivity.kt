@@ -16,17 +16,24 @@
 
 package com.android.bluetooth.auracast
 
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
+import android.annotation.RequiresPermission
 import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothLeBroadcastAssistant
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.Context
 import android.content.Intent
 import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
 import android.os.Bundle
 import android.util.Log
-import com.android.bluetooth.bass_client.BassClientService
-import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 
 /**
@@ -34,8 +41,10 @@ import com.android.bluetooth.flags.Flags
  * immediately finishes.
  */
 class NfcAuracastActivity : Activity() {
-    // TODO: (b/490499487): remove deprecatedGetAdapterService from NfcAuracastActivity
-    private fun getAdapterService(): AdapterService? = AdapterService.deprecatedGetAdapterService()
+
+    private val bluetoothAdapter: BluetoothAdapter? by lazy {
+        bluetoothAdapterProvider(applicationContext)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,12 +96,66 @@ class NfcAuracastActivity : Activity() {
             return
         }
 
-        showJoinPromptNotification(metadataStr, streamName)
+        showJoinPromptNotificationAsync(metadataStr, streamName)
     }
 
-    private fun showJoinPromptNotification(metadataStr: String, streamName: String) {
-        // Get the NotificationManager using the testable provider
-        val nm = notificationManagerProvider(this)
+    private fun showJoinPromptNotificationAsync(metadataStr: String, streamName: String) {
+        val appContext = applicationContext
+
+        // Check if Bluetooth is missing or turned off
+        if (bluetoothAdapter == null || !bluetoothAdapter!!.isEnabled) {
+            Log.w(TAG, "BluetoothAdapter is null or disabled. Posting fallback notification.")
+            postNotification(appContext, metadataStr, streamName, null)
+            return
+        }
+
+        val listener = ProxyListener(metadataStr, streamName)
+
+        val success =
+            bluetoothAdapter!!.getProfileProxy(
+                appContext,
+                listener,
+                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
+            )
+
+        if (!success) {
+            Log.w(TAG, "Failed to get BASS profile proxy")
+            postNotification(appContext, metadataStr, streamName, null)
+        }
+    }
+
+    private inner class ProxyListener(
+        private val metadataStr: String,
+        private val streamName: String,
+    ) : BluetoothProfile.ServiceListener {
+
+        @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
+        override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+            if (profile == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT) {
+                val assistant = proxy as BluetoothLeBroadcastAssistant
+                val connectedDevice = assistant.connectedDevices.firstOrNull()
+
+                postNotification(applicationContext, metadataStr, streamName, connectedDevice)
+
+                bluetoothAdapter?.closeProfileProxy(
+                    BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
+                    proxy,
+                )
+            }
+        }
+
+        override fun onServiceDisconnected(profile: Int) {
+            // Do nothing
+        }
+    }
+
+    private fun postNotification(
+        context: Context,
+        metadataStr: String,
+        streamName: String,
+        connectedDevice: BluetoothDevice?,
+    ) {
+        val nm = notificationManagerProvider(context)
 
         val channel =
             NotificationChannel(
@@ -104,31 +167,28 @@ class NfcAuracastActivity : Activity() {
 
         val connectIntent =
             Intent(AuracastUtils.ACTION_CONNECT_STREAM).apply {
-                setPackage(packageName)
+                setPackage(context.packageName)
                 putExtra(AuracastUtils.EXTRA_METADATA, metadataStr)
             }
 
         val connectPending =
             PendingIntent.getBroadcast(
-                this,
+                context,
                 0,
                 connectIntent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
 
-        val service = bassClientServiceProvider()
-        val connectedDevice = service?.connectedDevices?.firstOrNull()
-
         if (connectedDevice == null) {
             // No device connected: Pass the testable 'nm' and null for the pending intent
             val message = "Connect an LE Audio device to start listening"
-            AuracastUtils.showNotification(this, nm, streamName, message, null)
+            AuracastUtils.showNotification(context, nm, streamName, message, null)
         } else {
             // Device is connected
             // TODO: (b/491294522): use getAlias() or getName() for notification
             val deviceName = "devices"
             val message = "Listen to $streamName audio stream on your $deviceName"
-            AuracastUtils.showNotification(this, nm, streamName, message, connectPending)
+            AuracastUtils.showNotification(context, nm, streamName, message, connectPending)
         }
     }
 
@@ -136,13 +196,13 @@ class NfcAuracastActivity : Activity() {
         private const val TAG = "NfcAuracastActivity"
 
         // VisibleForTesting
-        var notificationManagerProvider: (Activity) -> NotificationManager = {
+        var notificationManagerProvider: (Context) -> NotificationManager = {
             it.getSystemService(NotificationManager::class.java)!!
         }
 
-        // VisibleForTesting - Inject the BassClientService
-        var bassClientServiceProvider: () -> BassClientService? = {
-            AdapterService.deprecatedGetAdapterService()?.bassClientService?.orElse(null)
+        // VisibleForTesting
+        var bluetoothAdapterProvider: (Context) -> BluetoothAdapter? = {
+            it.getSystemService(BluetoothManager::class.java)?.adapter
         }
     }
 }

@@ -230,6 +230,11 @@ void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
   inc_func_call_count(__func__);
   test::mock::stack_gatt_api::GATTS_UnoffloadCharacteristics(conn_id, session_id);
 }
+std::optional<bluetooth::Uuid> GATTS_LookupServiceUuidByStartHandle(uint16_t /* start_handle */) {
+  inc_func_call_count(__func__);
+  return std::nullopt;
+}
+void gatt_load_bonded(void) { inc_func_call_count(__func__); }
 // Mocked functions complete
 //
 bool GATT_BR_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr) {

@@ -29,7 +29,7 @@ import android.media.HwAudioSource
 import android.media.MediaRecorder
 import android.os.Handler
 import android.util.Log
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.btservice.AdapterService
 
 /**
@@ -234,7 +234,7 @@ open class AudioProxy(
             Log.e(TAG, "Device address is null or empty")
             return
         }
-        val device = adapterService.getDeviceFromByte(Utils.getBytesFromAddress(deviceAddress))
+        val device = adapterService.getDeviceFromByte(Util.getBytesFromAddress(deviceAddress))
         Log.i(
             TAG,
             "$ACTIVE_AUDIO_DEVICE_DEBUG_TAG Audio device added: $device, " +
@@ -377,7 +377,7 @@ open class AudioProxy(
             Log.e(TAG, "Device address is null or empty for removed device")
             return
         }
-        val device = adapterService.getDeviceFromByte(Utils.getBytesFromAddress(deviceAddress))
+        val device = adapterService.getDeviceFromByte(Util.getBytesFromAddress(deviceAddress))
         val state = deviceAudioStates[device] ?: return
 
         // Note: deviceInfo describes the remote device's role.

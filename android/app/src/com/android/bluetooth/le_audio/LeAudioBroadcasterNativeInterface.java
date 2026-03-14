@@ -29,6 +29,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService.SetBigChannelMapClassificationAction;
 import com.android.bluetooth.btservice.AdapterService;
@@ -78,7 +79,7 @@ public class LeAudioBroadcasterNativeInterface {
          * destination or peer device therefore this fake device was created.
          * For now it's only important that this device is a Bluetooth device.
          */
-        event.device = getDevice(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
+        event.device = getDevice(Util.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
         event.valueInt1 = broadcastId;
         event.valueInt2 = state;
         mService.messageFromNative(event);
@@ -230,7 +231,7 @@ public class LeAudioBroadcasterNativeInterface {
         if (action == SetBigChannelMapClassificationAction.CLEAR.getValue()) {
             sinkAddr = EMPTY_ADDRESS_BYTES;
         } else {
-            sinkAddr = Utils.getByteAddress(sink);
+            sinkAddr = Util.getByteAddress(sink);
         }
         setBigChannelMapClassificationNative(action, sinkAddr, broadcastId);
     }

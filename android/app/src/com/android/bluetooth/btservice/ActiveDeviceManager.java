@@ -1234,7 +1234,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     continue;
                 }
 
-                byte[] addressBytes = Utils.getBytesFromAddress(address);
+                byte[] addressBytes = Util.getBytesFromAddress(address);
                 BluetoothDevice device = mAdapterService.getDeviceFromByte(addressBytes);
 
                 Log.i(
@@ -1319,7 +1319,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     continue;
                 }
 
-                byte[] addressBytes = Utils.getBytesFromAddress(address);
+                byte[] addressBytes = Util.getBytesFromAddress(address);
                 BluetoothDevice device = mAdapterService.getDeviceFromByte(addressBytes);
 
                 Log.i(

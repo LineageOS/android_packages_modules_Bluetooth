@@ -139,33 +139,6 @@ public final class Utils {
                 address[0], address[1], address[2], address[3], address[4], address[5]);
     }
 
-    public static String getRedactedAddressStringFromByte(byte[] address) {
-        if (address == null || address.length != BD_ADDR_LEN) {
-            return null;
-        }
-
-        return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
-    }
-
-    public static byte[] getByteAddress(BluetoothDevice device) {
-        return getBytesFromAddress(device.getAddress());
-    }
-
-    public static byte[] getBytesFromAddress(String address) {
-        int i, j = 0;
-        byte[] output = new byte[BD_ADDR_LEN];
-
-        for (i = 0; i < address.length(); i++) {
-            if (address.charAt(i) != ':') {
-                output[j] = (byte) Integer.parseInt(address.substring(i, i + 2), BD_UUID_LEN);
-                j++;
-                i++;
-            }
-        }
-
-        return output;
-    }
-
     public static int byteArrayToInt(byte[] valueBuf) {
         return byteArrayToInt(valueBuf, 0);
     }

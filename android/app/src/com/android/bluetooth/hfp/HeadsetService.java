@@ -60,7 +60,6 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.InteropUtil;
@@ -2326,7 +2325,7 @@ public class HeadsetService extends ConnectableProfile {
                         continue;
                     }
 
-                    byte[] addressBytes = Utils.getBytesFromAddress(address);
+                    byte[] addressBytes = Util.getBytesFromAddress(address);
                     BluetoothDevice device = getAdapterService().getDeviceFromByte(addressBytes);
 
                     Log.d(

@@ -2919,7 +2919,7 @@ public class AdapterService extends Service {
     public byte[] getByteIdentityAddress(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp != null && deviceProp.getIdentityAddress().getAddress() != null) {
-            return Utils.getBytesFromAddress(deviceProp.getIdentityAddress().getAddress());
+            return Util.getBytesFromAddress(deviceProp.getIdentityAddress().getAddress());
         }
 
         // Return null if identity address unknown
@@ -2981,7 +2981,7 @@ public class AdapterService extends Service {
         // Otherwise, BR/EDR address will be same address as in BluetoothDevice#getAddress
         byte[] address = getByteIdentityAddress(device);
         if (address == null) {
-            address = Utils.getByteAddress(device);
+            address = Util.getByteAddress(device);
         }
         return address;
     }
@@ -5087,7 +5087,7 @@ public class AdapterService extends Service {
         if (device == null) {
             return new byte[0];
         }
-        return mNativeInterface.obfuscateAddress(Utils.getByteAddress(device));
+        return mNativeInterface.obfuscateAddress(Util.getByteAddress(device));
     }
 
     /**
@@ -5132,7 +5132,7 @@ public class AdapterService extends Service {
         if (device == null) {
             return 0;
         }
-        return mNativeInterface.getMetricId(Utils.getByteAddress(device));
+        return mNativeInterface.getMetricId(Util.getByteAddress(device));
     }
 
     public CompanionManager getCompanionManager() {
@@ -5211,7 +5211,7 @@ public class AdapterService extends Service {
      * @return boolean true if audio low latency is successfully allowed or disallowed
      */
     public boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
-        return mNativeInterface.allowLowLatencyAudio(allowed, Utils.getByteAddress(device));
+        return mNativeInterface.allowLowLatencyAudio(allowed, Util.getByteAddress(device));
     }
 
     /**

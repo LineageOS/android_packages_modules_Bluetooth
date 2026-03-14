@@ -31,7 +31,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothPrefs;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -430,7 +430,7 @@ public class AvrcpControllerService extends ProfileService {
         if (stateMachine == null) return;
         AvrcpItem track = stateMachine.getCurrentTrack();
         if (track != null && track.getCoverArtLocation() == null) {
-            mNativeInterface.getCurrentMetadata(Utils.getByteAddress(device));
+            mNativeInterface.getCurrentMetadata(Util.getByteAddress(device));
         }
     }
 

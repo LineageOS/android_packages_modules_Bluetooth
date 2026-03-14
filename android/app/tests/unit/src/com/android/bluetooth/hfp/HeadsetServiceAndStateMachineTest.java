@@ -77,7 +77,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
@@ -1068,12 +1068,12 @@ public class HeadsetServiceAndStateMachineTest {
             doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo).getType();
             final String deviceBAddress = deviceB.getAddress();
             doReturn(deviceBAddress).when(mAudioDeviceInfo).getAddress();
-            byte[] byteAddressB = Utils.getBytesFromAddress(deviceBAddress);
+            byte[] byteAddressB = Util.getBytesFromAddress(deviceBAddress);
             doReturn(deviceB).when(mAdapterService).getDeviceFromByte(byteAddressB);
             final String deviceAAddress = deviceA.getAddress();
             doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo2).getType();
             doReturn(deviceAAddress).when(mAudioDeviceInfo2).getAddress();
-            byte[] byteAddressA = Utils.getBytesFromAddress(deviceAAddress);
+            byte[] byteAddressA = Util.getBytesFromAddress(deviceAAddress);
             doReturn(deviceA).when(mAdapterService).getDeviceFromByte(byteAddressA);
             doReturn(List.of(mAudioDeviceInfo, mAudioDeviceInfo2))
                     .when(mAudioManager)
@@ -1287,12 +1287,12 @@ public class HeadsetServiceAndStateMachineTest {
                 doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo).getType();
                 final String deviceBAddress = deviceB.getAddress();
                 doReturn(deviceBAddress).when(mAudioDeviceInfo).getAddress();
-                byte[] byteAddressB = Utils.getBytesFromAddress(deviceBAddress);
+                byte[] byteAddressB = Util.getBytesFromAddress(deviceBAddress);
                 doReturn(deviceB).when(mAdapterService).getDeviceFromByte(byteAddressB);
                 final String deviceAAddress = deviceA.getAddress();
                 doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo2).getType();
                 doReturn(deviceAAddress).when(mAudioDeviceInfo2).getAddress();
-                byte[] byteAddressA = Utils.getBytesFromAddress(deviceAAddress);
+                byte[] byteAddressA = Util.getBytesFromAddress(deviceAAddress);
                 doReturn(deviceA).when(mAdapterService).getDeviceFromByte(byteAddressA);
                 doReturn(List.of(mAudioDeviceInfo, mAudioDeviceInfo2))
                         .when(mAudioManager)
@@ -1318,12 +1318,12 @@ public class HeadsetServiceAndStateMachineTest {
                 doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo).getType();
                 final String deviceBAddress = deviceB.getAddress();
                 doReturn(deviceBAddress).when(mAudioDeviceInfo).getAddress();
-                byte[] byteAddressB = Utils.getBytesFromAddress(deviceBAddress);
+                byte[] byteAddressB = Util.getBytesFromAddress(deviceBAddress);
                 doReturn(deviceB).when(mAdapterService).getDeviceFromByte(byteAddressB);
                 final String deviceAAddress = deviceA.getAddress();
                 doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo2).getType();
                 doReturn(deviceAAddress).when(mAudioDeviceInfo2).getAddress();
-                byte[] byteAddressA = Utils.getBytesFromAddress(deviceAAddress);
+                byte[] byteAddressA = Util.getBytesFromAddress(deviceAAddress);
                 doReturn(deviceA).when(mAdapterService).getDeviceFromByte(byteAddressA);
                 doReturn(List.of(mAudioDeviceInfo, mAudioDeviceInfo2))
                         .when(mAudioManager)
@@ -1989,7 +1989,7 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo).getType();
         final String address = device.getAddress();
         doReturn(address).when(mAudioDeviceInfo).getAddress();
-        byte[] byteAddress = Utils.getBytesFromAddress(device.getAddress());
+        byte[] byteAddress = Util.getBytesFromAddress(device.getAddress());
         doReturn(device).when(mAdapterService).getDeviceFromByte(byteAddress);
         doReturn(List.of(mAudioDeviceInfo)).when(mAudioManager).getAvailableCommunicationDevices();
         // Start voice recognition
@@ -2047,7 +2047,7 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo).getType();
         final String address = device.getAddress();
         doReturn(address).when(mAudioDeviceInfo).getAddress();
-        byte[] byteAddress = Utils.getBytesFromAddress(device.getAddress());
+        byte[] byteAddress = Util.getBytesFromAddress(device.getAddress());
         doReturn(device).when(mAdapterService).getDeviceFromByte(byteAddress);
         doReturn(List.of(mAudioDeviceInfo)).when(mAudioManager).getAvailableCommunicationDevices();
         mHeadsetService.startVoiceRecognition(device);
@@ -2446,7 +2446,7 @@ public class HeadsetServiceAndStateMachineTest {
             doReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO).when(mAudioDeviceInfo).getType();
             final String address = device.getAddress();
             doReturn(address).when(mAudioDeviceInfo).getAddress();
-            byte[] byteAddress = Utils.getBytesFromAddress(device.getAddress());
+            byte[] byteAddress = Util.getBytesFromAddress(device.getAddress());
             doReturn(device).when(mAdapterService).getDeviceFromByte(byteAddress);
             doReturn(List.of(mAudioDeviceInfo))
                     .when(mAudioManager)

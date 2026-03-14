@@ -16,8 +16,15 @@
 
 package com.android.bluetooth.auracast
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothLeBroadcastAssistant
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.Context
 import android.content.Intent
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
@@ -36,72 +43,72 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.Mockito.never
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class NfcAuracastActivityTest {
+
     @get:Rule val setFlagsRule = SetFlagsRule()
 
     private lateinit var mockNotificationManager: NotificationManager
+    private lateinit var mockBluetoothAdapter: BluetoothAdapter
+
+    companion object {
+        // 10s timeout for async intent handling
+        private const val ASYNC_TIMEOUT = 10000L
+    }
 
     @Before
     fun setUp() {
-        mockNotificationManager = mock<NotificationManager>()
+        // Grant system-level permissions to bypass SecurityExceptions
+        // when fetching connected devices from the Broadcast Assistant proxy.
+        InstrumentationRegistry.getInstrumentation()
+            .uiAutomation
+            .adoptShellPermissionIdentity(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_PRIVILEGED,
+            )
 
-        // Override the providers in the Activity to return your mocks
+        mockNotificationManager = mock()
+        mockBluetoothAdapter = mock {
+            on { isEnabled }.thenReturn(true)
+            on { getProfileProxy(any(), any(), any()) }.thenReturn(false)
+        }
+        // Override the providers in the Activity to return mocks
         NfcAuracastActivity.notificationManagerProvider = { mockNotificationManager }
+        NfcAuracastActivity.bluetoothAdapterProvider = { mockBluetoothAdapter }
     }
 
     @After
     fun tearDown() {
-        // Reset the providers back to real system services
+        InstrumentationRegistry.getInstrumentation().uiAutomation.dropShellPermissionIdentity()
         NfcAuracastActivity.notificationManagerProvider = {
             it.getSystemService(NotificationManager::class.java)!!
         }
-    }
-
-    /** Helper function to create an intent mimicking an NFC tap with specific payload */
-    private fun createNdefIntent(payloadStr: String): Intent {
-        val record =
-            NdefRecord(
-                NdefRecord.TNF_MIME_MEDIA,
-                "application/vnd.bluetooth.le.oob".toByteArray(),
-                ByteArray(0),
-                payloadStr.toByteArray(),
-            )
-        val ndefMessage = NdefMessage(arrayOf(record))
-
-        // Grab the target context (the main app package) rather than the test package
-        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
-
-        // Explicitly specify the target component using targetContext
-        // to bypass the system PackageManager intent resolution phase.
-        return Intent().apply {
-            setClassName(targetContext, NfcAuracastActivity::class.java.name)
-            action = NfcAdapter.ACTION_NDEF_DISCOVERED
-            // Explicitly typing as Array<Parcelable> resolves the Kotlin putExtra inference error
-            val messages: Array<Parcelable> = arrayOf(ndefMessage)
-            putExtra(NfcAdapter.EXTRA_NDEF_MESSAGES, messages)
+        NfcAuracastActivity.bluetoothAdapterProvider = {
+            (it.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
         }
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
     fun testActionNotNdefDiscovered_doesNothing() {
-        val intent = createNdefIntent("BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;;")
-        // Set to an unsupported action
-        intent.action = Intent.ACTION_VIEW
+        val intent =
+            createNdefIntent("BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;;").apply {
+                action = Intent.ACTION_VIEW // Set to an unsupported action
+            }
 
-        ActivityScenario.launch<NfcAuracastActivity>(intent).use { scenario ->
-            assertThat(scenario.state).isEqualTo(Lifecycle.State.DESTROYED)
-        }
+        launchAndAssertDestroyed(intent)
 
-        verify(mockNotificationManager, never()).notify(anyInt(), any())
+        verify(mockNotificationManager, never()).notify(any(), any())
     }
 
     @Test
@@ -109,46 +116,110 @@ class NfcAuracastActivityTest {
     fun testNdefMissingAuracastPrefix_doesNothing() {
         val intent = createNdefIntent("RANDOM_DATA_WITHOUT_PREFIX")
 
-        ActivityScenario.launch<NfcAuracastActivity>(intent).use { scenario ->
-            assertThat(scenario.state).isEqualTo(Lifecycle.State.DESTROYED)
-        }
+        launchAndAssertDestroyed(intent)
 
-        verify(mockNotificationManager, never()).notify(anyInt(), any())
+        verify(mockNotificationManager, never()).notify(any(), any())
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
-    fun testValidAuracastNdef_postsNotification() {
-        // "TestName" -> Base64: "VGVzdE5hbWU="
+    fun testValidAuracast_withoutConnectedDevice_postsNotification() {
+        // Base64 "VGVzdE5hbWU=" decodes to "TestName"
         val intent = createNdefIntent("BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;;")
 
-        ActivityScenario.launch<NfcAuracastActivity>(intent).use { scenario ->
-            assertThat(scenario.state).isEqualTo(Lifecycle.State.DESTROYED)
-        }
+        launchAndAssertDestroyed(intent)
 
         // Capture the notification passed to the mock NotificationManager
-        val notificationCaptor = ArgumentCaptor.forClass(Notification::class.java)
-        verify(mockNotificationManager).notify(anyInt(), notificationCaptor.capture())
+        val notificationCaptor = argumentCaptor<Notification>()
+        verify(mockNotificationManager, timeout(ASYNC_TIMEOUT))
+            .notify(any(), notificationCaptor.capture())
 
-        // Extract the captured notification and verify its contents
-        val notification = notificationCaptor.value
+        // Extract the captured notification and verify the decoded broadcast name appears
+        val notification = notificationCaptor.firstValue
         val title = notification.extras.getString(Notification.EXTRA_TITLE)
 
-        // Assert the decoded broadcast name appears in the title
         assertThat(title).contains("TestName")
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    fun testValidAuracast_withConnectedDevice_postsNotification() {
+        val mockAssistant = mock<BluetoothLeBroadcastAssistant>()
+        val mockDevice = mock<BluetoothDevice>()
+
+        doReturn(listOf(mockDevice)).whenever(mockAssistant).connectedDevices
+        doReturn(true)
+            .whenever(mockBluetoothAdapter)
+            .getProfileProxy(
+                any<Context>(),
+                any<BluetoothProfile.ServiceListener>(),
+                eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT),
+            )
+
+        // Base64 "VGVzdE5hbWU=" decodes to "TestName"
+        val intent = createNdefIntent("BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;;")
+        launchAndAssertDestroyed(intent)
+
+        val listenerCaptor = argumentCaptor<BluetoothProfile.ServiceListener>()
+        verify(mockBluetoothAdapter)
+            .getProfileProxy(
+                any<Context>(),
+                listenerCaptor.capture(),
+                eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT),
+            )
+
+        // Simulate the Bluetooth framework connecting the profile
+        val listener = listenerCaptor.firstValue
+        listener.onServiceConnected(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, mockAssistant)
+
+        // Verify the Notification was posted with the correct connected text
+        val notificationCaptor = argumentCaptor<Notification>()
+        verify(mockNotificationManager, timeout(ASYNC_TIMEOUT))
+            .notify(any(), notificationCaptor.capture())
+
+        val notification = notificationCaptor.firstValue
+        val text = notification.extras.getString(Notification.EXTRA_TEXT)
+
+        // Verify it hits the "Device is connected" branch in your Activity
+        assertThat(text).isEqualTo("Listen to TestName audio stream on your devices")
+
+        // Verify we didn't leak the proxy
+        verify(mockBluetoothAdapter)
+            .closeProfileProxy(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, mockAssistant)
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
     fun testValidAuracastNdef_missingName_doesNothing() {
-        // Missing BN field, but has other valid format data
+        // Missing BN (Broadcast Name) field, but has other valid format data
         val intent = createNdefIntent("BLUETOOTH:UUID:184F;BC:123456;;")
 
+        launchAndAssertDestroyed(intent)
+
+        verify(mockNotificationManager, never()).notify(any(), any())
+    }
+
+    // --- Helper Methods ---
+
+    /** Launches the activity with the intent and verifies it finishes immediately. */
+    private fun launchAndAssertDestroyed(intent: Intent) {
         ActivityScenario.launch<NfcAuracastActivity>(intent).use { scenario ->
             assertThat(scenario.state).isEqualTo(Lifecycle.State.DESTROYED)
         }
+    }
 
-        // Without a name, no notification should be shown
-        verify(mockNotificationManager, never()).notify(anyInt(), any())
+    /** Creates an intent mimicking an NFC tap with a specific payload string. */
+    private fun createNdefIntent(payloadStr: String): Intent {
+        val record = NdefRecord.createTextRecord(null, payloadStr)
+        val ndefMessage = NdefMessage(arrayOf(record))
+
+        // Bypass the system PackageManager intent resolution phase by explicitly
+        // specifying the target component using the target context.
+        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
+        return Intent(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
+            setClassName(targetContext, NfcAuracastActivity::class.java.name)
+            val messages: Array<Parcelable> = arrayOf(ndefMessage)
+            putExtra(NfcAdapter.EXTRA_NDEF_MESSAGES, messages)
+        }
     }
 }

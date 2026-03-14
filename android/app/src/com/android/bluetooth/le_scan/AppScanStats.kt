@@ -42,6 +42,7 @@ import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
+import com.android.internal.annotations.VisibleForTesting
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -131,6 +132,10 @@ class AppScanStats(
     private var resultsScreenOn = 0
     private var resultsScreenOff = 0
     private var scheduledBatchAlarmCount = 0
+
+    @VisibleForTesting
+    val results: Int
+        get() = resultsScreenOn + resultsScreenOff
 
     override fun toString() = "AppScanStats(uid=$uid, name=$name)"
 

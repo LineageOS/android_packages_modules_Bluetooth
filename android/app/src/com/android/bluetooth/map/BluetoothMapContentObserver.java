@@ -3363,6 +3363,18 @@ public class BluetoothMapContentObserver {
         values.put(Mms.READ_REPORT, PduHeaders.VALUE_NO);
         values.put(Mms.DELIVERY_REPORT, PduHeaders.VALUE_NO);
         values.put(Mms.LOCKED, 0);
+
+        // This field is read by our MmsFileProvider via PduComposer when we create and send the PDU
+        // bytes representing the message we want sent. PduComposer asserts it must not be null.
+        // Despite this though, the field is otherwise unused/reserved in Telephony. The usual code
+        // paths in Messenger/Telephony owned code don't explicitly set this, and rely on a default
+        // constructor to set a value in the same format we're setting here (See
+        // SendPdu#generateTransactionId() constructor for details). Telephony could choose to use
+        // the field at any time. Thus, we need to set this for now to avoid an exception, but
+        // *should not* rely on the value being anything specific in our logic. We should explore
+        // removal in the future.
+        values.put(Mms.TRANSACTION_ID, "T" + Long.toHexString(System.currentTimeMillis()));
+
         if (msg.getTextOnly()) {
             values.put(Mms.TEXT_ONLY, true);
         }

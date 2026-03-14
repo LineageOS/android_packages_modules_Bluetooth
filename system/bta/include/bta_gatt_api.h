@@ -995,6 +995,9 @@ void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_el
  ******************************************************************************/
 void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id);
 
+/* Initialize power management callbacks for GATT */
+extern void BTA_GATT_Init_gatt_pm_callbacks();
+
 namespace std {
 template <>
 struct formatter<tBTA_GATTC_EVT> : enum_formatter<tBTA_GATTC_EVT> {};

@@ -468,7 +468,7 @@ struct AseManager::manager_impl : public hci::iso_manager::CigCallbacks,
     // Note: There could be more than one CIS established event from a single device, be sure to
     //       move only those Sink ASEs to the STREAMING state, while the Source ASEs will transition
     //       when the peer device is ready to receive the data (on ReceiverStartReady).
-    auto has_incoming_data = (evt->max_pdu_mtos != 0);
+    auto has_incoming_data = (evt->max_pdu_c_to_p != 0);
     for (auto* sm : resuming_ase_state_machines) {
       if (has_incoming_data && sm->IsSinkAse() && app_callbacks_->IsDecodingSessionReady()) {
         if (!sm->ProcessEvent(AscsAseStateMachine::Events::RECEIVER_START_READY, nullptr)) {

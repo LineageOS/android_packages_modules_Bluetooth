@@ -179,3 +179,5 @@ void BTA_GATTC_OffloadCharacteristics(tCONN_ID /* conn_id */,
 void BTA_GATTC_UnoffloadCharacteristics(tCONN_ID /* conn_id */, int /* session_id */) {
   inc_func_call_count(__func__);
 }
+
+void BTA_GATT_Init_gatt_pm_callbacks() { inc_func_call_count(__func__); }

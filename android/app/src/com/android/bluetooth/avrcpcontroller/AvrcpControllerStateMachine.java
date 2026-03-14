@@ -36,7 +36,7 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
@@ -159,7 +159,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         super(TAG);
         mAdapterService = adapterService;
         mDevice = device;
-        mDeviceAddress = Utils.getByteAddress(mDevice);
+        mDeviceAddress = Util.getByteAddress(mDevice);
         mService = service;
         mNativeInterface = requireNonNull(nativeInterface);
         mCoverArtPsm = 0;

@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.audio_util.ListItem;
 import com.android.bluetooth.audio_util.Metadata;
 import com.android.bluetooth.audio_util.PlayStatus;
@@ -83,7 +83,7 @@ public class AvrcpNativeInterface {
     void sendMediaKeyEvent(String bdaddr, int keyEvent, boolean pushed) {
         d("sendMediaKeyEvent: keyEvent=" + keyEvent + " pushed=" + pushed);
         BluetoothDevice device =
-                mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
+                mAdapterService.getDeviceFromByte(Util.getBytesFromAddress(bdaddr));
         mAvrcpService.sendMediaKeyEvent(device, keyEvent, pushed);
     }
 
@@ -175,21 +175,21 @@ public class AvrcpNativeInterface {
 
     void setActiveDevice(String bdaddr) {
         BluetoothDevice device =
-                mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
+                mAdapterService.getDeviceFromByte(Util.getBytesFromAddress(bdaddr));
         d("setActiveDevice: device=" + device);
         mAvrcpService.setActiveDevice(device);
     }
 
     void deviceConnected(String bdaddr, boolean absoluteVolume) {
         BluetoothDevice device =
-                mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
+                mAdapterService.getDeviceFromByte(Util.getBytesFromAddress(bdaddr));
         d("deviceConnected: device=" + device + " absoluteVolume=" + absoluteVolume);
         mAvrcpService.deviceConnected(device, absoluteVolume);
     }
 
     void deviceDisconnected(String bdaddr) {
         BluetoothDevice device =
-                mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
+                mAdapterService.getDeviceFromByte(Util.getBytesFromAddress(bdaddr));
         d("deviceDisconnected: device=" + device);
         mAvrcpService.deviceDisconnected(device);
     }

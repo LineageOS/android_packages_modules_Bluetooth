@@ -39,7 +39,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHapPresetInfo;
 import android.platform.test.flag.junit.SetFlagsRule;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
@@ -272,6 +272,6 @@ public class HapClientNativeCallbackTest {
     }
 
     private static byte[] getByteAddress(BluetoothDevice device) {
-        return Utils.getBytesFromAddress(device.getAddress());
+        return Util.getBytesFromAddress(device.getAddress());
     }
 }

@@ -144,6 +144,21 @@ object Util {
             else -> "Unknown transport ($transport)"
         }
 
+    @JvmStatic
+    fun getRedactedAddressStringFromByte(address: ByteArray?): String? {
+        if (address == null || address.size != Utils.BD_ADDR_LEN) {
+            return null
+        }
+
+        return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5])
+    }
+
+    @JvmStatic fun getByteAddress(device: BluetoothDevice) = getBytesFromAddress(device.address)
+
+    @JvmStatic
+    fun getBytesFromAddress(address: String) =
+        address.split(":").map { it.toInt(16).toByte() }.toByteArray()
+
     /**
      * Converts HCI disconnect reasons to Android disconnect reasons.
      *

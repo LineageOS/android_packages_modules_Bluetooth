@@ -388,7 +388,7 @@ public class AdapterProperties {
             return;
         }
         try {
-            byte[] addrByte = Utils.getByteAddress(device);
+            byte[] addrByte = Util.getByteAddress(device);
             DeviceProperties prop = mRemoteDevices.getDeviceProperties(device);
             if (prop == null) {
                 prop = mRemoteDevices.addDeviceProperties(addrByte, device.getAddressType());
@@ -446,7 +446,7 @@ public class AdapterProperties {
             if (removeExisting) {
                 // Found an existing LE-only device with the same identity address but different
                 // pseudo address
-                if (mService.getNative().removeBond(Utils.getBytesFromAddress(existingAddress))) {
+                if (mService.getNative().removeBond(Util.getBytesFromAddress(existingAddress))) {
                     mBondedDevices.remove(existingDevice);
                     infoLog(
                             "Removing old bond"
@@ -948,7 +948,7 @@ public class AdapterProperties {
     protected void dump(PrintWriter writer) {
         writer.println(TAG);
         writer.println("  " + "Name: " + mService.getName());
-        writer.println("  " + "Address: " + Utils.getRedactedAddressStringFromByte(mAddress));
+        writer.println("  " + "Address: " + Util.getRedactedAddressStringFromByte(mAddress));
         writer.println("  " + "ConnectionState: " + dumpConnectionState(getConnectionState()));
         writer.println("  " + "MaxConnectedAudioDevices: " + getMaxConnectedAudioDevices());
         writer.println("  " + "A2dpOffloadEnabled: " + mA2dpOffloadEnabled);

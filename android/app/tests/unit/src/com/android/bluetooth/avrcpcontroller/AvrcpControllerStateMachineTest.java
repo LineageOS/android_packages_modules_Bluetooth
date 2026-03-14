@@ -21,7 +21,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.Utils.getBytesFromAddress;
+import static com.android.bluetooth.Util.getBytesFromAddress;
 
 import static com.google.common.truth.Truth.assertThat;
 
