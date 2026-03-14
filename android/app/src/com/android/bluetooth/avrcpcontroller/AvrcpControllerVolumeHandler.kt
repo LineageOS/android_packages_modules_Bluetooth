@@ -26,7 +26,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.VisibleForTesting
-import com.android.bluetooth.Util
+import com.android.bluetooth.Util.isAutomotive
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.util.registerReceiver
 import kotlin.math.roundToInt
@@ -375,7 +375,7 @@ class AvrcpControllerVolumeHandler(
         @JvmStatic
         fun getDesiredVolumeStrategy(context: Context): Int {
             val audioManager = context.getSystemService(AudioManager::class.java)
-            return if (audioManager.isVolumeFixed() || Util.isAutomotive(context)) STRATEGY_LOUD
+            return if (audioManager.isVolumeFixed() || context.isAutomotive()) STRATEGY_LOUD
             else STRATEGY_ABSOLUTE
         }
     }

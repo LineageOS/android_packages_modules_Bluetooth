@@ -44,7 +44,7 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
     private var currentWatchStatus = false
 
     init {
-        if (!isWatch(adapterService)) {
+        if (!adapterService.isWatch()) {
             val cdm = adapterService.getSystemService(CompanionDeviceManager::class.java)
             cdm.addOnAssociationsChangedListener(Handler(looper)::post, this)
             onAssociationsChanged(cdm.allAssociations)
@@ -52,7 +52,7 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
     }
 
     private fun computeCurrentWatchStatus(): Boolean {
-        if (isWatch(adapterService)) {
+        if (adapterService.isWatch()) {
             return !connectedDevices.isEmpty()
         }
         return connectedDevices.keys.any { device ->
