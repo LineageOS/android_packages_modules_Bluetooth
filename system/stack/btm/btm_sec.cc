@@ -4274,6 +4274,7 @@ void btm_sec_link_key_request(const RawAddress& bda) {
     btm_security.lk_req_timer_ = alarm_new("btm_sec_lk_req_timer");
     alarm_set_on_mloop(btm_security.lk_req_timer_, BTM_SEC_LK_REQ_TIMEOUT_MS,
                        btm_sec_lk_req_timeout, nullptr);
+    return;
   }
 
   /* The link key is not in the database and it is not known to the manager */
