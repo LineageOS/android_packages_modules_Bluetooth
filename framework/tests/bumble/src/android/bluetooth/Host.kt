@@ -102,7 +102,7 @@ class Host(context: Context) : Closeable {
         }
     }
 
-    public fun discoverAndVerify(remoteDeviceName: String): BluetoothDevice {
+    fun discoverAndVerify(remoteDeviceName: String): BluetoothDevice {
         Log.d(TAG, "discoverAndVerify: $remoteDeviceName")
         return runBlocking(scope.coroutineContext) {
             val foundDevice: BluetoothDevice =
