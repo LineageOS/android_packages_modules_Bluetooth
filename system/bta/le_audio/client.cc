@@ -6163,13 +6163,13 @@ public:
         }
         LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
 
-        if (event->max_pdu_mtos > 0) {
+        if (event->max_pdu_c_to_p > 0) {
           group->SetTransportLatency(bluetooth::le_audio::types::kLeAudioDirectionSink,
-                                     event->trans_lat_mtos);
+                                     event->trans_lat_c_to_p);
         }
-        if (event->max_pdu_stom > 0) {
+        if (event->max_pdu_p_to_c > 0) {
           group->SetTransportLatency(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                     event->trans_lat_stom);
+                                     event->trans_lat_p_to_c);
         }
 
         if (leAudioHealthStatus_ && (event->status != HCI_SUCCESS)) {

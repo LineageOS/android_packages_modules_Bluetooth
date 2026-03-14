@@ -1729,7 +1729,7 @@ private:
   void ApplyDsaParams(LeAudioDeviceGroup* group,
                       bluetooth::hci::iso_manager::cig_create_params& param) {
     /* Ignore bidirectional streaming */
-    if (param.sdu_itv_stom != 0) {
+    if (param.sdu_itv_p_to_c != 0) {
       log::debug("Bidirection streaming, ignore DSA mode {}", group->dsa_.mode);
       return;
     }
@@ -1763,29 +1763,29 @@ private:
           if (config->hasDsaBackChannel()) {
             auto const& cfg = config->confs.source.at(0);
 
-            param.sdu_itv_stom = cfg.qos.sduIntervalUs;
-            param.max_trans_lat_stom = cfg.qos.max_transport_latency;
-            it->max_sdu_size_stom = cfg.qos.maxSdu;
-            it->rtn_stom = cfg.qos.retransmission_number;
+            param.sdu_itv_p_to_c = cfg.qos.sduIntervalUs;
+            param.max_trans_lat_p_to_c = cfg.qos.max_transport_latency;
+            it->max_sdu_size_p_to_c = cfg.qos.maxSdu;
+            it->rtn_p_to_c = cfg.qos.retransmission_number;
 
             log::debug(
-                    "Applying DSA Cig parameters: sdu_itv_stom:{}, max_trans_lat_stom: {}, "
-                    "max_sdu_size_stom: {}, rtn_stom: {}",
-                    param.sdu_itv_stom, param.max_trans_lat_stom, it->max_sdu_size_stom,
-                    it->rtn_stom);
+                    "Applying DSA Cig parameters: sdu_itv_p_to_c:{}, max_trans_lat_p_to_c: {}, "
+                    "max_sdu_size_p_to_c: {}, rtn_p_to_c: {}",
+                    param.sdu_itv_p_to_c, param.max_trans_lat_p_to_c, it->max_sdu_size_p_to_c,
+                    it->rtn_p_to_c);
           } else {
             log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
-            param.sdu_itv_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
-            param.max_trans_lat_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
-            it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
+            param.sdu_itv_p_to_c = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
+            param.max_trans_lat_p_to_c = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
+            it->max_sdu_size_p_to_c = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
 
             // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
             if (!group->DsaReducedSduSizeSupported()) {
               log::verbose("Device does not support reduced headtracker SDU");
-              it->max_sdu_size_stom = 15;
+              it->max_sdu_size_p_to_c = 15;
             }
 
-            it->rtn_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerRtn;
+            it->rtn_p_to_c = bluetooth::le_audio::types::kLeAudioHeadtrackerRtn;
           }
           it++;
         }
@@ -1803,8 +1803,8 @@ private:
   }
 
   bool CigCreate(LeAudioDeviceGroup* group) {
-    uint32_t sdu_interval_mtos, sdu_interval_stom;
-    uint16_t max_trans_lat_mtos, max_trans_lat_stom;
+    uint32_t sdu_interval_c_to_p, sdu_interval_p_to_c;
+    uint16_t max_trans_lat_c_to_p, max_trans_lat_p_to_c;
     uint8_t packing, framing, sca;
     std::vector<EXT_CIS_CFG> cis_cfgs;
 
@@ -1817,21 +1817,22 @@ private:
       return false;
     }
 
-    sdu_interval_mtos = group->GetSduInterval(bluetooth::le_audio::types::kLeAudioDirectionSink);
-    sdu_interval_stom = group->GetSduInterval(bluetooth::le_audio::types::kLeAudioDirectionSource);
+    sdu_interval_c_to_p = group->GetSduInterval(bluetooth::le_audio::types::kLeAudioDirectionSink);
+    sdu_interval_p_to_c =
+            group->GetSduInterval(bluetooth::le_audio::types::kLeAudioDirectionSource);
     sca = group->GetSCA();
     packing = group->GetPacking();
     framing = group->GetFraming();
-    max_trans_lat_mtos = group->GetMaxTransportLatencyMtos();
-    max_trans_lat_stom = group->GetMaxTransportLatencyStom();
+    max_trans_lat_c_to_p = group->GetMaxTransportLatencyCToP();
+    max_trans_lat_p_to_c = group->GetMaxTransportLatencyPToC();
 
-    uint16_t max_sdu_size_mtos = 0;
-    uint16_t max_sdu_size_stom = 0;
-    uint8_t phy_mtos = group->GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSink);
-    uint8_t phy_stom = group->GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSource);
+    uint16_t max_sdu_size_c_to_p = 0;
+    uint16_t max_sdu_size_p_to_c = 0;
+    uint8_t phy_c_to_p = group->GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSink);
+    uint8_t phy_p_to_c = group->GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSource);
 
-    if (!isIntervalAndLatencyProperlySet(sdu_interval_mtos, max_trans_lat_mtos) ||
-        !isIntervalAndLatencyProperlySet(sdu_interval_stom, max_trans_lat_stom)) {
+    if (!isIntervalAndLatencyProperlySet(sdu_interval_c_to_p, max_trans_lat_c_to_p) ||
+        !isIntervalAndLatencyProperlySet(sdu_interval_p_to_c, max_trans_lat_p_to_c)) {
       log::error("Latency and interval not properly set");
       group->PrintDebugState();
       return false;
@@ -1839,14 +1840,14 @@ private:
 
     // Use 1M Phy for the ACK packet from remote device to phone for better
     // sensitivity
-    if (group->asymmetric_phy_for_unidirectional_cis_supported && sdu_interval_stom == 0 &&
-        (phy_stom & bluetooth::hci::kIsoCigPhy1M) != 0) {
+    if (group->asymmetric_phy_for_unidirectional_cis_supported && sdu_interval_p_to_c == 0 &&
+        (phy_p_to_c & bluetooth::hci::kIsoCigPhy1M) != 0) {
       log::info("Use asymmetric PHY for unidirectional CIS");
-      phy_stom = bluetooth::hci::kIsoCigPhy1M;
+      phy_p_to_c = bluetooth::hci::kIsoCigPhy1M;
     }
 
-    uint8_t rtn_mtos = 0;
-    uint8_t rtn_stom = 0;
+    uint8_t rtn_c_to_p = 0;
+    uint8_t rtn_p_to_c = 0;
 
     /* Currently assumed Sink/Source configuration is same across cis types.
      * If a cis in cises_ is currently associated with active device/ASE(s),
@@ -1859,44 +1860,46 @@ private:
      */
     auto& cises = group->cig.GetCises();
     for (const struct bluetooth::le_audio::types::cis& cis : cises) {
-      uint16_t max_sdu_size_mtos_temp =
+      uint16_t max_sdu_size_c_to_p_temp =
               group->GetMaxSduSize(bluetooth::le_audio::types::kLeAudioDirectionSink, cis.id);
-      uint16_t max_sdu_size_stom_temp =
+      uint16_t max_sdu_size_p_to_c_temp =
               group->GetMaxSduSize(bluetooth::le_audio::types::kLeAudioDirectionSource, cis.id);
-      uint8_t rtn_mtos_temp =
+      uint8_t rtn_c_to_p_temp =
               group->GetRtn(bluetooth::le_audio::types::kLeAudioDirectionSink, cis.id);
-      uint8_t rtn_stom_temp =
+      uint8_t rtn_p_to_c_temp =
               group->GetRtn(bluetooth::le_audio::types::kLeAudioDirectionSource, cis.id);
 
-      max_sdu_size_mtos = max_sdu_size_mtos_temp ? max_sdu_size_mtos_temp : max_sdu_size_mtos;
-      max_sdu_size_stom = max_sdu_size_stom_temp ? max_sdu_size_stom_temp : max_sdu_size_stom;
-      rtn_mtos = rtn_mtos_temp ? rtn_mtos_temp : rtn_mtos;
-      rtn_stom = rtn_stom_temp ? rtn_stom_temp : rtn_stom;
+      max_sdu_size_c_to_p =
+              max_sdu_size_c_to_p_temp ? max_sdu_size_c_to_p_temp : max_sdu_size_c_to_p;
+      max_sdu_size_p_to_c =
+              max_sdu_size_p_to_c_temp ? max_sdu_size_p_to_c_temp : max_sdu_size_p_to_c;
+      rtn_c_to_p = rtn_c_to_p_temp ? rtn_c_to_p_temp : rtn_c_to_p;
+      rtn_p_to_c = rtn_p_to_c_temp ? rtn_p_to_c_temp : rtn_p_to_c;
     }
 
     for (const struct bluetooth::le_audio::types::cis& cis : cises) {
       EXT_CIS_CFG cis_cfg = {};
 
       cis_cfg.cis_id = cis.id;
-      cis_cfg.phy_mtos = phy_mtos;
-      cis_cfg.phy_stom = phy_stom;
+      cis_cfg.phy_c_to_p = phy_c_to_p;
+      cis_cfg.phy_p_to_c = phy_p_to_c;
       if (cis.type == bluetooth::le_audio::types::CisType::CIS_TYPE_BIDIRECTIONAL) {
-        cis_cfg.max_sdu_size_mtos = max_sdu_size_mtos;
-        cis_cfg.rtn_mtos = rtn_mtos;
-        cis_cfg.max_sdu_size_stom = max_sdu_size_stom;
-        cis_cfg.rtn_stom = rtn_stom;
+        cis_cfg.max_sdu_size_c_to_p = max_sdu_size_c_to_p;
+        cis_cfg.rtn_c_to_p = rtn_c_to_p;
+        cis_cfg.max_sdu_size_p_to_c = max_sdu_size_p_to_c;
+        cis_cfg.rtn_p_to_c = rtn_p_to_c;
         cis_cfgs.push_back(cis_cfg);
       } else if (cis.type == bluetooth::le_audio::types::CisType::CIS_TYPE_UNIDIRECTIONAL_SINK) {
-        cis_cfg.max_sdu_size_mtos = max_sdu_size_mtos;
-        cis_cfg.rtn_mtos = rtn_mtos;
-        cis_cfg.max_sdu_size_stom = 0;
-        cis_cfg.rtn_stom = 0;
+        cis_cfg.max_sdu_size_c_to_p = max_sdu_size_c_to_p;
+        cis_cfg.rtn_c_to_p = rtn_c_to_p;
+        cis_cfg.max_sdu_size_p_to_c = 0;
+        cis_cfg.rtn_p_to_c = 0;
         cis_cfgs.push_back(cis_cfg);
       } else {
-        cis_cfg.max_sdu_size_mtos = 0;
-        cis_cfg.rtn_mtos = 0;
-        cis_cfg.max_sdu_size_stom = max_sdu_size_stom;
-        cis_cfg.rtn_stom = rtn_stom;
+        cis_cfg.max_sdu_size_c_to_p = 0;
+        cis_cfg.rtn_c_to_p = 0;
+        cis_cfg.max_sdu_size_p_to_c = max_sdu_size_p_to_c;
+        cis_cfg.rtn_p_to_c = rtn_p_to_c;
         cis_cfgs.push_back(cis_cfg);
       }
     }
@@ -1905,39 +1908,41 @@ private:
      * sense. e.g. Any direction is enabled, there is no logical mistakes in the parameters.
      */
     bool no_direction_enabled_due_to_sdu_interval =
-            (sdu_interval_mtos == 0 && sdu_interval_stom == 0);
+            (sdu_interval_c_to_p == 0 && sdu_interval_p_to_c == 0);
     bool no_direction_enabled_due_max_latencies_setting =
-            (max_trans_lat_mtos == bluetooth::le_audio::types::kMaxTransportLatencyMin &&
-             max_trans_lat_stom == bluetooth::le_audio::types::kMaxTransportLatencyMin);
+            (max_trans_lat_c_to_p == bluetooth::le_audio::types::kMaxTransportLatencyMin &&
+             max_trans_lat_p_to_c == bluetooth::le_audio::types::kMaxTransportLatencyMin);
     bool no_direction_enabled_due_max_sdu_sizes_zero =
-            (max_sdu_size_mtos == 0 && max_sdu_size_stom == 0);
+            (max_sdu_size_c_to_p == 0 && max_sdu_size_p_to_c == 0);
 
     /* The mismatch where one of the sdu size or sdu interval is 0 while the other parameter is 0 is
      * a non-sense configuration. We should catch that and avoid creating such a CIG.
      */
     bool is_sdu_config_mismatch_fix_enabled =
             com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig();
-    bool is_mtos_sdu_config_mismatched = ((max_sdu_size_mtos == 0) != (sdu_interval_mtos == 0));
-    bool is_stom_sdu_config_mismatched = ((max_sdu_size_stom == 0) != (sdu_interval_stom == 0));
+    bool is_c_to_p_sdu_config_mismatched =
+            ((max_sdu_size_c_to_p == 0) != (sdu_interval_c_to_p == 0));
+    bool is_p_to_c_sdu_config_mismatched =
+            ((max_sdu_size_p_to_c == 0) != (sdu_interval_p_to_c == 0));
 
     if (no_direction_enabled_due_to_sdu_interval ||
         no_direction_enabled_due_max_latencies_setting ||
         no_direction_enabled_due_max_sdu_sizes_zero ||
         (is_sdu_config_mismatch_fix_enabled &&
-         (is_mtos_sdu_config_mismatched || is_stom_sdu_config_mismatched))) {
+         (is_c_to_p_sdu_config_mismatched || is_p_to_c_sdu_config_mismatched))) {
       log::error("Trying to create invalid group");
       group->PrintDebugState();
       return false;
     }
 
     bluetooth::hci::iso_manager::cig_create_params param = {
-            .sdu_itv_mtos = sdu_interval_mtos,
-            .sdu_itv_stom = sdu_interval_stom,
+            .sdu_itv_c_to_p = sdu_interval_c_to_p,
+            .sdu_itv_p_to_c = sdu_interval_p_to_c,
             .sca = sca,
             .packing = packing,
             .framing = framing,
-            .max_trans_lat_stom = max_trans_lat_stom,
-            .max_trans_lat_mtos = max_trans_lat_mtos,
+            .max_trans_lat_c_to_p = max_trans_lat_c_to_p,
+            .max_trans_lat_p_to_c = max_trans_lat_p_to_c,
             .cis_cfgs = std::move(cis_cfgs),
     };
 
@@ -2368,13 +2373,13 @@ private:
            * device's ASE for the direction.
            */
 
-          uint16_t cig_curr_max_trans_lat_mtos = group->GetMaxTransportLatencyMtos();
-          uint16_t cig_curr_max_trans_lat_stom = group->GetMaxTransportLatencyStom();
+          uint16_t cig_curr_max_trans_lat_c_to_p = group->GetMaxTransportLatencyCToP();
+          uint16_t cig_curr_max_trans_lat_p_to_c = group->GetMaxTransportLatencyPToC();
 
           if ((ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink &&
-               cig_curr_max_trans_lat_mtos > rsp.max_transport_latency) ||
+               cig_curr_max_trans_lat_c_to_p > rsp.max_transport_latency) ||
               (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource &&
-               cig_curr_max_trans_lat_stom > rsp.max_transport_latency)) {
+               cig_curr_max_trans_lat_p_to_c > rsp.max_transport_latency)) {
             group->SetPendingConfiguration();
             state_machine_callbacks_->OnStateMachineInvalidStatusCb(
                     group->group_id_, StateMachineInvalidStatus::INVALID_ASE_STATE_PARAMETERS);
@@ -3137,10 +3142,10 @@ private:
 
       msg_stream << "ASE " << +conf.ase_id << ",";
       if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
-        conf.max_transport_latency = group->GetMaxTransportLatencyMtos();
+        conf.max_transport_latency = group->GetMaxTransportLatencyCToP();
         extra_stream << "snk,";
       } else {
-        conf.max_transport_latency = group->GetMaxTransportLatencyStom();
+        conf.max_transport_latency = group->GetMaxTransportLatencyPToC();
         extra_stream << "src,";
       }
 

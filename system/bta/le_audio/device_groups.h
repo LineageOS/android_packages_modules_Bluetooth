@@ -121,8 +121,8 @@ public:
         dsa_({DsaMode::DISABLED, false}),
         asymmetric_phy_for_unidirectional_cis_supported(true),
         is_enabled_(true),
-        transport_latency_mtos_us_(0),
-        transport_latency_stom_us_(0),
+        transport_latency_c_to_p_us_(0),
+        transport_latency_p_to_c_us_(0),
         configuration_context_type_(types::LeAudioContextType::UNINITIALIZED),
         metadata_context_type_(
                 {.sink = types::AudioContexts(types::LeAudioContextType::UNINITIALIZED),
@@ -211,8 +211,8 @@ public:
   uint8_t GetSCA(void) const;
   uint8_t GetPacking(void) const;
   uint8_t GetFraming(void) const;
-  uint16_t GetMaxTransportLatencyStom(void) const;
-  uint16_t GetMaxTransportLatencyMtos(void) const;
+  uint16_t GetMaxTransportLatencyPToC(void) const;
+  uint16_t GetMaxTransportLatencyCToP(void) const;
   void SetTransportLatency(uint8_t direction, uint32_t transport_latency_us);
   uint8_t GetRtn(uint8_t direction, uint8_t cis_id) const;
   uint16_t GetMaxSduSize(uint8_t direction, uint8_t cis_id) const;
@@ -484,8 +484,8 @@ public:
 private:
   bool is_enabled_;
 
-  uint32_t transport_latency_mtos_us_;
-  uint32_t transport_latency_stom_us_;
+  uint32_t transport_latency_c_to_p_us_;
+  uint32_t transport_latency_p_to_c_us_;
 
   bool ConfigureAses(const types::AudioSetConfiguration* audio_set_conf,
                      types::LeAudioContextType context_type,
