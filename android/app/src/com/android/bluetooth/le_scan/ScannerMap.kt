@@ -65,13 +65,13 @@ class ScannerMap(
             callback = callback,
             settings = settings,
             filters = filters,
-            piInfo = null,
+            pendingIntent = null,
             isInternal = isInternal,
         )
 
     fun addWithPendingIntent(
         source: AttributionSource,
-        piInfo: ScanController.PendingIntentInfo,
+        pendingIntent: PendingIntent,
         settings: ScanSettings,
         filters: List<ScanFilter>,
     ) =
@@ -84,7 +84,7 @@ class ScannerMap(
             callback = null,
             settings = settings,
             filters = filters,
-            piInfo = piInfo,
+            pendingIntent = pendingIntent,
             isInternal = false,
         )
 
@@ -97,7 +97,7 @@ class ScannerMap(
         callback: IScannerCallback?,
         settings: ScanSettings,
         filters: List<ScanFilter>,
-        piInfo: ScanController.PendingIntentInfo?,
+        pendingIntent: PendingIntent?,
         isInternal: Boolean,
     ): ScannerApp {
         val appName = adapterService.appNameOrUnknown(source.uid)
@@ -126,7 +126,7 @@ class ScannerMap(
                 settings,
                 filters,
                 source,
-                piInfo,
+                pendingIntent,
                 isInternal,
             )
         apps.add(app)
@@ -164,8 +164,8 @@ class ScannerMap(
 
     fun getByUuid(uuid: UUID) = findBy("UUID=$uuid") { it.uuid == uuid }
 
-    fun getByPendingIntentInfo(intent: PendingIntent) =
-        findBy("intent=$intent") { it.info?.intent() == intent }
+    fun getByPendingIntent(pendingIntent: PendingIntent) =
+        findBy("pendingIntent=$pendingIntent") { it.pendingIntent == pendingIntent }
 
     private fun findBy(criteria: String, predicate: (ScannerApp) -> Boolean): ScannerApp? {
         val app = apps.find(predicate)

@@ -276,22 +276,6 @@ public class ScanController {
         }
     }
 
-    public record PendingIntentInfo(PendingIntent intent) {
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof PendingIntentInfo)) {
-                return false;
-            }
-            return intent.equals(((PendingIntentInfo) other).intent);
-        }
-
-        @Override
-        public int hashCode() {
-            return intent == null ? 0 : intent.hashCode();
-        }
-    }
-
     /** Callback method for a scan result. */
     void onScanResult(
             int eventType,
@@ -469,7 +453,9 @@ public class ScanController {
                     Log.v(TAG, "Callback null for " + client + "; Send results by pendingIntent");
                     List<ScanResult> results = new ArrayList<>(Arrays.asList(result));
                     sendResultsByPendingIntent(
-                            app.getInfo(), results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
+                            app.getPendingIntent(),
+                            results,
+                            ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
                 }
             } catch (RemoteException | PendingIntent.CanceledException e) {
                 Log.e(TAG, "onScanResult(): Exception: " + e);
@@ -499,10 +485,10 @@ public class ScanController {
     }
 
     private void sendResultByPendingIntent(
-            PendingIntentInfo pii, ScanResult result, int callbackType, ScanClient client) {
+            PendingIntent pendingIntent, ScanResult result, int callbackType, ScanClient client) {
         List<ScanResult> results = new ArrayList<>(Arrays.asList(result));
         try {
-            sendResultsByPendingIntent(pii, results, callbackType);
+            sendResultsByPendingIntent(pendingIntent, results, callbackType);
         } catch (PendingIntent.CanceledException e) {
             final long token = Binder.clearCallingIdentity();
             try {
@@ -514,20 +500,20 @@ public class ScanController {
     }
 
     private void sendResultsByPendingIntent(
-            PendingIntentInfo pii, List<ScanResult> results, int callbackType)
+            PendingIntent pendingIntent, List<ScanResult> results, int callbackType)
             throws PendingIntent.CanceledException {
         Intent extrasIntent = new Intent();
         extrasIntent.putParcelableArrayListExtra(
                 BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT, new ArrayList<>(results));
         extrasIntent.putExtra(BluetoothLeScanner.EXTRA_CALLBACK_TYPE, callbackType);
-        pii.intent.send(mAdapterService, 0, extrasIntent);
+        pendingIntent.send(mAdapterService, 0, extrasIntent);
     }
 
-    private void sendErrorByPendingIntent(PendingIntentInfo pii, int errorCode)
+    private void sendErrorByPendingIntent(PendingIntent pendingIntent, int errorCode)
             throws PendingIntent.CanceledException {
         Intent extrasIntent = new Intent();
         extrasIntent.putExtra(BluetoothLeScanner.EXTRA_ERROR_CODE, errorCode);
-        pii.intent.send(mAdapterService, 0, extrasIntent);
+        pendingIntent.send(mAdapterService, 0, extrasIntent);
     }
 
     /** Callback method for scanner registration. */
@@ -665,7 +651,7 @@ public class ScanController {
                 // PendingIntent based
                 try {
                     sendResultsByPendingIntent(
-                            app.getInfo(),
+                            app.getPendingIntent(),
                             permittedResults,
                             ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
                 } catch (PendingIntent.CanceledException e) {
@@ -723,7 +709,7 @@ public class ScanController {
                 }
             } else {
                 sendResultsByPendingIntent(
-                        app.getInfo(), results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
+                        app.getPendingIntent(), results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
             }
         } catch (RemoteException | PendingIntent.CanceledException e) {
             Log.e(TAG, "sendBatchScanResults(): Exception: " + e);
@@ -773,7 +759,7 @@ public class ScanController {
                         callbackToApp(() -> app.getCallback().onFoundOrLost(true, result));
                     } else {
                         sendResultByPendingIntent(
-                                app.getInfo(),
+                                app.getPendingIntent(),
                                 result,
                                 ScanSettings.CALLBACK_TYPE_FIRST_MATCH,
                                 client);
@@ -785,7 +771,7 @@ public class ScanController {
                         callbackToApp(() -> app.getCallback().onFoundOrLost(false, result));
                     } else {
                         sendResultByPendingIntent(
-                                app.getInfo(),
+                                app.getPendingIntent(),
                                 result,
                                 ScanSettings.CALLBACK_TYPE_MATCH_LOST,
                                 client);
@@ -827,7 +813,7 @@ public class ScanController {
             callbackToApp(() -> app.getCallback().onScanManagerErrorCallback(errorCode));
         } else {
             try {
-                sendErrorByPendingIntent(app.getInfo(), errorCode);
+                sendErrorByPendingIntent(app.getPendingIntent(), errorCode);
             } catch (PendingIntent.CanceledException e) {
                 Log.e(TAG, header + "Error sending error code via PendingIntent: " + e);
                 handleDeadScanClient(scannerId);
@@ -1044,16 +1030,15 @@ public class ScanController {
         var header = "registerPiAndStartScan(): ";
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
         var callingPackage = source.getPackageName();
-        PendingIntentInfo piInfo = new PendingIntentInfo(pendingIntent);
         Log.d(TAG, header + "source=" + source);
 
         // Don't start scan if the Pi scan already in mScannerMap.
-        if (mScannerMap.getByPendingIntentInfo(pendingIntent) != null) {
+        if (mScannerMap.getByPendingIntent(pendingIntent) != null) {
             Log.d(TAG, header + "Ignoring since the same PI scan is already in ScannerMap");
             return;
         }
 
-        var app = mScannerMap.addWithPendingIntent(source, piInfo, settings, filters);
+        var app = mScannerMap.addWithPendingIntent(source, pendingIntent, settings, filters);
         mAppOps.checkPackage(source.getUid(), callingPackage);
         app.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));
@@ -1134,7 +1119,7 @@ public class ScanController {
 
     void stopScan(PendingIntent intent) {
         enforceScanThread();
-        var app = mScannerMap.getByPendingIntentInfo(intent);
+        var app = mScannerMap.getByPendingIntent(intent);
         if (app == null) {
             Log.e(TAG, "stopScan(PendingIntent): App not found for intent=" + intent);
             return;
