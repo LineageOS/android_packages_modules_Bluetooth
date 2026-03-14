@@ -135,7 +135,7 @@ public class ScanController {
                 scanNativeInterface,
                 null,
                 periodicScanNativeInterface,
-                new ScannerMap(adapterService, batteryStatsManager),
+                batteryStatsManager,
                 companionDeviceManager,
                 null,
                 TimeProvider.getSystemClock());
@@ -148,7 +148,7 @@ public class ScanController {
             ScanNativeInterface scanNativeInterface,
             PeriodicScanManager periodicScanManager,
             PeriodicScanNativeInterface periodicScanNativeInterface,
-            ScannerMap scannerMap,
+            BatteryStatsManager batteryStatsManager,
             CompanionDeviceManager companionDeviceManager,
             Looper looper,
             TimeProvider timeProvider) {
@@ -157,7 +157,7 @@ public class ScanController {
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = companionDeviceManager;
         mBinder = new ScanBinder(mAdapterService, this);
-        mScannerMap = scannerMap;
+        mScannerMap = new ScannerMap(mAdapterService, batteryStatsManager);
         mScanRadioStats = new ScanRadioStats(timeProvider);
         mExposureNotificationPackage =
                 mAdapterService.getString(R.string.exposure_notification_package);
