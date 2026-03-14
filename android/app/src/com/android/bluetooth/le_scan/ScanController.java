@@ -276,13 +276,8 @@ public class ScanController {
         }
     }
 
-    public record PendingIntentInfo(
-            PendingIntent intent,
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            String callingPackage,
-            int callingUid,
-            int callingPid) {
+    public record PendingIntentInfo(PendingIntent intent) {
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof PendingIntentInfo)) {
@@ -1049,14 +1044,7 @@ public class ScanController {
         var header = "registerPiAndStartScan(): ";
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
         var callingPackage = source.getPackageName();
-        PendingIntentInfo piInfo =
-                new PendingIntentInfo(
-                        pendingIntent,
-                        settings,
-                        filters,
-                        callingPackage,
-                        source.getUid(),
-                        source.getPid());
+        PendingIntentInfo piInfo = new PendingIntentInfo(pendingIntent);
         Log.d(TAG, header + "source=" + source);
 
         // Don't start scan if the Pi scan already in mScannerMap.

@@ -76,8 +76,8 @@ class ScannerMap(
         filters: List<ScanFilter>,
     ) =
         add(
-            appUid = piInfo.callingUid(),
-            appPid = piInfo.callingPid(),
+            appUid = source.uid,
+            appPid = source.pid,
             userHandle = UserHandle.getUserHandleForUid(source.uid),
             source = source,
             workSource = null,

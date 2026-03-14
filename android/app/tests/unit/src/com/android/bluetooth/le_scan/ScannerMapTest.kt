@@ -59,6 +59,7 @@ class ScannerMapTest {
         adapterService.mockPackageManager(packageManager)
         doReturn(APP_NAME).whenever(packageManager).getNameForUid(any())
         doReturn(UID).whenever(source).uid
+        doReturn(PID).whenever(source).pid
         scannerMap = ScannerMap(adapterService, batteryStatsManager)
     }
 
@@ -66,7 +67,7 @@ class ScannerMapTest {
     fun getByMethodsWithPii() {
         val context = InstrumentationRegistry.getInstrumentation().context
         val intent = PendingIntent.getBroadcast(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-        val info = ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID, PID)
+        val info = ScanController.PendingIntentInfo(intent)
         val scanSettings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().build())
         val app = scannerMap.addWithPendingIntent(source, info, scanSettings, filters)
