@@ -15,25 +15,27 @@
 from setuptools.command.build_py import build_py as _build_py
 
 import glob
-import os
 import pathlib
 import subprocess
+
+_BASE_DIR = pathlib.Path("tests", "pandora", "interfaces")
+_BASE_PYTHON_DIR = _BASE_DIR / "python"
 
 
 class build_py(_build_py):
     """Custom build command to process non-Python targets."""
 
     def run(self) -> None:
-        input_files = glob.glob("pandora/interfaces/**/*.proto")
+        input_files = glob.glob("**/*.proto", root_dir=_BASE_DIR)
         self.build_lib
-        output_path = pathlib.Path("pandora", "interfaces", "python").absolute()
+        output_path = _BASE_PYTHON_DIR.absolute()
         # Generate proto python stub
         cmds = [
             "python",
             "-m",
             "grpc_tools.protoc",
             "-I",
-            "pandora/interfaces",
+            _BASE_DIR,
             "-I",
             "../../../external/protobuf/src",
             *input_files,
@@ -41,7 +43,7 @@ class build_py(_build_py):
             output_path,
             "--grpc_out",
             output_path,
-            "--plugin=protoc-gen-grpc=pandora/interfaces/python/_build/protoc-gen-custom_grpc",
+            f"--plugin=protoc-gen-grpc={_BASE_PYTHON_DIR}/_build/protoc-gen-custom_grpc",
         ]
         subprocess.run(cmds).check_returncode()
         return super().run()

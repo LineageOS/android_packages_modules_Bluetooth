@@ -64,14 +64,13 @@ class BluetoothA2dpSnippet : Snippet {
                         )
                     val state =
                         intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothDevice.ERROR)
-                    val codecType =
+                    val codecConfig =
                         intent
                             .getParcelableExtra(
                                 BluetoothCodecStatus.EXTRA_CODEC_STATUS,
                                 BluetoothCodecStatus::class.java,
                             )
                             ?.codecConfig
-                            ?.codecType
                     when (intent.action) {
                         BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> {
                             postSnippetEvent(
@@ -102,10 +101,7 @@ class BluetoothA2dpSnippet : Snippet {
                                 SnippetConstants.A2DP_CODEC_CONFIG_CHANGED,
                             ) {
                                 putString(SnippetConstants.FIELD_DEVICE, device?.address)
-                                putInt(
-                                    SnippetConstants.A2DP_FIELD_CODEC_TYPE,
-                                    codecType ?: BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID,
-                                )
+                                putParcelable(SnippetConstants.CODEC_CONFIG, codecConfig)
                             }
                         }
                     }
@@ -138,12 +134,8 @@ class BluetoothA2dpSnippet : Snippet {
 
     /* Set A2DP codec config of device [address] to [codecConfig]. */
     @Rpc(description = "Set A2DP codec config of device [address] to [codecConfig]")
-    fun setA2dpCodecConfig(address: String, codecType: Int) {
-        val builder =
-            BluetoothCodecConfig.Builder()
-                .setCodecType(codecType)
-                .setCodecPriority(BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST)
-        proxy.setCodecConfigPreference(bluetoothAdapter.getRemoteDevice(address), builder.build())
+    fun setA2dpCodecConfig(address: String, config: BluetoothCodecConfig) {
+        proxy.setCodecConfigPreference(bluetoothAdapter.getRemoteDevice(address), config)
     }
 
     companion object {

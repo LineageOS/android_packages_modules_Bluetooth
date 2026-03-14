@@ -303,6 +303,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                 own_address_type=own_address_type,
             ),
             bl4a_api.AdvertisingData(service_uuids=[service_uuid]),
+            duration=0,
         )
 
         # [REF] Scan for DUT.
@@ -367,6 +368,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                 include_tx_power_level=True,
             ),
             periodic_advertising_data=bl4a_api.AdvertisingData(service_uuids=[service_uuid_2]),
+            duration=0,
         )
         self.test_case_context.enter_context(advertising_set)
 

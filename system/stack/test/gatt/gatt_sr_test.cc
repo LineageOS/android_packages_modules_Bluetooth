@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <cstdint>
@@ -30,6 +31,8 @@
 
 #define MAX_UINT16 ((uint16_t)0xffff)
 
+using namespace testing;
+
 tGATT_CB gatt_cb;
 
 namespace {
@@ -38,12 +41,7 @@ struct TestMutables {
   struct {
     uint8_t op_code_;
   } attp_build_sr_msg;
-  struct {
-    uint16_t conn_id_{0};
-    uint32_t trans_id_{0};
-    tGATTS_REQ_TYPE type_{0xff};
-    tGATTS_DATA data_;
-  } application_request_callback;
+
   struct {
     int access_count_{0};
     tGATT_STATUS return_status_{GATT_SUCCESS};
@@ -111,13 +109,72 @@ tGATT_STATUS gatts_write_attr_perm_check(tGATT_SVC_DB* /*p_db*/, uint8_t /*op_co
 void gatt_update_app_use_link_flag(tGATT_IF /*gatt_if*/, tGATT_TCB* /*p_tcb*/, bool /*is_add*/,
                                    bool /*check_acl_link*/) {}
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
-static void ApplicationRequestCallback(uint16_t conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type,
-                                       tGATTS_DATA* p_data) {
-  test_state_.application_request_callback.conn_id_ = conn_id;
-  test_state_.application_request_callback.trans_id_ = trans_id;
-  test_state_.application_request_callback.type_ = type;
-  test_state_.application_request_callback.data_ = *p_data;
+
+MockFunction<void(tCONN_ID, uint32_t, const RawAddress&, uint16_t, uint16_t, bool)>
+        mock_read_characteristic_cb;
+static void ApplicationReadCharacteristicCallback(tCONN_ID conn_id, uint32_t trans_id,
+                                                  const RawAddress& remote_bda, uint16_t handle,
+                                                  uint16_t offset, bool is_long) {
+  mock_read_characteristic_cb.Call(conn_id, trans_id, remote_bda, handle, offset, is_long);
 }
+
+MockFunction<void(tCONN_ID, uint32_t, const RawAddress&, uint16_t, uint16_t, bool)>
+        mock_read_descriptor_cb;
+static void ApplicationReadDescriptorCallback(tCONN_ID conn_id, uint32_t trans_id,
+                                              const RawAddress& remote_bda, uint16_t handle,
+                                              uint16_t offset, bool is_long) {
+  mock_read_descriptor_cb.Call(conn_id, trans_id, remote_bda, handle, offset, is_long);
+}
+
+MockFunction<void(tCONN_ID, uint32_t, const RawAddress&, uint16_t, uint16_t, bool, bool, uint8_t*,
+                  uint16_t)>
+        mock_write_characteristic_cb;
+static void ApplicationWriteCharacteristicCallback(tCONN_ID conn_id, uint32_t trans_id,
+                                                   const RawAddress& remote_bda, uint16_t handle,
+                                                   uint16_t offset, bool need_rsp, bool is_prep,
+                                                   uint8_t* value, uint16_t len) {
+  mock_write_characteristic_cb.Call(conn_id, trans_id, remote_bda, handle, offset, need_rsp,
+                                    is_prep, value, len);
+}
+
+MockFunction<void(tCONN_ID, uint32_t, const RawAddress&, uint16_t, uint16_t, bool, bool, uint8_t*,
+                  uint16_t)>
+        mock_write_descriptor_cb;
+static void ApplicationWriteDescriptorCallback(tCONN_ID conn_id, uint32_t trans_id,
+                                               const RawAddress& remote_bda, uint16_t handle,
+                                               uint16_t offset, bool need_rsp, bool is_prep,
+                                               uint8_t* value, uint16_t len) {
+  mock_write_descriptor_cb.Call(conn_id, trans_id, remote_bda, handle, offset, need_rsp, is_prep,
+                                value, len);
+}
+
+MockFunction<void(tCONN_ID, uint32_t, const RawAddress&, tGATT_EXEC_FLAG)> mock_exec_write_cb;
+static void ApplicationExecWriteCallback(tCONN_ID conn_id, uint32_t trans_id,
+                                         const RawAddress& remote_bda, tGATT_EXEC_FLAG exec_write) {
+  mock_exec_write_cb.Call(conn_id, trans_id, remote_bda, exec_write);
+}
+
+MockFunction<void(tCONN_ID, const RawAddress&, uint16_t)> mock_mtu_changed_cb;
+static void ApplicationMtuChangedCallback(tCONN_ID conn_id, const RawAddress& remote_bda,
+                                          uint16_t mtu) {
+  mock_mtu_changed_cb.Call(conn_id, remote_bda, mtu);
+}
+
+MockFunction<void(tCONN_ID, uint32_t, const RawAddress&)> mock_conf_cb;
+static void ApplicationConfCallback(tCONN_ID conn_id, uint32_t trans_id,
+                                    const RawAddress& remote_bda) {
+  mock_conf_cb.Call(conn_id, trans_id, remote_bda);
+}
+
+static stack::tGATT_REQ_CBACK ApplicationRequestCallback = {
+        .read_characteristic_cb = ApplicationReadCharacteristicCallback,
+        .read_descriptor_cb = ApplicationReadDescriptorCallback,
+        .write_characteristic_cb = ApplicationWriteCharacteristicCallback,
+        .write_descriptor_cb = ApplicationWriteDescriptorCallback,
+        .exec_write_cb = ApplicationExecWriteCallback,
+        .mtu_changed_cb = ApplicationMtuChangedCallback,
+        .conf_cb = ApplicationConfCallback,
+};
 
 bool gatt_sr_is_cl_change_aware(tGATT_TCB& /*tcb*/) { return false; }
 void gatt_sr_init_cl_status(tGATT_TCB& /*p_tcb*/) {}
@@ -135,25 +192,31 @@ bt_gatt_db_attribute_type_t kGattCharacteristicType = BTGATT_DB_CHARACTERISTIC;
 class GattSrTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    memset(&tcb_, 0, sizeof(tcb_));
+    memset(&gatt_cb.tcb[0], 0, sizeof(gatt_cb.tcb[0]));
     memset(&el_, 0, sizeof(el_));
 
-    tcb_.trans_id = 0x12345677;
-    tcb_.att_lcid = L2CAP_ATT_CID;
+    gatt_cb.tcb[0].trans_id = 0x12345677;
+    gatt_cb.tcb[0].att_lcid = L2CAP_ATT_CID;
+    gatt_cb.tcb[0].in_use = true;
+
     el_.gatt_if = 1;
 
     gatt_cb.cl_rcb_map.emplace(el_.gatt_if, std::make_unique<tGATT_REG>());
     tGATT_REG* p_reg = gatt_cb.cl_rcb_map[el_.gatt_if].get();
     p_reg->in_use = true;
     p_reg->gatt_if = el_.gatt_if;
-    p_reg->app_cb.p_req_cb = ApplicationRequestCallback;
+    p_reg->app_cb.p_req_cb = &ApplicationRequestCallback;
 
     test_state_ = TestMutables();
   }
 
-  void TearDown() override { gatt_cb.cl_rcb_map.erase(el_.gatt_if); }
+  void TearDown() override {
+    gatt_cb.cl_rcb_map.erase(el_.gatt_if);
 
-  tGATT_TCB tcb_;
+    gatt_cb.tcb[0] = {};
+  }
+
+  tGATT_TCB& tcb_ = gatt_cb.tcb[0];
   tGATT_SRV_LIST_ELEM el_;
 };
 
@@ -193,16 +256,15 @@ TEST_F(GattSrTest, gatts_process_write_req_request_prepare_write_zero_len_max_da
 TEST_F(GattSrTest, gatts_process_write_req_request_prepare_write_typical) {
   uint8_t p_data[2] = {0x34, 0x12};
   uint16_t length = static_cast<uint16_t>(sizeof(p_data) / sizeof(p_data[0]));
+
+  EXPECT_CALL(mock_write_characteristic_cb, Call(el_.gatt_if, 0x12345678u, testing::_, kHandle,
+                                                 0x1234, testing::_, true, testing::_, 0));
+
   gatts_process_write_req(tcb_, L2CAP_ATT_CID, el_, kHandle, GATT_REQ_PREPARE_WRITE, length, p_data,
                           kGattCharacteristicType);
 
   ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
-  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
-  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
-  ASSERT_EQ(test_state_.application_request_callback.type_, GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset, 0x1234);
-  ASSERT_TRUE(test_state_.application_request_callback.data_.write_req.is_prep);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len, 0);
+  Mock::VerifyAndClearExpectations(&mock_write_characteristic_cb);
 }
 
 TEST_F(GattSrTest, gatts_process_write_req_signed_command_write_no_data) {
@@ -227,16 +289,15 @@ TEST_F(GattSrTest, gatts_process_write_req_signed_command_write_typical) {
                                                       0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
                                                       0xdd, 0xee, 0xff, 0x01};
   uint16_t length = static_cast<uint16_t>(sizeof(p_data) / sizeof(p_data[0]));
+
+  EXPECT_CALL(mock_write_characteristic_cb, Call(el_.gatt_if, 0x12345678u, testing::_, kHandle, 0x0,
+                                                 false, false, testing::_, kDataLength));
+
   gatts_process_write_req(tcb_, L2CAP_ATT_CID, el_, kHandle, GATT_SIGN_CMD_WRITE, length, p_data,
                           kGattCharacteristicType);
 
   ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
-  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
-  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
-  ASSERT_EQ(test_state_.application_request_callback.type_, GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset, 0x0);
-  ASSERT_FALSE(test_state_.application_request_callback.data_.write_req.is_prep);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len, kDataLength);
+  Mock::VerifyAndClearExpectations(&mock_write_characteristic_cb);
 }
 
 TEST_F(GattSrTest, gatts_process_write_req_command_write_no_data) {
@@ -259,16 +320,15 @@ TEST_F(GattSrTest, gatts_process_write_req_command_write_typical) {
   uint8_t p_data[16] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
                         0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x01};
   uint16_t length = static_cast<uint16_t>(sizeof(p_data) / sizeof(p_data[0]));
+
+  EXPECT_CALL(mock_write_characteristic_cb, Call(el_.gatt_if, 0x12345678u, testing::_, kHandle, 0x0,
+                                                 false, false, testing::_, length));
+
   gatts_process_write_req(tcb_, L2CAP_ATT_CID, el_, kHandle, GATT_CMD_WRITE, length, p_data,
                           kGattCharacteristicType);
 
   ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
-  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
-  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
-  ASSERT_EQ(test_state_.application_request_callback.type_, GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset, 0x0);
-  ASSERT_FALSE(test_state_.application_request_callback.data_.write_req.is_prep);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len, length);
+  Mock::VerifyAndClearExpectations(&mock_write_characteristic_cb);
 }
 
 TEST_F(GattSrTest, gatts_process_write_req_request_write_no_data) {
@@ -292,16 +352,14 @@ TEST_F(GattSrTest, gatts_process_write_req_request_write_typical) {
                         0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x01};
   uint16_t length = static_cast<uint16_t>(sizeof(p_data) / sizeof(p_data[0]));
 
+  EXPECT_CALL(mock_write_characteristic_cb, Call(el_.gatt_if, 0x12345678u, testing::_, kHandle, 0x0,
+                                                 true, false, testing::_, length));
+
   gatts_process_write_req(tcb_, L2CAP_ATT_CID, el_, kHandle, GATT_REQ_WRITE, length, p_data,
                           kGattCharacteristicType);
 
   ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
-  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
-  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
-  ASSERT_EQ(test_state_.application_request_callback.type_, GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset, 0x0);
-  ASSERT_FALSE(test_state_.application_request_callback.data_.write_req.is_prep);
-  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len, length);
+  Mock::VerifyAndClearExpectations(&mock_write_characteristic_cb);
 }
 
 TEST_F(GattSrRobustCachingTest, gatts_process_db_out_of_sync_for_gatt_req_read_by_grp_type) {

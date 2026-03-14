@@ -44,38 +44,66 @@ static uint16_t attr_api_level_handle;
 
 static uint32_t api_level;
 
-static void ais_request_cback(tCONN_ID, uint32_t, tGATTS_REQ_TYPE, tGATTS_DATA*);
+static void ais_read_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                          const RawAddress& remote_bda, uint16_t handle,
+                                          uint16_t offset, bool is_long);
+static void ais_read_descriptor_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
+                                      const RawAddress& /*remote_bda*/, uint16_t /*handle*/,
+                                      uint16_t /*offset*/, bool /* is_long */) {
+  warn("Unknown/unexpected LE AIS ATT request: READ_DESCRIPTOR");
+}
+static void ais_write_characteristic_or_descriptor_cback(tCONN_ID /*conn_id*/,
+                                                         uint32_t /*trans_id*/,
+                                                         const RawAddress& /*remote_bda*/,
+                                                         uint16_t /*handle*/, uint16_t /*offset*/,
+                                                         bool /*need_rsp*/, bool /*is_prep*/,
+                                                         uint8_t* /*value*/, uint16_t /*len*/) {
+  warn("Unknown/unexpected LE AIS ATT request.");
+}
 
-static stack::tGATT_CBACK ais_cback = {
-        .p_req_cb = ais_request_cback,
+static void ais_exec_write_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
+                                 const RawAddress& /*remote_bda*/, tGATT_EXEC_FLAG /*exec_write*/) {
+}
+static void ais_mtu_changed_cback(tCONN_ID /*conn_id*/, const RawAddress& /*remote_bda*/,
+                                  uint16_t /*mtu*/) {}
+static void ais_conf_cback(tCONN_ID /*conn_id*/, uint32_t /*trans_id*/,
+                           const RawAddress& /*remote_bda*/) {}
+
+static stack::tGATT_REQ_CBACK ais_req_cback = {
+        .read_characteristic_cb = ais_read_characteristic_cback,
+        .read_descriptor_cb = ais_read_descriptor_cback,
+        .write_characteristic_cb = ais_write_characteristic_or_descriptor_cback,
+        .write_descriptor_cb = ais_write_characteristic_or_descriptor_cback,
+        .exec_write_cb = ais_exec_write_cback,
+        .mtu_changed_cb = ais_mtu_changed_cback,
+        .conf_cb = ais_conf_cback,
 };
 
-/** AIS ATT server attribute access request callback */
-static void ais_request_cback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type,
-                              tGATTS_DATA* p_data) {
+static stack::tGATT_CBACK ais_cback = {
+        .p_req_cb = &ais_req_cback,
+};
+
+static void ais_read_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
+                                          const RawAddress& /*remote_bda*/, uint16_t handle,
+                                          uint16_t offset, bool is_long) {
   tGATT_STATUS status = GATT_INVALID_PDU;
   tGATTS_RSP rsp_msg = {};
-  uint16_t handle = p_data->read_req.handle;
   tGATT_VALUE* p_value = &rsp_msg.attr_value;
   uint8_t* p = p_value->value;
 
-  if (type == GATTS_REQ_TYPE_READ_CHARACTERISTIC) {
-    p_value->handle = handle;
+  p_value->handle = handle;
 
-    if (handle == attr_api_level_handle) {
-      if (p_data->read_req.is_long) {
-        p_value->offset = p_data->read_req.offset;
-        status = GATT_NOT_LONG;
-      } else {
-        UINT32_TO_STREAM(p, api_level);
-        p_value->len = 4;
-        status = GATT_SUCCESS;
-      }
+  if (handle == attr_api_level_handle) {
+    if (is_long) {
+      p_value->offset = offset;
+      status = GATT_NOT_LONG;
     } else {
-      status = GATT_NOT_FOUND;
+      UINT32_TO_STREAM(p, api_level);
+      p_value->len = 4;
+      status = GATT_SUCCESS;
     }
   } else {
-    warn("Unknown/unexpected LE AIS ATT request: 0x{:02x}", type);
+    status = GATT_NOT_FOUND;
   }
 
   if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {

@@ -142,7 +142,7 @@ class VoiceAssistantService(gatt.TemplateService):
                 uuid=VA_SUPPORTED_FEATURES_CHARACTERISTIC_UUID,
                 properties=_Properties.READ | _Properties.NOTIFY,
                 permissions=gatt.Characteristic.Permissions.READABLE,
-                value=gatt.CharacteristicValue(write=self._on_vas_control_point_write),
+                value=supported_features,
             ),
             VaSupportedFeatures,
             length=1,

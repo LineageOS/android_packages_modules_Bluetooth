@@ -13,6 +13,7 @@
 #  limitations under the License.
 """Base classes for Bluetooth tests."""
 
+import abc
 import asyncio
 import collections
 from collections.abc import AsyncGenerator, Callable, Coroutine, Sequence
@@ -20,13 +21,15 @@ import contextlib
 import dataclasses
 import enum
 import functools
+import importlib
 import inspect
 import logging
 import pathlib
 import re
 import secrets
 import sys
-from typing import Any, ClassVar, Never, TypeAlias, TypeVar, cast, final
+import textwrap
+from typing import Any, ClassVar, Generic, Never, TypeAlias, TypeVar, cast, final
 import uuid
 
 from absl.testing import absltest
@@ -63,6 +66,7 @@ _SETUP_TIMEOUT_SECONDS = 15.0
 _DEFAULT_ADVERTISING_INTERVAL = 100
 RECORD_FULL_DATA = "record_full_data"
 DUMP_CROWN_LOG_ON_FAIL = "dump_crown_log_on_fail"
+CUSTOM_TEST_SESSION = "custom_test_session"
 _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 
 _FUNC = TypeVar("_FUNC", bound=Callable[..., Any])
@@ -88,6 +92,44 @@ class AFlag:
     name: str
     enabled: bool
     writable: bool
+
+
+_TC = TypeVar("_TC", bound=base_test.BaseTestClass)
+
+
+class CustomTestSession(Generic[_TC], abc.ABC):
+    """Custom test session interface."""
+
+    def __init__(self, test_class: _TC) -> None:
+        self.test_class = test_class
+
+    def setup_test(self) -> None:
+        """Sets up the test.
+
+    This method is called before each test case is executed, after the original
+    setup_test method in the test class.
+    """
+
+    def teardown_test(self) -> None:
+        """Tears down the test.
+
+    This method is called after each test case is executed, before the original
+    teardown_test method in the test class.
+    """
+
+    def setup_class(self) -> None:
+        """Sets up the class.
+
+    This method is called before any test in the class is executed, after the
+    original setup_class method in the test class.
+    """
+
+    def teardown_class(self) -> None:
+        """Tears down the class.
+
+    This method is called after all tests in the class are executed, before the
+    original teardown_class method in the test class.
+    """
 
 
 class AndroidSnippetDeviceWrapper:
@@ -139,6 +181,21 @@ class AndroidSnippetDeviceWrapper:
     @property
     def bt(self) -> snippet_stub.BluetoothSnippet:
         return self.device.bt
+
+    @property
+    def is_le_audio_supported(self) -> bool:
+        """Checks if the device supports LE Audio."""
+        if (self.getprop(android_constants.Property.BAP_UNICAST_CLIENT_ENABLED) != "true"):
+            return False
+        if (self.getprop(
+                android_constants.Property.LEAUDIO_LE_AUDIO_CONNECTION_BY_DEFAULT) == "false"):
+            return False
+
+        if (self.bt.getSdkVersion() >= 35 and android_constants.AudioDeviceType.BLE_HEADSET
+                not in self.bt.getSupportedAudioDeviceTypes(
+                    android_constants.AudioDeviceRole.OUTPUT)):
+            return False
+        return True
 
     @functools.cached_property
     def address(self) -> str:
@@ -425,6 +482,7 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
     current_test_info: runtime_test_info.RuntimeTestInfo
     user_params: dict[str, Any]
     current_test_method: Callable[[], Any]
+    custom_test_session: CustomTestSession | None = None
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -432,6 +490,17 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
         self.loop = asyncio.new_event_loop()
         self.test_case_context = contextlib.AsyncExitStack()
         self.test_class_context = contextlib.AsyncExitStack()
+        if custom_test_session_path := self.user_params.get(CUSTOM_TEST_SESSION):
+            if not isinstance(custom_test_session_path, str):
+                raise ValueError("Custom test class path must be a string, got"
+                                 f" {type(custom_test_session_path)}")
+            module_name, class_name = custom_test_session_path.rsplit(".", 1)
+            custom_test_session_module = importlib.import_module(module_name)
+            custom_test_session_class = getattr(custom_test_session_module, class_name)
+            if not issubclass(custom_test_session_class, CustomTestSession):
+                raise ValueError(f"Custom test class {custom_test_session_class} must be a"
+                                 f" subclass of {CustomTestSession.__name__}")
+            self.custom_test_session = custom_test_session_class(self)
 
     def _async_test_wrapper(
         self,
@@ -625,20 +694,32 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
     @override
     def setup_test(self) -> None:
         self.loop.run_until_complete(self.async_setup_test())
+        if self.custom_test_session:
+            with self._log_test_stage("custom_setup_test"):
+                self.custom_test_session.setup_test()
 
     @final
     @override
     def teardown_test(self) -> None:
+        if self.custom_test_session:
+            with self._log_test_stage("custom_teardown_test"):
+                self.custom_test_session.teardown_test()
         self.loop.run_until_complete(self.async_teardown_test())
 
     @final
     @override
     def setup_class(self) -> None:
         self.loop.run_until_complete(self.async_setup_class())
+        if self.custom_test_session:
+            with self._log_test_stage("custom_setup_class"):
+                self.custom_test_session.setup_class()
 
     @final
     @override
     def teardown_class(self) -> None:
+        if self.custom_test_session:
+            with self._log_test_stage("custom_teardown_class"):
+                self.custom_test_session.teardown_class()
         self.loop.run_until_complete(self.async_teardown_class())
 
     @override
@@ -859,6 +940,26 @@ class AndroidBumbleTestBase(BaseTestBase):
             else:
                 self.logger.exception("Failed to get btsnoop and dumpsys")
 
+    def _get_test_script(self) -> None:
+        """Writes the test script to a file in the test output directory."""
+        try:
+            target = self.current_test_method
+            while isinstance(target, functools.partial):
+                if getattr(target.func, "__name__", "") == "_async_test_wrapper":
+                    target = target.args[0]
+                else:
+                    target = target.func
+            with open(
+                    pathlib.Path(
+                        self.current_test_info.output_path,
+                        f"{target.__name__}.py",
+                    ),
+                    "w",
+            ) as f:
+                f.write(textwrap.dedent(inspect.getsource(target)))
+        except (OSError, FileNotFoundError):
+            self.logger.exception("Failed to get test script")
+
     @retry_lib.retry_on_exception()
     @override
     async def async_setup_test(self) -> None:
@@ -935,11 +1036,13 @@ class AndroidBumbleTestBase(BaseTestBase):
     @override
     def on_fail(self, record: records.TestResultRecord) -> None:
         self._get_btsnoop_and_dumpsys()
+        self._get_test_script()
 
     @override
     def on_pass(self, record: records.TestResultRecord) -> None:
         if self.user_params.get(RECORD_FULL_DATA):
             self._get_btsnoop_and_dumpsys()
+            self._get_test_script()
 
     @override
     async def async_teardown_class(self) -> None:
@@ -1199,6 +1302,59 @@ class AndroidBumbleTestBase(BaseTestBase):
                 )
                 # Trigger profile connections.
                 self.dut.bt.connect(ref_addr)
+
+    async def disconnect_with_check(
+        self,
+        ref_addr: str,
+        transport: android_constants.Transport,
+        ref: crown.CrownDevice | None = None,
+    ) -> None:
+        """Disconnect from DUT and checks if the connection is closed on both sides.
+
+    Args:
+      ref_addr: The address of the device to disconnect from.
+      transport: The transport type of the connection.
+      ref: The Bumble device to disconnect from. If None, first Bumble device
+        will be used.
+    """
+        if ref is None:
+            ref = self._refs[0]
+
+        match transport:
+            case android_constants.Transport.CLASSIC:
+                bumble_transport = bumble.core.PhysicalTransport.BR_EDR
+            case android_constants.Transport.LE:
+                bumble_transport = bumble.core.PhysicalTransport.LE
+            case _:
+                raise ValueError(f"Unsupported transport: {transport}")
+
+        ref_dut_acl = ref.device.find_connection_by_bd_addr(
+            bumble.hci.Address(self.dut.address),
+            transport=bumble_transport,
+        )
+        if not ref_dut_acl:
+            self.logger.info("[REF] Failed to find ACL connection to DUT.")
+            return
+
+        disconnection_event: asyncio.Event = asyncio.Event()
+
+        def on_disconnection(reason: int) -> None:
+            del reason  # Unused.
+            disconnection_event.set()
+
+        ref_dut_acl.on(bumble.device.Connection.EVENT_DISCONNECTION, on_disconnection)
+        with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as adapter_cb:
+            self.logger.info("[DUT] Disconnect from REF.")
+            self.dut.bt.disconnect(ref_addr)
+
+            self.logger.info("[DUT] Wait for ACL disconnection.")
+            await adapter_cb.wait_for_event(event=bl4a_api.AclDisconnected(
+                address=ref_addr,
+                transport=transport,
+            ),)
+
+            self.logger.info("[REF] Wait for ACL disconnection.")
+            await disconnection_event.wait()
 
     def setprop_for_class_context(self, prop: str, tmp_value: str) -> None:
         """Sets a property and registers a callback to revert it.

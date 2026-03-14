@@ -144,6 +144,7 @@ public class ScanManager {
     private final ScanController mScanController;
     private final ScanNativeCallback mNativeCallback;
     private final ScanNativeInterface mNativeInterface;
+    private final ScanRadioStats mScanRadioStats;
     private final TimeProvider mTimeProvider;
     private final AlarmManager mAlarmManager;
     private final PendingIntent mBatchScanIntervalIntent;
@@ -183,6 +184,7 @@ public class ScanManager {
             AdapterService service,
             ScanController scanController,
             ScanNativeInterface nativeInterface,
+            ScanRadioStats scanRadioStats,
             Looper looper,
             TimeProvider timeProvider) {
         this(
@@ -190,6 +192,7 @@ public class ScanManager {
                 scanController,
                 new ScanNativeCallback(service, scanController),
                 nativeInterface,
+                scanRadioStats,
                 looper,
                 timeProvider);
     }
@@ -200,6 +203,7 @@ public class ScanManager {
             ScanController scanController,
             ScanNativeCallback nativeCallback,
             ScanNativeInterface nativeInterface,
+            ScanRadioStats scanRadioStats,
             Looper looper,
             TimeProvider timeProvider) {
         mAdapterService = requireNonNull(service);
@@ -245,10 +249,11 @@ public class ScanManager {
         mIsConnecting = false;
         mHandler = new Handler(looper);
         mScreenOn = mAdapterService.getDisplayListener().isScreenOn();
+        mScanRadioStats = scanRadioStats;
         mScanController.doOnScanThread(
                 () -> {
                     AppScanStats.setScreenState(mScreenOn);
-                    mScanController.getScanRadioStats().setScreenState(mScreenOn);
+                    mScanRadioStats.setScreenState(mScreenOn);
                 });
         if (mActivityManager != null) {
             mActivityManager.addOnUidImportanceListener(
@@ -584,7 +589,7 @@ public class ScanManager {
     @VisibleForTesting
     void handleScreenOff() {
         AppScanStats.setScreenState(false);
-        mScanController.getScanRadioStats().setScreenState(false);
+        mScanRadioStats.setScreenState(false);
         if (!mScreenOn) {
             return;
         }
@@ -880,7 +885,7 @@ public class ScanManager {
     @VisibleForTesting
     void handleScreenOn() {
         AppScanStats.setScreenState(true);
-        mScanController.getScanRadioStats().setScreenState(true);
+        mScanRadioStats.setScreenState(true);
         if (mScreenOn) {
             return;
         }
@@ -996,7 +1001,7 @@ public class ScanManager {
             int scanWindowCoded = ScanUtil.scanWindow(mAdapterService, clientCoded);
             int scanIntervalCoded = ScanUtil.scanInterval(mAdapterService, clientCoded);
             mNativeInterface.scan(false, "configureRegularScanParams");
-            mScanController.getScanRadioStats().recordScanRadioStop("configureRegularScanParams");
+            mScanRadioStats.recordScanRadioStop("configureRegularScanParams");
             Log.d(
                     TAG,
                     (header + "Set Scan Parameters Native")
@@ -1043,14 +1048,12 @@ public class ScanManager {
         }
         if (chosenClient != null && chosenClient.getAppScanStats() != null) {
             var chosenClientSettings = chosenClient.getSettings();
-            mScanController
-                    .getScanRadioStats()
-                    .recordScanRadioStart(
-                            chosenClient.getScanModeApp(),
-                            chosenClient.getScannerId(),
-                            chosenClient.getAppScanStats(),
-                            ScanUtil.windowMillis(mAdapterService, chosenClientSettings),
-                            ScanUtil.intervalMillis(mAdapterService, chosenClientSettings));
+            mScanRadioStats.recordScanRadioStart(
+                    chosenClient.getScanModeApp(),
+                    chosenClient.getScannerId(),
+                    chosenClient.getAppScanStats(),
+                    ScanUtil.windowMillis(mAdapterService, chosenClientSettings),
+                    ScanUtil.intervalMillis(mAdapterService, chosenClientSettings));
         }
     }
 
@@ -1215,7 +1218,7 @@ public class ScanManager {
         mRegularScanClients.remove(client);
         if (numRegularScanClients() == 0) {
             mNativeInterface.scan(false, "stopRegularScan");
-            mScanController.getScanRadioStats().recordScanRadioStop("stopRegularScan");
+            mScanRadioStats.recordScanRadioStop("stopRegularScan");
         }
 
         if (mUseMsftFiltering) {
@@ -1255,7 +1258,7 @@ public class ScanManager {
         configureRegularScanParams();
         if (numRegularScanClients() == 0) {
             mNativeInterface.scan(false, "handleRegularScanTimeout");
-            mScanController.getScanRadioStats().recordScanRadioStop("handleRegularScanTimeout");
+            mScanRadioStats.recordScanRadioStop("handleRegularScanTimeout");
         }
     }
 

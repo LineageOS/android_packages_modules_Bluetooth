@@ -182,7 +182,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
                                  jaddr.get());
   }
@@ -210,7 +210,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGroupNodeStatus, jaddr.get(),
                                  (jint)group_id, (jint)node_status);
   }
@@ -244,7 +244,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     jint jni_sink_audio_location = sink_audio_location ? sink_audio_location->to_ulong() : -1;
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSinkAudioLocationAvailable, jaddr.get(),
                                  jni_sink_audio_location);
@@ -320,7 +320,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onHealthBasedRecommendationAction,
                                  jaddr.get(), (jint)action);
   }

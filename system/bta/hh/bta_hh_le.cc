@@ -1206,9 +1206,7 @@ static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
   }
 
   // remove bg conn here so hogp connection can be re-armed when acl is disconnected.
-  if (com_android_bluetooth_flags_hogp_fix_reconnection()) {
-    bta_hh_le_remove_dev_bg_conn(p_cb);
-  }
+  bta_hh_le_remove_dev_bg_conn(p_cb);
 
   if (p_cb->hid_srvc.state == BTA_HH_SERVICE_CHANGED) {
     /* Service change would have already prompted a local disconnection */
@@ -1806,9 +1804,6 @@ void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
 
   BtaGattQueue::Clean(p_cb->conn_id);
   BTA_GATTC_Close(p_cb->conn_id);
-  if (!com_android_bluetooth_flags_hogp_fix_reconnection()) {
-    bta_hh_le_remove_dev_bg_conn(p_cb);
-  }
 }
 
 /*******************************************************************************

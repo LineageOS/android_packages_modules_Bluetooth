@@ -74,7 +74,7 @@ static void connection_state_cb(RawAddress bd_addr, bthf_client_connection_state
 
   log::debug("state {} peer_feat {} chld_feat {}", state, peer_feat, chld_feat);
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
                                (jint)peer_feat, (jint)chld_feat, jaddr.get());
 }
@@ -86,7 +86,7 @@ static void audio_state_cb(RawAddress bd_addr, bthf_client_audio_state_t state) 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state, jaddr.get());
 }
 
@@ -97,7 +97,7 @@ static void vr_cmd_cb(RawAddress bd_addr, bthf_client_vr_state_t state) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVrStateChanged, (jint)state, jaddr.get());
 }
 
@@ -108,7 +108,7 @@ static void network_state_cb(RawAddress bd_addr, bthf_client_network_state_t sta
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onNetworkState, (jint)state, jaddr.get());
 }
 
@@ -119,7 +119,7 @@ static void network_roaming_cb(RawAddress bd_addr, bthf_client_service_type_t ty
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onNetworkRoaming, (jint)type, jaddr.get());
 }
 
@@ -130,7 +130,7 @@ static void network_signal_cb(RawAddress bd_addr, int signal) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onNetworkSignal, (jint)signal, jaddr.get());
 }
 
@@ -141,7 +141,7 @@ static void battery_level_cb(RawAddress bd_addr, int level) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onBatteryLevel, (jint)level, jaddr.get());
 }
 
@@ -152,7 +152,7 @@ static void current_operator_cb(RawAddress bd_addr, const char* name) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   const char null_str[] = "";
   if (!sCallbackEnv.isValidUtf(name)) {
@@ -171,7 +171,7 @@ static void call_cb(RawAddress bd_addr, bthf_client_call_t call) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onCall, (jint)call, jaddr.get());
 }
 
@@ -184,7 +184,7 @@ static void callsetup_cb(RawAddress bd_addr, bthf_client_callsetup_t callsetup) 
 
   log::debug("callsetup_cb bdaddr {}", bd_addr);
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onCallSetup, (jint)callsetup, jaddr.get());
 }
 
@@ -195,7 +195,7 @@ static void callheld_cb(RawAddress bd_addr, bthf_client_callheld_t callheld) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onCallHeld, (jint)callheld, jaddr.get());
 }
 
@@ -206,7 +206,7 @@ static void resp_and_hold_cb(RawAddress bd_addr, bthf_client_resp_and_hold_t res
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onRespAndHold, (jint)resp_and_hold,
                                jaddr.get());
 }
@@ -218,7 +218,7 @@ static void clip_cb(RawAddress bd_addr, const char* number) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   const char null_str[] = "";
   if (!sCallbackEnv.isValidUtf(number)) {
@@ -237,7 +237,7 @@ static void call_waiting_cb(RawAddress bd_addr, const char* number) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   const char null_str[] = "";
   if (!sCallbackEnv.isValidUtf(number)) {
@@ -258,7 +258,7 @@ static void current_calls_cb(RawAddress bd_addr, int index, bthf_client_call_dir
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   const char null_str[] = "";
   if (!sCallbackEnv.isValidUtf(number)) {
@@ -278,7 +278,7 @@ static void volume_change_cb(RawAddress bd_addr, bthf_client_volume_type_t type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVolumeChange, (jint)type, (jint)volume,
                                jaddr.get());
 }
@@ -290,7 +290,7 @@ static void cmd_complete_cb(RawAddress bd_addr, bthf_client_cmd_complete_t type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onCmdResult, (jint)type, (jint)cme,
                                jaddr.get());
 }
@@ -303,7 +303,7 @@ static void subscriber_info_cb(RawAddress bd_addr, const char* name,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   const char null_str[] = "";
   if (!sCallbackEnv.isValidUtf(name)) {
@@ -323,7 +323,7 @@ static void in_band_ring_cb(RawAddress bd_addr, bthf_client_in_band_ring_state_t
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onInBandRing, (jint)in_band, jaddr.get());
 }
 
@@ -334,7 +334,7 @@ static void last_voice_tag_number_cb(RawAddress bd_addr, const char* number) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   const char null_str[] = "";
   if (!sCallbackEnv.isValidUtf(number)) {
@@ -354,7 +354,7 @@ static void ring_indication_cb(RawAddress bd_addr) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onRingIndication, jaddr.get());
 }
 
@@ -365,7 +365,7 @@ static void unknown_event_cb(RawAddress bd_addr, const char* eventString) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   ScopedLocalRef<jstring> js_event(sCallbackEnv.get(), sCallbackEnv->NewStringUTF(eventString));
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onUnknownEvent, js_event.get(), jaddr.get());
 }

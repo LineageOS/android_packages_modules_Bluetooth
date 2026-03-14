@@ -268,7 +268,7 @@ static void remote_device_properties_callback(bt_status_t status, RawAddress bd_
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   jintArray typesPtr = types.get();
   jobjectArray propsPtr = props.get();
@@ -308,7 +308,7 @@ static void device_found_callback(int num_properties, bt_property_t* properties)
   }
 
   log::verbose("Properties: {}, Address: {}", num_properties, *addr);
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, *addr);
 
   // Add device properties before announcing device found
   remote_device_properties_callback(BT_STATUS_SUCCESS, *addr, addr_type, num_properties,
@@ -332,7 +332,7 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_bondStateChangeCallback, (jint)status,
                                jaddr.get(), (jint)transport, (jint)state,
@@ -349,9 +349,8 @@ static void address_consolidate_callback(RawAddress main_bd_addr, RawAddress sec
 
   CallbackEnv sCallbackEnv(__func__);
 
-  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv.get(), main_bd_addr);
-  ScopedLocalRef<jbyteArray> secondary_addr =
-          addressToJByteArray(sCallbackEnv.get(), secondary_bd_addr);
+  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv, main_bd_addr);
+  ScopedLocalRef<jbyteArray> secondary_addr = addressToJByteArray(sCallbackEnv, secondary_bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_addressConsolidateCallback, main_addr.get(),
                                secondary_addr.get());
@@ -367,9 +366,8 @@ static void le_address_associate_callback(RawAddress main_bd_addr, RawAddress se
 
   CallbackEnv sCallbackEnv(__func__);
 
-  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv.get(), main_bd_addr);
-  ScopedLocalRef<jbyteArray> secondary_addr =
-          addressToJByteArray(sCallbackEnv.get(), secondary_bd_addr);
+  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv, main_bd_addr);
+  ScopedLocalRef<jbyteArray> secondary_addr = addressToJByteArray(sCallbackEnv, secondary_bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_leAddressAssociateCallback, main_addr.get(),
                                secondary_addr.get(), (jint)identity_address_type);
@@ -389,7 +387,7 @@ static void acl_state_changed_callback(bt_status_t status, AclLinkSpec& link_spe
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), link_spec.addrt.bda);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, link_spec.addrt.bda);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_aclStateChangeCallback, (jint)status,
                                addr.get(), (jint)link_spec.addrt.type, (jint)link_spec.transport,
@@ -426,7 +424,7 @@ static void pin_request_callback(RawAddress bd_addr, bt_bdname_t* bdname, uint32
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
   ScopedLocalRef<jbyteArray> devname(sCallbackEnv.get(),
                                      sCallbackEnv->NewByteArray(sizeof(bt_bdname_t)));
   if (!devname.get()) {
@@ -454,7 +452,7 @@ static void ssp_request_callback(RawAddress bd_addr, int transport, PairingVaria
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback, addr.get(), transport,
                                (jint)pairing_variant, pass_key, pairing_algorithm);
@@ -677,7 +675,7 @@ static void key_missing_callback(const RawAddress bd_addr, uint8_t reason) {
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_keyMissingCallback, addr.get(),
                                (jint)reason);
@@ -695,8 +693,7 @@ static void encryption_change_callback(const bt_encryption_change_evt encryption
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr =
-          addressToJByteArray(sCallbackEnv.get(), encryption_change.bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, encryption_change.bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_encryptionChangeCallback, addr.get(),
                                encryption_change.status, encryption_change.encr_enable,

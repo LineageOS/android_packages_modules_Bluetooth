@@ -186,10 +186,7 @@ void HciHalImpl::sendIsoData(HciPacket packet) {
 }
 
 uint16_t HciHalImpl::getMsftOpcode() {
-  if (com_android_bluetooth_flags_le_scan_msft_support()) {
-    return android::sysprop::bluetooth::Hci::msft_vendor_opcode();
-  }
-  return 0;
+  return android::sysprop::bluetooth::Hci::msft_vendor_opcode();
 }
 
 HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLogger* btsnoop_logger)

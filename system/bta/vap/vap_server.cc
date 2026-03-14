@@ -141,8 +141,7 @@ public:
     }
   }
 
-  static void OnGattMtuChangedStatic(tCONN_ID conn_id, uint32_t /*trans_id*/,
-                                     const RawAddress& remote_bda, uint16_t mtu) {
+  static void OnGattMtuChangedStatic(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu) {
     if (instance) {
       instance->OnGattMtuChanged(conn_id, remote_bda, mtu);
     }

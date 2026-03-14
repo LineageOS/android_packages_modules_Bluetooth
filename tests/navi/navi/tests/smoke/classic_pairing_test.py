@@ -566,7 +566,8 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info("[DUT] Search for REF to update CoD.")
         self.dut.bt.startInquiry()
 
-        await dut_cb.wait_for_event(bl4a_api.DeviceFound(address=self.ref.address, name=mock.ANY),)
+        await dut_cb.wait_for_event(
+            bl4a_api.DeviceFound(address=self.ref.address, name=mock.ANY, rssi=mock.ANY),)
 
         self.logger.info("[DUT] Create bond.")
         self.dut.bt.createBond(self.ref.address, android_constants.Transport.CLASSIC)

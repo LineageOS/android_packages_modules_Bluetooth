@@ -40,6 +40,14 @@ using namespace ::vap::uuid;
 // --- Tests for vap_server_utils.cc ---
 
 TEST(VapServerUtilsTest, GetUuidName) {
+  EXPECT_EQ(::vap::uuid::getUuidName(kVaNameCharacteristic), "VA Name");
+  EXPECT_EQ(::vap::uuid::getUuidName(kVaUuidCharacteristic), "VA UUID");
+  EXPECT_EQ(::vap::uuid::getUuidName(kVasControlPointCharacteristic), "VAS Control Point");
+  EXPECT_EQ(::vap::uuid::getUuidName(kVaCcidCharacteristic), "VA CCID");
+  EXPECT_EQ(::vap::uuid::getUuidName(kVaSessionStateCharacteristic), "VA Session State");
+  EXPECT_EQ(::vap::uuid::getUuidName(kVaSupportedFeaturesCharacteristic), "VA Supported Features");
+  EXPECT_EQ(::vap::uuid::getUuidName(kClientCharacteristicConfiguration),
+            "Client Characteristic Configuration");
   EXPECT_EQ(::vap::uuid::getUuidName(bluetooth::Uuid::From16Bit(0x0000)), "Unknown UUID");
 }
 
@@ -109,6 +117,7 @@ TEST(VapServerUtilsTest, IsVapServiceCharacteristic) {
   EXPECT_TRUE(IsVapServiceCharacteristic(kVasControlPointCharacteristic));
   EXPECT_TRUE(IsVapServiceCharacteristic(kVaCcidCharacteristic));
   EXPECT_TRUE(IsVapServiceCharacteristic(kVaSessionStateCharacteristic));
+  EXPECT_TRUE(IsVapServiceCharacteristic(kVaSupportedFeaturesCharacteristic));
   EXPECT_FALSE(IsVapServiceCharacteristic(kClientCharacteristicConfiguration));
   EXPECT_FALSE(IsVapServiceCharacteristic(bluetooth::Uuid::From16Bit(0x1234)));
   EXPECT_FALSE(IsVapServiceCharacteristic(bluetooth::Uuid::From128BitBE({0x01})));

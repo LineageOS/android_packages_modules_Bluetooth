@@ -92,12 +92,12 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
             self.ref_hfp_protocols.put_nowait(hfp.AgProtocol(dlc, configuration))
 
         self.ref.device.sdp_service_records = {
-            _HFP_AG_SDP_HANDLE:
-                hfp.make_ag_sdp_records(
-                    service_record_handle=_HFP_AG_SDP_HANDLE,
-                    rfcomm_channel=rfcomm.Server(self.ref.device).listen(on_dlc),
-                    configuration=configuration,
-                )
+            _HFP_AG_SDP_HANDLE: (hfp_ext.AudioGatewaySdpRecord(
+                service_record_handle=_HFP_AG_SDP_HANDLE,
+                rfcomm_channel=rfcomm.Server(self.ref.device).listen(on_dlc),
+                version=hfp.ProfileVersion.V1_8,
+                supported_features=hfp_ext.make_ag_sdp_features(configuration),
+            ).to_service_attributes())
         }
 
     async def _connect_hfp_from_ref(self, config: hfp.AgConfiguration) -> hfp.AgProtocol:
@@ -114,10 +114,10 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
             await dut_ref_acl.authenticate()
             await dut_ref_acl.encrypt()
 
-        sdp_record = await hfp.find_hf_sdp_record(dut_ref_acl)
-        if not sdp_record:
+        sdp_records = await hfp_ext.HandsfreeSdpRecord.find(dut_ref_acl)
+        if not sdp_records:
             self.fail("DUT does not have HFP SDP record.")
-        rfcomm_channel = sdp_record[0]
+        rfcomm_channel = sdp_records[0].rfcomm_channel
 
         self.logger.info("[REF] Found HFP RFCOMM channel %s.", rfcomm_channel)
 

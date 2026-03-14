@@ -51,6 +51,11 @@ constants {
 }
 
 constants {
+  name: "FIELD_RSSI"
+  string_value: "rssi"
+}
+
+constants {
   name: "FIELD_SOURCE_ID"
   string_value: "source_id"
 }
@@ -168,6 +173,36 @@ constants {
 constants {
   name: "MEDIA_ITEM"
   string_value: "media_item"
+}
+
+constants {
+  name: "CODEC_CONFIG"
+  string_value: "codec_config"
+}
+
+constants {
+  name: "CODEC_TYPE"
+  string_value: "codec_type"
+}
+
+constants {
+  name: "BITS_PER_SAMPLE"
+  string_value: "bits_per_sample"
+}
+
+constants {
+  name: "CHANNEL_MODE"
+  string_value: "channel_mode"
+}
+
+constants {
+  name: "PRIORITY"
+  string_value: "priority"
+}
+
+constants {
+  name: "SAMPLE_RATE"
+  string_value: "sample_rate"
 }
 
 # =========================== #
@@ -564,6 +599,10 @@ constants {
   string_value: "encryption_change"
 }
 
+constants {
+  name: "KEY_MISSING"
+  string_value: "key_missing"
+}
 # =========================== #
 # BluetoothGattClientSnippet  #
 # =========================== #
@@ -596,6 +635,11 @@ constants {
 constants {
   name: "GATT_FIELD_SUBRATE_MODE"
   string_value: "subrate_mode"
+}
+
+constants {
+  name: "GATT_FIELD_INCLUDED_SERVICES"
+  string_value: "included_services"
 }
 
 constants {
@@ -793,8 +837,28 @@ constants {
 }
 
 constants {
-  name: "A2DP_FIELD_CODEC_TYPE"
-  string_value: "A2DP_FIELD_CODEC_TYPE"
+  name: "EXTENDED_CODEC_TYPE"
+  string_value: "extended_codec_type"
+}
+
+constants {
+  name: "CODEC_SPECIFIC_1"
+  string_value: "codec_specific_1"
+}
+
+constants {
+  name: "CODEC_SPECIFIC_2"
+  string_value: "codec_specific_2"
+}
+
+constants {
+  name: "CODEC_SPECIFIC_3"
+  string_value: "codec_specific_3"
+}
+
+constants {
+  name: "CODEC_SPECIFIC_4"
+  string_value: "codec_specific_4"
 }
 
 # ======================== #
@@ -1291,8 +1355,23 @@ constants {
 }
 
 constants {
+  name: "MEDIA_CONTROLLER_METADATA_CHANGE"
+  string_value: "MEDIA_CONTROLLER_METADATA_CHANGE"
+}
+
+constants {
+  name: "FIELD_ARTIST"
+  string_value: "artist"
+}
+
+constants {
   name: "FIELD_TITLE"
   string_value: "title"
+}
+
+constants {
+  name: "FIELD_ALBUM"
+  string_value: "album"
 }
 
 constants {

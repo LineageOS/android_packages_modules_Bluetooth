@@ -151,7 +151,7 @@ public class ScanController {
             PeriodicScanNativeInterface periodicScanNativeInterface,
             ScannerMap scannerMap,
             CompanionDeviceManager companionDeviceManager,
-            @Nullable Looper looper,
+            Looper looper,
             TimeProvider timeProvider) {
         Log.i(TAG, "Created");
         mAdapterService = requireNonNull(adapterService);
@@ -192,6 +192,7 @@ public class ScanController {
                                         mAdapterService,
                                         this,
                                         scanNativeInterface,
+                                        mScanRadioStats,
                                         mScanLooper,
                                         timeProvider));
         mScanSuspendManager = new ScanSuspendManager(mScanManager);
@@ -230,11 +231,6 @@ public class ScanController {
     ScannerMap getScannerMap() {
         enforceScanThread();
         return mScannerMap;
-    }
-
-    ScanRadioStats getScanRadioStats() {
-        enforceScanThread();
-        return mScanRadioStats;
     }
 
     /** onDisplayChanged notifies ScanManager when the screen status changes. */

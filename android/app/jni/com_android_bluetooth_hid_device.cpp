@@ -54,7 +54,7 @@ static void application_state_callback(RawAddress* bd_addr, bthd_application_sta
   }
 
   ScopedLocalRef<jbyteArray> jaddr =
-          bd_addr ? addressToJByteArray(sCallbackEnv.get(), *bd_addr)
+          bd_addr ? addressToJByteArray(sCallbackEnv, *bd_addr)
                   : ScopedLocalRef<jbyteArray>(sCallbackEnv.get(), nullptr);
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onApplicationStateChanged, jaddr.get(),
@@ -64,7 +64,7 @@ static void application_state_callback(RawAddress* bd_addr, bthd_application_sta
 static void connection_state_callback(RawAddress bd_addr, bthd_connection_state_t state) {
   CallbackEnv sCallbackEnv(__func__);
 
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv, bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, jaddr.get(),
                                (jint)state);
 }

@@ -180,18 +180,28 @@ static btif_rc_device_cb_t* alloc_device() {
   return NULL;
 }
 
+static void dealloc_device(btif_rc_device_cb_t* p_dev) {
+  CHECK(p_dev != nullptr);
+  p_dev->rc_connected = false;
+  p_dev->rc_handle = 0;
+  p_dev->rc_features = 0;
+  p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
+  p_dev->rc_addr = RawAddress::kEmpty;
+  p_dev->rc_volume = MAX_VOLUME;
+  p_dev->rc_vol_label = MAX_LABEL;
+  p_dev->peer_ct_features = 0;
+  p_dev->peer_tg_features = 0;
+  p_dev->launch_cmd_pending = 0;
+}
+
 static void initialize_device(btif_rc_device_cb_t* p_dev) {
   if (p_dev == nullptr) {
     return;
   }
 
-  p_dev->rc_connected = false;
+  dealloc_device(p_dev);
   p_dev->br_connected = false;
-  p_dev->rc_handle = 0;
-  p_dev->rc_features = 0;
   p_dev->rc_cover_art_psm = 0;
-  p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
-  p_dev->rc_addr = RawAddress::kEmpty;
   for (int i = 0; i < MAX_CMD_QUEUE_LEN; ++i) {
     p_dev->rc_pdu_info[i].ctype = 0;
     p_dev->rc_pdu_info[i].label = 0;
@@ -201,16 +211,11 @@ static void initialize_device(btif_rc_device_cb_t* p_dev) {
     list_clear(p_dev->rc_supported_event_list);
   }
   p_dev->rc_supported_event_list = nullptr;
-  p_dev->rc_volume = MAX_VOLUME;
-  p_dev->rc_vol_label = MAX_LABEL;
   memset(&p_dev->rc_app_settings, 0, sizeof(btif_rc_player_app_settings_t));
   p_dev->rc_play_status_timer = nullptr;
   p_dev->rc_features_processed = false;
   p_dev->rc_playing_uid = 0;
   p_dev->rc_procedure_complete = false;
-  p_dev->peer_ct_features = 0;
-  p_dev->peer_tg_features = 0;
-  p_dev->launch_cmd_pending = 0;
 
   // Reset the transaction set for this device. If this initialize_device() call
   // is made due to a disconnect event, this cancels any pending timers too.
@@ -481,17 +486,8 @@ static void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
 
   if (!(p_rc_open->status == BTA_AV_SUCCESS)) {
     log::error("Connect failed with error code: {}", p_rc_open->status);
-    p_dev->rc_connected = false;
+    dealloc_device(p_dev);
     BTA_AvCloseRc(p_rc_open->rc_handle);
-    p_dev->rc_handle = 0;
-    p_dev->rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
-    p_dev->rc_features = 0;
-    p_dev->peer_ct_features = 0;
-    p_dev->peer_tg_features = 0;
-    p_dev->launch_cmd_pending = 0;
-    p_dev->rc_vol_label = MAX_LABEL;
-    p_dev->rc_volume = MAX_VOLUME;
-    p_dev->rc_addr = RawAddress::kEmpty;
     return;
   }
 

@@ -27,12 +27,12 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.flags.Flags;
+import com.android.modules.utils.build.SdkLevel;
 
 import java.util.List;
 import java.util.Objects;
@@ -310,7 +310,7 @@ class A2dpCodecConfig {
         value =
                 SystemProperties.getInt(
                         "bluetooth.a2dp.source.lhdcv5_priority.config",
-                        Build.VERSION.SDK_INT >= 37
+                        SdkLevel.isAtLeastC()
                                 ? 5002
                                 : BluetoothCodecConfig.CODEC_PRIORITY_DISABLED);
 

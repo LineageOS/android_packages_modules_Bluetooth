@@ -1917,6 +1917,20 @@ public class RemoteDevices {
             options.setDeliveryGroupMatchingKey(
                     ACL_CONNECTION_DELIVERY_GROUP_POLICY, transport + "/" + device.getAddress());
         }
+
+        // Send the ACTION_KEY_MISSING Intent here if the link is disconnected in a bond-loss
+        // scenario, and none of the transports are connected indicating that we are done.
+        // Note: Broadcast the ACTION_KEY_MISSING before the ACTION_ACL_DISCONNECTED.
+        if (Utils.isAutonomousRepairingSupported()
+                && mAdapterService.isBondLost(device)
+                && newState == AbstractionLayer.BT_ACL_STATE_DISCONNECTED
+                && deviceProperties.getLastBondLossReason().isPresent()
+                && deviceProperties.getConnectionHandle(TRANSPORT_LE) == BluetoothDevice.ERROR
+                && deviceProperties.getConnectionHandle(TRANSPORT_BREDR) == BluetoothDevice.ERROR) {
+            sendKeyMissingIntent(device, deviceProperties.getLastBondLossReason().get());
+            deviceProperties.setLastBondLossReason(Optional.empty()); // Reset once sent.
+        }
+
         mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, options.toBundle());
 
         RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
@@ -1960,18 +1974,6 @@ public class RemoteDevices {
         }
 
         mAdapterService.aclStateChangeBroadcastCallback(connectionChangeConsumer);
-
-        // Send the ACTION_KEY_MISSING Intent here if the link is disconnected in a bond-loss
-        // scenario, and none of the transports are connected indicating that we are done.
-        if (Utils.isAutonomousRepairingSupported()
-                && mAdapterService.isBondLost(device)
-                && newState == AbstractionLayer.BT_ACL_STATE_DISCONNECTED
-                && deviceProperties.getLastBondLossReason().isPresent()
-                && deviceProperties.getConnectionHandle(TRANSPORT_LE) == BluetoothDevice.ERROR
-                && deviceProperties.getConnectionHandle(TRANSPORT_BREDR) == BluetoothDevice.ERROR) {
-            sendKeyMissingIntent(device, deviceProperties.getLastBondLossReason().get());
-            deviceProperties.setLastBondLossReason(Optional.empty()); // Reset once sent.
-        }
     }
 
     private void sendPairingCancelIntent(BluetoothDevice device) {
@@ -2111,6 +2113,7 @@ public class RemoteDevices {
 
             Log.w(TAG, "Removing " + device + " on behalf of: " + Arrays.toString(packages));
             mAdapterService.syncPost(() -> mAdapterService.removeBond(device), false);
+            return;
         }
 
         if (!Utils.isAutonomousRepairingSupported()) {

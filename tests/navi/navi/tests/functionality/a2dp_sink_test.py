@@ -107,7 +107,7 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
         # Setup SDP service records.
         self.ref.device.sdp_service_records = {
             _A2DP_SERVICE_RECORD_HANDLE:
-                a2dp.make_audio_source_service_sdp_records(_A2DP_SERVICE_RECORD_HANDLE),
+                (a2dp_ext.SourceSdpRecord(_A2DP_SERVICE_RECORD_HANDLE).to_service_attributes()),
             _AVRCP_TARGET_RECORD_HANDLE: (avrcp.TargetServiceSdpRecord(
                 _AVRCP_TARGET_RECORD_HANDLE,
                 supported_features=(avrcp.TargetFeatures.CATEGORY_1 |
@@ -274,10 +274,6 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
         await self.classic_connect_and_pair(connect_profiles=True)
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-            self.logger.info("[REF] Wait for AVDTP connection")
-            avdtp_protocol = await ref_a2dp_source_device.avdtp_protocol_queue.get()
-            self.logger.info("[REF] Discover remote endpoints")
-            await avdtp_protocol.discover_remote_endpoints()
             self.logger.info("[REF] Wait for AVRCP connection")
             await ref_a2dp_source_device.avrcp_protocol_starts.get()
             self.logger.info("[REF] Wait for Browsing connection")
@@ -297,18 +293,21 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
         self.assertLen(children, 1)
         self.assertEqual(children[0].title, self.ref.device.name)
         device_node = children[0]
+        assert device_node.id is not None
 
         self.logger.info("[DUT] Browse players")
         children = await browser.get_children(device_node.id)
         self.assertLen(children, 1)
         self.assertEqual(children[0].title, _SAMPLE_PLAYER.displayable_name)
         player_node = children[0]
+        assert player_node.id is not None
 
         self.logger.info("[DUT] Browse folders")
         children = await browser.get_children(player_node.id)
         self.assertLen(children, 1)
         self.assertEqual(children[0].title, _SAMPLE_FOLDER.displayable_name)
         folder_node = children[0]
+        assert folder_node.id is not None
 
         self.logger.info("[DUT] Browse media elements")
         children = await browser.get_children(folder_node.id)
@@ -531,21 +530,21 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
                 self.assertEqual(actual_key, expected_key)
 
     async def test_playback_status(self) -> None:
-        """Tests AVRCP playback control.
+        """Tests AVRCP playback status.
 
     Test steps:
       1. Connect and pair REF.
       2. Make A2DP and AVRCP connection from DUT.
-      3. Play media on DUT and check if REF receives the PLAY command.
-      4. Pause media on DUT and check if REF receives the PAUSE command.
-      5. Stop media on DUT and check if REF receives the STOP command.
-      6. Skip to next media on DUT and check if REF receives the FORWARD
-      command.
-      7. Skip to previous media on DUT and check if REF receives the BACKWARD
-         command.
-      8. Fast forward media on DUT and check if REF receives the FAST_FORWARD
-         command.
-      9. Rewind media on DUT and check if REF receives the REWIND command.
+      3. Play media on DUT and check if REF receives the PLAYBACK_STATUS_CHANGED
+         event with PLAYING state.
+      4. Pause media on DUT and check if REF receives the
+         PLAYBACK_STATUS_CHANGED event with PAUSED state.
+      5. Stop media on DUT and check if REF receives the PLAYBACK_STATUS_CHANGED
+         event with STOPPED state.
+      6. Fast forward media on DUT and check if REF receives the
+         PLAYBACK_STATUS_CHANGED event with FAST_FORWARD state.
+      7. Rewind media on DUT and check if REF receives the
+          PLAYBACK_STATUS_CHANGED event with REWIND state.
     """
 
         ref_a2dp_source_device = self._setup_a2dp_source_device(self.ref.device,
@@ -558,10 +557,6 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
         await self.classic_connect_and_pair(connect_profiles=True)
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-            self.logger.info("[REF] Wait for AVDTP connection")
-            avdtp_protocol = await ref_a2dp_source_device.avdtp_protocol_queue.get()
-            self.logger.info("[REF] Discover remote endpoints")
-            await avdtp_protocol.discover_remote_endpoints()
             self.logger.info("[REF] Wait for AVRCP connection")
             await ref_a2dp_source_device.avrcp_protocol_starts.get()
 
@@ -603,6 +598,317 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[DUT] Wait for playback state changed event")
             await callback.wait_for_event(
                 bl4a_api.MediaBrowser.PlaybackStateChanged(state=dut_playback_state))
+
+    async def test_media_metadata(self) -> None:
+        """Tests AVRCP media metadata changed and get item attributes.
+
+    Android passively receives the media metadata changed event and actively
+    requests the media metadata using get item attributes when the media is
+    changed.
+
+    Test steps:
+      1. Connect and pair REF.
+      2. Make A2DP and AVRCP connection from DUT.
+      3. Set now playing item on REF.
+      4. Verify the media metadata is changed on DUT.
+      5. Get item attributes on DUT and verify the media metadata.
+    """
+
+        ref_a2dp_source_device = self._setup_a2dp_source_device(self.ref.device)
+        ref_avrcp_protocol = ref_a2dp_source_device.avrcp_protocol
+        ref_avrcp_protocol.delegate = avrcp.Delegate(supported_events=[
+            avrcp.EventId.TRACK_CHANGED,  # pytype: disable=wrong-arg-types
+            avrcp.EventId.AVAILABLE_PLAYERS_CHANGED,  # pytype: disable=wrong-arg-types
+        ])
+
+        self.logger.info("[DUT] Connect and pair REF.")
+        await self.classic_connect_and_pair(connect_profiles=True)
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Wait for AVRCP connection")
+            await ref_a2dp_source_device.avrcp_protocol_starts.get()
+            self.logger.info("[REF] Wait for Browsing connection")
+            ref_browsing_target = (await ref_a2dp_source_device.browsing_target_queue.get())
+
+        self.logger.info("[DUT] Connect to media browser")
+        browser = self.dut.bl4a.connect_media_browser(
+            self.bluetooth_package,
+            self.bluetooth_browser_service,
+        )
+        self.test_case_context.push(browser)
+        self.logger.info("[DUT] Register media controller callback")
+        callback = browser.register_callback()
+        self.test_case_context.push(callback)
+
+        self.logger.info("[REF] Set browsed player")
+        ref_browsed_player = ref_browsing_target.browsed_player = (ref_browsing_target.players[0])
+        self.logger.info("[REF] Set now playing item")
+        ref_browsed_player.now_playing_items = [_SAMPLE_TRACK]
+        ref_avrcp_protocol.delegate.current_track_uid = (_SAMPLE_TRACK.media_element_uid)
+        ref_avrcp_protocol.notify_track_changed(_SAMPLE_TRACK.media_element_uid)
+
+        self.logger.info("[DUT] Wait for metadata changed event")
+        await callback.wait_for_event(
+            bl4a_api.MediaBrowser.MetadataChanged(
+                title=_SAMPLE_TRACK.attributes[avrcp.MediaAttributeId.TITLE],
+                artist=_SAMPLE_TRACK.attributes[avrcp.MediaAttributeId.ARTIST_NAME],
+                album=_SAMPLE_TRACK.attributes[avrcp.MediaAttributeId.ALBUM_NAME],
+            ))
+
+    async def test_player_app_setting_changed_from_ref(self) -> None:
+        """Tests AVRCP player app setting changed from REF.
+
+    Test steps:
+      1. Connect and pair REF.
+      2. Make A2DP and AVRCP connection from DUT.
+      3. Set player app setting on REF and check if DUT receives the
+         PLAYER_APPLICATION_SETTING_CHANGED event.
+    """
+
+        ref_a2dp_source_device = self._setup_a2dp_source_device(self.ref.device)
+        ref_avrcp_protocol = ref_a2dp_source_device.avrcp_protocol
+        condition = asyncio.Condition()
+
+        class Delegate(avrcp.Delegate):
+
+            @override
+            async def get_current_player_app_settings(
+                self,) -> dict[avrcp.ApplicationSetting.AttributeId, int]:
+                # Whenever event notification of PLAYER_APPLICATION_SETTING_CHANGED is
+                # registered, the delegate.get_current_player_app_settings() is called
+                # to get the current player app settings.
+                async with condition:
+                    condition.notify_all()
+                    return await super().get_current_player_app_settings()
+
+        ref_avrcp_protocol.delegate = Delegate(
+            supported_events=[
+                avrcp.EventId.PLAYER_APPLICATION_SETTING_CHANGED,  # pytype: disable=wrong-arg-types
+            ],
+            supported_player_app_settings={
+                avrcp.ApplicationSetting.AttributeId.REPEAT_MODE: [
+                    avrcp.ApplicationSetting.RepeatModeStatus.OFF,
+                    avrcp.ApplicationSetting.RepeatModeStatus.SINGLE_TRACK_REPEAT,
+                    avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT,
+                    avrcp.ApplicationSetting.RepeatModeStatus.GROUP_REPEAT,
+                ],
+                avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF: [
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.ALL_TRACKS_SHUFFLE,
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.GROUP_SHUFFLE,
+                ],
+            },
+        )
+        ref_avrcp_protocol.delegate.player_app_settings = {
+            avrcp.ApplicationSetting.AttributeId.REPEAT_MODE:
+                (avrcp.ApplicationSetting.RepeatModeStatus.OFF),
+            avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF:
+                (avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF),
+        }
+
+        self.logger.info("[DUT] Connect to media browser")
+        browser = self.dut.bl4a.connect_media_browser(
+            self.bluetooth_package,
+            self.bluetooth_browser_service,
+        )
+        self.test_case_context.push(browser)
+        self.logger.info("[DUT] Register media controller callback")
+        callback = browser.register_callback()
+        self.test_case_context.push(callback)
+
+        self.logger.info("[DUT] Connect and pair REF.")
+        await self.classic_connect_and_pair(connect_profiles=True)
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Wait for AVRCP connection")
+            await ref_a2dp_source_device.avrcp_protocol_starts.get()
+
+        async def wait_for_registration() -> None:
+            async with (
+                    self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS),
+                    condition,
+            ):
+                await condition.wait_for(lambda: avrcp.EventId.PLAYER_APPLICATION_SETTING_CHANGED in
+                                         ref_avrcp_protocol.notification_listeners)
+
+        for ref_repeat_mode, dut_repeat_mode in [
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT,
+                android_constants.RepeatMode.ALL,
+            ),
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.SINGLE_TRACK_REPEAT,
+                android_constants.RepeatMode.ONE,
+            ),
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.GROUP_REPEAT,
+                android_constants.RepeatMode.GROUP,
+            ),
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.OFF,
+                android_constants.RepeatMode.OFF,
+            ),
+        ]:
+            await wait_for_registration()
+            self.logger.info("[REF] Set repeat mode to %r", ref_repeat_mode)
+            ref_avrcp_protocol.delegate.player_app_settings[
+                avrcp.ApplicationSetting.AttributeId.REPEAT_MODE] = ref_repeat_mode
+            ref_avrcp_protocol.notify_player_application_settings_changed([
+                avrcp.PlayerApplicationSettingChangedEvent.Setting(
+                    avrcp.ApplicationSetting.AttributeId.REPEAT_MODE,  # pytype: disable=wrong-arg-types
+                    ref_repeat_mode,
+                )
+            ])
+            self.logger.info("[DUT] Wait for repeat mode changed to %r", dut_repeat_mode)
+            await callback.wait_for_event(
+                bl4a_api.MediaBrowser.RepeatModeChanged(mode=dut_repeat_mode))
+
+        for ref_shuffle_mode, dut_shuffle_mode in [
+            (
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.ALL_TRACKS_SHUFFLE,
+                android_constants.ShuffleMode.ALL,
+            ),
+            (
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.GROUP_SHUFFLE,
+                android_constants.ShuffleMode.GROUP,
+            ),
+            (
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
+                android_constants.ShuffleMode.OFF,
+            ),
+        ]:
+            await wait_for_registration()
+            self.logger.info("[REF] Set shuffle mode to %r", ref_shuffle_mode)
+            ref_avrcp_protocol.delegate.player_app_settings[
+                avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF] = ref_shuffle_mode
+            ref_avrcp_protocol.notify_player_application_settings_changed([
+                avrcp.PlayerApplicationSettingChangedEvent.Setting(
+                    avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF,  # pytype: disable=wrong-arg-types
+                    ref_shuffle_mode,
+                )
+            ])
+            self.logger.info("[DUT] Wait for shuffle mode changed to %r", dut_shuffle_mode)
+            await callback.wait_for_event(
+                bl4a_api.MediaBrowser.ShuffleModeChanged(mode=dut_shuffle_mode))
+
+    async def test_player_app_setting_changed_from_dut(self) -> None:
+        """Tests AVRCP player app setting changed from DUT.
+
+    Test steps:
+      1. Connect and pair REF.
+      2. Make A2DP and AVRCP connection from DUT.
+      3. Set player app setting on DUT and check if REF receives the
+         PLAYER_APPLICATION_SETTING_CHANGED event.
+    """
+
+        ref_a2dp_source_device = self._setup_a2dp_source_device(self.ref.device)
+        ref_avrcp_protocol = ref_a2dp_source_device.avrcp_protocol
+        condition = asyncio.Condition()
+
+        class Delegate(avrcp.Delegate):
+
+            @override
+            async def set_player_app_settings(self, attribute: avrcp.ApplicationSetting.AttributeId,
+                                              value: int) -> None:
+                await super().set_player_app_settings(attribute, value)
+                async with condition:
+                    condition.notify_all()
+
+        ref_avrcp_protocol.delegate = Delegate(
+            supported_events=[
+                avrcp.EventId.PLAYER_APPLICATION_SETTING_CHANGED,  # pytype: disable=wrong-arg-types
+            ],
+            supported_player_app_settings={
+                avrcp.ApplicationSetting.AttributeId.REPEAT_MODE: [
+                    avrcp.ApplicationSetting.RepeatModeStatus.OFF,
+                    avrcp.ApplicationSetting.RepeatModeStatus.SINGLE_TRACK_REPEAT,
+                    avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT,
+                    avrcp.ApplicationSetting.RepeatModeStatus.GROUP_REPEAT,
+                ],
+                avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF: [
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.ALL_TRACKS_SHUFFLE,
+                    avrcp.ApplicationSetting.ShuffleOnOffStatus.GROUP_SHUFFLE,
+                ],
+            },
+        )
+        ref_avrcp_protocol.delegate.player_app_settings = {
+            avrcp.ApplicationSetting.AttributeId.REPEAT_MODE:
+                (avrcp.ApplicationSetting.RepeatModeStatus.OFF),
+            avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF:
+                (avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF),
+        }
+
+        self.logger.info("[DUT] Connect to media browser")
+        browser = self.dut.bl4a.connect_media_browser(
+            self.bluetooth_package,
+            self.bluetooth_browser_service,
+        )
+        self.test_case_context.push(browser)
+
+        self.logger.info("[DUT] Connect and pair REF.")
+        await self.classic_connect_and_pair(connect_profiles=True)
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Wait for AVRCP connection")
+            await ref_a2dp_source_device.avrcp_protocol_starts.get()
+
+        for ref_repeat_mode, dut_repeat_mode in [
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.ALL_TRACK_REPEAT,
+                android_constants.RepeatMode.ALL,
+            ),
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.SINGLE_TRACK_REPEAT,
+                android_constants.RepeatMode.ONE,
+            ),
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.GROUP_REPEAT,
+                android_constants.RepeatMode.GROUP,
+            ),
+            (
+                avrcp.ApplicationSetting.RepeatModeStatus.OFF,
+                android_constants.RepeatMode.OFF,
+            ),
+        ]:
+            self.logger.info("[DUT] Set repeat mode to %r", dut_repeat_mode)
+            browser.set_repeat_mode(dut_repeat_mode)
+            self.logger.info("[REF] Wait for repeat mode changed to %r", ref_repeat_mode)
+            async with (
+                    self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS),
+                    condition,
+            ):
+                await condition.wait_for(lambda: (
+                    ref_avrcp_protocol.delegate.player_app_settings.get(
+                        avrcp.ApplicationSetting.AttributeId.REPEAT_MODE) == ref_repeat_mode,  # pylint: disable=cell-var-from-loop
+                ))
+
+        for ref_shuffle_mode, due_shuffle_mode in [
+            (
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.ALL_TRACKS_SHUFFLE,
+                android_constants.ShuffleMode.ALL,
+            ),
+            (
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.GROUP_SHUFFLE,
+                android_constants.ShuffleMode.GROUP,
+            ),
+            (
+                avrcp.ApplicationSetting.ShuffleOnOffStatus.OFF,
+                android_constants.ShuffleMode.OFF,
+            ),
+        ]:
+            self.logger.info("[DUT] Set shuffle mode to %r", due_shuffle_mode)
+            browser.set_shuffle_mode(due_shuffle_mode)
+            self.logger.info("[REF] Wait for shuffle mode changed to %r", ref_shuffle_mode)
+            async with (
+                    self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS),
+                    condition,
+            ):
+                await condition.wait_for(
+                    lambda: (
+                        ref_avrcp_protocol.delegate.player_app_settings.get(
+                            avrcp.ApplicationSetting.AttributeId.SHUFFLE_ON_OFF) == ref_shuffle_mode  # pylint: disable=cell-var-from-loop
+                    ),)
 
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ from navi.tests.functionality import a2dp_sink_test
 from navi.tests.functionality import a2dp_source_test
 from navi.tests.functionality import asha_dual_devices_test
 from navi.tests.functionality import coex_test
+from navi.tests.functionality import gatt_server_test as gatt_server_test_venti
 from navi.tests.functionality import hap_test
 from navi.tests.functionality import hfp_ag_test as hfp_ag_test_venti
 from navi.tests.functionality import le_audio_unicast_client_dual_device_test
@@ -63,6 +64,7 @@ if __name__ == "__main__":
         classic_pairing_test.ClassicPairingTest,
         gatt_client_test.GattClientTest,
         gatt_server_test.GattServerTest,
+        gatt_server_test_venti.GattServerVentiTest,
         hfp_ag_test.HfpAgTest,
         hfp_hf_test.HfpHfTest,
         hid_device_test.HidDeviceTest,
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         bluetooth_service_test.BluetoothServiceTest,
         a2dp_source_test.A2dpSourceTest,
         coex_test.CoexTest,
-        hfp_ag_test_venti.HfpAgTest,
+        hfp_ag_test_venti.HfpAgVentiTest,
         rfcomm_socket_test.RfcommSocketTest,
         le_audio_unicast_client_dual_device_test.LeAudioUnicastClientDualDeviceTest,
         vap_test.VapTest,

@@ -57,6 +57,12 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def getAddress(self) -> str:
         ...
 
+    def getName(self) -> str:
+        ...
+
+    def setName(self, name: str) -> bool:
+        ...
+
     def createBond(self, address: str, transport: int, address_type: int | None = None) -> bool:
         ...
 
@@ -127,6 +133,9 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         scan_response: dict[str, Any] | None = None,
         periodic_advertising_parameters: dict[str, Any] | None = None,
         periodic_advertising_data: dict[str, Any] | None = None,
+        duration: int = 0,
+        max_extended_advertising_events: int = 0,
+        gatt_server: str | None = None,
     ) -> str:
         ...
 
@@ -173,6 +182,9 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def isLePeriodicAdvertisingSupported(self) -> bool:
         ...
 
+    def getSupportedProfiles(self) -> list[int]:
+        ...
+
     # A2DP
     def registerA2dpCallback(self) -> callback_handler_v2.CallbackHandlerV2:
         ...
@@ -189,7 +201,7 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def isA2dpPlaying(self, address: str) -> bool:
         ...
 
-    def setA2dpCodec(self, address: str, codec: int) -> None:
+    def setA2dpCodecConfig(self, address: str, codec_config: dict[str, Any]) -> None:
         ...
 
     # GATT Client
@@ -455,13 +467,12 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     ) -> None:
         ...
 
-    def audioSetRouteSco(self, address: str, player_id: str | None = None) -> None:
-        ...
-
-    def audioSetRouteDefault(self, player_id: str | None = None) -> None:
-        ...
-
     def getCommunicationDevice(self) -> dict[str, Any] | None:
+        ...
+
+    def setCommunicationDevice(self,
+                               device_type: int | None = None,
+                               address: str | None = None) -> bool:
         ...
 
     def addMediaItem(self, media_item: dict[str, Any], player_id: str | None = None) -> None:
@@ -917,4 +928,10 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     def registerMediaControllerCallback(self, cookie: str) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def setMediaControllerRepeatMode(self, cookie: str, repeat_mode: int) -> None:
+        ...
+
+    def setMediaControllerShuffleMode(self, cookie: str, shuffle_mode: int) -> None:
         ...

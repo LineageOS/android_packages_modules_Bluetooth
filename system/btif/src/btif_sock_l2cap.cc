@@ -539,12 +539,7 @@ static void clone_server_socket_to_accepted_socket(tBTA_JV_L2CAP_OPEN* p_open, l
   accept_rs->endpoint_id = sock->endpoint_id;
 }
 
-/**
- * Here we allocate a new sock instance to mimic the BluetoothSocket. The socket
- * will be a clone of the sock representing the BluetoothServerSocket.
- */
-static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
-  // state_lock taken by caller
+static l2cap_socket* prepare_server_socket(l2cap_socket* sock, tBTA_JV_L2CAP_OPEN* p_open) {
   l2cap_socket* accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
   clone_server_socket_to_accepted_socket(p_open, sock, accept_rs);
 
@@ -566,33 +561,25 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket*
           accept_rs->channel, 0, 0, accept_rs->name, 0, BTSOCK_ERROR_NONE, accept_rs->data_path);
   accept_rs->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
-  // start monitor the socket
-  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_EXCEPTION, sock->id);
-  btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, accept_rs->id);
-  send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0, accept_rs->app_fd,
-                          sock->rx_mtu, p_open->tx_mtu, accept_rs->socket_id);
-  accept_rs->app_fd = -1;  // The fd is closed after sent to app in send_app_connect_signal()
-  // But for some reason we still leak a FD - either the server socket
-  // one or the accept socket one.
-  btsock_l2cap_server_listen(sock, true);
-  // start monitoring the socketpair to get call back when app is accepting on server socket
-  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
+  return accept_rs;
 }
 
-static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
+static void prepare_client_socket(l2cap_socket* sock, tBTA_JV_L2CAP_OPEN* p_open) {
   sock->addr = p_open->rem_bda;
   sock->tx_mtu = p_open->tx_mtu;
   sock->local_cid = p_open->local_cid;
   sock->remote_cid = p_open->remote_cid;
   sock->socket_id = btif_l2cap_sock_generate_socket_id();
+}
 
+static void notify_app_connected(l2cap_socket* sock, int tx_mtu) {
   if (!send_app_psm_or_chan_l(sock)) {
     log::error("Unable to send l2cap socket to application socket_id:{}", sock->id);
     return;
   }
 
   if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1, sock->rx_mtu,
-                               p_open->tx_mtu, sock->socket_id)) {
+                               tx_mtu, sock->socket_id)) {
     log::error("Unable to connect l2cap socket to application socket_id:{}", sock->id);
     return;
   }
@@ -609,10 +596,37 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* 
           0, 0, sock->name, 0, BTSOCK_ERROR_NONE, sock->data_path);
   sock->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
-  // start monitoring the socketpair to get call back when app writing data
-  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
   log::info("Connected l2cap socket socket_id:{}", sock->id);
   sock->connected = true;
+}
+
+/**
+ * Here we allocate a new sock instance to mimic the BluetoothSocket. The socket
+ * will be a clone of the sock representing the BluetoothServerSocket.
+ */
+static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
+  // state_lock taken by caller
+  l2cap_socket* accept_rs = prepare_server_socket(sock, p_open);
+
+  // start monitor the socket
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_EXCEPTION, sock->id);
+  btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, accept_rs->id);
+  send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0, accept_rs->app_fd,
+                          sock->rx_mtu, p_open->tx_mtu, accept_rs->socket_id);
+  accept_rs->app_fd = -1;  // The fd is closed after sent to app in send_app_connect_signal()
+  // But for some reason we still leak a FD - either the server socket
+  // one or the accept socket one.
+  btsock_l2cap_server_listen(sock, true);
+  // start monitoring the socketpair to get call back when app is accepting on server socket
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
+}
+
+static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
+  prepare_client_socket(sock, p_open);
+  notify_app_connected(sock, p_open->tx_mtu);
+
+  // start monitoring the socketpair to get call back when app writing data
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
 }
 
 static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
@@ -1264,30 +1278,7 @@ void on_btsocket_l2cap_opened_complete(uint64_t socket_id, bool success) {
     // The fd is closed after sent to app in send_app_connect_signal()
     sock->app_fd = -1;
   } else {
-    if (!send_app_psm_or_chan_l(sock)) {
-      log::error("Unable to send l2cap socket to application socket_id:{}", sock->id);
-      return;
-    }
-    if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1, sock->rx_mtu,
-                                 sock->tx_mtu, sock->socket_id)) {
-      log::error("Unable to connect l2cap socket to application socket_id:{}", sock->id);
-      return;
-    }
-
-    log::info(
-            "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, id: {}, "
-            "is_le: {}, socket_id: {}, rx_mtu: {}",
-            sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc, sock->socket_id,
-            sock->rx_mtu);
-    btif_sock_connection_logger(
-            sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-            SOCKET_CONNECTION_STATE_CONNECTED,
-            sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid,
-            sock->channel, 0, 0, sock->name, 0, BTSOCK_ERROR_NONE, sock->data_path);
-    sock->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
-
-    log::info("Connected l2cap socket socket_id:{}", sock->id);
-    sock->connected = true;
+    notify_app_connected(sock, sock->tx_mtu);
   }
 }
 
@@ -1305,23 +1296,7 @@ void on_btsocket_l2cap_close(uint64_t socket_id) {
 }
 
 static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
-  sock->addr = p_open->rem_bda;
-  sock->tx_mtu = p_open->tx_mtu;
-  sock->local_cid = p_open->local_cid;
-  sock->remote_cid = p_open->remote_cid;
-  sock->socket_id = btif_l2cap_sock_generate_socket_id();
-
-  log::info(
-          "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
-          "id: {}, is_le: {}, socket_id: {}, rx_mtu: {}",
-          sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc, sock->socket_id,
-          sock->rx_mtu);
-  btif_sock_connection_logger(
-          sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-          SOCKET_CONNECTION_STATE_CONNECTED,
-          sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid, sock->channel,
-          0, 0, sock->name, 0, BTSOCK_ERROR_NONE, sock->data_path);
-  sock->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
+  prepare_client_socket(sock, p_open);
 
   bluetooth::hal::SocketContext socket_context = {
           .socket_id = sock->socket_id,
@@ -1347,27 +1322,8 @@ static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_
 
 static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
   // std::mutex locked by caller
-  l2cap_socket* accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
-  clone_server_socket_to_accepted_socket(p_open, sock, accept_rs);
+  l2cap_socket* accept_rs = prepare_server_socket(sock, p_open);
   accept_rs->listen_fd = sock->our_fd;
-
-  /* Swap IDs to hand over the GAP connection to the accepted socket, and start
-     a new server on the newly create socket ID. */
-  uint32_t new_listen_id = accept_rs->id;
-  accept_rs->id = sock->id;
-  sock->id = new_listen_id;
-
-  log::info(
-          "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
-          "id: {}, is_le: {}, socket_id: {}, rx_mtu: {}",
-          accept_rs->addr, accept_rs->channel, accept_rs->app_uid, accept_rs->id,
-          accept_rs->is_le_coc, accept_rs->socket_id, accept_rs->rx_mtu);
-  btif_sock_connection_logger(
-          accept_rs->addr, accept_rs->id, accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-          SOCKET_CONNECTION_STATE_CONNECTED,
-          accept_rs->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, accept_rs->app_uid,
-          accept_rs->channel, 0, 0, accept_rs->name, 0, BTSOCK_ERROR_NONE, accept_rs->data_path);
-  accept_rs->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
   bluetooth::hal::SocketContext socket_context = {
           .socket_id = accept_rs->socket_id,

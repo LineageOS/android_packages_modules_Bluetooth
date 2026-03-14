@@ -75,7 +75,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, addr.get(),
                                  (jint)state);
   }
@@ -89,7 +89,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDiscovered, addr.get());
   }
 
@@ -104,7 +104,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     jstring j_name = sCallbackEnv->NewStringUTF(name.c_str());
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onMediaPlayerNameChanged, addr.get(),
                                  media_controller_id, j_name);
@@ -119,7 +119,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackChanged, addr.get(),
                                  media_controller_id);
   }
@@ -135,7 +135,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     jstring j_title = sCallbackEnv->NewStringUTF(title.c_str());
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackTitleChanged, addr.get(),
                                  media_controller_id, j_title);
@@ -152,7 +152,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackDurationChanged, addr.get(),
                                  media_controller_id, (jint)duration);
   }
@@ -168,7 +168,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackPositionChanged, addr.get(),
                                  media_controller_id, (jint)position);
   }
@@ -184,7 +184,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPlaybackSpeedChanged, addr.get(),
                                  media_controller_id, (jbyte)speed);
   }
@@ -200,7 +200,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPlayingOrderChanged, addr.get(),
                                  media_controller_id, (jint)playing_order);
   }
@@ -216,7 +216,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPlayingOrdersSupportedChanged, addr.get(),
                                  media_controller_id, (jint)playing_orders);
   }
@@ -232,7 +232,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSeekingSpeedChanged, addr.get(),
                                  media_controller_id, (jbyte)speed);
   }
@@ -248,7 +248,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onMediaStateChanged, addr.get(),
                                  media_controller_id, (jint)state);
   }
@@ -264,7 +264,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onMediaControlResult, addr.get(),
                                  media_controller_id, (jint)opcode, (jint)result);
   }
@@ -280,7 +280,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), address);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, address);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onOpcodesSupportedChanged, addr.get(),
                                  media_controller_id, (jint)opcodes);
   }

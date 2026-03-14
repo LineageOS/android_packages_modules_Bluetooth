@@ -24,12 +24,14 @@ from collections.abc import Sequence
 import dataclasses
 import enum
 import struct
-from typing import ClassVar, TypeVar
+from typing import ClassVar, Self, TypeVar
 
 from bumble import a2dp
 from bumble import avdtp
 from bumble import codecs
-from bumble import device as bumble_device
+from bumble import core
+from bumble import device as device_lib
+from bumble import sdp
 
 from navi.bumble_ext import ogg
 from navi.utils import constants
@@ -416,7 +418,7 @@ def find_local_endpoints_by_codec(
 
 
 def setup_sink_server(
-    device: bumble_device.Device,
+    device: device_lib.Device,
     supported_capabilities: Sequence[avdtp.MediaCodecCapabilities],
     a2dp_sink_handle: int,
 ) -> avdtp.Listener:
@@ -438,6 +440,267 @@ def setup_sink_server(
             server.add_sink(capability)
 
     device.sdp_service_records.update({
-        a2dp_sink_handle: a2dp.make_audio_sink_service_sdp_records(a2dp_sink_handle),
+        a2dp_sink_handle:
+            (SinkSdpRecord(service_record_handle=a2dp_sink_handle).to_service_attributes()),
     })
     return listener
+
+
+@dataclasses.dataclass
+class SourceSdpRecord:
+    """A2DP source SDP record."""
+
+    class Features(enum.IntFlag):
+        """A2DP source SDP record features."""
+
+        PLAYER = 0x01
+        MICROPHONE = 0x02
+        TUNER = 0x04
+        MIXER = 0x08
+
+    service_record_handle: int
+    avdtp_version: tuple[int, int] = (1, 3)
+    a2dp_version: tuple[int, int] = (1, 3)
+    supported_features: Features | None = None
+
+    def to_service_attributes(self) -> list[sdp.ServiceAttribute]:
+        """Converts the SDP record to a list of SDP service attributes.
+
+    The record exposes the features supported in the input configuration,
+    and the allocated RFCOMM channel.
+
+    Returns:
+      A list of SDP service attributes.
+    """
+        attributes = [
+            sdp.ServiceAttribute(
+                sdp.SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID,
+                sdp.DataElement.unsigned_integer_32(self.service_record_handle),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_BROWSE_GROUP_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([sdp.DataElement.uuid(sdp.SDP_PUBLIC_BROWSE_ROOT)]),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([sdp.DataElement.uuid(core.BT_AUDIO_SOURCE_SERVICE)]),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([
+                    sdp.DataElement.sequence([
+                        sdp.DataElement.uuid(core.BT_L2CAP_PROTOCOL_ID),
+                        sdp.DataElement.unsigned_integer_16(avdtp.AVDTP_PSM),
+                    ]),
+                    sdp.DataElement.sequence([
+                        sdp.DataElement.uuid(core.BT_AVDTP_PROTOCOL_ID),
+                        sdp.DataElement.unsigned_integer_16(self.avdtp_version[0] << 8 |
+                                                            self.avdtp_version[1]),
+                    ]),
+                ]),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([
+                    sdp.DataElement.sequence([
+                        sdp.DataElement.uuid(core.BT_ADVANCED_AUDIO_DISTRIBUTION_SERVICE),
+                        sdp.DataElement.unsigned_integer_16(self.a2dp_version[0] << 8 |
+                                                            self.a2dp_version[1]),
+                    ])
+                ]),
+            ),
+        ]
+        if self.supported_features is not None:
+            attributes.append(
+                sdp.ServiceAttribute(
+                    sdp.SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID,
+                    sdp.DataElement.unsigned_integer_16(self.supported_features),
+                ))
+        return attributes
+
+    @classmethod
+    async def find(
+        cls,
+        connection: device_lib.Connection,
+    ) -> list[Self]:
+        """Searches for A2DP source SDP records from remote device.
+
+    Args:
+        connection: ACL connection to make SDP search.
+
+    Returns:
+        A list of A2DP source SDP records.
+    """
+        records = []
+        async with sdp.Client(connection) as sdp_client:
+            search_result = await sdp_client.search_attributes(
+                uuids=[core.BT_AUDIO_SOURCE_SERVICE],
+                attribute_ids=[
+                    sdp.SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID,
+                    sdp.SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                    sdp.SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID,
+                    sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                ],
+            )
+            for attribute_lists in search_result:
+                avdtp_version: tuple[int, int] | None = None
+                a2dp_version: tuple[int, int] | None = None
+                service_record_handle: int | None = None
+                features: SourceSdpRecord.Features | None = None
+                for attribute in attribute_lists:
+                    match attribute.id:
+                        case sdp.SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID:
+                            service_record_handle = attribute.value.value
+                        case sdp.SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID:
+                            profile_descriptor_list = attribute.value.value
+                            a2dp_version = (
+                                profile_descriptor_list[0].value[1].value >> 8,
+                                profile_descriptor_list[0].value[1].value & 0xFF,
+                            )
+                        case sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID:
+                            protocol_descriptor_list = attribute.value.value
+                            avdtp_version = (
+                                protocol_descriptor_list[1].value[1].value >> 8,
+                                protocol_descriptor_list[1].value[1].value & 0xFF,
+                            )
+                        case sdp.SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID:
+                            features = SourceSdpRecord.Features(attribute.value.value)
+
+                if (avdtp_version is None or a2dp_version is None or service_record_handle is None):
+                    continue
+                records.append(
+                    cls(
+                        service_record_handle=service_record_handle,
+                        avdtp_version=avdtp_version,
+                        a2dp_version=a2dp_version,
+                        supported_features=features,
+                    ))
+        return records
+
+
+@dataclasses.dataclass
+class SinkSdpRecord:
+    """A2DP sink SDP record."""
+
+    class Features(enum.IntFlag):
+        """A2DP sink SDP record features."""
+
+        HEADPHONE = 0x01
+        SPEAKER = 0x02
+        RECORDER = 0x04
+        AMPLIFIER = 0x08
+
+    service_record_handle: int
+    avdtp_version: tuple[int, int] = (1, 3)
+    a2dp_version: tuple[int, int] = (1, 3)
+    supported_features: Features | None = None
+
+    def to_service_attributes(self) -> list[sdp.ServiceAttribute]:
+        """Converts the SDP record to a list of SDP service attributes.
+
+    The record exposes the features supported in the input configuration,
+    and the allocated RFCOMM channel.
+
+    Returns:
+      A list of SDP service attributes.
+    """
+        attributes = [
+            sdp.ServiceAttribute(
+                sdp.SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID,
+                sdp.DataElement.unsigned_integer_32(self.service_record_handle),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([sdp.DataElement.uuid(core.BT_AUDIO_SINK_SERVICE)]),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([
+                    sdp.DataElement.sequence([
+                        sdp.DataElement.uuid(core.BT_L2CAP_PROTOCOL_ID),
+                        sdp.DataElement.unsigned_integer_16(avdtp.AVDTP_PSM),
+                    ]),
+                    sdp.DataElement.sequence([
+                        sdp.DataElement.uuid(core.BT_AVDTP_PROTOCOL_ID),
+                        sdp.DataElement.unsigned_integer_16(self.avdtp_version[0] << 8 |
+                                                            self.avdtp_version[1]),
+                    ]),
+                ]),
+            ),
+            sdp.ServiceAttribute(
+                sdp.SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                sdp.DataElement.sequence([
+                    sdp.DataElement.sequence([
+                        sdp.DataElement.uuid(core.BT_ADVANCED_AUDIO_DISTRIBUTION_SERVICE),
+                        sdp.DataElement.unsigned_integer_16(self.a2dp_version[0] << 8 |
+                                                            self.a2dp_version[1]),
+                    ])
+                ]),
+            ),
+        ]
+        if self.supported_features is not None:
+            attributes.append(
+                sdp.ServiceAttribute(
+                    sdp.SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID,
+                    sdp.DataElement.unsigned_integer_16(self.supported_features),
+                ))
+        return attributes
+
+    @classmethod
+    async def find(
+        cls,
+        connection: device_lib.Connection,
+    ) -> list[Self]:
+        """Searches for A2DP sink SDP records from remote device.
+
+    Args:
+        connection: ACL connection to make SDP search.
+
+    Returns:
+        A list of A2DP source SDP records.
+    """
+        records = []
+        async with sdp.Client(connection) as sdp_client:
+            search_result = await sdp_client.search_attributes(
+                uuids=[core.BT_AUDIO_SINK_SERVICE],
+                attribute_ids=[
+                    sdp.SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID,
+                    sdp.SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                    sdp.SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID,
+                    sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
+                ],
+            )
+            for attribute_lists in search_result:
+                avdtp_version: tuple[int, int] | None = None
+                a2dp_version: tuple[int, int] | None = None
+                service_record_handle: int | None = None
+                features: SinkSdpRecord.Features | None = None
+                for attribute in attribute_lists:
+                    match attribute.id:
+                        case sdp.SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID:
+                            service_record_handle = attribute.value.value
+                        case sdp.SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID:
+                            profile_descriptor_list = attribute.value.value
+                            a2dp_version = (
+                                profile_descriptor_list[0].value[1].value >> 8,
+                                profile_descriptor_list[0].value[1].value & 0xFF,
+                            )
+                        case sdp.SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID:
+                            protocol_descriptor_list = attribute.value.value
+                            avdtp_version = (
+                                protocol_descriptor_list[1].value[1].value >> 8,
+                                protocol_descriptor_list[1].value[1].value & 0xFF,
+                            )
+                        case sdp.SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID:
+                            features = SinkSdpRecord.Features(attribute.value.value)
+
+                if (avdtp_version is None or a2dp_version is None or service_record_handle is None):
+                    continue
+                records.append(
+                    cls(
+                        service_record_handle=service_record_handle,
+                        avdtp_version=avdtp_version,
+                        a2dp_version=a2dp_version,
+                        supported_features=features,
+                    ))
+        return records

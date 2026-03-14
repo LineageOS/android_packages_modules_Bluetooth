@@ -21,7 +21,7 @@ import dataclasses
 import logging
 import pprint
 import struct
-from typing import cast
+from typing import cast, override
 
 from bumble import avctp
 from bumble import avrcp
@@ -47,8 +47,27 @@ class Error(core.ProtocolError):
         )
 
 
+class BrowsableItem:
+    """Abstract BrowsableItem class without some protocol details."""
+
+    def to_avrcp_item(self) -> avrcp.BrowseableItem:
+        raise NotImplementedError()
+
+    @classmethod
+    def from_avrcp_item(cls, item: avrcp.BrowseableItem) -> BrowsableItem:
+        match item:
+            case avrcp.MediaElementItem():
+                return MediaElement.from_avrcp_item(item)
+            case avrcp.FolderItem():
+                return Folder.from_avrcp_item(item)
+            case avrcp.MediaPlayerItem():
+                return Player.from_avrcp_item(item)
+            case _:
+                raise core.InvalidPacketError(f"Unsupported item type: {type(item)}")
+
+
 @dataclasses.dataclass
-class MediaElement:
+class MediaElement(BrowsableItem):
     """Abstract MediaElement class without some protocol details."""
 
     media_element_uid: int
@@ -57,6 +76,7 @@ class MediaElement:
         avrcp.MediaElementItem.MediaType.AUDIO))
     attributes: Mapping[int, str] = dataclasses.field(default_factory=dict)
 
+    @override
     def to_avrcp_item(self) -> avrcp.MediaElementItem:
         return avrcp.MediaElementItem(
             media_element_uid=self.media_element_uid,
@@ -72,9 +92,23 @@ class MediaElement:
             ],
         )
 
+    @classmethod
+    def from_avrcp_item(cls, item: avrcp.BrowseableItem) -> MediaElement:
+        if not isinstance(item, avrcp.MediaElementItem):
+            raise ValueError(f"Expect avrcp.MediaElementItem, got {type(item)}")
+        return cls(
+            media_element_uid=item.media_element_uid,
+            displayable_name=item.displayable_name,
+            media_type=item.media_type,
+            attributes={
+                entry.attribute_id.value: entry.attribute_value
+                for entry in item.attribute_value_entry_list
+            },
+        )
+
 
 @dataclasses.dataclass
-class Folder:
+class Folder(BrowsableItem):
     """Abstract Folder class without some protocol details."""
 
     folder_uid: int
@@ -84,6 +118,7 @@ class Folder:
         avrcp.FolderItem.FolderType.MIXED)
     children: Sequence[MediaElement | Folder] = ()
 
+    @override
     def to_avrcp_item(self) -> avrcp.FolderItem:
         return avrcp.FolderItem(
             folder_uid=self.folder_uid,
@@ -97,9 +132,20 @@ class Folder:
             displayable_name=self.displayable_name,
         )
 
+    @classmethod
+    def from_avrcp_item(cls, item: avrcp.BrowseableItem) -> Folder:
+        if not isinstance(item, avrcp.FolderItem):
+            raise ValueError(f"Expect avrcp.FolderItem, got {type(item)}")
+        return cls(
+            folder_uid=item.folder_uid,
+            is_playable=item.is_playable == avrcp.FolderItem.Playable.PLAYABLE,
+            displayable_name=item.displayable_name,
+            folder_type=item.folder_type,
+        )
+
 
 @dataclasses.dataclass
-class Player:
+class Player(BrowsableItem):
     """Abstract Player class without some protocol details."""
 
     player_id: int
@@ -110,7 +156,9 @@ class Player:
         avrcp.MediaPlayerItem.MajorPlayerType(avrcp.MediaPlayerItem.MajorPlayerType.AUDIO))
     player_sub_type: avrcp.MediaPlayerItem.PlayerSubType = (avrcp.MediaPlayerItem.PlayerSubType(0))
     play_status: avrcp.PlayStatus = avrcp.PlayStatus(avrcp.PlayStatus.STOPPED)
+    now_playing_items: list[MediaElement] = dataclasses.field(default_factory=list)
 
+    @override
     def to_avrcp_item(self) -> avrcp.MediaPlayerItem:
         return avrcp.MediaPlayerItem(
             player_id=self.player_id,
@@ -120,6 +168,19 @@ class Player:
             feature_bitmask=self.feature_bitmask,
             character_set_id=_CHARSET_ID_UTF_8,
             displayable_name=self.displayable_name,
+        )
+
+    @classmethod
+    def from_avrcp_item(cls, item: avrcp.BrowseableItem) -> Player:
+        if not isinstance(item, avrcp.MediaPlayerItem):
+            raise ValueError(f"Expect avrcp.MediaPlayerItem, got {type(item)}")
+        return cls(
+            player_id=item.player_id,
+            feature_bitmask=item.feature_bitmask,
+            displayable_name=item.displayable_name,
+            major_player_type=item.major_player_type,
+            player_sub_type=item.player_sub_type,
+            play_status=item.play_status,
         )
 
 
@@ -259,7 +320,7 @@ class BrowsingController:
             start_item: int = 0,
             end_item: int = 0,
             attributes: Sequence[avrcp.MediaAttributeId] = (),
-    ) -> Sequence[avrcp.BrowseableItem]:
+    ) -> list[BrowsableItem]:
         """Gets the folder items of the browsing channel.
 
     Args:
@@ -294,7 +355,7 @@ class BrowsingController:
             raise Error(response.status_code)
         if not isinstance(response, avrcp.GetFolderItemsResponse):
             raise core.InvalidPacketError(f"Invalid response type: {type(response)}")
-        return response.items
+        return [BrowsableItem.from_avrcp_item(item) for item in response.items]
 
     async def set_browsed_player(self, player_id: int) -> avrcp.SetBrowsedPlayerResponse:
         """Sets the browsed player of the browsing channel.
@@ -306,7 +367,8 @@ class BrowsingController:
       The response of the set browsed player command.
 
     Raises:
-      core.InvalidPacketError: If the response is not a GetFolderItemsResponse.
+      core.InvalidPacketError: If the response is not a
+      SetBrowsedPlayerResponse.
       Error: If the response is a RejectedResponse.
     """
         response = await self.send_command(avrcp.SetBrowsedPlayerCommand(player_id=player_id))
@@ -315,6 +377,41 @@ class BrowsingController:
         if not isinstance(response, avrcp.SetBrowsedPlayerResponse):
             raise core.InvalidPacketError(f"Invalid response type: {type(response)}")
         return response
+
+    async def get_item_attributes(
+            self,
+            uid: int,
+            scope: avrcp.Scope,
+            attributes: Sequence[avrcp.MediaAttributeId] = (),
+    ) -> dict[avrcp.MediaAttributeId, str]:
+        """Sets the browsed player of the browsing channel.
+
+    Args:
+      uid: The uid of the item to get the attributes for.
+      scope: The scope of the item to get the attributes for.
+      attributes: The attributes of the item to get the attributes for.
+
+    Returns:
+      A dictionary of the item attributes.
+
+    Raises:
+      core.InvalidPacketError: If the response is not a
+      GetItemAttributesResponse.
+      Error: If the response is a RejectedResponse.
+    """
+        response = await self.send_command(
+            avrcp.GetItemAttributesCommand(scope=scope,
+                                           uid=uid,
+                                           attributes=attributes,
+                                           uid_counter=0))
+        if isinstance(response, avrcp.RejectedResponse):
+            raise Error(response.status_code)
+        if not isinstance(response, avrcp.GetItemAttributesResponse):
+            raise core.InvalidPacketError(f"Invalid response type: {type(response)}")
+        return {
+            entry.attribute_id: entry.attribute_value
+            for entry in response.attribute_value_entry_list
+        }
 
 
 class BrowsingTarget:
@@ -388,78 +485,183 @@ class BrowsingTarget:
         pdu_id = avrcp.PduId(payload[0])
         command = avrcp.Command.from_bytes(pdu_id, payload[3:])
         logger.debug("<<< AVRCP command PDU: %s", pprint.pformat(command))
-        if isinstance(command, avrcp.GetFolderItemsCommand):
-            self._on_get_folder_items_command(transaction_label, command)
-        elif isinstance(command, avrcp.GetTotalNumberOfItemsCommand):
-            self._on_get_total_number_of_items_command(transaction_label, command)
-        elif isinstance(command, avrcp.SetBrowsedPlayerCommand):
-            self._on_set_browsed_player_command(transaction_label, command)
-        elif isinstance(command, avrcp.ChangePathCommand):
-            self._on_change_path_command(transaction_label, command)
-        else:
+        match command:
+            case avrcp.GetFolderItemsCommand():
+                self._on_get_folder_items_command(transaction_label, command)
+            case avrcp.GetTotalNumberOfItemsCommand():
+                self._on_get_total_number_of_items_command(transaction_label, command)
+            case avrcp.SetBrowsedPlayerCommand():
+                self._on_set_browsed_player_command(transaction_label, command)
+            case avrcp.ChangePathCommand():
+                self._on_change_path_command(transaction_label, command)
+            case avrcp.GetItemAttributesCommand():
+                self._on_get_item_attributes_command(transaction_label, command)
+            case _:
+                self.send_response(
+                    transaction_label,
+                    avrcp.RejectedResponse(pdu_id,
+                                           cast(avrcp.StatusCode, avrcp.StatusCode.INTERNAL_ERROR)),
+                )
+
+    def _on_get_item_attributes_command(self, transaction_label: int,
+                                        command: avrcp.GetItemAttributesCommand) -> None:
+        """Handles a GetItemAttributesCommand."""
+        if not self.browsed_player:
             self.send_response(
                 transaction_label,
-                avrcp.RejectedResponse(pdu_id,
-                                       cast(avrcp.StatusCode, avrcp.StatusCode.INTERNAL_ERROR)),
+                avrcp.RejectedResponse(
+                    command.pdu_id,
+                    avrcp.StatusCode.PLAYER_NOT_BROWSABLE,  # pytype: disable=wrong-arg-types
+                ),
             )
+            return
+
+        search_scope: Sequence[MediaElement | Folder]
+        match command.scope:
+            case avrcp.Scope.NOW_PLAYING:
+                search_scope = self.browsed_player.now_playing_items
+            case avrcp.Scope.MEDIA_PLAYER_VIRTUAL_FILESYSTEM:
+                search_scope = ([self.browsed_player.root_folder]
+                                if self.browsed_player.root_folder else [])
+            case _:
+                self.send_response(
+                    transaction_label,
+                    avrcp.RejectedResponse(
+                        command.pdu_id,
+                        avrcp.StatusCode.INVALID_SCOPE,  # pytype: disable=wrong-arg-types
+                    ),
+                )
+                return
+
+        def find_item_by_uid(items: Sequence[MediaElement | Folder],
+                             uid: int) -> MediaElement | Folder | None:
+            for item in items:
+                match item:
+                    case MediaElement(media_element_uid=media_element_uid):
+                        if media_element_uid == uid:
+                            return item
+                    case Folder(folder_uid=folder_uid):
+                        if folder_uid == uid:
+                            return item
+                        if result := find_item_by_uid(item.children, uid):
+                            return result
+            return None
+
+        item = find_item_by_uid(search_scope, command.uid)
+        if not item:
+            self.send_response(
+                transaction_label,
+                avrcp.RejectedResponse(
+                    command.pdu_id,
+                    avrcp.StatusCode.DOES_NOT_EXIST,  # pytype: disable=wrong-arg-types
+                ),
+            )
+            return
+
+        if isinstance(item, Folder):
+            self.send_response(
+                transaction_label,
+                avrcp.RejectedResponse(
+                    command.pdu_id,
+                    avrcp.StatusCode.PARAMETER_CONTENT_ERROR,  # pytype: disable=wrong-arg-types
+                ),
+            )
+            return
+
+        if not command.attributes:
+            attributes = item.to_avrcp_item().attribute_value_entry_list
+        else:
+            attributes = [
+                avrcp.AttributeValueEntry(
+                    attribute_id=attribute_id,
+                    character_set_id=_CHARSET_ID_UTF_8,
+                    attribute_value=attribute_value,
+                )
+                for attribute_id in command.attributes
+                if (attribute_value := item.attributes.get(attribute_id))
+            ]
+
+        response = avrcp.GetItemAttributesResponse(
+            status=avrcp.StatusCode.OPERATION_COMPLETED,  # pytype: disable=wrong-arg-types
+            attribute_value_entry_list=attributes,
+        )
+        self.send_response(transaction_label, response)
 
     def _on_get_folder_items_command(self, transaction_label: int,
                                      command: avrcp.GetFolderItemsCommand) -> None:
         """Handles a GetFolderItemsCommand."""
         response: avrcp.Response
         items: list[avrcp.BrowseableItem]
-        if command.scope == avrcp.Scope.MEDIA_PLAYER_LIST:
-            items = [player.to_avrcp_item() for player in self.players]
-            response = avrcp.GetFolderItemsResponse(
-                status=cast(avrcp.StatusCode, avrcp.StatusCode.OPERATION_COMPLETED),
-                uid_counter=0,
-                items=items[command.start_item:command.end_item + 1],
-            )
-        elif command.scope == avrcp.Scope.MEDIA_PLAYER_VIRTUAL_FILESYSTEM:
-            if not self.browsed_player:
-                response = avrcp.RejectedResponse(
-                    command.pdu_id,
-                    cast(avrcp.StatusCode, avrcp.StatusCode.PLAYER_NOT_BROWSABLE),
+        match command.scope:
+            case avrcp.Scope.MEDIA_PLAYER_LIST:
+                items = [player.to_avrcp_item() for player in self.players]
+                response = avrcp.GetFolderItemsResponse(
+                    status=avrcp.StatusCode.OPERATION_COMPLETED,  # pytype: disable=wrong-arg-types
+                    uid_counter=0,
+                    items=items[command.start_item:command.end_item + 1],
                 )
-            else:
-                folder = self.current_folder
-                if folder is None:
+            case avrcp.Scope.MEDIA_PLAYER_VIRTUAL_FILESYSTEM:
+                if not self.browsed_player:
                     response = avrcp.RejectedResponse(
                         command.pdu_id,
-                        cast(avrcp.StatusCode, avrcp.StatusCode.INVALID_DIRECTION),
+                        avrcp.StatusCode.NO_AVAILABLE_PLAYERS,  # pytype: disable=wrong-arg-types
                     )
                 else:
-                    items = [child.to_avrcp_item() for child in folder.children]
-                    response = avrcp.GetFolderItemsResponse(
-                        status=cast(avrcp.StatusCode, avrcp.StatusCode.OPERATION_COMPLETED),
-                        uid_counter=0,
-                        items=items[command.start_item:command.end_item + 1],
+                    folder = self.current_folder
+                    if folder is None:
+                        response = avrcp.RejectedResponse(
+                            command.pdu_id,
+                            avrcp.StatusCode.NO_AVAILABLE_PLAYERS,  # pytype: disable=wrong-arg-types
+                        )
+                    else:
+                        items = [child.to_avrcp_item() for child in folder.children]
+                        response = avrcp.GetFolderItemsResponse(
+                            status=avrcp.StatusCode.OPERATION_COMPLETED,  # pytype: disable=wrong-arg-types
+                            uid_counter=0,
+                            items=items[command.start_item:command.end_item + 1],
+                        )
+            case avrcp.Scope.NOW_PLAYING:
+                if not self.browsed_player:
+                    response = avrcp.RejectedResponse(
+                        command.pdu_id,
+                        avrcp.StatusCode.NO_AVAILABLE_PLAYERS,  # pytype: disable=wrong-arg-types
                     )
-        else:
-            response = avrcp.RejectedResponse(
-                command.pdu_id,
-                cast(avrcp.StatusCode, avrcp.StatusCode.INVALID_COMMAND),
-            )
+                else:
+                    response = avrcp.GetFolderItemsResponse(
+                        status=avrcp.StatusCode.OPERATION_COMPLETED,  # pytype: disable=wrong-arg-types
+                        uid_counter=0,
+                        items=[
+                            item.to_avrcp_item() for item in self.browsed_player.now_playing_items
+                        ],
+                    )
+            case _:
+                response = avrcp.RejectedResponse(
+                    command.pdu_id,
+                    avrcp.StatusCode.INVALID_COMMAND,  # pytype: disable=wrong-arg-types
+                )
         self.send_response(transaction_label, response)
 
     def _on_get_total_number_of_items_command(self, transaction_label: int,
                                               command: avrcp.GetTotalNumberOfItemsCommand) -> None:
         """Handles a GetTotalNumberOfItemsCommand."""
-        if command.scope == avrcp.Scope.MEDIA_PLAYER_LIST:
-            count = len(self.players)
-        elif command.scope == avrcp.Scope.MEDIA_PLAYER_VIRTUAL_FILESYSTEM:
-            if not self.browsed_player:
+        match command.scope:
+            case avrcp.Scope.MEDIA_PLAYER_LIST:
+                count = len(self.players)
+            case avrcp.Scope.MEDIA_PLAYER_VIRTUAL_FILESYSTEM:
+                if not self.browsed_player:
+                    count = 0
+                else:
+                    folder = self.current_folder
+                    count = len(folder.children) if folder else 0
+            case avrcp.Scope.NOW_PLAYING:
+                count = (len(self.browsed_player.now_playing_items) if self.browsed_player else 0)
+            case _:
                 count = 0
-            else:
-                folder = self.current_folder
-                count = len(folder.children) if folder else 0
-        else:
-            count = 0
 
         self.send_response(
             transaction_label,
             avrcp.GetTotalNumberOfItemsResponse(
-                status=cast(avrcp.StatusCode, avrcp.StatusCode.OPERATION_COMPLETED),
+                status=avrcp.StatusCode.OPERATION_COMPLETED,  # pytype: disable=wrong-arg-types
                 uid_counter=0,
                 number_of_items=count,
             ),

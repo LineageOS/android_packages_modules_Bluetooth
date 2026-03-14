@@ -41,7 +41,6 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
 import static com.android.bluetooth.Util.isPackageNameAccurate;
 import static com.android.bluetooth.Utils.callbackToApp;
-import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 
 import static java.util.Objects.requireNonNull;
@@ -1118,9 +1117,8 @@ public class AdapterService extends Service {
                             && SystemProperties.getBoolean(
                                     AdapterSuspend.BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
             var pauseAdvertisement =
-                    Flags.adapterSuspendAdvertisement()
-                            && SystemProperties.getBoolean(
-                                    AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
+                    SystemProperties.getBoolean(
+                            AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
             if (disconnectAcl || scanModeNone || stopLeScan || pauseAdvertisement) {
                 mAdapterSuspend =
                         Optional.of(

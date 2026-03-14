@@ -531,36 +531,6 @@ class AudioSnippet : Snippet {
         } ?: throw IllegalArgumentException("$outputPath is not recording")
     }
 
-    /**
-     * Enables SCO route to Bluetooth SCO device with [address]. If address is not passed, sets the
-     * active device to the first SCO device.
-     */
-    @Rpc(description = "Enable SCO route")
-    @RunOnUiThread
-    fun audioSetRouteSco(@RpcOptional address: String?, @RpcOptional playerId: String? = null) {
-        val player =
-            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
-        audioManager.availableCommunicationDevices
-            .first {
-                it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO &&
-                    (it.address == address || address == null)
-            }
-            .let { audioDevice ->
-                audioManager.setCommunicationDevice(audioDevice)
-                player.setPreferredAudioDevice(audioDevice)
-            }
-    }
-
-    /** Sets audio route to default. */
-    @Rpc(description = "Set audio route to default")
-    @RunOnUiThread
-    fun audioSetRouteDefault(@RpcOptional playerId: String? = null) {
-        val player =
-            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
-        audioManager.clearCommunicationDevice()
-        player.setPreferredAudioDevice(null)
-    }
-
     /** Gets the currently selected communication device. */
     @Rpc(description = "Get the currently selected communication device")
     fun getCommunicationDevice(): Bundle? {
@@ -570,6 +540,23 @@ class AudioSnippet : Snippet {
                 putInt(SnippetConstants.FIELD_TYPE, device.type)
             }
         }
+    }
+
+    /** Sets the communication device to [type] and [address]. */
+    @Rpc(description = "Set the communication device")
+    fun setCommunicationDevice(
+        @RpcOptional type: Int? = null,
+        @RpcOptional address: String? = null,
+    ): Boolean {
+        if (type == null && address == null) {
+            audioManager.clearCommunicationDevice()
+            return true
+        }
+        val device =
+            audioManager.availableCommunicationDevices.firstOrNull {
+                (type == null || it.type == type) && (address == null || it.address == address)
+            } ?: throw IllegalArgumentException("Device not found")
+        return audioManager.setCommunicationDevice(device)
     }
 
     /** Checks if spatializer is available. */

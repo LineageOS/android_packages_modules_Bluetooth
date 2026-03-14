@@ -26,13 +26,6 @@ flag {
 }
 
 flag {
-    name: "le_scan_msft_support"
-    namespace: "bluetooth"
-    description: "Support MSFT HCI extension for LE Scanning. go/bt-msft-aosp-dd"
-    bug: "365787977"
-}
-
-flag {
     name: "fix_private_gatt_advertisement"
     namespace: "bluetooth"
     description: "Fix that private GATT advertising is handled as a normal GATT"
@@ -47,23 +40,6 @@ flag {
     namespace: "bluetooth"
     description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
     bug: "407051373"
-}
-
-flag {
-    name: "l2cap_improve_segmented_sdu"
-    namespace: "bluetooth"
-    description: "Improve sending segmented sdu"
-    bug: "437272601"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "delay_jv_pm_idle"
-    namespace: "bluetooth"
-    description: "Delay the transition to the idle state for JV PM connection"
-    bug: "440618134"
 }
 
 flag {
