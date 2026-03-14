@@ -27,11 +27,11 @@ internal constructor(internal val nativeCallback: LeAudioPeripheralNativeCallbac
     }
 
     fun confirmStreamStartRequest(device: android.bluetooth.BluetoothDevice, allowed: Boolean) {
-        confirmStreamStartRequestNative(com.android.bluetooth.Utils.getByteAddress(device), allowed)
+        confirmStreamStartRequestNative(com.android.bluetooth.Util.getByteAddress(device), allowed)
     }
 
     fun stopStream(device: android.bluetooth.BluetoothDevice, streamId: Int) {
-        stopStreamNative(com.android.bluetooth.Utils.getByteAddress(device), streamId)
+        stopStreamNative(com.android.bluetooth.Util.getByteAddress(device), streamId)
     }
 
     // Native methods that call into the JNI interface

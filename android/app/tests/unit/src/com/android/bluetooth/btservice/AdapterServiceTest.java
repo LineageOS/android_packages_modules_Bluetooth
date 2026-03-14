@@ -22,14 +22,14 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -69,10 +69,10 @@ import android.media.AudioManager;
 import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.Bundle;
-import android.os.ParcelUuid;
 import android.os.IpcDataCache;
 import android.os.Looper;
 import android.os.Message;
+import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemProperties;
@@ -92,6 +92,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.flags.Flags;
@@ -943,7 +944,7 @@ public class AdapterServiceTest {
         initTest();
         doEnable(false); // Needed for getRemoteDevice to work
         BluetoothDevice device = getTestDevice(0);
-        byte[] deviceAddressBytes = Utils.getByteAddress(device);
+        byte[] deviceAddressBytes = Util.getByteAddress(device);
 
         // Ensure no identity address is set (this is the default state)
         assertThat(mAdapter.getByteIdentityAddress(device)).isNull();
@@ -1500,7 +1501,7 @@ public class AdapterServiceTest {
         doEnable(false);
 
         final int reason = BluetoothStatusCodes.ERROR_UNKNOWN;
-        final byte[] address = Utils.getByteAddress(mDevice1);
+        final byte[] address = Util.getByteAddress(mDevice1);
 
         mAdapter.getRemoteDevices()
                 .aclStateChangeCallback(

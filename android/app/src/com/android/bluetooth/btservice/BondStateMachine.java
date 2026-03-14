@@ -391,7 +391,7 @@ public final class BondStateMachine extends StateMachine {
             return false;
         }
 
-        if (!mAdapterService.getNative().cancelBond(Utils.getByteAddress(dev))) {
+        if (!mAdapterService.getNative().cancelBond(Util.getByteAddress(dev))) {
             logW("cancelBond: Unexpected error while cancelling bond:" + dev);
             return false;
         }
@@ -414,7 +414,7 @@ public final class BondStateMachine extends StateMachine {
             return false;
         }
 
-        if (!mAdapterService.getNative().removeBond(Utils.getByteAddress(dev))) {
+        if (!mAdapterService.getNative().removeBond(Util.getByteAddress(dev))) {
             logW("removeBond: Unexpected error while removing " + dev);
             return false;
         }
@@ -443,7 +443,7 @@ public final class BondStateMachine extends StateMachine {
         }
 
         logD("createBond: " + dev + ", transport: " + transport);
-        byte[] addr = Utils.getByteAddress(dev);
+        byte[] addr = Util.getByteAddress(dev);
         int addrType = dev.getAddressType();
         boolean initiated;
 
@@ -646,8 +646,7 @@ public final class BondStateMachine extends StateMachine {
         int deviceType = mRemoteDevices.getType(device);
         int deviceClass = mRemoteDevices.getBluetoothClass(device);
 
-        MetricsLogger.getInstance()
-                .logBondStateMachineEvent(device, newState, reason, hciReason);
+        MetricsLogger.getInstance().logBondStateMachineEvent(device, newState, reason, hciReason);
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_BOND_STATE_CHANGED,
                 mAdapterService.obfuscateAddress(device),
@@ -864,14 +863,14 @@ public final class BondStateMachine extends StateMachine {
                         "sspRequestCallback: Unknown pairing variant("
                                 + pairingVariant
                                 + ") for "
-                                + Utils.getRedactedAddressStringFromByte(address));
+                                + Util.getRedactedAddressStringFromByte(address));
                 return;
             }
         }
 
         logD(
                 "sspRequestCallback: "
-                        + Utils.getRedactedAddressStringFromByte(address)
+                        + Util.getRedactedAddressStringFromByte(address)
                         + " pairingVariant "
                         + pairingVariant
                         + " passkey: "
