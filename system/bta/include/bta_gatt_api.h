@@ -298,10 +298,8 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
 
 /* Server callback function */
 typedef struct {
-  void (*p_connect_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-                       tBT_TRANSPORT transport);
-  void (*p_disconnect_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-                          tBT_TRANSPORT transport);
+  void (*p_conn_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
+                    bool connected, tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
   void (*p_stop_service_cb)(tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id);
   void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id);
   void (*p_congestion_cb)(tCONN_ID conn_id, bool congested);

@@ -120,8 +120,7 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
   };
 
   static const tBTA_GATTS_CBACK gmap_ops = {
-          .p_connect_cb = GmapServer::OnGattConnect,
-          .p_disconnect_cb = GmapServer::OnGattDisconnect,
+          .p_conn_cb = GmapServer::OnGattConn,
           .server_cbacks = &gmap_server_cbacks,
   };
 
@@ -157,18 +156,16 @@ std::unordered_map<uint16_t, GmapCharacteristic> &GmapServer::GetCharacteristics
   return GmapServer::characteristics_;
 }
 
-void GmapServer::OnGattConnect(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                               tCONN_ID conn_id, tBT_TRANSPORT transport) {
-  log::info("Address: {}, conn_id:{}", remote_bda, conn_id);
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    log::warn("Skip BE/EDR connection");
-    return;
+void GmapServer::OnGattConn(tGATT_IF /*server_if*/, const RawAddress& remote_bda, tCONN_ID conn_id,
+                            bool connected, tGATT_DISCONN_REASON /*reason*/,
+                            tBT_TRANSPORT transport) {
+  log::info("Address: {}, conn_id:{} connected: {}", remote_bda, conn_id, connected);
+  if (connected) {
+    if (transport == BT_TRANSPORT_BR_EDR) {
+      log::warn("Skip BE/EDR connection");
+      return;
+    }
   }
-}
-
-void GmapServer::OnGattDisconnect(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                  tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
-  log::info("Address: {}, conn_id:{}", remote_bda, conn_id);
 }
 
 void GmapServer::OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if,

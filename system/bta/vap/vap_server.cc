@@ -92,17 +92,15 @@ public:
     }
   }
 
-  static void OnGattConnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                  tCONN_ID conn_id, tBT_TRANSPORT transport) {
+  static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                               tCONN_ID conn_id, bool connected, tGATT_DISCONN_REASON /*reason*/,
+                               tBT_TRANSPORT transport) {
     if (instance) {
-      instance->OnGattConnect(remote_bda, conn_id, transport);
-    }
-  }
-
-  static void OnGattDisconnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                     tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
-    if (instance) {
-      instance->OnGattDisconnect(remote_bda, conn_id);
+      if (connected) {
+        instance->OnGattConnect(remote_bda, conn_id, transport);
+      } else {
+        instance->OnGattDisconnect(remote_bda, conn_id);
+      }
     }
   }
 
@@ -167,8 +165,7 @@ public:
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
     static const tBTA_GATTS_CBACK vap_ops = {
-            .p_connect_cb = OnGattConnectStatic,
-            .p_disconnect_cb = OnGattDisconnectStatic,
+            .p_conn_cb = OnGattConnStatic,
             .server_cbacks = &vap_server_cbacks,
     };
 

@@ -122,12 +122,12 @@ protected:
     SyncOnMainLoop();
 
     // Connect a client
-    captured_gatt_callback_->p_connect_cb(1, test_address_, 1, BT_TRANSPORT_LE);
+    captured_gatt_callback_->p_conn_cb(1, test_address_, 1, true, GATT_CONN_OK, BT_TRANSPORT_LE);
     SyncOnMainLoop();
   }
 
   void TearDown() override {
-    captured_gatt_callback_->p_disconnect_cb(1, test_address_, 1, BT_TRANSPORT_LE);
+    captured_gatt_callback_->p_conn_cb(1, test_address_, 1, false, GATT_CONN_OK, BT_TRANSPORT_LE);
     EXPECT_CALL(mock_gatt_server_interface_, AppDeregister(1));
     GetVapServer()->Cleanup();
     SyncOnMainLoop();

@@ -50,9 +50,7 @@ static void bta_gatts_nv_save_cback(bool is_saved, tGATTS_HNDL_RANGE* p_hndl_ran
 static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ* p_req,
                                        tGATTS_SRV_CHG_RSP* p_rsp);
 
-static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bda, tCONN_ID conn_id,
-                                 bool connected, tGATT_DISCONN_REASON reason,
-                                 tBT_TRANSPORT transport);
+static void bta_gatts_start_if(tGATT_IF server_if);
 
 static tGATT_APPL_INFO bta_gatts_nv_cback = {bta_gatts_nv_save_cback, bta_gatts_nv_srv_chg_cback};
 
@@ -161,7 +159,7 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
   log::info("register application first_unuse rcb_idx={}", first_unuse);
 
   stack::tGATT_CBACK passthrough_cbacks = {
-          .p_conn_cb = bta_gatts_conn_cback,
+          .p_conn_cb = p_cback->p_conn_cb,
           .p_cmpl_cb = nullptr,
           .p_disc_res_cb = nullptr,
           .p_disc_cmpl_cb = nullptr,
@@ -318,28 +316,6 @@ void bta_gatts_cancel_open(tGATT_IF server_if, const RawAddress& remote_bda, boo
 }
 
 void bta_gatts_close(uint16_t conn_id) { std::ignore = GATT_Disconnect(conn_id); }
-
-static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr, tCONN_ID conn_id,
-                                 bool connected, tGATT_DISCONN_REASON, tBT_TRANSPORT transport) {
-  log::verbose("bda={} gatt_if= {}, conn_id=0x{:x} connected={}", bdaddr, gatt_if, conn_id,
-               connected);
-
-  tBTA_GATTS_RCB* p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
-  if (!p_reg || !p_reg->p_cback) {
-    log::error("server_if={} not found", gatt_if);
-    return;
-  }
-
-  if (connected) {
-    if (p_reg->p_cback->p_connect_cb) {
-      p_reg->p_cback->p_connect_cb(gatt_if, bdaddr, conn_id, transport);
-    }
-  } else {
-    if (p_reg->p_cback->p_disconnect_cb) {
-      p_reg->p_cback->p_disconnect_cb(gatt_if, bdaddr, conn_id, transport);
-    }
-  }
-}
 
 static void notify_pm_br_gatt_conn_open(const RawAddress& bda) {
   bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);

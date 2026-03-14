@@ -124,8 +124,7 @@ struct VcsServer::service_impl {
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
     static const tBTA_GATTS_CBACK vcs_ops = {
-            .p_connect_cb = OnGattConnectStatic,
-            .p_disconnect_cb = OnGattDisconnectStatic,
+            .p_conn_cb = OnGattConnStatic,
             .server_cbacks = &vcs_server_cbacks,
     };
 
@@ -139,17 +138,15 @@ struct VcsServer::service_impl {
     }
   }
 
-  static void OnGattConnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                  tCONN_ID conn_id, tBT_TRANSPORT transport) {
+  static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                               tCONN_ID conn_id, bool connected, tGATT_DISCONN_REASON /*reason*/,
+                               tBT_TRANSPORT transport) {
     if (instance) {
-      instance->service_impl_->OnGattConnect(remote_bda, conn_id, transport);
-    }
-  }
-
-  static void OnGattDisconnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                     tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
-    if (instance) {
-      instance->service_impl_->OnGattDisconnect(remote_bda, conn_id);
+      if (connected) {
+        instance->service_impl_->OnGattConnect(remote_bda, conn_id, transport);
+      } else {
+        instance->service_impl_->OnGattDisconnect(remote_bda, conn_id);
+      }
     }
   }
 
