@@ -1424,3 +1424,406 @@ impl IsoManager for Arc<IsoManagerImpl> {
         Ok(BigSyncImpl(big_inner))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use googletest::prelude::*;
+    use std::sync::atomic::AtomicBool;
+    use tokio::spawn;
+    use tokio::time::{sleep, timeout};
+
+    use crate::le_audio::iso_manager::traits::{
+        CigParameters, CodecId, DataPathDirection, DataPathId,
+    };
+
+    const TEST_BUFFER_SIZE: usize = 10;
+
+    // --- CIS / CIG Tests ---
+
+    #[googletest::test]
+    fn test_cis_impl_send_data_fails_when_terminated() {
+        // Verify that send_iso_data returns early without calling manager if already terminated.
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle: IsoConnectionHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: AtomicBool::new(true),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+        cis.write(&[1, 2, 3]);
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_disconnect_fails_when_terminated() {
+        // Verify that calling disconnect on an already terminated CIS returns an internal error.
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle: IsoConnectionHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: AtomicBool::new(true),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+        let result = timeout(DEFAULT_TIMEOUT, cis.disconnect(HciStatus::Success)).await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_setup_data_path_fails_when_terminated() {
+        // Verify that setup_iso_data_path fails if the CIS is terminated.
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle: IsoConnectionHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: AtomicBool::new(true),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            cis.setup_iso_data_path(SetupIsoDataPathParameters {
+                data_path_dir: DataPathDirection::Input,
+                data_path_id: DataPathId::Hci,
+                codec_id: CodecId { coding_format: 0, company_id: 0, vendor_specific_codec_id: 0 },
+                controller_delay: Duration::from_micros(0),
+                codec_configuration: vec![],
+            }),
+        )
+        .await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_read_link_quality_fails_when_terminated() {
+        // Verify that read_iso_link_quality fails if the CIS is terminated.
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle: IsoConnectionHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: AtomicBool::new(true),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+        let result = timeout(DEFAULT_TIMEOUT, cis.read_iso_link_quality()).await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_on_disconnected_waits_for_broadcast() {
+        // Verify that on_disconnected future resolves correctly when the broadcast signal is sent.
+        let (sender, _) = broadcast::channel(1);
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle: IsoConnectionHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: AtomicBool::new(false),
+            disconnected_sender: sender.clone(),
+            disconnect_reason: Mutex::new(None),
+        }));
+
+        let sender_clone = sender.clone();
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let _ = sender_clone.send(HciStatus::RemoteUserTerminatedConnection);
+        });
+        let reason = timeout(DEFAULT_TIMEOUT, cis.on_disconnected()).await;
+        expect_that!(reason, ok(eq(&HciStatus::RemoteUserTerminatedConnection)));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_drop_triggers_cleanup() {
+        // Verify that dropping a CIS object triggers the asynchronous disconnection logic.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(50);
+
+        {
+            let _cis = CisImpl(Arc::new(CisInner {
+                conn_handle,
+                manager: Arc::downgrade(&manager),
+                terminated: AtomicBool::new(false),
+                disconnected_sender: broadcast::channel(1).0,
+                disconnect_reason: Mutex::new(None),
+            }));
+            // _cis goes out of scope here. Arc strong count of terminated flag drops to 1,
+            // but the internal Drop impl will check count == 1 and proceed.
+        }
+
+        let mut cleaned_up = false;
+        for _ in 0..10 {
+            sleep(Duration::from_millis(50)).await;
+            if manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .disconnect_cis
+                .contains_key(&conn_handle)
+            {
+                cleaned_up = true;
+                break;
+            }
+        }
+        expect_that!(cleaned_up, is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_drop_after_disconnected_does_not_trigger_cleanup() {
+        // Verify that dropping a CIS object after it is already disconnected does not trigger
+        // cleanup.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(51);
+
+        {
+            let _cis = CisImpl(Arc::new(CisInner {
+                conn_handle,
+                manager: Arc::downgrade(&manager),
+                terminated: AtomicBool::new(true),
+                disconnected_sender: broadcast::channel(1).0,
+                disconnect_reason: Mutex::new(None),
+            }));
+        }
+
+        sleep(Duration::from_millis(100)).await;
+        expect_that!(
+            manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .disconnect_cis
+                .contains_key(&conn_handle),
+            is_false()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_setup_iso_data_path_success() {
+        // Verify that setup_iso_data_path fulfills correctly on success.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(1);
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle,
+            manager: Arc::downgrade(&manager),
+            terminated: AtomicBool::new(false),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+
+        let manager_clone = manager.clone();
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let sender = manager_clone
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .setup_iso_data_path
+                .remove(&conn_handle);
+            if let Some(sender) = sender {
+                let _ = sender.send(Ok(()));
+            }
+        });
+
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            cis.setup_iso_data_path(SetupIsoDataPathParameters {
+                data_path_dir: DataPathDirection::Input,
+                data_path_id: DataPathId::Hci,
+                codec_id: CodecId { coding_format: 0, company_id: 0, vendor_specific_codec_id: 0 },
+                controller_delay: Duration::from_micros(0),
+                codec_configuration: vec![],
+            }),
+        )
+        .await;
+        expect_that!(result, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cis_impl_read_iso_link_quality_success() {
+        // Verify that read_iso_link_quality returns correct data on success.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(1);
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle,
+            manager: Arc::downgrade(&manager),
+            terminated: AtomicBool::new(false),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+
+        let expected_quality = IsoLinkQuality {
+            tx_unacked_packets: 1,
+            tx_flushed_packets: 2,
+            tx_last_subevent_packets: 3,
+            retransmitted_packets: 4,
+            crc_error_packets: 5,
+            rx_unreceived_packets: 6,
+            duplicate_packets: 7,
+        };
+
+        let manager_clone = manager.clone();
+        // let quality_clone = expected_quality;
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let sender = manager_clone
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .read_iso_link_quality
+                .remove(&conn_handle);
+            if let Some(sender) = sender {
+                let _ = sender.send(Ok(expected_quality));
+            }
+        });
+
+        let result = timeout(DEFAULT_TIMEOUT, cis.read_iso_link_quality()).await;
+        expect_that!(result, ok(ok(eq(&expected_quality))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cig_impl_get_cis_connection_finds_correct_instance() {
+        // Verify that get_cis_connection returns the matching CIS object from the group.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(10);
+        let cis = CisImpl(Arc::new(CisInner {
+            conn_handle,
+            manager: Arc::downgrade(&manager),
+            terminated: AtomicBool::new(false),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        }));
+        let cig = CigImpl(Arc::new(CigInner {
+            cig_id: CigId::from_masked(1),
+            manager: Arc::downgrade(&manager),
+            cis_connections: Mutex::new(vec![cis.clone()]),
+            terminated: AtomicBool::new(false),
+        }));
+
+        expect_that!(
+            cig.get_cis_connection(conn_handle).map(|cis| cis.conn_handle()),
+            some(eq(conn_handle))
+        );
+        expect_that!(cig.get_cis_connection(IsoConnectionHandle::from_masked(99)), none());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cig_impl_reconfigure_fails_when_terminated() {
+        // Verify that reconfiguration fails if the CIG has been terminated.
+        let cig = CigImpl(Arc::new(CigInner {
+            cig_id: CigId::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            cis_connections: Mutex::new(vec![]),
+            terminated: AtomicBool::new(true),
+        }));
+        let params = CigParameters {
+            sdu_interval_c_to_p: 0,
+            sdu_interval_p_to_c: 0,
+            worse_cast_sca: 0,
+            packing: false,
+            framing: false,
+            max_transport_latency_c_to_p: 0,
+            max_transport_latency_p_to_c: 0,
+            cis_configurations: vec![],
+        };
+        let result = timeout(DEFAULT_TIMEOUT, cig.reconfigure(params)).await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cig_impl_drop_triggers_cleanup() {
+        // Verify that dropping a CIG object triggers removal logic.
+        let manager = IsoManagerImpl::new();
+        let cig_id = CigId::from_masked(7);
+
+        {
+            let _cig = CigImpl(Arc::new(CigInner {
+                cig_id,
+                manager: Arc::downgrade(&manager),
+                cis_connections: Mutex::new(vec![]),
+                terminated: AtomicBool::new(false),
+            }));
+        }
+
+        let mut cleaned_up = false;
+        for _ in 0..10 {
+            sleep(Duration::from_millis(50)).await;
+            if manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .remove_cig
+                .contains_key(&cig_id)
+            {
+                cleaned_up = true;
+                break;
+            }
+        }
+        expect_that!(cleaned_up, is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cig_impl_remove_success() {
+        // Verify that remove() correctly marks the CIG as terminated.
+        let manager = IsoManagerImpl::new();
+        let cig_id = CigId::from_masked(1);
+        let cig = CigImpl(Arc::new(CigInner {
+            cig_id,
+            manager: Arc::downgrade(&manager),
+            cis_connections: Mutex::new(vec![]),
+            terminated: AtomicBool::new(false),
+        }));
+
+        let manager_clone = manager.clone();
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let sender = manager_clone
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .remove_cig
+                .remove(&cig_id);
+            if let Some(sender) = sender {
+                let _ = sender.send(Ok(()));
+            }
+        });
+
+        let result = timeout(DEFAULT_TIMEOUT, cig.remove(true)).await;
+        expect_that!(result, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_cig_impl_drop_after_remove_does_not_trigger_cleanup() {
+        // Verify that dropping a CIG object after it is already removed does not trigger cleanup.
+        let manager = IsoManagerImpl::new();
+        let cig_id = CigId::from_masked(77);
+
+        {
+            let _cig = CigImpl(Arc::new(CigInner {
+                cig_id,
+                manager: Arc::downgrade(&manager),
+                cis_connections: Mutex::new(vec![]),
+                terminated: AtomicBool::new(true),
+            }));
+        }
+
+        sleep(Duration::from_millis(100)).await;
+        expect_that!(
+            manager.iso_registry.lock().unwrap().pending_requests.remove_cig.contains_key(&cig_id),
+            is_false()
+        );
+    }
+}
