@@ -1078,8 +1078,7 @@ public class ScanController {
         }
     }
 
-    @VisibleForTesting
-    void dispatchPendingIntentStartScan(ScannerApp app) {
+    private void dispatchPendingIntentStartScan(ScannerApp app) {
         var client = new ScanClient(app);
         mScanManager.fetchAppForegroundState(client);
         client.getAppScanStats()
