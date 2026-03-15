@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.le_scan
 
+import android.app.PendingIntent
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
@@ -38,7 +39,7 @@ class ScannerApp(
     val settings: ScanSettings,
     val filters: List<ScanFilter>,
     val source: AttributionSource,
-    val info: ScanController.PendingIntentInfo?, // Context information
+    val pendingIntent: PendingIntent?,
     val isInternal: Boolean,
 ) {
     var scannerId = 0
