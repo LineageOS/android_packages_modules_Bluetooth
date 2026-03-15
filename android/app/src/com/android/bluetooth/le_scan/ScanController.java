@@ -24,6 +24,7 @@ import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
@@ -869,12 +870,12 @@ public class ScanController {
     }
 
     void registerAndStartScan(
-            IScannerCallback callback,
-            WorkSource workSource,
-            AttributionSource source,
+            @NonNull IScannerCallback callback,
+            @Nullable WorkSource workSource,
+            @NonNull AttributionSource source,
             boolean hasPrivilegedPermission,
-            ScanSettings settings,
-            List<ScanFilter> filters) {
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters) {
         enforceScanThread();
         var appScanStats = mScannerMap.getAppScanStatsByUid(source.getUid());
         if (appScanStats != null
@@ -894,20 +895,21 @@ public class ScanController {
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
     public void registerAndStartScanInternal(
-            IScannerCallback callback,
-            AttributionSource source,
-            ScanSettings settings,
-            List<ScanFilter> filters) {
+            @NonNull IScannerCallback callback,
+            @NonNull AttributionSource source,
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters) {
         enforceScanThread();
-        registerAndStartScan(callback, null, source, settings, filters, /* isInternal */ true);
+        registerAndStartScan(
+                callback, /* workSource */ null, source, settings, filters, /* isInternal */ true);
     }
 
     private void registerAndStartScan(
-            IScannerCallback callback,
+            @NonNull IScannerCallback callback,
             @Nullable WorkSource workSource,
-            AttributionSource source,
-            ScanSettings settings,
-            List<ScanFilter> filters,
+            @NonNull AttributionSource source,
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters,
             boolean isInternal) {
         Log.d(
                 TAG,
@@ -1022,10 +1024,10 @@ public class ScanController {
     }
 
     void registerPiAndStartScan(
-            PendingIntent pendingIntent,
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            AttributionSource source) {
+            @NonNull PendingIntent pendingIntent,
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters,
+            @NonNull AttributionSource source) {
         enforceScanThread();
         var header = "registerPiAndStartScan(): ";
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
@@ -1155,18 +1157,18 @@ public class ScanController {
         mPeriodicScanManager.stopSync(callback);
     }
 
-    public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
+    public void transferSync(BluetoothDevice device, int serviceData, int syncHandle) {
         enforceScanThread();
-        mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
+        mPeriodicScanManager.transferSync(device, serviceData, syncHandle);
     }
 
     public void transferSetInfo(
-            BluetoothDevice bda,
+            BluetoothDevice device,
             int serviceData,
             int advHandle,
             IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
-        mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
+        mPeriodicScanManager.transferSetInfo(device, serviceData, advHandle, callback);
     }
 
     int numHwTrackFiltersAvailable() {
@@ -1174,6 +1176,10 @@ public class ScanController {
         return mAdapterService.getTotalNumOfTrackableAdvertisements()
                 - mScanManager.getCurrentUsedTrackingAdvertisement();
     }
+
+    /**************************************************************************
+     * THREADING
+     *************************************************************************/
 
     void enforceScanThread() {
         if (Util.isInstrumentationTestMode()) return;
