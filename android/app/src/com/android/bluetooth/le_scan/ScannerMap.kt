@@ -34,7 +34,6 @@ import com.android.bluetooth.util.getLastAttributionTag
 import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
 import java.util.UUID
-import java.util.concurrent.ConcurrentLinkedQueue
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScannerMap"
 
@@ -46,7 +45,7 @@ class ScannerMap(
 
     /** Internal map to keep track of logging information by app uid */
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
-    private val apps = ConcurrentLinkedQueue<ScannerApp>()
+    private val apps = ArrayDeque<ScannerApp>()
 
     fun addWithCallback(
         source: AttributionSource,
