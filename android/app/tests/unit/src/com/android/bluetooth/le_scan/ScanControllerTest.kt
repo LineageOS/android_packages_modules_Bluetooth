@@ -92,7 +92,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
     private val device = getTestDevice(TEST_ADDRESS)
 
-    private lateinit var scannerMap: ScannerMap
     private lateinit var scanController: ScanController
 
     @Before
@@ -109,7 +108,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
             .whenever(adapterService)
             .getSharedPreferences(any<String>(), any<Int>())
 
-        scannerMap = ScannerMap(adapterService, batteryStatsManager)
         scanController =
             ScanController(
                 adapterService,
@@ -117,7 +115,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 scanNativeInterface,
                 periodicScanManager,
                 periodicScanNativeInterface,
-                scannerMap,
+                batteryStatsManager,
                 companionDeviceManager,
                 TestLooper().looper,
                 timeProvider,
@@ -352,7 +350,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
             recordData,
         )
 
-        assertThat(scannerMap.getById(TEST_SCANNER_ID)).isNull()
+        assertThat(scanController.scannerMap.getById(TEST_SCANNER_ID)).isNull()
     }
 
     private fun verifyOnBatchScanReportsInternal(expectResults: Boolean, isTruncated: Boolean) {
@@ -496,14 +494,14 @@ class ScanControllerTest(flags: FlagsWrapper) {
             createSettings(),
             listOf(ScanFilter.Builder().build()),
         )
-        assertThat(scannerMap.getAppScanStatsByUid(source.uid)).isNotNull()
+        assertThat(scanController.scannerMap.getAppScanStatsByUid(source.uid)).isNotNull()
         verify(scanManager).registerScanner(any())
     }
 
     @Test
     fun unregisterScanner() {
         scanController.unregisterScanner(TEST_SCANNER_ID)
-        assertThat(scannerMap.getById(TEST_SCANNER_ID)).isNull()
+        assertThat(scanController.scannerMap.getById(TEST_SCANNER_ID)).isNull()
         verify(scanManager).unregisterScanner(TEST_SCANNER_ID)
     }
 
@@ -650,7 +648,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         filters: List<ScanFilter> = listOf(ScanFilter.Builder().build()),
         scannerId: Int = TEST_SCANNER_ID,
     ) =
-        scannerMap.addWithCallback(source, null, callback, settings, filters).apply {
+        scanController.scannerMap.addWithCallback(source, null, callback, settings, filters).apply {
             this.scannerId = scannerId
         }
 
