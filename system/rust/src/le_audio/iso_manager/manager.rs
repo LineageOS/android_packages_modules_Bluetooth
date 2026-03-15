@@ -1826,4 +1826,350 @@ mod test {
             is_false()
         );
     }
+
+    // --- BIS / BIG Tests ---
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_bis_impl_returns_correct_handle() {
+        // Verify that BisImpl accurately reports its assigned connection conn_handle.
+        let bis = BisImpl {
+            conn_handle: IsoConnectionHandle::from_masked(5),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: Arc::new(AtomicBool::new(false)),
+        };
+        expect_that!(bis.conn_handle(), eq(IsoConnectionHandle::from_masked(5)));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_bis_impl_setup_path_fails_when_terminated() {
+        // Verify that setup_iso_data_path for BIS fails if terminated.
+        let bis = BisImpl {
+            conn_handle: IsoConnectionHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            terminated: Arc::new(AtomicBool::new(true)),
+        };
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            bis.setup_iso_data_path(SetupIsoDataPathParameters {
+                data_path_dir: DataPathDirection::Input,
+                data_path_id: DataPathId::Hci,
+                codec_id: CodecId { coding_format: 0, company_id: 0, vendor_specific_codec_id: 0 },
+                controller_delay: Duration::from_micros(0),
+                codec_configuration: vec![],
+            }),
+        )
+        .await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_source_impl_terminate_fails_when_terminated() {
+        // Verify that terminate() returns error if already terminated.
+        let big = BigSourceImpl(Arc::new(BigInner {
+            big_handle: BigHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            bis_connections: vec![],
+            terminated: Arc::new(AtomicBool::new(true)),
+            lost_sender: broadcast::channel(1).0,
+            lost_reason: Mutex::new(None),
+            is_source: true,
+        }));
+        let result = timeout(DEFAULT_TIMEOUT, big.terminate(HciStatus::Success)).await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_source_impl_drop_triggers_cleanup() {
+        // Verify that dropping a BIG Source object triggers termination.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(2);
+
+        {
+            let _big = BigSourceImpl(Arc::new(BigInner {
+                big_handle,
+                manager: Arc::downgrade(&manager),
+                bis_connections: vec![],
+                terminated: Arc::new(AtomicBool::new(false)),
+                lost_sender: broadcast::channel(1).0,
+                lost_reason: Mutex::new(None),
+                is_source: true,
+            }));
+        }
+
+        let mut cleaned_up = false;
+        for _ in 0..10 {
+            sleep(Duration::from_millis(50)).await;
+            if manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .terminate_big
+                .contains_key(&big_handle)
+            {
+                cleaned_up = true;
+                break;
+            }
+        }
+        expect_that!(cleaned_up, is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_source_impl_terminate_success() {
+        // Verify that terminate() correctly marks the BIG Source as terminated.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(1);
+        let big = BigSourceImpl(Arc::new(BigInner {
+            big_handle,
+            manager: Arc::downgrade(&manager),
+            bis_connections: vec![],
+            terminated: Arc::new(AtomicBool::new(false)),
+            lost_sender: broadcast::channel(1).0,
+            lost_reason: Mutex::new(None),
+            is_source: true,
+        }));
+
+        let manager_clone = manager.clone();
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let sender = manager_clone
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .terminate_big
+                .remove(&big_handle);
+            if let Some(sender) = sender {
+                let _ = sender.send(Ok(()));
+            }
+        });
+
+        let result = timeout(DEFAULT_TIMEOUT, big.terminate(HciStatus::Success)).await;
+        expect_that!(result, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_source_impl_drop_after_terminate_does_not_trigger_cleanup() {
+        // Verify that dropping a BIG Source object after it is terminated does not trigger cleanup.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(12);
+
+        {
+            let _big = BigSourceImpl(Arc::new(BigInner {
+                big_handle,
+                manager: Arc::downgrade(&manager),
+                bis_connections: vec![],
+                terminated: Arc::new(AtomicBool::new(true)),
+                lost_sender: broadcast::channel(1).0,
+                lost_reason: Mutex::new(None),
+                is_source: true,
+            }));
+        }
+
+        sleep(Duration::from_millis(100)).await;
+        expect_that!(
+            manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .terminate_big
+                .contains_key(&big_handle),
+            is_false()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_sync_impl_terminate_success() {
+        // Verify that terminate() correctly marks the BIG Sync as terminated.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(1);
+        let big = BigSyncImpl(Arc::new(BigInner {
+            big_handle,
+            manager: Arc::downgrade(&manager),
+            bis_connections: vec![],
+            terminated: Arc::new(AtomicBool::new(false)),
+            lost_sender: broadcast::channel(1).0,
+            lost_reason: Mutex::new(None),
+            is_source: false,
+        }));
+
+        let manager_clone = manager.clone();
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let sender = manager_clone
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .big_terminate_sync
+                .remove(&big_handle);
+            if let Some(sender) = sender {
+                let _ = sender.send(Ok(()));
+            }
+        });
+
+        let result = timeout(DEFAULT_TIMEOUT, big.terminate()).await;
+        expect_that!(result, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_sync_impl_on_lost_resolves_correctly() {
+        // Verify that BIG Sync on_lost correctly waits for the loss event signal.
+        let (sender, _) = broadcast::channel(1);
+        let big = BigSyncImpl(Arc::new(BigInner {
+            big_handle: BigHandle::from_masked(1),
+            manager: Arc::downgrade(&IsoManagerImpl::new()),
+            bis_connections: vec![],
+            terminated: Arc::new(AtomicBool::new(false)),
+            lost_sender: sender.clone(),
+            lost_reason: Mutex::new(None),
+            is_source: false,
+        }));
+
+        let tx_clone = sender.clone();
+        spawn(async move {
+            sleep(Duration::from_millis(10)).await;
+            let _ = tx_clone.send(HciStatus::ConnectionTimeout);
+        });
+        let reason = timeout(DEFAULT_TIMEOUT, big.on_lost()).await;
+        expect_that!(reason, ok(eq(&HciStatus::ConnectionTimeout)));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_sync_impl_drop_triggers_cleanup() {
+        // Verify that dropping a BIG Sync object triggers termination.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(3);
+
+        {
+            let _big = BigSyncImpl(Arc::new(BigInner {
+                big_handle,
+                manager: Arc::downgrade(&manager),
+                bis_connections: vec![],
+                terminated: Arc::new(AtomicBool::new(false)),
+                lost_sender: broadcast::channel(1).0,
+                lost_reason: Mutex::new(None),
+                is_source: false,
+            }));
+        }
+
+        let mut cleaned_up = false;
+        for _ in 0..10 {
+            sleep(Duration::from_millis(50)).await;
+            if manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .big_terminate_sync
+                .contains_key(&big_handle)
+            {
+                cleaned_up = true;
+                break;
+            }
+        }
+        expect_that!(cleaned_up, is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_sync_impl_drop_after_lost_does_not_trigger_cleanup() {
+        // Verify that dropping a BIG Sync object after it is lost does not trigger cleanup.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(33);
+
+        {
+            let _big = BigSyncImpl(Arc::new(BigInner {
+                big_handle,
+                manager: Arc::downgrade(&manager),
+                bis_connections: vec![],
+                terminated: Arc::new(AtomicBool::new(true)),
+                lost_sender: broadcast::channel(1).0,
+                lost_reason: Mutex::new(None),
+                is_source: false,
+            }));
+        }
+
+        sleep(Duration::from_millis(100)).await;
+        expect_that!(
+            manager
+                .iso_registry
+                .lock()
+                .unwrap()
+                .pending_requests
+                .big_terminate_sync
+                .contains_key(&big_handle),
+            is_false()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_sync_loss_marks_all_bis_as_terminated() {
+        // Verify that a BIG Sync loss event correctly terminates all associated BIS objects.
+        let manager = IsoManagerImpl::new();
+        let big_handle = BigHandle::from_masked(10);
+        let bis_handle = IsoConnectionHandle::from_masked(101);
+        let (sender, _) = broadcast::channel(1);
+
+        let big_inner = Arc::new(BigInner {
+            big_handle,
+            manager: Arc::downgrade(&manager),
+            bis_connections: vec![],
+            terminated: Arc::new(AtomicBool::new(false)),
+            lost_sender: sender.clone(),
+            lost_reason: Mutex::new(None),
+            is_source: false,
+        });
+
+        // Register the BIG in the registry first.
+        manager.iso_registry.lock().unwrap().bigs.insert(
+            big_handle,
+            BigState { inner: Arc::downgrade(&big_inner), lost_sender: Some(sender) },
+        );
+
+        // Use the actual terminated flag from big_inner for the test's BIS object.
+        // In reality, BIS objects would be created via manager and share this.
+        let bis = BisImpl {
+            conn_handle: bis_handle,
+            manager: Arc::downgrade(&manager),
+            // Manually link to the same flag for validation in this unit test.
+            terminated: big_inner.terminated.clone(),
+        };
+
+        // Trigger BIG Sync lost.
+        manager
+            .iso_registry
+            .lock()
+            .unwrap()
+            .dispatch_big_sync_event(big_handle, HciStatus::ConnectionTimeout);
+
+        // Verify BIS is now terminated.
+        expect_that!(big_inner.terminated.load(Ordering::SeqCst), is_true());
+
+        // verify calling setup_path returns Disconnected error now.
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            bis.setup_iso_data_path(SetupIsoDataPathParameters {
+                data_path_dir: DataPathDirection::Input,
+                data_path_id: DataPathId::Hci,
+                codec_id: CodecId { coding_format: 0, company_id: 0, vendor_specific_codec_id: 0 },
+                controller_delay: Duration::from_micros(0),
+                codec_configuration: vec![],
+            }),
+        )
+        .await;
+
+        expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
 }
