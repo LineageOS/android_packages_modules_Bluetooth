@@ -125,12 +125,18 @@ int MetricIdManager::AllocateId(const Address& mac_address) {
     return it->second;
   }
 
+  int initial_next_id = next_id_;
+
   // find next available id
   while (id_set_.count(next_id_) > 0) {
     next_id_++;
     if (next_id_ > kMaxId) {
       next_id_ = kMinId;
-      log::warn("Bluetooth metric id overflow.");
+    }
+
+    if (next_id_ == initial_next_id) {
+      log::error("Bluetooth metric id overflow.");
+      return -1;
     }
   }
   int id = next_id_++;
