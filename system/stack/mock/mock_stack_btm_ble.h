@@ -434,7 +434,7 @@ extern struct btm_ble_start_sec_check btm_ble_start_sec_check;
 struct btm_ble_test_command_complete {
   std::function<void(bluetooth::hci::CommandCompleteView view)> body{
           [](bluetooth::hci::CommandCompleteView /* view */) {}};
-  void operator()(bluetooth::hci::CommandCompleteView view) { body(view); }
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(std::move(view)); }
 };
 extern struct btm_ble_test_command_complete btm_ble_test_command_complete;
 

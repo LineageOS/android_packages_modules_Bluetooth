@@ -25,6 +25,7 @@
 #include <functional>
 
 // Original included files, if any
+#include "hci/hci_packets.h"
 #include "stack/btm/btm_device_record.h"
 #include "stack/include/btm_status.h"
 
@@ -35,40 +36,40 @@ namespace stack_btm_ble_privacy {
 
 // Shared state between mocked functions and tests
 // Name: btm_ble_clear_resolving_list_complete
-// Params: uint8_t* p, uint16_t evt_len
+// Params: bluetooth::hci::CommandCompleteView view
 // Returns: void
 struct btm_ble_clear_resolving_list_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len)> body{
-          [](uint8_t* /* p */, uint16_t /* evt_len */) {}};
-  void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) {}};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(std::move(view)); }
 };
 extern struct btm_ble_clear_resolving_list_complete btm_ble_clear_resolving_list_complete;
 // Name: btm_ble_add_resolving_list_entry_complete
-// Params: uint8_t* p, uint16_t evt_len
+// Params: bluetooth::hci::CommandCompleteView view
 // Returns: void
 struct btm_ble_add_resolving_list_entry_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len)> body{
-          [](uint8_t* /* p */, uint16_t /* evt_len */) {}};
-  void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) {}};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(std::move(view)); }
 };
 extern struct btm_ble_add_resolving_list_entry_complete btm_ble_add_resolving_list_entry_complete;
 // Name: btm_ble_remove_resolving_list_entry_complete
-// Params: uint8_t* p, uint16_t evt_len
+// Params: bluetooth::hci::CommandCompleteView view
 // Returns: void
 struct btm_ble_remove_resolving_list_entry_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len)> body{
-          [](uint8_t* /* p */, uint16_t /* evt_len */) {}};
-  void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) {}};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(std::move(view)); }
 };
 extern struct btm_ble_remove_resolving_list_entry_complete
         btm_ble_remove_resolving_list_entry_complete;
 // Name: btm_ble_read_resolving_list_entry_complete
-// Params: uint8_t* p, uint16_t evt_len
+// Params: bluetooth::hci::CommandCompleteView view
 // Returns: void
 struct btm_ble_read_resolving_list_entry_complete {
-  std::function<void(const uint8_t* p, uint16_t evt_len)> body{
-          [](const uint8_t* /* p */, uint16_t /* evt_len */) {}};
-  void operator()(const uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
+  std::function<void(bluetooth::hci::CommandCompleteView view)> body{
+          [](bluetooth::hci::CommandCompleteView /* view */) {}};
+  void operator()(bluetooth::hci::CommandCompleteView view) { body(std::move(view)); }
 };
 extern struct btm_ble_read_resolving_list_entry_complete btm_ble_read_resolving_list_entry_complete;
 // Name: btm_ble_read_resolving_list_entry

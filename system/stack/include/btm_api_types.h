@@ -52,8 +52,7 @@ class CommandCompleteView;
  */
 using tBTM_CMPL_CB = void(bluetooth::hci::CommandCompleteView view);
 using tBTM_READ_RSSI_CB = void(tBTM_STATUS status, uint8_t rssi, RawAddress addr);
-using tBTM_READ_AUTOMATIC_FLUSH_TIMEOUT_CB = void(bluetooth::hci::CommandCompleteView view,
-                                                  RawAddress addr);
+using tBTM_READ_AUTOMATIC_FLUSH_TIMEOUT_CB = void(RawAddress addr);
 
 /* VSC callback function for notifying an application that a synchronous
  * BTM function is complete. The pointer contains the address of any returned

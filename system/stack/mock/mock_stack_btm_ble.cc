@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "hci/hci_packets.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_api_types.h"
@@ -248,7 +249,7 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, boo
 }
 void btm_ble_test_command_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::btm_ble_test_command_complete(view);
+  test::mock::stack_btm_ble::btm_ble_test_command_complete(std::move(view));
 }
 void btm_ble_update_sec_key_size(const RawAddress& bd_addr, uint8_t enc_key_size) {
   inc_func_call_count(__func__);

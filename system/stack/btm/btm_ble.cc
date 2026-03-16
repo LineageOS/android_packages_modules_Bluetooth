@@ -102,12 +102,12 @@ void BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback) {
  * Internal Functions
  ******************************************************************************/
 void btm_ble_test_command_complete(bluetooth::hci::CommandCompleteView view) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_le_test_cmd_cmpl_cb;
+  auto p_cb = btm_cb.devcb.p_le_test_cmd_cmpl_cb;
 
   btm_cb.devcb.p_le_test_cmd_cmpl_cb = NULL;
 
   if (p_cb) {
-    (*p_cb)(view);
+    (*p_cb)(std::move(view));
   }
 }
 

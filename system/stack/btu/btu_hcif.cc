@@ -753,6 +753,10 @@ static void btu_hcif_command_status_evt_with_cb_on_task(uint8_t status, BT_HDR* 
   auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet);
   auto event_view = bluetooth::hci::EventView::Create(packet_view);
   auto command_complete_view = bluetooth::hci::CommandCompleteView::Create(event_view);
+  if (!command_complete_view.IsValid()) {
+    log::error("Invalid command complete view");
+    return;
+  }
 
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
   std::move(cb_wrapper->cb).Run(std::move(command_complete_view));
@@ -943,9 +947,6 @@ static void btu_hcif_esco_connection_chg_evt(uint8_t* p) {
  ******************************************************************************/
 static void btu_hcif_hdl_command_complete(bluetooth::hci::CommandCompleteView view) {
   uint16_t opcode = static_cast<uint16_t>(view.GetCommandOpCode());
-  auto payload = view.GetPayload();
-  std::vector<uint8_t> payload_bytes(payload.begin(), payload.end());
-
   switch (opcode) {
     case HCI_SET_EVENT_FILTER:
       break;
@@ -989,19 +990,19 @@ static void btu_hcif_hdl_command_complete(bluetooth::hci::CommandCompleteView vi
       break;
 
     case HCI_BLE_ADD_DEV_RESOLVING_LIST:
-      btm_ble_add_resolving_list_entry_complete(payload_bytes.data(), payload_bytes.size());
+      btm_ble_add_resolving_list_entry_complete(std::move(view));
       break;
 
     case HCI_BLE_RM_DEV_RESOLVING_LIST:
-      btm_ble_remove_resolving_list_entry_complete(payload_bytes.data(), payload_bytes.size());
+      btm_ble_remove_resolving_list_entry_complete(std::move(view));
       break;
 
     case HCI_BLE_CLEAR_RESOLVING_LIST:
-      btm_ble_clear_resolving_list_complete(payload_bytes.data(), payload_bytes.size());
+      btm_ble_clear_resolving_list_complete(std::move(view));
       break;
 
     case HCI_BLE_READ_RESOLVABLE_ADDR_PEER:
-      btm_ble_read_resolving_list_entry_complete(payload_bytes.data(), payload_bytes.size());
+      btm_ble_read_resolving_list_entry_complete(std::move(view));
       break;
 
     // Explicitly handled command complete events
