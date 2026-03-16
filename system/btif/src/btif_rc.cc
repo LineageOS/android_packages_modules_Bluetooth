@@ -3700,10 +3700,6 @@ void btif_debug_rc_dump(int fd) {
   }
 }
 
-static btif_rc_device_cb_t* get_device_cb(unsigned index) {
-  return (index < BTIF_RC_NUM_CONN) ? &btif_rc_cb.rc_multi_cb[index] : nullptr;
-}
-
 namespace bluetooth::testing::avrc {
 
 static btif_rc_interface interface = {
@@ -3756,7 +3752,6 @@ static btif_rc_interface interface = {
         /*************************************************************************
          * Group 4: Device & Transaction Management
          *************************************************************************/
-        .get_device_cb = ::get_device_cb,
         .alloc_device = ::alloc_device,
         .btif_rc_get_device_by_bda = ::btif_rc_get_device_by_bda,
         .btif_rc_get_device_by_handle = ::btif_rc_get_device_by_handle,
