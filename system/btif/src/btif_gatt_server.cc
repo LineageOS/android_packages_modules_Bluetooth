@@ -299,7 +299,6 @@ static bluetooth::stack::tGATT_REQ_CBACK server_cbacks = {
 
 static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
         .p_conn_cb = btapp_gatts_conn_cback,
-        .p_delete_service_cb = btapp_gatts_delete_service_cback,
         .p_congestion_cb = btapp_gatts_congestion_cback,
         .p_phy_update_cb = btapp_gatts_phy_update_cback,
         .p_conn_update_cb = btapp_gatts_conn_update_cback,
@@ -413,7 +412,8 @@ static BtStatus btif_gatts_add_service(int server_if, const btgatt_db_element_t*
 
 static BtStatus btif_gatts_delete_service(int server_if, int service_handle) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&BTA_GATTS_DeleteService, server_if, service_handle));
+  return do_in_jni_thread(BindOnce(&BTA_GATTS_DeleteService, server_if, service_handle,
+                                   btapp_gatts_delete_service_cback));
 }
 
 static BtStatus btif_gatts_send_indication(int /* server_if */, int attribute_handle, int conn_id,

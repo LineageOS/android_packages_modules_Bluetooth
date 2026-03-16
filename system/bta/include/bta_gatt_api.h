@@ -300,8 +300,6 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
 typedef struct {
   void (*p_conn_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
                     bool connected, tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
-  void (*p_stop_service_cb)(tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id);
-  void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id);
   void (*p_congestion_cb)(tCONN_ID conn_id, bool congested);
   void (*p_phy_update_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint8_t tx_phy, uint8_t rx_phy,
                           tGATT_STATUS status);
@@ -857,7 +855,9 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
  * Returns          returns none.
  *
  ******************************************************************************/
-void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id);
+void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
+                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                         uint16_t service_id));
 
 /*******************************************************************************
  *

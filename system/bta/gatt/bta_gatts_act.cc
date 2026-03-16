@@ -213,7 +213,9 @@ void bta_gatts_deregister(tGATT_IF server_if) {
   }
 }
 
-void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id) {
+void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id,
+                              void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                          uint16_t service_id)) {
   std::optional<Uuid> svc_uuid = GATTS_LookupServiceUuidByStartHandle(service_id);
   if (!svc_uuid) {
     log::error("can't delete service - no service {} found", service_id);
@@ -235,8 +237,8 @@ void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id) {
     status = GATT_ERROR;
   }
 
-  if (p_rcb->p_cback && p_rcb->p_cback->p_delete_service_cb) {
-    p_rcb->p_cback->p_delete_service_cb(status, p_rcb->gatt_if, service_id);
+  if (p_delete_service_cb) {
+    p_delete_service_cb(status, p_rcb->gatt_if, service_id);
   }
 }
 

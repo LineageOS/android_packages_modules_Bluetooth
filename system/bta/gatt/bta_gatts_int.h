@@ -74,7 +74,9 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
                         void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                          const bluetooth::Uuid& uuid));
 void bta_gatts_deregister(tGATT_IF server_if);
-void bta_gatts_delete_service(tGATT_IF server_if, uint16_t service_id);
+void bta_gatts_delete_service(tGATT_IF server_if, uint16_t service_id,
+                              void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                          uint16_t service_id));
 
 void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
                         std::unique_ptr<tGATTS_RSP> rsp);

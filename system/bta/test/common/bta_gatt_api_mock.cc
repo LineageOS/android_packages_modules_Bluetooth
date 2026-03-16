@@ -150,9 +150,11 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->AddService(server_if, service, std::move(cb));
 }
-void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id) {
+void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
+                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                         uint16_t service_id)) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->DeleteService(server_if, service_id);
+  gatt_server_interface->DeleteService(server_if, service_id, p_delete_service_cb);
 }
 void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
                                      bool need_confirm) {
