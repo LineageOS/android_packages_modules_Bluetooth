@@ -229,7 +229,17 @@ static void btapp_gatts_mtu_changed_cback(tCONN_ID conn_id, const RawAddress& /*
           conn_id, mtu));
 }
 
-static void btapp_gatts_conf_cback(tCONN_ID conn_id, tGATT_STATUS status) {
+static void btapp_gatts_conf_cback(tCONN_ID conn_id, uint32_t /* trans_id */,
+                                   const RawAddress& /* remote_bda */) {
+  do_in_jni_thread(BindOnce(
+          [](tCONN_ID conn_id) {
+            // TODO: status is always success, get rid of it.
+            HAL_CBACK(bt_gatt_callbacks, server->indication_sent_cb, conn_id, GATT_SUCCESS);
+          },
+          conn_id));
+}
+
+static void btapp_gatts_conf_send_fail_cback(tCONN_ID conn_id, tGATT_STATUS status) {
   do_in_jni_thread(BindOnce(
           [](tCONN_ID conn_id, tGATT_STATUS status) {
             HAL_CBACK(bt_gatt_callbacks, server->indication_sent_cb, conn_id, status);
@@ -279,19 +289,8 @@ static void btapp_gatts_subrate_chg_cback(tGATT_IF /*server_if*/, tCONN_ID conn_
           conn_id, subrate_factor, latency, cont_num, timeout, subrate_mode, status));
 }
 
-static void btapp_gatts_req_open_cback(tGATT_STATUS /*status*/) {
-  // Empty
-}
-
-static void btapp_gatts_cancel_open_cback(tGATT_STATUS /*status*/) {
-  // Empty
-}
-
-static void btapp_gatts_close_cback(tGATT_STATUS /*status*/) {
-  // Empty
-}
-
-static void btapp_gatts_characteristics_unoffloaded_cback(tCONN_ID conn_id, uint32_t session_id,
+static void btapp_gatts_characteristics_unoffloaded_cback(tGATT_IF /*server_if*/, tCONN_ID conn_id,
+                                                          uint32_t session_id,
                                                           tGATT_STATUS status) {
   do_in_jni_thread(BindOnce(
           [](tCONN_ID conn_id, uint32_t session_id, tGATT_STATUS status) {
@@ -301,27 +300,29 @@ static void btapp_gatts_characteristics_unoffloaded_cback(tCONN_ID conn_id, uint
           conn_id, session_id, status));
 }
 
+static bluetooth::stack::tGATT_REQ_CBACK server_cbacks = {
+        .read_characteristic_cb = btapp_gatts_read_characteristic_cback,
+        .read_descriptor_cb = btapp_gatts_read_descriptor_cback,
+        .write_characteristic_cb = btapp_gatts_write_characteristic_cback,
+        .write_descriptor_cb = btapp_gatts_write_descriptor_cback,
+        .exec_write_cb = btapp_gatts_exec_write_cback,
+        .mtu_changed_cb = btapp_gatts_mtu_changed_cback,
+        .conf_cb = btapp_gatts_conf_cback,
+        .conf_send_fail_cb = btapp_gatts_conf_send_fail_cback,
+};
+
 static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
         .p_reg_cb = btapp_gatts_reg_cback,
         .p_dereg_cb = btapp_gatts_dereg_cback,
         .p_connect_cb = btapp_gatts_connect_cback,
         .p_disconnect_cb = btapp_gatts_disconnect_cback,
         .p_delete_service_cb = btapp_gatts_delete_service_cback,
-        .p_read_characteristic_cb = btapp_gatts_read_characteristic_cback,
-        .p_read_descriptor_cb = btapp_gatts_read_descriptor_cback,
-        .p_write_characteristic_cb = btapp_gatts_write_characteristic_cback,
-        .p_write_descriptor_cb = btapp_gatts_write_descriptor_cback,
-        .p_exec_write_cb = btapp_gatts_exec_write_cback,
-        .p_mtu_changed_cb = btapp_gatts_mtu_changed_cback,
-        .p_conf_cb = btapp_gatts_conf_cback,
         .p_congestion_cb = btapp_gatts_congestion_cback,
         .p_phy_update_cb = btapp_gatts_phy_update_cback,
         .p_conn_update_cb = btapp_gatts_conn_update_cback,
         .p_subrate_chg_cb = btapp_gatts_subrate_chg_cback,
-        .p_req_open_cb = btapp_gatts_req_open_cback,
-        .p_cancel_open_cb = btapp_gatts_cancel_open_cback,
-        .p_close_cb = btapp_gatts_close_cback,
         .p_characteristics_unoffloaded_cb = btapp_gatts_characteristics_unoffloaded_cback,
+        .server_cbacks = &server_cbacks,
 };
 
 /*******************************************************************************

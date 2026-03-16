@@ -274,8 +274,8 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->p_read_characteristic_cb(conn_id, gatt_trans_id_++, address, handle,
-                                                        0, false);
+      p_gatt_event_source_cb_->server_cbacks->read_characteristic_cb(conn_id, gatt_trans_id_++,
+                                                                     address, handle, 0, false);
     }
   }
 
@@ -316,8 +316,8 @@ public:
       uint8_t* pp = value;
       UINT16_TO_STREAM(pp, cccd_value);
 
-      p_gatt_event_source_cb_->p_write_descriptor_cb(conn_id, gatt_trans_id_++, address, handle, 0,
-                                                     true, false, value, sizeof(value));
+      p_gatt_event_source_cb_->server_cbacks->write_descriptor_cb(
+              conn_id, gatt_trans_id_++, address, handle, 0, true, false, value, sizeof(value));
     }
   }
 
@@ -338,9 +338,9 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->p_write_characteristic_cb(conn_id, gatt_trans_id_++, address, handle,
-                                                         0, with_rsp, false, (uint8_t*)value.data(),
-                                                         value.size());
+      p_gatt_event_source_cb_->server_cbacks->write_characteristic_cb(
+              conn_id, gatt_trans_id_++, address, handle, 0, with_rsp, false,
+              (uint8_t*)value.data(), value.size());
     }
   }
 

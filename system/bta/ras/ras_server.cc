@@ -46,6 +46,7 @@ using namespace bluetooth;
 using namespace ::ras;
 using namespace ::ras::uuid;
 using bluetooth::ras::VendorSpecificCharacteristic;
+using bluetooth::stack::tGATT_REQ_CBACK;
 
 namespace {
 
@@ -167,15 +168,22 @@ public:
     app_uuid_ = uuid;
     log::info("Register server with uuid:{}", app_uuid_.ToString());
 
+    static bluetooth::stack::tGATT_REQ_CBACK ras_server_cbacks = {
+            .read_characteristic_cb = OnGattReadCharacteristicStatic,
+            .read_descriptor_cb = OnGattReadDescriptorStatic,
+            .write_characteristic_cb = OnGattWriteCharacteristicStatic,
+            .write_descriptor_cb = OnGattWriteDescriptorStatic,
+            .exec_write_cb = tGATT_REQ_CBACK::do_nothing,
+            .mtu_changed_cb = OnGattMtuChangedStatic,
+            .conf_cb = tGATT_REQ_CBACK::do_nothing,
+            .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
+    };
+
     static const tBTA_GATTS_CBACK ras_ops = {
             .p_reg_cb = OnGattRegisterStatic,
             .p_connect_cb = OnGattConnectStatic,
             .p_disconnect_cb = OnGattDisconnectStatic,
-            .p_read_characteristic_cb = OnGattReadCharacteristicStatic,
-            .p_read_descriptor_cb = OnGattReadDescriptorStatic,
-            .p_write_characteristic_cb = OnGattWriteCharacteristicStatic,
-            .p_write_descriptor_cb = OnGattWriteDescriptorStatic,
-            .p_mtu_changed_cb = OnGattMtuChangedStatic,
+            .server_cbacks = &ras_server_cbacks,
     };
 
     BTA_GATTS_AppRegister(app_uuid_, &ras_ops, false);
