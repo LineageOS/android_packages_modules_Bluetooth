@@ -81,3 +81,10 @@ flag {
     description: "Remove the fixed delay for AVRCP connection"
     bug: "475410182"
 }
+
+flag {
+    name: "postpone_avrcp_play_until_a2dp_ready"
+    namespace: "bluetooth"
+    description: "Postpone the AVRCP play until A2DP is ready"
+    bug: "491970318"
+}

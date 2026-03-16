@@ -123,7 +123,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
     @GuardedBy("mLock")
     private final List<BluetoothDevice> mLeHearingAidConnectedDevices = new ArrayList<>();
 
-    @GuardedBy("mLock")
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
 
@@ -235,7 +234,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                                 || leAudio.get().getConnectionPolicy(device)
                                         == CONNECTION_POLICY_ALLOWED);
         final var hearingAid = mAdapterService.getHearingAidService();
-        mPendingActiveDevice = device;
+        synchronized (mLock) {
+            mPendingActiveDevice = device;
+        }
 
         if (leAudioSupported) {
             if (Flags.admCentralizeActiveDeviceHandling()) {
@@ -442,6 +443,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         return false;
     }
 
+    @GuardedBy("mLock")
     private boolean isAnyHearingAidDeviceActive() {
         if (Flags.admRemoveHapVariables()) {
             return !mHearingAidActiveDevices.isEmpty()
@@ -829,9 +831,12 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             if (Flags.admCentralizeActiveDeviceHandling()) {
                 /* Look for fallback if all devices from the active group disconnected. */
                 BluetoothDevice leadDevice = leAudio.get().getLeadDevice(device);
+
+                List<BluetoothDevice> connectedDevices = mLeAudioConnectedDevices;
+
                 if (Objects.equals(mLeAudioActiveDevice, leadDevice)
                         && leAudio.get().getGroupDevices(leadDevice).stream()
-                                .noneMatch(mLeAudioConnectedDevices::contains)) {
+                                .noneMatch(connectedDevices::contains)) {
                     hasFallbackDevice = setFallbackDeviceActiveLocked(device);
 
                     /* If hasFallbackDevice is true, it means fallback was found, and active device

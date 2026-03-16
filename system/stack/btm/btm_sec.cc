@@ -2608,11 +2608,15 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
   /* If device is bonded, and encrypted it's upgrading security and it's ok.
    * If it's bonded and not encrypted, it's remote missing keys scenario
    * Do not process this RSP and return, REQ will handle generation of
-   * key missing event and disconnect.*/
+   * key missing event and disconnect.
+   *
+   * Note: Process this RSP if autonomous repair is supported, as this will be used to continue the
+   * re-pair attempt. The changes in this function will be reset on pairing success or failure.
+   */
   if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
       !p_device->sec_rec.is_device_encrypted() &&
       !(com::android::bluetooth::flags::process_iocap_rsp_while_repairing() &&
-        is_autonomous_repairing_supported() && p_device->bond_lost)) {
+        is_autonomous_repairing_supported())) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     return;
   }
@@ -4274,6 +4278,7 @@ void btm_sec_link_key_request(const RawAddress& bda) {
     btm_security.lk_req_timer_ = alarm_new("btm_sec_lk_req_timer");
     alarm_set_on_mloop(btm_security.lk_req_timer_, BTM_SEC_LK_REQ_TIMEOUT_MS,
                        btm_sec_lk_req_timeout, nullptr);
+    return;
   }
 
   /* The link key is not in the database and it is not known to the manager */
