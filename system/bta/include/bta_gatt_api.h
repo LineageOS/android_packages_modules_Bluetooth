@@ -827,12 +827,10 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
  *
  * Parameters       service_id: service_id to be deleted.
  *
- * Returns          returns none.
+ * Returns          returns true on success, false otherwise.
  *
  ******************************************************************************/
-void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
-                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                         uint16_t service_id));
+bool BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id);
 
 /*******************************************************************************
  *

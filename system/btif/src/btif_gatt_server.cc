@@ -132,11 +132,7 @@ static void btapp_gatts_conn_cback(tGATT_IF server_if, const RawAddress& remote_
 
 static void btapp_gatts_delete_service_cback(tGATT_STATUS status, tGATT_IF server_if,
                                              uint16_t service_id) {
-  do_in_jni_thread(BindOnce(
-          [](tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id) {
-            HAL_CBACK(bt_gatt_callbacks, server->service_deleted_cb, status, server_if, service_id);
-          },
-          status, server_if, service_id));
+  HAL_CBACK(bt_gatt_callbacks, server->service_deleted_cb, status, server_if, service_id);
 }
 
 static void btapp_gatts_read_characteristic_cback(tCONN_ID conn_id, uint32_t trans_id,
@@ -412,8 +408,14 @@ static BtStatus btif_gatts_add_service(int server_if, const btgatt_db_element_t*
 
 static BtStatus btif_gatts_delete_service(int server_if, int service_handle) {
   CHECK_BTGATT_INIT();
-  return do_in_main_thread(BindOnce(&BTA_GATTS_DeleteService, server_if, service_handle,
-                                    btapp_gatts_delete_service_cback));
+  return do_in_main_thread(BindOnce(
+          [](int server_if, int service_handle) {
+            bool result = BTA_GATTS_DeleteService(server_if, service_handle);
+            do_in_jni_thread(BindOnce(&btapp_gatts_delete_service_cback,
+                                      result ? GATT_SUCCESS : GATT_ERROR, server_if,
+                                      service_handle));
+          },
+          server_if, service_handle));
 }
 
 static BtStatus btif_gatts_send_indication(int /* server_if */, int attribute_handle, int conn_id,

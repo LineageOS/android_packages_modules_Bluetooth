@@ -256,13 +256,11 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
   return;
 }
 
-void BTA_GATTS_DeleteService(tGATT_IF gatt_if, uint16_t service_id,
-                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                         uint16_t service_id)) {
+bool BTA_GATTS_DeleteService(tGATT_IF gatt_if, uint16_t service_id) {
   std::optional<Uuid> svc_uuid = GATTS_LookupServiceUuidByStartHandle(service_id);
   if (!svc_uuid) {
     log::error("can't delete service - no service {} found", service_id);
-    return;
+    return false;
   }
 
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
@@ -270,19 +268,10 @@ void BTA_GATTS_DeleteService(tGATT_IF gatt_if, uint16_t service_id,
     /* this is only useful thing of BTA layer, we ensure BTA apps can't stop internal services, if
      * they just guess the service_id (start_handle) */
     log::error("gatt_if={} not found", gatt_if);
-    return;
+    return false;
   }
 
-  tGATT_STATUS status;
-  if (GATTS_DeleteService(p_rcb->gatt_if, &(svc_uuid.value()), service_id)) {
-    status = GATT_SUCCESS;
-  } else {
-    status = GATT_ERROR;
-  }
-
-  if (p_delete_service_cb) {
-    p_delete_service_cb(status, p_rcb->gatt_if, service_id);
-  }
+  return GATTS_DeleteService(p_rcb->gatt_if, &(svc_uuid.value()), service_id);
 }
 
 void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
