@@ -286,7 +286,7 @@ static void btapp_gatts_characteristics_unoffloaded_cback(tGATT_IF /*server_if*/
           conn_id, session_id, status));
 }
 
-static bluetooth::stack::tGATT_REQ_CBACK server_cbacks = {
+static bluetooth::stack::tGATT_REQ_CBACK p_req_cb = {
         .read_characteristic_cb = btapp_gatts_read_characteristic_cback,
         .read_descriptor_cb = btapp_gatts_read_descriptor_cback,
         .write_characteristic_cb = btapp_gatts_write_characteristic_cback,
@@ -297,14 +297,14 @@ static bluetooth::stack::tGATT_REQ_CBACK server_cbacks = {
         .conf_send_fail_cb = btapp_gatts_conf_send_fail_cback,
 };
 
-static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
+static const stack::tGATT_CBACK btapp_gatts_callbacks = {
         .p_conn_cb = btapp_gatts_conn_cback,
+        .p_req_cb = &p_req_cb,
         .p_congestion_cb = btapp_gatts_congestion_cback,
         .p_phy_update_cb = btapp_gatts_phy_update_cback,
         .p_conn_update_cb = btapp_gatts_conn_update_cback,
         .p_subrate_chg_cb = btapp_gatts_subrate_chg_cback,
         .p_characteristics_unoffloaded_cb = btapp_gatts_characteristics_unoffloaded_cback,
-        .server_cbacks = &server_cbacks,
 };
 
 /*******************************************************************************

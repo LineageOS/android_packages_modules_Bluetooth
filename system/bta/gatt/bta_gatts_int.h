@@ -48,7 +48,7 @@
 typedef struct {
   bool in_use;
   bluetooth::Uuid app_uuid;
-  const tBTA_GATTS_CBACK* p_cback;
+  const bluetooth::stack::tGATT_CBACK* p_cback;
   tGATT_IF gatt_if;
 } tBTA_GATTS_RCB;
 
@@ -69,8 +69,8 @@ extern tBTA_GATTS_CB bta_gatts_cb;
  *  Function prototypes
  ****************************************************************************/
 void bta_gatts_api_disable();
-void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
-                        bool eatt_support,
+void bta_gatts_register(const bluetooth::Uuid& app_uuid,
+                        const bluetooth::stack::tGATT_CBACK* p_cback, bool eatt_support,
                         void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                          const bluetooth::Uuid& uuid));
 void bta_gatts_deregister(tGATT_IF server_if);

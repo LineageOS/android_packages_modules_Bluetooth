@@ -113,7 +113,7 @@ struct VcsServer::service_impl {
             static_cast<int>(service_descriptor_.initial_volume_setting_persisted),
             service_descriptor_.step_size);
 
-    static bluetooth::stack::tGATT_REQ_CBACK vcs_server_cbacks = {
+    static bluetooth::stack::tGATT_REQ_CBACK vcs_req_cb = {
             .read_characteristic_cb = OnGattReadCharacteristicStatic,
             .read_descriptor_cb = OnGattReadDescriptorStatic,
             .write_characteristic_cb = OnGattWriteCharacteristicStatic,
@@ -123,9 +123,9 @@ struct VcsServer::service_impl {
             .conf_cb = tGATT_REQ_CBACK::do_nothing,
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
-    static const tBTA_GATTS_CBACK vcs_ops = {
+    static const stack::tGATT_CBACK vcs_ops = {
             .p_conn_cb = OnGattConnStatic,
-            .server_cbacks = &vcs_server_cbacks,
+            .p_req_cb = &vcs_req_cb,
     };
 
     BTA_GATTS_AppRegister(uuid::kVolumeControlServiceUuid, &vcs_ops, false, &OnGattRegisterStatic);
