@@ -35,7 +35,9 @@
 void BTA_GATTS_Disable(void) { inc_func_call_count(__func__); }
 void BTA_GATTS_AppDeregister(tGATT_IF /* server_if */) { inc_func_call_count(__func__); }
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */,
-                           const tBTA_GATTS_CBACK* /* p_cback */, bool /* eatt_support */) {
+                           const tBTA_GATTS_CBACK* /* p_cback */, bool /* eatt_support */,
+                           void (*)(tGATT_STATUS status, tGATT_IF server_if,
+                                    const bluetooth::Uuid& uuid)) {
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_CancelOpen(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,

@@ -167,14 +167,13 @@ struct Pacs::service_impl {
     };
 
     static const tBTA_GATTS_CBACK pacs_ops = {
-            .p_reg_cb = OnGattRegisterStatic,
             .p_connect_cb = OnGattConnectStatic,
             .p_disconnect_cb = OnGattDisconnectStatic,
             .server_cbacks = &pacs_callbacks,
     };
 
     BTA_GATTS_AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, &pacs_ops,
-                          true /* eatt_support */);
+                          true /* eatt_support */, &OnGattRegisterStatic);
   }
 
   static void OnGattRegisterStatic(tGATT_STATUS status, tGATT_IF server_if,

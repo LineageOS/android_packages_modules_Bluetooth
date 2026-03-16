@@ -80,8 +80,6 @@ public:
   static void OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if,
                                    const bluetooth::Uuid& uuid);
 
-  static void OnGattServerDeregister(tGATT_STATUS status, tGATT_IF server_if);
-
   static void OnServiceAdded(tGATT_STATUS status, int server_if,
                              std::vector<btgatt_db_element_t> services);
 

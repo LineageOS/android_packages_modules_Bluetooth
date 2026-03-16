@@ -120,14 +120,13 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
   };
 
   static const tBTA_GATTS_CBACK gmap_ops = {
-          .p_reg_cb = GmapServer::OnGattServerRegister,
-          .p_dereg_cb = GmapServer::OnGattServerDeregister,
           .p_connect_cb = GmapServer::OnGattConnect,
           .p_disconnect_cb = GmapServer::OnGattDisconnect,
           .server_cbacks = &gmap_server_cbacks,
   };
 
-  BTA_GATTS_AppRegister(bluetooth::le_audio::uuid::kGamingAudioServiceUuid, &gmap_ops, false);
+  BTA_GATTS_AppRegister(bluetooth::le_audio::uuid::kGamingAudioServiceUuid, &gmap_ops, false,
+                        &GmapServer::OnGattServerRegister);
 }
 
 std::bitset<8> GmapServer::GetRole() { return GmapServer::role_; }
@@ -170,14 +169,6 @@ void GmapServer::OnGattConnect(tGATT_IF /*server_if*/, const RawAddress& remote_
 void GmapServer::OnGattDisconnect(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
                                   tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
   log::info("Address: {}, conn_id:{}", remote_bda, conn_id);
-}
-
-void GmapServer::OnGattServerDeregister(tGATT_STATUS status, tGATT_IF /*server_if*/) {
-  if (status != GATT_SUCCESS) {
-    log::warn("Deregister Server fail");
-    return;
-  }
-  BTA_GATTS_AppDeregister(server_if_);
 }
 
 void GmapServer::OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if,

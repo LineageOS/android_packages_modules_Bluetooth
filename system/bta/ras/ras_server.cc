@@ -180,13 +180,12 @@ public:
     };
 
     static const tBTA_GATTS_CBACK ras_ops = {
-            .p_reg_cb = OnGattRegisterStatic,
             .p_connect_cb = OnGattConnectStatic,
             .p_disconnect_cb = OnGattDisconnectStatic,
             .server_cbacks = &ras_server_cbacks,
     };
 
-    BTA_GATTS_AppRegister(app_uuid_, &ras_ops, false);
+    BTA_GATTS_AppRegister(app_uuid_, &ras_ops, false, OnGattRegisterStatic);
   }
 
   void RegisterCallbacks(bluetooth::ras::RasServerCallbacks* callbacks) { callbacks_ = callbacks; }

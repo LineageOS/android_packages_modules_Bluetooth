@@ -171,13 +171,13 @@ struct Ascs::service_impl {
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
     static const tBTA_GATTS_CBACK ascs_ops = {
-            .p_reg_cb = OnGattRegisterStatic,
             .p_connect_cb = OnGattConnectStatic,
             .p_disconnect_cb = OnGattDisconnectStatic,
             .server_cbacks = &ascs_server_cbacks,
     };
 
-    BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false);
+    BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false,
+                          &OnGattRegisterStatic);
   }
 
   static void OnGattRegisterStatic(tGATT_STATUS status, tGATT_IF server_if,

@@ -118,10 +118,6 @@ static void btapp_gatts_reg_cback(tGATT_STATUS status, tGATT_IF server_if,
           status, server_if, uuid));
 }
 
-static void btapp_gatts_dereg_cback(tGATT_STATUS /*status*/, tGATT_IF /*server_if*/) {
-  // Empty
-}
-
 static void btapp_gatts_connect_cback(tGATT_IF server_if, const RawAddress& remote_bda,
                                       tCONN_ID conn_id, tBT_TRANSPORT transport) {
   do_in_jni_thread(BindOnce(
@@ -312,8 +308,6 @@ static bluetooth::stack::tGATT_REQ_CBACK server_cbacks = {
 };
 
 static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
-        .p_reg_cb = btapp_gatts_reg_cback,
-        .p_dereg_cb = btapp_gatts_dereg_cback,
         .p_connect_cb = btapp_gatts_connect_cback,
         .p_disconnect_cb = btapp_gatts_disconnect_cback,
         .p_delete_service_cb = btapp_gatts_delete_service_cback,
@@ -331,8 +325,8 @@ static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
 static BtStatus btif_gatts_register_app(const Uuid& bt_uuid, bool eatt_support) {
   CHECK_BTGATT_INIT();
 
-  return do_in_jni_thread(
-          BindOnce(&BTA_GATTS_AppRegister, bt_uuid, &btapp_gatts_callbacks, eatt_support));
+  return do_in_jni_thread(BindOnce(&BTA_GATTS_AppRegister, bt_uuid, &btapp_gatts_callbacks,
+                                   eatt_support, &btapp_gatts_reg_cback));
 }
 
 static BtStatus btif_gatts_unregister_app(int server_if) {

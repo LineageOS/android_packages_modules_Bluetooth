@@ -131,9 +131,11 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   gatt_server_interface->AppDeregister(server_if);
 }
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
-                           bool eatt_support) {
+                           bool eatt_support,
+                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                            const bluetooth::Uuid& uuid)) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->AppRegister(app_uuid, p_cback, eatt_support);
+  gatt_server_interface->AppRegister(app_uuid, p_cback, eatt_support, p_reg_cb);
 }
 void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
