@@ -106,18 +106,20 @@ TEST_F(VcsTestBase, RegisterGattService) {
           .initial_volume = 0,
           .initial_mute_state = MuteState::kNotMuted,
           .initial_volume_setting_persisted = VolumeSettingPersisted::kResetVolumeSetting};
-  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
-          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb)));
+  void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false, _))
+          .WillOnce(DoAll(SaveArg<0>(&uuid), testing::SaveArg<1>(&p_gatt_event_source_cb),
+                          SaveArg<3>(&p_reg_cb)));
   vcs_->RegisterGattService(service_descriptor, &vcs_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
   ASSERT_EQ(uuid::kVolumeControlServiceUuid, uuid);
   Mock::VerifyAndClearExpectations(&gatt_server_interface_);
 
   // Inject the registration success event
-  p_gatt_event_source_cb->p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
+  p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
 
   // Ignore second call to register
-  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false, _))
           .Times(0);
   vcs_->RegisterGattService(service_descriptor, &vcs_callbacks_);
 
@@ -144,12 +146,14 @@ public:
     VcsTestBase::SetUp();
 
     // Mock GATT application registration success
-    EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
+    EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false, _))
             .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
                                   [](const bluetooth::Uuid& app_uuid,
-                                     const tBTA_GATTS_CBACK* p_cback, bool /* eatt_support */) {
-                                    if (p_cback) {
-                                      p_cback->p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
+                                     const tBTA_GATTS_CBACK* /*p_cback*/, bool /* eatt_support */,
+                                     void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                      const bluetooth::Uuid& uuid)) {
+                                    if (p_reg_cb) {
+                                      p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
                                     }
                                   }));
 

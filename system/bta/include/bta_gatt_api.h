@@ -298,8 +298,6 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
 
 /* Server callback function */
 typedef struct {
-  void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
-  void (*p_dereg_cb)(tGATT_STATUS status, tGATT_IF server_if);
   void (*p_connect_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
                        tBT_TRANSPORT transport);
   void (*p_disconnect_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
@@ -809,7 +807,9 @@ void BTA_GATTS_Disable(void);
  *
  ******************************************************************************/
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
-                           bool eatt_support);
+                           bool eatt_support,
+                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                            const bluetooth::Uuid& uuid));
 
 /*******************************************************************************
  *

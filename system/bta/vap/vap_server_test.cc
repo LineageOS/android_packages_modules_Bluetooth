@@ -99,8 +99,9 @@ protected:
     test_address_ = RawAddress::FromString("11:22:33:44:55:66").value();
 
     // GetVapServer() will create an instance if it's null
-    EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
-            .WillOnce(SaveArg<1>(&captured_gatt_callback_));
+    void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
+    EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _, _))
+            .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), SaveArg<3>(&p_reg_cb)));
     GetVapServer()->Initialize(&mock_callbacks_);
     SyncOnMainLoop();
     ASSERT_NE(captured_gatt_callback_, nullptr);
@@ -112,7 +113,7 @@ protected:
             .WillOnce(DoAll(SaveArg<0>(&captured_server_if), SaveArg<1>(&captured_service),
                             testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
-    captured_gatt_callback_->p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
+    p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
     SyncOnMainLoop();
 
     EXPECT_CALL(mock_callbacks_, OnInitialized());

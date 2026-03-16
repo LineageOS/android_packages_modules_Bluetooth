@@ -167,13 +167,12 @@ public:
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
     static const tBTA_GATTS_CBACK vap_ops = {
-            .p_reg_cb = OnGattRegisterStatic,
             .p_connect_cb = OnGattConnectStatic,
             .p_disconnect_cb = OnGattDisconnectStatic,
             .server_cbacks = &vap_server_cbacks,
     };
 
-    BTA_GATTS_AppRegister(app_uuid_, &vap_ops, true);
+    BTA_GATTS_AppRegister(app_uuid_, &vap_ops, true, OnGattRegisterStatic);
   }
 
   void Cleanup() override {

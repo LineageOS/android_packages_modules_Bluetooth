@@ -117,9 +117,9 @@ void bta_gatts_api_disable() {
 }
 
 void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
-                        bool eatt_support) {
-  tGATT_STATUS status = GATT_SUCCESS;
-
+                        bool eatt_support,
+                        void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                         const bluetooth::Uuid& uuid)) {
   if (!bta_gatts_cb.enabled) {
     bta_gatts_enable();
   }
@@ -134,8 +134,8 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
 
     log::error("application already registered.");
 
-    if (p_cback && p_cback->p_reg_cb) {
-      p_cback->p_reg_cb(GATT_DUP_REG, BTA_GATTS_INVALID_IF, app_uuid);
+    if (p_reg_cb) {
+      p_reg_cb(GATT_DUP_REG, BTA_GATTS_INVALID_IF, app_uuid);
     }
     return;
   }
@@ -152,8 +152,8 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
   }
 
   if (first_unuse == 0xff) {
-    if (p_cback && p_cback->p_reg_cb) {
-      p_cback->p_reg_cb(GATT_NO_RESOURCES, BTA_GATTS_INVALID_IF, app_uuid);
+    if (p_reg_cb) {
+      p_reg_cb(GATT_NO_RESOURCES, BTA_GATTS_INVALID_IF, app_uuid);
     }
     return;
   }
@@ -180,14 +180,16 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
   bta_gatts_cb.rcb[first_unuse].app_uuid = app_uuid;
   bta_gatts_cb.rcb[first_unuse].gatt_if =
           stack::appRegister(app_uuid, "GattServer", &passthrough_cbacks, eatt_support);
+
+  tGATT_STATUS status = GATT_SUCCESS;
   if (!bta_gatts_cb.rcb[first_unuse].gatt_if) {
     status = GATT_NO_RESOURCES;
   } else {
     do_in_main_thread(base::BindOnce(&bta_gatts_start_if, bta_gatts_cb.rcb[first_unuse].gatt_if));
   }
 
-  if (p_cback && p_cback->p_reg_cb) {
-    p_cback->p_reg_cb(status, bta_gatts_cb.rcb[first_unuse].gatt_if, app_uuid);
+  if (p_reg_cb) {
+    p_reg_cb(status, bta_gatts_cb.rcb[first_unuse].gatt_if, app_uuid);
   }
 }
 
@@ -198,25 +200,11 @@ void bta_gatts_start_if(tGATT_IF server_if) {
     log::error("Unable to start app.: Unknown interface={}", server_if);
   }
 }
-/*******************************************************************************
- *
- * Function         bta_gatts_deregister
- *
- * Description      deregister an application.
- *
- * Returns          none.
- *
- ******************************************************************************/
+
+/* Deregister an application */
 void bta_gatts_deregister(tGATT_IF server_if) {
-  tGATT_STATUS status = GATT_ERROR;
-  const tBTA_GATTS_CBACK* p_cback = NULL;
-  uint8_t i;
-
-  for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
+  for (uint8_t i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
     if (bta_gatts_cb.rcb[i].in_use && bta_gatts_cb.rcb[i].gatt_if == server_if) {
-      p_cback = bta_gatts_cb.rcb[i].p_cback;
-      status = GATT_SUCCESS;
-
       /* deregister the app */
       stack::appDeregister(bta_gatts_cb.rcb[i].gatt_if);
 
@@ -224,12 +212,6 @@ void bta_gatts_deregister(tGATT_IF server_if) {
       memset(&bta_gatts_cb.rcb[i], 0, sizeof(tBTA_GATTS_RCB));
       break;
     }
-  }
-
-  if (p_cback && p_cback->p_dereg_cb) {
-    p_cback->p_dereg_cb(status, server_if);
-  } else {
-    log::error("application not registered.");
   }
 }
 
