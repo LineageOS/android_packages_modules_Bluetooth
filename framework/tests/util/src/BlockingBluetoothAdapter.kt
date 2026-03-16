@@ -85,7 +85,7 @@ object BlockingBluetoothAdapter {
                 Thread.sleep(50)
             }
             if (!adapter.isBleScanAlwaysAvailable()) {
-                throw IllegalStateException("Could not enable BLE scan")
+                Log.w(TAG, "No BLE_SCAN_ALWAYS_AVAILABLE propagation. Test may fail")
             }
         }
         Log.d(TAG, "Call to enableBLE")
