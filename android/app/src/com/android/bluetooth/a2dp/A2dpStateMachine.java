@@ -683,16 +683,6 @@ final class A2dpStateMachine extends StateMachine {
                     newCodecStatus.getCodecConfig().sameAudioFeedingParameters(prevCodecConfig);
             mA2dpService.codecConfigUpdated(mDevice, mCodecStatus, sameAudioFeedingParameters);
         }
-
-        if (Flags.synchronizeCodecPreferencesAndPriority()
-                // Disable the optional codec to ensure that the mandatory codec priority aligns
-                // with the optional codec preference
-                && (mA2dpService.getSupportsOptionalCodecs(mDevice)
-                        == BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED)
-                && (mA2dpService.getOptionalCodecsEnabled(mDevice)
-                        == BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED)) {
-            mA2dpService.disableOptionalCodecs(mDevice);
-        }
     }
 
     // This method does not check for error condition (newState == prevState)
