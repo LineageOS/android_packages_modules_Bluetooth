@@ -22,7 +22,7 @@
  */
 
 // Mock include file to share data between tests and mock
-#include "test/mock/mock_bta_dm_act.h"
+#include "mock_bta_dm_act.h"
 
 #include <bluetooth/types/ble_address_with_type.h>
 

@@ -19,7 +19,7 @@
  *   Functions generated:8
  */
 
-#include "test/mock/mock_bta_hearing_aid_audio_source.h"
+#include "mock_bta_hearing_aid_audio_source.h"
 
 #include <base/functional/callback.h>
 #include <bluetooth/types/address.h>
