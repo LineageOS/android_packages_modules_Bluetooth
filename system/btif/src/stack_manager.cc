@@ -238,18 +238,11 @@ void stack_disable(ProfileStopCallback stopProfiles) {
   // btm_free() is called in main thread, and is a blocking call.
   get_btm_client_interface().lifecycle.btm_free();
 
-  std::promise<void> off_promise;
-  std::future<void> off_future = off_promise.get_future();
+  log::info("Native disable done. Notifying the java now");
 
-  do_in_jni_thread(base::BindOnce(
-          [](std::promise<void> off_promise) {
-            GetInterfaceToProfiles()->events->invoke_adapter_state_changed_cb(BT_STATE_OFF);
-            off_promise.set_value();
-          },
-          std::move(off_promise)));
-  off_future.wait();  // TODO: remove this future entirely
+  GetInterfaceToProfiles()->events->invoke_adapter_state_changed_cb(BT_STATE_OFF);
 
-  log::info("finished");
+  log::info("Finished");
 }
 
 // Synchronous function to clean up the stack
