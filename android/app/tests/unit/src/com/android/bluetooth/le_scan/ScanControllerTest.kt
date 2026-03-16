@@ -17,6 +17,7 @@
 package com.android.bluetooth.le_scan
 
 import android.app.AppOpsManager
+import android.app.PendingIntent
 import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC
 import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_RANDOM
 import android.bluetooth.BluetoothProfile
@@ -31,6 +32,7 @@ import android.bluetooth.le.ScanSettings.CALLBACK_TYPE_FIRST_MATCH
 import android.companion.CompanionDeviceManager
 import android.content.AttributionSource
 import android.content.Context
+import android.content.Intent
 import android.location.LocationManager
 import android.os.BatteryStatsManager
 import android.os.IBinder
@@ -90,13 +92,14 @@ class ScanControllerTest(flags: FlagsWrapper) {
     @Mock private lateinit var companionDeviceManager: CompanionDeviceManager
     @Mock private lateinit var timeProvider: TimeProvider
 
+    private val context = InstrumentationRegistry.getInstrumentation().context
     private val device = getTestDevice(TEST_ADDRESS)
+    private val source = AttributionSource.myAttributionSource()
 
     private lateinit var scanController: ScanController
 
     @Before
     fun setUp() {
-        val context = InstrumentationRegistry.getInstrumentation().context
         adapterService.mockResources()
         adapterService.mockPackageManager(context.packageManager)
         adapterService.mockGetRemoteDevice(device)
@@ -485,7 +488,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
     @Test
     fun registerAndStartScan() {
-        val source = AttributionSource.myAttributionSource()
         scanController.registerAndStartScan(
             mock<IScannerCallback>(),
             mock<WorkSource>(),
@@ -507,10 +509,13 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
     @Test
     fun dispatchPendingIntentStartScanCheckUid() {
-        val source = AttributionSource.myAttributionSource()
-        val app = addScannerApp(source)
-        scanController.dispatchPendingIntentStartScan(app)
-        verify(scanManager).startScan(argThat { client -> source.uid == client.appUid })
+        val intent = PendingIntent.getBroadcast(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        val settings = createSettings()
+        val filters = listOf(ScanFilter.Builder().build())
+        val app = scanController.scannerMap.addWithPendingIntent(source, intent, settings, filters)
+        // The following will call dispatchPendingIntentStartScan as the app has a pendingIntent
+        scanController.onScannerRegistered(NO_ERROR, TEST_SCANNER_ID, app.uuid)
+        verify(scanManager).startScan(argThat { client -> app.uid == client.appUid })
     }
 
     @Test
@@ -642,7 +647,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
     ) = ScanSettings.Builder().setCallbackType(callbackType).setLegacy(legacy).build()
 
     private fun addScannerApp(
-        source: AttributionSource = AttributionSource.myAttributionSource(),
+        source: AttributionSource = this@ScanControllerTest.source,
         callback: IScannerCallback = mock<IScannerCallback>(),
         settings: ScanSettings = createSettings(),
         filters: List<ScanFilter> = listOf(ScanFilter.Builder().build()),
