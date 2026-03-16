@@ -68,33 +68,33 @@ import pandora.HostGrpc.HostImplBase
 import pandora.HostProto.*
 
 object ByteArrayOps {
-    public fun getUShortAt(input: ByteArray, index: Int): UShort {
+    fun getUShortAt(input: ByteArray, index: Int): UShort {
         return (((input[index + 1].toUInt() and 0xffU) shl 8) or (input[index].toUInt() and 0xffU))
             .toUShort()
     }
 
-    public fun getShortAt(input: ByteArray, index: Int): Short {
+    fun getShortAt(input: ByteArray, index: Int): Short {
         return getUShortAt(input, index).toShort()
     }
 
-    public fun getUIntAt(input: ByteArray, index: Int): UInt {
+    fun getUIntAt(input: ByteArray, index: Int): UInt {
         return (((input[index + 3].toUInt() and 0xffU) shl 24) or
             ((input[index + 2].toUInt() and 0xffU) shl 16) or
             ((input[index + 1].toUInt() and 0xffU) shl 8) or
             (input[index].toUInt() and 0xffU))
     }
 
-    public fun getIntAt(input: ByteArray, index: Int): Int {
+    fun getIntAt(input: ByteArray, index: Int): Int {
         return getUIntAt(input, index).toInt()
     }
 
-    public fun getUInt24At(input: ByteArray, index: Int): UInt {
+    fun getUInt24At(input: ByteArray, index: Int): UInt {
         return (((input[index + 2].toUInt() and 0xffU) shl 16) or
             ((input[index + 1].toUInt() and 0xffU) shl 8) or
             (input[index].toUInt() and 0xffU))
     }
 
-    public fun getInt24At(input: ByteArray, index: Int): Int {
+    fun getInt24At(input: ByteArray, index: Int): Int {
         return getUInt24At(input, index).toInt()
     }
 }
