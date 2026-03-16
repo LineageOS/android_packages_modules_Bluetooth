@@ -333,7 +333,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockBtaAv",
         ":TestMockOsi",
-        "src/btif_rc.cc",
         "src/btif_util.cc",
         "test/btif_rc_test.cc",
     ],

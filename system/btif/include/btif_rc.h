@@ -336,7 +336,6 @@ struct btif_rc_interface {
    * Focus: Lifecycle management of device control blocks and AVRCP
    * transaction state. Heavy usage of label and RawAddress parameters.
    *************************************************************************/
-  [[nodiscard]] btif_rc_device_cb_t* (*get_device_cb)(unsigned index);
   [[nodiscard]] btif_rc_device_cb_t* (*alloc_device)();
   [[nodiscard]] btif_rc_device_cb_t* (*btif_rc_get_device_by_bda)(const RawAddress& bd_addr);
   [[nodiscard]] btif_rc_device_cb_t* (*btif_rc_get_device_by_handle)(uint8_t handle);
