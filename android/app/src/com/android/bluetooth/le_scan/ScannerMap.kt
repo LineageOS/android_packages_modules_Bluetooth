@@ -34,7 +34,6 @@ import com.android.bluetooth.util.getLastAttributionTag
 import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
 import java.util.UUID
-import java.util.concurrent.ConcurrentLinkedQueue
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScannerMap"
 
@@ -46,7 +45,7 @@ class ScannerMap(
 
     /** Internal map to keep track of logging information by app uid */
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
-    private val apps = ConcurrentLinkedQueue<ScannerApp>()
+    private val apps = ArrayDeque<ScannerApp>()
 
     fun addWithCallback(
         source: AttributionSource,
@@ -57,8 +56,6 @@ class ScannerMap(
         isInternal: Boolean = false,
     ) =
         add(
-            appUid = source.uid,
-            appPid = source.pid,
             userHandle = null,
             source = source,
             workSource = workSource,
@@ -76,8 +73,6 @@ class ScannerMap(
         filters: List<ScanFilter>,
     ) =
         add(
-            appUid = source.uid,
-            appPid = source.pid,
             userHandle = UserHandle.getUserHandleForUid(source.uid),
             source = source,
             workSource = null,
@@ -89,8 +84,6 @@ class ScannerMap(
         )
 
     private fun add(
-        appUid: Int,
-        appPid: Int,
         userHandle: UserHandle?,
         source: AttributionSource,
         workSource: WorkSource?,
@@ -100,15 +93,15 @@ class ScannerMap(
         pendingIntent: PendingIntent?,
         isInternal: Boolean,
     ): ScannerApp {
-        val appName = adapterService.appNameOrUnknown(source.uid)
         val appScanStats =
-            appScanStatsMap.getOrPut(appUid) {
+            appScanStatsMap.getOrPut(source.uid) {
+                val appName = adapterService.appNameOrUnknown(source.uid)
                 // Bill the caller uid if the work source isn't passed through
-                val workSource = workSource ?: WorkSource(appUid, appName)
+                val workSource = workSource ?: WorkSource(source.uid, appName)
                 val workSourceUtil = WorkSourceUtil(workSource)
                 AppScanStats(
-                    appUid,
-                    appPid,
+                    source.uid,
+                    source.pid,
                     appName,
                     workSourceUtil,
                     adapterService,
