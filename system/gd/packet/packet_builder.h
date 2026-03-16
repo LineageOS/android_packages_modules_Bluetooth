@@ -43,6 +43,7 @@ public:
   // Serialize the packet to a byte vector.
   std::vector<uint8_t> SerializeToBytes() const {
     std::vector<uint8_t> output;
+    output.reserve(size());
     BitInserter it(output);
     Serialize(it);
     return output;
