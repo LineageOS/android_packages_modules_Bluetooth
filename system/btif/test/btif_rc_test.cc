@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "hardware/bluetooth.h"
-#undef LOG_TAG  // Undefine the LOG_TAG by this compilation unit
+#include "btif/include/btif_rc.h"
+
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
+#include <hardware/bluetooth.h>
 #include <unistd.h>
 
 #include <cstdint>
@@ -28,7 +29,6 @@
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_av.h"
 #include "btif/include/btif_common.h"
-#include "btif/src/btif_rc.cc"
 #include "btif_status.h"
 #include "common/message_loop_thread.h"
 #include "device/include/interop.h"
@@ -39,6 +39,8 @@
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_list.h"
+
+using namespace bluetooth;
 
 namespace bluetooth {
 namespace avrcp {
