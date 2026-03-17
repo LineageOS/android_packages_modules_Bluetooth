@@ -51,7 +51,7 @@ private const val TAG = ScanUtil.TAG_PREFIX + "ScanBinder"
 class ScanBinder(
     private val adapterService: AdapterService,
     private val scanController: ScanController,
-    private val testModeEnabled: Boolean,
+    private val testModeEnabled: Boolean, // TODO(b/491969072) Remove unused
 ) : IBluetoothScan.Stub() {
 
     @Volatile private var isAvailable = true
