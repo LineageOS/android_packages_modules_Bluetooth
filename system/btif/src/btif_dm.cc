@@ -3664,6 +3664,9 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
     pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
   }
 
+  pairing_cb.is_le_only = true;
+  pairing_cb.is_le_nc = false;
+
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
 
