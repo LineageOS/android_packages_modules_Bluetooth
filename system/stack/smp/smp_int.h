@@ -354,6 +354,11 @@ public:
   tSMP_STATUS cert_failure; /*failure case for certification */
   alarm_t* delayed_auth_timer_ent;
   tBLE_BD_ADDR pairing_ble_bd_addr;
+
+  struct {
+    bool approved;   // User has approved the pairing
+    bool confirmed;  // Remote device has confirmed the passkey
+  } passkey_display_state;
 };
 
 /* Server Action functions are of this type */
