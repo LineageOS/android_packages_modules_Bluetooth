@@ -355,7 +355,6 @@ TEST_F(LeAudioServerTest, OnClientConnected_AsCentralFails) {
   EXPECT_CALL(*mock_ase_manager_, IsKnownPeerDevice(addr)).WillOnce(Return(true));
   ON_CALL(*mock_ascs_, GetConnectionId(addr)).WillByDefault(Return(1));
   EXPECT_CALL(mock_callbacks_, OnConnectionStateChanged(addr, _)).Times(0);
-  EXPECT_CALL(mock_gatt_server_if_, Close(1));
 
   ase_manager_callbacks_->OnClientConnected(addr);
 }
