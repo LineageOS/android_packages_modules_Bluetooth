@@ -33,7 +33,6 @@ source_set("nonstandard_codecs") {
     include_dirs = [
       "//bt/floss",
       "//bt/system",
-      "//bt/system/bta/include",
       "//bt/system/btif/include",
       "//bt/system/include",
       "//bt/system/stack",
@@ -208,8 +207,6 @@ source_set("stack") {
     "srvc",
     "//bt/floss",
     "//bt/system/",
-    "//bt/system/bta/include",
-    "//bt/system/bta/sys",
     "//bt/system/btif/include",
     "//bt/system/ctrlr/include",
     "//bt/system/gd",
@@ -314,9 +311,6 @@ if (defined(use.android) && use.android) {
     include_dirs = [
       "include",
       "//bt/system/",
-      "//bt/system/bta/eatt",
-      "//bt/system/bta/include",
-      "//bt/system/bta/sys",
       "//bt/system/embdrv/sbc/encoder/include",
       "//bt/system/stack/a2dp",
       "//bt/system/stack/btm",
@@ -367,8 +361,6 @@ if (defined(use.android) && use.android) {
 
     include_dirs = [
       "//bt/system/",
-      "//bt/system/bta/include",
-      "//bt/system/bta/sys",
       "//bt/system/embdrv/sbc/encoder/include",
       "//bt/system/stack/a2dp",
       "//bt/system/stack/l2cap",

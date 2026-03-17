@@ -21,8 +21,6 @@ cc_defaults {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/bta/include",
-        "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/stack/test",
