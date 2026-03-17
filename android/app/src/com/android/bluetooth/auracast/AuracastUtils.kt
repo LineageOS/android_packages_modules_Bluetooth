@@ -22,10 +22,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import com.android.bluetooth.R
 
 object AuracastUtils {
     const val CHANNEL_ID = "auracast_nfc_channel"
     const val NOTIFICATION_ID = 1001
+    // 5mins
+    const val NOTIF_AUTO_DISMISS_MILLIS = 300000L
     const val AURACAST_PREFIX = "BLUETOOTH:UUID:184F"
     const val ACTION_CONNECT_STREAM = "com.android.bluetooth.auracast.action.CONNECT_STREAM"
     const val EXTRA_METADATA = "extra_metadata"
@@ -104,12 +107,12 @@ object AuracastUtils {
     ) {
         val builder =
             Notification.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-                .setSubText("Bluetooth LE Audio")
+                .setSmallIcon(R.drawable.ic_bt_le_audio_sharing)
+                .setSubText("LE Audio")
+                .setLocalOnly(true)
                 .setContentTitle("$streamName audio stream available")
                 .setContentText(message)
-                .setStyle(Notification.BigTextStyle().bigText(message))
-                .setAutoCancel(true)
+                .setTimeoutAfter(NOTIF_AUTO_DISMISS_MILLIS)
 
         if (connectPending != null) {
             builder.addAction(Notification.Action.Builder(null, "Connect", connectPending).build())
