@@ -106,8 +106,20 @@ public:
     common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_,
                                  GetTimerText(__func__, packet));
     link_clocker_.OnHciEvent(packet);
+
+    auto start_time = std::chrono::steady_clock::now();
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::EVT);
+    auto end_time = std::chrono::steady_clock::now();
+    auto snoop_duration =
+            std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    // TODO(b/493507987): Remove this log after debugging.
+    if (snoop_duration >= std::chrono::milliseconds(500)) {
+      log::error("Snoop logger capture took too long: {}ms for packet: {}", snoop_duration.count(),
+                 GetTimerText(__func__, packet));
+      common::StopWatch::DumpStopWatchLog();
+    }
+
     {
       std::lock_guard<std::mutex> lock(mutex_);
       callback_->hciEventReceived(packet);
