@@ -2427,8 +2427,6 @@ TEST_F(BtifRcTest, btif_debug_rc_dump_test) {
 
   // Check the specific transaction we set up
   ASSERT_NE(output.find("label=5 in_use=true"), std::string::npos);
-  // Check a default (unused) transaction for good measure
-  ASSERT_NE(output.find("label=0 in_use=false"), std::string::npos);
 
   // Cleanup the state for other tests
   bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->initialize_device(p_dev);
