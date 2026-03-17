@@ -30,6 +30,7 @@ import android.content.AttributionSource
 import android.content.Context
 import android.os.ParcelUuid
 import com.android.bluetooth.Util
+import com.android.bluetooth.Util.callerIsSystemOrActiveOrManagedUser
 import com.android.bluetooth.Util.checkProfileAvailable
 
 private const val TAG = GattUtil.TAG_PREFIX + "DistanceMeasurementBinder"
@@ -59,7 +60,7 @@ class DistanceMeasurementBinder(
     ): DistanceMeasurementManager? {
         val manager = getManager()
         if (
-            !Util.callerIsSystemOrActiveOrManagedUser(context, TAG, "$TAG $method") ||
+            !context.callerIsSystemOrActiveOrManagedUser(TAG, "$TAG $method") ||
                 !Util.enforceConnectPermissionForDataDelivery(context, source, "$TAG $method")
         ) {
             return null
@@ -105,7 +106,7 @@ class DistanceMeasurementBinder(
         val manager = getManager() ?: return BluetoothStatusCodes.ERROR_UNKNOWN
 
         val methodName = "stopDistanceMeasurement"
-        if (!Util.callerIsSystemOrActiveOrManagedUser(context, TAG, methodName)) {
+        if (!context.callerIsSystemOrActiveOrManagedUser(TAG, methodName)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         } else if (
             !Util.enforceConnectPermissionForDataDelivery(context, source, "$TAG $methodName")
