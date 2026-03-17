@@ -50,6 +50,7 @@
 #include "packet/packet_view.h"
 #include "packet/raw_builder.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/gatt_api.h"
 #include "stack/include/main_thread.h"
 #include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_btm_sec.h"
@@ -59,6 +60,8 @@
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_osi_thread.h"
+
+void gatt_set_debug_conn_state_cb(void (*)(const RawAddress&, bool, const tGATT_DISCONN_REASON)) {}
 
 namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);

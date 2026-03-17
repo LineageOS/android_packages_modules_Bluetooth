@@ -65,13 +65,13 @@ static void next_event() {
   }
 }
 
-void btif_debug_conn_state(const RawAddress& bda, const btif_debug_conn_state_t state,
+void btif_debug_conn_state(const RawAddress& bda, bool connected,
                            const tGATT_DISCONN_REASON disconnect_reason) {
   next_event();
 
   conn_event_t* evt = &connection_events[current_event];
   evt->ts = bluetooth::common::time_gettimeofday_us();
-  evt->state = state;
+  evt->state = connected ? BTIF_DEBUG_CONNECTED : BTIF_DEBUG_DISCONNECTED;
   evt->disconnect_reason = disconnect_reason;
   evt->bda = bda;
 }
