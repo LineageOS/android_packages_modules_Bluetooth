@@ -89,7 +89,6 @@ static stack::tGATT_REQ_CBACK gap_req_cback = {
         .exec_write_cb = gap_exec_write_cback,
         .mtu_changed_cb = gap_mtu_changed_cback,
         .conf_cb = gap_conf_cback,
-        .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
 };
 
 stack::tGATT_CBACK gap_cback = {

@@ -91,7 +91,6 @@ static stack::tGATT_REQ_CBACK gatt_profile_req_cback = {
         .exec_write_cb = gatt_exec_write_cback,
         .mtu_changed_cb = gatt_mtu_changed_cback,
         .conf_cb = gatt_conf_cback,
-        .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
 };
 
 static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda, tCONN_ID conn_id,

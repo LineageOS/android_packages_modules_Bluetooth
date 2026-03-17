@@ -48,7 +48,6 @@ using namespace bluetooth;
 typedef struct {
   bool in_use;
   bluetooth::Uuid app_uuid;
-  const stack::tGATT_CBACK* p_cback;
   tGATT_IF gatt_if;
 } tBTA_GATTS_RCB;
 
@@ -199,7 +198,6 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGATT_C
   log::info("register application first_unuse rcb_idx={}", first_unuse);
 
   bta_gatts_cb.rcb[first_unuse].in_use = true;
-  bta_gatts_cb.rcb[first_unuse].p_cback = p_cback;
   bta_gatts_cb.rcb[first_unuse].app_uuid = app_uuid;
   bta_gatts_cb.rcb[first_unuse].gatt_if =
           stack::appRegister(app_uuid, "GattServer", p_cback, eatt_support);
@@ -281,11 +279,11 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
   }
 }
 
-void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                                     bool need_confirm) {
+tGATT_STATUS BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
+                                             std::vector<uint8_t> value, bool need_confirm) {
   if (value.size() > GATT_MAX_ATTR_LEN) {
     log::error("data to indicate is too long");
-    return;
+    return GATT_ERROR;
   }
 
   tGATT_IF gatt_if;
@@ -293,33 +291,19 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::ve
   tBT_TRANSPORT transport;
   if (!GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
     log::error("Unknown connection_id=0x{:x} fail sending notification", conn_id);
-    return;
+    return GATT_ERROR;
   }
 
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
   if (!p_rcb) {
     log::error("server_if={} not found", gatt_if);
-    return;
+    return GATT_ERROR;
   }
 
-  tGATT_STATUS status;
   if (need_confirm) {
-    status = GATTS_HandleValueIndication(conn_id, attr_id, value.size(), value.data());
+    return GATTS_HandleValueIndication(conn_id, attr_id, value.size(), value.data());
   } else {
-    status = GATTS_HandleValueNotification(conn_id, attr_id, value.size(), value.data());
-  }
-
-  if (status == GATT_SUCCESS && need_confirm) {
-    // in this case we will call p_conf_cb when handling GATTS_REQ_TYPE_CONF
-    return;
-  }
-
-  if (p_rcb->p_cback && p_rcb->p_cback->p_req_cb) {
-    if (status != GATT_SUCCESS) {
-      p_rcb->p_cback->p_req_cb->conf_send_fail_cb(conn_id, status);
-      return;
-    }
-    p_rcb->p_cback->p_req_cb->conf_cb(conn_id, 0, remote_bda);
+    return GATTS_HandleValueNotification(conn_id, attr_id, value.size(), value.data());
   }
 }
 

@@ -33,6 +33,7 @@ using ::testing::DoAll;
 using ::testing::InSequence;
 using ::testing::Mock;
 using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::SaveArg;
 
 namespace bluetooth::le_audio::test {
@@ -76,6 +77,8 @@ public:
     };
 
     gatt::SetMockBtaGattServerInterface(&gatt_server_interface_);
+    ON_CALL(gatt_server_interface_, HandleValueIndication(_, _, _, _))
+            .WillByDefault(Return(GATT_SUCCESS));
     ascs_ = InstantiateAscs();
   }
 
@@ -778,7 +781,7 @@ TEST_F(AscsTests, RemoteWriteAseCtpConfigCodec) {
   // Expect a notification on the control point
   std::vector<uint8_t> notified_value;
   EXPECT_CALL(gatt_server_interface_, HandleValueIndication(_, _, _, _))
-          .WillOnce(SaveArg<2>(&notified_value));
+          .WillOnce(DoAll(SaveArg<2>(&notified_value), Return(GATT_SUCCESS)));
   ascs_->AseCtpRequestResponse(test_dev, response);
 
   // Verify the notification
@@ -818,7 +821,7 @@ TEST_F(AscsTests, UpdateAseStateNotifies) {
   // Expect a notification on the ASE characteristic
   std::vector<uint8_t> notified_value;
   EXPECT_CALL(gatt_server_interface_, HandleValueIndication(_, _, _, _))
-          .WillOnce(SaveArg<2>(&notified_value));
+          .WillOnce(DoAll(SaveArg<2>(&notified_value), Return(GATT_SUCCESS)));
   ascs_->UpdateAseState(test_dev, sink_ase_id, new_state);
 
   // Verify the notification

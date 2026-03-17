@@ -845,11 +845,11 @@ bool BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id);
  *                  need_confirm - if this indication expects a confirmation or
  *                                 not.
  *
- * Returns          None
+ * Returns          GATT_SUCCESS or error code
  *
  ******************************************************************************/
-void BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                                     bool need_confirm);
+tGATT_STATUS BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id,
+                                             std::vector<uint8_t> value, bool need_confirm);
 
 /*******************************************************************************
  *

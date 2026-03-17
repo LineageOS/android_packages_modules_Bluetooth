@@ -290,7 +290,6 @@ static bluetooth::stack::tGATT_REQ_CBACK p_req_cb = {
         .exec_write_cb = btapp_gatts_exec_write_cback,
         .mtu_changed_cb = btapp_gatts_mtu_changed_cback,
         .conf_cb = btapp_gatts_conf_cback,
-        .conf_send_fail_cb = btapp_gatts_conf_send_fail_cback,
 };
 
 static const stack::tGATT_CBACK btapp_gatts_callbacks = {
@@ -435,11 +434,19 @@ static BtStatus btif_gatts_send_indication(int /* server_if */, int attribute_ha
     length = GATT_MAX_ATTR_LEN;
   }
 
-  return do_in_main_thread(BindOnce(&BTA_GATTS_HandleValueIndication,
-                                    static_cast<tCONN_ID>(conn_id), attribute_handle,
-                                    std::vector(value, value + length), confirm));
-  // TODO: Might need to send an ACK if handle value indication is
-  //       invoked without need for confirmation.
+  return do_in_main_thread(BindOnce(
+          [](tCONN_ID conn_id, uint16_t attribute_handle, std::vector<uint8_t> value,
+             bool need_confirm) {
+            tGATT_STATUS status = BTA_GATTS_HandleValueIndication(conn_id, attribute_handle,
+                                                                  std::move(value), need_confirm);
+
+            if (status != GATT_SUCCESS || !need_confirm) {
+              btapp_gatts_conf_send_fail_cback(conn_id, status);
+              return;
+            }
+          },
+          static_cast<tCONN_ID>(conn_id), attribute_handle, std::vector(value, value + length),
+          confirm));
 }
 
 static void btif_gatts_send_response_impl(int conn_id, int trans_id, int status,

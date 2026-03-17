@@ -54,7 +54,6 @@ struct tGATT_REQ_CBACK {
                         tGATT_EXEC_FLAG exec_write);
   void (&mtu_changed_cb)(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu);
   void (&conf_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda);
-  void (&conf_send_fail_cb)(tCONN_ID conn_id, tGATT_STATUS status);
 
   /* in case your server implementation needs to do nothing... */
   template <typename... Args>
