@@ -147,7 +147,14 @@ class NfcAuracastActivityTest {
         val mockAssistant = mock<BluetoothLeBroadcastAssistant>()
         val mockDevice = mock<BluetoothDevice>()
 
+        val testAlias = "My Earbuds"
+        doReturn(testAlias).whenever(mockDevice).alias
+
+        // Using doReturn for the assistant property setup
         doReturn(listOf(mockDevice)).whenever(mockAssistant).connectedDevices
+
+        // Using doReturn for the proxy setup.
+        // explicitly typed `any<Context>()` and `any<ServiceListener>()`
         doReturn(true)
             .whenever(mockBluetoothAdapter)
             .getProfileProxy(
@@ -160,6 +167,7 @@ class NfcAuracastActivityTest {
         val intent = createNdefIntent("BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;;")
         launchAndAssertDestroyed(intent)
 
+        // Intercept and capture the listener AFTER the activity runs using verify()
         val listenerCaptor = argumentCaptor<BluetoothProfile.ServiceListener>()
         verify(mockBluetoothAdapter)
             .getProfileProxy(
@@ -180,8 +188,7 @@ class NfcAuracastActivityTest {
         val notification = notificationCaptor.firstValue
         val text = notification.extras.getString(Notification.EXTRA_TEXT)
 
-        // Verify it hits the "Device is connected" branch in your Activity
-        assertThat(text).isEqualTo("Listen to TestName audio stream on your devices")
+        assertThat(text).isEqualTo("Listen to TestName audio stream on your My Earbuds")
 
         // Verify we didn't leak the proxy
         verify(mockBluetoothAdapter)

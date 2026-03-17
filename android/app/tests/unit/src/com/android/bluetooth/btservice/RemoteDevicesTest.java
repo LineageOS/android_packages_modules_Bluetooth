@@ -1410,6 +1410,28 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDevice(newAddress)).isNotNull();
     }
 
+    @Test
+    public void testGetAlias() {
+        // Verify that getAlias returns null when device property is null initially
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
+        assertThat(mRemoteDevices.getAlias(mDevice)).isNull();
+
+        // Prepare the base device property
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Util.getBytesFromAddress(mDevice.getAddress()));
+        assertThat(deviceProp).isNotNull();
+
+        // Verify that getAlias returns null when no alias is set
+        assertThat(mRemoteDevices.getAlias(mDevice)).isNull();
+
+        // Set an alias
+        String testAlias = "TestAlias";
+        deviceProp.setAlias(mDevice, testAlias);
+
+        // Verify that getAlias returns the correctly set alias
+        assertThat(mRemoteDevices.getAlias(mDevice)).isEqualTo(testAlias);
+    }
+
     private List<BluetoothDevice> fillLruCacheWithDevices(
             int count, BiConsumer<Integer, DeviceProperties> propertySetter) {
         List<BluetoothDevice> devices = new ArrayList<>();

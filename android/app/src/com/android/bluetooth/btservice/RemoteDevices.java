@@ -277,6 +277,21 @@ public class RemoteDevices {
         return deviceProp.getName();
     }
 
+    /**
+     * Gets the alias of a remote device from the internal cache.
+     *
+     * @param device the remote {@link BluetoothDevice}
+     * @return the alias of the device, or {@code null} if no alias is set or the device is not
+     *     found
+     */
+    public String getAlias(BluetoothDevice device) {
+        DeviceProperties deviceProp = getDeviceProperties(device);
+        if (deviceProp == null) {
+            return null;
+        }
+        return deviceProp.getAlias();
+    }
+
     int getType(BluetoothDevice device) {
         DeviceProperties deviceProp = getDeviceProperties(device);
         if (deviceProp == null) {

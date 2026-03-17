@@ -66,6 +66,7 @@ import com.android.bluetooth.Util;
 import com.android.bluetooth.auracast.AuracastUtils;
 import com.android.bluetooth.auracast.BroadcastStreamInfo;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioConstants;
 import com.android.bluetooth.le_audio.LeAudioStackEvent;
@@ -1788,8 +1789,18 @@ public class BassClientService extends ConnectableProfile {
         if (mPendingNfcJoiningDevices.isEmpty()) {
             String streamName =
                     source.getBroadcastName() != null ? source.getBroadcastName() : "Nearby";
-            // TODO: (b/491294522): use getAlias() or getName() for notification
-            String deviceName = "devices";
+
+            RemoteDevices remoteDevices = getAdapterService().getRemoteDevices();
+            String deviceName = remoteDevices.getAlias(sink);
+
+            if (deviceName == null) {
+                // If alias is null, try to get name
+                deviceName = remoteDevices.getName(sink);
+            }
+            if (deviceName == null) {
+                // If name is null, fallback
+                deviceName = "devices";
+            }
 
             NotificationManager nm =
                     getAdapterService().getSystemService(NotificationManager.class);
