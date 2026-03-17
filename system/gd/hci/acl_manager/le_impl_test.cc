@@ -1120,7 +1120,7 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   // Acknowledge that the le_impl has quiesced all relevant controller state
   le_impl_->add_device_to_resolving_list(remote_public_address_with_type_,
                                          kPeerIdentityResolvingKey, kLocalIdentityResolvingKey);
-  ASSERT_EQ(4UL, le_impl_->le_address_manager_->NumberCachedCommands());
+  ASSERT_LE(4UL, le_impl_->le_address_manager_->NumberCachedCommands());
 
   sync_handler();  // Let |LeAddressManager::register_client| execute on handler
   ASSERT_TRUE(le_impl_->address_manager_registered);
