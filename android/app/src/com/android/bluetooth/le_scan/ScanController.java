@@ -988,7 +988,7 @@ public class ScanController {
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService),
                         getAssociatedDevices(callingPackage));
-        dispatchStartScan(client);
+        dispatchStartScan(app, client);
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
@@ -1002,24 +1002,19 @@ public class ScanController {
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        dispatchStartScan(client);
+        dispatchStartScan(app, client);
     }
 
-    private void dispatchStartScan(ScanClient client) {
+    private void dispatchStartScan(ScannerApp app, ScanClient client) {
         mScanManager.fetchAppForegroundState(client);
-        boolean isCallbackScan = false;
-        var app = mScannerMap.getById(client.getScannerId());
-        if (app != null) {
-            isCallbackScan = app.getCallback() != null;
-        }
         client.getAppScanStats()
                 .recordScanStart(
                         client.getSettings(),
                         client.getFilters(),
                         client.isFiltered(),
-                        isCallbackScan,
+                        app.getCallback() != null,
                         client.getScannerId(),
-                        app == null ? null : app.getAttributionTag());
+                        app.getAttributionTag());
         mScanManager.startScan(client);
     }
 
