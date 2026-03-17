@@ -72,10 +72,10 @@ private const val TAG = "MainActivity"
 
 class MainActivity : ComponentActivity() {
 
-    private val leScanner: BluetoothLeScanner by lazy {
+    private val leScanner: BluetoothLeScanner? by lazy {
         val attributionContext = createAttributionContext(getString(R.string.attribution_tag))
         val bluetoothManager = attributionContext.getSystemService(BluetoothManager::class.java)
-        bluetoothManager.adapter.bluetoothLeScanner!!
+        bluetoothManager.adapter.bluetoothLeScanner
     }
 
     private val REQUIRED_PERMISSIONS =
@@ -249,7 +249,7 @@ class MainActivity : ComponentActivity() {
                 .build()
 
         isScanning = true
-        leScanner.startScan(emptyList(), scanSettings, leScanCallback)
+        leScanner?.startScan(emptyList(), scanSettings, leScanCallback)
     }
 
     @SuppressLint("MissingPermission")
@@ -259,7 +259,7 @@ class MainActivity : ComponentActivity() {
 
         toast("Scan stopped")
         isScanning = false
-        leScanner.stopScan(leScanCallback)
+        leScanner?.stopScan(leScanCallback)
     }
 
     private val leScanCallback: ScanCallback =
