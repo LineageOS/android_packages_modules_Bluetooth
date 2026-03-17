@@ -87,6 +87,20 @@ class DistanceMeasurementManagerTest {
         val address = device.address
         doReturn(address).whenever(adapterService).getIdentityAddress(address)
         doReturn(true).whenever(adapterService).isConnected(any<BluetoothDevice>())
+        doReturn(BluetoothDevice.BOND_BONDED).whenever(adapterService).getBondState(any())
+
+        val bondStatus = mock<BondStatus>()
+        doReturn(BluetoothDevice.PAIRING_ALGORITHM_SC).whenever(bondStatus).pairingAlgorithm
+        doReturn(bondStatus)
+            .whenever(adapterService)
+            .getBondStatus(any(), eq(BluetoothDevice.TRANSPORT_LE))
+
+        val encryptionStatus = mock<EncryptionStatus>()
+        doReturn(BluetoothDevice.ENCRYPTION_ALGORITHM_AES).whenever(encryptionStatus).algorithm
+        doReturn(16).whenever(encryptionStatus).keySize
+        doReturn(encryptionStatus)
+            .whenever(adapterService)
+            .getEncryptionStatus(any(), eq(BluetoothDevice.TRANSPORT_LE))
 
         handlerThread = HandlerThread("DistanceMeasurementManagerTest")
         handlerThread.start()
