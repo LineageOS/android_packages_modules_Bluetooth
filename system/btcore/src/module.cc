@@ -31,20 +31,50 @@
 
 using namespace bluetooth;
 
-typedef enum {
+typedef enum : uint8_t {
   MODULE_STATE_NONE = 0,
   MODULE_STATE_INITIALIZED = 1,
   MODULE_STATE_STARTED = 2
 } module_state_t;
+
+namespace std {
+template <>
+struct formatter<module_state_t> : enum_formatter<module_state_t> {};
+}  // namespace std
 
 static std::unordered_map<const module_t*, module_state_t> metadata;
 
 // TODO(jamuraa): remove this lock after the startup sequence is clean
 static std::mutex metadata_mutex;
 
-static bool call_lifecycle_function(module_lifecycle_fn function);
-static module_state_t get_module_state(const module_t* module);
-static void set_module_state(const module_t* module, module_state_t state);
+static bool call_lifecycle_function(module_lifecycle_fn function) {
+  // A NULL lifecycle function means it isn't needed, so assume success
+  if (!function) {
+    return true;
+  }
+
+  future_t* future = function();
+
+  // A NULL future means synchronous success
+  if (!future) {
+    return true;
+  }
+
+  // Otherwise fall back to the future
+  return future_await(future);
+}
+
+static module_state_t get_module_state(const module_t* module) {
+  std::lock_guard<std::mutex> lock(metadata_mutex);
+  auto map_ptr = metadata.find(module);
+
+  return (map_ptr != metadata.end()) ? map_ptr->second : MODULE_STATE_NONE;
+}
+
+static void set_module_state(const module_t* module, module_state_t state) {
+  std::lock_guard<std::mutex> lock(metadata_mutex);
+  metadata[module] = state;
+}
 
 void module_management_start(void) {}
 
@@ -99,6 +129,7 @@ void module_shut_down(const module_t* module) {
 
   // Only something to do if the module was actually started
   if (state < MODULE_STATE_STARTED) {
+    log::info("Nothing to do for module \"{}\" state is {}", module->name, state);
     return;
   }
 
@@ -119,6 +150,7 @@ void module_clean_up(const module_t* module) {
 
   // Only something to do if the module was actually initialized
   if (state < MODULE_STATE_INITIALIZED) {
+    log::info("Nothing to do for module \"{}\" state is {}", module->name, state);
     return;
   }
 
@@ -129,39 +161,4 @@ void module_clean_up(const module_t* module) {
   log::info("Cleanup of module \"{}\" completed", module->name);
 
   set_module_state(module, MODULE_STATE_NONE);
-}
-
-static bool call_lifecycle_function(module_lifecycle_fn function) {
-  // A NULL lifecycle function means it isn't needed, so assume success
-  if (!function) {
-    return true;
-  }
-
-  future_t* future = function();
-
-  // A NULL future means synchronous success
-  if (!future) {
-    return true;
-  }
-
-  // Otherwise fall back to the future
-  return future_await(future);
-}
-
-static module_state_t get_module_state(const module_t* module) {
-  std::lock_guard<std::mutex> lock(metadata_mutex);
-  auto map_ptr = metadata.find(module);
-
-  return (map_ptr != metadata.end()) ? map_ptr->second : MODULE_STATE_NONE;
-}
-
-static void set_module_state(const module_t* module, module_state_t state) {
-  std::lock_guard<std::mutex> lock(metadata_mutex);
-  metadata[module] = state;
-}
-
-bool is_module_started(const module_t* module) {
-  std::lock_guard<std::mutex> lock(metadata_mutex);
-  auto map_ptr = metadata.find(module);
-  return map_ptr != metadata.end() && map_ptr->second == MODULE_STATE_STARTED;
 }
