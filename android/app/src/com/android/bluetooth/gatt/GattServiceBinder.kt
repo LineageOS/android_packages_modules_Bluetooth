@@ -34,6 +34,8 @@ import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import com.android.bluetooth.Util
+import com.android.bluetooth.Util.callerIsSystemOrActiveOrManagedUser
+import com.android.bluetooth.Util.checkCallerHasPrivilegedPermission
 import com.android.bluetooth.Util.checkCallerTargetSdk
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.Utils
@@ -420,7 +422,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): Int {
         val gatt = gatt() ?: return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
-        if (!Util.callerIsSystemOrActiveOrManagedUser(gatt, TAG, "subrateModeRequest")) {
+        if (!gatt.callerIsSystemOrActiveOrManagedUser(TAG, "subrateModeRequest")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         }
         if (
@@ -660,7 +662,7 @@ class GattServiceBinder(private var gattService: GattService?) :
             return gatt.block()
         }
 
-        val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(gatt)
+        val hasPrivilegedPermission = gatt.checkCallerHasPrivilegedPermission()
         val header = "onGattThreadAndEnforcePrivilegedOnBinderIfNeeded($callback, $device):"
 
         val (result, isRestricted) =

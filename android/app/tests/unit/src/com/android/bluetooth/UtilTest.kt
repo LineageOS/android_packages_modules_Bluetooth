@@ -30,9 +30,11 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.Util.blockedByLocationOff
+import com.android.bluetooth.Util.callerIsSystemOrActiveOrManagedUser
 import com.android.bluetooth.Util.checkCallerHasCoarseLocation
 import com.android.bluetooth.Util.checkCallerHasCoarseOrFineLocation
 import com.android.bluetooth.Util.checkCallerHasFineLocation
+import com.android.bluetooth.Util.checkCallerIsSystemOrActiveOrManagedUser
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
@@ -252,7 +254,7 @@ class UtilTest {
     @Test
     fun checkCallerIsSystemOrActiveOrManagedUser() {
         // In Instrumentation mode, this is expected to return true
-        assertThat(Util.checkCallerIsSystemOrActiveOrManagedUser(context, TAG)).isTrue()
-        assertThat(Util.callerIsSystemOrActiveOrManagedUser(context, TAG, "testMethod")).isTrue()
+        assertThat(context.checkCallerIsSystemOrActiveOrManagedUser(TAG)).isTrue()
+        assertThat(context.callerIsSystemOrActiveOrManagedUser(TAG, "testMethod")).isTrue()
     }
 }
