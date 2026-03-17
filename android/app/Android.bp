@@ -161,6 +161,7 @@ android_library {
 
     libs: [
         "PlatformProperties",
+        "android.app.privatecompute.flags-aconfig-java-export",
         "bluetooth_constants-java",
         "bluetooth_flags_java_lib",
         "error_prone_annotations",
