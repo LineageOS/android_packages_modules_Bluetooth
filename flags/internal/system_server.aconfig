@@ -1,0 +1,10 @@
+package: "com.android.bluetooth.beta.flags"
+container: "com.android.bt"
+
+flag {
+    name: "system_server_direct_switch"
+    namespace: "com_android_bt"
+    description: "Never post the user switch request. Instead handle it immediately"
+    bug: "489876039"
+}
+

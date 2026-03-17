@@ -1,0 +1,29 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+    default_visibility: ["//visibility:private"],
+}
+
+aconfig_declarations {
+    name: "bluetooth_beta_aconfig_flags",
+    package: "com.android.bluetooth.beta.flags",
+    container: "com.android.bt",
+    exportable: false, // DO NOT EXPORT INTERNAL FLAG, EVER
+    srcs: ["*.aconfig"],
+}
+
+java_aconfig_library {
+    name: "bluetooth_beta_flags-java_lib",
+    aconfig_declarations: "bluetooth_beta_aconfig_flags",
+    visibility: [
+        // Never expose flags outside of packages/modules/Bluetooth
+        "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/android/app/tests/unit",
+        "//packages/modules/Bluetooth/framework",
+        "//packages/modules/Bluetooth/framework/tests/bumble",
+        "//packages/modules/Bluetooth/service",
+    ],
+    apex_available: ["com.android.bt"],
+    libs: ["framework-configinfrastructure.stubs.module_lib"],
+    sdk_version: "module_current",
+    min_sdk_version: "36",
+}
