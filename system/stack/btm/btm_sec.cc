@@ -4285,7 +4285,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
 
   p_dev_rec = btm_find_dev(p_cb->pairing_bda);
 
-  log::verbose("State: {}   Flags: {}",
+  log::warn("State: {}   Flags: {}",
                tBTM_SEC_CB::btm_pair_state_descr(p_cb->pairing_state),
                p_cb->pairing_flags);
 
@@ -4351,6 +4351,10 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_AUTH_COMPLETE:
+      if (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_LE_ACTIVE) {
+        SMP_PairCancel(p_cb->pairing_bda);
+      }
+      FALLTHROUGH_INTENDED;
     case BTM_PAIR_STATE_GET_REM_NAME:
       /* We need to notify the UI that timeout has happened while waiting for
        * authentication*/

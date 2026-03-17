@@ -3596,6 +3596,8 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
+  pairing_cb.is_le_only = true;
+  pairing_cb.is_le_nc = false;
   cod = COD_UNCLASSIFIED;
 
   BTM_LogHistory(

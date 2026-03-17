@@ -458,16 +458,22 @@ void smp_generate_compare(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
 /** This function is called when STK is generated proceed to send the encrypt
  * the link using STK. */
 static void smp_process_stk(tSMP_CB* p_cb, Octet16* p) {
-  tSMP_KEY key;
-
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
   smp_mask_enc_key(p_cb->loc_enc_size, p);
 
-  key.key_type = SMP_KEY_TYPE_STK;
-  key.p_data = p->data();
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
+       p_cb->selected_association_model == SMP_MODEL_KEY_NOTIF) {
+    p_cb->passkey_display_state.confirmed = true;
+    p_cb->tk = *p;
+    if (!p_cb->passkey_display_state.approved) {
+      log::info("Waiting for user to approve pairing {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+      return;
+    }
+  }
 
-  tSMP_INT_DATA smp_int_data;
-  smp_int_data.key = key;
+  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  tSMP_INT_DATA smp_int_data = {.key = {.key_type = SMP_KEY_TYPE_STK, .p_data = p->data()}};
+
   smp_sm_event(p_cb, SMP_KEY_READY_EVT, &smp_int_data);
 }
 
