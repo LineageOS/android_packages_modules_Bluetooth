@@ -290,7 +290,8 @@ public:
     if (conn_id_by_address_.count(pseudo_addr) == 0) {
       conn_id_by_address_[pseudo_addr] = conn_id;
 
-      p_gatt_event_source_cb_->p_connect_cb(server_if_, pseudo_addr, conn_id++, BT_TRANSPORT_LE);
+      p_gatt_event_source_cb_->p_conn_cb(server_if_, pseudo_addr, conn_id++, true, GATT_CONN_OK,
+                                         BT_TRANSPORT_LE);
     }
   }
 
@@ -303,7 +304,8 @@ public:
     }
 
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->p_disconnect_cb(server_if_, pseudo_addr, conn_id, BT_TRANSPORT_LE);
+      p_gatt_event_source_cb_->p_conn_cb(server_if_, pseudo_addr, conn_id, false, GATT_CONN_OK,
+                                         BT_TRANSPORT_LE);
     }
   }
 

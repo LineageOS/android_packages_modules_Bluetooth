@@ -73,7 +73,6 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
                         bool eatt_support,
                         void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                          const bluetooth::Uuid& uuid));
-void bta_gatts_start_if(tGATT_IF server_if);
 void bta_gatts_deregister(tGATT_IF server_if);
 void bta_gatts_delete_service(tGATT_IF server_if, uint16_t service_id);
 

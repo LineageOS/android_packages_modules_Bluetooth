@@ -118,26 +118,16 @@ static void btapp_gatts_reg_cback(tGATT_STATUS status, tGATT_IF server_if,
           status, server_if, uuid));
 }
 
-static void btapp_gatts_connect_cback(tGATT_IF server_if, const RawAddress& remote_bda,
-                                      tCONN_ID conn_id, tBT_TRANSPORT transport) {
+static void btapp_gatts_conn_cback(tGATT_IF server_if, const RawAddress& remote_bda,
+                                   tCONN_ID conn_id, bool connected, tGATT_DISCONN_REASON reason,
+                                   tBT_TRANSPORT transport) {
   do_in_jni_thread(BindOnce(
-          [](tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-             tBT_TRANSPORT transport) {
+          [](tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id, bool connected,
+             tGATT_DISCONN_REASON /*reason*/, tBT_TRANSPORT transport) {
             HAL_CBACK(bt_gatt_callbacks, server->connection_cb, conn_id, server_if,
-                      to_java_transport(transport), true, remote_bda);
+                      to_java_transport(transport), connected, remote_bda);
           },
-          server_if, remote_bda, conn_id, transport));
-}
-
-static void btapp_gatts_disconnect_cback(tGATT_IF server_if, const RawAddress& remote_bda,
-                                         tCONN_ID conn_id, tBT_TRANSPORT transport) {
-  do_in_jni_thread(BindOnce(
-          [](tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-             tBT_TRANSPORT transport) {
-            HAL_CBACK(bt_gatt_callbacks, server->connection_cb, conn_id, server_if,
-                      to_java_transport(transport), false, remote_bda);
-          },
-          server_if, remote_bda, conn_id, transport));
+          server_if, remote_bda, conn_id, connected, reason, transport));
 }
 
 static void btapp_gatts_delete_service_cback(tGATT_STATUS status, tGATT_IF server_if,
@@ -308,8 +298,7 @@ static bluetooth::stack::tGATT_REQ_CBACK server_cbacks = {
 };
 
 static const tBTA_GATTS_CBACK btapp_gatts_callbacks = {
-        .p_connect_cb = btapp_gatts_connect_cback,
-        .p_disconnect_cb = btapp_gatts_disconnect_cback,
+        .p_conn_cb = btapp_gatts_conn_cback,
         .p_delete_service_cb = btapp_gatts_delete_service_cback,
         .p_congestion_cb = btapp_gatts_congestion_cback,
         .p_phy_update_cb = btapp_gatts_phy_update_cback,

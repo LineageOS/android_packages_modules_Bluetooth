@@ -186,11 +186,13 @@ protected:
 
     // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
     EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(1);
-    captured_gatt_callback_->p_connect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
+    captured_gatt_callback_->p_conn_cb(1, test_address_, test_conn_id_, true, GATT_CONN_OK,
+                                       BT_TRANSPORT_LE);
   }
 
   void TearDown() override {
-    captured_gatt_callback_->p_disconnect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
+    captured_gatt_callback_->p_conn_cb(1, test_address_, test_conn_id_, false, GATT_CONN_OK,
+                                       BT_TRANSPORT_LE);
     RasServerTestNoInit::TearDown();
   }
 };
@@ -231,11 +233,13 @@ TEST_F(RasServerTestNoInit, ConnectAndDisconnect) {
 
   // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(1);
-  captured_gatt_callback_->p_connect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
+  captured_gatt_callback_->p_conn_cb(1, test_address_, test_conn_id_, true, GATT_CONN_OK,
+                                     BT_TRANSPORT_LE);
 
   // OnRasServerDisconnected should be triggered after receiving BTA_GATTS_DISCONNECT_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerDisconnected(test_address_)).Times(1);
-  captured_gatt_callback_->p_disconnect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_LE);
+  captured_gatt_callback_->p_conn_cb(1, test_address_, test_conn_id_, false, GATT_CONN_OK,
+                                     BT_TRANSPORT_LE);
 }
 
 TEST_F(RasServerTestNoInit, IgnoreBrEdr) {
@@ -250,7 +254,8 @@ TEST_F(RasServerTestNoInit, IgnoreBrEdr) {
 
   // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
   EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(0);
-  captured_gatt_callback_->p_connect_cb(1, test_address_, test_conn_id_, BT_TRANSPORT_BR_EDR);
+  captured_gatt_callback_->p_conn_cb(1, test_address_, test_conn_id_, true, GATT_CONN_OK,
+                                     BT_TRANSPORT_BR_EDR);
 }
 
 TEST_F(RasServerTest, EmptyTest) {}
