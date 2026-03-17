@@ -871,38 +871,6 @@ void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status,
 // Adds bonded device for GATT server tracking service changes
 void BTA_GATTS_InitBonded(void);
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_OffloadCharacteristics
- *
- * Description      This function is called to offload a service.
- *
- * Parameters       conn_id - connection ID.
- *                  service - vector describing service.
- *                  endpoint_id - ID of the hub end point.
- *                  hub_id - ID of the hub to which the end point belongs.
- *                  uid - UID of the app.
- *                  attribution_tag - attribution tag of the app.
- *                  promise - object used to signal the completion status.
- *
- ******************************************************************************/
-void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
-                                      uint64_t endpoint_id, uint64_t hub_id, int uid,
-                                      std::string attribution_tag,
-                                      std::promise<btgatt_offload_result_t> promise);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_UnoffloadCharacteristics
- *
- * Description      This function is called to unoffload a session.
- *
- * Parameters       conn_id - connection ID.
- *                  session_id - session ID.
- *
- ******************************************************************************/
-void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id);
-
 /* Initialize power management callbacks for GATT */
 extern void BTA_GATT_Init_gatt_pm_callbacks();
 

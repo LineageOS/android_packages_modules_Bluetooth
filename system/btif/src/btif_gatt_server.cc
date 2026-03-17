@@ -487,10 +487,9 @@ static BtStatus btif_gatts_offload_characteristics(int conn_id, btgatt_db_elemen
   std::promise<btgatt_offload_result_t> promise;
   std::future future = promise.get_future();
 
-  BtStatus status = do_in_main_thread(
-          base::BindOnce(&BTA_GATTS_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id),
-                         std::vector(service, service + elements_count), endpoint_id, hub_id, uid,
-                         std::move(attribution_tag), std::move(promise)));
+  BtStatus status = do_in_main_thread(base::BindOnce(
+          &GATTS_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id), service, elements_count,
+          endpoint_id, hub_id, uid, std::move(attribution_tag), std::move(promise)));
   if (!status) {
     return status;
   }
@@ -509,7 +508,7 @@ static BtStatus btif_gatts_offload_characteristics(int conn_id, btgatt_db_elemen
 
 static BtStatus btif_gatts_unoffload_characteristics(int conn_id, int session_id) {
   CHECK_BTGATT_INIT();
-  return do_in_main_thread(BindOnce(base::IgnoreResult(&BTA_GATTS_UnoffloadCharacteristics),
+  return do_in_main_thread(BindOnce(base::IgnoreResult(&GATTS_UnoffloadCharacteristics),
                                     static_cast<tCONN_ID>(conn_id), session_id));
 }
 

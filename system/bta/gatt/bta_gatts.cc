@@ -323,20 +323,6 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::ve
   }
 }
 
-void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
-                                      uint64_t endpoint_id, uint64_t hub_id, int uid,
-                                      std::string attribution_tag,
-                                      std::promise<btgatt_offload_result_t> promise) {
-  log::verbose("conn_id: {}, endpoint_id: {}, hub_id: {}, uid: {}, attribution_tag: {}", conn_id,
-               endpoint_id, hub_id, uid, attribution_tag);
-  GATTS_OffloadCharacteristics(conn_id, service.data(), service.size(), endpoint_id, hub_id, uid,
-                               std::move(attribution_tag), std::move(promise));
-}
-
-void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id) {
-  GATTS_UnoffloadCharacteristics(conn_id, session_id);
-}
-
 static void notify_pm_br_gatt_conn_open(const RawAddress& bda) {
   bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);
   bta_sys_conn_open(BTA_ID_GATTS, BTA_ALL_APP_ID, bda);
