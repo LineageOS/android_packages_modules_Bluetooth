@@ -32,6 +32,7 @@ import android.annotation.SystemApi;
 import android.app.PendingIntent;
 import android.bluetooth.Attributable;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothScan;
 import android.bluetooth.annotations.RequiresBluetoothLocationPermission;
 import android.bluetooth.annotations.RequiresBluetoothScanPermission;
@@ -300,11 +301,11 @@ public final class BluetoothLeScanner {
             allOf = {BLUETOOTH_PRIVILEGED, BLUETOOTH_SCAN},
             conditional = true)
     private int doStartScan(
-            List<ScanFilter> filters,
+            @Nullable List<ScanFilter> filters,
             ScanSettings settings,
-            final WorkSource workSource,
-            final ScanCallback callback,
-            final PendingIntent callbackIntent) {
+            @Nullable final WorkSource workSource,
+            @Nullable final ScanCallback callback,
+            @Nullable final PendingIntent callbackIntent) {
         if (callback == null && callbackIntent == null) {
             throw new IllegalArgumentException("callback is null");
         }
@@ -461,22 +462,22 @@ public final class BluetoothLeScanner {
 
     /** Bluetooth Scan interface callbacks */
     private final class BleScanCallbackWrapper extends IScannerCallback.Stub {
-        private final IBluetoothScan mScan;
-        private final List<ScanFilter> mFilters;
-        private final ScanSettings mSettings;
-        private final WorkSource mWorkSource;
-        private final ScanCallback mCallback;
+        @NonNull private final IBluetoothScan mScan;
+        @NonNull private final List<ScanFilter> mFilters;
+        @NonNull private final ScanSettings mSettings;
+        @Nullable private final WorkSource mWorkSource;
+        @NonNull private final ScanCallback mCallback;
 
         // 0: not registered
         // > 0: registered and scan started
         private int mScannerId;
 
         BleScanCallbackWrapper(
-                IBluetoothScan bluetoothScan,
-                List<ScanFilter> filters,
-                ScanSettings settings,
-                WorkSource workSource,
-                ScanCallback scanCallback) {
+                @NonNull IBluetoothScan bluetoothScan,
+                @NonNull List<ScanFilter> filters,
+                @NonNull ScanSettings settings,
+                @Nullable WorkSource workSource,
+                @NonNull ScanCallback scanCallback) {
             mScan = bluetoothScan;
             mFilters = filters;
             mSettings = settings;

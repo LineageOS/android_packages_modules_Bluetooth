@@ -32,6 +32,7 @@
 #define MAX_UINT16 ((uint16_t)0xffff)
 
 using namespace testing;
+using stack::tGATT_REQ_CBACK;
 
 tGATT_CB gatt_cb;
 
@@ -174,6 +175,7 @@ static stack::tGATT_REQ_CBACK ApplicationRequestCallback = {
         .exec_write_cb = ApplicationExecWriteCallback,
         .mtu_changed_cb = ApplicationMtuChangedCallback,
         .conf_cb = ApplicationConfCallback,
+        .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
 };
 
 bool gatt_sr_is_cl_change_aware(tGATT_TCB& /*tcb*/) { return false; }

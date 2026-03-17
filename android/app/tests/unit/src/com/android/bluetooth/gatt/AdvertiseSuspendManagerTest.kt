@@ -16,8 +16,11 @@
 
 package com.android.bluetooth.gatt
 
+import android.bluetooth.IBluetoothGattServerCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
+import android.bluetooth.le.IAdvertisingSetCallback
+import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.content.AttributionSource
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,6 +36,7 @@ import org.mockito.Mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
@@ -362,6 +366,137 @@ class AdvertiseSuspendManagerTest {
                 )
             )
             .isTrue()
+    }
+
+    @Test
+    fun onAdvertisingEnabled_unexpectedEventDuringPausing_returnsTrue() {
+        // Start an advertisement
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
+        advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
+
+        // Enter suspend, which will pause the advertisement
+        advertiseSuspendManager.enterSuspend()
+
+        // Simulate an unexpected event: enable is true instead of false
+        val result =
+            advertiseSuspendManager.onAdvertisingEnabled(
+                ADVERTISER_ID1,
+                enable = true,
+                status = STATUS_OK,
+            )
+
+        // Callback should be called because it's an unexpected event
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun onAdvertisingEnabled_unexpectedEventDuringResuming_returnsTrue() {
+        // Start an advertisement
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
+        advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
+
+        // Enter suspend and complete pausing
+        advertiseSuspendManager.enterSuspend()
+        advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
+
+        // Exit suspend, which will resume the advertisement
+        advertiseSuspendManager.exitSuspend()
+
+        // Simulate an unexpected event: enable is false instead of true, but status is OK
+        val result =
+            advertiseSuspendManager.onAdvertisingEnabled(
+                ADVERTISER_ID1,
+                enable = false,
+                status = STATUS_OK,
+            )
+
+        // Callback should be called because it's an unexpected event
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun suspendThenQueueAllCommandTypes() {
+        // Enter suspend directly (no ongoing advertisements)
+        advertiseSuspendManager.enterSuspend()
+        verify(adapterSuspend).advertiseSuspendReady()
+
+        // Queue all types of commands not covered by other tests
+        val parameters = AdvertisingSetParameters.Builder().build()
+        val advertiseData = AdvertiseData.Builder().build()
+        val scanResponse = AdvertiseData.Builder().build()
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        val periodicData = AdvertiseData.Builder().build()
+        val callback = mock<IAdvertisingSetCallback>()
+        val gattServerCallback = mock<IBluetoothGattServerCallback>()
+
+        advertiseSuspendManager.queueStartAdvertisingSet(
+            parameters,
+            advertiseData,
+            scanResponse,
+            periodicParameters,
+            periodicData,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            gattServerCallback,
+            callback,
+            source,
+        )
+        advertiseSuspendManager.queueGetOwnAddress(ADVERTISER_ID1)
+        advertiseSuspendManager.queueStopAdvertisingSet(callback)
+        advertiseSuspendManager.queueEnableAdvertisingSet(
+            ADVERTISER_ID1,
+            true,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
+        advertiseSuspendManager.queueSetPeriodicAdvertisingParameters(
+            ADVERTISER_ID1,
+            periodicParameters,
+        )
+        advertiseSuspendManager.queueSetPeriodicAdvertisingData(ADVERTISER_ID1, periodicData)
+        advertiseSuspendManager.queueSetPeriodicAdvertisingEnable(ADVERTISER_ID1, true)
+
+        // Exit suspend, verify all commands are executed
+        advertiseSuspendManager.exitSuspend()
+
+        verify(advertiseManager)
+            .startAdvertisingSet(
+                eq(parameters),
+                eq(advertiseData),
+                eq(scanResponse),
+                eq(periodicParameters),
+                eq(periodicData),
+                eq(DURATION1),
+                eq(MAX_EXT_ADV_EVENTS1),
+                eq(gattServerCallback),
+                eq(callback),
+                eq(source),
+            )
+        verify(advertiseManager).getOwnAddress(eq(ADVERTISER_ID1))
+        verify(advertiseManager).stopAdvertisingSet(eq(callback))
+        verify(advertiseManager)
+            .enableAdvertisingSet(
+                eq(ADVERTISER_ID1),
+                eq(true),
+                eq(DURATION1),
+                eq(MAX_EXT_ADV_EVENTS1),
+                eq(source),
+            )
+        verify(advertiseManager)
+            .setPeriodicAdvertisingParameters(eq(ADVERTISER_ID1), eq(periodicParameters))
+        verify(advertiseManager).setPeriodicAdvertisingData(eq(ADVERTISER_ID1), eq(periodicData))
+        verify(advertiseManager).setPeriodicAdvertisingEnable(eq(ADVERTISER_ID1), eq(true))
     }
 
     companion object {

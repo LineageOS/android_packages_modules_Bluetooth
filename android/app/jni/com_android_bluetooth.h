@@ -42,7 +42,8 @@ public:
     if (!com_android_bluetooth_flags_jni_batch_memory_management()) {
       return;
     }
-    log::assert_that(mCallbackEnv != nullptr && isCallbackThread(), "CallbackEnv is not valid");
+    log::assert_that(mCallbackEnv != nullptr, "CallbackEnv must not be null");
+    log::assert_that(isCallbackThread(), "CallbackEnv must be run on callback thread");
     log::assert_that(mCallbackEnv->PushLocalFrame(128) >= 0, "Failed to push local frame");
   }
 

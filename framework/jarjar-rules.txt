@@ -26,3 +26,7 @@ rule android.bluetooth.platform.flags.Flags com.android.bluetooth.jarjar.@0
 rule com.android.internal.telephony.flags.*FeatureFlags* com.android.bluetooth.jarjar.@0
 rule com.android.internal.telephony.flags.FeatureFlags* com.android.bluetooth.jarjar.@0
 rule com.android.internal.telephony.flags.Flags com.android.bluetooth.jarjar.@0
+
+rule android.app.privatecompute.flags.*FeatureFlags* com.android.bluetooth.jarjar.@0
+rule android.app.privatecompute.flags.FeatureFlags* com.android.bluetooth.jarjar.@0
+rule android.app.privatecompute.flags.Flags com.android.bluetooth.jarjar.@0

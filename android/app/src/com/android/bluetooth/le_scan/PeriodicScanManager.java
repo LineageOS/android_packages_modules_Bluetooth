@@ -34,10 +34,12 @@ import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /** Manages Bluetooth LE Periodic scans */
@@ -47,8 +49,9 @@ public class PeriodicScanManager {
 
     @VisibleForTesting int mTempRegistrationId = -1;
 
-    private final Map<IBinder, SyncInfo> mSyncs = new HashMap<>();
-    private final Map<IBinder, SyncTransferInfo> mSyncTransfers = new HashMap<>();
+    private final Map<IBinder, SyncInfo> mSyncs = new ConcurrentHashMap<>();
+    private final Map<IBinder, SyncTransferInfo> mSyncTransfers =
+            Collections.synchronizedMap(new HashMap<>());
 
     private final AdapterService mAdapterService;
     private final ScanController mScanController;
@@ -104,47 +107,49 @@ public class PeriodicScanManager {
             return;
         }
 
-        Iterator<Map.Entry<IBinder, SyncInfo>> it = mSyncs.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<IBinder, SyncInfo> e = it.next();
-            if (e.getValue().id != regId) {
-                continue;
-            }
-            IPeriodicAdvertisingCallback callback = e.getValue().callback;
-            if (status == 0) {
-                Log.d(TAG, "onSyncStarted(): Updating id with syncHandle=" + syncHandle);
-                e.setValue(
-                        new SyncInfo(
-                                syncHandle,
-                                sid,
-                                address,
-                                e.getValue().skip,
-                                e.getValue().timeout,
-                                e.getValue().deathRecipient,
-                                callback));
-                callbackToApp(
-                        () ->
-                                callback.onSyncEstablished(
-                                        syncHandle,
-                                        mAdapterService.getRemoteDevice(address, addressType),
-                                        sid,
-                                        e.getValue().skip,
-                                        e.getValue().timeout,
-                                        status));
+        synchronized (mSyncs) {
+            Iterator<Map.Entry<IBinder, SyncInfo>> it = mSyncs.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<IBinder, SyncInfo> e = it.next();
+                if (e.getValue().id != regId) {
+                    continue;
+                }
+                IPeriodicAdvertisingCallback callback = e.getValue().callback;
+                if (status == 0) {
+                    Log.d(TAG, "onSyncStarted(): Updating id with syncHandle=" + syncHandle);
+                    e.setValue(
+                            new SyncInfo(
+                                    syncHandle,
+                                    sid,
+                                    address,
+                                    e.getValue().skip,
+                                    e.getValue().timeout,
+                                    e.getValue().deathRecipient,
+                                    callback));
+                    callbackToApp(
+                            () ->
+                                    callback.onSyncEstablished(
+                                            syncHandle,
+                                            mAdapterService.getRemoteDevice(address, addressType),
+                                            sid,
+                                            e.getValue().skip,
+                                            e.getValue().timeout,
+                                            status));
 
-            } else {
-                it.remove();
-                callbackToApp(
-                        () ->
-                                callback.onSyncEstablished(
-                                        syncHandle,
-                                        mAdapterService.getRemoteDevice(address, addressType),
-                                        sid,
-                                        e.getValue().skip,
-                                        e.getValue().timeout,
-                                        status));
-                IBinder binder = e.getKey();
-                binder.unlinkToDeath(e.getValue().deathRecipient, 0);
+                } else {
+                    it.remove();
+                    callbackToApp(
+                            () ->
+                                    callback.onSyncEstablished(
+                                            syncHandle,
+                                            mAdapterService.getRemoteDevice(address, addressType),
+                                            sid,
+                                            e.getValue().skip,
+                                            e.getValue().timeout,
+                                            status));
+                    IBinder binder = e.getKey();
+                    binder.unlinkToDeath(e.getValue().deathRecipient, 0);
+                }
             }
         }
     }
@@ -173,7 +178,9 @@ public class PeriodicScanManager {
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
             IBinder binder = callback.asBinder();
-            mSyncs.remove(binder);
+            synchronized (mSyncs) {
+                mSyncs.remove(binder);
+            }
             callbackToApp(() -> callback.onSyncLost(syncHandle));
         }
     }
@@ -217,36 +224,38 @@ public class PeriodicScanManager {
                 TAG,
                 ("startSync for Device: " + address + " addressType: " + addressType)
                         + (" sid: " + sid));
-        Map.Entry<IBinder, SyncInfo> entry = findMatchingSync(sid, address);
-        if (entry != null) {
-            // Found matching sync. Copy sync handle
-            Log.d(TAG, "startSync(): Matching entry found");
-            mSyncs.put(
-                    binder,
-                    new SyncInfo(
-                            entry.getValue().id,
-                            sid,
-                            address,
-                            entry.getValue().skip,
-                            entry.getValue().timeout,
-                            deathRecipient,
-                            callback));
-            if (entry.getValue().id >= 0) {
-                try {
-                    callback.onSyncEstablished(
-                            entry.getValue().id,
-                            mAdapterService.getRemoteDevice(address, addressType),
-                            sid,
-                            entry.getValue().skip,
-                            entry.getValue().timeout,
-                            0 /*success*/);
-                } catch (RemoteException e) {
-                    throw new IllegalArgumentException("Can't invoke callback");
+        synchronized (mSyncs) {
+            Map.Entry<IBinder, SyncInfo> entry = findMatchingSync(sid, address);
+            if (entry != null) {
+                // Found matching sync. Copy sync handle
+                Log.d(TAG, "startSync(): Matching entry found");
+                mSyncs.put(
+                        binder,
+                        new SyncInfo(
+                                entry.getValue().id,
+                                sid,
+                                address,
+                                entry.getValue().skip,
+                                entry.getValue().timeout,
+                                deathRecipient,
+                                callback));
+                if (entry.getValue().id >= 0) {
+                    try {
+                        callback.onSyncEstablished(
+                                entry.getValue().id,
+                                mAdapterService.getRemoteDevice(address, addressType),
+                                sid,
+                                entry.getValue().skip,
+                                entry.getValue().timeout,
+                                0 /*success*/);
+                    } catch (RemoteException e) {
+                        throw new IllegalArgumentException("Can't invoke callback");
+                    }
+                } else {
+                    Log.d(TAG, "startSync(): Sync pending for same remote");
                 }
-            } else {
-                Log.d(TAG, "startSync(): Sync pending for same remote");
+                return;
             }
-            return;
         }
 
         int cbId = --mTempRegistrationId;
@@ -261,7 +270,10 @@ public class PeriodicScanManager {
         mScanController.enforceScanThread();
         IBinder binder = callback.asBinder();
         Log.d(TAG, "stopSync(): Binder=" + binder);
-        SyncInfo sync = mSyncs.remove(binder);
+        SyncInfo sync = null;
+        synchronized (mSyncs) {
+            sync = mSyncs.remove(binder);
+        }
         if (sync == null) {
             Log.e(TAG, "stopSync(): No client found for callback");
             return;
@@ -271,10 +283,12 @@ public class PeriodicScanManager {
         binder.unlinkToDeath(sync.deathRecipient, 0);
         Log.d(TAG, "stopSync: " + syncHandle);
 
-        Map.Entry<IBinder, SyncInfo> entry = findSync(syncHandle);
-        if (entry != null) {
-            Log.d(TAG, "stopSync(): Another app synced to same PA, not stopping sync");
-            return;
+        synchronized (mSyncs) {
+            Map.Entry<IBinder, SyncInfo> entry = findSync(syncHandle);
+            if (entry != null) {
+                Log.d(TAG, "stopSync(): Another app synced to same PA, not stopping sync");
+                return;
+            }
         }
         Log.d(TAG, "calling stopSyncNative: " + syncHandle.intValue());
         if (syncHandle < 0) {

@@ -26,7 +26,7 @@ private const val TAG = "Permissions"
 object Permissions {
     private val uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation()
 
-    public interface PermissionContext : AutoCloseable {
+    interface PermissionContext : AutoCloseable {
         // Override AutoCloseable method to silent the requirement on Exception
         override fun close()
     }

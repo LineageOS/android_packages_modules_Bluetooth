@@ -93,6 +93,7 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.auracast.AuracastUtils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioConstants;
@@ -9766,8 +9767,8 @@ public class BassClientServiceTest {
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
     public void testLocalNotifySourceAddFailed_showsNotificationWhenEmpty() {
         NotificationManager mockNm = mock(NotificationManager.class);
+        RemoteDevices mockRemoteDevices = mock(RemoteDevices.class);
 
-        // Use the existing helper for the manager
         mockGetSystemService(mAdapterService, NotificationManager.class, mockNm);
         doReturn(ApplicationProvider.getApplicationContext().getResources())
                 .when(mAdapterService)
@@ -9777,7 +9778,13 @@ public class BassClientServiceTest {
                 .when(mBassClientService.getBaseContext())
                 .getApplicationInfo();
 
+        // Mock the RemoteDevices cache for the new alias/name logic
+        doReturn(mockRemoteDevices).when(mAdapterService).getRemoteDevices();
+
         BluetoothDevice device = mock(BluetoothDevice.class);
+        doReturn("Test Alias").when(mockRemoteDevices).getAlias(device);
+        doReturn("Test Name").when(mockRemoteDevices).getName(device);
+
         mBassClientService.mPendingNfcJoiningDevices.add(device);
 
         BluetoothLeBroadcastMetadata metadata = mock(BluetoothLeBroadcastMetadata.class);
@@ -9789,6 +9796,18 @@ public class BassClientServiceTest {
                 .notifySourceAddFailed(device, metadata, BluetoothStatusCodes.ERROR_UNKNOWN);
 
         assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
-        verify(mockNm).notify(eq(AuracastUtils.NOTIFICATION_ID), any(Notification.class));
+
+        // Capture the notification passed to the NotificationManager
+        ArgumentCaptor<Notification> notificationCaptor =
+                ArgumentCaptor.forClass(Notification.class);
+        verify(mockNm).notify(eq(AuracastUtils.NOTIFICATION_ID), notificationCaptor.capture());
+
+        // Extract the text from the captured notification's extras
+        Notification notification = notificationCaptor.getValue();
+        String text = notification.extras.getString(Notification.EXTRA_TEXT);
+
+        // Verify the exact text hits the Alias branch properly
+        assertThat(text)
+                .isEqualTo("Failed to connect to TestName audio stream on your Test Alias.");
     }
 }

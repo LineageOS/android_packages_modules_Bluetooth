@@ -102,18 +102,20 @@ TEST_F(AscsTestsBase, RegisterCallbacks) {
 
   // Check GATT server app registration
   Ascs::ServiceDescriptor service_descriptor;
-  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _))
-          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb)));
+  void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _, _))
+          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb),
+                          SaveArg<3>(&p_reg_cb)));
   ascs_->RegisterGattService(service_descriptor, &asc_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
   ASSERT_EQ(uuid::kAudioStreamControlServiceUuid, uuid);
   Mock::VerifyAndClearExpectations(&gatt_server_interface_);
 
   // Inject the registration success event
-  p_gatt_event_source_cb->p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
+  p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
 
   // Ignore second call to register
-  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _))
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _, _))
           .Times(0);
   ascs_->RegisterGattService(service_descriptor, &asc_callbacks_);
 
@@ -184,12 +186,14 @@ public:
     AscsTestsBase::SetUp();
 
     // Mock GATT application registration success
-    EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _))
+    EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _, _))
             .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
                                   [](const bluetooth::Uuid& app_uuid,
-                                     const tBTA_GATTS_CBACK* p_cback, bool /* eatt_support */) {
-                                    if (p_cback) {
-                                      p_cback->p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
+                                     const tBTA_GATTS_CBACK* /*p_cback*/, bool /* eatt_support */,
+                                     void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                      const bluetooth::Uuid& uuid)) {
+                                    if (p_reg_cb) {
+                                      p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
                                     }
                                   }));
 
@@ -237,7 +241,8 @@ public:
     if (conn_id_by_address_.count(pseudo_addr) == 0) {
       conn_id_by_address_[pseudo_addr] = conn_id;
 
-      p_gatt_event_source_cb_->p_connect_cb(server_if_, pseudo_addr, conn_id++, BT_TRANSPORT_LE);
+      p_gatt_event_source_cb_->p_conn_cb(server_if_, pseudo_addr, conn_id++, true, GATT_CONN_OK,
+                                         BT_TRANSPORT_LE);
     }
   }
 
@@ -250,7 +255,8 @@ public:
     }
 
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->p_disconnect_cb(server_if_, address, conn_id, BT_TRANSPORT_LE);
+      p_gatt_event_source_cb_->p_conn_cb(server_if_, address, conn_id, false, GATT_CONN_OK,
+                                         BT_TRANSPORT_LE);
     }
   }
 
@@ -274,8 +280,8 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->p_read_characteristic_cb(conn_id, gatt_trans_id_++, address, handle,
-                                                        0, false);
+      p_gatt_event_source_cb_->server_cbacks->read_characteristic_cb(conn_id, gatt_trans_id_++,
+                                                                     address, handle, 0, false);
     }
   }
 
@@ -316,8 +322,8 @@ public:
       uint8_t* pp = value;
       UINT16_TO_STREAM(pp, cccd_value);
 
-      p_gatt_event_source_cb_->p_write_descriptor_cb(conn_id, gatt_trans_id_++, address, handle, 0,
-                                                     true, false, value, sizeof(value));
+      p_gatt_event_source_cb_->server_cbacks->write_descriptor_cb(
+              conn_id, gatt_trans_id_++, address, handle, 0, true, false, value, sizeof(value));
     }
   }
 
@@ -338,9 +344,9 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->p_write_characteristic_cb(conn_id, gatt_trans_id_++, address, handle,
-                                                         0, with_rsp, false, (uint8_t*)value.data(),
-                                                         value.size());
+      p_gatt_event_source_cb_->server_cbacks->write_characteristic_cb(
+              conn_id, gatt_trans_id_++, address, handle, 0, with_rsp, false,
+              (uint8_t*)value.data(), value.size());
     }
   }
 

@@ -31,6 +31,8 @@
 // Generated packet headers:
 #include "ascs/ascs_packets.h"
 
+using bluetooth::stack::tGATT_REQ_CBACK;
+
 namespace bluetooth::le_audio {
 
 static const uint8_t kInvalidAseId = 0x00;
@@ -158,17 +160,23 @@ struct Ascs::service_impl {
 
     callbacks_ = callbacks;
 
+    static bluetooth::stack::tGATT_REQ_CBACK ascs_server_cbacks = {
+            .read_characteristic_cb = OnGattReadCharacteristicStatic,
+            .read_descriptor_cb = OnGattReadDescriptorStatic,
+            .write_characteristic_cb = OnGattWriteCharacteristicStatic,
+            .write_descriptor_cb = OnGattWriteDescriptorStatic,
+            .exec_write_cb = tGATT_REQ_CBACK::do_nothing,
+            .mtu_changed_cb = tGATT_REQ_CBACK::do_nothing,
+            .conf_cb = tGATT_REQ_CBACK::do_nothing,
+            .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
+    };
     static const tBTA_GATTS_CBACK ascs_ops = {
-            .p_reg_cb = OnGattRegisterStatic,
-            .p_connect_cb = OnGattConnectStatic,
-            .p_disconnect_cb = OnGattDisconnectStatic,
-            .p_read_characteristic_cb = OnGattReadCharacteristicStatic,
-            .p_read_descriptor_cb = OnGattReadDescriptorStatic,
-            .p_write_characteristic_cb = OnGattWriteCharacteristicStatic,
-            .p_write_descriptor_cb = OnGattWriteDescriptorStatic,
+            .p_conn_cb = OnGattConnStatic,
+            .server_cbacks = &ascs_server_cbacks,
     };
 
-    BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false);
+    BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false,
+                          &OnGattRegisterStatic);
   }
 
   static void OnGattRegisterStatic(tGATT_STATUS status, tGATT_IF server_if,
@@ -178,17 +186,15 @@ struct Ascs::service_impl {
     }
   }
 
-  static void OnGattConnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                  tCONN_ID conn_id, tBT_TRANSPORT transport) {
+  static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
+                               tCONN_ID conn_id, bool connected, tGATT_DISCONN_REASON /*reason*/,
+                               tBT_TRANSPORT transport) {
     if (instance) {
-      instance->service_impl_->OnGattConnect(remote_bda, conn_id, transport);
-    }
-  }
-
-  static void OnGattDisconnectStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
-                                     tCONN_ID conn_id, tBT_TRANSPORT /*transport*/) {
-    if (instance) {
-      instance->service_impl_->OnGattDisconnect(remote_bda, conn_id);
+      if (connected) {
+        instance->service_impl_->OnGattConnect(remote_bda, conn_id, transport);
+      } else {
+        instance->service_impl_->OnGattDisconnect(remote_bda, conn_id);
+      }
     }
   }
 

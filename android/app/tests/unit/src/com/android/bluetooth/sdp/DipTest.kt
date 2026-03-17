@@ -25,7 +25,7 @@ import android.os.Looper
 import android.os.ParcelUuid
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.Util
+import com.android.bluetooth.Util.getByteAddress
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AbstractionLayer
 import com.android.bluetooth.btservice.AdapterService
@@ -130,7 +130,7 @@ class DipTest {
         sdpManager.sdpSearch(device, BluetoothUuid.DIP)
         sdpManager.sdpDipRecordFoundCallback(
             AbstractionLayer.BT_STATUS_SUCCESS,
-            Util.getByteAddress(device),
+            device.getByteAddress(),
             uuid,
             specificationId,
             vendorId,

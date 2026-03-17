@@ -24,11 +24,11 @@ import android.util.Base64
 import android.util.Log
 
 object AuracastUtils {
-    public const val CHANNEL_ID = "auracast_nfc_channel"
-    public const val NOTIFICATION_ID = 1001
-    public const val AURACAST_PREFIX = "BLUETOOTH:UUID:184F"
-    public const val ACTION_CONNECT_STREAM = "com.android.bluetooth.auracast.action.CONNECT_STREAM"
-    public const val EXTRA_METADATA = "extra_metadata"
+    const val CHANNEL_ID = "auracast_nfc_channel"
+    const val NOTIFICATION_ID = 1001
+    const val AURACAST_PREFIX = "BLUETOOTH:UUID:184F"
+    const val ACTION_CONNECT_STREAM = "com.android.bluetooth.auracast.action.CONNECT_STREAM"
+    const val EXTRA_METADATA = "extra_metadata"
 
     private const val TAG = "AuracastUtils"
     // --- URI Parsing Constants ---

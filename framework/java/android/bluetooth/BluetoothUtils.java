@@ -28,6 +28,8 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.util.Log;
 
+import com.android.modules.utils.build.SdkLevel;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -504,6 +506,37 @@ public final class BluetoothUtils {
         final int uid = Process.myUid();
         for (String permission : permissions) {
             context.enforcePermission(permission, pid, uid, null);
+        }
+    }
+
+    /**
+     * Checks if the current process UID is a Private Compute Core (PCC) UID.
+     *
+     * <p>PCC UIDs are restricted from performing certain Bluetooth egress operations to maintain
+     * data privacy boundaries.
+     *
+     * <p>Note: Similar to {@link #enforcePermissionInFramework}, this check is a framework-level
+     * courtesy for developers to provide immediate feedback. It is not a formal security
+     * enforcement mechanism, as a malicious caller could bypass the framework and call the
+     * Bluetooth binder directly via reflection.
+     *
+     * <p>Because many Bluetooth binder operations are {@code oneway}, any {@link SecurityException}
+     * thrown on the service side would be lost to the caller and only appear in system logs. This
+     * check ensures the developer is warned of the restriction within their own process.
+     *
+     * @param methodName the name of the method being checked, used for the exception message
+     * @throws SecurityException if the current process is a PCC UID
+     */
+    @Hide
+    public static void verifyNonPccUid(String methodName) {
+        if (SdkLevel.isAtLeastC()
+                && android.app.privatecompute.flags.Flags.enablePccFrameworkSupport()) {
+            final int uid = Process.myUid();
+            if (Process.isPrivateComputeCoreUid(uid)) {
+                throw new SecurityException(
+                        "PCC UIDs are not allowed to perform Bluetooth egress operation: "
+                                + methodName);
+            }
         }
     }
 }

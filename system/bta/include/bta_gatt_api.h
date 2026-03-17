@@ -38,6 +38,7 @@
 #include "hardware/bt_gatt_types.h"
 #include "macros.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/stack_app.h"
 
 #ifndef BTA_GATT_DEBUG
 #define BTA_GATT_DEBUG false
@@ -297,29 +298,8 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
 
 /* Server callback function */
 typedef struct {
-  void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
-  void (*p_dereg_cb)(tGATT_STATUS status, tGATT_IF server_if);
-  void (*p_connect_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-                       tBT_TRANSPORT transport);
-  void (*p_disconnect_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-                          tBT_TRANSPORT transport);
-  void (*p_stop_service_cb)(tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id);
-  void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if, uint16_t service_id);
-  void (*p_read_characteristic_cb)(tCONN_ID conn_id, uint32_t trans_id,
-                                   const RawAddress& remote_bda, uint16_t handle, uint16_t offset,
-                                   bool is_long);
-  void (*p_read_descriptor_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
-                               uint16_t handle, uint16_t offset, bool is_long);
-  void (*p_write_characteristic_cb)(tCONN_ID conn_id, uint32_t trans_id,
-                                    const RawAddress& remote_bda, uint16_t handle, uint16_t offset,
-                                    bool need_rsp, bool is_prep, uint8_t* value, uint16_t len);
-  void (*p_write_descriptor_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
-                                uint16_t handle, uint16_t offset, bool need_rsp, bool is_prep,
-                                uint8_t* value, uint16_t len);
-  void (*p_exec_write_cb)(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,
-                          tGATT_EXEC_FLAG exec_write);
-  void (*p_mtu_changed_cb)(tCONN_ID conn_id, const RawAddress& remote_bda, uint16_t mtu);
-  void (*p_conf_cb)(tCONN_ID conn_id, tGATT_STATUS status);
+  void (*p_conn_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
+                    bool connected, tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
   void (*p_congestion_cb)(tCONN_ID conn_id, bool congested);
   void (*p_phy_update_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint8_t tx_phy, uint8_t rx_phy,
                           tGATT_STATUS status);
@@ -328,11 +308,10 @@ typedef struct {
   void (*p_subrate_chg_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint16_t subrate_factor,
                            uint16_t latency, uint16_t cont_num, uint16_t timeout,
                            tGATT_SUBRATE_MODE subrate_mode, tGATT_STATUS status);
-  void (*p_req_open_cb)(tGATT_STATUS status);
-  void (*p_cancel_open_cb)(tGATT_STATUS status);
-  void (*p_close_cb)(tGATT_STATUS status);
-  void (*p_characteristics_unoffloaded_cb)(tCONN_ID conn_id, uint32_t session_id,
-                                           tGATT_STATUS status);
+  void (*p_characteristics_unoffloaded_cb)(tGATT_IF server_if, tCONN_ID conn_id,
+                                           uint32_t session_id, tGATT_STATUS status);
+
+  bluetooth::stack::tGATT_REQ_CBACK* server_cbacks;
 } tBTA_GATTS_CBACK;
 
 /*****************************************************************************
@@ -824,7 +803,9 @@ void BTA_GATTS_Disable(void);
  *
  ******************************************************************************/
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
-                           bool eatt_support);
+                           bool eatt_support,
+                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                            const bluetooth::Uuid& uuid));
 
 /*******************************************************************************
  *
@@ -874,7 +855,9 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
  * Returns          returns none.
  *
  ******************************************************************************/
-void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id);
+void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
+                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                         uint16_t service_id));
 
 /*******************************************************************************
  *

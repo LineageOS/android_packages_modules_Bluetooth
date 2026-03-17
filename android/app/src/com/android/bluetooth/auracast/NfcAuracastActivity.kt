@@ -24,7 +24,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothLeBroadcastAssistant
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
@@ -134,8 +133,10 @@ class NfcAuracastActivity : Activity() {
             if (profile == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT) {
                 val assistant = proxy as BluetoothLeBroadcastAssistant
                 val connectedDevice = assistant.connectedDevices.firstOrNull()
-
-                postNotification(applicationContext, metadataStr, streamName, connectedDevice)
+                // If no connected device, deviceName is null.
+                // If device exists, it resolves the alias, name, or falls back to "devices".
+                val deviceName = connectedDevice?.let { it.alias ?: it.name ?: "devices" }
+                postNotification(applicationContext, metadataStr, streamName, deviceName)
 
                 bluetoothAdapter?.closeProfileProxy(
                     BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
@@ -153,7 +154,7 @@ class NfcAuracastActivity : Activity() {
         context: Context,
         metadataStr: String,
         streamName: String,
-        connectedDevice: BluetoothDevice?,
+        deviceName: String?,
     ) {
         val nm = notificationManagerProvider(context)
 
@@ -165,6 +166,14 @@ class NfcAuracastActivity : Activity() {
             )
         nm.createNotificationChannel(channel)
 
+        if (deviceName == null) {
+            // No device connected: Pass the testable 'nm' and null for the pending intent
+            val message = "Connect an LE Audio device to start listening"
+            AuracastUtils.showNotification(context, nm, streamName, message, null)
+            return
+        }
+
+        // Device is connected
         val connectIntent =
             Intent(AuracastUtils.ACTION_CONNECT_STREAM).apply {
                 setPackage(context.packageName)
@@ -179,17 +188,8 @@ class NfcAuracastActivity : Activity() {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
 
-        if (connectedDevice == null) {
-            // No device connected: Pass the testable 'nm' and null for the pending intent
-            val message = "Connect an LE Audio device to start listening"
-            AuracastUtils.showNotification(context, nm, streamName, message, null)
-        } else {
-            // Device is connected
-            // TODO: (b/491294522): use getAlias() or getName() for notification
-            val deviceName = "devices"
-            val message = "Listen to $streamName audio stream on your $deviceName"
-            AuracastUtils.showNotification(context, nm, streamName, message, connectPending)
-        }
+        val message = "Listen to $streamName audio stream on your $deviceName"
+        AuracastUtils.showNotification(context, nm, streamName, message, connectPending)
     }
 
     companion object {

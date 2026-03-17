@@ -96,6 +96,7 @@ AUDIO_SIGNAL_SAMPLING_RATE = 44100
 AUDIO_SIGNAL_SINE_DURATION = 0.1
 MAX_INT16 = 2**15 - 1
 
+A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG = "com.android.bluetooth.flags.a2dp_offload_user_codec_selection"
 
 async def initiate_pairing(device: PandoraDevice, address: bytes) -> Connection:
     """Connect and pair a remote device."""
@@ -309,6 +310,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         self.ref2_a2dp.on('connection', on_ref2_avdtp_connection)
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_connect_and_stream(self) -> None:
         """Basic A2DP connection and streaming test.
         This test wants to be a template to be reused for other tests.
@@ -343,6 +345,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         assert_equal(self.ref1_a2dp_sink.stream.state, State.OPEN)
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_signaling_channel_and_streaming(self) -> None:
         """Basic A2DP connection and streaming with SignalingChannel used by acceptor device test.
 
@@ -422,6 +425,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await asyncio.wait_for(avdtp_future, timeout=10.0)
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_reconfigure_codec_success(self) -> None:
         """Basic A2DP connection and codec reconfiguration.
 
@@ -536,6 +540,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_avdt_handle_suspend_cfm_bad_state_error(self) -> None:
         """Test AVDTP handling of suspend confirmation BAD_STATE error.
 
@@ -586,6 +591,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await channel.accept_close(timeout=10.0)
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_avdt_open_after_timeout(self) -> None:
         """Test AVDTP automatically opens stream after timeout if peer device only configures codec.
 
@@ -950,6 +956,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info("<< 6. DUT A2DP source configured and connected >>")
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_avdt_wait_before_sending_open_command__no_delay_report_sent(self) -> None:
         """Test if AOSP DUT will wait for 2 seconds before sending AVDT Open command.
         DUT should wait for that time to allow RD1 sink device to send AVDT Delay Report command
@@ -1016,6 +1023,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                              channel.accept_suspend())
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_avdt_wait_before_sending_open_command__delay_report_sent(self) -> None:
         """Test if AOSP DUT will wait for 2 seconds before sending AVDT Open command.
         DUT should wait for that time to allow REF sink device to send AVDT Delay Report command
@@ -1085,6 +1093,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                              channel.accept_suspend())
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_dut_disconnects_after_no_avdt_start_response(self) -> None:
         """Test that DUT disconnects L2CAP Channel after no response for AVDT Start for 15 seconds.
 
@@ -1177,6 +1186,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             "No new connection for 10 seconds on DUT. accept_signalling_timer properly canceled.")
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_codec_reconfiguration(self) -> None:
         """Basic A2DP connection with SignalingChannel and codec reconfiguration while streaming.
 
@@ -1292,6 +1302,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                              channel.accept_suspend())
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_delay_report_after_full_codec_reconfiguration(self) -> None:
         """Test if AOSP properly sets configuration when the peer device supports/doesn't support
            delay report service capability.
@@ -1444,6 +1455,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await disconnect(result.connection, ref1_dut)
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_avdt_handle_start_cfm_bad_state_error(self) -> None:
         """Test AVDTP handling of start confirmation BAD_STATE error.
 
@@ -1553,6 +1565,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await channel.accept_get_all_capabilities(aac_service_capabilites())
 
     @avatar.asynchronous
+    @enableFlag(A2DP_OFFLOAD_USER_CODEC_SELECTION_FLAG)
     async def test_avdt_suspend_and_start_from_remote(self) -> None:
         """Test AVDTP suspend and start from remote.
 

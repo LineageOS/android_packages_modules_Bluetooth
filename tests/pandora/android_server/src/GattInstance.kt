@@ -37,7 +37,7 @@ import pandora.GattProto.*
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mContext: Context) {
     private val TAG = "GattInstance"
-    public val mGatt: BluetoothGatt
+    val mGatt: BluetoothGatt
 
     private var mServiceDiscovered = MutableStateFlow(false)
     private var mConnectionState = MutableStateFlow(STATE_DISCONNECTED)
@@ -174,31 +174,31 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         gattInstances.put(mDevice.address, this)
     }
 
-    public fun isConnected(): Boolean {
+    fun isConnected(): Boolean {
         return mConnectionState.value == STATE_CONNECTED
     }
 
-    public fun isDisconnected(): Boolean {
+    fun isDisconnected(): Boolean {
         return mConnectionState.value == STATE_DISCONNECTED
     }
 
-    public fun isBonded(): Boolean {
+    fun isBonded(): Boolean {
         return mDevice.getBondState() == BluetoothDevice.BOND_BONDED
     }
 
-    public fun isBLETransport(): Boolean {
+    fun isBLETransport(): Boolean {
         return mTransport == BluetoothDevice.TRANSPORT_LE
     }
 
-    public fun servicesDiscovered(): Boolean {
+    fun servicesDiscovered(): Boolean {
         return mServiceDiscovered.value
     }
 
-    public fun clearServicesDiscovered() {
+    fun clearServicesDiscovered() {
         mServiceDiscovered.value = false
     }
 
-    public suspend fun waitForOnCharacteristicChanged(
+    suspend fun waitForOnCharacteristicChanged(
         characteristic: BluetoothGattCharacteristic
     ): Boolean {
         if (mOnCharacteristicChanged.value == false) {
@@ -207,39 +207,39 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mCharacteristicChangedMap[characteristic] == true
     }
 
-    public suspend fun waitForState(newState: Int) {
+    suspend fun waitForState(newState: Int) {
         if (mConnectionState.value != newState) {
             mConnectionState.first { it == newState }
         }
     }
 
-    public suspend fun waitForDiscoveryEnd() {
+    suspend fun waitForDiscoveryEnd() {
         if (mServiceDiscovered.value != true) {
             mServiceDiscovered.first { it == true }
         }
     }
 
-    public suspend fun waitForValuesReadEnd() {
+    suspend fun waitForValuesReadEnd() {
         if (mValuesRead.value < mGattInstanceValuesRead.size) {
             mValuesRead.first { it == mGattInstanceValuesRead.size }
         }
         mValuesRead.value = 0
     }
 
-    public suspend fun waitForValuesRead() {
+    suspend fun waitForValuesRead() {
         if (mValuesRead.value < mGattInstanceValuesRead.size) {
             mValuesRead.first { it == mGattInstanceValuesRead.size }
         }
     }
 
-    public suspend fun waitForWriteEnd() {
+    suspend fun waitForWriteEnd() {
         if (mValueWrote.value != true) {
             mValueWrote.first { it == true }
         }
         mValueWrote.value = false
     }
 
-    public suspend fun readCharacteristicBlocking(
+    suspend fun readCharacteristicBlocking(
         characteristic: BluetoothGattCharacteristic
     ): GattInstanceValueRead {
         // Init mGattInstanceValuesRead with characteristic values.
@@ -259,7 +259,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mGattInstanceValuesRead.get(0)
     }
 
-    public suspend fun readCharacteristicUuidBlocking(
+    suspend fun readCharacteristicUuidBlocking(
         uuid: UUID,
         startHandle: Int,
         endHandle: Int,
@@ -312,9 +312,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mGattInstanceValuesRead
     }
 
-    public suspend fun readDescriptorBlocking(
-        descriptor: BluetoothGattDescriptor
-    ): GattInstanceValueRead {
+    suspend fun readDescriptorBlocking(descriptor: BluetoothGattDescriptor): GattInstanceValueRead {
         // Init mGattInstanceValuesRead with descriptor values.
         mGattInstanceValuesRead =
             arrayListOf(
@@ -332,7 +330,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mGattInstanceValuesRead.get(0)
     }
 
-    public suspend fun writeCharacteristicBlocking(
+    suspend fun writeCharacteristicBlocking(
         characteristic: BluetoothGattCharacteristic,
         value: ByteArray,
     ): GattInstanceValueWrote {
@@ -353,7 +351,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mGattInstanceValueWrote
     }
 
-    public fun writeCharacteristicNonBlocking(
+    fun writeCharacteristicNonBlocking(
         characteristic: BluetoothGattCharacteristic,
         value: ByteArray,
     ): Int {
@@ -364,7 +362,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         )
     }
 
-    public suspend fun writeDescriptorBlocking(
+    suspend fun writeDescriptorBlocking(
         descriptor: BluetoothGattDescriptor,
         value: ByteArray,
     ): GattInstanceValueWrote {
@@ -379,14 +377,11 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mGattInstanceValueWrote
     }
 
-    public fun writeDescriptorNonBlocking(
-        descriptor: BluetoothGattDescriptor,
-        value: ByteArray,
-    ): Int {
+    fun writeDescriptorNonBlocking(descriptor: BluetoothGattDescriptor, value: ByteArray): Int {
         return mGatt.writeDescriptor(descriptor, value)
     }
 
-    public fun disconnectInstance() {
+    fun disconnectInstance() {
         require(isConnected()) { "Trying to disconnect an already disconnected device $mDevice" }
         mGatt.disconnect()
         gattInstances.remove(mDevice.address)

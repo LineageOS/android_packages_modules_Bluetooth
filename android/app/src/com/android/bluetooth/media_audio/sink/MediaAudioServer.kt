@@ -29,7 +29,9 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import com.android.bluetooth.R
-import com.android.bluetooth.Util
+import com.android.bluetooth.Util.isIotDevice
+import com.android.bluetooth.Util.isTv
+import com.android.bluetooth.Util.isXrDevice
 import com.android.bluetooth.a2dpsink.A2dpSinkService
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService
 import com.android.bluetooth.mcp.McpClientService
@@ -585,7 +587,7 @@ class MediaAudioServer(private val context: Context) {
      * states is not usually enough to know that the local user _intends_ for Bluetooth to start
      * playing over another app. It can be incredibly disruptive one some form factors.
      *
-     * This disruptiveness usually looks like a remote device sending sonifications down A2DP (i.e.
+     * This disruptiveness usually looks like a remote device sending notifications down A2DP (i.e.
      * notification noises, keyboard clicks, etc.) and/or sending playback states for those too.
      *
      * Many form factors require a local user action as an indicator of user intent to play over
@@ -597,10 +599,10 @@ class MediaAudioServer(private val context: Context) {
      * Despite this, some device manufacturers are willing to trade the disruptiveness caused by
      * some devices for the generally improved UX of automatic focus requesting with all devices.
      *
-     * This function returns true in the case that focus can currently be automotically requested.
+     * This function returns true in the case that focus can currently be automatically requested.
      */
     private fun canAutomaticallyRequestFocus(): Boolean {
-        if (Util.isIotDevice(context) || Util.isTv(context) || Util.isXrDevice(context)) {
+        if (context.isIotDevice() || context.isTv() || context.isXrDevice()) {
             Log.d(TAG, "canAutomaticallyRequestFocus(): true, due to supported device type")
             return true
         }

@@ -24,6 +24,7 @@ import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
@@ -156,7 +157,7 @@ public class ScanController {
         mAdapterService = requireNonNull(adapterService);
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = companionDeviceManager;
-        mBinder = new ScanBinder(mAdapterService, this);
+        mBinder = new ScanBinder(mAdapterService, this, mTestModeEnabled);
         mScannerMap = new ScannerMap(mAdapterService, batteryStatsManager);
         mScanRadioStats = new ScanRadioStats(timeProvider);
         mExposureNotificationPackage =
@@ -869,12 +870,12 @@ public class ScanController {
     }
 
     void registerAndStartScan(
-            IScannerCallback callback,
-            WorkSource workSource,
-            AttributionSource source,
+            @NonNull IScannerCallback callback,
+            @Nullable WorkSource workSource,
+            @NonNull AttributionSource source,
             boolean hasPrivilegedPermission,
-            ScanSettings settings,
-            List<ScanFilter> filters) {
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters) {
         enforceScanThread();
         var appScanStats = mScannerMap.getAppScanStatsByUid(source.getUid());
         if (appScanStats != null
@@ -894,20 +895,21 @@ public class ScanController {
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
     public void registerAndStartScanInternal(
-            IScannerCallback callback,
-            AttributionSource source,
-            ScanSettings settings,
-            List<ScanFilter> filters) {
+            @NonNull IScannerCallback callback,
+            @NonNull AttributionSource source,
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters) {
         enforceScanThread();
-        registerAndStartScan(callback, null, source, settings, filters, /* isInternal */ true);
+        registerAndStartScan(
+                callback, /* workSource */ null, source, settings, filters, /* isInternal */ true);
     }
 
     private void registerAndStartScan(
-            IScannerCallback callback,
+            @NonNull IScannerCallback callback,
             @Nullable WorkSource workSource,
-            AttributionSource source,
-            ScanSettings settings,
-            List<ScanFilter> filters,
+            @NonNull AttributionSource source,
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters,
             boolean isInternal) {
         Log.d(
                 TAG,
@@ -986,7 +988,7 @@ public class ScanController {
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService),
                         getAssociatedDevices(callingPackage));
-        dispatchStartScan(client);
+        dispatchStartScan(app, client);
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
@@ -1000,32 +1002,27 @@ public class ScanController {
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        dispatchStartScan(client);
+        dispatchStartScan(app, client);
     }
 
-    private void dispatchStartScan(ScanClient client) {
+    private void dispatchStartScan(ScannerApp app, ScanClient client) {
         mScanManager.fetchAppForegroundState(client);
-        boolean isCallbackScan = false;
-        var app = mScannerMap.getById(client.getScannerId());
-        if (app != null) {
-            isCallbackScan = app.getCallback() != null;
-        }
         client.getAppScanStats()
                 .recordScanStart(
                         client.getSettings(),
                         client.getFilters(),
                         client.isFiltered(),
-                        isCallbackScan,
+                        app.getCallback() != null,
                         client.getScannerId(),
-                        app == null ? null : app.getAttributionTag());
+                        app.getAttributionTag());
         mScanManager.startScan(client);
     }
 
     void registerPiAndStartScan(
-            PendingIntent pendingIntent,
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            AttributionSource source) {
+            @NonNull PendingIntent pendingIntent,
+            @NonNull ScanSettings settings,
+            @NonNull List<ScanFilter> filters,
+            @NonNull AttributionSource source) {
         enforceScanThread();
         var header = "registerPiAndStartScan(): ";
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
@@ -1076,8 +1073,7 @@ public class ScanController {
         }
     }
 
-    @VisibleForTesting
-    void dispatchPendingIntentStartScan(ScannerApp app) {
+    private void dispatchPendingIntentStartScan(ScannerApp app) {
         var client = new ScanClient(app);
         mScanManager.fetchAppForegroundState(client);
         client.getAppScanStats()
@@ -1155,18 +1151,18 @@ public class ScanController {
         mPeriodicScanManager.stopSync(callback);
     }
 
-    public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
+    public void transferSync(BluetoothDevice device, int serviceData, int syncHandle) {
         enforceScanThread();
-        mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
+        mPeriodicScanManager.transferSync(device, serviceData, syncHandle);
     }
 
     public void transferSetInfo(
-            BluetoothDevice bda,
+            BluetoothDevice device,
             int serviceData,
             int advHandle,
             IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
-        mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
+        mPeriodicScanManager.transferSetInfo(device, serviceData, advHandle, callback);
     }
 
     int numHwTrackFiltersAvailable() {
@@ -1174,6 +1170,10 @@ public class ScanController {
         return mAdapterService.getTotalNumOfTrackableAdvertisements()
                 - mScanManager.getCurrentUsedTrackingAdvertisement();
     }
+
+    /**************************************************************************
+     * THREADING
+     *************************************************************************/
 
     void enforceScanThread() {
         if (Util.isInstrumentationTestMode()) return;

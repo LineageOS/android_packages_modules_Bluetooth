@@ -109,7 +109,9 @@ class BtaGattServerInterface {
 public:
   virtual void Disable() = 0;
   virtual void AppRegister(const bluetooth::Uuid& /* app_uuid */,
-                           const tBTA_GATTS_CBACK* /* p_cback */, bool /* eatt_support */) = 0;
+                           const tBTA_GATTS_CBACK* /* p_cback */, bool /* eatt_support */,
+                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                            const bluetooth::Uuid& uuid)) = 0;
   virtual void AppDeregister(tGATT_IF server_if) = 0;
   virtual void Open(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,
                     tBLE_ADDR_TYPE /* addr_type */, bool /* is_direct */,
@@ -119,7 +121,9 @@ public:
   virtual void Close(uint16_t /* conn_id */) = 0;
   virtual void AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
                           BTA_GATTS_AddServiceCb /* cb */) = 0;
-  virtual void DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */) = 0;
+  virtual void DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */,
+                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                                         uint16_t service_id)) = 0;
   virtual void HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
                                      std::vector<uint8_t> /* value */, bool /* need_confirm */) = 0;
   virtual void SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,
@@ -131,8 +135,10 @@ public:
 class MockBtaGattServerInterface : public BtaGattServerInterface {
 public:
   MOCK_METHOD((void), Disable, ());
-  MOCK_METHOD((void), AppRegister,
-              (const bluetooth::Uuid& uuid, const tBTA_GATTS_CBACK* cb, bool eatt_support),
+  MOCK_METHOD(void, AppRegister,
+              (const bluetooth::Uuid& uuid, const tBTA_GATTS_CBACK* cb, bool eatt_support,
+               void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                const bluetooth::Uuid& uuid)),
               (override));
   MOCK_METHOD((void), AppDeregister, (tGATT_IF server_if), (override));
   MOCK_METHOD((void), Open,
@@ -146,7 +152,10 @@ public:
               (tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
                BTA_GATTS_AddServiceCb cb),
               (override));
-  MOCK_METHOD((void), DeleteService, (tGATT_IF server_if, uint16_t service_id));
+  MOCK_METHOD(void, DeleteService,
+              (tGATT_IF server_if, uint16_t service_id,
+               void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                           uint16_t service_id)));
   MOCK_METHOD((void), HandleValueIndication,
               (uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value, bool need_confirm));
 

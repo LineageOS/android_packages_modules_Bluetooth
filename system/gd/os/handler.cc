@@ -29,6 +29,11 @@
 namespace bluetooth {
 namespace os {
 
+// Simple pointer to track which handler is currently draining tasks on this thread.
+// This is necessary because the same thread might be executing other Reactor callbacks
+// (like timers or queue registrations) that are not part of this Handler's task loop.
+static thread_local Handler* handler_running_on_this_thread = nullptr;
+
 Handler::Handler(Thread* thread)
     : tasks_(new std::queue<base::OnceClosure>()),
       thread_(thread),
@@ -60,7 +65,11 @@ std::optional<base::OnceClosure> Handler::Post(base::OnceClosure closure) {
     }
     tasks_->emplace(std::move(closure));
   }
-  if (!thread_->IsSameThread()) {
+  // We only skip notification if we are already on the same thread AND
+  // we are currently inside the handle_next_event loop for this specific handler.
+  // If we are on the same thread but in a different callback (like a timer),
+  // we must notify to ensure the Reactor triggers a new handle_next_event turn.
+  if (handler_running_on_this_thread != this) {
     event_->Notify();
   }
   return std::nullopt;
@@ -106,11 +115,13 @@ void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
 
 void Handler::handle_next_event() {
   event_->Read();
+  handler_running_on_this_thread = this;
   while (true) {
     base::OnceClosure closure;
     {
       std::lock_guard<std::mutex> lock(mutex_);
       if (was_cleared() || tasks_->empty()) {
+        handler_running_on_this_thread = nullptr;
         return;
       }
 

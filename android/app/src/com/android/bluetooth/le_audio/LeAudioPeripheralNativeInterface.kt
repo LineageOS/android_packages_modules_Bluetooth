@@ -16,8 +16,11 @@
 
 package com.android.bluetooth.le_audio
 
+import com.android.bluetooth.Util.getByteAddress
+
 class LeAudioPeripheralNativeInterface
 internal constructor(internal val nativeCallback: LeAudioPeripheralNativeCallback) {
+
     fun init() {
         initNative()
     }
@@ -27,11 +30,11 @@ internal constructor(internal val nativeCallback: LeAudioPeripheralNativeCallbac
     }
 
     fun confirmStreamStartRequest(device: android.bluetooth.BluetoothDevice, allowed: Boolean) {
-        confirmStreamStartRequestNative(com.android.bluetooth.Util.getByteAddress(device), allowed)
+        confirmStreamStartRequestNative(device.getByteAddress(), allowed)
     }
 
     fun stopStream(device: android.bluetooth.BluetoothDevice, streamId: Int) {
-        stopStreamNative(com.android.bluetooth.Util.getByteAddress(device), streamId)
+        stopStreamNative(device.getByteAddress(), streamId)
     }
 
     // Native methods that call into the JNI interface

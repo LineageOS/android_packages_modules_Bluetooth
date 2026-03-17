@@ -32,11 +32,17 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
+import android.os.Build
 import android.os.WorkSource
 import android.util.Log
 import com.android.bluetooth.Util
+import com.android.bluetooth.Util.appNameOrUnknown
+import com.android.bluetooth.Util.checkCallerHasCoarseOrFineLocation
+import com.android.bluetooth.Util.checkCallerHasFineLocation
+import com.android.bluetooth.Util.checkCallerTargetSdk
 import com.android.bluetooth.Util.enforceScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanUtil.toStringShort
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanBinder"
@@ -44,6 +50,7 @@ private const val TAG = ScanUtil.TAG_PREFIX + "ScanBinder"
 class ScanBinder(
     private val adapterService: AdapterService,
     private val scanController: ScanController,
+    private val testModeEnabled: Boolean,
 ) : IBluetoothScan.Stub() {
 
     @Volatile private var isAvailable = true
@@ -82,6 +89,14 @@ class ScanBinder(
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
         val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(adapterService)
+
+        if (Flags.earlyRejectUnauthorizedScans() && !hasDisavowedLocationOrHasPermission(source)) {
+            val app = adapterService.appNameOrUnknown(source.uid)
+            Log.w(TAG, "$app requested to scan but does not have location permission")
+            callback.onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1)
+            return
+        }
+
         withControllerRunOnScanThread(source, "registerAndStartScan") {
             registerAndStartScan(
                 callback,
@@ -92,6 +107,18 @@ class ScanBinder(
                 filters,
             )
         } ?: run { callback.onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1) }
+    }
+
+    private fun hasDisavowedLocationOrHasPermission(source: AttributionSource): Boolean {
+        if (Util.hasDisavowedLocationForScan(adapterService, source, testModeEnabled)) {
+            return true
+        }
+        val isQApp = adapterService.checkCallerTargetSdk(source, Build.VERSION_CODES.Q)
+        return if (isQApp) {
+            adapterService.checkCallerHasFineLocation(source, getCallingUserHandle())
+        } else {
+            adapterService.checkCallerHasCoarseOrFineLocation(source, getCallingUserHandle())
+        }
     }
 
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
