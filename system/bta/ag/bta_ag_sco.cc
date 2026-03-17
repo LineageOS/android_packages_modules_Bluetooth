@@ -1586,6 +1586,13 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */,
          (p_scb->callsetup_ind == BTA_AG_CALLSETUP_NONE)) ||
         (p_scb->post_sco == BTA_AG_POST_SCO_CALL_END)) {
       bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+    } else if (com_android_bluetooth_flags_sco_close_after_rfcomm_disconnect() &&
+               (!p_scb->svc_conn)) {
+      bool exist_other_scb = bta_ag_other_scb_open(p_scb);
+      log::warn("SCO closed after RFCOMM closed ({})", exist_other_scb);
+      if (!exist_other_scb) {
+        bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+      }
     }
 
     /* call app callback */
