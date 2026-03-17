@@ -868,54 +868,6 @@ void BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id, std::ve
 void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status,
                        std::unique_ptr<tGATTS_RSP> rsp);
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Open
- *
- * Description      Open a direct open connection or add a background auto
- *                  connection bd address
- *
- * Parameters       server_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  addr_type: remote device address type
- *                  is_direct: direct connection or background auto connection
- *                  transport: transport to use in this connection
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_CancelOpen
- *
- * Description      Cancel a direct open connection or remove a background auto
- *                  connection bd address
- *
- * Parameters       server_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  is_direct: direct connection or background auto connection
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Close
- *
- * Description      Close a connection  a remote device.
- *
- * Parameters       conn_id: connection ID to be closed.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_GATTS_Close(tCONN_ID conn_id);
-
 // Adds bonded device for GATT server tracking service changes
 void BTA_GATTS_InitBonded(void);
 

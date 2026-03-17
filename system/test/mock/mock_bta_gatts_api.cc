@@ -41,11 +41,6 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */,
                                     const bluetooth::Uuid& uuid)) {
   inc_func_call_count(__func__);
 }
-void BTA_GATTS_CancelOpen(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,
-                          bool /* is_direct */) {
-  inc_func_call_count(__func__);
-}
-void BTA_GATTS_Close(uint16_t /* conn_id */) { inc_func_call_count(__func__); }
 void BTA_GATTS_AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
                           BTA_GATTS_AddServiceCb /* cb */) {
   inc_func_call_count(__func__);
@@ -56,11 +51,6 @@ bool BTA_GATTS_DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */
 }
 void BTA_GATTS_HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
                                      std::vector<uint8_t> /* value */, bool /* need_confirm */) {
-  inc_func_call_count(__func__);
-}
-void BTA_GATTS_Open(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,
-                    tBLE_ADDR_TYPE /* addr_type */, bool /* is_direct */,
-                    tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,

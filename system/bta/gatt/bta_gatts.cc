@@ -323,39 +323,6 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::ve
   }
 }
 
-void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
-  if (!p_rcb) {
-    log::error("Inavlid server_if={}", server_if);
-    return;
-  }
-
-  /* should always get the connection ID */
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    std::ignore = GATT_BR_Connect(p_rcb->gatt_if, remote_bda);
-  } else {
-    tBTM_BLE_CONN_TYPE connection_type =
-            is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
-    std::ignore = stack::leConnectionConnect(p_rcb->gatt_if, remote_bda, addr_type, connection_type,
-                                             0, false, false);
-  }
-}
-
-void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
-  if (!p_rcb) {
-    log::error("Inavlid server_if={}", server_if);
-    return;
-  }
-
-  if (!stack::leConnectionCancelConnect(p_rcb->gatt_if, remote_bda, is_direct)) {
-    log::error("failed for open request");
-  }
-}
-
-void BTA_GATTS_Close(uint16_t conn_id) { std::ignore = GATT_Disconnect(conn_id); }
-
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
                                       uint64_t endpoint_id, uint64_t hub_id, int uid,
                                       std::string attribution_tag,

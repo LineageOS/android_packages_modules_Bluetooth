@@ -348,7 +348,16 @@ static void btif_gatts_open_impl_use_address_type(int server_if, const RawAddres
   }
 
   log::info("addr_type:{}, transport:{}", addr_type, bt_transport_text(transport));
-  BTA_GATTS_Open(server_if, address, addr_type, is_direct, transport);
+
+  /* should always get the connection ID */
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    std::ignore = GATT_BR_Connect(server_if, address);
+  } else {
+    tBTM_BLE_CONN_TYPE connection_type =
+            is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
+    std::ignore = stack::leConnectionConnect(server_if, address, addr_type, connection_type, 0,
+                                             false, false);
+  }
 }
 
 static BtStatus btif_gatts_open(int server_if, const RawAddress& bd_addr, uint8_t addr_type,
@@ -362,13 +371,13 @@ static BtStatus btif_gatts_open(int server_if, const RawAddress& bd_addr, uint8_
 static void btif_gatts_close_impl(int server_if, const RawAddress& address, int conn_id) {
   // Close active connection
   if (conn_id != 0) {
-    BTA_GATTS_Close(static_cast<tCONN_ID>(conn_id));
+    std::ignore = GATT_Disconnect(static_cast<tCONN_ID>(conn_id));
   } else {
-    BTA_GATTS_CancelOpen(server_if, address, true);
+    std::ignore = stack::leConnectionCancelConnect(server_if, address, true);
   }
 
   // Cancel pending background connections
-  BTA_GATTS_CancelOpen(server_if, address, false);
+  std::ignore = stack::leConnectionCancelConnect(server_if, address, false);
 }
 
 static BtStatus btif_gatts_close(int server_if, const RawAddress& bd_addr, int conn_id) {

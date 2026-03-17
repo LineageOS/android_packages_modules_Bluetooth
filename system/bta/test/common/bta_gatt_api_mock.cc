@@ -137,14 +137,6 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->AppRegister(app_uuid, p_cback, eatt_support, p_reg_cb);
 }
-void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
-  log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->CancelOpen(server_if, remote_bda, is_direct);
-}
-void BTA_GATTS_Close(uint16_t conn_id) {
-  log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->Close(conn_id);
-}
 void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
                           BTA_GATTS_AddServiceCb cb) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
@@ -158,11 +150,6 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id, std::ve
                                      bool need_confirm) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   gatt_server_interface->HandleValueIndication(conn_id, attr_id, value, need_confirm);
-}
-void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport) {
-  log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->Open(server_if, remote_bda, addr_type, is_direct, transport);
 }
 void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
                        std::unique_ptr<tGATTS_RSP> p_msg) {
