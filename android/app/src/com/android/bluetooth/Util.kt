@@ -153,7 +153,7 @@ object Util {
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5])
     }
 
-    @JvmStatic fun getByteAddress(device: BluetoothDevice) = getBytesFromAddress(device.address)
+    @JvmStatic fun BluetoothDevice.getByteAddress() = getBytesFromAddress(address)
 
     @JvmStatic
     fun getBytesFromAddress(address: String) =
@@ -240,35 +240,29 @@ object Util {
      * @return `true` if BLE is supported, `false` otherwise
      */
     @JvmStatic
-    fun isBleSupported(context: Context) =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
+    fun Context.isBleSupported() =
+        packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
     /** @return `true` if this Android device is an automotive device, `false` otherwise */
     @JvmStatic
-    fun isAutomotive(context: Context) =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+    fun Context.isAutomotive() = packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
     /** @return `true` if this Android device is an IoT device, `false` otherwise */
     @JvmStatic
-    fun isIotDevice(context: Context) =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_EMBEDDED)
+    fun Context.isIotDevice() = packageManager.hasSystemFeature(PackageManager.FEATURE_EMBEDDED)
 
     /** @return `true` if this Android device is a TV device, `false` otherwise */
     @Suppress("DEPRECATION") // Checking deprecated PackageManager.FEATURE_TELEVISION
     @JvmStatic
-    fun isTv(context: Context) =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
-            context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+    fun Context.isTv() =
+        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
+            packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
     /** @return `true` if this Android device is a watch device, `false` otherwise */
-    @JvmStatic
-    fun isWatch(context: Context) =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+    @JvmStatic fun Context.isWatch() = packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
 
     /** @return `true` if this Android device is an XR device, `false` otherwise */
-    @JvmStatic
-    fun isXrDevice(context: Context) =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_XR_PERIPHERAL)
+    fun Context.isXrDevice() = packageManager.hasSystemFeature(PackageManager.FEATURE_XR_PERIPHERAL)
 
     /**
      * Returns true if the specified package has disavowed the use of bluetooth scans for location,
