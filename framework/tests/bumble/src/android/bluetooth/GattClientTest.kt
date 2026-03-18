@@ -904,22 +904,22 @@ class GattClientTest {
                 gatts.add(gatt)
                 inOrder
                     .verify(gattCallback, timeout(gattCallbackTimeout))
-                    .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+                    .onConnectionStateChange(eq(gatt), eq(GATT_SUCCESS), eq(STATE_CONNECTED))
 
                 gatt.disconnect()
                 inOrder
                     .verify(gattCallback, timeout(gattCallbackTimeout))
-                    .onConnectionStateChange(any(), any<Int>(), eq(STATE_DISCONNECTED))
+                    .onConnectionStateChange(eq(gatt), eq(GATT_SUCCESS), eq(STATE_DISCONNECTED))
 
-                gatt.connect()
+                assertThat(gatt.connect()).isTrue()
                 inOrder
                     .verify(gattCallback, timeout(gattCallbackTimeout))
-                    .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+                    .onConnectionStateChange(eq(gatt), eq(GATT_SUCCESS), eq(STATE_CONNECTED))
 
                 gatt.disconnect()
                 inOrder
                     .verify(gattCallback, timeout(gattCallbackTimeout))
-                    .onConnectionStateChange(any(), any<Int>(), eq(STATE_DISCONNECTED))
+                    .onConnectionStateChange(eq(gatt), eq(GATT_SUCCESS), eq(STATE_DISCONNECTED))
             }
         } finally {
             gatts.forEach { it.close() }
