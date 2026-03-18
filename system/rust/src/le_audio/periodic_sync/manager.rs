@@ -180,17 +180,21 @@ mod test {
         let mut stream2 = manager.subscribe_events();
 
         // Broadcast a simulated event.
-        let event = PeriodicSyncEvent::PaSyncLost { sync_handle: 42 };
+        let event = PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle: 42 };
         manager.sync_registry.lock().unwrap().broadcast_event(event);
 
         // Verify both subscribers receive it.
         expect_that!(
             timeout(DEFAULT_TIMEOUT, stream1.next()).await,
-            ok(some(matches_pattern!(&PeriodicSyncEvent::PaSyncLost { sync_handle: eq(42) })))
+            ok(some(matches_pattern!(&PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
+                sync_handle: eq(42)
+            })))
         );
         expect_that!(
             timeout(DEFAULT_TIMEOUT, stream2.next()).await,
-            ok(some(matches_pattern!(&PeriodicSyncEvent::PaSyncLost { sync_handle: eq(42) })))
+            ok(some(matches_pattern!(&PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
+                sync_handle: eq(42)
+            })))
         );
     }
 
@@ -212,7 +216,7 @@ mod test {
             .sync_registry
             .lock()
             .unwrap()
-            .broadcast_event(PeriodicSyncEvent::PaSyncLost { sync_handle: 0 });
+            .broadcast_event(PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle: 0 });
 
         // Verify dead subscriber is removed.
         expect_that!(manager.sync_registry.lock().unwrap().event_subscribers.len(), eq(0));
@@ -227,8 +231,8 @@ mod test {
         let params = PaCreateSyncParams {
             broadcast_id: 99,
             advertising_sid: 1,
-            advertiser_addr: Address::default(),
             advertiser_addr_type: AddressType::PublicDeviceAddress,
+            advertiser_addr: Address::default(),
             skip: 0,
             sync_timeout: Duration::from_millis(2000),
         };
@@ -277,8 +281,8 @@ mod test {
         let params = PaCreateSyncParams {
             broadcast_id: 1,
             advertising_sid: 1,
-            advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
             advertiser_addr_type: AddressType::PublicDeviceAddress,
+            advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
             skip: 0,
             sync_timeout: Duration::from_secs(2),
         };
@@ -300,8 +304,8 @@ mod test {
         let params = PaCreateSyncParams {
             broadcast_id: 1,
             advertising_sid: 1,
-            advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
             advertiser_addr_type: AddressType::PublicDeviceAddress,
+            advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
             skip: 0,
             sync_timeout: Duration::from_secs(2),
         };

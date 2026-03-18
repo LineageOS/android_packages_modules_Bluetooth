@@ -58,12 +58,12 @@ public:
   // Only implement below functions.
   void OnPeriodicSyncStarted(int reg_id, uint8_t status, uint16_t sync_handle,
                              uint8_t advertising_sid, uint8_t advertiser_addr_type,
-                             RawAddress advertiser_addr, uint8_t phy,
-                             uint16_t sync_interval) override;
+                             RawAddress advertiser_addr, uint8_t advertiser_phy,
+                             uint16_t periodic_advertising_interval) override;
   void OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power, int8_t rssi, uint8_t status,
                             std::vector<uint8_t> data) override;
   void OnPeriodicSyncLost(uint16_t sync_handle) override;
-  void OnBigInfoReport(uint16_t sync_handle, bool encrypted) override;
+  void OnBigInfoReport(uint16_t sync_handle, bool encryption) override;
 
 private:
   rust::Box<::bluetooth::shim::ffi::PeriodicSyncCallbacks> callbacks_;
