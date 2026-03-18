@@ -109,7 +109,8 @@ class BtaGattServerInterface {
 public:
   virtual void Disable() = 0;
   virtual void AppRegister(const bluetooth::Uuid& /* app_uuid */,
-                           const tBTA_GATTS_CBACK* /* p_cback */, bool /* eatt_support */,
+                           const bluetooth::stack::tGATT_CBACK* /* p_cback */,
+                           bool /* eatt_support */,
                            void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                             const bluetooth::Uuid& uuid)) = 0;
   virtual void AppDeregister(tGATT_IF server_if) = 0;
@@ -135,11 +136,11 @@ public:
 class MockBtaGattServerInterface : public BtaGattServerInterface {
 public:
   MOCK_METHOD((void), Disable, ());
-  MOCK_METHOD(void, AppRegister,
-              (const bluetooth::Uuid& uuid, const tBTA_GATTS_CBACK* cb, bool eatt_support,
-               void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                const bluetooth::Uuid& uuid)),
-              (override));
+  MOCK_METHOD(
+          void, AppRegister,
+          (const bluetooth::Uuid& uuid, const bluetooth::stack::tGATT_CBACK* cb, bool eatt_support,
+           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid)),
+          (override));
   MOCK_METHOD((void), AppDeregister, (tGATT_IF server_if), (override));
   MOCK_METHOD((void), Open,
               (tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE type,

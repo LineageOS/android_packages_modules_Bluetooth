@@ -53,7 +53,7 @@ static tGATT_IF FindNextFreeClRcbId();
  *                  with GATT
  *
  ******************************************************************************/
-tGATT_IF appRegister(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
+tGATT_IF appRegister(const Uuid& app_uuid128, const std::string& name, const tGATT_CBACK* p_cb_info,
                      bool eatt_support) {
   for (auto& [gatt_if, p_reg] : gatt_cb.cl_rcb_map) {
     if (p_reg->app_uuid128 == app_uuid128) {

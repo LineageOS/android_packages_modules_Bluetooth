@@ -160,7 +160,7 @@ struct Ascs::service_impl {
 
     callbacks_ = callbacks;
 
-    static bluetooth::stack::tGATT_REQ_CBACK ascs_server_cbacks = {
+    static bluetooth::stack::tGATT_REQ_CBACK ascs_req_cb = {
             .read_characteristic_cb = OnGattReadCharacteristicStatic,
             .read_descriptor_cb = OnGattReadDescriptorStatic,
             .write_characteristic_cb = OnGattWriteCharacteristicStatic,
@@ -170,9 +170,9 @@ struct Ascs::service_impl {
             .conf_cb = tGATT_REQ_CBACK::do_nothing,
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
-    static const tBTA_GATTS_CBACK ascs_ops = {
+    static const stack::tGATT_CBACK ascs_ops = {
             .p_conn_cb = OnGattConnStatic,
-            .server_cbacks = &ascs_server_cbacks,
+            .p_req_cb = &ascs_req_cb,
     };
 
     BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false,

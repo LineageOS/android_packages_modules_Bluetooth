@@ -71,7 +71,7 @@ protected:
 
     test::mock::stack_app::appRegister.body =
             [](const bluetooth::Uuid& /*p_app_uuid128*/, const std::string /*name*/,
-               stack::tGATT_CBACK* /*p_cb_info*/,
+               const stack::tGATT_CBACK* /*p_cb_info*/,
                bool /*eatt_support*/) -> tGATT_IF { return kGattRegisteredIf; };
 
     ON_CALL(mock_btm_client_interface_, BTM_GetEirSupportedServices)

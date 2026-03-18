@@ -166,7 +166,7 @@ public:
     app_uuid_ = uuid;
     log::info("Register server with uuid:{}", app_uuid_.ToString());
 
-    static bluetooth::stack::tGATT_REQ_CBACK ras_server_cbacks = {
+    static bluetooth::stack::tGATT_REQ_CBACK ras_p_req_cb = {
             .read_characteristic_cb = OnGattReadCharacteristicStatic,
             .read_descriptor_cb = OnGattReadDescriptorStatic,
             .write_characteristic_cb = OnGattWriteCharacteristicStatic,
@@ -177,9 +177,9 @@ public:
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
 
-    static const tBTA_GATTS_CBACK ras_ops = {
+    static const stack::tGATT_CBACK ras_ops = {
             .p_conn_cb = OnGattConnStatic,
-            .server_cbacks = &ras_server_cbacks,
+            .p_req_cb = &ras_p_req_cb,
     };
 
     BTA_GATTS_AppRegister(app_uuid_, &ras_ops, false, OnGattRegisterStatic);

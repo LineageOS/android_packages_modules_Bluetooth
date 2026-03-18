@@ -51,12 +51,12 @@ namespace stack_app {
 struct appRegister {
   static tGATT_IF return_value;
   std::function<tGATT_IF(const Uuid& app_uuid128, const std::string& name,
-                         stack::tGATT_CBACK* p_cb_info, bool eatt_support)>
+                         const stack::tGATT_CBACK* p_cb_info, bool eatt_support)>
           body{[](const Uuid& /* app_uuid128 */, const std::string& /* name */,
-                  stack::tGATT_CBACK* /* p_cb_info */,
+                  const stack::tGATT_CBACK* /* p_cb_info */,
                   bool /* eatt_support */) { return return_value; }};
   tGATT_IF operator()(const Uuid& app_uuid128, const std::string& name,
-                      stack::tGATT_CBACK* p_cb_info, bool eatt_support) {
+                      const stack::tGATT_CBACK* p_cb_info, bool eatt_support) {
     return body(app_uuid128, name, p_cb_info, eatt_support);
   }
 };

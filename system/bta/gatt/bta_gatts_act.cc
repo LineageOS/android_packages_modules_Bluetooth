@@ -114,7 +114,7 @@ void bta_gatts_api_disable() {
   memset(&bta_gatts_cb, 0, sizeof(tBTA_GATTS_CB));
 }
 
-void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
+void bta_gatts_register(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
                         bool eatt_support,
                         void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                          const bluetooth::Uuid& uuid)) {
@@ -158,26 +158,11 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK*
 
   log::info("register application first_unuse rcb_idx={}", first_unuse);
 
-  stack::tGATT_CBACK passthrough_cbacks = {
-          .p_conn_cb = p_cback->p_conn_cb,
-          .p_cmpl_cb = nullptr,
-          .p_disc_res_cb = nullptr,
-          .p_disc_cmpl_cb = nullptr,
-          .p_req_cb = p_cback->server_cbacks,
-          .p_enc_cmpl_cb = nullptr,
-          .p_congestion_cb = p_cback->p_congestion_cb,
-          .p_phy_update_cb = p_cback->p_phy_update_cb,
-          .p_conn_update_cb = p_cback->p_conn_update_cb,
-          .p_subrate_chg_cb = p_cback->p_subrate_chg_cb,
-          .p_characteristics_unoffloaded_cb = p_cback->p_characteristics_unoffloaded_cb,
-          .p_offloaded_service_chg_cb = nullptr,
-  };
-
   bta_gatts_cb.rcb[first_unuse].in_use = true;
   bta_gatts_cb.rcb[first_unuse].p_cback = p_cback;
   bta_gatts_cb.rcb[first_unuse].app_uuid = app_uuid;
   bta_gatts_cb.rcb[first_unuse].gatt_if =
-          stack::appRegister(app_uuid, "GattServer", &passthrough_cbacks, eatt_support);
+          stack::appRegister(app_uuid, "GattServer", p_cback, eatt_support);
 
   tGATT_STATUS status = GATT_SUCCESS;
   if (!bta_gatts_cb.rcb[first_unuse].gatt_if) {
@@ -277,12 +262,12 @@ void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<u
     return;
   }
 
-  if (p_rcb->p_cback && p_rcb->p_cback->server_cbacks) {
+  if (p_rcb->p_cback && p_rcb->p_cback->p_req_cb) {
     if (status != GATT_SUCCESS) {
-      p_rcb->p_cback->server_cbacks->conf_send_fail_cb(conn_id, status);
+      p_rcb->p_cback->p_req_cb->conf_send_fail_cb(conn_id, status);
       return;
     }
-    p_rcb->p_cback->server_cbacks->conf_cb(conn_id, 0, remote_bda);
+    p_rcb->p_cback->p_req_cb->conf_cb(conn_id, 0, remote_bda);
   }
 }
 
