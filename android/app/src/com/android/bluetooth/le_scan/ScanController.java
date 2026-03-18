@@ -1126,6 +1126,12 @@ public class ScanController {
         unregisterScanner(app.getScannerId());
     }
 
+    int numHwTrackFiltersAvailable() {
+        enforceScanThread();
+        return mAdapterService.getTotalNumOfTrackableAdvertisements()
+                - mScanManager.getCurrentUsedTrackingAdvertisement();
+    }
+
     /**************************************************************************
      * PERIODIC SCANNING
      *************************************************************************/
@@ -1163,12 +1169,6 @@ public class ScanController {
             IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
         mPeriodicScanManager.transferSetInfo(device, serviceData, advHandle, callback);
-    }
-
-    int numHwTrackFiltersAvailable() {
-        enforceScanThread();
-        return mAdapterService.getTotalNumOfTrackableAdvertisements()
-                - mScanManager.getCurrentUsedTrackingAdvertisement();
     }
 
     /**************************************************************************

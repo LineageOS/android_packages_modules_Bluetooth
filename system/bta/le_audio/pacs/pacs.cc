@@ -166,9 +166,9 @@ struct Pacs::service_impl {
             .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
 
-    static const tBTA_GATTS_CBACK pacs_ops = {
+    static const stack::tGATT_CBACK pacs_ops = {
             .p_conn_cb = OnGattConnStatic,
-            .server_cbacks = &pacs_callbacks,
+            .p_req_cb = &pacs_callbacks,
     };
 
     BTA_GATTS_AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, &pacs_ops,

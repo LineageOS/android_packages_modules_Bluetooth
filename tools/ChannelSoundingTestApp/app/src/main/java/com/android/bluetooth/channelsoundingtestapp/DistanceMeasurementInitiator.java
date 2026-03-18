@@ -161,6 +161,10 @@ class DistanceMeasurementInitiator {
             printLog("do Gatt connect first");
             return;
         }
+        if (!mBluetoothAdapter.isEnabled()) {
+            printLog("Bluetooth is disabled. Cannot start measurement.");
+            return;
+        }
 
         printLog("start CS with device: " + mTargetDevice.getName());
 

@@ -347,67 +347,6 @@ public class ScanManager {
 
     void startScan(ScanClient client) {
         Log.d(TAG, "startScan(" + client + ")");
-        handleStartScan(client);
-    }
-
-    void stopScan(int scannerId) {
-        // TODO: Inline in next CL
-        handleStopScan(scannerId);
-    }
-
-    void flushBatchScanResults(ScanClient client) {
-        Log.d(TAG, "flushBatchScanResults(" + client + ")");
-        handleFlushBatchResults(client);
-    }
-
-    void batchScanResultDelivered() {
-        mBatchScanThrottler.resetBackoff();
-    }
-
-    private boolean isFilteringSupported() {
-        return ScanUtil.isOffloadedFilteringSupported(mAdapterService);
-    }
-
-    int getCurrentUsedTrackingAdvertisement() {
-        return mCurUsedTrackableAdvertisementsScanThread;
-    }
-
-    void fetchAppForegroundState(ScanClient client) {
-        PackageManager packageManager = mAdapterService.getPackageManager();
-        if (mActivityManager == null || packageManager == null) {
-            return;
-        }
-        String[] packages = packageManager.getPackagesForUid(client.getAppUid());
-        if (packages == null || packages.length == 0) {
-            return;
-        }
-        int importance = IMPORTANCE_CACHED;
-        for (String packageName : packages) {
-            importance = Math.min(importance, mActivityManager.getPackageImportance(packageName));
-        }
-        mUidImportanceMap.put(client.getAppUid(), importance);
-        client.getAppScanStats().setAppImportance(importance);
-    }
-
-    void fetchUidPermission(ScanClient client) {
-        PackageManager packageManager = mAdapterService.getPackageManager();
-        if (packageManager == null) {
-            return;
-        }
-        String[] packages = packageManager.getPackagesForUid(client.getAppUid());
-        if (packages == null || packages.length == 0) {
-            return;
-        }
-        boolean hasPrivilegedPermission = false;
-        for (String packageName : packages) {
-            hasPrivilegedPermission =
-                    Util.checkPrivilegedPermission(
-                            mAdapterService, packageName, client.getAppUid());
-        }
-        mIsUidPrivilegedPermissionMap.put(client.getAppUid(), hasPrivilegedPermission);
-    }
-
-    private void handleStartScan(ScanClient client) {
         fetchAppForegroundState(client);
         if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
             fetchUidPermission(client);
@@ -486,6 +425,73 @@ public class ScanManager {
         client.setStarted(true);
     }
 
+    void stopScan(int scannerId) {
+        ScanClient client = ScanUtil.findById(mBatchClients, scannerId);
+        if (client == null) {
+            client = ScanUtil.findById(mRegularScanClients, scannerId);
+        }
+        if (client == null) {
+            client = ScanUtil.findById(mSuspendedScanClients, scannerId);
+        }
+        if (client == null) {
+            Log.d(TAG, "handleStopScan(): No client found for scannerId=" + scannerId);
+            return;
+        }
+        handleStopScan(client);
+    }
+
+    void flushBatchScanResults(ScanClient client) {
+        Log.d(TAG, "flushBatchScanResults(" + client + ")");
+        handleFlushBatchResults(client);
+    }
+
+    void batchScanResultDelivered() {
+        mBatchScanThrottler.resetBackoff();
+    }
+
+    private boolean isFilteringSupported() {
+        return ScanUtil.isOffloadedFilteringSupported(mAdapterService);
+    }
+
+    int getCurrentUsedTrackingAdvertisement() {
+        return mCurUsedTrackableAdvertisementsScanThread;
+    }
+
+    void fetchAppForegroundState(ScanClient client) {
+        PackageManager packageManager = mAdapterService.getPackageManager();
+        if (mActivityManager == null || packageManager == null) {
+            return;
+        }
+        String[] packages = packageManager.getPackagesForUid(client.getAppUid());
+        if (packages == null || packages.length == 0) {
+            return;
+        }
+        int importance = IMPORTANCE_CACHED;
+        for (String packageName : packages) {
+            importance = Math.min(importance, mActivityManager.getPackageImportance(packageName));
+        }
+        mUidImportanceMap.put(client.getAppUid(), importance);
+        client.getAppScanStats().setAppImportance(importance);
+    }
+
+    private void fetchUidPermission(ScanClient client) {
+        PackageManager packageManager = mAdapterService.getPackageManager();
+        if (packageManager == null) {
+            return;
+        }
+        String[] packages = packageManager.getPackagesForUid(client.getAppUid());
+        if (packages == null || packages.length == 0) {
+            return;
+        }
+        boolean hasPrivilegedPermission = false;
+        for (String packageName : packages) {
+            hasPrivilegedPermission =
+                    Util.checkPrivilegedPermission(
+                            mAdapterService, packageName, client.getAppUid());
+        }
+        mIsUidPrivilegedPermissionMap.put(client.getAppUid(), hasPrivilegedPermission);
+    }
+
     private void configureTimeout(ScanClient client) {
         if (mScanThrottler.isScanAllowanceThrottlingEnabled()) {
             // Skip scan time out when allowance based throttling is enabled
@@ -508,21 +514,6 @@ public class ScanManager {
         mScanTimeoutRunnables.put(client, timeoutRunnable);
         mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeout().toMillis());
         Log.d(TAG, "Apply scan timeout (" + mAdapterService.getScanTimeout() + ") to " + client);
-    }
-
-    private void handleStopScan(int scannerIdToStop) {
-        ScanClient client = ScanUtil.findById(mBatchClients, scannerIdToStop);
-        if (client == null) {
-            client = ScanUtil.findById(mRegularScanClients, scannerIdToStop);
-        }
-        if (client == null) {
-            client = ScanUtil.findById(mSuspendedScanClients, scannerIdToStop);
-        }
-        if (client == null) {
-            Log.d(TAG, "handleStopScan(): No client found for scannerId=" + scannerIdToStop);
-            return;
-        }
-        handleStopScan(client);
     }
 
     private void handleStopScan(ScanClient client) {
@@ -678,7 +669,7 @@ public class ScanManager {
                 Log.d(TAG, "Updating regular scan to batch scan for " + client);
                 handleStopScan(client);
                 setAutoBatchScanClient(client);
-                handleStartScan(client);
+                startScan(client);
                 updatedScanParams = true;
             }
         }
@@ -694,7 +685,7 @@ public class ScanManager {
                 Log.d(TAG, "Updating batch scan to regular scan for " + client);
                 handleStopScan(client);
                 clearAutoBatchScanClient(client);
-                handleStartScan(client);
+                startScan(client);
                 updatedScanParams = true;
             }
         }
@@ -906,7 +897,7 @@ public class ScanManager {
                     && (!requiresLocationOn(client) || mLocationManager.isLocationEnabled())) {
                 client.getAppScanStats().recordScanResume(client.getScannerId());
                 Log.d(TAG, "Resume scan for " + client);
-                handleStartScan(client);
+                startScan(client);
                 iterator.remove();
             }
         }

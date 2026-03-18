@@ -153,6 +153,7 @@ void StorageModule::SaveImmediately() {
     pimpl_->config_save_alarm_.Cancel();
     pimpl_->has_pending_config_save_ = false;
   }
+  auto start_time = std::chrono::steady_clock::now();
 #ifndef TARGET_FLOSS
   log::assert_that(
           LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_),
@@ -167,6 +168,13 @@ void StorageModule::SaveImmediately() {
       bluetooth::os::ParameterProvider::IsCommonCriteriaMode()) {
     bluetooth::os::ParameterProvider::GetBtKeystoreInterface()->set_encrypt_key_or_remove_key(
             kConfigFilePrefix, kConfigFileHash);
+  }
+  auto end_time = std::chrono::steady_clock::now();
+  auto write_duration =
+          std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // TODO: Remove this log after debugging.
+  if (write_duration >= std::chrono::milliseconds(500)) {
+    log::error("Config write took too long: {}ms", write_duration.count());
   }
 }
 

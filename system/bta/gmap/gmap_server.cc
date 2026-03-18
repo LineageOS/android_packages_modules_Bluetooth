@@ -108,7 +108,7 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
             UGG_feature.to_string());
   characteristics_.clear();
 
-  static bluetooth::stack::tGATT_REQ_CBACK gmap_server_cbacks = {
+  static bluetooth::stack::tGATT_REQ_CBACK gmap_req_cb = {
           .read_characteristic_cb = GmapServer::OnReadCharacteristic,
           .read_descriptor_cb = tGATT_REQ_CBACK::do_nothing,
           .write_characteristic_cb = tGATT_REQ_CBACK::do_nothing,
@@ -119,9 +119,9 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
           .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
   };
 
-  static const tBTA_GATTS_CBACK gmap_ops = {
+  static const stack::tGATT_CBACK gmap_ops = {
           .p_conn_cb = GmapServer::OnGattConn,
-          .server_cbacks = &gmap_server_cbacks,
+          .p_req_cb = &gmap_req_cb,
   };
 
   BTA_GATTS_AppRegister(bluetooth::le_audio::uuid::kGamingAudioServiceUuid, &gmap_ops, false,

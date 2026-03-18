@@ -39,6 +39,7 @@ import com.android.bluetooth.Util
 import com.android.bluetooth.Util.appNameOrUnknown
 import com.android.bluetooth.Util.checkCallerHasCoarseOrFineLocation
 import com.android.bluetooth.Util.checkCallerHasFineLocation
+import com.android.bluetooth.Util.checkCallerHasPrivilegedPermission
 import com.android.bluetooth.Util.checkCallerTargetSdk
 import com.android.bluetooth.Util.enforceScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
@@ -50,7 +51,7 @@ private const val TAG = ScanUtil.TAG_PREFIX + "ScanBinder"
 class ScanBinder(
     private val adapterService: AdapterService,
     private val scanController: ScanController,
-    private val testModeEnabled: Boolean,
+    private val testModeEnabled: Boolean, // TODO(b/491969072) Remove unused
 ) : IBluetoothScan.Stub() {
 
     @Volatile private var isAvailable = true
@@ -88,15 +89,13 @@ class ScanBinder(
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
-        val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(adapterService)
-
+        val hasPrivilegedPermission = adapterService.checkCallerHasPrivilegedPermission()
         if (Flags.earlyRejectUnauthorizedScans() && !hasDisavowedLocationOrHasPermission(source)) {
             val app = adapterService.appNameOrUnknown(source.uid)
             Log.w(TAG, "$app requested to scan but does not have location permission")
             callback.onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1)
             return
         }
-
         withControllerRunOnScanThread(source, "registerAndStartScan") {
             registerAndStartScan(
                 callback,

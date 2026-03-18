@@ -97,7 +97,7 @@ TEST_F(VcsTestBase, InstantiateRelease) {
 }
 
 TEST_F(VcsTestBase, RegisterGattService) {
-  const tBTA_GATTS_CBACK* p_gatt_event_source_cb = nullptr;
+  const stack::tGATT_CBACK* p_gatt_event_source_cb = nullptr;
   bluetooth::Uuid uuid;
 
   // Check GATT server app registration
@@ -129,7 +129,7 @@ TEST_F(VcsTestBase, RegisterGattService) {
 
 class VcsTest : public VcsTestBase {
 public:
-  const tBTA_GATTS_CBACK* p_gatt_event_source_cb_ = nullptr;
+  const stack::tGATT_CBACK* p_gatt_event_source_cb_ = nullptr;
   std::vector<btgatt_db_element_t> service_db_;
   tGATT_IF server_if_;
 
@@ -149,7 +149,7 @@ public:
     EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false, _))
             .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
                                   [](const bluetooth::Uuid& app_uuid,
-                                     const tBTA_GATTS_CBACK* /*p_cback*/, bool /* eatt_support */,
+                                     const stack::tGATT_CBACK* /*p_cback*/, bool /* eatt_support */,
                                      void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                                       const bluetooth::Uuid& uuid)) {
                                     if (p_reg_cb) {
@@ -223,8 +223,8 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->server_cbacks->read_characteristic_cb(conn_id, gatt_trans_id_++,
-                                                                     address, handle, 0, false);
+      p_gatt_event_source_cb_->p_req_cb->read_characteristic_cb(conn_id, gatt_trans_id_++, address,
+                                                                handle, 0, false);
     }
   }
 
@@ -246,7 +246,7 @@ public:
 
     auto conn_id = conn_id_by_address_.at(address);
     if (conn_id != GATT_INVALID_CONN_ID) {
-      p_gatt_event_source_cb_->server_cbacks->write_characteristic_cb(
+      p_gatt_event_source_cb_->p_req_cb->write_characteristic_cb(
               conn_id, gatt_trans_id_++, address, handle, 0, with_response, false,
               (uint8_t*)value.data(), value.size());
     }
@@ -284,7 +284,7 @@ public:
       uint8_t* pp = value;
       UINT16_TO_STREAM(pp, cccd_value);
 
-      p_gatt_event_source_cb_->server_cbacks->write_descriptor_cb(
+      p_gatt_event_source_cb_->p_req_cb->write_descriptor_cb(
               conn_id, gatt_trans_id_++, address, handle, 0, true, false, value, sizeof(value));
     }
   }
@@ -535,7 +535,7 @@ TEST_F(VcsTest, RemoteReadInvalidHandle) {
 
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_INVALID_HANDLE, _));
 
-  p_gatt_event_source_cb_->server_cbacks->read_characteristic_cb(
+  p_gatt_event_source_cb_->p_req_cb->read_characteristic_cb(
           conn_id_by_address_.at(test_dev), gatt_trans_id_++, test_dev, invalid_handle, 0, false);
 }
 

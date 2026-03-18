@@ -467,28 +467,28 @@ object Util {
 
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic
-    fun checkCallerHasNetworkSettingsPermission(context: Context) =
-        context.checkCallerHasPermission(NETWORK_SETTINGS)
+    fun Context.checkCallerHasNetworkSettingsPermission() =
+        checkCallerHasPermission(NETWORK_SETTINGS)
 
     /** Returns `true` if the caller holds [NETWORK_SETUP_WIZARD] */
     @JvmStatic
-    fun checkCallerHasNetworkSetupWizardPermission(context: Context) =
-        context.checkCallerHasPermission(NETWORK_SETUP_WIZARD)
+    fun Context.checkCallerHasNetworkSetupWizardPermission() =
+        checkCallerHasPermission(NETWORK_SETUP_WIZARD)
 
     /** Returns `true` if the caller holds [RADIO_SCAN_WITHOUT_LOCATION] */
     @JvmStatic
-    fun checkCallerHasScanWithoutLocationPermission(context: Context) =
-        context.checkCallerHasPermission(RADIO_SCAN_WITHOUT_LOCATION)
+    fun Context.checkCallerHasScanWithoutLocationPermission() =
+        checkCallerHasPermission(RADIO_SCAN_WITHOUT_LOCATION)
 
     /** Returns `true` if the caller holds [BLUETOOTH_PRIVILEGED] */
     @JvmStatic
-    fun checkCallerHasPrivilegedPermission(context: Context) =
-        context.checkCallerHasPermission(BLUETOOTH_PRIVILEGED)
+    fun Context.checkCallerHasPrivilegedPermission() =
+        checkCallerHasPermission(BLUETOOTH_PRIVILEGED)
 
     /** Returns `true` if the uid / packageName pair holds [BLUETOOTH_PRIVILEGED] */
     @JvmStatic
-    fun checkPrivilegedPermission(context: Context, packageName: String, uid: Int): Boolean {
-        val app = getPackageInfoAsUser(context, packageName, uid)
+    fun Context.checkPrivilegedPermission(packageName: String, uid: Int): Boolean {
+        val app = getPackageInfoAsUser(packageName, uid)
 
         val permissions = app?.requestedPermissions ?: return false
         val flags = app.requestedPermissionsFlags ?: return false
@@ -504,14 +504,10 @@ object Util {
         return false
     }
 
-    private fun getPackageInfoAsUser(
-        context: Context,
-        packageName: String,
-        uid: Int,
-    ): PackageInfo? {
+    private fun Context.getPackageInfoAsUser(packageName: String, uid: Int): PackageInfo? {
         return try {
             val user = UserHandle.getUserHandleForUid(uid)
-            val pm = context.createContextAsUser(user, 0).packageManager
+            val pm = createContextAsUser(user, 0).packageManager
             pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
         } catch (e: PackageManager.NameNotFoundException) {
             Log.e(TAG, "NameNotFoundException $packageName")
@@ -520,9 +516,7 @@ object Util {
     }
 
     /** Returns `true` if the caller holds [WRITE_SMS] */
-    @JvmStatic
-    fun checkCallerHasWriteSmsPermission(context: Context) =
-        context.checkCallerHasPermission(WRITE_SMS)
+    @JvmStatic fun Context.checkCallerHasWriteSmsPermission() = checkCallerHasPermission(WRITE_SMS)
 
     @PermissionMethod
     private fun Context.checkCallerHasPermission(@PermissionName permission: String) =
@@ -563,17 +557,14 @@ object Util {
      * @return `true` if the package name matches the calling app uid, `false` otherwise
      */
     @JvmStatic
-    fun isPackageNameAccurate(context: Context, callingPackage: String, callingUid: Int): Boolean {
+    fun Context.isPackageNameAccurate(callingPackage: String, callingUid: Int): Boolean {
         val header = "isPackageNameAccurate: App with package name $callingPackage"
         val callingUser = UserHandle.getUserHandleForUid(callingUid)
 
         // Verifies the integrity of the calling package name
         try {
             val packageUid =
-                context
-                    .createContextAsUser(callingUser, 0)
-                    .packageManager
-                    .getPackageUid(callingPackage, 0)
+                createContextAsUser(callingUser, 0).packageManager.getPackageUid(callingPackage, 0)
             if (packageUid != callingUid) {
                 Log.e(TAG, "$header is UID $packageUid but caller is $callingUid")
                 return false
@@ -608,15 +599,15 @@ object Util {
         UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(Binder.getCallingUid())
 
     @JvmStatic
-    fun callerIsSystemOrActiveOrManagedUser(context: Context, tag: String, method: String) =
-        checkCallerIsSystemOrActiveOrManagedUser(context, "$tag.$method()")
+    fun Context.callerIsSystemOrActiveOrManagedUser(tag: String, method: String) =
+        checkCallerIsSystemOrActiveOrManagedUser("$tag.$method()")
 
     @JvmStatic
-    fun checkCallerIsSystemOrActiveOrManagedUser(context: Context, tag: String): Boolean {
+    fun Context.checkCallerIsSystemOrActiveOrManagedUser(tag: String): Boolean {
         if (isInstrumentationTestMode) {
             return true
         }
-        val res = checkCallerIsAllowed(context)
+        val res = checkCallerIsAllowed()
         if (!res) {
             Log.w(TAG, "$tag - Not allowed for non-active user and non-system and non-managed user")
         }
@@ -632,7 +623,7 @@ object Util {
     // * SystemUiUid because global UI is running under user 0
     // * System user in case we are in HSUM mode
     // * System uid for any request from the system server
-    private fun checkCallerIsAllowed(context: Context): Boolean {
+    private fun Context.checkCallerIsAllowed(): Boolean {
         val currentUser = Process.myUserHandle()
         val callingUid = Binder.getCallingUid()
         val callingUser = UserHandle.getUserHandleForUid(callingUid)
@@ -646,8 +637,7 @@ object Util {
                 // In HSUM, UserHandle.SYSTEM is only for System, not human
                 (UserManager.isHeadlessSystemUserMode() && callingUser == UserHandle.SYSTEM) ||
                 // Allow any users in the same group (Managed, clone, private...)
-                context
-                    .getSystemService(UserManager::class.java)
+                getSystemService(UserManager::class.java)
                     .isSameProfileGroup(currentUser, callingUser) // Requires Bluetooth Identity
         } finally {
             Binder.restoreCallingIdentity(identity)

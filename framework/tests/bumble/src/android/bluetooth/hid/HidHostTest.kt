@@ -709,7 +709,8 @@ class HidHostTest {
         assertThat(device.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_DISCONNECTING))
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_DISCONNECTED))
-        verifyIntentReceived(
+        // ACL disconnection event might come before profile disconnection, due to race.
+        verifyIntentReceivedAnyOrder(
             hasAction(ACTION_ACL_DISCONNECTED),
             hasExtra(EXTRA_DEVICE, device),
             hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
@@ -854,6 +855,11 @@ class HidHostTest {
     private fun verifyIntentReceived(vararg matchers: Matcher<Intent>) {
         inOrder!!
             .verify(receiver, timeout(INTENT_TIMEOUT.toMillis()))
+            .onReceive(any(Context::class.java), argThat(allOf(*matchers)))
+    }
+
+    private fun verifyIntentReceivedAnyOrder(vararg matchers: Matcher<Intent>) {
+        verify(receiver, timeout(INTENT_TIMEOUT.toMillis()))
             .onReceive(any(Context::class.java), argThat(allOf(*matchers)))
     }
 

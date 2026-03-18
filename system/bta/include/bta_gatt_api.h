@@ -289,31 +289,6 @@ typedef void(tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 
 #define BTA_GATTS_INVALID_IF 0
 
-#ifndef BTA_GATTC_CHAR_DESCR_MAX
-#define BTA_GATTC_CHAR_DESCR_MAX 7
-#endif
-
-/* GATTS enable callback function */
-typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
-
-/* Server callback function */
-typedef struct {
-  void (*p_conn_cb)(tGATT_IF server_if, const RawAddress& remote_bda, tCONN_ID conn_id,
-                    bool connected, tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
-  void (*p_congestion_cb)(tCONN_ID conn_id, bool congested);
-  void (*p_phy_update_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint8_t tx_phy, uint8_t rx_phy,
-                          tGATT_STATUS status);
-  void (*p_conn_update_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint16_t interval,
-                           uint16_t latency, uint16_t timeout, tGATT_STATUS status);
-  void (*p_subrate_chg_cb)(tGATT_IF server_if, tCONN_ID conn_id, uint16_t subrate_factor,
-                           uint16_t latency, uint16_t cont_num, uint16_t timeout,
-                           tGATT_SUBRATE_MODE subrate_mode, tGATT_STATUS status);
-  void (*p_characteristics_unoffloaded_cb)(tGATT_IF server_if, tCONN_ID conn_id,
-                                           uint32_t session_id, tGATT_STATUS status);
-
-  bluetooth::stack::tGATT_REQ_CBACK* server_cbacks;
-} tBTA_GATTS_CBACK;
-
 /*****************************************************************************
  *  External Function Declarations
  ****************************************************************************/
@@ -802,8 +777,8 @@ void BTA_GATTS_Disable(void);
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const tBTA_GATTS_CBACK* p_cback,
-                           bool eatt_support,
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
+                           const bluetooth::stack::tGATT_CBACK* p_cback, bool eatt_support,
                            void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                             const bluetooth::Uuid& uuid));
 

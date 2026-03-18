@@ -17,6 +17,7 @@
 #![allow(dead_code)]
 
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use crate::le_audio::periodic_sync::manager::SyncRegistry;
 use crate::le_audio::periodic_sync::traits::{
@@ -77,12 +78,12 @@ pub mod inner_ffi {
             advertising_sid: u8,
             advertiser_addr_type: u8,
             advertiser_addr: Address,
-            phy: u8,
-            sync_interval: u16,
+            advertiser_phy: u8,
+            periodic_advertising_interval: u16,
         );
 
-        #[cxx_name = "OnPeriodicSyncReport"]
-        fn on_periodic_sync_report(
+        #[cxx_name = "OnPeriodicAdvertisingReport"]
+        fn on_periodic_advertising_report(
             self: &PeriodicSyncCallbacks,
             sync_handle: u16,
             tx_power: i8,
@@ -94,8 +95,12 @@ pub mod inner_ffi {
         #[cxx_name = "OnPeriodicSyncLost"]
         fn on_periodic_sync_lost(self: &PeriodicSyncCallbacks, sync_handle: u16);
 
-        #[cxx_name = "OnBigInfoReport"]
-        fn on_big_info_report(self: &PeriodicSyncCallbacks, sync_handle: u16, encrypted: bool);
+        #[cxx_name = "OnBigInfoAdvertisingReport"]
+        fn on_biginfo_advertising_report(
+            self: &PeriodicSyncCallbacks,
+            sync_handle: u16,
+            encryption: bool,
+        );
     }
 }
 
@@ -105,6 +110,8 @@ unsafe impl Send for inner_ffi::BleScannerInterfaceShim {}
 pub struct PeriodicSyncCallbacks {
     sync_registry: Arc<Mutex<SyncRegistry>>,
 }
+
+const HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US: u64 = 1250;
 
 impl PeriodicSyncCallbacks {
     pub fn new(sync_registry: Arc<Mutex<SyncRegistry>>) -> Self {
@@ -120,8 +127,8 @@ impl PeriodicSyncCallbacks {
         advertising_sid: u8,
         advertiser_addr_type_raw: u8,
         advertiser_addr: Address,
-        phy: u8,
-        sync_interval: u16,
+        advertiser_phy: u8,
+        periodic_advertising_interval: u16,
     ) {
         let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
         let advertiser_addr_type = AddressType::try_from(advertiser_addr_type_raw)
@@ -137,8 +144,11 @@ impl PeriodicSyncCallbacks {
                 advertising_sid,
                 advertiser_addr_type,
                 advertiser_addr,
-                phy,
-                sync_interval,
+                advertiser_phy,
+                periodic_advertising_interval: Duration::from_micros(
+                    periodic_advertising_interval as u64
+                        * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
+                ),
             })
         } else {
             Err(PeriodicSyncError::HciError(status))
@@ -149,7 +159,7 @@ impl PeriodicSyncCallbacks {
         }
     }
 
-    pub fn on_periodic_sync_report(
+    pub fn on_periodic_advertising_report(
         &self,
         sync_handle: u16,
         tx_power: i8,
@@ -159,7 +169,7 @@ impl PeriodicSyncCallbacks {
     ) {
         let data_status = DataStatus::try_from(data_status_raw).unwrap_or(DataStatus::Complete);
         let mut sync_registry = self.sync_registry.lock().unwrap();
-        sync_registry.broadcast_event(PeriodicSyncEvent::PaReport {
+        sync_registry.broadcast_event(PeriodicSyncEvent::PeriodicAdvertisingReport {
             sync_handle,
             tx_power,
             rssi,
@@ -171,12 +181,16 @@ impl PeriodicSyncCallbacks {
     pub fn on_periodic_sync_lost(&self, sync_handle: u16) {
         let mut sync_registry = self.sync_registry.lock().unwrap();
         sync_registry.active_handles.remove(&sync_handle);
-        sync_registry.broadcast_event(PeriodicSyncEvent::PaSyncLost { sync_handle });
+        sync_registry
+            .broadcast_event(PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle });
     }
 
-    pub fn on_big_info_report(&self, sync_handle: u16, encrypted: bool) {
+    pub fn on_biginfo_advertising_report(&self, sync_handle: u16, encryption: bool) {
         let mut sync_registry = self.sync_registry.lock().unwrap();
-        sync_registry.broadcast_event(PeriodicSyncEvent::BigInfoReport { sync_handle, encrypted });
+        sync_registry.broadcast_event(PeriodicSyncEvent::BigInfoAdvertisingReport {
+            sync_handle,
+            encryption,
+        });
     }
 }
 
@@ -205,12 +219,12 @@ mod test {
         let address = Address::from_be_bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
         callbacks.on_periodic_sync_started(
             123,
-            0, // success
+            HciStatus::Success.into(),
             1, // handle
             2, // sid
             AddressType::RandomDeviceAddress.into(),
             address,
-            3, // phy
+            3, // advertiser_phy
             4, // interval
         );
 
@@ -222,8 +236,10 @@ mod test {
                 advertising_sid: eq(2),
                 advertiser_addr_type: eq(AddressType::RandomDeviceAddress),
                 advertiser_addr: eq(address),
-                phy: eq(3),
-                sync_interval: eq(4),
+                advertiser_phy: eq(3),
+                periodic_advertising_interval: eq(Duration::from_micros(
+                    4 * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
+                )),
             })))
         );
         expect_that!(sync_registry.lock().unwrap().active_handles.contains(&1), is_true());
@@ -262,7 +278,7 @@ mod test {
 
     #[googletest::test]
     #[tokio::test]
-    async fn test_on_periodic_sync_report_broadcasts_event_with_received_data() {
+    async fn test_on_periodic_advertising_report_broadcasts_event_with_received_data() {
         // Verify that receiving a periodic advertising report correctly triggers a broadcast
         // event containing the report's metadata and payload.
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
@@ -272,11 +288,11 @@ mod test {
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
         let data = vec![1, 2, 3];
-        callbacks.on_periodic_sync_report(10, 20, -50, DataStatus::Complete.into(), &data);
+        callbacks.on_periodic_advertising_report(10, 20, -50, DataStatus::Complete.into(), &data);
 
         expect_that!(
             timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
-            ok(some(matches_pattern!(PeriodicSyncEvent::PaReport {
+            ok(some(matches_pattern!(PeriodicSyncEvent::PeriodicAdvertisingReport {
                 sync_handle: eq(&10),
                 tx_power: eq(&20),
                 rssi: eq(&-50),
@@ -304,13 +320,15 @@ mod test {
 
         expect_that!(
             timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
-            ok(some(matches_pattern!(&PeriodicSyncEvent::PaSyncLost { sync_handle: eq(99) })))
+            ok(some(matches_pattern!(&PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
+                sync_handle: eq(99)
+            })))
         );
     }
 
     #[googletest::test]
     #[tokio::test]
-    async fn test_on_big_info_report_broadcasts_event_with_encryption_status() {
+    async fn test_on_biginfo_advertising_report_broadcasts_event_with_encryption_status() {
         // Verify that receiving a BIG Info report correctly triggers a broadcast event with the
         // specified synchronization handle and encryption status.
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
@@ -319,13 +337,13 @@ mod test {
         let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
-        callbacks.on_big_info_report(88, true);
+        callbacks.on_biginfo_advertising_report(88, true);
 
         expect_that!(
             timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
-            ok(some(matches_pattern!(&PeriodicSyncEvent::BigInfoReport {
+            ok(some(matches_pattern!(&PeriodicSyncEvent::BigInfoAdvertisingReport {
                 sync_handle: eq(88),
-                encrypted: eq(true)
+                encryption: eq(true)
             })))
         );
     }

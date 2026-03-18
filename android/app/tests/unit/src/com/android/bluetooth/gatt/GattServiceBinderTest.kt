@@ -323,12 +323,11 @@ class GattServiceBinderTest {
 
     @Test
     fun registerServer() {
-        val uuid = UUID.randomUUID()
         val eattSupport = true
         val transport = BluetoothDevice.TRANSPORT_LE
 
-        binder.registerServer(ParcelUuid(uuid), serverCallback, eattSupport, transport, source)
-        verify(serverManager).registerServer(uuid, serverCallback, eattSupport, transport, source)
+        binder.registerServer(serverCallback, eattSupport, transport, source)
+        verify(serverManager).registerServer(serverCallback, eattSupport, transport, source)
     }
 
     @Test

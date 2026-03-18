@@ -58,7 +58,7 @@ tGATT_IF appRegister::return_value = 0;
 
 // Mocked functions, if any
 namespace bluetooth::stack {
-tGATT_IF appRegister(const Uuid& app_uuid128, const std::string& name, tGATT_CBACK* p_cb_info,
+tGATT_IF appRegister(const Uuid& app_uuid128, const std::string& name, const tGATT_CBACK* p_cb_info,
                      bool eatt_support) {
   inc_func_call_count(__func__);
   return test::mock::stack_app::appRegister(app_uuid128, name, p_cb_info, eatt_support);

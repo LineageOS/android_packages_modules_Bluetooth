@@ -288,9 +288,7 @@ void rfc_port_timer_stop(tPORT* p_port) {
  *
  ******************************************************************************/
 void rfc_check_mcb_active(tRFC_MCB* p_mcb) {
-  uint16_t i;
-
-  for (i = 0; i < RFCOMM_MAX_DLCI; i++) {
+  for (uint16_t i = 0; i <= RFCOMM_MAX_DLCI; i++) {
     if (p_mcb->port_handles[i] != 0) {
       p_mcb->is_disc_initiator = false;
       return;

@@ -86,6 +86,7 @@ java_library {
         "bluetooth-common-kotlinutils",
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
+        "bluetooth_beta_flags-java_lib",
         "bluetooth_flags_java_lib",
         "modules-utils-build_system",
         "modules-utils-shell-command-handler",

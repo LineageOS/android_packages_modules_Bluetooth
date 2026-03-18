@@ -25,6 +25,7 @@ import android.bluetooth.IBluetoothLeAudioPeripheral
 import android.bluetooth.IBluetoothLeAudioPeripheralCallback
 import android.content.AttributionSource
 import com.android.bluetooth.Util
+import com.android.bluetooth.Util.checkCallerIsSystemOrActiveOrManagedUser
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder
 
@@ -49,7 +50,7 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         if (
             service == null ||
                 !service.checkProfileAvailable(TAG) ||
-                !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG) ||
+                !service.checkCallerIsSystemOrActiveOrManagedUser(TAG) ||
                 !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)
         ) {
             return null
