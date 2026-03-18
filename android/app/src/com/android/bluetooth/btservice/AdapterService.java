@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 import static android.bluetooth.BluetoothAdapter.nameForState;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
+import static android.bluetooth.BluetoothDevice.BOND_BONDING;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
@@ -364,7 +365,7 @@ public class AdapterService extends Service {
     private boolean mNativeAvailable;
     private boolean mCleaningUp;
     private boolean mQuietMode = false;
-    private final Map<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
+    private final Map<String, CallerInfo> mBondAttemptCallerInfo = new ConcurrentHashMap<>();
 
     private BatteryStatsManager mBatteryStatsManager;
     private PowerManager mPowerManager;
@@ -798,10 +799,6 @@ public class AdapterService extends Service {
         return mMetadataListeners;
     }
 
-    Map<String, CallerInfo> getBondAttemptCallerInfo() {
-        return mBondAttemptCallerInfo;
-    }
-
     public Optional<MediaAudioServer> getMediaAudioServer() {
         return mMediaAudioServer;
     }
@@ -994,10 +991,11 @@ public class AdapterService extends Service {
     }
 
     Optional<String> getCallingPackageName(String address) {
-        if (mBondAttemptCallerInfo.get(address) == null) {
+        CallerInfo info = mBondAttemptCallerInfo.get(address);
+        if (info == null) {
             return Optional.empty();
         }
-        return Optional.of(mBondAttemptCallerInfo.get(address).callerPackageName());
+        return Optional.of(info.callerPackageName());
     }
 
     /**
@@ -3152,7 +3150,7 @@ public class AdapterService extends Service {
         }
 
         for (BluetoothDevice dev : devices) {
-            getBondAttemptCallerInfo().remove(dev.getAddress());
+            mBondAttemptCallerInfo.remove(dev.getAddress());
             getStartedConnectableProfiles()
                     .filter(p -> p.getConnectionPolicy(dev) == CONNECTION_POLICY_ALLOWED)
                     .forEach(
@@ -3599,13 +3597,12 @@ public class AdapterService extends Service {
      * @return true if it was recently associated and we can bypass the dialog, false otherwise
      */
     public boolean canBondWithoutDialog(BluetoothDevice device) {
-        if (mBondAttemptCallerInfo.containsKey(device.getAddress())) {
-            CallerInfo bondCallerInfo = mBondAttemptCallerInfo.get(device.getAddress());
-
-            return mCompanionDeviceManager.canPairWithoutPrompt(
-                    bondCallerInfo.callerPackageName, device.getAddress(), bondCallerInfo.user);
+        CallerInfo info = mBondAttemptCallerInfo.get(device.getAddress());
+        if (info == null) {
+            return false;
         }
-        return false;
+        return mCompanionDeviceManager.canPairWithoutPrompt(
+                info.callerPackageName(), device.getAddress(), info.user());
     }
 
     /**
@@ -3618,7 +3615,7 @@ public class AdapterService extends Service {
         if (info == null) {
             return null;
         }
-        return info.callerPackageName;
+        return info.callerPackageName();
     }
 
     /**
@@ -4528,6 +4525,14 @@ public class AdapterService extends Service {
             setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
             setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
             setSimAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
+        }
+
+        // Remove the bond caller info when bonding is concluded
+        if (Flags.removeBondCallerInfo() && toState != BOND_BONDING) {
+            CallerInfo callerInfo = mBondAttemptCallerInfo.remove(device.getAddress());
+            if (callerInfo != null) {
+                Log.d(TAG, "Removed bond caller info for device: " + device);
+            }
         }
     }
 
