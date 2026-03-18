@@ -28,6 +28,7 @@ import android.bluetooth.State
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
+import android.bluetooth.le.ScanCallback.SCAN_FAILED_INTERNAL_ERROR
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
@@ -84,19 +85,25 @@ class ScanBinder(
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
+        val method = "registerAndStartScan"
+        val hasPrivilegedPermission = adapterService.checkCallerHasPrivilegedPermission()
+        if (!isBluetoothOn() && !hasPrivilegedPermission) {
+            Log.e(TAG, "$method(): Only privileged app can scan when Bluetooth is not ON")
+            callback.onScannerRegistered(SCAN_FAILED_INTERNAL_ERROR, -1)
+            return
+        }
         enforceTransportBlockFilterSupported(filters)
         enforcePrivilegedPermissionIfNeeded(settings, filters)
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
-        val hasPrivilegedPermission = adapterService.checkCallerHasPrivilegedPermission()
         if (Flags.earlyRejectUnauthorizedScans() && !hasDisavowedLocationOrHasPermission(source)) {
             val app = adapterService.appNameOrUnknown(source.uid)
             Log.w(TAG, "$app requested to scan but does not have location permission")
             callback.onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1)
             return
         }
-        withControllerRunOnScanThread(source, "registerAndStartScan") {
+        withControllerRunOnScanThread(source, method) {
             registerAndStartScan(
                 callback,
                 workSource,
@@ -130,9 +137,15 @@ class ScanBinder(
         filters: List<ScanFilter>,
         source: AttributionSource,
     ) {
+        val method = "registerPiAndStartScan"
+        val hasPrivilegedPermission = adapterService.checkCallerHasPrivilegedPermission()
+        if (!isBluetoothOn() && !hasPrivilegedPermission) {
+            Log.e(TAG, "$method(): Only privileged app can scan when Bluetooth is not ON")
+            return
+        }
         enforceTransportBlockFilterSupported(filters)
         enforcePrivilegedPermissionIfNeeded(settings, filters)
-        withControllerRunOnScanThread(source, "registerPiAndStartScan") {
+        withControllerRunOnScanThread(source, method) {
             registerPiAndStartScan(intent, settings, filters, source)
         }
     }
@@ -204,6 +217,9 @@ class ScanBinder(
         }
     }
 
+    // BLE scan only mode needs special permission.
+    private fun isBluetoothOn() = adapterService.state == State.ON
+
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
     private fun enforcePrivilegedPermissionIfNeeded(
         settings: ScanSettings,
@@ -213,7 +229,7 @@ class ScanBinder(
 
         fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
             // BLE scan only mode needs special permission.
-            if (adapterService.getState() != State.ON) {
+            if (!isBluetoothOn()) {
                 return true
             }
 
