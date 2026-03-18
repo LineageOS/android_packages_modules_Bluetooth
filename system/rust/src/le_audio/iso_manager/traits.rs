@@ -358,6 +358,37 @@ pub trait BigSync: Clone + Send + Sync + fmt::Debug {
     fn on_lost(&self) -> impl Future<Output = HciStatus> + Send;
 }
 
+/// Factory interface for managing ISO resources (CIGs and BIGs).
+pub trait IsoManager: Clone + Send + Sync + 'static {
+    /// Resource type for CIGs.
+    type Cig: Cig;
+    /// Resource type for BIG sources.
+    type BigSource: BigSource;
+    /// Resource type for BIG syncs.
+    type BigSync: BigSync;
+
+    /// Create a new CIG allocating a fresh CIG ID.
+    /// Returns the created Cig entity. The Cis within the Cig can be
+    /// accessed using Cig::cis_connections().
+    fn create_cig(&self, params: CigParameters) -> impl Future<Output = Result<Self::Cig>> + Send;
+
+    /// Create a new BIG allocating a fresh BIG handle.
+    /// Returns the created BigSource entity. The Bis within the BigSource can be accessed using
+    /// BigSource::bis_connections().
+    fn create_big(
+        &self,
+        params: CreateBigParameters,
+    ) -> impl Future<Output = Result<Self::BigSource>> + Send;
+
+    /// Synchronizes to an existing BIG, allocating a fresh BIG handle.
+    /// Returns the created BigSync entity. The Bis within the BigSource can be accessed using
+    /// BigSync::bis_connections().
+    fn big_create_sync(
+        &self,
+        params: BigCreateSyncParameters,
+    ) -> impl Future<Output = Result<Self::BigSync>> + Send;
+}
+
 #[cfg(test)]
 mockall::mock! {
     pub Cis {}
@@ -496,6 +527,38 @@ mockall::mock! {
     }
 
     impl fmt::Debug for BigSync {
+        fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result;
+    }
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub IsoManager {}
+
+    impl IsoManager for IsoManager {
+        type Cig = MockCig;
+        type BigSource = MockBigSource;
+        type BigSync = MockBigSync;
+
+        fn create_cig(
+            &self,
+            params: CigParameters,
+        ) -> impl Future<Output = Result<MockCig>> + Send;
+        fn create_big(
+            &self,
+            params: CreateBigParameters,
+        ) -> impl Future<Output = Result<MockBigSource>> + Send;
+        fn big_create_sync(
+            &self,
+            params: BigCreateSyncParameters,
+        ) -> impl Future<Output = Result<MockBigSync>> + Send;
+    }
+
+    impl Clone for IsoManager {
+        fn clone(&self) -> Self;
+    }
+
+    impl fmt::Debug for IsoManager {
         fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result;
     }
 }
