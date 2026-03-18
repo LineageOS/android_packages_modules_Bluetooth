@@ -107,22 +107,15 @@ TEST_F(PacsTestsBase, RegisterCallbacks) {
   // Check GATT server app registration
   Pacs::ServiceDescriptor service_descriptor;
   service_descriptor.pac_sets.sink.push_back({});
-  void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
-  EXPECT_CALL(gatt_server_interface_,
-              AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
-          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb),
-                          SaveArg<3>(&p_reg_cb)));
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
+          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb), Return(0xDE)));
   pacs_->RegisterGattService(service_descriptor, &pac_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
   ASSERT_EQ(uuid::kPublishedAudioCapabilityServiceUuid, uuid);
   Mock::VerifyAndClearExpectations(&gatt_server_interface_);
 
-  // Inject the registration success event
-  p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
-
   // Ignore second call to register
-  EXPECT_CALL(gatt_server_interface_,
-              AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
           .Times(0);
   pacs_->RegisterGattService(service_descriptor, &pac_callbacks_);
 
@@ -135,13 +128,8 @@ TEST_F(PacsTestsBase, RegisterCallbacksAppRegisterFailsDeathTest) {
   // Check GATT server app registration failure
   Pacs::ServiceDescriptor service_descriptor;
   service_descriptor.pac_sets.sink.push_back({});
-  ON_CALL(gatt_server_interface_, AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
-          .WillByDefault([](const bluetooth::Uuid& uuid, const stack::tGATT_CBACK* /*p_cback*/,
-                            bool,
-                            void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                             const bluetooth::Uuid& uuid)) {
-            p_reg_cb(tGATT_STATUS::GATT_ERROR, 0, uuid);
-          });
+  ON_CALL(gatt_server_interface_, AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
+          .WillByDefault(Return(0));
 
   EXPECT_CALL(pac_callbacks_, OnPacsRegistered()).Times(0);
   ASSERT_DEATH(pacs_->RegisterGattService(service_descriptor, &pac_callbacks_),
@@ -242,16 +230,8 @@ protected:
   void RegisterService(const Pacs::ServiceDescriptor& desc) {
     // Mock GATT application registration success
     EXPECT_CALL(gatt_server_interface_,
-                AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
-            .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
-                                  [](const bluetooth::Uuid& app_uuid,
-                                     const stack::tGATT_CBACK* /*p_cback*/, bool /*eatt_support*/,
-                                     void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                      const bluetooth::Uuid& uuid)) {
-                                    if (p_reg_cb) {
-                                      p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
-                                    }
-                                  }));
+                AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
+            .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_), Return(0xDE)));
 
     // Mock GATT service registration success
     EXPECT_CALL(gatt_server_interface_, AddService(0xDE, _, _))
@@ -517,15 +497,8 @@ public:
 
     // Mock GATT application registration success
     EXPECT_CALL(gatt_server_interface_,
-                AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
-            .WillRepeatedly([this](const bluetooth::Uuid& app_uuid,
-                                   const stack::tGATT_CBACK* /*p_cback*/, bool /* eatt_support */,
-                                   void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                    const bluetooth::Uuid& uuid)) {
-              if (p_reg_cb) {
-                p_reg_cb(tGATT_STATUS::GATT_SUCCESS, server_if_, app_uuid);
-              }
-            });
+                AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
+            .WillRepeatedly(Return(server_if_));
   }
 };
 
@@ -1470,15 +1443,8 @@ protected:
 
     // Mock GATT application registration success
     EXPECT_CALL(gatt_server_interface_,
-                AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
-            .WillRepeatedly(
-                    DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
-                          [this](const bluetooth::Uuid& app_uuid,
-                                 const stack::tGATT_CBACK* /*p_cback*/, bool /*eatt_support*/,
-                                 void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                  const bluetooth::Uuid& uuid)) {
-                            p_reg_cb(tGATT_STATUS::GATT_SUCCESS, server_if_, app_uuid);
-                          }));
+                AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
+            .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_), Return(server_if_)));
   }
 };
 
@@ -1569,8 +1535,7 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithNoPacsShouldFail) {
   service_descriptor.pac_sets.sink.clear();
   service_descriptor.pac_sets.source.clear();
 
-  EXPECT_CALL(gatt_server_interface_,
-              AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _, _))
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
           .Times(0);
   EXPECT_CALL(pac_callbacks_, OnPacsRegistered()).Times(0);
 
@@ -1585,7 +1550,7 @@ TEST_F(PacsTestsBase, RegisterGattServiceWithDuplicatePacId) {
   service_descriptor.pac_sets.sink.push_back(service_descriptor.pac_sets.sink.front());
 
   // Expect that AppRegister is never called because of the validation failure
-  EXPECT_CALL(gatt_server_interface_, AppRegister(_, _, _, _)).Times(0);
+  EXPECT_CALL(gatt_server_interface_, AppRegister(_, _, _)).Times(0);
   EXPECT_CALL(pac_callbacks_, OnPacsRegistered()).Times(0);
 
   pacs_->RegisterGattService(service_descriptor, &pac_callbacks_);

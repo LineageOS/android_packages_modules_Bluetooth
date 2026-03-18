@@ -34,12 +34,11 @@
 
 void BTA_GATTS_Disable(void) { inc_func_call_count(__func__); }
 void BTA_GATTS_AppDeregister(tGATT_IF /* server_if */) { inc_func_call_count(__func__); }
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */,
-                           const bluetooth::stack::tGATT_CBACK* /* p_cback */,
-                           bool /* eatt_support */,
-                           void (*)(tGATT_STATUS status, tGATT_IF server_if,
-                                    const bluetooth::Uuid& uuid)) {
+tGATT_IF BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */,
+                               const bluetooth::stack::tGATT_CBACK* /* p_cback */,
+                               bool /* eatt_support */) {
   inc_func_call_count(__func__);
+  return bluetooth::stack::GATT_IF_INVALID;
 }
 void BTA_GATTS_AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
                           BTA_GATTS_AddServiceCb /* cb */) {

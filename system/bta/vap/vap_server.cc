@@ -85,13 +85,6 @@ public:
             base::BindOnce(&VapServerImpl::do_initialize, base::Unretained(this), callbacks));
   }
 
-  static void OnGattRegisterStatic(tGATT_STATUS status, tGATT_IF server_if,
-                                   const bluetooth::Uuid& /*uuid*/) {
-    if (instance) {
-      instance->OnGattServerRegister(status, server_if);
-    }
-  }
-
   static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
                                tCONN_ID conn_id, bool connected, tGATT_DISCONN_REASON /*reason*/,
                                tBT_TRANSPORT transport) {
@@ -168,7 +161,94 @@ public:
             .p_req_cb = &vap_req_cb,
     };
 
-    BTA_GATTS_AppRegister(app_uuid_, &vap_ops, true, OnGattRegisterStatic);
+    server_if_ = BTA_GATTS_AppRegister(app_uuid_, &vap_ops, true);
+    log::info("server_if: {}", server_if_);
+
+    if (server_if_ == stack::GATT_IF_INVALID) {
+      log::warn("Register Server fail");
+      return;
+    }
+
+    std::vector<btgatt_db_element_t> service;
+    // Generic Voice Assistant Service
+    btgatt_db_element_t gvas_service;
+    gvas_service.uuid = kGenericVasService;
+    gvas_service.type = BTGATT_DB_PRIMARY_SERVICE;
+    service.push_back(gvas_service);
+
+    // VA Name characteristic
+    btgatt_db_element_t va_name_characteristic;
+    va_name_characteristic.uuid = kVaNameCharacteristic;
+    va_name_characteristic.type = BTGATT_DB_CHARACTERISTIC;
+    va_name_characteristic.properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY;
+    va_name_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
+    service.push_back(va_name_characteristic);
+    // CCC descriptor for VA Name characteristic
+    btgatt_db_element_t ccc_descriptor;
+    ccc_descriptor.uuid = kClientCharacteristicConfiguration;
+    ccc_descriptor.type = BTGATT_DB_DESCRIPTOR;
+    ccc_descriptor.permissions = GATT_PERM_WRITE | GATT_PERM_READ;
+    service.push_back(ccc_descriptor);
+
+    // VA UUID characteristic
+    btgatt_db_element_t va_uuid_characteristic;
+    va_uuid_characteristic.uuid = kVaUuidCharacteristic;
+    va_uuid_characteristic.type = BTGATT_DB_CHARACTERISTIC;
+    va_uuid_characteristic.properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY;
+    va_uuid_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
+    service.push_back(va_uuid_characteristic);
+    // CCC descriptor for VA UUID characteristic
+    service.push_back(ccc_descriptor);
+
+    // VAS Control Point (VAS-CP) characteristic
+    btgatt_db_element_t vas_control_point;
+    vas_control_point.uuid = kVasControlPointCharacteristic;
+    vas_control_point.type = BTGATT_DB_CHARACTERISTIC;
+    vas_control_point.properties = GATT_CHAR_PROP_BIT_WRITE_NR | GATT_CHAR_PROP_BIT_NOTIFY;
+    vas_control_point.permissions = GATT_PERM_WRITE_ENCRYPTED;
+    service.push_back(vas_control_point);
+    // CCC descriptor for VAS Control Point
+    service.push_back(ccc_descriptor);
+
+    // VA CCID characteristic
+    btgatt_db_element_t va_ccid_characteristic;
+    va_ccid_characteristic.uuid = kVaCcidCharacteristic;
+    va_ccid_characteristic.type = BTGATT_DB_CHARACTERISTIC;
+    va_ccid_characteristic.properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY;
+    va_ccid_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
+    service.push_back(va_ccid_characteristic);
+    // CCC descriptor for VA CCID characteristic
+    service.push_back(ccc_descriptor);
+
+    // VA Session State characteristic
+    btgatt_db_element_t va_session_state_characteristic;
+    va_session_state_characteristic.uuid = kVaSessionStateCharacteristic;
+    va_session_state_characteristic.type = BTGATT_DB_CHARACTERISTIC;
+    va_session_state_characteristic.properties =
+            (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+    va_session_state_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
+    service.push_back(va_session_state_characteristic);
+    // CCC descriptor for VA Session State characteristic
+    service.push_back(ccc_descriptor);
+
+    // VA Supported Features characteristic
+    btgatt_db_element_t va_supported_features_characteristic;
+    va_supported_features_characteristic.uuid = kVaSupportedFeaturesCharacteristic;
+    va_supported_features_characteristic.type = BTGATT_DB_CHARACTERISTIC;
+    va_supported_features_characteristic.properties =
+            (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+    va_supported_features_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
+    service.push_back(va_supported_features_characteristic);
+    // CCC descriptor for VA Supported Features characteristic
+    service.push_back(ccc_descriptor);
+
+    BTA_GATTS_AddService(server_if_, service,
+                         base::BindOnce([](tGATT_STATUS status, int server_if,
+                                           std::vector<btgatt_db_element_t> service) {
+                           if (instance) {
+                             instance->OnServiceAdded(status, server_if, service);
+                           }
+                         }));
   }
 
   void Cleanup() override {
@@ -474,99 +554,6 @@ public:
    void OnGattDisconnect(const RawAddress& remote_bda, tCONN_ID conn_id) {
      log::info("Address: {}, conn_id:{}", remote_bda, conn_id);
      remote_clients_.erase(remote_bda);
-   }
-
-   void OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if) {
-     log::info("status: {}", gatt_status_text(status));
-
-     if (status != tGATT_STATUS::GATT_SUCCESS) {
-       log::warn("Register Server fail");
-       return;
-     }
-     server_if_ = server_if;
-
-     std::vector<btgatt_db_element_t> service;
-     // Generic Voice Assistant Service
-     btgatt_db_element_t gvas_service;
-     gvas_service.uuid = kGenericVasService;
-     gvas_service.type = BTGATT_DB_PRIMARY_SERVICE;
-     service.push_back(gvas_service);
-
-     // VA Name characteristic
-     btgatt_db_element_t va_name_characteristic;
-     va_name_characteristic.uuid = kVaNameCharacteristic;
-     va_name_characteristic.type = BTGATT_DB_CHARACTERISTIC;
-     va_name_characteristic.properties =
-         GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY;
-     va_name_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
-     service.push_back(va_name_characteristic);
-     // CCC descriptor for VA Name characteristic
-     btgatt_db_element_t ccc_descriptor;
-     ccc_descriptor.uuid = kClientCharacteristicConfiguration;
-     ccc_descriptor.type = BTGATT_DB_DESCRIPTOR;
-     ccc_descriptor.permissions = GATT_PERM_WRITE | GATT_PERM_READ;
-     service.push_back(ccc_descriptor);
-
-     // VA UUID characteristic
-     btgatt_db_element_t va_uuid_characteristic;
-     va_uuid_characteristic.uuid = kVaUuidCharacteristic;
-     va_uuid_characteristic.type = BTGATT_DB_CHARACTERISTIC;
-     va_uuid_characteristic.properties =
-         GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY;
-     va_uuid_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
-     service.push_back(va_uuid_characteristic);
-     // CCC descriptor for VA UUID characteristic
-     service.push_back(ccc_descriptor);
-
-     // VAS Control Point (VAS-CP) characteristic
-     btgatt_db_element_t vas_control_point;
-     vas_control_point.uuid = kVasControlPointCharacteristic;
-     vas_control_point.type = BTGATT_DB_CHARACTERISTIC;
-     vas_control_point.properties = GATT_CHAR_PROP_BIT_WRITE_NR | GATT_CHAR_PROP_BIT_NOTIFY;
-     vas_control_point.permissions = GATT_PERM_WRITE_ENCRYPTED;
-     service.push_back(vas_control_point);
-     // CCC descriptor for VAS Control Point
-     service.push_back(ccc_descriptor);
-
-     // VA CCID characteristic
-     btgatt_db_element_t va_ccid_characteristic;
-     va_ccid_characteristic.uuid = kVaCcidCharacteristic;
-     va_ccid_characteristic.type = BTGATT_DB_CHARACTERISTIC;
-     va_ccid_characteristic.properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY;
-     va_ccid_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
-     service.push_back(va_ccid_characteristic);
-     // CCC descriptor for VA CCID characteristic
-     service.push_back(ccc_descriptor);
-
-     // VA Session State characteristic
-     btgatt_db_element_t va_session_state_characteristic;
-     va_session_state_characteristic.uuid = kVaSessionStateCharacteristic;
-     va_session_state_characteristic.type = BTGATT_DB_CHARACTERISTIC;
-     va_session_state_characteristic.properties =
-          (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
-     va_session_state_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
-     service.push_back(va_session_state_characteristic);
-     // CCC descriptor for VA Session State characteristic
-     service.push_back(ccc_descriptor);
-
-     // VA Supported Features characteristic
-     btgatt_db_element_t va_supported_features_characteristic;
-     va_supported_features_characteristic.uuid = kVaSupportedFeaturesCharacteristic;
-     va_supported_features_characteristic.type = BTGATT_DB_CHARACTERISTIC;
-     va_supported_features_characteristic.properties =
-          (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
-     va_supported_features_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
-     service.push_back(va_supported_features_characteristic);
-     // CCC descriptor for VA Supported Features characteristic
-     service.push_back(ccc_descriptor);
-
-     BTA_GATTS_AddService(server_if_, service,
-                          base::BindOnce([](tGATT_STATUS status, int server_if,
-                                            std::vector<btgatt_db_element_t> service) {
-                            if (instance) {
-                              instance->OnServiceAdded(status, server_if, service);
-                            }
-                          }));
    }
 
    void OnReadCharacteristic(tCONN_ID conn_id, uint32_t trans_id, const RawAddress& remote_bda,

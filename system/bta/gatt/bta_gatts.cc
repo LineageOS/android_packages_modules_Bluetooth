@@ -110,26 +110,17 @@ void BTA_GATTS_Disable(void) {
   bta_sys_deregister(BTA_ID_GATTS);
 }
 
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
-                           bool eatt_support,
-                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                            const bluetooth::Uuid& uuid)) {
+tGATT_IF BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
+                               bool eatt_support) {
   if (!bta_gatts_enabled) {
     bta_gatts_enable();
   }
 
   tGATT_IF gatt_if = stack::appRegister(app_uuid, "GattServer", p_cback, eatt_support);
-
-  tGATT_STATUS status = GATT_SUCCESS;
-  if (!gatt_if) {
-    status = GATT_NO_RESOURCES;
-  } else {
+  if (gatt_if) {
     do_in_main_thread(base::BindOnce(&stack::appStartIf, gatt_if));
   }
-
-  if (p_reg_cb) {
-    p_reg_cb(status, gatt_if, app_uuid);
-  }
+  return gatt_if;
 }
 
 void BTA_GATTS_AppDeregister(tGATT_IF gatt_if) { stack::appDeregister(gatt_if); }

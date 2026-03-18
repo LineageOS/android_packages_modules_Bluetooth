@@ -108,11 +108,9 @@ void SetMockBtaGattInterface(MockBtaGattInterface* mock_bta_gatt_interface);
 class BtaGattServerInterface {
 public:
   virtual void Disable() = 0;
-  virtual void AppRegister(const bluetooth::Uuid& /* app_uuid */,
-                           const bluetooth::stack::tGATT_CBACK* /* p_cback */,
-                           bool /* eatt_support */,
-                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                            const bluetooth::Uuid& uuid)) = 0;
+  virtual tGATT_IF AppRegister(const bluetooth::Uuid& /* app_uuid */,
+                               const bluetooth::stack::tGATT_CBACK* /* p_cback */,
+                               bool /* eatt_support */) = 0;
   virtual void AppDeregister(tGATT_IF server_if) = 0;
   virtual void AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
                           BTA_GATTS_AddServiceCb /* cb */) = 0;
@@ -129,11 +127,10 @@ public:
 class MockBtaGattServerInterface : public BtaGattServerInterface {
 public:
   MOCK_METHOD((void), Disable, ());
-  MOCK_METHOD(
-          void, AppRegister,
-          (const bluetooth::Uuid& uuid, const bluetooth::stack::tGATT_CBACK* cb, bool eatt_support,
-           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid)),
-          (override));
+  MOCK_METHOD((tGATT_IF), AppRegister,
+              (const bluetooth::Uuid& uuid, const bluetooth::stack::tGATT_CBACK* cb,
+               bool eatt_support),
+              (override));
   MOCK_METHOD((void), AppDeregister, (tGATT_IF server_if), (override));
   MOCK_METHOD((void), AddService,
               (tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
