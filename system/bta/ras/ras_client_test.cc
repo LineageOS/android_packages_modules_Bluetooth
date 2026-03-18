@@ -18,8 +18,8 @@
 #include <gtest/gtest.h>
 
 #include "bta/include/bta_ras_api.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta/ras/ras_types.h"
-#include "bta/test/common/bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "btm_api_mock.h"
 #include "fake_osi.h"

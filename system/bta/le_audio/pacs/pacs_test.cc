@@ -22,7 +22,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "btm_api_mock.h"
 #include "pacs/pacs_packets.h"
 #include "stack/include/btm_client_interface.h"

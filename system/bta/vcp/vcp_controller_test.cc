@@ -26,7 +26,7 @@
 
 #include "bta/include/bta_vcp_controller_api.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "bta/test/common/bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta/test/common/bta_gatt_queue_mock.h"
 #include "bta/test/common/mock_csis_client.h"
 #include "bta/test/common/mock_device_groups.h"

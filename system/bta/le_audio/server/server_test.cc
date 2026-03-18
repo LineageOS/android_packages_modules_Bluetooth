@@ -25,7 +25,7 @@
 #include "bta/le_audio/test/mock_ase_manager.h"
 #include "bta/le_audio/test/mock_le_audio_server_config_manager.h"
 #include "bta/le_audio/test/mock_pacs.h"
-#include "bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta_le_audio_api.h"
 #include "bta_le_audio_server_api.h"
 #include "hardware/bt_le_audio.h"

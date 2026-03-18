@@ -30,8 +30,8 @@
 #include <variant>
 
 #include "bta/le_audio/le_audio_types.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta_csis_api.h"
-#include "bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "bta_has_api.h"
 #include "btif_storage_mock.h"

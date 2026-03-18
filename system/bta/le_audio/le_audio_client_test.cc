@@ -25,7 +25,7 @@
 #include <chrono>
 
 #include "bta/csis/csis_types.h"
-#include "bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "bta_groups.h"
 #include "bta_le_audio_api.h"
