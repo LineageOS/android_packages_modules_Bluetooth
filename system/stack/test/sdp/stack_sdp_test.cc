@@ -21,6 +21,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "bta/ag/bta_ag_int.h"
+#include "bta/sys/bta_sys.h"
 #include "include/macros.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_uuid16.h"
@@ -48,6 +50,10 @@ using ::testing::SaveArgPointee;
 using ::testing::StrEq;
 using ::testing::StrictMock;
 using ::testing::Test;
+
+// TODO: remove dependency on BTA symbols.
+bool bta_ag_get_swb_supported() { return false; }
+void bta_sys_add_uuid(uint16_t) {}
 
 namespace {
 constexpr uint8_t kSDP_MAX_CONNECTIONS = static_cast<uint8_t>(SDP_MAX_CONNECTIONS);

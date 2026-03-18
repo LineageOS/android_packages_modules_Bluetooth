@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "bta/include/bta_av_api.h"
 #include "osi/include/allocator.h"
 #include "stack/avdt/avdt_int.h"
 #include "stack/include/avdt_api.h"
@@ -30,6 +31,9 @@
 #include "test/common/mock_functions.h"
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
+
+// TODO: remove dependency on BTA symbols.
+int BTA_AvObtainPeerChannelIndex(RawAddress const&) { return 0; }
 
 class StackAvdtpTest : public ::testing::Test {
 protected:

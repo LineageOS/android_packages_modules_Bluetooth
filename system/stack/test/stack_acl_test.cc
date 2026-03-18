@@ -20,6 +20,9 @@
 
 #include <cstdint>
 
+#include "bta/gatt/bta_gattc_int.h"
+#include "bta/include/bta_dm_acl.h"
+#include "bta/sys/bta_sys.h"
 #include "hci/controller_mock.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_device_record.h"
@@ -32,6 +35,15 @@
 #include "test/mock/mock_main_shim_entry.h"
 
 tBTM_CB btm_cb;
+
+// TODO: remove dependency on BTA symbols
+void BTA_dm_acl_up(const AclLinkSpec&, uint16_t, bool) {}
+void BTA_dm_acl_up_failed(const AclLinkSpec&, tHCI_STATUS, bool) {}
+void BTA_dm_acl_down(const AclLinkSpec&) {}
+void BTA_dm_report_role_change(RawAddress, tHCI_ROLE, tHCI_STATUS) {}
+void BTA_dm_notify_remote_features_complete(RawAddress) {}
+void bta_gattc_continue_discovery_if_needed(const RawAddress&, uint16_t) {}
+void bta_sys_notify_collision(const RawAddress&) {}
 
 namespace {
 const RawAddress kRawAddress = RawAddress("11:22:33:44:55:66");
