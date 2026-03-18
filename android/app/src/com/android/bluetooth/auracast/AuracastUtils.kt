@@ -91,7 +91,7 @@ object AuracastUtils {
      *
      * @param context The [Context] used to retrieve resources and system services.
      * @param nm The [NotificationManager] instance responsible for posting the notification.
-     * @param streamName The human-readable name of the Auracast broadcast (e.g., "Airport TV").
+     * @param title The human-readable name of the Auracast broadcast (e.g., "Airport TV").
      * @param message The descriptive text body of the notification, often indicating the target
      *   device.
      * @param connectPending An optional [PendingIntent] to be triggered when the user taps the
@@ -101,21 +101,24 @@ object AuracastUtils {
     fun showNotification(
         context: Context,
         nm: NotificationManager,
-        streamName: String,
+        title: String,
         message: String,
         connectPending: PendingIntent?,
     ) {
         val builder =
             Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_bt_le_audio_sharing)
-                .setSubText("LE Audio")
+                .setSubText(context.getString(R.string.auracast_notification_subtext))
                 .setLocalOnly(true)
-                .setContentTitle("$streamName audio stream available")
+                .setContentTitle(title)
                 .setContentText(message)
                 .setTimeoutAfter(NOTIF_AUTO_DISMISS_MILLIS)
 
         if (connectPending != null) {
-            builder.addAction(Notification.Action.Builder(null, "Connect", connectPending).build())
+            val connectText = context.getString(R.string.auracast_connect_action)
+            builder.addAction(
+                Notification.Action.Builder(null, connectText, connectPending).build()
+            )
         }
 
         nm.notify(NOTIFICATION_ID, builder.build())
