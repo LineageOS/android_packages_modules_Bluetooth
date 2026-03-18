@@ -1083,7 +1083,13 @@ void btif_hh_remove_device(const AclLinkSpec& link_spec) {
     return;
   }
 
-  get_jni_thread()->DoInThreadSynchronously(&btif_hh_remove_device_in_jni_thread, link_spec);
+  if (!com_android_bluetooth_flags_jni_batch_memory_management()) {
+    get_jni_thread()->DoInThreadSynchronously(&btif_hh_remove_device_in_jni_thread, link_spec);
+  } else {
+    do_in_jni_thread(base::BindOnce(
+            [](AclLinkSpec link_spec) { btif_hh_remove_device_in_jni_thread(link_spec); },
+            link_spec));
+  }
 }
 
 /*******************************************************************************
