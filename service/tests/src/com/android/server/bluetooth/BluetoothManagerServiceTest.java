@@ -71,6 +71,7 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionManager;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.sysprop.BluetoothProperties;
@@ -113,7 +114,8 @@ public class BluetoothManagerServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf();
+        return FlagsWrapper.progressionOf(
+                com.android.bluetooth.beta.flags.Flags.FLAG_SYSTEM_SERVER_DIRECT_SWITCH);
     }
 
     private static final UserHandle DEFAULT_USER = UserHandle.of(42);
@@ -896,6 +898,7 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
+    @DisableFlags(com.android.bluetooth.beta.flags.Flags.FLAG_SYSTEM_SERVER_DIRECT_SWITCH)
     public void userSwitch_onSameUserWhenBtOn_doesNothing() throws Exception {
         mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing");
         transition_offToOn();
@@ -907,6 +910,49 @@ public class BluetoothManagerServiceTest {
 
         // Verify a subsequent enable call still works (is not blocked by a pending user switch).
         assertThat(mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing")).isTrue();
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(com.android.bluetooth.beta.flags.Flags.FLAG_SYSTEM_SERVER_DIRECT_SWITCH)
+    public void userSwitch_onSameUserWhenTurningOn_doesNothing() throws Exception {
+        mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing");
+
+        // To TURNING_ON state
+        IBluetoothCallback btCallback = transition_offToBleOn();
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
+        verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
+        verifyStateIntentSent(State.OFF, State.TURNING_ON);
+
+        assertThat(mManagerService.getState()).isEqualTo(State.TURNING_ON);
+
+        mManagerService.onUserSwitching(DEFAULT_USER); // this should be discarded
+
+        // Finish transition to ON
+        btCallback.onBluetoothStateChange(State.TURNING_ON, State.ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.TURNING_ON, State.ON);
+        verifyStateIntentSent(State.TURNING_ON, State.ON);
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        // Verify a subsequent enable call still works (is not blocked by a pending user switch).
+        assertThat(mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing")).isTrue();
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(com.android.bluetooth.beta.flags.Flags.FLAG_SYSTEM_SERVER_DIRECT_SWITCH)
+    public void userSwitch_onSameUserWhenBinding_startImmediatelyOnNewUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing");
+        verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+
+        mManagerService.onUserSwitching(OTHER_USER);
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+
+        mCurrentUser = OTHER_USER;
+        transition_offToOn();
 
         endTest();
     }
