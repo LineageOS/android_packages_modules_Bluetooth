@@ -540,3 +540,20 @@ TEST_F(StackRfcommTest, rfc_port_sm_state_closed_RFC_PORT_EVENT_TIMEOUT) {
               PortManagementCallback(tPORT_RESULT::PORT_PEER_TIMEOUT, client_handle, 1));
   rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, nullptr);
 }
+
+TEST_F(StackRfcommTest, test_rfc_check_mcb_active_last_dlci) {
+  tRFC_MCB mcb = {};
+  mcb.is_disc_initiator = true;
+  mcb.state = RFC_MX_STATE_CONNECTED;
+
+  // Set only the last DLCI active
+  mcb.port_handles[RFCOMM_MAX_DLCI] = 1;
+
+  // The function should return early without starting any timer or closing MX,
+  // and it should set is_disc_initiator to false.
+  rfc_check_mcb_active(&mcb);
+
+  ASSERT_FALSE(mcb.is_disc_initiator);
+  // State should not change because the MX is not closed
+  ASSERT_EQ(mcb.state, RFC_MX_STATE_CONNECTED);
+}
