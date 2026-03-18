@@ -35,10 +35,10 @@ pub struct PaCreateSyncParams {
     pub broadcast_id: u32,
     /// The advertising SID.
     pub advertising_sid: u8,
-    /// The address of the broadcaster.
-    pub advertiser_addr: Address,
     /// The address type of the broadcaster.
     pub advertiser_addr_type: AddressType,
+    /// The address of the broadcaster.
+    pub advertiser_addr: Address,
     /// The skip interval (number of PA events that can be skipped).
     pub skip: u16,
     /// The synchronization timeout.
@@ -52,7 +52,7 @@ pub struct PaCreateSyncParams {
 pub struct PeriodicSyncInfo {
     /// Registration ID.
     pub reg_id: i32,
-    /// Sync handle.
+    /// Identify the periodic advertising train.
     pub sync_handle: u16,
     /// Advertising SID.
     pub advertising_sid: u8,
@@ -60,18 +60,18 @@ pub struct PeriodicSyncInfo {
     pub advertiser_addr_type: AddressType,
     /// Address.
     pub advertiser_addr: Address,
-    /// PHY.
-    pub phy: u8,
-    /// PA Interval.
-    pub sync_interval: u16,
+    /// Phy.
+    pub advertiser_phy: u8,
+    /// Interval.
+    pub periodic_advertising_interval: Duration,
 }
 
 /// Event types for Periodic Sync.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PeriodicSyncEvent {
-    /// Periodic sync report received.
-    PaReport {
-        /// Sync handle.
+    /// Report carries periodic advertising data.
+    PeriodicAdvertisingReport {
+        /// Identify the periodic advertising train.
         sync_handle: u16,
         /// TX power.
         tx_power: i8,
@@ -82,17 +82,17 @@ pub enum PeriodicSyncEvent {
         /// Data.
         data: Vec<u8>,
     },
-    /// Periodic sync lost.
-    PaSyncLost {
-        /// Sync handle.
+    /// Periodic advertising sync lost.
+    PeriodicAdvertisingSyncLost {
+        /// Identify the periodic advertising train.
         sync_handle: u16,
     },
-    /// BIG Info report received.
-    BigInfoReport {
-        /// Sync handle.
+    /// Report carries BIG Info advertising data.
+    BigInfoAdvertisingReport {
+        /// Identify the periodic advertising train.
         sync_handle: u16,
-        /// Encrypted.
-        encrypted: bool,
+        /// Indicate whether BIG carries encrypted data.
+        encryption: bool,
     },
 }
 

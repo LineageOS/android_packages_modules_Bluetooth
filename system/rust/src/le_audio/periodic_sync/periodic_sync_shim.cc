@@ -19,8 +19,8 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
+#include <rust/cxx.h>
 
-#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -28,7 +28,6 @@
 #include "hardware/ble_scanner.h"
 #include "main/shim/le_scanning_manager.h"
 #include "periodic_sync/ffi.rs.h"
-#include "rust/cxx.h"
 
 namespace bluetooth::shim {
 namespace {
@@ -120,25 +119,25 @@ void ScanningCallbackShim::OnPeriodicSyncTransferred(int, uint8_t, RawAddress) {
 void ScanningCallbackShim::OnPeriodicSyncStarted(int reg_id, uint8_t status, uint16_t sync_handle,
                                                  uint8_t advertising_sid,
                                                  uint8_t advertiser_addr_type,
-                                                 RawAddress advertiser_addr, uint8_t phy,
-                                                 uint16_t sync_interval) {
+                                                 RawAddress advertiser_addr, uint8_t advertiser_phy,
+                                                 uint16_t periodic_advertising_interval) {
   callbacks_->OnPeriodicSyncStarted(reg_id, status, sync_handle, advertising_sid,
-                                    advertiser_addr_type, FromRawAddress(advertiser_addr), phy,
-                                    sync_interval);
+                                    advertiser_addr_type, FromRawAddress(advertiser_addr),
+                                    advertiser_phy, periodic_advertising_interval);
 }
 
 void ScanningCallbackShim::OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power, int8_t rssi,
                                                 uint8_t status, std::vector<uint8_t> data) {
-  callbacks_->OnPeriodicSyncReport(sync_handle, tx_power, rssi, status,
-                                   rust::Slice<const uint8_t>(data.data(), data.size()));
+  callbacks_->OnPeriodicAdvertisingReport(sync_handle, tx_power, rssi, status,
+                                          rust::Slice<const uint8_t>(data.data(), data.size()));
 }
 
 void ScanningCallbackShim::OnPeriodicSyncLost(uint16_t sync_handle) {
   callbacks_->OnPeriodicSyncLost(sync_handle);
 }
 
-void ScanningCallbackShim::OnBigInfoReport(uint16_t sync_handle, bool encrypted) {
-  callbacks_->OnBigInfoReport(sync_handle, encrypted);
+void ScanningCallbackShim::OnBigInfoReport(uint16_t sync_handle, bool encryption) {
+  callbacks_->OnBigInfoAdvertisingReport(sync_handle, encryption);
 }
 
 }  // namespace bluetooth::shim
