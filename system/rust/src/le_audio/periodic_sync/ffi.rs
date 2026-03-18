@@ -213,7 +213,7 @@ mod test {
         let address = Address::from_be_bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
         callbacks.on_periodic_sync_started(
             123,
-            0, // success
+            HciStatus::Success.into(),
             1, // handle
             2, // sid
             AddressType::RandomDeviceAddress.into(),
