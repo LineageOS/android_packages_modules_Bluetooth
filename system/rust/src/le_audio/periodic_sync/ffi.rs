@@ -17,6 +17,7 @@
 #![allow(dead_code)]
 
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use crate::le_audio::periodic_sync::manager::SyncRegistry;
 use crate::le_audio::periodic_sync::traits::{
@@ -110,6 +111,8 @@ pub struct PeriodicSyncCallbacks {
     sync_registry: Arc<Mutex<SyncRegistry>>,
 }
 
+const HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US: u64 = 1250;
+
 impl PeriodicSyncCallbacks {
     pub fn new(sync_registry: Arc<Mutex<SyncRegistry>>) -> Self {
         Self { sync_registry }
@@ -142,7 +145,10 @@ impl PeriodicSyncCallbacks {
                 advertiser_addr_type,
                 advertiser_addr,
                 advertiser_phy,
-                periodic_advertising_interval,
+                periodic_advertising_interval: Duration::from_micros(
+                    periodic_advertising_interval as u64
+                        * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
+                ),
             })
         } else {
             Err(PeriodicSyncError::HciError(status))
@@ -231,7 +237,9 @@ mod test {
                 advertiser_addr_type: eq(AddressType::RandomDeviceAddress),
                 advertiser_addr: eq(address),
                 advertiser_phy: eq(3),
-                periodic_advertising_interval: eq(4),
+                periodic_advertising_interval: eq(Duration::from_micros(
+                    4 * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
+                )),
             })))
         );
         expect_that!(sync_registry.lock().unwrap().active_handles.contains(&1), is_true());

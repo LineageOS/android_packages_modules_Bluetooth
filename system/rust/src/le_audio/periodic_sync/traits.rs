@@ -63,7 +63,7 @@ pub struct PeriodicSyncInfo {
     /// Phy.
     pub advertiser_phy: u8,
     /// Interval.
-    pub periodic_advertising_interval: u16,
+    pub periodic_advertising_interval: Duration,
 }
 
 /// Event types for Periodic Sync.
