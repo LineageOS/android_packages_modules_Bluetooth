@@ -657,7 +657,8 @@ int A2DP_GetMaxBitpoolSbc(const uint8_t* p_codec_info) {
   return sbc_cie.max_bitpool;
 }
 
-uint32_t A2DP_GetBitrateSbc() { return a2dp_sbc_get_bitrate(); }
+int A2dpCodecConfigSbcBase::getTrackBitRate() const { return a2dp_sbc_get_bitrate(); }
+
 int A2DP_GetSinkTrackChannelTypeSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE sbc_cie;
 

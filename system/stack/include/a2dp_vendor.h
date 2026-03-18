@@ -97,12 +97,6 @@ bool A2DP_VendorUsesRtpHeader(bool content_protection_enabled, const uint8_t* p_
 // If the codec type is not recognized, the return value is false.
 bool A2DP_VendorCodecTypeEquals(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b);
 
-// Gets the bitrate for the A2DP vendor-specific codec.
-// |p_codec_info| is a pointer to the vendor-specific codec_info to decode.
-// Returns the channel count on success, or -1 if |p_codec_info|
-// contains invalid codec information.
-int A2DP_VendorGetBitRate(const uint8_t* p_codec_info);
-
 // Gets the channel type for the A2DP vendor-specific Sink codec:
 // 1 for mono, or 3 for dual/stereo/joint.
 // |p_codec_info| is a pointer to the vendor-specific codec_info to decode.

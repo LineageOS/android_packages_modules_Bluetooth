@@ -1183,3 +1183,7 @@ A2dpCodecConfigOpusSink::~A2dpCodecConfigOpusSink() {}
 bool A2dpCodecConfigOpusSink::init() { return true; }
 
 bool A2dpCodecConfigOpusSink::useRtpHeaderMarkerBit() const { return false; }
+
+int A2dpCodecConfigOpusBase::getTrackBitRate() const {
+  return A2DP_VendorGetBitRateOpus(ota_codec_config_.data());
+}

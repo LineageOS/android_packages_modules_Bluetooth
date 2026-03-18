@@ -43,7 +43,6 @@ struct A2DP_CodecEqualsSbc A2DP_CodecEqualsSbc;
 struct A2DP_CodecInfoStringSbc A2DP_CodecInfoStringSbc;
 struct A2DP_CodecTypeEqualsSbc A2DP_CodecTypeEqualsSbc;
 struct A2DP_GetAllocationMethodCodeSbc A2DP_GetAllocationMethodCodeSbc;
-struct A2DP_GetBitrateSbc A2DP_GetBitrateSbc;
 struct A2DP_GetChannelModeCodeSbc A2DP_GetChannelModeCodeSbc;
 struct A2DP_GetDecoderInterfaceSbc A2DP_GetDecoderInterfaceSbc;
 struct A2DP_GetEncoderInterfaceSbc A2DP_GetEncoderInterfaceSbc;
@@ -77,7 +76,6 @@ bool A2DP_CodecEqualsSbc::return_value = false;
 std::string A2DP_CodecInfoStringSbc::return_value = std::string();
 bool A2DP_CodecTypeEqualsSbc::return_value = false;
 int A2DP_GetAllocationMethodCodeSbc::return_value = 0;
-uint32_t A2DP_GetBitrateSbc::return_value = 0;
 int A2DP_GetChannelModeCodeSbc::return_value = 0;
 const tA2DP_DECODER_INTERFACE* A2DP_GetDecoderInterfaceSbc::return_value = nullptr;
 const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceSbc::return_value = nullptr;
@@ -125,10 +123,6 @@ bool A2DP_CodecTypeEqualsSbc(const uint8_t* p_codec_info_a, const uint8_t* p_cod
 int A2DP_GetAllocationMethodCodeSbc(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);
   return test::mock::stack_a2dp_sbc::A2DP_GetAllocationMethodCodeSbc(p_codec_info);
-}
-uint32_t A2DP_GetBitrateSbc() {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_GetBitrateSbc();
 }
 int A2DP_GetChannelModeCodeSbc(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);

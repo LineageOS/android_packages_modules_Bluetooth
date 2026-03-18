@@ -1381,3 +1381,7 @@ bool A2dpCodecConfigAacSink::useRtpHeaderMarkerBit() const {
   // TODO: This method applies only to Source codecs
   return false;
 }
+
+int A2dpCodecConfigAacBase::getTrackBitRate() const {
+  return A2DP_GetBitRateAac(ota_codec_config_.data());
+}
