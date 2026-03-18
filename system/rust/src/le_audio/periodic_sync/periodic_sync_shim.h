@@ -18,13 +18,13 @@
 
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
+#include <rust/cxx.h>
 
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 #include "hardware/ble_scanner.h"
-#include "rust/cxx.h"
 
 namespace ffi {
 // Shadow struct matching Rust's Address { value: u64 }.

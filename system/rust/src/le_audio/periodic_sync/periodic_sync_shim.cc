@@ -19,8 +19,8 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
+#include <rust/cxx.h>
 
-#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -28,7 +28,6 @@
 #include "hardware/ble_scanner.h"
 #include "main/shim/le_scanning_manager.h"
 #include "periodic_sync/ffi.rs.h"
-#include "rust/cxx.h"
 
 namespace bluetooth::shim {
 namespace {
