@@ -340,12 +340,12 @@ cc_test {
         "packages/modules/Bluetooth/system/bta",
     ],
     srcs: [
-        ":TestMockBtaAg",
         "hfp_client_interface.cc",
         "hfp_client_interface_unittest.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
+        "libbt-bta-mock",
         "server_configurable_flags",
     ],
     header_libs: ["libbluetooth_headers"],
