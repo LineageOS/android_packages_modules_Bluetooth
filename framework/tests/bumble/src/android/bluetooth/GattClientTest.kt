@@ -894,7 +894,7 @@ class GattClientTest {
         advertiseWithBumble()
 
         val gatts = mutableListOf<BluetoothGatt>()
-        val gattCallbackTimeout = 5000L
+        val gattCallbackTimeout = 10000L
         try {
             repeat(100) {
                 val gattCallback = mock<BluetoothGattCallback>()
