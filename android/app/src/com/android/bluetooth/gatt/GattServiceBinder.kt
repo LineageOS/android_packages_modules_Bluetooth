@@ -453,14 +453,13 @@ class GattServiceBinder(private var gattService: GattService?) :
     }
 
     override fun registerServer(
-        uuid: ParcelUuid,
         callback: IBluetoothGattServerCallback,
         eattSupport: Boolean,
         transport: Int,
         source: AttributionSource,
     ) {
         serverOnGattThreadEnforceConnect(source) {
-            registerServer(uuid.uuid, callback, eattSupport, transport, source)
+            registerServer(callback, eattSupport, transport, source)
         }
     }
 
