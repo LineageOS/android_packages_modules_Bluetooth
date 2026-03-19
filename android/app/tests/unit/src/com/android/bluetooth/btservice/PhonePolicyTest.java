@@ -134,6 +134,7 @@ public class PhonePolicyTest {
                 .when(mAdapterService)
                 .getDatabasePath(anyString());
 
+        doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
         doReturn(mAdapterService).when(mAdapterService).createDeviceProtectedStorageContext();
         doReturn(State.ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();

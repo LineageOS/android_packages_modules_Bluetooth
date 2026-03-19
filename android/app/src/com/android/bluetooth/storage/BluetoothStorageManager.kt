@@ -43,6 +43,7 @@ import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
 import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
+import com.android.internal.annotations.GuardedBy
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
@@ -82,6 +83,15 @@ constructor(
     private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
     private val eventLog = BluetoothEventLogger(50, "$TAG.EventLog") // Dumpsys logger
+
+    private val MAX_UNBONDED_CACHE_SIZE = 20
+
+    @GuardedBy("memoryOnlyCache")
+    private val memoryOnlyCache =
+        object : java.util.LinkedHashMap<String, Device>(MAX_UNBONDED_CACHE_SIZE, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Device>) =
+                size > MAX_UNBONDED_CACHE_SIZE
+        }
 
     // Represent current index of the connection.
     // This is only relevant to track most recently active devices.
@@ -131,7 +141,16 @@ constructor(
     // [dataStore.data.first()] is efficient because the [initialize] call
     // eagerly triggers the initial disk read, warming DataStore's in-memory cache.
     private val currentStorage: UserStorage
-        get() = runBlocking { dataStore.data.first() }
+        get() {
+            val storage = runBlocking { dataStore.data.first() }
+            return storage
+                .toBuilder()
+                .apply {
+                    val cacheCopy = synchronized(memoryOnlyCache) { memoryOnlyCache.toMap() }
+                    putAllDevices(cacheCopy)
+                }
+                .build()
+        }
 
     // Eagerly launch a coroutine to trigger the DataStore's serializer. This will perform the
     // initial disk read, run migrations, and populate the in-memory cache on a background thread.
@@ -142,7 +161,7 @@ constructor(
         currentConnectionCounter =
             userStorage.devicesMap.values.maxOfOrNull { it.connectionCounter } ?: 0L
         userStorage.devicesMap.keys.forEach {
-            Log.v(TAG, "Device loaded from disk and put in cache: ${it.anonymizeAddress()}")
+            Log.v(TAG, "Device loaded from disk: ${it.anonymizeAddress()}")
         }
 
         if (currentConnectionCounter > COMPACTION_THRESHOLD) {
@@ -166,8 +185,15 @@ constructor(
             "active_hfp_devices: ${storage.activeHfpDevicesList.map { it.anonymizeAddress() }}"
         )
 
+        val cachedAddresses = synchronized(memoryOnlyCache) { memoryOnlyCache.keys.toSet() }
         for ((address, device) in storage.devicesMap.toSortedMap()) {
-            databaseDump.appendLine("\nDevice: ${address.anonymizeAddress()} {")
+            val isInMemory = cachedAddresses.contains(address)
+            val locationTag =
+                when {
+                    cachedAddresses.contains(address) -> "[Memory Cache]"
+                    else -> "[Disk]"
+                }
+            databaseDump.appendLine("\nDevice: ${address.anonymizeAddress()} $locationTag {")
             databaseDump.appendLine(dumpDevice(device).indent("  "))
             databaseDump.appendLine("}")
         }
@@ -233,6 +259,12 @@ constructor(
             setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
             setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
             setSimAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
+        } else if (toState == BOND_BONDED) {
+            // Leverage blockingUpdateData logic to migrate to persistent storage
+            dataStore.blockingUpdateData { storage ->
+                logEvent(device, "Migrated to persistent storage")
+                storage
+            }
         }
     }
 
@@ -346,7 +378,7 @@ constructor(
 
             val newByteString =
                 if (value.isEmpty()) ByteString.EMPTY else ByteString.copyFrom(value)
-            val oldByteString = deviceBuilder.customMetadataMap[key] ?: ByteString.EMPTY
+            val oldByteString = deviceBuilder.customMetadataMap?.get(key) ?: ByteString.EMPTY
 
             if (oldByteString == newByteString) {
                 status = false
@@ -842,7 +874,7 @@ constructor(
         builder.build()
     }
 
-    private suspend fun recompactConnectionCounter() = dataStore.updateData { storage ->
+    private suspend fun recompactConnectionCounter() = dataStore.updateStorageData { storage ->
         Log.d(TAG, "Re-compacting the connection counter")
 
         val sortedDevices = storage.devicesMap.entries.sortedBy { it.value.connectionCounter }
@@ -863,6 +895,9 @@ constructor(
         builder.build()
     }
 
+    // TODO: Remove this method and its call in cleanup() in a few months after release.
+    // It is kept for now to ensure devices released with the previous code still trigger the
+    // removal of old unbonded devices from disk.
     private suspend fun removeUnbondedDevices() {
         val bondedAddresses = adapterService.bondedDevices.map { it.address }.toSet()
 
@@ -905,9 +940,70 @@ constructor(
         }
     }
 
+    private suspend fun DataStore<UserStorage>.updateStorageData(
+        transform: suspend (UserStorage) -> UserStorage
+    ): UserStorage {
+        val bondedAddr = adapterService.bondedDevices.map { it.address }.toSet()
+
+        var pendingCacheUpdates: Map<String, Device>? = null
+        var pendingRemovals: Set<String>? = null
+
+        // Note: DataStore is designed to retry `updateData` automatically.
+        // We don't want to mutate the cache in it.
+        val finalStorage = updateData { storageFromDisk ->
+            val cacheCopy = synchronized(memoryOnlyCache) { memoryOnlyCache.toMap() }
+
+            // Merge disk storage with memory cache
+            val mergedStorage =
+                storageFromDisk.toBuilder().apply { putAllDevices(cacheCopy) }.build()
+
+            // Apply database transformation on all devices
+            val updatedStorage = transform(mergedStorage)
+            val builder = updatedStorage.toBuilder()
+
+            // List all unbonded devices in the storage
+            val unbondedAddr = updatedStorage.devicesMap.keys.filter { !bondedAddr.contains(it) }
+
+            val tempCacheUpdates = mutableMapOf<String, Device>()
+
+            unbondedAddr.forEach { address ->
+                val deviceProto = updatedStorage.devicesMap[address]!!
+
+                // Compare against the snapshot, to avoids accidental LRU bumps.
+                val existing = cacheCopy[address]
+                if (existing != deviceProto) {
+                    tempCacheUpdates[address] = deviceProto
+                }
+
+                // Remove the non-bonded devices from persistent storage
+                builder.removeDevices(address)
+            }
+
+            pendingCacheUpdates = tempCacheUpdates
+            val deletedAddresses = mergedStorage.devicesMap.keys - updatedStorage.devicesMap.keys
+            pendingRemovals = bondedAddr + deletedAddresses
+
+            builder.build()
+        }
+
+        if (pendingCacheUpdates != null && pendingRemovals != null) {
+            synchronized(memoryOnlyCache) {
+                // Remove newly bonded devices from memoryOnlyCache
+                memoryOnlyCache.keys.removeAll(pendingRemovals!!)
+
+                // Putting back devices that actually changed will bumps their LRU order.
+                pendingCacheUpdates!!.forEach { (address, deviceProto) ->
+                    memoryOnlyCache[address] = deviceProto
+                }
+            }
+        }
+
+        return finalStorage
+    }
+
     private fun DataStore<UserStorage>.blockingUpdateData(
         transform: suspend (UserStorage) -> UserStorage
-    ) = runBlocking { updateData(transform) }
+    ) = runBlocking { updateStorageData(transform) }
 
     /** Logs a metadata change event for dumpsys. */
     private fun logEvent(device: BluetoothDevice, log: String) {
