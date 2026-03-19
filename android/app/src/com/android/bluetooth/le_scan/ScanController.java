@@ -237,13 +237,7 @@ public class ScanController {
     public void onDisplayChanged(boolean screenOn) {
         enforceScanThread();
         Log.d(TAG, "onDisplayChanged(): Screen on=" + screenOn);
-        AppScanStats.setScreenState(screenOn);
-        mScanRadioStats.setScreenState(screenOn);
-        if (screenOn) {
-            mScanManager.handleScreenOn();
-        } else {
-            mScanManager.handleScreenOff();
-        }
+        mScanManager.onDisplayChanged(screenOn);
     }
 
     /** onSystemSuspendChanged notifies ScanSuspendManager when the system suspends and resumes. */
