@@ -30,16 +30,6 @@ flag {
 }
 
 flag {
-    name: "disable_high_res_images_on_low_ram"
-    namespace: "bluetooth"
-    description: "Don't use high resolution contact images in low-RAM devices"
-    bug: "446812657"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "pbap_correct_filtered_index"
     namespace: "bluetooth"
     description: "Correct indexes for phonebook requests with filter"
