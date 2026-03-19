@@ -78,9 +78,16 @@ class MapClientContent {
     }
 
     private enum Folder {
-        UNKNOWN,
-        INBOX,
-        SENT
+        INBOX(Sms.Inbox.CONTENT_URI, Mms.Inbox.CONTENT_URI),
+        SENT(Sms.Sent.CONTENT_URI, Mms.Sent.CONTENT_URI);
+
+        private final Uri mSmsUri;
+        private final Uri mMmsUri;
+
+        Folder(Uri smsUri, Uri mmsUri) {
+            mSmsUri = smsUri;
+            mMmsUri = mmsUri;
+        }
     }
 
     private final HashMap<String, Uri> mHandleToUriMap = new HashMap<>();
@@ -662,26 +669,8 @@ class MapClientContent {
     }
 
     private List<MessageDumpElement> getRecentMessagesFromFolder(Folder folder) {
-        final Uri smsUri;
-        final Uri mmsUri;
-
-        switch (folder) {
-            case Folder.INBOX -> {
-                smsUri = Sms.Inbox.CONTENT_URI;
-                mmsUri = Mms.Inbox.CONTENT_URI;
-            }
-            case Folder.SENT -> {
-                smsUri = Sms.Sent.CONTENT_URI;
-                mmsUri = Mms.Sent.CONTENT_URI;
-            }
-            default -> { // Folder.UNKNOWN
-                warn("getRecentMessagesFromFolder: Failed, unsupported folder=" + folder);
-                return null;
-            }
-        }
-
         List<MessageDumpElement> messages = new ArrayList<>();
-        for (Uri uri : new Uri[] {smsUri, mmsUri}) {
+        for (Uri uri : new Uri[] {folder.mSmsUri, folder.mMmsUri}) {
             messages.addAll(getMessagesFromUri(uri));
         }
         verbose(

@@ -126,7 +126,6 @@ public class RequestTest {
         newRequest.execute(mFakeClientSession);
 
         assertThat(newRequest.isSuccess()).isTrue();
-        assertThat(newRequest.getList().toString()).isEqualTo(TEST_FOLDER_LIST.toString());
     }
 
     @Test

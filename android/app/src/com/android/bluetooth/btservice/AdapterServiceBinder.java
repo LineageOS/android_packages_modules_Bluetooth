@@ -835,8 +835,10 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         return service.getRemoteClass(device);
     }
 
+    // Nullable is needed because CTS enforce it
     @Override
-    public List<ParcelUuid> getRemoteUuids(BluetoothDevice device, AttributionSource source) {
+    public @Nullable List<ParcelUuid> getRemoteUuids(
+            BluetoothDevice device, AttributionSource source) {
         requireNonNull(device);
         var service = getServiceAndEnforceCallerUserAndConnect(source, "getRemoteUuids");
         if (service == null) {

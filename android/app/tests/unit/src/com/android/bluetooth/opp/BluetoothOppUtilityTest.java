@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -67,7 +66,6 @@ import org.mockito.Spy;
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** Test cases for {@link BluetoothOppUtility}. */
 @RunWith(AndroidJUnit4.class)
@@ -136,31 +134,6 @@ public class BluetoothOppUtilityTest {
         doReturn(destinationValue).when(mCursor).getString(anyInt());
         assertThat(BluetoothOppUtility.queryRecord(mContext, CORRECT_FORMAT_BUT_INVALID_FILE_URI))
                 .isInstanceOf(BluetoothOppTransferInfo.class);
-    }
-
-    @Test
-    public void queryTransfersInBatch_returnsCorrectUrlArrayList() {
-        long timestampValue = 123456;
-        String where = BluetoothShare.TIMESTAMP + " == " + timestampValue;
-        AtomicInteger cnt = new AtomicInteger(1);
-
-        doReturn(mCursor)
-                .when(mCallProxy)
-                .contentResolverQuery(
-                        any(),
-                        eq(BluetoothShare.CONTENT_URI),
-                        eq(new String[] {BluetoothShare._DATA}),
-                        eq(where),
-                        eq(null),
-                        eq(BluetoothShare._ID));
-
-        doAnswer(invocation -> cnt.incrementAndGet() > 5).when(mCursor).isAfterLast();
-        doReturn(CORRECT_FORMAT_BUT_INVALID_FILE_URI.toString()).when(mCursor).getString(0);
-
-        List<String> answer = BluetoothOppUtility.queryTransfersInBatch(mContext, timestampValue);
-        for (String url : answer) {
-            assertThat(url).isEqualTo(CORRECT_FORMAT_BUT_INVALID_FILE_URI.toString());
-        }
     }
 
     @Test

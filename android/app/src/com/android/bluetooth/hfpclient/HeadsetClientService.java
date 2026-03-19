@@ -50,6 +50,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -692,12 +693,12 @@ public class HeadsetClientService extends ConnectableProfile {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm == null) {
             Log.e(TAG, "SM does not exist for device " + device);
-            return null;
+            return Collections.emptyList();
         }
 
         int connectionState = sm.getConnectionState();
         if (connectionState != STATE_CONNECTED) {
-            return null;
+            return Collections.emptyList();
         }
         return sm.getCurrentCalls();
     }
@@ -769,11 +770,11 @@ public class HeadsetClientService extends ConnectableProfile {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm == null) {
             Log.e(TAG, "SM does not exist for device " + device);
-            return null;
+            return Collections.emptySet();
         }
         int connectionState = sm.getConnectionState();
         if (connectionState != STATE_CONNECTED) {
-            return null;
+            return Collections.emptySet();
         }
         return sm.getCurrentAgFeatures();
     }
