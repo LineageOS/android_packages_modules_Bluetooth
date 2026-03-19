@@ -135,7 +135,43 @@ struct VcsServer::service_impl {
 
     log::info("Adding LE Audio Service {} service to GATT database.", gatt_db.begin()->uuid);
     auto status = BTA_GATTS_AddService(server_if_, &gatt_db);
-    OnGattServiceAdded(status, server_if_, std::move(gatt_db));
+    log::assert_that(status == GATT_SERVICE_STARTED, "Unable to add VCS GATT service");
+    log::assert_that(gatt_db.size() != 0, "Service is empty");
+    log::assert_that(gatt_db.begin()->uuid == uuid::kVolumeControlServiceUuid, "Service not mine!");
+
+    // Find and assign handles for each characteristic and descriptor
+    for (const auto& element : gatt_db) {
+      if (element.type == BTGATT_DB_PRIMARY_SERVICE) {
+        service_handle_ = element.attribute_handle;
+      } else if (element.type == BTGATT_DB_CHARACTERISTIC) {
+        if (element.uuid == uuid::kVolumeStateUuid) {
+          volume_state_handle_ = element.attribute_handle;
+        } else if (element.uuid == uuid::kVolumeControlPointUuid) {
+          volume_control_point_handle_ = element.attribute_handle;
+        } else if (element.uuid == uuid::kVolumeFlagsUuid) {
+          volume_flags_handle_ = element.attribute_handle;
+        }
+      } else if (element.type == BTGATT_DB_DESCRIPTOR &&
+                 element.uuid == Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG)) {
+        // The CCCD handle is the one immediately following its characteristic
+        // handle. This is a safe assumption as long as the CCCD is defined
+        // right after its characteristic in `BuildGattDatabase`.
+        if (element.attribute_handle == volume_state_handle_ + 1) {
+          volume_state_cccd_handle_ = element.attribute_handle;
+        } else if (element.attribute_handle == volume_flags_handle_ + 1) {
+          volume_flags_cccd_handle_ = element.attribute_handle;
+        }
+      }
+    }
+
+    log::info("Service handle: 0x{:04x}", service_handle_);
+    log::info("volume_state_handle: 0x{:04x}", volume_state_handle_);
+    log::info("volume_state_cccd_handle: 0x{:04x}", volume_state_cccd_handle_);
+    log::info("volume_control_point_handle: 0x{:04x}", volume_control_point_handle_);
+    log::info("volume_flags_handle: 0x{:04x}", volume_flags_handle_);
+    log::info("volume_flags_cccd_handle: 0x{:04x}", volume_flags_cccd_handle_);
+
+    callbacks_->OnVcsServerRegistered();
   }
 
   static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
@@ -220,81 +256,35 @@ struct VcsServer::service_impl {
 
   // Prepares the attribute database structure according to the requirements
   static std::vector<btgatt_db_element_t> BuildGattDatabase() {
-    std::vector<btgatt_db_element_t> db;
+    return {btgatt_db_element_t{.uuid = uuid::kVolumeControlServiceUuid,
+                                .type = BTGATT_DB_PRIMARY_SERVICE},
 
-    // VCS Service
-    db.push_back({.uuid = uuid::kVolumeControlServiceUuid, .type = BTGATT_DB_PRIMARY_SERVICE});
+            // Volume State Characteristic
+            btgatt_db_element_t{.uuid = uuid::kVolumeStateUuid,
+                                .type = BTGATT_DB_CHARACTERISTIC,
+                                .properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY,
+                                .permissions = GATT_PERM_READ_ENCRYPTED},
+            btgatt_db_element_t{
+                    .uuid = Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG),
+                    .type = BTGATT_DB_DESCRIPTOR,
+                    .permissions = GATT_PERM_READ_ENCRYPTED | GATT_PERM_WRITE_ENCRYPTED},
 
-    // Volume State Characteristic
-    db.push_back({.uuid = uuid::kVolumeStateUuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY,
-                  .permissions = GATT_PERM_READ_ENCRYPTED});
-    db.push_back({.uuid = Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG),
-                  .type = BTGATT_DB_DESCRIPTOR,
-                  .permissions = GATT_PERM_READ_ENCRYPTED | GATT_PERM_WRITE_ENCRYPTED});
+            // Volume Control Point Characteristic
+            btgatt_db_element_t{.uuid = uuid::kVolumeControlPointUuid,
+                                .type = BTGATT_DB_CHARACTERISTIC,
+                                .properties = GATT_CHAR_PROP_BIT_WRITE,
+                                .permissions = GATT_PERM_WRITE_ENCRYPTED},
 
-    // Volume Control Point Characteristic
-    db.push_back({.uuid = uuid::kVolumeControlPointUuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_WRITE,
-                  .permissions = GATT_PERM_WRITE_ENCRYPTED});
-
-    // Volume Flags Characteristic
-    db.push_back({.uuid = uuid::kVolumeFlagsUuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY,
-                  .permissions = GATT_PERM_READ_ENCRYPTED});
-    db.push_back({.uuid = Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG),
-                  .type = BTGATT_DB_DESCRIPTOR,
-                  .permissions = GATT_PERM_READ_ENCRYPTED | GATT_PERM_WRITE_ENCRYPTED});
-
-    return db;
-  }
-
-  void OnGattServiceAdded(tGATT_STATUS status, int server_if,
-                          std::vector<btgatt_db_element_t> service_elements) {
-    log::info("GATT Service Add status: {}, server_if: {}", gatt_status_text(status), server_if);
-
-    log::assert_that(status == GATT_SERVICE_STARTED, "Unable to add VCS GATT service");
-    log::assert_that(service_elements.size() != 0, "Service is empty");
-    log::assert_that(service_elements.begin()->uuid == uuid::kVolumeControlServiceUuid,
-                     "Service not mine!");
-
-    // Find and assign handles for each characteristic and descriptor
-    for (const auto& element : service_elements) {
-      if (element.type == BTGATT_DB_PRIMARY_SERVICE) {
-        service_handle_ = element.attribute_handle;
-      } else if (element.type == BTGATT_DB_CHARACTERISTIC) {
-        if (element.uuid == uuid::kVolumeStateUuid) {
-          volume_state_handle_ = element.attribute_handle;
-        } else if (element.uuid == uuid::kVolumeControlPointUuid) {
-          volume_control_point_handle_ = element.attribute_handle;
-        } else if (element.uuid == uuid::kVolumeFlagsUuid) {
-          volume_flags_handle_ = element.attribute_handle;
-        }
-      } else if (element.type == BTGATT_DB_DESCRIPTOR &&
-                 element.uuid == Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG)) {
-        // The CCCD handle is the one immediately following its characteristic
-        // handle. This is a safe assumption as long as the CCCD is defined
-        // right after its characteristic in `BuildGattDatabase`.
-        if (element.attribute_handle == volume_state_handle_ + 1) {
-          volume_state_cccd_handle_ = element.attribute_handle;
-        } else if (element.attribute_handle == volume_flags_handle_ + 1) {
-          volume_flags_cccd_handle_ = element.attribute_handle;
-        }
-      }
+            // Volume Flags Characteristic
+            btgatt_db_element_t{.uuid = uuid::kVolumeFlagsUuid,
+                                .type = BTGATT_DB_CHARACTERISTIC,
+                                .properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY,
+                                .permissions = GATT_PERM_READ_ENCRYPTED},
+            btgatt_db_element_t{
+                    .uuid = Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG),
+                    .type = BTGATT_DB_DESCRIPTOR,
+                    .permissions = GATT_PERM_READ_ENCRYPTED | GATT_PERM_WRITE_ENCRYPTED}};
     }
-
-    log::info("Service handle: 0x{:04x}", service_handle_);
-    log::info("volume_state_handle: 0x{:04x}", volume_state_handle_);
-    log::info("volume_state_cccd_handle: 0x{:04x}", volume_state_cccd_handle_);
-    log::info("volume_control_point_handle: 0x{:04x}", volume_control_point_handle_);
-    log::info("volume_flags_handle: 0x{:04x}", volume_flags_handle_);
-    log::info("volume_flags_cccd_handle: 0x{:04x}", volume_flags_cccd_handle_);
-
-    callbacks_->OnVcsServerRegistered();
-  }
 
   void OnGattReadCharacteristic(tCONN_ID conn_id, uint32_t trans_id,
                                 const RawAddress& /*remote_bda*/, uint16_t handle,
