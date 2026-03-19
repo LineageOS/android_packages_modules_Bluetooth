@@ -122,22 +122,21 @@ class TestStateManager @Inject constructor() {
          */
         val p95Index = maxOf(0, (runs.size * PERCENTILE_95).toInt() - 1)
 
-        runsSortedByDuration =
-            runsSortedByDuration.mapIndexed { index, run ->
-                /**
-                 * Failed if:
-                 * - Did not pass. (e.g. timeout)
-                 * - Duration is greater than outlierValue.
-                 * - Duration is greater than p95Value for those whose index is less or equal to
-                 *   p95Index.
-                 */
-                // Failed if does not pass or its outlier/ P95 value is greater than expected.
-                val failed =
-                    !run.passed ||
-                        (run.getDuration() >= outlierValue) ||
-                        (index <= p95Index && run.getDuration() >= p95Value)
-                run.copy(passed = !failed)
-            }
+        runsSortedByDuration = runsSortedByDuration.mapIndexed { index, run ->
+            /**
+             * Failed if:
+             * - Did not pass. (e.g. timeout)
+             * - Duration is greater than outlierValue.
+             * - Duration is greater than p95Value for those whose index is less or equal to
+             *   p95Index.
+             */
+            // Failed if does not pass or its outlier/ P95 value is greater than expected.
+            val failed =
+                !run.passed ||
+                    (run.getDuration() >= outlierValue) ||
+                    (index <= p95Index && run.getDuration() >= p95Value)
+            run.copy(passed = !failed)
+        }
 
         val p95ValueInMillis =
             if (runs.size > 0) {

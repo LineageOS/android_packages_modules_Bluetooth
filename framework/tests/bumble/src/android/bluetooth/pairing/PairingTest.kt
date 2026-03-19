@@ -874,14 +874,13 @@ class PairingTest {
         val bluetoothSocket = bumbleDevice.createL2capChannel(TEST_PSM)
 
         val executor = Executors.newSingleThreadExecutor()
-        val futureSocketConnection: Future<*> =
-            executor.submit {
-                try {
-                    bluetoothSocket.connect()
-                } catch (e: IOException) {
-                    Log.e(TAG, "Exception during socket connection: $e")
-                }
+        val futureSocketConnection: Future<*> = executor.submit {
+            try {
+                bluetoothSocket.connect()
+            } catch (e: IOException) {
+                Log.e(TAG, "Exception during socket connection: $e")
             }
+        }
         try {
             futureSocketConnection[2, TimeUnit.SECONDS]
         } catch (e: TimeoutException) {

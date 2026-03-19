@@ -289,8 +289,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun checkPermissions() =
-        REQUIRED_PERMISSIONS.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        }
+    private fun checkPermissions() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+    }
 }

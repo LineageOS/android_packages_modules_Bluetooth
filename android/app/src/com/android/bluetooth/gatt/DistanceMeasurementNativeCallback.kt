@@ -86,7 +86,9 @@ class DistanceMeasurementNativeCallback(
         }
 
     private fun postOnDistanceMeasurementThread(block: DistanceMeasurementManager.() -> Unit) =
-        manager.postOnDistanceMeasurementThread { manager.block() }
+        manager.postOnDistanceMeasurementThread {
+            manager.block()
+        }
 
     companion object {
         /**

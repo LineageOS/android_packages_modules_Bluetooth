@@ -184,10 +184,9 @@ constructor(
     private fun findBleInputDevice() {
         val targetDeviceAddresses = bluetoothManager.targetDevice.map { it.address }
         val inputDevices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)
-        bleHeadsetDevice =
-            inputDevices.firstOrNull {
-                it.type == AudioDeviceInfo.TYPE_BLE_HEADSET && it.address in targetDeviceAddresses
-            }
+        bleHeadsetDevice = inputDevices.firstOrNull {
+            it.type == AudioDeviceInfo.TYPE_BLE_HEADSET && it.address in targetDeviceAddresses
+        }
 
         if (bleHeadsetDevice != null) {
             logList.add(
@@ -224,34 +223,33 @@ constructor(
                 actionRequired = true,
             )
         )
-        recordingJob =
-            viewModelScope.launch {
-                recorder.getMaxAmplitude().collect { amplitude ->
-                    Log.d(TAG, "Max amplitude: $amplitude")
-                    _maxAmplitude.value = amplitude
+        recordingJob = viewModelScope.launch {
+            recorder.getMaxAmplitude().collect { amplitude ->
+                Log.d(TAG, "Max amplitude: $amplitude")
+                _maxAmplitude.value = amplitude
 
-                    // max amplitude should be greater than MAX_AMPLITUDE_THRESHOLD to avoid noise.
-                    // stop both the timer and the recording when audio is received by the recorder.
-                    if (amplitude > MAX_AMPLITUDE_THRESHOLD) {
-                        logList.add(LogRecordUiModel(message = "Max amplitude: $amplitude"))
-                        stopTimer()
-                        stopRecording()
+                // max amplitude should be greater than MAX_AMPLITUDE_THRESHOLD to avoid noise.
+                // stop both the timer and the recording when audio is received by the recorder.
+                if (amplitude > MAX_AMPLITUDE_THRESHOLD) {
+                    logList.add(LogRecordUiModel(message = "Max amplitude: $amplitude"))
+                    stopTimer()
+                    stopRecording()
+                    logList.add(
+                        LogRecordUiModel(message = "Audio received by recorder successfully.")
+                    )
+                    endCurrentRunAndSaveRecord(passed = true)
+
+                    // If the test not finished, the recording test will continue.
+                    if (isTestFinished()) {
                         logList.add(
-                            LogRecordUiModel(message = "Audio received by recorder successfully.")
+                            LogRecordUiModel(message = LogRecordUiModel.ALL_RUNS_FINISHED_TEXT)
                         )
-                        endCurrentRunAndSaveRecord(passed = true)
-
-                        // If the test not finished, the recording test will continue.
-                        if (isTestFinished()) {
-                            logList.add(
-                                LogRecordUiModel(message = LogRecordUiModel.ALL_RUNS_FINISHED_TEXT)
-                            )
-                        } else {
-                            startRecordingTestAfterDelay()
-                        }
+                    } else {
+                        startRecordingTestAfterDelay()
                     }
                 }
             }
+        }
     }
 
     /**

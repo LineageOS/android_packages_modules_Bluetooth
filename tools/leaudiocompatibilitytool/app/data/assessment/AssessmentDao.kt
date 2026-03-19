@@ -84,20 +84,18 @@ interface AssessmentDao {
         val assessmentId = insertAssessment(assessment)
 
         // Handle selected test items
-        val selectedTestItems =
-            testItemIds.map { id ->
-                SelectedTestItem(assessmentId = assessmentId.toInt(), testItemId = id)
-            }
+        val selectedTestItems = testItemIds.map { id ->
+            SelectedTestItem(assessmentId = assessmentId.toInt(), testItemId = id)
+        }
         insertSelectedTestItems(selectedTestItems)
 
         // Handle selected devices. If the device is not in the database, insert it.
-        val selectedDevices =
-            devices.map {
-                val deviceId =
-                    getDeviceIdByAddress(it.address)
-                        ?: insertDevice(Device(name = it.name, address = it.address)).toInt()
-                SelectedDevice(deviceId, assessmentId.toInt())
-            }
+        val selectedDevices = devices.map {
+            val deviceId =
+                getDeviceIdByAddress(it.address)
+                    ?: insertDevice(Device(name = it.name, address = it.address)).toInt()
+            SelectedDevice(deviceId, assessmentId.toInt())
+        }
         insertSelectedDevices(selectedDevices)
         return assessmentId
     }
