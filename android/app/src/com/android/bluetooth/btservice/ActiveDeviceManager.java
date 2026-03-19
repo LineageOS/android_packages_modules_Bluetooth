@@ -1272,7 +1272,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                                             }
                                         });
                     }
-                    case AudioDeviceInfo.TYPE_BLE_HEADSET, AudioDeviceInfo.TYPE_BLE_SPEAKER -> {
+                    case AudioDeviceInfo.TYPE_BLE_HEADSET,
+                            AudioDeviceInfo.TYPE_BLE_SPEAKER,
+                            AudioDeviceInfo.TYPE_BLE_HEARING_AID -> {
                         mAdapterService
                                 .getLeAudioService()
                                 .ifPresent(
@@ -1352,7 +1354,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                                             }
                                         });
                     }
-                    case AudioDeviceInfo.TYPE_BLE_HEADSET, AudioDeviceInfo.TYPE_BLE_SPEAKER -> {
+                    case AudioDeviceInfo.TYPE_BLE_HEADSET,
+                            AudioDeviceInfo.TYPE_BLE_SPEAKER,
+                            AudioDeviceInfo.TYPE_BLE_HEARING_AID -> {
                         mAdapterService
                                 .getLeAudioService()
                                 .ifPresent(
@@ -1931,7 +1935,8 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     AudioDeviceInfo.TYPE_HEARING_AID,
                     AudioDeviceInfo.TYPE_BLE_HEADSET,
                     AudioDeviceInfo.TYPE_BLE_SPEAKER,
-                    AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
+                    AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                    AudioDeviceInfo.TYPE_BLE_HEARING_AID -> {
                 return true;
             }
             default -> {
