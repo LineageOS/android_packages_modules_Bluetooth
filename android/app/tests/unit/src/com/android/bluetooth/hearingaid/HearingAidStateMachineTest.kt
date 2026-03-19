@@ -167,6 +167,21 @@ class HearingAidStateMachineTest {
         verify(nativeInterface).addToAcceptlist(eq(device))
     }
 
+    @Test
+    fun testDoQuit_inConnectedState_broadcastsDisconnectedIntent() {
+        stateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING)
+        looper.dispatchAll()
+        stateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED)
+        looper.dispatchAll()
+
+        stateMachine.doQuit()
+
+        verifyIntentSent(
+            hasAction(ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(EXTRA_STATE, STATE_DISCONNECTED),
+        )
+    }
+
     private fun sendAndDispatchMessage(what: Int, obj: Any?) {
         stateMachine.sendMessage(what, obj)
         looper.dispatchAll()
