@@ -229,14 +229,14 @@ public class AdvertiseManager {
             }
         }
 
-        mAdvertiseSuspendManager.ifPresent(
-                manager -> {
-                    if (manager.onAdvertisingEnabled(advertiserId, enable, status)) {
-                        final var callback = entry.getValue().callback;
-                        callbackToApp(
-                                () -> callback.onAdvertisingEnabled(advertiserId, enable, status));
-                    }
-                });
+        var shouldFireCallback =
+                mAdvertiseSuspendManager
+                        .map(manager -> manager.onAdvertisingEnabled(advertiserId, enable, status))
+                        .orElse(true);
+        if (shouldFireCallback) {
+            final var callback = entry.getValue().callback;
+            callbackToApp(() -> callback.onAdvertisingEnabled(advertiserId, enable, status));
+        }
     }
 
     private void fetchAppForegroundState(int uid, int id) {
