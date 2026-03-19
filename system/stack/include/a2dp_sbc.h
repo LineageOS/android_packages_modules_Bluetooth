@@ -39,6 +39,7 @@ protected:
   tA2DP_STATUS setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                               uint8_t* p_result_codec_config) override;
   bool setPeerCodecCapabilities(const uint8_t* p_peer_codec_capabilities) override;
+  int getTrackBitRate() const override;
 
 private:
   bool is_source_;  // True if local is Source
@@ -214,9 +215,5 @@ bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg);
 // Initializes A2DP SBC Sink codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_InitCodecConfigSbcSink(AvdtpSepConfig* p_cfg);
-
-// Get SBC bitrate
-// Returns |uint32_t| bitrate value in bits per second
-uint32_t A2DP_GetBitrateSbc();
 
 #endif  // A2DP_SBC_H

@@ -296,7 +296,7 @@ uint8_t A2DP_GetMediaType(const uint8_t* /* p_codec_info */) {
   inc_func_call_count(__func__);
   return 0;
 }
-uint8_t A2dpCodecConfig::getAudioBitsPerSample() {
+uint8_t A2dpCodecConfig::getAudioBitsPerSample() const {
   inc_func_call_count(__func__);
   return 0;
 }
