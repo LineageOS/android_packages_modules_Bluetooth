@@ -393,6 +393,7 @@ void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROL
   p_acl->link_role = link_role;
   p_acl->link_up_issued = false;
   p_acl->link_spec = link_spec;
+  p_acl->link_policy = kLinkPolicyDefault;
   p_acl->sca = 0xFF;
   p_acl->switch_role_failed_attempts = 0;
   p_acl->switch_role_state_ = BtmAclSwitchKeyState::kIdle;
