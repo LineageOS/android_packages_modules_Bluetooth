@@ -493,33 +493,37 @@ public final class BondStateMachine extends StateMachine {
 
         if (!initiated) {
             logW("createBond: Failed to initiate pairing for " + dev);
-            BluetoothStatsLog.write(
-                    BluetoothStatsLog.BLUETOOTH_BOND_STATE_CHANGED,
-                    mAdapterService.obfuscateAddress(dev),
-                    transport,
-                    mRemoteDevices.getType(dev),
-                    BluetoothDevice.BOND_NONE,
-                    BluetoothProtoEnums.BOND_SUB_STATE_UNKNOWN,
-                    BluetoothDevice.UNBOND_REASON_REPEATED_ATTEMPTS);
-
-            // Using UNBOND_REASON_REMOVED for legacy reason
-            handleBondStateChanged(
-                    dev,
-                    BluetoothDevice.TRANSPORT_AUTO,
-                    BluetoothDevice.BOND_NONE,
-                    0,
-                    0,
-                    AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
-                    BluetoothDevice.UNBOND_REASON_REMOVED,
-                    -1);
 
             if (Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(dev)) {
                 // If it's a bond-loss scenario, disconnect the ACL.
                 // TODO (b/440298497): It is possible that createBond() is called on the device by
                 // any 1P/3P app and the bond loss was already detected. In this case, we should not
                 // disconnect the ACL, fix this.
+                logD("createBond: Disconnecting ACL for " + dev + " due to re-pairing failure");
                 mAdapterService.getNative().disconnectAcl(dev, transport);
+            } else {
+                // Note: Do not change the state for if we are re-pairing.
+                BluetoothStatsLog.write(
+                        BluetoothStatsLog.BLUETOOTH_BOND_STATE_CHANGED,
+                        mAdapterService.obfuscateAddress(dev),
+                        transport,
+                        mRemoteDevices.getType(dev),
+                        BluetoothDevice.BOND_NONE,
+                        BluetoothProtoEnums.BOND_SUB_STATE_UNKNOWN,
+                        BluetoothDevice.UNBOND_REASON_REPEATED_ATTEMPTS);
+
+                // Using UNBOND_REASON_REMOVED for legacy reason
+                handleBondStateChanged(
+                        dev,
+                        BluetoothDevice.TRANSPORT_AUTO,
+                        BluetoothDevice.BOND_NONE,
+                        0,
+                        0,
+                        AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
+                        BluetoothDevice.UNBOND_REASON_REMOVED,
+                        -1);
             }
+
             return false;
         }
 
