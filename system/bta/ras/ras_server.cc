@@ -174,7 +174,6 @@ public:
             .exec_write_cb = tGATT_REQ_CBACK::do_nothing,
             .mtu_changed_cb = OnGattMtuChangedStatic,
             .conf_cb = tGATT_REQ_CBACK::do_nothing,
-            .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
     };
 
     static const stack::tGATT_CBACK ras_ops = {

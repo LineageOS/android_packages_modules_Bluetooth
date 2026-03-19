@@ -78,7 +78,6 @@ static tGATT_REQ_CBACK ais_req_cback = {
         .exec_write_cb = ais_exec_write_cback,
         .mtu_changed_cb = ais_mtu_changed_cback,
         .conf_cb = ais_conf_cback,
-        .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
 };
 
 static stack::tGATT_CBACK ais_cback = {

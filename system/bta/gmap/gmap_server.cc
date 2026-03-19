@@ -116,11 +116,9 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
           .exec_write_cb = tGATT_REQ_CBACK::do_nothing,
           .mtu_changed_cb = tGATT_REQ_CBACK::do_nothing,
           .conf_cb = tGATT_REQ_CBACK::do_nothing,
-          .conf_send_fail_cb = tGATT_REQ_CBACK::do_nothing,
   };
 
   static const stack::tGATT_CBACK gmap_ops = {
-          .p_conn_cb = GmapServer::OnGattConn,
           .p_req_cb = &gmap_req_cb,
   };
 
@@ -154,18 +152,6 @@ uint16_t GmapServer::GetUGGFeatureHandle() {
 
 std::unordered_map<uint16_t, GmapCharacteristic> &GmapServer::GetCharacteristics() {
   return GmapServer::characteristics_;
-}
-
-void GmapServer::OnGattConn(tGATT_IF /*server_if*/, const RawAddress& remote_bda, tCONN_ID conn_id,
-                            bool connected, tGATT_DISCONN_REASON /*reason*/,
-                            tBT_TRANSPORT transport) {
-  log::info("Address: {}, conn_id:{} connected: {}", remote_bda, conn_id, connected);
-  if (connected) {
-    if (transport == BT_TRANSPORT_BR_EDR) {
-      log::warn("Skip BE/EDR connection");
-      return;
-    }
-  }
 }
 
 void GmapServer::OnGattServerRegister(tGATT_STATUS status, tGATT_IF server_if,

@@ -16,21 +16,15 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- *
- *  This file contains the GATT Server action functions for the state
- *  machine.
- *
- ******************************************************************************/
-
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
-#include "bta/gatt/bta_gatts_int.h"
 #include "bta/include/bta_api.h"
+#include "bta/include/bta_gatt_api.h"
+#include "bta/sys/bta_sys.h"
 #include "btif/include/btif_debug_conn.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
@@ -42,6 +36,26 @@
 #include "stack/include/stack_le_connection.h"
 
 using namespace bluetooth;
+
+/*****************************************************************************
+ *  Constants and data types
+ ****************************************************************************/
+
+/* max number of application allowed on device */
+#define BTA_GATTS_MAX_APP_NUM GATT_MAX_SR_PROFILES
+
+/* application registration control block */
+typedef struct {
+  bool in_use;
+  bluetooth::Uuid app_uuid;
+  tGATT_IF gatt_if;
+} tBTA_GATTS_RCB;
+
+/* GATT server control block */
+typedef struct {
+  bool enabled;
+  tBTA_GATTS_RCB rcb[BTA_GATTS_MAX_APP_NUM];
+} tBTA_GATTS_CB;
 
 /* GATTS control block */
 tBTA_GATTS_CB bta_gatts_cb;
@@ -83,6 +97,19 @@ static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD /*cmd*/, tGATTS_SRV_CH
   return false;
 }
 
+/* find the index of the application control block by app ID */
+static tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tGATT_IF server_if) {
+  uint8_t i;
+  tBTA_GATTS_RCB* p_reg;
+
+  for (i = 0, p_reg = bta_gatts_cb.rcb; i < BTA_GATTS_MAX_APP_NUM; i++, p_reg++) {
+    if (p_reg->in_use && p_reg->gatt_if == server_if) {
+      return p_reg;
+    }
+  }
+  return NULL;
+}
+
 static void bta_gatts_enable() {
   if (bta_gatts_cb.enabled) {
     log::verbose("GATTS already enabled.");
@@ -100,7 +127,17 @@ static void bta_gatts_enable() {
   }
 }
 
-void bta_gatts_api_disable() {
+void BTA_GATTS_InitBonded(void) {
+  log::info("");
+  gatt_load_bonded();
+}
+
+void BTA_GATTS_Disable(void) {
+  if (!bta_sys_is_register(BTA_ID_GATTS)) {
+    log::warn("GATTS Module not enabled/already disabled");
+    return;
+  }
+
   if (!bta_gatts_cb.enabled) {
     log::error("GATTS not enabled");
     return;
@@ -112,12 +149,14 @@ void bta_gatts_api_disable() {
     }
   }
   memset(&bta_gatts_cb, 0, sizeof(tBTA_GATTS_CB));
+
+  bta_sys_deregister(BTA_ID_GATTS);
 }
 
-void bta_gatts_register(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
-                        bool eatt_support,
-                        void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                         const bluetooth::Uuid& uuid)) {
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBACK* p_cback,
+                           bool eatt_support,
+                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
+                                            const bluetooth::Uuid& uuid)) {
   if (!bta_gatts_cb.enabled) {
     bta_gatts_enable();
   }
@@ -159,7 +198,6 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBAC
   log::info("register application first_unuse rcb_idx={}", first_unuse);
 
   bta_gatts_cb.rcb[first_unuse].in_use = true;
-  bta_gatts_cb.rcb[first_unuse].p_cback = p_cback;
   bta_gatts_cb.rcb[first_unuse].app_uuid = app_uuid;
   bta_gatts_cb.rcb[first_unuse].gatt_if =
           stack::appRegister(app_uuid, "GattServer", p_cback, eatt_support);
@@ -176,7 +214,7 @@ void bta_gatts_register(const bluetooth::Uuid& app_uuid, const stack::tGATT_CBAC
   }
 }
 
-void bta_gatts_start_if(tGATT_IF server_if) {
+static void bta_gatts_start_if(tGATT_IF server_if) {
   if (bta_gatts_find_app_rcb_by_app_if(server_if)) {
     stack::appStartIf(server_if);
   } else {
@@ -184,8 +222,7 @@ void bta_gatts_start_if(tGATT_IF server_if) {
   }
 }
 
-/* Deregister an application */
-void bta_gatts_deregister(tGATT_IF server_if) {
+void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   for (uint8_t i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
     if (bta_gatts_cb.rcb[i].in_use && bta_gatts_cb.rcb[i].gatt_if == server_if) {
       /* deregister the app */
@@ -198,13 +235,30 @@ void bta_gatts_deregister(tGATT_IF server_if) {
   }
 }
 
-void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id,
-                              void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                          uint16_t service_id)) {
+void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
+                          BTA_GATTS_AddServiceCb cb) {
+  auto p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
+  if (!p_rcb) {
+    std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
+    return;
+  }
+
+  tGATT_STATUS status = GATTS_AddService(server_if, service.data(), service.size());
+  if (status != GATT_SERVICE_STARTED) {
+    log::error("service creation failed.");
+    std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
+    return;
+  }
+
+  std::move(cb).Run(GATT_SUCCESS, server_if, std::move(service));
+  return;
+}
+
+bool BTA_GATTS_DeleteService(tGATT_IF gatt_if, uint16_t service_id) {
   std::optional<Uuid> svc_uuid = GATTS_LookupServiceUuidByStartHandle(service_id);
   if (!svc_uuid) {
     log::error("can't delete service - no service {} found", service_id);
-    return;
+    return false;
   }
 
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
@@ -212,97 +266,46 @@ void bta_gatts_delete_service(tGATT_IF gatt_if, uint16_t service_id,
     /* this is only useful thing of BTA layer, we ensure BTA apps can't stop internal services, if
      * they just guess the service_id (start_handle) */
     log::error("gatt_if={} not found", gatt_if);
-    return;
+    return false;
   }
 
-  tGATT_STATUS status;
-  if (GATTS_DeleteService(p_rcb->gatt_if, &(svc_uuid.value()), service_id)) {
-    status = GATT_SUCCESS;
-  } else {
-    status = GATT_ERROR;
-  }
-
-  if (p_delete_service_cb) {
-    p_delete_service_cb(status, p_rcb->gatt_if, service_id);
-  }
+  return GATTS_DeleteService(p_rcb->gatt_if, &(svc_uuid.value()), service_id);
 }
 
-void bta_gatts_send_rsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                        std::unique_ptr<tGATTS_RSP> rsp) {
+void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+                       std::unique_ptr<tGATTS_RSP> rsp) {
   if (GATTS_SendRsp(conn_id, trans_id, status, rsp.get()) != GATT_SUCCESS) {
     log::error("Sending response failed");
   }
 }
 
-void bta_gatts_indicate_handle(uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                               bool need_confirm) {
+tGATT_STATUS BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
+                                             std::vector<uint8_t> value, bool need_confirm) {
+  if (value.size() > GATT_MAX_ATTR_LEN) {
+    log::error("data to indicate is too long");
+    return GATT_ERROR;
+  }
+
   tGATT_IF gatt_if;
   RawAddress remote_bda;
   tBT_TRANSPORT transport;
   if (!GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
     log::error("Unknown connection_id=0x{:x} fail sending notification", conn_id);
-    return;
+    return GATT_ERROR;
   }
 
   tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
   if (!p_rcb) {
     log::error("server_if={} not found", gatt_if);
-    return;
+    return GATT_ERROR;
   }
 
-  tGATT_STATUS status;
   if (need_confirm) {
-    status = GATTS_HandleValueIndication(conn_id, attr_id, value.size(), value.data());
+    return GATTS_HandleValueIndication(conn_id, attr_id, value.size(), value.data());
   } else {
-    status = GATTS_HandleValueNotification(conn_id, attr_id, value.size(), value.data());
-  }
-
-  if (status == GATT_SUCCESS && need_confirm) {
-    // in this case we will call p_conf_cb when handling GATTS_REQ_TYPE_CONF
-    return;
-  }
-
-  if (p_rcb->p_cback && p_rcb->p_cback->p_req_cb) {
-    if (status != GATT_SUCCESS) {
-      p_rcb->p_cback->p_req_cb->conf_send_fail_cb(conn_id, status);
-      return;
-    }
-    p_rcb->p_cback->p_req_cb->conf_cb(conn_id, 0, remote_bda);
+    return GATTS_HandleValueNotification(conn_id, attr_id, value.size(), value.data());
   }
 }
-
-void bta_gatts_open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
-  if (!p_rcb) {
-    log::error("Inavlid server_if={}", server_if);
-    return;
-  }
-
-  /* should always get the connection ID */
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    std::ignore = GATT_BR_Connect(p_rcb->gatt_if, remote_bda);
-  } else {
-    tBTM_BLE_CONN_TYPE connection_type =
-            is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
-    std::ignore = stack::leConnectionConnect(p_rcb->gatt_if, remote_bda, addr_type, connection_type,
-                                             0, false, false);
-  }
-}
-
-void bta_gatts_cancel_open(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct) {
-  tBTA_GATTS_RCB* p_rcb = bta_gatts_find_app_rcb_by_app_if(server_if);
-  if (!p_rcb) {
-    log::error("Inavlid server_if={}", server_if);
-    return;
-  }
-
-  if (!stack::leConnectionCancelConnect(p_rcb->gatt_if, remote_bda, is_direct)) {
-    log::error("failed for open request");
-  }
-}
-
-void bta_gatts_close(uint16_t conn_id) { std::ignore = GATT_Disconnect(conn_id); }
 
 static void notify_pm_br_gatt_conn_open(const RawAddress& bda) {
   bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, bda);
