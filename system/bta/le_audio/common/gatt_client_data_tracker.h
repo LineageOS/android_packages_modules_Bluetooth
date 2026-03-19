@@ -213,7 +213,6 @@ public:
     if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_PERIPHERAL) {
       log::warn("Unicast server is not available for this connection. {}, status: {}, AclRole: {}",
                 pseudo_addr, btm_status_text(role_status), hci_role_text(role));
-      BTA_GATTS_Close(conn_id);
       return nullptr;
     }
 

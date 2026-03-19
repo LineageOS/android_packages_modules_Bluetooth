@@ -36,8 +36,6 @@ bool A2DP_VendorCodecEqualsAptxHd(const uint8_t* p_codec_info_a, const uint8_t* 
   return false;
 }
 
-int A2DP_VendorGetBitRateAptxHd(const uint8_t* p_codec_info) { return -1; }
-
 int A2DP_VendorGetTrackSampleRateAptxHd(const uint8_t* p_codec_info) { return -1; }
 
 int A2DP_VendorGetTrackBitsPerSampleAptxHd(const uint8_t* p_codec_info) { return -1; }

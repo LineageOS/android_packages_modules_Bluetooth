@@ -172,7 +172,7 @@ void StorageModule::SaveImmediately() {
   auto end_time = std::chrono::steady_clock::now();
   auto write_duration =
           std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  // TODO: Remove this log after debugging.
+  // TODO(b/493507987): Remove this log after debugging.
   if (write_duration >= std::chrono::milliseconds(500)) {
     log::error("Config write took too long: {}ms", write_duration.count());
   }

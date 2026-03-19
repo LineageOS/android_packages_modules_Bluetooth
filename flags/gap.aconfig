@@ -53,16 +53,6 @@ flag {
 }
 
 flag {
-    name: "use_filter_for_each_manufacturer_data_block"
-    namespace: "bluetooth"
-    description: "When multiple manufacturer data blocks exist for same ID, also try matching each of them in ScanFilter"
-    bug: "453511802"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_conn_settings"
     namespace: "bluetooth"
     description: "GATT connection settings & related APIs"

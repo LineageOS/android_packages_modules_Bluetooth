@@ -39,6 +39,7 @@
 #include "btif_status.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/le_advertising_manager.h"
+#include "stack/include/main_thread.h"
 
 const btgatt_callbacks_t* bt_gatt_callbacks = NULL;
 
@@ -53,7 +54,7 @@ const btgatt_callbacks_t* bt_gatt_callbacks = NULL;
  ******************************************************************************/
 static BtStatus btif_gatt_init(const btgatt_callbacks_t* callbacks) {
   bt_gatt_callbacks = callbacks;
-  BTA_GATTS_InitBonded();
+  do_in_main_thread(base::BindOnce(&BTA_GATTS_InitBonded));
   return BtifStatus();
 }
 
@@ -64,7 +65,7 @@ static void btif_gatt_cleanup_impl() {
   }
 
   BTA_GATTC_Disable();
-  BTA_GATTS_Disable();
+  do_in_main_thread(base::BindOnce(&BTA_GATTS_Disable));
 }
 /*******************************************************************************
  *

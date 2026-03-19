@@ -39,6 +39,7 @@ protected:
   tA2DP_STATUS setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                               uint8_t* p_result_codec_config) override;
   bool setPeerCodecCapabilities(const uint8_t* p_peer_codec_capabilities) override;
+  int getTrackBitRate() const override;
 
 private:
   [[maybe_unused]] bool is_source_;  // True if local is Source
@@ -97,12 +98,6 @@ int A2DP_VendorGetTrackSampleRateLdac(const uint8_t* p_codec_info);
 // Returns the track bits per sample on success, or -1 if |p_codec_info|
 // contains invalid codec information.
 int A2DP_VendorGetTrackBitsPerSampleLdac(const uint8_t* p_codec_info);
-
-// Gets the track bitrate value for the A2DP LDAC codec.
-// |p_codec_info| is a pointer to the LDAC codec_info to decode.
-// Returns the track sample rate on success, or -1 if |p_codec_info|
-// contains invalid codec information.
-int A2DP_VendorGetBitRateLdac(const uint8_t* p_codec_info);
 
 // Gets the channel count for the A2DP LDAC codec.
 // |p_codec_info| is a pointer to the LDAC codec_info to decode.

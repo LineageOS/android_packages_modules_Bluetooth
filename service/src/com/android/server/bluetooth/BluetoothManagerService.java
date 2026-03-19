@@ -122,8 +122,8 @@ public class BluetoothManagerService {
 
     static {
         if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
-            TIMEOUT_BIND = Duration.ofSeconds(8);
-            STATE_TIMEOUT = Duration.ofSeconds(8);
+            TIMEOUT_BIND = Duration.ofSeconds(8).multipliedBy(HW_MULTIPLIER);
+            STATE_TIMEOUT = Duration.ofSeconds(8).multipliedBy(HW_MULTIPLIER);
         } else {
             TIMEOUT_BIND = Duration.ofSeconds(4);
             STATE_TIMEOUT = Duration.ofSeconds(4);

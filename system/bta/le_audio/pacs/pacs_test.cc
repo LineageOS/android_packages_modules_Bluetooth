@@ -32,6 +32,7 @@ using ::testing::DoAll;
 using ::testing::InSequence;
 using ::testing::Mock;
 using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::SaveArg;
 
 namespace bluetooth::le_audio::test {
@@ -76,6 +77,8 @@ public:
       return tBTM_STATUS::BTM_SUCCESS;
     };
 
+    ON_CALL(gatt_server_interface_, HandleValueIndication(_, _, _, _))
+            .WillByDefault(Return(GATT_SUCCESS));
     gatt::SetMockBtaGattServerInterface(&gatt_server_interface_);
     pacs_ = InstantiatePacs();
   }
@@ -1238,7 +1241,7 @@ TEST_F(PacsTests, UpdatePacSetWithEmptyRecords) {
   // Expect one notification for dev1
   std::vector<uint8_t> sent_value;
   EXPECT_CALL(gatt_server_interface_, HandleValueIndication(_, _, _, _))
-          .WillOnce(SaveArg<2>(&sent_value));
+          .WillOnce(DoAll(SaveArg<2>(&sent_value), Return(GATT_SUCCESS)));
 
   // Update sink PAC set with ID 0.
   pacs_->UpdatePacSet(0, empty_records);
@@ -1391,8 +1394,9 @@ TEST_F(PacsTests, UpdatePacSet) {
   EXPECT_CALL(gatt_server_interface_, HandleValueIndication(_, _, _, _))
           .WillOnce(DoAll(SaveArg<2>(&sent_value),
                           [this, test_dev1](uint16_t conn_id, uint16_t handle,
-                                            const std::vector<uint8_t>& /*value*/, bool indicated) {
-                            ASSERT_EQ(conn_id, conn_id_by_address_.at(test_dev1));
+                                            const std::vector<uint8_t>& /*value*/,
+                                            bool indicated) -> tGATT_STATUS {
+                            EXPECT_EQ(conn_id, conn_id_by_address_.at(test_dev1));
 
                             // Find the handle for the first sink PAC
                             uint16_t expected_handle = 0;
@@ -1403,9 +1407,10 @@ TEST_F(PacsTests, UpdatePacSet) {
                                 break;
                               }
                             }
-                            ASSERT_NE(expected_handle, 0);
-                            ASSERT_EQ(handle, expected_handle);
-                            ASSERT_FALSE(indicated);
+                            EXPECT_NE(expected_handle, 0);
+                            EXPECT_EQ(handle, expected_handle);
+                            EXPECT_FALSE(indicated);
+                            return GATT_SUCCESS;
                           }));
 
   // Update sink PAC set with ID 0. This corresponds to the first sink PAC set.

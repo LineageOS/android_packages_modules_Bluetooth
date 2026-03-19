@@ -116,16 +116,6 @@ struct A2DP_GetAllocationMethodCodeSbc {
 };
 extern struct A2DP_GetAllocationMethodCodeSbc A2DP_GetAllocationMethodCodeSbc;
 
-// Name: A2DP_GetBitrateSbc
-// Params:
-// Return: uint32_t
-struct A2DP_GetBitrateSbc {
-  static uint32_t return_value;
-  std::function<uint32_t()> body{[]() { return return_value; }};
-  uint32_t operator()() { return body(); }
-};
-extern struct A2DP_GetBitrateSbc A2DP_GetBitrateSbc;
-
 // Name: A2DP_GetChannelModeCodeSbc
 // Params: const uint8_t* p_codec_info
 // Return: int

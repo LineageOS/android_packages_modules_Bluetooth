@@ -305,6 +305,7 @@
         </receiver>
 
         <activity android:name="com.android.bluetooth.auracast.NfcAuracastActivity"
+                android:permission="android.permission.DISPATCH_NFC_MESSAGE"
                 android:theme="@android:style/Theme.NoDisplay"
                 android:exported="true"
                 android:excludeFromRecents="true"

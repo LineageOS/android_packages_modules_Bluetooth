@@ -180,11 +180,9 @@ class BluetoothPbapUtils {
             return false;
         }
 
-        if (Flags.disableHighResImagesOnLowRam()) {
-            ActivityManager am = ctx.getSystemService(ActivityManager.class);
-            if (am != null && am.isLowRamDevice()) {
-                return false;
-            }
+        ActivityManager am = ctx.getSystemService(ActivityManager.class);
+        if (am != null && am.isLowRamDevice()) {
+            return false;
         }
 
         return true;

@@ -189,9 +189,6 @@ TEST_F(GattClientDataTrackerTest, RejectCentralRole) {
     return tBTM_STATUS::BTM_SUCCESS;
   };
 
-  // Expect BTA_GATTS_Close to be called
-  EXPECT_CALL(gatt_server_interface_, Close(conn_id)).Times(1);
-
   // Call the handler
   auto device_entry =
           tracker_.OnGattConnectedEventHandler(conn_id, test_addr1, transport, TestData());
@@ -212,9 +209,6 @@ TEST_F(GattClientDataTrackerTest, RejectBtmGetRoleFailure) {
   get_btm_client_interface().link_policy.BTM_GetRole =
           [](const RawAddress& /* remote_bd_addr */, tBT_TRANSPORT /* transport */,
              tHCI_ROLE* /* p_role */) -> tBTM_STATUS { return tBTM_STATUS::BTM_WRONG_MODE; };
-
-  // Expect BTA_GATTS_Close to be called
-  EXPECT_CALL(gatt_server_interface_, Close(conn_id)).Times(1);
 
   // Call the handler
   auto device_entry =

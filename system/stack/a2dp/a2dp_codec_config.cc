@@ -239,23 +239,7 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(btav_a2dp_codec_index_t codec_inde
 }
 
 int A2dpCodecConfig::getTrackBitRate() const {
-  bluetooth::a2dp::MediaCodecCapabilities p_codec_info = ota_codec_config_;
-  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info.data());
-
-  switch (codec_type) {
-    case A2DP_MEDIA_CT_SBC:
-      return A2DP_GetBitrateSbc();
-#if !defined(EXCLUDE_NONSTANDARD_CODECS)
-    case A2DP_MEDIA_CT_AAC:
-      return A2DP_GetBitRateAac(p_codec_info.data());
-    case A2DP_MEDIA_CT_NON_A2DP:
-      return A2DP_VendorGetBitRate(p_codec_info.data());
-#endif
-    default:
-      break;
-  }
-
-  log::error("unsupported codec type 0x{:x}", codec_type);
+  log::error("unimplemented for codec ID {}", CodecIdToString(codec_id_));
   return -1;
 }
 
@@ -372,7 +356,7 @@ btav_a2dp_codec_config_t A2dpCodecConfig::getCodecAudioConfig() {
   return codec_audio_config_;
 }
 
-uint8_t A2dpCodecConfig::getAudioBitsPerSample() {
+uint8_t A2dpCodecConfig::getAudioBitsPerSample() const {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
 
   switch (codec_config_.bits_per_sample) {

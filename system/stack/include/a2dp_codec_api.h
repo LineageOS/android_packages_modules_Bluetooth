@@ -125,7 +125,7 @@ public:
 
   // Gets the number of bits per sample of the current codec configuration,
   // or 0 if not configured.
-  uint8_t getAudioBitsPerSample();
+  uint8_t getAudioBitsPerSample() const;
 
   // Checks whether the codec uses the RTP Header Marker bit (see RFC 6416).
   // NOTE: Even if the encoded data uses RTP headers, some codecs do not use
@@ -237,7 +237,7 @@ protected:
   // The information is written in user-friendly form to file descriptor |fd|.
   virtual void debug_codec_dump(int fd);
 
-  std::recursive_mutex codec_mutex_;
+  mutable std::recursive_mutex codec_mutex_;
   const btav_a2dp_codec_index_t codec_index_;  // The unique codec index
   const bluetooth::a2dp::CodecId codec_id_;    // The standardized codec id
   const std::string name_;                     // The codec name

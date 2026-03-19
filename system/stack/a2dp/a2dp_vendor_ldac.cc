@@ -33,7 +33,6 @@
 #include <sstream>
 #include <string>
 
-#include "btif/include/btif_av_co.h"
 #include "hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
 #include "stack/include/a2dp_api.h"
@@ -284,10 +283,8 @@ bool A2DP_VendorCodecEqualsLdac(const uint8_t* p_codec_info_a, const uint8_t* p_
          (ldac_cie_a.channelMode == ldac_cie_b.channelMode);
 }
 
-int A2DP_VendorGetBitRateLdac(const uint8_t* p_codec_info) {
-  A2dpCodecConfig* current_codec = bta_av_get_a2dp_current_codec();
-  btav_a2dp_codec_config_t codec_config_ = current_codec->getCodecConfig();
-  int samplerate = A2DP_GetTrackSampleRate(p_codec_info);
+int A2dpCodecConfigLdacBase::getTrackBitRate() const {
+  int samplerate = A2DP_GetTrackSampleRate(ota_codec_config_.data());
   switch (codec_config_.codec_specific_1 % 10) {
     case 0:
       if (samplerate == 44100 || samplerate == 88200) {

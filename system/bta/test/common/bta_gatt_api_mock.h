@@ -114,19 +114,12 @@ public:
                            void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
                                             const bluetooth::Uuid& uuid)) = 0;
   virtual void AppDeregister(tGATT_IF server_if) = 0;
-  virtual void Open(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,
-                    tBLE_ADDR_TYPE /* addr_type */, bool /* is_direct */,
-                    tBT_TRANSPORT /* transport */) = 0;
-  virtual void CancelOpen(tGATT_IF /* server_if */, const RawAddress& /* remote_bda */,
-                          bool /* is_direct */) = 0;
-  virtual void Close(uint16_t /* conn_id */) = 0;
   virtual void AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
                           BTA_GATTS_AddServiceCb /* cb */) = 0;
-  virtual void DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */,
-                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                         uint16_t service_id)) = 0;
-  virtual void HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
-                                     std::vector<uint8_t> /* value */, bool /* need_confirm */) = 0;
+  virtual bool DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */) = 0;
+  virtual tGATT_STATUS HandleValueIndication(uint16_t /* conn_id */, uint16_t /* attr_id */,
+                                             std::vector<uint8_t> /* value */,
+                                             bool /* need_confirm */) = 0;
   virtual void SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_STATUS /* status */,
                        std::unique_ptr<tGATTS_RSP> /* p_msg */) = 0;
   virtual void InitBonded() = 0;
@@ -142,24 +135,13 @@ public:
            void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid)),
           (override));
   MOCK_METHOD((void), AppDeregister, (tGATT_IF server_if), (override));
-  MOCK_METHOD((void), Open,
-              (tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE type,
-               bool is_direct, tBT_TRANSPORT transport),
-              (override));
-  MOCK_METHOD((void), CancelOpen,
-              (tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct));
-  MOCK_METHOD((void), Close, (uint16_t conn_id));
   MOCK_METHOD((void), AddService,
               (tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
                BTA_GATTS_AddServiceCb cb),
               (override));
-  MOCK_METHOD(void, DeleteService,
-              (tGATT_IF server_if, uint16_t service_id,
-               void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                           uint16_t service_id)));
-  MOCK_METHOD((void), HandleValueIndication,
+  MOCK_METHOD(bool, DeleteService, (tGATT_IF server_if, uint16_t service_id));
+  MOCK_METHOD(tGATT_STATUS, HandleValueIndication,
               (uint16_t conn_id, uint16_t attr_id, std::vector<uint8_t> value, bool need_confirm));
-
   MOCK_METHOD(void, SendRsp,
               (uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
                std::unique_ptr<tGATTS_RSP> p_msg));

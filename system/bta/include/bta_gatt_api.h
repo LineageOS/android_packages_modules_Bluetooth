@@ -827,12 +827,10 @@ void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> s
  *
  * Parameters       service_id: service_id to be deleted.
  *
- * Returns          returns none.
+ * Returns          returns true on success, false otherwise.
  *
  ******************************************************************************/
-void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
-                             void (*p_delete_service_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                         uint16_t service_id));
+bool BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id);
 
 /*******************************************************************************
  *
@@ -847,11 +845,11 @@ void BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id,
  *                  need_confirm - if this indication expects a confirmation or
  *                                 not.
  *
- * Returns          None
+ * Returns          GATT_SUCCESS or error code
  *
  ******************************************************************************/
-void BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id, std::vector<uint8_t> value,
-                                     bool need_confirm);
+tGATT_STATUS BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id,
+                                             std::vector<uint8_t> value, bool need_confirm);
 
 /*******************************************************************************
  *
@@ -870,88 +868,8 @@ void BTA_GATTS_HandleValueIndication(tCONN_ID conn_id, uint16_t attr_id, std::ve
 void BTA_GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS status,
                        std::unique_ptr<tGATTS_RSP> rsp);
 
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Open
- *
- * Description      Open a direct open connection or add a background auto
- *                  connection bd address
- *
- * Parameters       server_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  addr_type: remote device address type
- *                  is_direct: direct connection or background auto connection
- *                  transport: transport to use in this connection
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    bool is_direct, tBT_TRANSPORT transport);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_CancelOpen
- *
- * Description      Cancel a direct open connection or remove a background auto
- *                  connection bd address
- *
- * Parameters       server_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  is_direct: direct connection or background auto connection
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool is_direct);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_Close
- *
- * Description      Close a connection  a remote device.
- *
- * Parameters       conn_id: connection ID to be closed.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_GATTS_Close(tCONN_ID conn_id);
-
 // Adds bonded device for GATT server tracking service changes
 void BTA_GATTS_InitBonded(void);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_OffloadCharacteristics
- *
- * Description      This function is called to offload a service.
- *
- * Parameters       conn_id - connection ID.
- *                  service - vector describing service.
- *                  endpoint_id - ID of the hub end point.
- *                  hub_id - ID of the hub to which the end point belongs.
- *                  uid - UID of the app.
- *                  attribution_tag - attribution tag of the app.
- *                  promise - object used to signal the completion status.
- *
- ******************************************************************************/
-void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
-                                      uint64_t endpoint_id, uint64_t hub_id, int uid,
-                                      std::string attribution_tag,
-                                      std::promise<btgatt_offload_result_t> promise);
-
-/*******************************************************************************
- *
- * Function         BTA_GATTS_UnoffloadCharacteristics
- *
- * Description      This function is called to unoffload a session.
- *
- * Parameters       conn_id - connection ID.
- *                  session_id - session ID.
- *
- ******************************************************************************/
-void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id);
 
 /* Initialize power management callbacks for GATT */
 extern void BTA_GATT_Init_gatt_pm_callbacks();

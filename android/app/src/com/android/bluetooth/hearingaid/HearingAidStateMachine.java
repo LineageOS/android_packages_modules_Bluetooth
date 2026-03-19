@@ -115,6 +115,12 @@ final class HearingAidStateMachine extends StateMachine {
 
     public void doQuit() {
         log("doQuit for device " + mDevice);
+        if (mConnectionState != STATE_DISCONNECTED && mLastConnectionState != -1) {
+            // Broadcast CONNECTION_STATE_CHANGED when state machine is turned off while
+            // the device is connected
+            mLastConnectionState = mConnectionState;
+            broadcastConnectionState(STATE_DISCONNECTED);
+        }
         quitNow();
     }
 
