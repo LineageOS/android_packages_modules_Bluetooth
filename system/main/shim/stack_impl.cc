@@ -103,10 +103,11 @@ void StackImpl::StartEverything() {
                                                common::Unretained(this), std::move(promise)));
 
     std::chrono::milliseconds start_timeout;
+    uint32_t hw_timeout_multiplier = os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1);
     if (android::sysprop::bluetooth::Hardware::degraded_performance_mode() ||
-        os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
+        hw_timeout_multiplier != 1) {
       log::warn("Running in degraded performance mode due to slow hardware");
-      start_timeout = std::chrono::milliseconds(8000);
+      start_timeout = std::chrono::milliseconds(8000) * hw_timeout_multiplier;
     } else if (bluetooth::os::GetSystemPropertyUint32("ro.build.version.sdk", 99) < 37) {
       start_timeout = std::chrono::milliseconds(
               os::GetSystemPropertyUint32("bluetooth.gd.start_timeout", 3000));
