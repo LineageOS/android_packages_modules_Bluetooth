@@ -31,6 +31,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <com_android_bluetooth_flags.h>
+
 #include "avdt_int.h"
 #include "bta/include/bta_av_api.h"
 #include "device/include/interop.h"
@@ -53,6 +55,7 @@ static void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 static void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
 static void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 static void avdt_on_l2cap_error(uint16_t lcid, uint16_t result);
+static void avdt_ad_init_tc(AvdtpCcb* p_ccb, AvdtpTransportChannel* p_tbl, uint16_t lcid);
 
 /* L2CAP callback function structure */
 const tL2CAP_APPL_INFO avdt_l2c_appl = {avdt_l2c_connect_ind_cback,
@@ -95,42 +98,63 @@ static void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     if (channel_index >= 0) {
       p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
     }
-    if (p_ccb == nullptr) {
+    if (p_ccb == NULL) {
       p_ccb = avdt_ccb_alloc(bd_addr);
     }
     if (p_ccb == NULL) {
       /* no ccb available, reject L2CAP connection */
+      log::warn("no ccb available, reject imcoming L2CAP connection for {}", bd_addr);
       result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
     } else {
       /* allocate and set up entry; first channel is always signaling */
-      log::verbose("lcid: 0x{:04x} AVDT_CHAN_SIG", lcid);
       p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
-      p_tbl->my_mtu = kAvdtpMtu;
-      p_tbl->tcid = AVDT_CHAN_SIG;
-      p_tbl->lcid = lcid;
-      p_tbl->state = AVDT_AD_ST_CFG;
-      p_tbl->role = tAVDT_ROLE::AVDT_ACP;
-
-      if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, bd_addr)) {
-        // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
-        btm_set_packet_types_from_address(
-                bd_addr, (acl_get_supported_packet_types() | HCI_PKT_TYPES_MASK_NO_3_DH1 |
-                          HCI_PKT_TYPES_MASK_NO_3_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH5));
-      }
-      /* store idx in LCID table, store LCID in routing table */
-      avdtp_cb.ad.lcid_tbl[p_tbl->lcid] = avdt_ad_tc_tbl_to_idx(p_tbl);
-      avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
-      bluetooth::metrics::LogAvdtpL2capEvent(
-              bd_addr, bluetooth::metrics::EventType::AVDTP_L2CAP_CONNECTION_REQUEST_RECEIVED,
-              tL2CAP_CONN::L2CAP_CONN_OK);
+      avdt_ad_init_tc(p_ccb, p_tbl, lcid);
       return;
     }
   } else {
     /* deal with simultaneous control channel connect case */
     p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_CONN);
     if (p_tbl != NULL) {
-      /* reject their connection */
-      result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
+      if (com_android_bluetooth_flags_a2dp_l2cap_collision_coverage()) {
+        /* Collision detected. Per AVDTP specification, the device that receives
+         * the L2CAP_CONNECT_IND while it is in a connecting state shall accept
+         * the incoming connection and abort its own outgoing connection. */
+        log::warn("Collision detected, aborting outgoing connection.");
+        uint16_t outgoing_lcid = avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid;
+
+        /* Close the outgoing connection. */
+        if (!stack::l2cap::get_interface().L2CA_DisconnectReq(outgoing_lcid)) {
+          log::warn("Unable to disconnect L2CAP lcid: 0x{:04x}", outgoing_lcid);
+        }
+        /* Close action will release both p_ccb and p_tbl */
+        avdt_ad_tc_close_ind(p_tbl);
+
+        /* Reallocate the CCB and TC table entries for the incoming connection. */
+        p_ccb = avdt_ccb_by_bd(bd_addr);
+        if (p_ccb == NULL) {
+          int channel_index = BTA_AvObtainPeerChannelIndex(bd_addr);
+          if (channel_index >= 0) {
+            p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
+          }
+          if (p_ccb == NULL) {
+            p_ccb = avdt_ccb_alloc(bd_addr);
+          }
+        }
+
+        if (p_ccb == NULL) {
+          /* still no ccb available after aborting the outgoing connection,
+           * reject the incoming L2CAP connection. */
+          log::warn("still no ccb available, reject imcoming L2CAP connection for {}", bd_addr);
+          result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
+        } else {
+          p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
+          avdt_ad_init_tc(p_ccb, p_tbl, lcid);
+          return;
+        }
+      } else {
+        /* reject their connection */
+        result = tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES;
+      }
     } else {
       /* This must be a traffic channel; are we accepting a traffic channel
        * for this ccb?
@@ -401,4 +425,38 @@ static void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
     return;
   }
   avdt_ad_tc_data_ind(p_tbl, p_buf);
+}
+
+/*******************************************************************************
+ *
+ * Function         avdt_ad_init_tc
+ *
+ * Description      Helper function to initialize the signaling channel.
+ *
+ *
+ * Returns          void
+ *
+ *
+ ******************************************************************************/
+static void avdt_ad_init_tc(AvdtpCcb* p_ccb, AvdtpTransportChannel* p_tbl, uint16_t lcid) {
+  /* allocate and set up entry; first channel is always signaling */
+  log::verbose("lcid: 0x{:04x} AVDT_CHAN_SIG", lcid);
+  p_tbl->my_mtu = kAvdtpMtu;
+  p_tbl->tcid = AVDT_CHAN_SIG;
+  p_tbl->lcid = lcid;
+  p_tbl->state = AVDT_AD_ST_CFG;
+  p_tbl->role = tAVDT_ROLE::AVDT_ACP;
+
+  if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, p_ccb->peer_addr)) {
+    // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
+    btm_set_packet_types_from_address(
+            p_ccb->peer_addr, (acl_get_supported_packet_types() | HCI_PKT_TYPES_MASK_NO_3_DH1 |
+                               HCI_PKT_TYPES_MASK_NO_3_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH5));
+  }
+  /* store idx in LCID table, store LCID in routing table */
+  avdtp_cb.ad.lcid_tbl[p_tbl->lcid] = avdt_ad_tc_tbl_to_idx(p_tbl);
+  avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
+  bluetooth::metrics::LogAvdtpL2capEvent(
+          p_ccb->peer_addr, bluetooth::metrics::EventType::AVDTP_L2CAP_CONNECTION_REQUEST_RECEIVED,
+          tL2CAP_CONN::L2CAP_CONN_OK);
 }
