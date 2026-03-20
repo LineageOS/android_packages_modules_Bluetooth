@@ -375,7 +375,6 @@ public class AdapterProperties {
         } catch (ArrayStoreException ee) {
             Log.e(TAG, "Error retrieving bonded device array");
         }
-        infoLog("getBondedDevices: length=" + bondedDeviceList.length);
         return bondedDeviceList;
     }
 
