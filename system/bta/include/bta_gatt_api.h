@@ -344,16 +344,18 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  * Parameters       client_if: server interface.
  *                  remote_bda: remote device BD address.
  *                  connection_type: connection type used for the peer device
+ *                  transport: Transport to be used for GATT connection
+ *                             (BREDR/LE)
+ *                  opportunistic: whether the connection shall be opportunistic and
+ *                                 don't impact the disconnection timer
+ *                  auto_mtu_enabled: triggers mtu exchange with default mtu on connection
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type);
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
-                    uint16_t preferred_mtu, bool prefer_relax_mode);
-void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
-                    uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled);
+                    uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled = false);
 
 /*******************************************************************************
  *

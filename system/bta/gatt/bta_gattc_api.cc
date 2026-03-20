@@ -143,31 +143,9 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
                                auto_mtu_enabled));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTC_Open
- *
- * Description      Open a direct connection or add a background auto connection
- *                  bd address
- *
- * Parameters       client_if: server interface.
- *                  remote_bda: remote device BD address.
- *                  connection_type: connection type used for the peer device
- *                  transport: Transport to be used for GATT connection
- *                             (BREDR/LE)
- *                  initiating_phys: LE PHY to use, optional
- *
- ******************************************************************************/
-void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
-                    uint16_t preferred_mtu, bool prefer_relax_mode) {
-  BTA_GATTC_Open(client_if, remote_bda, addr_type, connection_type, transport, preferred_mtu,
-                 prefer_relax_mode, false);
-}
-
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type) {
-  BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type, BT_TRANSPORT_LE, 0,
+  BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type, BT_TRANSPORT_LE, 0, false,
                  false);
 }
 
