@@ -134,9 +134,8 @@ struct VcsServer::service_impl {
     auto gatt_db = BuildGattDatabase();
 
     log::info("Adding LE Audio Service {} service to GATT database.", gatt_db.begin()->uuid);
-    BTA_GATTS_AddService(server_if_, std::move(gatt_db),
-                         base::BindRepeating(&VcsServer::service_impl::OnGattServiceAdded,
-                                             weak_factory_.GetWeakPtr()));
+    auto status = BTA_GATTS_AddService(server_if_, &gatt_db);
+    OnGattServiceAdded(status, server_if_, std::move(gatt_db));
   }
 
   static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
@@ -257,7 +256,7 @@ struct VcsServer::service_impl {
                           std::vector<btgatt_db_element_t> service_elements) {
     log::info("GATT Service Add status: {}, server_if: {}", gatt_status_text(status), server_if);
 
-    log::assert_that(status == GATT_SUCCESS, "Unable to add VCS GATT service");
+    log::assert_that(status == GATT_SERVICE_STARTED, "Unable to add VCS GATT service");
     log::assert_that(service_elements.size() != 0, "Service is empty");
     log::assert_that(service_elements.begin()->uuid == uuid::kVolumeControlServiceUuid,
                      "Service not mine!");

@@ -88,12 +88,12 @@ static uint16_t GetDescriptorHandle(const bluetooth::Uuid& uuid) {
   return GetCharacteristicHandle(uuid) + 1;
 }
 
-static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>& service) {
-  for (uint16_t i = 0; i < service.size(); i++) {
-    service[i].attribute_handle = GetCharacteristicHandle(service[i].uuid);
+static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>* service) {
+  for (uint16_t i = 0; i < service->size(); i++) {
+    (*service)[i].attribute_handle = GetCharacteristicHandle((*service)[i].uuid);
     // Check if descriptor exist
-    if (i < service.size() - 1 && service[i + 1].type == BTGATT_DB_DESCRIPTOR) {
-      service[i + 1].attribute_handle = GetDescriptorHandle(service[i].uuid);
+    if (i < service->size() - 1 && (*service)[i + 1].type == BTGATT_DB_DESCRIPTOR) {
+      (*service)[i + 1].attribute_handle = GetDescriptorHandle((*service)[i].uuid);
       i++;
     }
   }
@@ -159,14 +159,12 @@ protected:
     EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
             .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), Return(1)));
 
-    tGATT_IF captured_server_if;
-    std::vector<btgatt_db_element_t> captured_service;
-    BTA_GATTS_AddServiceCb captured_cb;
-    EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _, _))
-            .WillOnce(testing::DoAll(
-                    testing::SaveArg<0>(&captured_server_if),
-                    testing::SaveArg<1>(&captured_service),
-                    testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
+    EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _))
+            .WillOnce([](tGATT_IF /*server_if*/, std::vector<btgatt_db_element_t>* service) {
+              // Update handle for testing
+              UpdateTestServiceHandle(service);
+              return GATT_SERVICE_STARTED;
+            });
 
     GetRasServer()->SetVendorSpecificCharacteristic(vendor_specific_characteristics_);
     GetRasServer()->Initialize();
@@ -174,12 +172,6 @@ protected:
 
     // RegisterCallback
     GetRasServer()->RegisterCallbacks(&mock_ras_server_callbacks_);
-
-    // Update handle for testing
-    UpdateTestServiceHandle(captured_service);
-
-    // Run BTA_GATTS_AddServiceCb
-    std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
 
     // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
     EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(1);
@@ -200,20 +192,11 @@ TEST_F(RasServerTestNoInit, InitializationSuccessful) {
   EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
           .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), Return(1)));
 
-  tGATT_IF captured_server_if;
-  std::vector<btgatt_db_element_t> captured_service;
-  BTA_GATTS_AddServiceCb captured_cb;
-  EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _, _))
-          .WillOnce(testing::DoAll(
-                  testing::SaveArg<0>(&captured_server_if), testing::SaveArg<1>(&captured_service),
-                  testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
+  EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _)).WillOnce(Return(GATT_SERVICE_STARTED));
 
   GetRasServer()->SetVendorSpecificCharacteristic(vendor_specific_characteristics_);
   GetRasServer()->Initialize();
   ASSERT_NE(captured_gatt_callback_, nullptr);
-
-  // Run BTA_GATTS_AddServiceCb
-  std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
 }
 
 TEST_F(RasServerTestNoInit, ConnectAndDisconnect) {

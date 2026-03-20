@@ -112,6 +112,7 @@ TEST_F(VcsTestBase, RegisterGattService) {
   EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kVolumeControlServiceUuid, _, false))
           .WillOnce(DoAll(SaveArg<0>(&uuid), testing::SaveArg<1>(&p_gatt_event_source_cb),
                           Return(0xDE)));
+  EXPECT_CALL(gatt_server_interface_, AddService(_, _)).WillOnce(Return(GATT_SERVICE_STARTED));
   vcs_->RegisterGattService(service_descriptor, &vcs_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
   ASSERT_EQ(uuid::kVolumeControlServiceUuid, uuid);
@@ -149,20 +150,19 @@ public:
             .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_), Return(0xDE)));
 
     // Mock GATT service registration success
-    EXPECT_CALL(gatt_server_interface_, AddService(0xDE, _, _))
-            .WillOnce(DoAll(SaveArg<0>(&server_if_),
-                            [this](tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                                   BTA_GATTS_AddServiceCb cb) {
-                              // Assign some ATT handles
-                              uint16_t handle_idx = 0x2000;
-                              service_db_ = service;  // Store for using it by mock GATT layer
-                              for (auto& el : service_db_) {
-                                el.attribute_handle = handle_idx++;
-                              }
-                              auto status = service.empty() ? tGATT_STATUS::GATT_ERROR
-                                                            : tGATT_STATUS::GATT_SUCCESS;
-                              std::move(cb).Run(status, server_if, service_db_);
-                            }));
+    EXPECT_CALL(gatt_server_interface_, AddService(0xDE, _))
+            .WillOnce(DoAll(
+                    SaveArg<0>(&server_if_),
+                    [this](tGATT_IF /*server_if*/, std::vector<btgatt_db_element_t>* service) {
+                      // Assign some ATT handles
+                      uint16_t handle_idx = 0x2000;
+                      for (auto& el : *service) {
+                        el.attribute_handle = handle_idx++;
+                      }
+                      service_db_ = *service;  // Store for using it by mock GATT layer
+                      return service->empty() ? tGATT_STATUS::GATT_ERROR
+                                              : tGATT_STATUS::GATT_SERVICE_STARTED;
+                    }));
 
     // Register GATT service instance
     EXPECT_CALL(vcs_callbacks_, OnVcsServerRegistered());

@@ -27,6 +27,7 @@
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 #include "bta/include/bta_gatt_api.h"
@@ -40,9 +41,10 @@ tGATT_IF BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */,
   inc_func_call_count(__func__);
   return bluetooth::stack::GATT_IF_INVALID;
 }
-void BTA_GATTS_AddService(tGATT_IF /* server_if */, std::vector<btgatt_db_element_t> /* service */,
-                          BTA_GATTS_AddServiceCb /* cb */) {
+tGATT_STATUS BTA_GATTS_AddService(tGATT_IF /* server_if */,
+                                  std::vector<btgatt_db_element_t>* /* service */) {
   inc_func_call_count(__func__);
+  return GATT_SERVICE_STARTED;
 }
 bool BTA_GATTS_DeleteService(tGATT_IF /* server_if */, uint16_t /* service_id */) {
   inc_func_call_count(__func__);

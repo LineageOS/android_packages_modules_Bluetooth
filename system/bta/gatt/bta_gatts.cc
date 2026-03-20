@@ -125,17 +125,8 @@ tGATT_IF BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid, const stack::tGA
 
 void BTA_GATTS_AppDeregister(tGATT_IF gatt_if) { stack::appDeregister(gatt_if); }
 
-void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                          BTA_GATTS_AddServiceCb cb) {
-  tGATT_STATUS status = GATTS_AddService(server_if, service.data(), service.size());
-  if (status != GATT_SERVICE_STARTED) {
-    log::error("service creation failed.");
-    std::move(cb).Run(GATT_ERROR, server_if, std::move(service));
-    return;
-  }
-
-  std::move(cb).Run(GATT_SUCCESS, server_if, std::move(service));
-  return;
+tGATT_STATUS BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t>* service) {
+  return GATTS_AddService(server_if, service->data(), service->size());
 }
 
 bool BTA_GATTS_DeleteService(tGATT_IF gatt_if, uint16_t service_id) {

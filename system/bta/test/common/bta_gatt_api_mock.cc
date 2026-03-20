@@ -135,10 +135,9 @@ tGATT_IF BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
   return gatt_server_interface->AppRegister(app_uuid, p_cback, eatt_support);
 }
-void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                          BTA_GATTS_AddServiceCb cb) {
+tGATT_STATUS BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t>* service) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
-  gatt_server_interface->AddService(server_if, service, std::move(cb));
+  return gatt_server_interface->AddService(server_if, service);
 }
 bool BTA_GATTS_DeleteService(tGATT_IF server_if, uint16_t service_id) {
   log::assert_that(gatt_server_interface != nullptr, "Mock GATT server interface not set!");
