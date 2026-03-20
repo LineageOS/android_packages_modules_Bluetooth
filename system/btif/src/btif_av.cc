@@ -2060,6 +2060,11 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
       log::warn("Peer {} : event={}: transitioning to Idle due to ACL Disconnect",
                 peer_.PeerAddress(), BtifAvEvent::EventName(event));
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::A2DP_CONNECTION_ACL_DISCONNECTED);
+      if (com_android_bluetooth_flags_a2dp_cleanup_on_acl_disconnect()) {
+        if (peer_.BtaHandle() != kBtaHandleUnknown) {
+          BTA_AvClose(peer_.BtaHandle());
+        }
+      }
       btif_report_connection_state(peer_.PeerAddress(), BTAV_CONNECTION_STATE_DISCONNECTED,
                                    BtifStatus(FAIL), BTA_AV_FAIL,
                                    peer_.IsSource() ? A2dpType::kSink : A2dpType::kSource);
