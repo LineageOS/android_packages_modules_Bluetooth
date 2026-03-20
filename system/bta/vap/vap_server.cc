@@ -242,13 +242,8 @@ public:
     // CCC descriptor for VA Supported Features characteristic
     service.push_back(ccc_descriptor);
 
-    BTA_GATTS_AddService(server_if_, service,
-                         base::BindOnce([](tGATT_STATUS status, int server_if,
-                                           std::vector<btgatt_db_element_t> service) {
-                           if (instance) {
-                             instance->OnServiceAdded(status, server_if, service);
-                           }
-                         }));
+    auto status = BTA_GATTS_AddService(server_if_, &service);
+    OnServiceAdded(status, server_if_, std::move(service));
   }
 
   void Cleanup() override {

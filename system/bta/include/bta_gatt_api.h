@@ -804,16 +804,11 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if);
  * Parameters       server_if: server interface.
  *                  service: pointer to vector describing service.
  *
- * Returns          Returns |GATT_SUCCESS| on success or |GATT_ERROR| if the
+ * Returns          Returns |GATT_SERVICE_STARTED| on success or error if the
  *                  service cannot be added.
  *
  ******************************************************************************/
-typedef base::OnceCallback<void(tGATT_STATUS status, int server_if,
-                                std::vector<btgatt_db_element_t> service)>
-        BTA_GATTS_AddServiceCb;
-
-void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                          BTA_GATTS_AddServiceCb cb);
+tGATT_STATUS BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t>* service);
 
 /*******************************************************************************
  *

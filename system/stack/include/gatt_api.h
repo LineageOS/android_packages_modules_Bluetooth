@@ -744,7 +744,7 @@ typedef struct {
 
 /*******************************************************************************
  *
- * Function         BTA_GATTS_AddService
+ * Function         GATTS_AddService
  *
  * Description      Add a service. When service is ready, a callback
  *                  event BTA_GATTS_ADD_SRVC_EVT is called to report status

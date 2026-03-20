@@ -157,11 +157,8 @@ void GmapServer::Initialize(std::bitset<8> UGG_feature) {
   service.push_back(UGG_feature_characteristic);
 
   log::info("add service");
-  BTA_GATTS_AddService(server_if_, service,
-                       base::BindOnce([](tGATT_STATUS status, int server_if,
-                                         std::vector<btgatt_db_element_t> service) {
-                         OnServiceAdded(status, server_if, service);
-                       }));
+  auto status = BTA_GATTS_AddService(server_if_, &service);
+  OnServiceAdded(status, server_if_, std::move(service));
 }
 
 std::bitset<8> GmapServer::GetRole() { return GmapServer::role_; }

@@ -407,8 +407,14 @@ static void add_service_impl(int server_if, vector<btgatt_db_element_t> service)
     return;
   }
 
-  do_in_main_thread(BindOnce(&BTA_GATTS_AddService, server_if, service,
-                             jni_thread_wrapper(base::BindOnce(&on_service_added_cb))));
+  do_in_main_thread(BindOnce(
+          [](int server_if, vector<btgatt_db_element_t> service) {
+            tGATT_STATUS status = BTA_GATTS_AddService(server_if, &service);
+            status = (status == GATT_SERVICE_STARTED) ? GATT_SUCCESS : GATT_ERROR;
+            do_in_jni_thread(
+                    base::BindOnce(&on_service_added_cb, status, server_if, std::move(service)));
+          },
+          server_if, std::move(service)));
 }
 
 static BtStatus btif_gatts_add_service(int server_if, const btgatt_db_element_t* service,

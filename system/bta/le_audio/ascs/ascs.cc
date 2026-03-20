@@ -181,9 +181,8 @@ struct Ascs::service_impl {
     auto gatt_db = BuildGattDatabase(service_descriptor_);
 
     log::info("Adding LE Audio Service {} service to GATT database.", gatt_db.begin()->uuid);
-    BTA_GATTS_AddService(server_if_, gatt_db,
-                         base::BindRepeating(&Ascs::service_impl::OnGattServiceAdded,
-                                             weak_factory_.GetWeakPtr()));
+    auto status = BTA_GATTS_AddService(server_if_, &gatt_db);
+    OnGattServiceAdded(status, server_if_, std::move(gatt_db));
   }
 
   static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
@@ -305,7 +304,7 @@ struct Ascs::service_impl {
                             "GATT Service Add status: {}, server_if: {}", gatt_status_text(status),
                             server_if);
 
-    log::assert_that(status == GATT_SUCCESS, "Unable to add GATT service");
+    log::assert_that(status == GATT_SERVICE_STARTED, "Unable to add GATT service");
     log::assert_that(service_elements.size() != 0, "Service is empty");
     log::assert_that(service_elements.begin()->uuid == uuid::kAudioStreamControlServiceUuid,
                      "Service not mine!");

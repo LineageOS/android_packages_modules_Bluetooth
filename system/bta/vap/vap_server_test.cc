@@ -68,9 +68,9 @@ static uint16_t GetDescriptorHandle(const bluetooth::Uuid& uuid) {
   return GetCharacteristicHandle(uuid) + 1;
 }
 
-static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>& service) {
+static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>* service) {
   bluetooth::Uuid last_char_uuid;
-  for (auto& element : service) {
+  for (auto& element : *service) {
     if (element.type == BTGATT_DB_CHARACTERISTIC) {
       element.attribute_handle = GetCharacteristicHandle(element.uuid);
       last_char_uuid = element.uuid;
@@ -102,23 +102,17 @@ protected:
     EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
             .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), Return(1)));
 
-    tGATT_IF captured_server_if;
-    std::vector<btgatt_db_element_t> captured_service;
-    BTA_GATTS_AddServiceCb captured_cb;
-    EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _, _))
-            .WillOnce(DoAll(SaveArg<0>(&captured_server_if), SaveArg<1>(&captured_service),
-                            testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
+    EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _))
+            .WillOnce([](tGATT_IF /*server_if*/,
+                         std::vector<btgatt_db_element_t>* service) -> tGATT_STATUS {
+              UpdateTestServiceHandle(service);
+              return GATT_SERVICE_STARTED;
+            });
+    EXPECT_CALL(mock_callbacks_, OnInitialized());
 
     GetVapServer()->Initialize(&mock_callbacks_);
     SyncOnMainLoop();
     ASSERT_NE(captured_gatt_callback_, nullptr);
-
-    SyncOnMainLoop();
-
-    EXPECT_CALL(mock_callbacks_, OnInitialized());
-    UpdateTestServiceHandle(captured_service);
-    std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
-    SyncOnMainLoop();
 
     // Connect a client
     captured_gatt_callback_->p_conn_cb(1, test_address_, 1, true, GATT_CONN_OK, BT_TRANSPORT_LE);

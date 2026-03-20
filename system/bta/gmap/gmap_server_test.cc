@@ -57,7 +57,7 @@ public:
     reset_mock_function_count_map();
     gatt::SetMockBtaGattServerInterface(&gatt_server_interface);
     EXPECT_CALL(gatt_server_interface, AppRegister(_, _, _)).Times(1).WillOnce(Return(server_if));
-    EXPECT_CALL(gatt_server_interface, AddService(_, _, _)).Times(1);
+    EXPECT_CALL(gatt_server_interface, AddService(_, _)).WillOnce(Return(GATT_SERVICE_STARTED));
     GmapServer::Initialize(role, UGG_feature);
   }
 };
