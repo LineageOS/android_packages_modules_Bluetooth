@@ -444,3 +444,286 @@ impl IsoCigCallbacks {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use googletest::prelude::*;
+    use std::time::Duration;
+    use tokio::sync::{mpsc, oneshot};
+    use tokio::time::timeout;
+
+    use crate::le_audio::iso_manager::manager::CisState;
+
+    const TEST_TIMEOUT: Duration = Duration::from_secs(1);
+    const SUBSCRIBER_EVENT_BUFFER: usize = 10;
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_create_cig_cmpl_fulfills_pending_request_on_success() {
+        // Verify that when a CIG is successfully created, the manager fulfills the pending
+        // request with the appropriate completion event containing the allocated connection handles.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry.lock().unwrap().pending_requests.create_cig.insert(cig_id, sender);
+
+        callbacks.on_create_cig_cmpl(HciStatus::Success.into(), cig_id.into(), vec![10, 11]);
+
+        expect_that!(
+            receiver.await,
+            ok(ok(matches_pattern!(CreateCigCmplEvent {
+                cig_id: eq(&cig_id),
+                cis_conn_handles: eq(&vec![
+                    IsoConnectionHandle::try_from(10).unwrap(),
+                    IsoConnectionHandle::try_from(11).unwrap()
+                ]),
+            })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_remove_cig_cmpl_fulfills_pending_request() {
+        // Verify that when a CIG is removed, the manager notifies the requester of the success
+        // status via the pending request channel.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(2).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry.lock().unwrap().pending_requests.remove_cig.insert(cig_id, sender);
+
+        callbacks.on_remove_cig_cmpl(HciStatus::Success.into(), cig_id.into());
+
+        expect_that!(receiver.await, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_cis_established_fulfills_pending_request() {
+        // Verify that when a CIS is established, the manager fulfills the specific pending
+        // request for that connection handle with all the extracted ISO parameters.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+        let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry.lock().unwrap().pending_requests.create_cis.insert(cis_conn_handle, sender);
+
+        callbacks.on_cis_established(
+            HciStatus::Success.into(),
+            cig_id.into(),
+            cis_conn_handle.into(),
+            1000,
+            1100,
+            2000,
+            2100,
+            1,
+            2,
+            3,
+            1,
+            2,
+            0,
+            1,
+            128,
+            256,
+            10,
+        );
+
+        expect_that!(
+            receiver.await,
+            ok(ok(matches_pattern!(&CisEstablishedEvent {
+                cig_id: eq(cig_id),
+                cis_conn_handle: eq(cis_conn_handle),
+                cig_sync_delay: eq(1000),
+                cis_sync_delay: eq(1100),
+                transport_latency_c_to_p: eq(2000),
+                transport_latency_p_to_c: eq(2100),
+                phy_c_to_p: eq(1),
+                phy_p_to_c: eq(2),
+                nse: eq(3),
+                bn_c_to_p: eq(1),
+                bn_p_to_c: eq(2),
+                ft_c_to_p: eq(0),
+                ft_p_to_c: eq(1),
+                max_pdu_c_to_p: eq(128),
+                max_pdu_p_to_c: eq(256),
+                iso_interval: eq(10),
+            })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_cis_disconnected_fulfills_pending_request() {
+        // Verify that a CIS disconnection correctly triggers a notification to the requester
+        // with the appropriate reason status.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+        let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .disconnect_cis
+            .insert(cis_conn_handle, sender);
+
+        callbacks.on_cis_disconnected(
+            HciStatus::RemoteUserTerminatedConnection.into(),
+            cig_id.into(),
+            cis_conn_handle.into(),
+        );
+
+        expect_that!(
+            receiver.await,
+            ok(ok(matches_pattern!(&CisDisconnectedEvent {
+                reason: eq(HciStatus::RemoteUserTerminatedConnection),
+                cig_id: eq(cig_id),
+                cis_conn_handle: eq(cis_conn_handle),
+            })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_cis_data_available_broadcasts_event_to_subscribers() {
+        // Verify that when ISO data is available for a CIS, the manager correctly broadcasts
+        // an event containing the payload and its metadata to specific data subscribers.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+        let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
+
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        iso_registry.lock().unwrap().cis.insert(
+            cis_conn_handle,
+            CisState { data_subscribers: vec![subscriber_sender], ..Default::default() },
+        );
+
+        let data = vec![0x01, 0x02, 0x03, 0x04];
+        callbacks.on_cis_data_available(cig_id.into(), cis_conn_handle.into(), 1234, 56, &data);
+
+        expect_that!(
+            timeout(TEST_TIMEOUT, subscriber_receiver.recv()).await,
+            ok(some(matches_pattern!(IsoDataPacket {
+                time_stamp: eq(&Some(Duration::from_micros(1234))),
+                seq_nb: eq(&56),
+                data: eq(&data),
+            })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_setup_iso_data_path_cig_fulfills_pending_request() {
+        // Verify that successful data path setup for a CIG-based CIS notifies the requester
+        // by fulfilling the pending request channel.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+        let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .setup_iso_data_path
+            .insert(cis_conn_handle, sender);
+
+        callbacks.on_setup_iso_data_path_cig(
+            HciStatus::Success.into(),
+            cis_conn_handle.into(),
+            cig_id.into(),
+        );
+
+        expect_that!(receiver.await, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_remove_iso_data_path_cig_fulfills_pending_request() {
+        // Verify that successful data path removal for a CIG-based CIS notifies the requester
+        // by fulfilling the pending request channel.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+        let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .remove_iso_data_path
+            .insert(cis_conn_handle, sender);
+
+        callbacks.on_remove_iso_data_path_cig(
+            HciStatus::Success.into(),
+            cis_conn_handle.into(),
+            cig_id.into(),
+        );
+
+        expect_that!(receiver.await, ok(ok(anything())));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_on_iso_link_quality_read_fulfills_pending_request_with_stats() {
+        // Verify that reading link quality correctly extracts all statistics from the callback
+        // and provides them to the requester through the pending request channel.
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let callbacks = IsoCigCallbacks::new(iso_registry.clone());
+
+        let cig_id = CigId::try_from(1).unwrap();
+        let cis_conn_handle = IsoConnectionHandle::try_from(200).unwrap();
+
+        let (sender, receiver) = oneshot::channel();
+        iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .read_iso_link_quality
+            .insert(cis_conn_handle, sender);
+
+        callbacks.on_iso_link_quality_read(
+            cis_conn_handle.into(),
+            cig_id.into(),
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+        );
+
+        expect_that!(
+            receiver.await,
+            ok(ok(matches_pattern!(&IsoLinkQuality {
+                tx_unacked_packets: eq(10),
+                tx_flushed_packets: eq(20),
+                tx_last_subevent_packets: eq(30),
+                retransmitted_packets: eq(40),
+                crc_error_packets: eq(50),
+                rx_unreceived_packets: eq(60),
+                duplicate_packets: eq(70),
+            })))
+        );
+    }
+}
