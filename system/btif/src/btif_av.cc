@@ -2368,16 +2368,14 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
 
         // Invoke the started handler only when initiator.
         log::info("Peer should suspend: {}", should_suspend);
-
-        if (!should_suspend &&
-            btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
-          // Only clear pending flag after acknowledgement
-          peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
-        }
       }
 
       // Remain in Open state if status failed
       if (p_av->start.status != BTA_AV_SUCCESS) {
+        if (peer_.IsSink() && !should_suspend &&
+            btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
+          peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
+        }
         return false;
       }
 
@@ -2400,6 +2398,10 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
       }
 
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateStarted);
+
+      if (peer_.IsSink() && !should_suspend) {
+        btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource);
+      }
       break;
     }
 
