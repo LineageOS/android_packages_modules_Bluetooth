@@ -2,4 +2,3 @@
 // - style=java
 // - flagged-api-inheritance=none
 // - overloaded-method-order=source
-// - type-argument-spacing=legacy

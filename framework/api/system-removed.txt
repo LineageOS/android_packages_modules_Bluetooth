@@ -1,6 +1,5 @@
 // Signature format: 6.0
 // - style=java
-// - type-argument-spacing=legacy
 package android.bluetooth.le {
 
   public final class BluetoothLeScanner {

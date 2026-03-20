@@ -2,7 +2,6 @@
 // - style=java
 // - flagged-api-inheritance=none
 // - overloaded-method-order=source
-// - type-argument-spacing=legacy
 package android.bluetooth {
 
   public final class BluetoothA2dp implements android.bluetooth.BluetoothProfile {
@@ -1283,7 +1282,7 @@ package android.bluetooth.le {
     method public boolean getIncludeDeviceName();
     method public boolean getIncludeTxPowerLevel();
     method public android.util.SparseArray<byte[]> getManufacturerSpecificData();
-    method public java.util.Map<android.os.ParcelUuid,byte[]> getServiceData();
+    method public java.util.Map<android.os.ParcelUuid, byte[]> getServiceData();
     method @NonNull public java.util.List<android.os.ParcelUuid> getServiceSolicitationUuids();
     method public java.util.List<android.os.ParcelUuid> getServiceUuids();
     method @NonNull public java.util.List<android.bluetooth.le.TransportDiscoveryData> getTransportDiscoveryData();
@@ -1495,12 +1494,12 @@ package android.bluetooth.le {
 
   public final class ScanRecord {
     method public int getAdvertiseFlags();
-    method @NonNull public java.util.Map<Integer,byte[]> getAdvertisingDataMap();
+    method @NonNull public java.util.Map<Integer, byte[]> getAdvertisingDataMap();
     method public byte[] getBytes();
     method @Nullable public String getDeviceName();
     method public android.util.SparseArray<byte[]> getManufacturerSpecificData();
     method @Nullable public byte[] getManufacturerSpecificData(int);
-    method public java.util.Map<android.os.ParcelUuid,byte[]> getServiceData();
+    method public java.util.Map<android.os.ParcelUuid, byte[]> getServiceData();
     method @Nullable public byte[] getServiceData(android.os.ParcelUuid);
     method @NonNull public java.util.List<android.os.ParcelUuid> getServiceSolicitationUuids();
     method public java.util.List<android.os.ParcelUuid> getServiceUuids();
