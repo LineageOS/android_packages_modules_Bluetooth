@@ -1,1 +1,6 @@
-// Signature format: 2.0
+// Signature format: 6.0
+// - style=java
+// - flagged-api-inheritance=none
+// - overloaded-method-order=source
+// - strip-java-lang-prefix=legacy
+// - type-argument-spacing=legacy
