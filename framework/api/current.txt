@@ -2,7 +2,6 @@
 // - style=java
 // - flagged-api-inheritance=none
 // - overloaded-method-order=source
-// - strip-java-lang-prefix=legacy
 // - type-argument-spacing=legacy
 package android.bluetooth {
 
@@ -522,7 +521,7 @@ package android.bluetooth {
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.BluetoothCodecType> CREATOR;
   }
 
-  public final class BluetoothCsipSetCoordinator implements java.lang.AutoCloseable android.bluetooth.BluetoothProfile {
+  public final class BluetoothCsipSetCoordinator implements AutoCloseable android.bluetooth.BluetoothProfile {
     method public void close();
     method protected void finalize();
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public java.util.List<android.bluetooth.BluetoothDevice> getConnectedDevices();
@@ -1030,7 +1029,7 @@ package android.bluetooth {
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.BluetoothHidDeviceAppSdpSettings> CREATOR;
   }
 
-  public final class BluetoothLeAudio implements java.lang.AutoCloseable android.bluetooth.BluetoothProfile {
+  public final class BluetoothLeAudio implements AutoCloseable android.bluetooth.BluetoothProfile {
     method public void close();
     method protected void finalize();
     method @NonNull @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public java.util.List<android.bluetooth.BluetoothDevice> getConnectedDevices();
@@ -1496,7 +1495,7 @@ package android.bluetooth.le {
 
   public final class ScanRecord {
     method public int getAdvertiseFlags();
-    method @NonNull public java.util.Map<java.lang.Integer,byte[]> getAdvertisingDataMap();
+    method @NonNull public java.util.Map<Integer,byte[]> getAdvertisingDataMap();
     method public byte[] getBytes();
     method @Nullable public String getDeviceName();
     method public android.util.SparseArray<byte[]> getManufacturerSpecificData();
