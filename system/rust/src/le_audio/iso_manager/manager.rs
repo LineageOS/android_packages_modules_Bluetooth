@@ -18,15 +18,24 @@
 
 #![allow(dead_code)]
 
-use log::warn;
+use cxx::UniquePtr;
+use log::{error, info, warn};
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
+use tokio::spawn;
 use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::time::timeout;
+use tokio_stream::wrappers::ReceiverStream;
 
+use crate::le_audio::iso_manager::ffi::{inner_ffi as iso_ffi, IsoBigCallbacks, IsoCigCallbacks};
 use crate::le_audio::iso_manager::traits::{
-    BigHandle, CigId, IsoConnectionHandle, IsoDataPacket, IsoLinkQuality, Result,
+    BigCreateSyncParameters, BigHandle, BigSource, BigSync, Bis, Cig, CigId, CigParameters, Cis,
+    CreateBigParameters, CreateCisParameters, IsoConnectionHandle, IsoDataPacket, IsoDataStream,
+    IsoLinkQuality, IsoManager, IsoManagerError, RemoveIsoDataPathDirection, Result,
+    SetupIsoDataPathParameters,
 };
 use crate::pdl::hci::HciStatus;
 
@@ -171,7 +180,7 @@ pub(super) struct CisState {
     // Active data subscribers for this stream.
     pub data_subscribers: Vec<mpsc::Sender<IsoDataPacket>>,
     // Reference to the internal CIS state for synchronization.
-    pub inner: Option<Weak<CisInner>>,
+    pub inner: Weak<CisInner>,
     // Sender used to notify listeners when the stream is disconnected externally.
     pub disconnected_sender: Option<broadcast::Sender<HciStatus>>,
 }
@@ -180,7 +189,7 @@ pub(super) struct CisState {
 #[derive(Default)]
 pub(super) struct CigState {
     // Reference to the internal CIG state for synchronization.
-    pub inner: Option<Weak<CigInner>>,
+    pub inner: Weak<CigInner>,
 }
 
 // Internal state and subscribers for a Broadcast Isochronous Stream (BIS).
@@ -194,7 +203,7 @@ pub(super) struct BisState {
 #[derive(Default)]
 pub(super) struct BigState {
     // Reference to the internal BIG state for synchronization.
-    pub inner: Option<Weak<BigInner>>,
+    pub inner: Weak<BigInner>,
     // Sender used to notify listeners when the stream is lost externally.
     pub lost_sender: Option<broadcast::Sender<HciStatus>>,
 }
@@ -205,6 +214,8 @@ pub(super) struct BigState {
 pub(super) struct CisInner {
     // CIS connection handle.
     pub conn_handle: IsoConnectionHandle,
+    // Weak reference to the manager to avoid circular dependencies.
+    pub manager: Weak<IsoManagerImpl>,
     // Whether the stream has been terminated.
     pub terminated: AtomicBool,
     // Broadcast sender to notify asynchronous listeners of disconnection.
@@ -213,18 +224,61 @@ pub(super) struct CisInner {
     pub disconnect_reason: Mutex<Option<HciStatus>>,
 }
 
+impl Drop for CisInner {
+    fn drop(&mut self) {
+        if self.terminated.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let Some(manager) = self.manager.upgrade() else {
+            return;
+        };
+        let conn_handle = self.conn_handle;
+        spawn(async move {
+            info!("drop: cis_conn_handle: {}", conn_handle);
+            let _ = manager
+                .disconnect_cis_internal(conn_handle, HciStatus::RemoteUserTerminatedConnection)
+                .await;
+        });
+    }
+}
 #[derive(Debug)]
 pub(super) struct CigInner {
     // CIG identifier.
     pub cig_id: CigId,
+    // Weak reference to the manager.
+    pub manager: Weak<IsoManagerImpl>,
+    // The active CIS connections belonging to this group.
+    pub cis_connections: Mutex<Vec<CisImpl>>,
     // Whether the group has been terminated.
     pub terminated: AtomicBool,
+}
+
+impl Drop for CigInner {
+    fn drop(&mut self) {
+        if self.terminated.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let Some(manager) = self.manager.upgrade() else {
+            return;
+        };
+        let cig_id = self.cig_id;
+        let cis_connections = self.cis_connections.lock().unwrap().drain(..).collect::<Vec<_>>();
+        spawn(async move {
+            info!("drop: cig_id: {}", cig_id);
+            drop(cis_connections); // Triggers Drop for each CIS.
+            let _ = manager.remove_cig_internal(cig_id, true).await;
+        });
+    }
 }
 
 #[derive(Debug)]
 pub(super) struct BigInner {
     // BIG handle.
     pub big_handle: BigHandle,
+    // Weak reference to the manager.
+    pub manager: Weak<IsoManagerImpl>,
+    // The active BIS connections belonging to this group.
+    pub bis_connections: Vec<BisImpl>,
     // Whether the group has been terminated.
     pub terminated: Arc<AtomicBool>,
     // Broadcast sender to notify asynchronous listeners when the group is lost.
@@ -233,6 +287,29 @@ pub(super) struct BigInner {
     pub lost_reason: Mutex<Option<HciStatus>>,
     // Whether this BIG is a source or a sync.
     pub is_source: bool,
+}
+
+impl Drop for BigInner {
+    fn drop(&mut self) {
+        if self.terminated.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let Some(manager) = self.manager.upgrade() else {
+            return;
+        };
+        let big_handle = self.big_handle;
+        let is_source = self.is_source;
+        spawn(async move {
+            info!("drop: big_handle: {}", big_handle);
+            if is_source {
+                let _ = manager
+                    .terminate_big_internal(big_handle, HciStatus::RemoteUserTerminatedConnection)
+                    .await;
+            } else {
+                let _ = manager.big_terminate_sync_internal(big_handle).await;
+            }
+        });
+    }
 }
 
 // Registry for tracking pending requests and active event subscribers.
@@ -251,6 +328,17 @@ pub(super) struct IsoRegistry {
 }
 
 impl IsoRegistry {
+    pub fn allocate_cid_id(&self) -> Result<u8> {
+        // IDs range from 0x00 to 0xEF per Bluetooth specification.
+        (0..=0xEF)
+            .map(|id| id as u8)
+            .find(|&id| {
+                !self.cigs.contains_key(&CigId::from_masked(id))
+                    && !self.bigs.contains_key(&BigHandle::from_masked(id))
+            })
+            .ok_or(IsoManagerError::OutOfResources)
+    }
+
     pub fn dispatch_cis_data(
         &mut self,
         cis_conn_handle: IsoConnectionHandle,
@@ -304,7 +392,7 @@ impl IsoRegistry {
             return;
         };
 
-        let Some(inner) = state.inner.and_then(|weak_inner| weak_inner.upgrade()) else {
+        let Some(inner) = state.inner.upgrade() else {
             return;
         };
 
@@ -321,7 +409,7 @@ impl IsoRegistry {
             return;
         };
 
-        let Some(inner) = state.inner.and_then(|weak_inner| weak_inner.upgrade()) else {
+        let Some(inner) = state.inner.upgrade() else {
             return;
         };
 
@@ -331,5 +419,1008 @@ impl IsoRegistry {
                 let _ = sender.send(reason);
             }
         }
+    }
+}
+
+/// Concrete implementation of a CIS resource.
+#[derive(Clone, Debug)]
+pub struct CisImpl(Arc<CisInner>);
+
+impl IsoDataStream for CisImpl {
+    type DataStream = ReceiverStream<IsoDataPacket>;
+
+    fn conn_handle(&self) -> IsoConnectionHandle {
+        self.0.conn_handle
+    }
+
+    fn write(&self, data: &[u8]) {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return;
+        }
+        if let Some(manager) = self.0.manager.upgrade() {
+            manager.send_iso_data_internal(self.0.conn_handle, data);
+        }
+    }
+
+    fn read(&self) -> Self::DataStream {
+        if let Some(manager) = self.0.manager.upgrade() {
+            manager.subscribe_cis_data(self.0.conn_handle)
+        } else {
+            let (_, receiver) = mpsc::channel(1);
+            ReceiverStream::new(receiver)
+        }
+    }
+
+    async fn setup_iso_data_path(&self, path_params: SetupIsoDataPathParameters) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("setup_iso_data_path: cis_conn_handle: {}", self.0.conn_handle);
+        manager.setup_iso_data_path_internal(self.0.conn_handle, path_params).await
+    }
+
+    async fn remove_iso_data_path(&self, data_path_dir: RemoveIsoDataPathDirection) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("remove_iso_data_path: cis_conn_handle: {}", self.0.conn_handle);
+        manager.remove_iso_data_path_internal(self.0.conn_handle, data_path_dir).await
+    }
+}
+
+impl Cis for CisImpl {
+    async fn disconnect(&self, reason: HciStatus) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("disconnect: cis_conn_handle: {}", self.0.conn_handle);
+        let result = manager.disconnect_cis_internal(self.0.conn_handle, reason).await;
+        if result.is_ok() {
+            self.0.terminated.store(true, Ordering::SeqCst);
+        }
+        result
+    }
+
+    async fn read_iso_link_quality(&self) -> Result<IsoLinkQuality> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("read_iso_link_quality: cis_conn_handle: {}", self.0.conn_handle);
+        manager.read_iso_link_quality_internal(self.0.conn_handle).await
+    }
+
+    async fn on_disconnected(&self) -> HciStatus {
+        let mut receiver = self.0.disconnected_sender.subscribe();
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return self.0.disconnect_reason.lock().unwrap().unwrap_or(HciStatus::StatusUnknown);
+        }
+        match receiver.recv().await {
+            Ok(reason) => {
+                *self.0.disconnect_reason.lock().unwrap() = Some(reason);
+                reason
+            }
+            Err(_) => HciStatus::StatusUnknown,
+        }
+    }
+}
+
+/// Concrete implementation of a CIG resource.
+#[derive(Clone, Debug)]
+pub struct CigImpl(Arc<CigInner>);
+
+impl Cig for CigImpl {
+    type Cis = CisImpl;
+
+    fn cig_id(&self) -> CigId {
+        self.0.cig_id
+    }
+
+    fn cis_connections(&self) -> Vec<Self::Cis> {
+        let cis_list = self.0.cis_connections.lock().unwrap().clone();
+        info!("cis_connections: cig_id: {}, count: {}", self.0.cig_id, cis_list.len());
+        cis_list
+    }
+
+    fn get_cis_connection(&self, cis_conn_handle: IsoConnectionHandle) -> Option<Self::Cis> {
+        self.0
+            .cis_connections
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|cis_connection| cis_connection.conn_handle() == cis_conn_handle)
+            .cloned()
+    }
+
+    async fn reconfigure(&self, params: CigParameters) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("reconfigure: cig_id: {}", self.0.cig_id);
+        let _event = manager.reconfigure_cig_internal(self.0.cig_id, params).await?;
+        Ok(())
+    }
+
+    async fn remove(&self, force: bool) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("remove: cig_id: {}", self.0.cig_id);
+        let result = manager.remove_cig_internal(self.0.cig_id, force).await;
+        if result.is_ok() {
+            self.0.terminated.store(true, Ordering::SeqCst);
+        }
+        result
+    }
+
+    async fn create_cis(&self, conn_params: CreateCisParameters) -> Result<Vec<Self::Cis>> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!(
+            "create_cis: cig_id: {}, count: {}",
+            self.0.cig_id,
+            conn_params.conn_handle_pairs.len()
+        );
+        let events = manager.create_cis_internal(conn_params).await?;
+        let mut cis_list = self.0.cis_connections.lock().unwrap();
+        let mut result = Vec::new();
+        for event in events {
+            let (sender, _) = broadcast::channel(1);
+            let cis_inner = Arc::new(CisInner {
+                conn_handle: event.cis_conn_handle,
+                manager: self.0.manager.clone(),
+                terminated: AtomicBool::new(false),
+                disconnected_sender: sender.clone(),
+                disconnect_reason: Mutex::new(None),
+            });
+            {
+                let mut registry = manager.iso_registry.lock().unwrap();
+                registry.cis.insert(
+                    event.cis_conn_handle,
+                    CisState {
+                        data_subscribers: Vec::new(),
+                        inner: Arc::downgrade(&cis_inner),
+                        disconnected_sender: Some(sender),
+                    },
+                );
+            }
+            let cis = CisImpl(cis_inner);
+            cis_list.push(cis.clone());
+            result.push(cis);
+        }
+        Ok(result)
+    }
+}
+
+/// Concrete implementation of a BIS resource.
+///
+/// Note: BisImpl does not use the `Arc<Inner>` pattern because BIS handles are managed
+/// collectively by their parent BIG. Unlike CIS, individual BIS do not have independent
+/// HCI disconnection commands or complex RAII state that needs to be synchronized
+/// across clones. Its lifecycle is effectively tied to the parent BIG's termination flag.
+#[derive(Clone, Debug)]
+pub struct BisImpl {
+    conn_handle: IsoConnectionHandle,
+    manager: Weak<IsoManagerImpl>,
+    terminated: Arc<AtomicBool>,
+}
+
+impl IsoDataStream for BisImpl {
+    type DataStream = ReceiverStream<IsoDataPacket>;
+    fn conn_handle(&self) -> IsoConnectionHandle {
+        self.conn_handle
+    }
+
+    fn write(&self, data: &[u8]) {
+        if self.terminated.load(Ordering::SeqCst) {
+            return;
+        }
+        if let Some(manager) = self.manager.upgrade() {
+            manager.send_iso_data_internal(self.conn_handle, data);
+        }
+    }
+
+    fn read(&self) -> Self::DataStream {
+        if let Some(manager) = self.manager.upgrade() {
+            manager.subscribe_bis_data(self.conn_handle)
+        } else {
+            let (_, receiver) = mpsc::channel(1);
+            ReceiverStream::new(receiver)
+        }
+    }
+
+    async fn setup_iso_data_path(&self, path_params: SetupIsoDataPathParameters) -> Result<()> {
+        if self.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("setup_iso_data_path: bis_conn_handle: {}", self.conn_handle);
+        manager.setup_iso_data_path_internal(self.conn_handle, path_params).await
+    }
+
+    async fn remove_iso_data_path(&self, data_path_dir: RemoveIsoDataPathDirection) -> Result<()> {
+        if self.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("remove_iso_data_path: bis_conn_handle: {}", self.conn_handle);
+        manager.remove_iso_data_path_internal(self.conn_handle, data_path_dir).await
+    }
+}
+
+impl Bis for BisImpl {}
+
+/// Concrete implementation of a BIG Source resource.
+#[derive(Clone, Debug)]
+pub struct BigSourceImpl(Arc<BigInner>);
+
+impl BigSource for BigSourceImpl {
+    type Bis = BisImpl;
+
+    fn big_handle(&self) -> BigHandle {
+        self.0.big_handle
+    }
+
+    fn bis_connections(&self) -> Vec<Self::Bis> {
+        info!(
+            "bis_connections: big_handle: {}, count: {}",
+            self.0.big_handle,
+            self.0.bis_connections.len()
+        );
+        self.0.bis_connections.clone()
+    }
+
+    fn get_bis_connection(&self, bis_conn_handle: IsoConnectionHandle) -> Option<Self::Bis> {
+        self.0
+            .bis_connections
+            .iter()
+            .find(|bis_connection| bis_connection.conn_handle() == bis_conn_handle)
+            .cloned()
+    }
+
+    async fn terminate(&self, reason: HciStatus) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("terminate: big_handle: {}, reason: {:?}", self.0.big_handle, reason);
+        let result = manager.terminate_big_internal(self.0.big_handle, reason).await;
+        if result.is_ok() {
+            self.0.terminated.store(true, Ordering::SeqCst);
+        }
+        result
+    }
+}
+
+/// Concrete implementation of a BIG Sync resource.
+#[derive(Clone, Debug)]
+pub struct BigSyncImpl(Arc<BigInner>);
+
+impl BigSync for BigSyncImpl {
+    type Bis = BisImpl;
+
+    fn big_handle(&self) -> BigHandle {
+        self.0.big_handle
+    }
+
+    fn bis_connections(&self) -> Vec<Self::Bis> {
+        info!(
+            "bis_connections: big_handle: {}, count: {}",
+            self.0.big_handle,
+            self.0.bis_connections.len()
+        );
+        self.0.bis_connections.clone()
+    }
+
+    fn get_bis_connection(&self, bis_conn_handle: IsoConnectionHandle) -> Option<Self::Bis> {
+        self.0
+            .bis_connections
+            .iter()
+            .find(|bis_connection| bis_connection.conn_handle() == bis_conn_handle)
+            .cloned()
+    }
+
+    async fn terminate(&self) -> Result<()> {
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return Err(IsoManagerError::Disconnected);
+        }
+        let manager = self.0.manager.upgrade().ok_or(IsoManagerError::Disconnected)?;
+        info!("terminate: big_handle: {}", self.0.big_handle);
+        let result = manager.big_terminate_sync_internal(self.0.big_handle).await;
+        if result.is_ok() {
+            self.0.terminated.store(true, Ordering::SeqCst);
+        }
+        result
+    }
+
+    async fn on_lost(&self) -> HciStatus {
+        let mut receiver = self.0.lost_sender.subscribe();
+        if self.0.terminated.load(Ordering::SeqCst) {
+            return self.0.lost_reason.lock().unwrap().unwrap_or(HciStatus::StatusUnknown);
+        }
+        match receiver.recv().await {
+            Ok(reason) => {
+                *self.0.lost_reason.lock().unwrap() = Some(reason);
+                reason
+            }
+            Err(_) => HciStatus::StatusUnknown,
+        }
+    }
+}
+
+/// Concrete implementation of IsoManager using the FFI shim.
+pub struct IsoManagerImpl {
+    shim: Mutex<UniquePtr<iso_ffi::IsoManagerShim>>,
+    iso_registry: Arc<Mutex<IsoRegistry>>,
+}
+
+impl fmt::Debug for IsoManagerImpl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("IsoManagerImpl").finish()
+    }
+}
+
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(2);
+const HCI_TIMEOUT_UNIT_MS: u128 = 10;
+const MPSC_CHANNEL_BUFFER_SIZE: usize = 10;
+struct CisConfigs {
+    cis_id: Vec<u8>,
+    max_sdu_c_to_p: Vec<u16>,
+    max_sdu_p_to_c: Vec<u16>,
+    phy_c_to_p: Vec<u8>,
+    phy_p_to_c: Vec<u8>,
+    rtn_c_to_p: Vec<u8>,
+    rtn_p_to_c: Vec<u8>,
+}
+
+impl IsoManagerImpl {
+    /// Creates a new `IsoManagerImpl` instance wrapped in an `Arc`.
+    pub fn new() -> Arc<Self> {
+        let shim = Mutex::new(iso_ffi::get_iso_manager_shim());
+        let iso_registry = Arc::new(Mutex::new(IsoRegistry::default()));
+        let cig_cb = Box::new(IsoCigCallbacks::new(iso_registry.clone()));
+        let big_cb = Box::new(IsoBigCallbacks::new(iso_registry.clone()));
+        shim.lock().unwrap().pin_mut().register_callbacks_native(cig_cb, big_cb);
+        Arc::new(Self { shim, iso_registry })
+    }
+
+    fn extract_cis_configs(&self, params: &CigParameters) -> CisConfigs {
+        let count = params.cis_configurations.len();
+        let mut cis_id = Vec::with_capacity(count);
+        let mut max_sdu_c_to_p = Vec::with_capacity(count);
+        let mut max_sdu_p_to_c = Vec::with_capacity(count);
+        let mut phy_c_to_p = Vec::with_capacity(count);
+        let mut phy_p_to_c = Vec::with_capacity(count);
+        let mut rtn_c_to_p = Vec::with_capacity(count);
+        let mut rtn_p_to_c = Vec::with_capacity(count);
+
+        for cis_cfg in &params.cis_configurations {
+            cis_id.push(cis_cfg.cis_id.into());
+            max_sdu_c_to_p.push(cis_cfg.max_sdu_c_to_p);
+            max_sdu_p_to_c.push(cis_cfg.max_sdu_p_to_c);
+            phy_c_to_p.push(cis_cfg.phy_c_to_p);
+            phy_p_to_c.push(cis_cfg.phy_p_to_c);
+            rtn_c_to_p.push(cis_cfg.rtn_c_to_p);
+            rtn_p_to_c.push(cis_cfg.rtn_p_to_c);
+        }
+        CisConfigs {
+            cis_id,
+            max_sdu_c_to_p,
+            max_sdu_p_to_c,
+            phy_c_to_p,
+            phy_p_to_c,
+            rtn_c_to_p,
+            rtn_p_to_c,
+        }
+    }
+
+    async fn create_cig_internal(
+        &self,
+        cig_id: CigId,
+        params: CigParameters,
+    ) -> Result<CreateCigCmplEvent> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut reg = self.iso_registry.lock().unwrap();
+            if reg.pending_requests.create_cig.contains_key(&cig_id) {
+                warn!("CIG create for {} already in progress", cig_id);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            reg.pending_requests.create_cig.insert(cig_id, sender);
+        }
+
+        let cis_params = self.extract_cis_configs(&params);
+        self.shim.lock().unwrap().pin_mut().create_cig(
+            cig_id.into(),
+            params.sdu_interval_c_to_p,
+            params.sdu_interval_p_to_c,
+            params.worse_cast_sca,
+            params.packing,
+            params.framing,
+            params.max_transport_latency_c_to_p,
+            params.max_transport_latency_p_to_c,
+            cis_params.cis_id,
+            cis_params.max_sdu_c_to_p,
+            cis_params.max_sdu_p_to_c,
+            cis_params.phy_c_to_p,
+            cis_params.phy_p_to_c,
+            cis_params.rtn_c_to_p,
+            cis_params.rtn_p_to_c,
+        );
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.create_cig.remove(&cig_id);
+
+        if let Err(error) = &result {
+            error!("create_cig failed: cig_id: {}, error: {:?}", cig_id, error);
+        }
+        result
+    }
+
+    async fn reconfigure_cig_internal(
+        &self,
+        cig_id: CigId,
+        params: CigParameters,
+    ) -> Result<CreateCigCmplEvent> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut reg = self.iso_registry.lock().unwrap();
+            if reg.pending_requests.create_cig.contains_key(&cig_id) {
+                warn!("CIG reconfigure for {} already in progress", cig_id);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            reg.pending_requests.create_cig.insert(cig_id, sender);
+        }
+
+        let cis_params = self.extract_cis_configs(&params);
+        self.shim.lock().unwrap().pin_mut().reconfigure_cig(
+            cig_id.into(),
+            params.sdu_interval_c_to_p,
+            params.sdu_interval_p_to_c,
+            params.worse_cast_sca,
+            params.packing,
+            params.framing,
+            params.max_transport_latency_c_to_p,
+            params.max_transport_latency_p_to_c,
+            cis_params.cis_id,
+            cis_params.max_sdu_c_to_p,
+            cis_params.max_sdu_p_to_c,
+            cis_params.phy_c_to_p,
+            cis_params.phy_p_to_c,
+            cis_params.rtn_c_to_p,
+            cis_params.rtn_p_to_c,
+        );
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.create_cig.remove(&cig_id);
+
+        if let Err(error) = &result {
+            error!("reconfigure_cig failed: cig_id: {}, error: {:?}", cig_id, error);
+        }
+        result
+    }
+
+    async fn remove_cig_internal(&self, cig_id: CigId, force: bool) -> Result<()> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.remove_cig.contains_key(&cig_id) {
+                warn!("CIG remove request for cig_id {} is already in progress", cig_id);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.remove_cig.insert(cig_id, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().remove_cig(cig_id.into(), force);
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.remove_cig.remove(&cig_id);
+
+        if let Err(error) = &result {
+            error!("remove_cig failed: cig_id: {}, error: {:?}", cig_id, error);
+        }
+        result
+    }
+
+    async fn create_cis_internal(
+        &self,
+        conn_params: CreateCisParameters,
+    ) -> Result<Vec<CisEstablishedEvent>> {
+        let mut receivers = Vec::new();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            for conn_pair in &conn_params.conn_handle_pairs {
+                if iso_registry.pending_requests.create_cis.contains_key(&conn_pair.0) {
+                    warn!(
+                        "CIS establishment for cis_conn_handle {} is already in progress",
+                        conn_pair.0
+                    );
+                    // Cleanup previously inserted senders in this batch.
+                    for pair_to_cleanup in &conn_params.conn_handle_pairs {
+                        iso_registry.pending_requests.create_cis.remove(&pair_to_cleanup.0);
+                    }
+                    return Err(IsoManagerError::AlreadyInProgress);
+                }
+                let (sender, receiver) = oneshot::channel();
+                iso_registry.pending_requests.create_cis.insert(conn_pair.0, sender);
+                receivers.push(receiver);
+            }
+        }
+
+        let cis_conn_handles: Vec<u16> =
+            conn_params.conn_handle_pairs.iter().map(|conn_pair| conn_pair.0.into()).collect();
+        let acl_conn_handles: Vec<u16> =
+            conn_params.conn_handle_pairs.iter().map(|conn_pair| conn_pair.1.into()).collect();
+
+        self.shim.lock().unwrap().pin_mut().create_cis(cis_conn_handles, acl_conn_handles);
+
+        let mut results: Vec<CisEstablishedEvent> = Vec::new();
+        for receiver in receivers {
+            match timeout(DEFAULT_TIMEOUT, receiver).await {
+                Ok(Ok(inner_res)) => {
+                    results.push(inner_res?);
+                }
+                Ok(Err(_)) => return Err(IsoManagerError::ChannelClosed),
+                Err(_) => return Err(IsoManagerError::Timeout),
+            }
+        }
+
+        Ok(results)
+    }
+
+    async fn disconnect_cis_internal(
+        &self,
+        cis_conn_handle: IsoConnectionHandle,
+        reason: HciStatus,
+    ) -> Result<()> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.disconnect_cis.contains_key(&cis_conn_handle) {
+                warn!(
+                    "CIS disconnection for cis_conn_handle {} is already in progress",
+                    cis_conn_handle
+                );
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.disconnect_cis.insert(cis_conn_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().disconnect_cis(cis_conn_handle.into(), reason.into());
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(_)) => Ok(()),
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.disconnect_cis.remove(&cis_conn_handle);
+
+        if let Err(error) = &result {
+            error!(
+                "disconnect_cis failed: cis_conn_handle: {}, error: {:?}",
+                cis_conn_handle, error
+            );
+        }
+        result
+    }
+    async fn create_big_internal(
+        &self,
+        big_handle: BigHandle,
+        big_params: CreateBigParameters,
+    ) -> Result<CreateBigCmplEvent> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.create_big.contains_key(&big_handle) {
+                warn!("BIG create request for big_handle {} is already in progress", big_handle);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.create_big.insert(big_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().create_big(
+            big_handle.into(),
+            big_params.advertising_handle.into(),
+            big_params.num_bis,
+            big_params.sdu_itv,
+            big_params.max_sdu_size,
+            big_params.max_transport_latency,
+            big_params.rtn,
+            big_params.phy,
+            big_params.packing,
+            big_params.framing,
+            big_params.encryption,
+            big_params.broadcast_code,
+        );
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.create_big.remove(&big_handle);
+
+        if let Err(error) = &result {
+            error!("create_big failed: big_handle: {}, error: {:?}", big_handle, error);
+        }
+        result
+    }
+
+    async fn terminate_big_internal(&self, big_handle: BigHandle, reason: HciStatus) -> Result<()> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.terminate_big.contains_key(&big_handle) {
+                warn!("BIG terminate request for big_handle {} is already in progress", big_handle);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.terminate_big.insert(big_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().terminate_big(big_handle.into(), reason.into());
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.terminate_big.remove(&big_handle);
+
+        if let Err(error) = &result {
+            error!("terminate_big failed: big_handle: {}, error: {:?}", big_handle, error);
+        }
+        result
+    }
+
+    async fn big_create_sync_internal(
+        &self,
+        big_handle: BigHandle,
+        sync_params: BigCreateSyncParameters,
+    ) -> Result<BigSyncEstablishedEvent> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.big_create_sync.contains_key(&big_handle) {
+                warn!(
+                    "BIG sync create request for big_handle {} is already in progress",
+                    big_handle
+                );
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.big_create_sync.insert(big_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().big_create_sync(
+            big_handle.into(),
+            sync_params.sync_handle.into(),
+            sync_params.encryption,
+            sync_params.broadcast_code,
+            sync_params.mse,
+            (sync_params.big_sync_timeout.as_millis() / HCI_TIMEOUT_UNIT_MS) as u16,
+            sync_params.bis_indices,
+        );
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.big_create_sync.remove(&big_handle);
+
+        if let Err(error) = &result {
+            error!("big_create_sync failed: big_handle: {}, error: {:?}", big_handle, error);
+        }
+        result
+    }
+
+    async fn big_terminate_sync_internal(&self, big_handle: BigHandle) -> Result<()> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.big_terminate_sync.contains_key(&big_handle) {
+                warn!(
+                    "BIG sync terminate request for big_handle {} is already in progress",
+                    big_handle
+                );
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.big_terminate_sync.insert(big_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().big_terminate_sync(big_handle.into());
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.big_terminate_sync.remove(&big_handle);
+
+        if let Err(error) = &result {
+            error!("big_terminate_sync failed: big_handle: {}, error: {:?}", big_handle, error);
+        }
+        result
+    }
+
+    async fn setup_iso_data_path_internal(
+        &self,
+        conn_handle: IsoConnectionHandle,
+        path_params: SetupIsoDataPathParameters,
+    ) -> Result<()> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.setup_iso_data_path.contains_key(&conn_handle) {
+                warn!("Setup data path for conn_handle {} is already in progress", conn_handle);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.setup_iso_data_path.insert(conn_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().setup_iso_data_path(
+            conn_handle.into(),
+            path_params.data_path_dir as u8,
+            path_params.data_path_id as u8,
+            path_params.codec_id.coding_format,
+            path_params.codec_id.company_id,
+            path_params.codec_id.vendor_specific_codec_id,
+            path_params.controller_delay.as_micros() as u32,
+            path_params.codec_configuration,
+        );
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry.lock().unwrap().pending_requests.setup_iso_data_path.remove(&conn_handle);
+
+        if let Err(error) = &result {
+            error!("setup_iso_data_path failed: conn_handle: {}, error: {:?}", conn_handle, error);
+        }
+        result
+    }
+
+    async fn remove_iso_data_path_internal(
+        &self,
+        conn_handle: IsoConnectionHandle,
+        data_path_dir: RemoveIsoDataPathDirection,
+    ) -> Result<()> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.remove_iso_data_path.contains_key(&conn_handle) {
+                warn!("Remove data path for conn_handle {} is already in progress", conn_handle);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.remove_iso_data_path.insert(conn_handle, sender);
+        }
+
+        self.shim
+            .lock()
+            .unwrap()
+            .pin_mut()
+            .remove_iso_data_path(conn_handle.into(), data_path_dir as u8);
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .remove_iso_data_path
+            .remove(&conn_handle);
+
+        if let Err(error) = &result {
+            error!(
+                "remove_iso_data_path failed: conn_handle: {}, data_path_dir: {:?}, \
+                error: {:?}",
+                conn_handle, data_path_dir, error
+            );
+        }
+
+        result
+    }
+
+    fn send_iso_data_internal(&self, conn_handle: IsoConnectionHandle, data: &[u8]) {
+        self.shim.lock().unwrap().pin_mut().send_iso_data(conn_handle.into(), data);
+    }
+
+    async fn read_iso_link_quality_internal(
+        &self,
+        conn_handle: IsoConnectionHandle,
+    ) -> Result<IsoLinkQuality> {
+        let (sender, receiver) = oneshot::channel();
+        {
+            let mut iso_registry = self.iso_registry.lock().unwrap();
+            if iso_registry.pending_requests.read_iso_link_quality.contains_key(&conn_handle) {
+                warn!("Link quality read for conn_handle {} is already in progress", conn_handle);
+                return Err(IsoManagerError::AlreadyInProgress);
+            }
+            iso_registry.pending_requests.read_iso_link_quality.insert(conn_handle, sender);
+        }
+
+        self.shim.lock().unwrap().pin_mut().read_iso_link_quality(conn_handle.into());
+
+        let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
+            Ok(Ok(res)) => res,
+            Ok(Err(_)) => Err(IsoManagerError::ChannelClosed),
+            Err(_) => Err(IsoManagerError::Timeout),
+        };
+
+        self.iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .read_iso_link_quality
+            .remove(&conn_handle);
+
+        if let Err(error) = &result {
+            error!(
+                "read_iso_link_quality failed: conn_handle: {}, error: {:?}",
+                conn_handle, error
+            );
+        }
+        result
+    }
+
+    fn subscribe_cis_data(
+        &self,
+        cis_conn_handle: IsoConnectionHandle,
+    ) -> ReceiverStream<IsoDataPacket> {
+        let (sender, receiver) = mpsc::channel(MPSC_CHANNEL_BUFFER_SIZE);
+        self.iso_registry
+            .lock()
+            .unwrap()
+            .cis
+            .entry(cis_conn_handle)
+            .or_default()
+            .data_subscribers
+            .push(sender);
+        ReceiverStream::new(receiver)
+    }
+
+    fn subscribe_bis_data(
+        &self,
+        bis_conn_handle: IsoConnectionHandle,
+    ) -> ReceiverStream<IsoDataPacket> {
+        let (sender, receiver) = mpsc::channel(MPSC_CHANNEL_BUFFER_SIZE);
+        self.iso_registry
+            .lock()
+            .unwrap()
+            .bis
+            .entry(bis_conn_handle)
+            .or_default()
+            .data_subscribers
+            .push(sender);
+        ReceiverStream::new(receiver)
+    }
+}
+
+impl IsoManager for Arc<IsoManagerImpl> {
+    type Cig = CigImpl;
+    type BigSource = BigSourceImpl;
+    type BigSync = BigSyncImpl;
+
+    async fn create_cig(&self, params: CigParameters) -> Result<Self::Cig> {
+        let cig_id = CigId::from_masked(self.iso_registry.lock().unwrap().allocate_cid_id()?);
+        info!("create_cig: cig_id: {}", cig_id);
+        let event = self.create_cig_internal(cig_id, params).await?;
+        let cig_inner = Arc::new(CigInner {
+            cig_id: event.cig_id,
+            manager: Arc::downgrade(self),
+            cis_connections: Mutex::new(Vec::new()),
+            terminated: AtomicBool::new(false),
+        });
+        self.iso_registry
+            .lock()
+            .unwrap()
+            .cigs
+            .insert(event.cig_id, CigState { inner: Arc::downgrade(&cig_inner) });
+
+        Ok(CigImpl(cig_inner))
+    }
+
+    async fn create_big(&self, params: CreateBigParameters) -> Result<Self::BigSource> {
+        let big_handle =
+            BigHandle::from_masked(self.iso_registry.lock().unwrap().allocate_cid_id()?);
+        info!("create_big: big_handle: {}", big_handle);
+        let event = self.create_big_internal(big_handle, params).await?;
+        let (sender, _) = broadcast::channel(1);
+        let terminated = Arc::new(AtomicBool::new(false));
+        let bis_connections = event
+            .bis_conn_handles
+            .iter()
+            .map(|&conn_handle| BisImpl {
+                conn_handle,
+                manager: Arc::downgrade(self),
+                terminated: terminated.clone(),
+            })
+            .collect();
+
+        let big_inner = Arc::new(BigInner {
+            big_handle: event.big_handle,
+            manager: Arc::downgrade(self),
+            bis_connections,
+            terminated,
+            lost_sender: sender,
+            lost_reason: Mutex::new(None),
+            is_source: true,
+        });
+
+        self.iso_registry.lock().unwrap().bigs.insert(
+            event.big_handle,
+            BigState { inner: Arc::downgrade(&big_inner), lost_sender: None },
+        );
+        Ok(BigSourceImpl(big_inner))
+    }
+
+    async fn big_create_sync(&self, params: BigCreateSyncParameters) -> Result<Self::BigSync> {
+        let big_handle =
+            BigHandle::from_masked(self.iso_registry.lock().unwrap().allocate_cid_id()?);
+        info!("big_create_sync: big_handle: {}", big_handle);
+        let event = self.big_create_sync_internal(big_handle, params).await?;
+        let (sender, _) = broadcast::channel(1);
+        let terminated = Arc::new(AtomicBool::new(false));
+        let bis_connections = event
+            .bis_conn_handles
+            .iter()
+            .map(|&conn_handle| BisImpl {
+                conn_handle,
+                manager: Arc::downgrade(self),
+                terminated: terminated.clone(),
+            })
+            .collect();
+
+        let big_inner = Arc::new(BigInner {
+            big_handle: event.big_handle,
+            manager: Arc::downgrade(self),
+            bis_connections,
+            terminated,
+            lost_sender: sender.clone(),
+            lost_reason: Mutex::new(None),
+            is_source: false,
+        });
+
+        {
+            let mut registry = self.iso_registry.lock().unwrap();
+            registry.bigs.insert(
+                event.big_handle,
+                BigState { inner: Arc::downgrade(&big_inner), lost_sender: Some(sender) },
+            );
+        }
+        Ok(BigSyncImpl(big_inner))
     }
 }

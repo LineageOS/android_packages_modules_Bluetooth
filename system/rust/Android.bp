@@ -85,7 +85,10 @@ rust_test {
         "libbluetooth_le_audio_rs_test_mocks",
         "libbluetooth_log",
         "libbluetooth_types",
+        "libbt-stack-mock",
         "libchrome",
+        "libgmock",
+        "libgtest",
         "liblog",
     ],
 }

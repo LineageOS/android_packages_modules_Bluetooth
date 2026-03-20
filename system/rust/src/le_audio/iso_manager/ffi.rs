@@ -746,11 +746,12 @@ mod test {
 
     use googletest::prelude::*;
     use std::sync::atomic::AtomicBool;
+    use std::sync::Weak;
     use std::time::Duration;
     use tokio::sync::{broadcast, mpsc, oneshot};
     use tokio::time::timeout;
 
-    use crate::le_audio::iso_manager::manager::{BigInner, BigState, BisState, CisState};
+    use crate::le_audio::iso_manager::manager::{BigInner, BigState, BisState, CisInner, CisState};
     use crate::le_audio::iso_manager::traits::IsoDataPacket;
 
     const TEST_TIMEOUT: Duration = Duration::from_secs(1);
@@ -905,10 +906,21 @@ mod test {
         let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
 
         let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+        let cis_inner = Arc::new(CisInner {
+            conn_handle: cis_conn_handle,
+            manager: Weak::new(),
+            terminated: AtomicBool::new(false),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: Mutex::new(None),
+        });
 
         iso_registry.lock().unwrap().cis.insert(
             cis_conn_handle,
-            CisState { data_subscribers: vec![subscriber_sender], ..Default::default() },
+            CisState {
+                data_subscribers: vec![subscriber_sender],
+                inner: Arc::downgrade(&cis_inner),
+                ..Default::default()
+            },
         );
 
         let data = vec![0x01, 0x02, 0x03, 0x04];
@@ -1150,6 +1162,8 @@ mod test {
         let (lost_sender, mut lost_receiver) = broadcast::channel(SUBSCRIBER_EVENT_BUFFER);
         let big_inner = Arc::new(BigInner {
             big_handle,
+            manager: Weak::new(),
+            bis_connections: vec![],
             terminated: Arc::new(AtomicBool::new(false)),
             lost_sender: lost_sender.clone(),
             lost_reason: Mutex::new(None),
@@ -1158,7 +1172,7 @@ mod test {
 
         iso_registry.lock().unwrap().bigs.insert(
             big_handle,
-            BigState { lost_sender: Some(lost_sender), inner: Some(Arc::downgrade(&big_inner)) },
+            BigState { lost_sender: Some(lost_sender), inner: Arc::downgrade(&big_inner) },
         );
 
         callbacks

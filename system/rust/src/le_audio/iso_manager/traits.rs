@@ -243,9 +243,27 @@ pub type Result<T> = std::result::Result<T, IsoManagerError>;
 /// Error type for ISO Manager operations.
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum IsoManagerError {
+    /// Operation timed out.
+    #[error("operation timed out")]
+    Timeout,
+    /// The resource is already disconnected or removed.
+    #[error("resource is disconnected")]
+    Disconnected,
+    /// A communication channel (oneshot/mpsc) was closed unexpectedly.
+    #[error("channel closed")]
+    ChannelClosed,
     /// HCI Error status code.
     #[error("HCI Error: {0:?}")]
     HciError(HciStatus),
+    /// No available IDs (CIG/BIG) or maximum connections reached.
+    #[error("out of resources")]
+    OutOfResources,
+    /// A similar request is already being processed.
+    #[error("already in progress")]
+    AlreadyInProgress,
+    /// Provided arguments are invalid.
+    #[error("invalid arguments")]
+    InvalidArgs,
 }
 
 /// ISO data streams interface.

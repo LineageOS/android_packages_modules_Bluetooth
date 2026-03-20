@@ -90,6 +90,8 @@ cc_library_static {
         "libbluetooth_log",
         "libbluetooth_types",
         "libchrome",
+        "libgmock",
+        "libgtest",
         "liblog",
     ],
 }
