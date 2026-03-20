@@ -644,8 +644,6 @@ void btif_a2dp_source_shutdown(std::promise<void> shutdown_complete_promise) {
     wakelock_release();
   }
 
-  bluetooth::audio::a2dp::cleanup();
-
   fixed_queue_free(btif_a2dp_source_cb.tx_audio_queue, nullptr);
   btif_a2dp_source_cb.tx_audio_queue = nullptr;
 
@@ -660,6 +658,8 @@ void btif_a2dp_source_cleanup(void) {
   // Make sure the source is shutdown
   std::promise<void> shutdown_complete_promise;
   btif_a2dp_source_shutdown(std::move(shutdown_complete_promise));
+
+  bluetooth::audio::a2dp::cleanup();
 
   // Exit the thread
   btif_a2dp_source_thread.ShutDown();
