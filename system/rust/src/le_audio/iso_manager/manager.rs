@@ -1435,7 +1435,8 @@ mod test {
     use tokio::time::{sleep, timeout};
 
     use crate::le_audio::iso_manager::traits::{
-        CigParameters, CodecId, DataPathDirection, DataPathId,
+        AclConnectionHandle, AdvertisingHandle, BigCreateSyncParameters, CigParameters, CodecId,
+        CreateBigParameters, CreateCisParameters, DataPathDirection, DataPathId,
     };
 
     const TEST_BUFFER_SIZE: usize = 10;
@@ -2171,5 +2172,350 @@ mod test {
         .await;
 
         expect_that!(result, ok(err(eq(&IsoManagerError::Disconnected))));
+    }
+
+    // --- IsoRegistry Tests ---
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_cis_data_reaches_subscriber() {
+        // Verify that ISO data packets are correctly delivered to CIS subscribers.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = IsoConnectionHandle::from_masked(1);
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(TEST_BUFFER_SIZE);
+        registry.cis.insert(
+            conn_handle,
+            CisState { data_subscribers: vec![subscriber_sender], ..Default::default() },
+        );
+
+        let time_stamp = Some(Duration::from_micros(1));
+        let seq_nb = 1;
+        let data = vec![0xAA];
+        let packet = IsoDataPacket { time_stamp, seq_nb, data: data.clone() };
+        registry.dispatch_cis_data(conn_handle, time_stamp, seq_nb, &data);
+
+        expect_that!(
+            timeout(DEFAULT_TIMEOUT, subscriber_receiver.recv()).await,
+            ok(some(eq(&packet)))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_cis_data_removes_dropped_subscribers() {
+        // Verify that the registry automatically cleans up CIS subscribers that have been dropped.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = IsoConnectionHandle::from_masked(1);
+
+        {
+            let (sender, _rx) = mpsc::channel(TEST_BUFFER_SIZE);
+            registry.cis.insert(
+                conn_handle,
+                CisState { data_subscribers: vec![sender], ..Default::default() },
+            );
+        }
+
+        let data = vec![];
+        registry.dispatch_cis_data(conn_handle, Some(Duration::from_micros(0)), 0, &data);
+
+        expect_that!(
+            registry.cis.get(&conn_handle).unwrap().data_subscribers.is_empty(),
+            is_true()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_bis_data_reaches_subscriber() {
+        // Verify that ISO data packets are correctly delivered to BIS subscribers.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = IsoConnectionHandle::from_masked(2);
+        let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(TEST_BUFFER_SIZE);
+        registry.bis.insert(conn_handle, BisState { data_subscribers: vec![subscriber_sender] });
+
+        let time_stamp = Some(Duration::from_micros(2));
+        let seq_nb = 2;
+        let data = vec![0xBB];
+        let packet = IsoDataPacket { time_stamp, seq_nb, data: data.clone() };
+        registry.dispatch_bis_data(conn_handle, time_stamp, seq_nb, &data);
+
+        expect_that!(
+            timeout(DEFAULT_TIMEOUT, subscriber_receiver.recv()).await,
+            ok(some(eq(&packet)))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_bis_data_removes_dropped_subscribers() {
+        // Verify that the registry automatically cleans up BIS subscribers that have been dropped.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = IsoConnectionHandle::from_masked(2);
+
+        {
+            let (sender, _rx) = mpsc::channel(TEST_BUFFER_SIZE);
+            registry.bis.insert(conn_handle, BisState { data_subscribers: vec![sender] });
+        }
+
+        let data = vec![];
+        registry.dispatch_bis_data(conn_handle, Some(Duration::from_micros(0)), 0, &data);
+
+        expect_that!(
+            registry.bis.get(&conn_handle).unwrap().data_subscribers.is_empty(),
+            is_true()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_cis_disconnected_cleans_up() {
+        // Verify that disconnection events mark the state as terminated and notify listeners.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = IsoConnectionHandle::from_masked(3);
+        let cis_inner = Arc::new(CisInner {
+            conn_handle,
+            manager: Weak::new(),
+            terminated: AtomicBool::new(false),
+            disconnected_sender: broadcast::channel(1).0,
+            disconnect_reason: std::sync::Mutex::new(None),
+        });
+        let (sender, mut receiver) = broadcast::channel(1);
+        registry.cis.insert(
+            conn_handle,
+            CisState {
+                data_subscribers: vec![],
+                inner: Arc::downgrade(&cis_inner),
+                disconnected_sender: Some(sender),
+            },
+        );
+
+        registry.dispatch_cis_disconnected(conn_handle, HciStatus::ConnectionTimeout);
+
+        expect_that!(registry.cis.contains_key(&conn_handle), is_false());
+        expect_that!(cis_inner.terminated.load(Ordering::SeqCst), is_true());
+        expect_that!(receiver.recv().await, ok(eq(&HciStatus::ConnectionTimeout)));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_big_sync_event_cleans_up() {
+        // Verify that BIG sync events notify listeners and remove the state from registry.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = BigHandle::from_masked(4);
+        let big_inner = Arc::new(BigInner {
+            big_handle: conn_handle,
+            manager: Weak::new(),
+            bis_connections: vec![],
+            terminated: Arc::new(AtomicBool::new(false)),
+            lost_sender: broadcast::channel(1).0,
+            lost_reason: Mutex::new(None),
+            is_source: false,
+        });
+        let (sender, mut receiver) = broadcast::channel(1);
+        registry.bigs.insert(
+            conn_handle,
+            BigState { inner: Arc::downgrade(&big_inner), lost_sender: Some(sender) },
+        );
+
+        registry.dispatch_big_sync_event(conn_handle, HciStatus::ConnectionFailedEstablishment);
+
+        expect_that!(registry.bigs.contains_key(&conn_handle), is_false());
+        expect_that!(big_inner.terminated.load(Ordering::SeqCst), is_true());
+        expect_that!(receiver.recv().await, ok(eq(&HciStatus::ConnectionFailedEstablishment)));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_registry_dispatch_data_to_multiple_subscribers() {
+        // Verify that ISO data is delivered to all active subscribers of the same stream.
+        let mut registry = IsoRegistry::default();
+        let conn_handle = IsoConnectionHandle::from_masked(1);
+        let (sender1, mut receiver1) = mpsc::channel(TEST_BUFFER_SIZE);
+        let (sender2, mut receiver2) = mpsc::channel(TEST_BUFFER_SIZE);
+
+        registry.cis.insert(
+            conn_handle,
+            CisState { data_subscribers: vec![sender1, sender2], ..Default::default() },
+        );
+
+        let time_stamp = Some(Duration::from_micros(100));
+        let seq_nb = 5;
+        let data = vec![0x11, 0x22];
+        let packet = IsoDataPacket { time_stamp, seq_nb, data: data.clone() };
+        registry.dispatch_cis_data(conn_handle, time_stamp, seq_nb, &data);
+
+        expect_that!(timeout(DEFAULT_TIMEOUT, receiver1.recv()).await, ok(some(eq(&packet))));
+        expect_that!(timeout(DEFAULT_TIMEOUT, receiver2.recv()).await, ok(some(eq(&packet))));
+    }
+
+    // --- IsoManagerImpl Logic Tests ---
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_create_cig_fails_if_already_pending() {
+        // Verify that starting a CIG creation fails if a request with the same ID is already
+        // pending.
+        let manager = IsoManagerImpl::new();
+        // The first allocate_id() will likely return 0.
+        let id = CigId::from_masked(0);
+        let (sender, _) = oneshot::channel();
+        manager.iso_registry.lock().unwrap().pending_requests.create_cig.insert(id, sender);
+
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            manager.create_cig(CigParameters {
+                sdu_interval_c_to_p: 0,
+                sdu_interval_p_to_c: 0,
+                worse_cast_sca: 0,
+                packing: false,
+                framing: false,
+                max_transport_latency_c_to_p: 0,
+                max_transport_latency_p_to_c: 0,
+                cis_configurations: vec![],
+            }),
+        )
+        .await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::AlreadyInProgress))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_create_big_fails_if_already_pending() {
+        // Verify that starting a BIG creation fails if a request with the same handle is already
+        // pending.
+        let manager = IsoManagerImpl::new();
+        // The first allocate_id() will likely return 0.
+        let conn_handle = BigHandle::from_masked(0);
+        let (sender, _) = oneshot::channel();
+        manager
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .create_big
+            .insert(conn_handle, sender);
+
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            manager.create_big(CreateBigParameters {
+                advertising_handle: AdvertisingHandle::from_masked(0),
+                num_bis: 1,
+                sdu_itv: 10000,
+                max_sdu_size: 100,
+                max_transport_latency: 10,
+                rtn: 2,
+                phy: 2,
+                packing: false,
+                framing: false,
+                encryption: false,
+                broadcast_code: [0; 16],
+            }),
+        )
+        .await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::AlreadyInProgress))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_big_create_sync_fails_if_already_pending() {
+        // Verify that starting a BIG sync creation fails if a request with the same handle is
+        // already pending.
+        let manager = IsoManagerImpl::new();
+        // The first allocate_id() will likely return 0.
+        let conn_handle = BigHandle::from_masked(0);
+        let (sender, _) = oneshot::channel();
+        manager
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .big_create_sync
+            .insert(conn_handle, sender);
+
+        let result = timeout(
+            DEFAULT_TIMEOUT,
+            manager.big_create_sync(BigCreateSyncParameters {
+                sync_handle: 1,
+                encryption: false,
+                broadcast_code: [0; 16],
+                mse: 0,
+                big_sync_timeout: Duration::from_millis(1000),
+                bis_indices: vec![1],
+            }),
+        )
+        .await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::AlreadyInProgress))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_create_cis_fails_if_handle_pending() {
+        // Verify that CIS establishment fails if handles are already pending.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(100);
+        let (sender, _) = oneshot::channel();
+        manager
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .create_cis
+            .insert(conn_handle, sender);
+
+        let params = CreateCisParameters {
+            conn_handle_pairs: vec![(conn_handle, AclConnectionHandle::from_masked(1))],
+        };
+        let result = timeout(DEFAULT_TIMEOUT, manager.create_cis_internal(params)).await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::AlreadyInProgress))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_create_cis_cleans_up_on_partial_pending_failure() {
+        // Verify that create_cis cleans up successfully registered handles if a later handle
+        // in the same batch fails.
+        let manager = IsoManagerImpl::new();
+        let conn_handle_a = IsoConnectionHandle::from_masked(101);
+        let conn_handle_b = IsoConnectionHandle::from_masked(102);
+
+        // Pre-insert handle_b to cause a conflict.
+        let (sender_b, _) = oneshot::channel();
+        manager
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .create_cis
+            .insert(conn_handle_b, sender_b);
+
+        let params = CreateCisParameters {
+            conn_handle_pairs: vec![
+                (conn_handle_a, AclConnectionHandle::from_masked(1)),
+                (conn_handle_b, AclConnectionHandle::from_masked(1)),
+            ],
+        };
+
+        let result = timeout(DEFAULT_TIMEOUT, manager.create_cis_internal(params)).await;
+        expect_that!(result, ok(err(eq(&IsoManagerError::AlreadyInProgress))));
+
+        // Both handle_a and handle_b should have been removed from pending_requests due to
+        // 'clear all' cleanup.
+        let reg = manager.iso_registry.lock().unwrap();
+        expect_that!(reg.pending_requests.create_cis.contains_key(&conn_handle_a), is_false());
+        expect_that!(reg.pending_requests.create_cis.contains_key(&conn_handle_b), is_false());
+    }
+
+    #[googletest::test]
+    fn test_subscribe_cis_data_creates_entry_lazily() {
+        // Verify that subscribing to CIS data ensures a registry entry is created.
+        let manager = IsoManagerImpl::new();
+        let conn_handle = IsoConnectionHandle::from_masked(200);
+
+        {
+            let _stream = manager.subscribe_cis_data(conn_handle);
+            let reg = manager.iso_registry.lock().unwrap();
+            expect_that!(reg.cis.contains_key(&conn_handle), is_true());
+            expect_that!(reg.cis.get(&conn_handle).unwrap().data_subscribers.len(), eq(1));
+        }
     }
 }
