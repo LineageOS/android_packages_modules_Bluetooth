@@ -41,7 +41,7 @@ pub struct AdvertisingSid(u8);
 
 /// Represents the parameters for starting PA sync.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PaCreateSyncParams {
+pub struct PeriodicAdvertisingCreateSyncParameters {
     /// The unique identifier for the broadcast source.
     /// It would be used as registration id for native gd periodic synchronization.
     pub broadcast_id: u32,
@@ -61,7 +61,7 @@ pub struct PaCreateSyncParams {
 
 /// Information for Periodic Sync establishment.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PeriodicSyncInfo {
+pub struct PeriodicAdvertisingSyncInfo {
     /// Registration ID.
     pub reg_id: i32,
     /// Identify the periodic advertising train.
@@ -80,7 +80,7 @@ pub struct PeriodicSyncInfo {
 
 /// Event types for Periodic Sync.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PeriodicSyncEvent {
+pub enum PeriodicAdvertisingSyncEvent {
     /// Report carries periodic advertising data.
     PeriodicAdvertisingReport {
         /// Identify the periodic advertising train.
@@ -108,9 +108,9 @@ pub enum PeriodicSyncEvent {
     },
 }
 
-/// Errors returned by PeriodicSyncManager operations.
+/// Errors returned by PeriodicAdvertisingSyncManager operations.
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
-pub enum PeriodicSyncError {
+pub enum PeriodicAdvertisingSyncError {
     /// Operation timed out.
     #[error("operation timed out")]
     Timeout,
@@ -128,29 +128,29 @@ pub enum PeriodicSyncError {
     InvalidHandle,
 }
 
-/// A specialized Result type for PeriodicSyncManager operations.
-pub type Result<T> = std::result::Result<T, PeriodicSyncError>;
+/// A specialized Result type for PeriodicAdvertisingSyncManager operations.
+pub type Result<T> = std::result::Result<T, PeriodicAdvertisingSyncError>;
 
 /// Trait defining the interface for Periodic Sync Manager.
 ///
 /// TODO: b/488209682 - Refactor this into an object-oriented API where `start_sync` returns a
-/// `PeriodicSync` instance. This instance should implement a trait providing its own
+/// `PeriodicAdvertisingSync` instance. This instance should implement a trait providing its own
 /// `reports()` stream and `lost()` future, enabling RAII for resource management
 /// and removing the need for manual handle-based event demuxing in the worker.
-#[cfg_attr(test, automock(type EventStream = ReceiverStream<PeriodicSyncEvent>;))]
-pub trait PeriodicSyncManager: Send + Sync {
+#[cfg_attr(test, automock(type EventStream = ReceiverStream<PeriodicAdvertisingSyncEvent>;))]
+pub trait PeriodicAdvertisingSyncManager: Send + Sync {
     /// The type of the stream returned by subscribe_events.
-    type EventStream: futures::Stream<Item = PeriodicSyncEvent> + Send + 'static;
+    type EventStream: futures::Stream<Item = PeriodicAdvertisingSyncEvent> + Send + 'static;
 
     /// Starts synchronization with a periodic advertiser.
     /// This method is procedural: it waits for the synchronization to be physically
-    /// established on the radio (triggered by the `OnPeriodicSyncStarted` callback
+    /// established on the radio (triggered by the `OnPeriodicAdvertisingSyncStarted` callback
     /// with status success) or for the sync timeout to expire.
     /// Returns the sync handle and other details on success.
     fn start_sync(
         &self,
-        params: PaCreateSyncParams,
-    ) -> impl Future<Output = Result<PeriodicSyncInfo>> + Send;
+        params: PeriodicAdvertisingCreateSyncParameters,
+    ) -> impl Future<Output = Result<PeriodicAdvertisingSyncInfo>> + Send;
 
     /// Stops a periodic synchronization.
     /// This method only waits for the command status: it returns immediately once

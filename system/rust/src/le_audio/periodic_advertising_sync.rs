@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-//! Periodic sync module.
+//! Periodic advertising sync module.
 
 mod ffi;
 pub mod manager;
 pub mod traits;
 
-pub use traits::PeriodicSyncManager;
+pub use traits::PeriodicAdvertisingSyncManager;

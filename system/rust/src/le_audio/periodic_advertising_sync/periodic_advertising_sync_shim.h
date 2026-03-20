@@ -35,12 +35,13 @@ struct Address {
 
 namespace bluetooth::shim {
 namespace ffi {
-struct PeriodicSyncCallbacks;
+struct PeriodicAdvertisingSyncCallbacks;
 }  // namespace ffi
 
 class ScanningCallbackShim : public ScanningCallbacks {
 public:
-  explicit ScanningCallbackShim(rust::Box<::bluetooth::shim::ffi::PeriodicSyncCallbacks> cb);
+  explicit ScanningCallbackShim(
+          rust::Box<::bluetooth::shim::ffi::PeriodicAdvertisingSyncCallbacks> callback);
   ~ScanningCallbackShim() override = default;
 
   void OnScannerRegistered(const ::bluetooth::Uuid app_uuid, uint8_t scannerId,
@@ -66,7 +67,7 @@ public:
   void OnBigInfoReport(uint16_t sync_handle, bool encryption) override;
 
 private:
-  rust::Box<::bluetooth::shim::ffi::PeriodicSyncCallbacks> callbacks_;
+  rust::Box<::bluetooth::shim::ffi::PeriodicAdvertisingSyncCallbacks> callbacks_;
 };
 
 class BleScannerInterfaceShim {
@@ -75,8 +76,9 @@ public:
   void StartSync(uint8_t advertising_sid, ::ffi::Address advertiser_addr,
                  uint8_t advertiser_addr_type, uint16_t skip, uint16_t timeout, int32_t reg_id);
   void StopSync(uint16_t handle);
-  void RegisterCallbacksNative(rust::Box<::bluetooth::shim::ffi::PeriodicSyncCallbacks> cb,
-                               uint8_t client_id);
+  void RegisterCallbacksNative(
+          rust::Box<::bluetooth::shim::ffi::PeriodicAdvertisingSyncCallbacks> callback,
+          uint8_t client_id);
 
 private:
   BleScannerInterface* ble_scanner_interface_;
