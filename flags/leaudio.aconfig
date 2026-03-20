@@ -449,3 +449,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "soft_leaudio_health_disable"
+    namespace: "bluetooth"
+    description: "Softly disable LE Audio upon health recommendation instead of setting policy to forbidden in storage"
+    bug: "494395176"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
