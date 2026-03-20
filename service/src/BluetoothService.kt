@@ -59,8 +59,9 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     // Run lambda on the BluetoothSystemServer thread without waiting for completion
-    private fun launchOnServerThread(block: suspend CoroutineScope.() -> Unit) =
-        scope.launch { block() }
+    private fun launchOnServerThread(block: suspend CoroutineScope.() -> Unit) = scope.launch {
+        block()
+    }
 
     override fun onStart() {
         publishBinderService(SERVICE_NAME, ServerBinder(looper, supervisor.api, context))

@@ -99,19 +99,16 @@ class SecurityStorage(private val context: Context) : SecurityStorageImplBase(),
                 bluetoothAdapter.getRemoteLeDevice(address.decodeAsMacAddressToString(), type)
             Log.i(TAG, "deleteBond: device=$bluetoothDevice")
 
-            val unbonded =
-                globalScope.async {
-                    flow
-                        .filter { it.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED }
-                        .filter { it.getBluetoothDeviceExtra() == bluetoothDevice }
-                        .filter {
-                            it.getIntExtra(
-                                BluetoothDevice.EXTRA_BOND_STATE,
-                                BluetoothAdapter.ERROR,
-                            ) == BluetoothDevice.BOND_NONE
-                        }
-                        .first()
-                }
+            val unbonded = globalScope.async {
+                flow
+                    .filter { it.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED }
+                    .filter { it.getBluetoothDeviceExtra() == bluetoothDevice }
+                    .filter {
+                        it.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR) ==
+                            BluetoothDevice.BOND_NONE
+                    }
+                    .first()
+            }
 
             if (bluetoothDevice.removeBond()) {
                 Log.i(TAG, "deleteBond: device=$bluetoothDevice - wait BOND_NONE intent")

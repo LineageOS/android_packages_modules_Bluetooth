@@ -72,30 +72,26 @@ class OobPairingTest {
     private var remoteInitiator = false
     private lateinit var util: TestUtil
 
-    private val intentListener =
-        IntentReceiver.IntentListener { intent ->
-            val action = intent.action
-            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED == action) {
-                val device =
-                    intent.getParcelableExtra(
-                        BluetoothDevice.EXTRA_DEVICE,
-                        BluetoothDevice::class.java,
-                    )
-                val bondState =
-                    intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR)
-                val prevBondState =
-                    intent.getIntExtra(
-                        BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
-                        BluetoothAdapter.ERROR,
-                    )
-                Log.i(
-                    TAG,
-                    "onReceive(): device $device bond state changed from $prevBondState to $bondState",
+    private val intentListener = IntentReceiver.IntentListener { intent ->
+        val action = intent.action
+        if (BluetoothDevice.ACTION_BOND_STATE_CHANGED == action) {
+            val device =
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+            val bondState =
+                intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR)
+            val prevBondState =
+                intent.getIntExtra(
+                    BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
+                    BluetoothAdapter.ERROR,
                 )
-            } else {
-                Log.i(TAG, "onReceive(): unknown intent action $action")
-            }
+            Log.i(
+                TAG,
+                "onReceive(): device $device bond state changed from $prevBondState to $bondState",
+            )
+        } else {
+            Log.i(TAG, "onReceive(): unknown intent action $action")
         }
+    }
 
     private val generateOobDataCallback =
         object : OobDataCallback {

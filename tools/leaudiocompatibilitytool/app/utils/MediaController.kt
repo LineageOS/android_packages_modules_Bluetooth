@@ -122,36 +122,35 @@ class MediaController @Inject constructor(@ApplicationContext private val contex
     }
 
     /** The listener for audio focus changes. Used in the media call switch test. */
-    private val audioFocusChangeListener =
-        AudioManager.OnAudioFocusChangeListener { focusChange ->
-            Log.d(TAG, "onAudioFocusChange: $focusChange")
-            when (focusChange) {
-                AudioManager.AUDIOFOCUS_GAIN -> {
-                    Log.d(TAG, "AUDIOFOCUS_GAIN")
-                    for (listener in audioFocusChangeListeners) {
-                        listener.onAudioFocusChange("AUDIOFOCUS_GAIN")
-                    }
+    private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        Log.d(TAG, "onAudioFocusChange: $focusChange")
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d(TAG, "AUDIOFOCUS_GAIN")
+                for (listener in audioFocusChangeListeners) {
+                    listener.onAudioFocusChange("AUDIOFOCUS_GAIN")
                 }
-                AudioManager.AUDIOFOCUS_LOSS -> {
-                    Log.d(TAG, "AUDIOFOCUS_LOSS")
-                    for (listener in audioFocusChangeListeners) {
-                        listener.onAudioFocusChange("AUDIOFOCUS_LOSS")
-                    }
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS")
+                for (listener in audioFocusChangeListeners) {
+                    listener.onAudioFocusChange("AUDIOFOCUS_LOSS")
                 }
-                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                    Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT")
-                    for (listener in audioFocusChangeListeners) {
-                        listener.onAudioFocusChange("AUDIOFOCUS_LOSS_TRANSIENT")
-                    }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT")
+                for (listener in audioFocusChangeListeners) {
+                    listener.onAudioFocusChange("AUDIOFOCUS_LOSS_TRANSIENT")
                 }
-                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                    Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK")
-                    for (listener in audioFocusChangeListeners) {
-                        listener.onAudioFocusChange("AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK")
-                    }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK")
+                for (listener in audioFocusChangeListeners) {
+                    listener.onAudioFocusChange("AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK")
                 }
             }
         }
+    }
 
     /** Requests audio focus for media. */
     override fun requestAudioFocus() {

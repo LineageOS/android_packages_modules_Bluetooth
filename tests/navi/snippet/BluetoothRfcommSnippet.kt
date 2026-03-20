@@ -69,15 +69,14 @@ class BluetoothRfcommSnippet : Snippet {
         if (blocking) {
             socket.connect()
         } else {
-            connectingFutures[cookie] =
-                threadPool.submit {
-                    try {
-                        socket.connect()
-                    } catch (e: java.io.IOException) {
-                        Log.e(TAG, "Failed to connect to RFCOMM channel", e)
-                        throw e
-                    }
+            connectingFutures[cookie] = threadPool.submit {
+                try {
+                    socket.connect()
+                } catch (e: java.io.IOException) {
+                    Log.e(TAG, "Failed to connect to RFCOMM channel", e)
+                    throw e
                 }
+            }
         }
 
         return cookie

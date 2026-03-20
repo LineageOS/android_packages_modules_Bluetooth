@@ -67,17 +67,16 @@ class EncryptionChangeTest {
     private lateinit var util: TestUtil
     private lateinit var bumbleDevice: BluetoothDevice
 
-    private val intentListener =
-        IntentReceiver.IntentListener { intent ->
-            val action = intent.action
-            if (BluetoothDevice.ACTION_UUID == action) {
-                val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID)
-                Log.d(TAG, "onReceive(): UUID=${uuids.contentToString()}")
-            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED == action) {
-                val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
-                Log.d(TAG, "onReceive(): bondState=$bondState")
-            }
+    private val intentListener = IntentReceiver.IntentListener { intent ->
+        val action = intent.action
+        if (BluetoothDevice.ACTION_UUID == action) {
+            val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID)
+            Log.d(TAG, "onReceive(): UUID=${uuids.contentToString()}")
+        } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED == action) {
+            val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
+            Log.d(TAG, "onReceive(): bondState=$bondState")
         }
+    }
 
     @Before
     fun setUp() {
