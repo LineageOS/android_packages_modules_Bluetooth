@@ -1,6 +1,5 @@
 // Signature format: 6.0
 // - style=java
-// - flagged-api-inheritance=none
 // - overloaded-method-order=source
 package android.bluetooth {
 
@@ -786,7 +785,7 @@ package android.bluetooth {
     method public boolean isOpportunisticEnabled();
   }
 
-  public static final class BluetoothGattConnectionSettings.Builder {
+  @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") public static final class BluetoothGattConnectionSettings.Builder {
     ctor public BluetoothGattConnectionSettings.Builder();
     method @NonNull public android.bluetooth.BluetoothGattConnectionSettings build();
     method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setAutoConnectEnabled(boolean);
