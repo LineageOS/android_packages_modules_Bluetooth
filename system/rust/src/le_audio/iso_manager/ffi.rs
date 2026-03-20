@@ -20,10 +20,11 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::le_audio::iso_manager::manager::{
-    CisDisconnectedEvent, CisEstablishedEvent, CreateCigCmplEvent, IsoRegistry,
+    BigSyncEstablishedEvent, CisDisconnectedEvent, CisEstablishedEvent, CreateBigCmplEvent,
+    CreateCigCmplEvent, IsoRegistry,
 };
 use crate::le_audio::iso_manager::traits::{
-    CigId, IsoConnectionHandle, IsoLinkQuality, IsoManagerError,
+    BigHandle, CigId, IsoConnectionHandle, IsoLinkQuality, IsoManagerError,
 };
 use crate::pdl::hci::HciStatus;
 
@@ -42,6 +43,7 @@ pub mod inner_ffi {
         fn register_callbacks_native(
             self: Pin<&mut IsoManagerShim>,
             cig_callbacks: Box<IsoCigCallbacks>,
+            big_callbacks: Box<IsoBigCallbacks>,
         );
 
         #[allow(clippy::too_many_arguments)]
@@ -98,6 +100,43 @@ pub mod inner_ffi {
 
         #[cxx_name = "DisconnectCis"]
         fn disconnect_cis(self: Pin<&mut IsoManagerShim>, cis_conn_handle: u16, reason: u8);
+
+        #[allow(clippy::too_many_arguments)]
+        #[cxx_name = "CreateBig"]
+        fn create_big(
+            self: Pin<&mut IsoManagerShim>,
+            big_handle: u8,
+            advertising_handle: u8,
+            num_bis: u8,
+            sdu_itv: u32,
+            max_sdu_size: u16,
+            max_transport_latency: u16,
+            rtn: u8,
+            phy: u8,
+            packing: bool,
+            framing: bool,
+            encryption: bool,
+            broadcast_code: [u8; 16],
+        );
+
+        #[cxx_name = "TerminateBig"]
+        fn terminate_big(self: Pin<&mut IsoManagerShim>, big_handle: u8, reason: u8);
+
+        #[allow(clippy::too_many_arguments)]
+        #[cxx_name = "BigCreateSync"]
+        fn big_create_sync(
+            self: Pin<&mut IsoManagerShim>,
+            big_handle: u8,
+            sync_handle: u16,
+            encryption: bool,
+            broadcast_code: [u8; 16],
+            mse: u8,
+            big_sync_timeout: u16,
+            bis_indices: Vec<u8>,
+        );
+
+        #[cxx_name = "BigTerminateSync"]
+        fn big_terminate_sync(self: Pin<&mut IsoManagerShim>, big_handle: u8);
 
         #[allow(clippy::too_many_arguments)]
         #[cxx_name = "SetupIsoDataPath"]
@@ -212,6 +251,80 @@ pub mod inner_ffi {
             crc_error_packets: u32,
             rx_unreceived_packets: u32,
             duplicate_packets: u32,
+        );
+    }
+
+    #[namespace = "bluetooth::hci::iso_manager::ffi"]
+    extern "Rust" {
+        type IsoBigCallbacks;
+
+        #[allow(clippy::too_many_arguments)]
+        #[cxx_name = "OnCreateBigCmpl"]
+        fn on_create_big_cmpl(
+            self: &IsoBigCallbacks,
+            status: u8,
+            big_handle: u8,
+            big_sync_delay: u32,
+            transport_latency_big: u32,
+            phy: u8,
+            nse: u8,
+            bn: u8,
+            pto: u8,
+            irc: u8,
+            max_pdu: u16,
+            iso_interval: u16,
+            bis_conn_handles: Vec<u16>,
+        );
+
+        #[cxx_name = "OnTerminateBigCmpl"]
+        fn on_terminate_big_cmpl(self: &IsoBigCallbacks, big_handle: u8, reason: u8);
+
+        #[allow(clippy::too_many_arguments)]
+        #[cxx_name = "OnBigSyncEstablished"]
+        fn on_big_sync_established(
+            self: &IsoBigCallbacks,
+            status: u8,
+            big_handle: u8,
+            transport_latency_big: u32,
+            nse: u8,
+            bn: u8,
+            pto: u8,
+            irc: u8,
+            max_pdu: u16,
+            iso_interval: u16,
+            conn_handles: Vec<u16>,
+        );
+
+        #[cxx_name = "OnBigTerminateSyncCmpl"]
+        fn on_big_terminate_sync_cmpl(self: &IsoBigCallbacks, status: u8, big_handle: u8);
+
+        #[cxx_name = "OnBigSyncLost"]
+        fn on_big_sync_lost(self: &IsoBigCallbacks, big_handle: u8, reason: u8);
+
+        #[cxx_name = "OnBisDataAvailable"]
+        fn on_bis_data_available(
+            self: &IsoBigCallbacks,
+            big_handle: u8,
+            bis_conn_handle: u16,
+            time_stamp: u32,
+            seq_nb: u16,
+            data: &[u8],
+        );
+
+        #[cxx_name = "OnSetupIsoDataPath"]
+        fn on_setup_iso_data_path_big(
+            self: &IsoBigCallbacks,
+            status: u8,
+            bis_conn_handle: u16,
+            big_handle: u8,
+        );
+
+        #[cxx_name = "OnRemoveIsoDataPath"]
+        fn on_remove_iso_data_path_big(
+            self: &IsoBigCallbacks,
+            status: u8,
+            bis_conn_handle: u16,
+            big_handle: u8,
         );
     }
 }
@@ -428,6 +541,201 @@ impl IsoCigCallbacks {
                 rx_unreceived_packets,
                 duplicate_packets,
             }));
+        }
+    }
+}
+
+pub struct IsoBigCallbacks {
+    iso_registry: Arc<Mutex<IsoRegistry>>,
+}
+
+impl IsoBigCallbacks {
+    pub fn new(iso_registry: Arc<Mutex<IsoRegistry>>) -> Self {
+        Self { iso_registry }
+    }
+
+    pub fn on_setup_iso_data_path_big(
+        &self,
+        status_raw: u8,
+        bis_conn_handle_raw: u16,
+        _big_handle: u8,
+    ) {
+        let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
+        let bis_conn_handle = IsoConnectionHandle::try_from(bis_conn_handle_raw).unwrap();
+
+        if let Some(sender) = self
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .setup_iso_data_path
+            .remove(&bis_conn_handle)
+        {
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
+        }
+    }
+
+    pub fn on_remove_iso_data_path_big(
+        &self,
+        status_raw: u8,
+        bis_conn_handle_raw: u16,
+        _big_handle: u8,
+    ) {
+        let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
+        let bis_conn_handle = IsoConnectionHandle::try_from(bis_conn_handle_raw).unwrap();
+
+        if let Some(sender) = self
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .remove_iso_data_path
+            .remove(&bis_conn_handle)
+        {
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
+        }
+    }
+
+    pub fn on_bis_data_available(
+        &self,
+        _big_handle: u8,
+        bis_conn_handle_raw: u16,
+        time_stamp: u32,
+        seq_nb: u16,
+        data: &[u8],
+    ) {
+        let bis_conn_handle = IsoConnectionHandle::try_from(bis_conn_handle_raw).unwrap();
+        let mut iso_registry = self.iso_registry.lock().unwrap();
+
+        if let Some(state) = iso_registry.bis.get(&bis_conn_handle) {
+            if !state.data_subscribers.is_empty() {
+                iso_registry.dispatch_bis_data(
+                    bis_conn_handle,
+                    Some(Duration::from_micros(time_stamp as u64)),
+                    seq_nb,
+                    data,
+                );
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn on_create_big_cmpl(
+        &self,
+        status_raw: u8,
+        big_handle_raw: u8,
+        big_sync_delay: u32,
+        transport_latency_big: u32,
+        phy: u8,
+        nse: u8,
+        bn: u8,
+        pto: u8,
+        irc: u8,
+        max_pdu: u16,
+        iso_interval: u16,
+        bis_conn_handles_raw: Vec<u16>,
+    ) {
+        let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
+        let big_handle = BigHandle::try_from(big_handle_raw).unwrap();
+        if let Some(sender) =
+            self.iso_registry.lock().unwrap().pending_requests.create_big.remove(&big_handle)
+        {
+            let _ = sender.send(
+                status
+                    .err_or_else(|| CreateBigCmplEvent {
+                        big_handle,
+                        big_sync_delay,
+                        transport_latency_big,
+                        phy,
+                        nse,
+                        bn,
+                        pto,
+                        irc,
+                        max_pdu,
+                        iso_interval,
+                        bis_conn_handles: bis_conn_handles_raw
+                            .into_iter()
+                            .map(|conn_handle| IsoConnectionHandle::try_from(conn_handle).unwrap())
+                            .collect(),
+                    })
+                    .map_err(IsoManagerError::HciError),
+            );
+        }
+    }
+
+    pub fn on_terminate_big_cmpl(&self, big_handle_raw: u8, status_raw: u8) {
+        let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
+        let big_handle = BigHandle::try_from(big_handle_raw).unwrap();
+
+        if let Some(sender) =
+            self.iso_registry.lock().unwrap().pending_requests.terminate_big.remove(&big_handle)
+        {
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn on_big_sync_established(
+        &self,
+        status_raw: u8,
+        big_handle_raw: u8,
+        transport_latency_big: u32,
+        nse: u8,
+        bn: u8,
+        pto: u8,
+        irc: u8,
+        max_pdu: u16,
+        iso_interval: u16,
+        bis_conn_handles_raw: Vec<u16>,
+    ) {
+        let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
+        let big_handle = BigHandle::try_from(big_handle_raw).unwrap();
+
+        if let Some(sender) =
+            self.iso_registry.lock().unwrap().pending_requests.big_create_sync.remove(&big_handle)
+        {
+            let _ = sender.send(
+                status
+                    .err_or_else(|| BigSyncEstablishedEvent {
+                        big_handle,
+                        transport_latency_big,
+                        nse,
+                        bn,
+                        pto,
+                        irc,
+                        max_pdu,
+                        iso_interval,
+                        bis_conn_handles: bis_conn_handles_raw
+                            .into_iter()
+                            .map(|conn_handle| IsoConnectionHandle::try_from(conn_handle).unwrap())
+                            .collect(),
+                    })
+                    .map_err(IsoManagerError::HciError),
+            );
+        }
+    }
+
+    pub fn on_big_sync_lost(&self, big_handle_raw: u8, reason_raw: u8) {
+        let reason = HciStatus::try_from(reason_raw).unwrap_or(HciStatus::StatusUnknown);
+        self.iso_registry
+            .lock()
+            .unwrap()
+            .dispatch_big_sync_event(BigHandle::try_from(big_handle_raw).unwrap(), reason);
+    }
+
+    pub fn on_big_terminate_sync_cmpl(&self, status_raw: u8, big_handle_raw: u8) {
+        let status = HciStatus::try_from(status_raw).unwrap_or(HciStatus::StatusUnknown);
+        let big_handle = BigHandle::try_from(big_handle_raw).unwrap();
+
+        if let Some(sender) = self
+            .iso_registry
+            .lock()
+            .unwrap()
+            .pending_requests
+            .big_terminate_sync
+            .remove(&big_handle)
+        {
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
         }
     }
 }
