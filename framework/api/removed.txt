@@ -1,4 +1,2 @@
 // Signature format: 6.0
 // - style=java
-// - flagged-api-inheritance=none
-// - overloaded-method-order=source
