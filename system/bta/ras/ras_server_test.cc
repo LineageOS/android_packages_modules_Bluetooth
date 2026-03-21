@@ -156,17 +156,9 @@ protected:
   void SetUp() override {
     RasServerTestNoInit::SetUp();
     // AppRegister should be triggered when Initialize
-    void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
-    EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _, _))
-            .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), SaveArg<3>(&p_reg_cb)));
-    GetRasServer()->SetVendorSpecificCharacteristic(vendor_specific_characteristics_);
-    GetRasServer()->Initialize();
-    ASSERT_NE(captured_gatt_callback_, nullptr);
+    EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
+            .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), Return(1)));
 
-    // RegisterCallback
-    GetRasServer()->RegisterCallbacks(&mock_ras_server_callbacks_);
-
-    // AddService should be triggered after receiving BTA_GATTS_REG_EVT
     tGATT_IF captured_server_if;
     std::vector<btgatt_db_element_t> captured_service;
     BTA_GATTS_AddServiceCb captured_cb;
@@ -176,7 +168,12 @@ protected:
                     testing::SaveArg<1>(&captured_service),
                     testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
-    p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
+    GetRasServer()->SetVendorSpecificCharacteristic(vendor_specific_characteristics_);
+    GetRasServer()->Initialize();
+    ASSERT_NE(captured_gatt_callback_, nullptr);
+
+    // RegisterCallback
+    GetRasServer()->RegisterCallbacks(&mock_ras_server_callbacks_);
 
     // Update handle for testing
     UpdateTestServiceHandle(captured_service);
@@ -200,13 +197,9 @@ protected:
 TEST_F(RasServerTestNoInit, InitializationSuccessful) {
   // AppRegister should be triggered when Initialize
   void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
-  EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _, _))
-          .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), SaveArg<3>(&p_reg_cb)));
-  GetRasServer()->SetVendorSpecificCharacteristic(vendor_specific_characteristics_);
-  GetRasServer()->Initialize();
-  ASSERT_NE(captured_gatt_callback_, nullptr);
+  EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
+          .WillOnce(DoAll(testing::SaveArg<1>(&captured_gatt_callback_), Return(1)));
 
-  // AddService should be triggered after receiving BTA_GATTS_REG_EVT
   tGATT_IF captured_server_if;
   std::vector<btgatt_db_element_t> captured_service;
   BTA_GATTS_AddServiceCb captured_cb;
@@ -215,7 +208,9 @@ TEST_F(RasServerTestNoInit, InitializationSuccessful) {
                   testing::SaveArg<0>(&captured_server_if), testing::SaveArg<1>(&captured_service),
                   testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
-  p_reg_cb(GATT_SUCCESS, 1, bluetooth::Uuid::kEmpty);
+  GetRasServer()->SetVendorSpecificCharacteristic(vendor_specific_characteristics_);
+  GetRasServer()->Initialize();
+  ASSERT_NE(captured_gatt_callback_, nullptr);
 
   // Run BTA_GATTS_AddServiceCb
   std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
@@ -223,8 +218,8 @@ TEST_F(RasServerTestNoInit, InitializationSuccessful) {
 
 TEST_F(RasServerTestNoInit, ConnectAndDisconnect) {
   // AppRegister should be triggered when Initialize
-  EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _, _))
-          .WillOnce(testing::SaveArg<1>(&captured_gatt_callback_));
+  EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
+          .WillOnce(DoAll(SaveArg<1>(&captured_gatt_callback_), Return(GATT_SUCCESS)));
   GetRasServer()->Initialize();
   ASSERT_NE(captured_gatt_callback_, nullptr);
 
@@ -244,8 +239,8 @@ TEST_F(RasServerTestNoInit, ConnectAndDisconnect) {
 
 TEST_F(RasServerTestNoInit, IgnoreBrEdr) {
   // AppRegister should be triggered when Initialize
-  EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _, _))
-          .WillOnce(testing::SaveArg<1>(&captured_gatt_callback_));
+  EXPECT_CALL(mock_gatt_server_interface_, AppRegister(_, _, _))
+          .WillOnce(DoAll(SaveArg<1>(&captured_gatt_callback_), Return(GATT_SUCCESS)));
   GetRasServer()->Initialize();
   ASSERT_NE(captured_gatt_callback_, nullptr);
 

@@ -32,7 +32,6 @@ using bluetooth::Uuid;
 
 namespace bluetooth::stack {
 
-inline constexpr tGATT_IF GATT_IF_INVALID = static_cast<tGATT_IF>(0);
 // 0xF1 ~ 0xFF are reserved for special use cases.
 inline constexpr tGATT_IF GATT_IF_MAX = static_cast<tGATT_IF>(0xf8);
 

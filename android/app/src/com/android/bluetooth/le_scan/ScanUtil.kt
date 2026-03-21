@@ -647,20 +647,19 @@ object ScanTestUtil {
         )
 
     @JvmStatic
-    fun ScanController.runTestCycle() =
-        TEST_MODE_BEACONS.forEach { test ->
-            onScanResultInternal(
-                0x1b,
-                0x1,
-                "DD:34:02:05:5C:4D",
-                1,
-                0,
-                0xff,
-                127,
-                -54,
-                0x0,
-                HexEncoding.decode(test),
-                "DD:34:02:05:5C:4E",
-            )
-        }
+    fun ScanController.runTestCycle() = TEST_MODE_BEACONS.forEach { test ->
+        onScanResultInternal(
+            0x1b,
+            0x1,
+            "DD:34:02:05:5C:4D",
+            1,
+            0,
+            0xff,
+            127,
+            -54,
+            0x0,
+            HexEncoding.decode(test),
+            "DD:34:02:05:5C:4E",
+        )
+    }
 }

@@ -61,5 +61,7 @@ class AdvertiseManagerNativeCallback(
     }
 
     private fun doOnAdvertiseThread(block: AdvertiseManager.() -> Unit) =
-        manager.doOnAdvertiseThread { manager.block() }
+        manager.doOnAdvertiseThread {
+            manager.block()
+        }
 }

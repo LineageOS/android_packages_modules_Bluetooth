@@ -63,7 +63,6 @@ import java.io.File;
 import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -160,41 +159,6 @@ public class BluetoothOppUtility {
                 confirmationType == BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED;
 
         Log.v(TAG, "Get data from db:" + info.mFileName + info.mFileType + info.mDestAddr);
-    }
-
-    /** Organize Array list for transfers in one batch */
-    // This function is used when UI show batch transfer. Currently only show single transfer.
-    public static List<String> queryTransfersInBatch(Context context, Long timeStamp) {
-        List<String> uris = new ArrayList<>();
-        final String where = BluetoothShare.TIMESTAMP + " == " + timeStamp;
-        Cursor metadataCursor =
-                BluetoothMethodProxy.getInstance()
-                        .contentResolverQuery(
-                                context.getContentResolver(),
-                                BluetoothShare.CONTENT_URI,
-                                new String[] {BluetoothShare._DATA},
-                                where,
-                                null,
-                                BluetoothShare._ID);
-
-        if (metadataCursor == null) {
-            return null;
-        }
-
-        for (metadataCursor.moveToFirst();
-                !metadataCursor.isAfterLast();
-                metadataCursor.moveToNext()) {
-            String fileName = metadataCursor.getString(0);
-            Uri path = Uri.parse(fileName);
-            // If there is no scheme, then it must be a file
-            if (path.getScheme() == null) {
-                path = Uri.fromFile(new File(fileName));
-            }
-            uris.add(path.toString());
-            Log.v(TAG, "Uri in this batch: " + path.toString());
-        }
-        metadataCursor.close();
-        return uris;
     }
 
     /**

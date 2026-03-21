@@ -261,38 +261,37 @@ constructor(
     /** Starts a call. */
     private val startCallAction = Runnable {
         job?.cancel()
-        job =
-            viewModelScope.launch {
-                val callCookie =
-                    callController.addCall(
-                        callDirection = CallDirection.INCOMING,
-                        onCallAddedAction = { cookie ->
-                            mediaController.playRingtone()
-                            logList.add(
-                                LogRecordUiModel(
-                                    message =
-                                        LogRecordUiModel.getRunStartString(
-                                            testStateManager.getFinishedRuns(TEST_ITEM_ID) + 1
-                                        )
-                                )
+        job = viewModelScope.launch {
+            val callCookie =
+                callController.addCall(
+                    callDirection = CallDirection.INCOMING,
+                    onCallAddedAction = { cookie ->
+                        mediaController.playRingtone()
+                        logList.add(
+                            LogRecordUiModel(
+                                message =
+                                    LogRecordUiModel.getRunStartString(
+                                        testStateManager.getFinishedRuns(TEST_ITEM_ID) + 1
+                                    )
                             )
-                            startTimer(CurrentTest.RING_CALL)
-                            currentCallCookie = cookie
-                        },
-                        onAnswerAction = {
-                            mediaController.stopRingtone()
-                            mediaController.playMusic(MediaSource.SPEECH)
-                            logList.add(LogRecordUiModel(message = "Communication started."))
-                        },
-                        onDisconnectAction = {
-                            // Play music again after the call is disconnected.
-                            logList.add(LogRecordUiModel(message = "Call disconnected."))
-                            mediaController.playMusic(MediaSource.SONG)
-                            job?.cancel()
-                        },
-                    )
-                Log.d(TAG, "startCall with cookie: $callCookie")
-            }
+                        )
+                        startTimer(CurrentTest.RING_CALL)
+                        currentCallCookie = cookie
+                    },
+                    onAnswerAction = {
+                        mediaController.stopRingtone()
+                        mediaController.playMusic(MediaSource.SPEECH)
+                        logList.add(LogRecordUiModel(message = "Communication started."))
+                    },
+                    onDisconnectAction = {
+                        // Play music again after the call is disconnected.
+                        logList.add(LogRecordUiModel(message = "Call disconnected."))
+                        mediaController.playMusic(MediaSource.SONG)
+                        job?.cancel()
+                    },
+                )
+            Log.d(TAG, "startCall with cookie: $callCookie")
+        }
     }
 
     /** The listener for connection state changes. */

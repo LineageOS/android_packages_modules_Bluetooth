@@ -253,4 +253,23 @@
     <string name="bluetooth_enabled_auto_on_title">Bluetooth turned back on</string>
     <string name="bluetooth_enabled_auto_on_message">You can change this anytime in Settings</string>
     <string name="bluetooth_notification_group">Bluetooth automatic state change</string>
+
+    <!-- Title for the Auracast notification channel [CHAR LIMIT=40] -->
+    <string name="auracast_notification_channel">Auracast</string>
+    <!-- Title for the Auracast notification when a stream is discovered [CHAR LIMIT=50] -->
+    <string name="auracast_notification_title"><xliff:g id="stream_name" example="Airport TV">%1$s</xliff:g> audio stream available</string>
+    <!-- Subtext for the Auracast notification indicating the technology used [CHAR LIMIT=20] -->
+    <string name="auracast_notification_subtext">LE Audio</string>
+    <!-- Message instructing the user to connect an LE Audio device to use Auracast [CHAR LIMIT=70] -->
+    <string name="auracast_connect_device_message">Connect an LE Audio device to start listening</string>
+    <!-- Message telling the user they can listen to the stream on their connected device [CHAR LIMIT=80] -->
+    <string name="auracast_listen_on_device_message">Listen to <xliff:g id="stream_name" example="Airport TV">%1$s</xliff:g> audio stream on your <xliff:g id="device_name" example="Google Buds">%2$s</xliff:g></string>
+    <!-- Action button text to connect to the Auracast stream [CHAR LIMIT=20] -->
+    <string name="auracast_connect_action">Connect</string>
+    <!-- Message shown when an attempt to connect to an Auracast stream fails [CHAR LIMIT=80] -->
+    <string name="auracast_connection_failed_message">Failed to connect to <xliff:g id="stream_name" example="Airport TV">%1$s</xliff:g> audio stream on your <xliff:g id="device_name" example="Google Buds">%2$s</xliff:g>.</string>
+    <!-- Fallback name for an Auracast stream when the actual name is unknown [CHAR LIMIT=30] -->
+    <string name="auracast_default_stream_name">Nearby</string>
+    <!-- Fallback name for a connected Bluetooth device when the specific name is unknown [CHAR LIMIT=30] -->
+    <string name="auracast_default_device_name">devices</string>
 </resources>

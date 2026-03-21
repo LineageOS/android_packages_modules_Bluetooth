@@ -48,14 +48,13 @@ fun <T> Iterable<T>.toTable(columns: List<Column<T>>): String {
         return ""
     }
 
-    val colWidths =
-        columns.map { column ->
-            column.width
-                ?: maxOf(
-                    column.header.length,
-                    data.maxOfOrNull { column.value(it).toString().length } ?: 0,
-                )
-        }
+    val colWidths = columns.map { column ->
+        column.width
+            ?: maxOf(
+                column.header.length,
+                data.maxOfOrNull { column.value(it).toString().length } ?: 0,
+            )
+    }
 
     return buildString {
         // Headers

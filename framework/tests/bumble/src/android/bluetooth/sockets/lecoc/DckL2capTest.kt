@@ -853,13 +853,12 @@ class DckL2capTest() : Closeable {
         val bluetoothSocket = createSocket(dckSpsm, remoteDevice, isSecure)
         runBlocking {
             val waitFlow = flow { emit(waitConnection(dckSpsm, remoteDevice)) }
-            val connectJob =
-                scope.launch {
-                    // give some time for Bumble to host the socket server
-                    Thread.sleep(200)
-                    bluetoothSocket.connect()
-                    Log.d(TAG, "clientConnect: Bluetooth socket connected")
-                }
+            val connectJob = scope.launch {
+                // give some time for Bumble to host the socket server
+                Thread.sleep(200)
+                bluetoothSocket.connect()
+                Log.d(TAG, "clientConnect: Bluetooth socket connected")
+            }
             connectionResponse = waitFlow.first()
             // Wait for the connection to complete
             connectJob.join()
@@ -891,13 +890,12 @@ class DckL2capTest() : Closeable {
             )
         runBlocking {
             val waitFlow = flow { emit(waitConnection(dckSpsm, remoteDevice)) }
-            val connectJob =
-                scope.launch {
-                    // give some time for Bumble to host the socket server
-                    Thread.sleep(200)
-                    bluetoothSocket.connect()
-                    Log.d(TAG, "clientConnect: Bluetooth socket connected")
-                }
+            val connectJob = scope.launch {
+                // give some time for Bumble to host the socket server
+                Thread.sleep(200)
+                bluetoothSocket.connect()
+                Log.d(TAG, "clientConnect: Bluetooth socket connected")
+            }
             connectionResponse = waitFlow.first()
             // Wait for the connection to complete
             connectJob.join()

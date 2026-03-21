@@ -308,8 +308,12 @@ static const stack::tGATT_CBACK btapp_gatts_callbacks = {
 static BtStatus btif_gatts_register_app(const Uuid& bt_uuid, bool eatt_support) {
   CHECK_BTGATT_INIT();
 
-  return do_in_main_thread(BindOnce(&BTA_GATTS_AppRegister, bt_uuid, &btapp_gatts_callbacks,
-                                    eatt_support, &btapp_gatts_reg_cback));
+  return do_in_main_thread(BindOnce(
+          [](const Uuid& bt_uuid, bool eatt_support) {
+            auto server_if = BTA_GATTS_AppRegister(bt_uuid, &btapp_gatts_callbacks, eatt_support);
+            btapp_gatts_reg_cback(server_if ? GATT_SUCCESS : GATT_ERROR, server_if, bt_uuid);
+          },
+          bt_uuid, eatt_support));
 }
 
 static BtStatus btif_gatts_unregister_app(int server_if) {

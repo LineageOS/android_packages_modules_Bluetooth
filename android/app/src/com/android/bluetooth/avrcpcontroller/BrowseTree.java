@@ -18,6 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
 import android.net.Uri;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -270,7 +271,7 @@ public class BrowseTree {
             mItem.setCoverArtLocation(uri);
         }
 
-        public synchronized List<MediaItem> getContents() {
+        public synchronized @Nullable List<MediaItem> getContents() {
             if (mChildren.size() > 0 || mCached) {
                 List<MediaItem> contents = new ArrayList<MediaItem>(mChildren.size());
                 for (BrowseNode child : mChildren) {
@@ -281,7 +282,7 @@ public class BrowseTree {
             return null;
         }
 
-        synchronized List<AvrcpItem> getContentsAsAvrcpItems() {
+        synchronized @Nullable List<AvrcpItem> getContentsAsAvrcpItems() {
             if (mChildren.size() > 0 || mCached) {
                 List<AvrcpItem> contents = new ArrayList<>(mChildren.size());
                 for (BrowseNode child : mChildren) {

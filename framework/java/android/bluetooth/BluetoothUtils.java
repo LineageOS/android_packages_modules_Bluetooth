@@ -529,14 +529,16 @@ public final class BluetoothUtils {
      */
     @Hide
     public static void verifyNonPccUid(String methodName) {
-        if (SdkLevel.isAtLeastC()
-                && android.app.privatecompute.flags.Flags.enablePccFrameworkSupport()) {
-            final int uid = Process.myUid();
-            if (Process.isPrivateComputeCoreUid(uid)) {
-                throw new SecurityException(
-                        "PCC UIDs are not allowed to perform Bluetooth egress operation: "
-                                + methodName);
-            }
+        if (!android.app.privatecompute.flags.Flags.enablePccFrameworkSupport()) {
+            return;
+        }
+        if (!SdkLevel.isAtLeastC()) {
+            return;
+        }
+        if (Process.isPrivateComputeCoreUid(Process.myUid())) {
+            throw new SecurityException(
+                    "PCC UIDs are not allowed to perform Bluetooth egress operation: "
+                            + methodName);
         }
     }
 }

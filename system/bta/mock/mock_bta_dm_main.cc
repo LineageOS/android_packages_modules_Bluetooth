@@ -21,7 +21,7 @@
  */
 
 // Mock include file to share data between tests and mock
-#include "test/mock/mock_bta_dm_main.h"
+#include "mock_bta_dm_main.h"
 
 #include "bta/include/bta_api.h"
 #include "test/common/mock_functions.h"

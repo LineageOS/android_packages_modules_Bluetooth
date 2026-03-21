@@ -21,7 +21,7 @@
  */
 
 // Mock include file to share data between tests and mock
-#include "test/mock/mock_bta_av_api.h"
+#include "mock_bta_av_api.h"
 
 #include <cstdint>
 

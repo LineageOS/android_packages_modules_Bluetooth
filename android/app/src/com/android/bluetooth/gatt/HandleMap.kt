@@ -135,14 +135,14 @@ class HandleMap {
         return entry
     }
 
-    fun checkServiceExists(uuid: UUID, handle: Int) =
-        entries.any { it.type == Type.SERVICE && it.handle == handle && it.uuid == uuid }
+    fun checkServiceExists(uuid: UUID, handle: Int) = entries.any {
+        it.type == Type.SERVICE && it.handle == handle && it.uuid == uuid
+    }
 
-    fun deleteService(serverIf: Int, serviceHandle: Int) =
-        entries.removeIf { entry ->
-            (entry.serverIf == serverIf) &&
-                (entry.handle == serviceHandle || entry.serviceHandle == serviceHandle)
-        }
+    fun deleteService(serverIf: Int, serviceHandle: Int) = entries.removeIf { entry ->
+        (entry.serverIf == serverIf) &&
+            (entry.handle == serviceHandle || entry.serviceHandle == serviceHandle)
+    }
 
     /*
      * Store a request context in this handle map and receive an integer identifier to that

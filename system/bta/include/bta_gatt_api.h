@@ -774,13 +774,11 @@ void BTA_GATTS_Disable(void);
  *                  p_cback - pointer to the application callback function.
  *                  eatt_support: indicate eatt support.
  *
- * Returns          None
+ * Returns          GATT_IF_INVALID for error, otherwise the app id
  *
  ******************************************************************************/
-void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
-                           const bluetooth::stack::tGATT_CBACK* p_cback, bool eatt_support,
-                           void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                            const bluetooth::Uuid& uuid));
+tGATT_IF BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
+                               const bluetooth::stack::tGATT_CBACK* p_cback, bool eatt_support);
 
 /*******************************************************************************
  *

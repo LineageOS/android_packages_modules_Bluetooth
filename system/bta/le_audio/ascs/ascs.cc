@@ -174,15 +174,16 @@ struct Ascs::service_impl {
             .p_req_cb = &ascs_req_cb,
     };
 
-    BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false,
-                          &OnGattRegisterStatic);
-  }
+    server_if_ = BTA_GATTS_AppRegister(uuid::kAudioStreamControlServiceUuid, &ascs_ops, false);
+    log::assert_that(server_if_ != stack::GATT_IF_INVALID, "Failed to register GATT Server");
+    log::info("GATT Server Registered with server_if: {}", server_if_);
 
-  static void OnGattRegisterStatic(tGATT_STATUS status, tGATT_IF server_if,
-                                   const bluetooth::Uuid& uuid) {
-    if (instance) {
-      instance->service_impl_->OnGattServerAppRegistered(status, server_if, uuid);
-    }
+    auto gatt_db = BuildGattDatabase(service_descriptor_);
+
+    log::info("Adding LE Audio Service {} service to GATT database.", gatt_db.begin()->uuid);
+    BTA_GATTS_AddService(server_if_, gatt_db,
+                         base::BindRepeating(&Ascs::service_impl::OnGattServiceAdded,
+                                             weak_factory_.GetWeakPtr()));
   }
 
   static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
@@ -295,22 +296,6 @@ struct Ascs::service_impl {
     ascs_service_db.push_back(ase_control_point_cccd);
 
     return ascs_service_db;
-  }
-
-  void OnGattServerAppRegistered(tGATT_STATUS status, tGATT_IF server_if,
-                                 const bluetooth::Uuid& /*uuid*/) {
-    log::assert_that(status == tGATT_STATUS::GATT_SUCCESS,
-                     "Failed to register GATT Server, status: {}", gatt_status_text(status));
-
-    server_if_ = server_if;
-    log::info("GATT Server Registered with server_if: {}", server_if_);
-
-    auto gatt_db = BuildGattDatabase(service_descriptor_);
-
-    log::info("Adding LE Audio Service {} service to GATT database.", gatt_db.begin()->uuid);
-    BTA_GATTS_AddService(server_if_, gatt_db,
-                         base::BindRepeating(&Ascs::service_impl::OnGattServiceAdded,
-                                             weak_factory_.GetWeakPtr()));
   }
 
   void OnGattServiceAdded(tGATT_STATUS status, int server_if,

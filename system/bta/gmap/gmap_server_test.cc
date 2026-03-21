@@ -53,9 +53,11 @@ public:
   uint8_t UGG_feature = 0b111;
 
   void SetUp(void) override {
+    uint8_t server_if = 10;
     reset_mock_function_count_map();
     gatt::SetMockBtaGattServerInterface(&gatt_server_interface);
-    EXPECT_CALL(gatt_server_interface, AppRegister(_, _, _, _)).Times(1);
+    EXPECT_CALL(gatt_server_interface, AppRegister(_, _, _)).Times(1).WillOnce(Return(server_if));
+    EXPECT_CALL(gatt_server_interface, AddService(_, _, _)).Times(1);
     GmapServer::Initialize(role, UGG_feature);
   }
 };
@@ -64,15 +66,6 @@ TEST_F(GmapServerTest, test_get_role) { ASSERT_EQ(GmapServer::GetRole(), role); 
 
 TEST_F(GmapServerTest, test_get_UGG_feature) {
   ASSERT_EQ(GmapServer::GetUGGFeature(), UGG_feature);
-}
-
-TEST_F(GmapServerTest, test_add_service) {
-  uint8_t server_if = 10;
-  bluetooth::Uuid uuid =
-          bluetooth::Uuid::FromString("e0e0e0e0-e0e0-e0e0-e0e0-e0e0e0e0e0e0").value();
-
-  EXPECT_CALL(gatt_server_interface, AddService(_, _, _)).Times(1);
-  GmapServer::OnGattServerRegister(GATT_SUCCESS, server_if, uuid);
 }
 
 TEST_F(GmapServerTest, test_read_invalid_characteristic) {

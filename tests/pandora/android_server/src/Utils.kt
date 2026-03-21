@@ -181,25 +181,24 @@ fun <T, U> grpcBidirectionalStream(
     val inputChannel = Channel<T>()
     val serverCallStreamObserver = responseObserver as ServerCallStreamObserver<T>
 
-    val job =
-        scope.launch {
-            block(inputChannel.consumeAsFlow())
-                .onEach { responseObserver.onNext(it) }
-                .onCompletion { error ->
-                    if (error == null) {
-                        responseObserver.onCompleted()
-                    }
+    val job = scope.launch {
+        block(inputChannel.consumeAsFlow())
+            .onEach { responseObserver.onNext(it) }
+            .onCompletion { error ->
+                if (error == null) {
+                    responseObserver.onCompleted()
                 }
-                .catch {
-                    it.printStackTrace()
-                    val sw = StringWriter()
-                    it.printStackTrace(PrintWriter(sw))
-                    responseObserver.onError(
-                        Status.UNKNOWN.withCause(it).withDescription(sw.toString()).asException()
-                    )
-                }
-                .launchIn(this)
-        }
+            }
+            .catch {
+                it.printStackTrace()
+                val sw = StringWriter()
+                it.printStackTrace(PrintWriter(sw))
+                responseObserver.onError(
+                    Status.UNKNOWN.withCause(it).withDescription(sw.toString()).asException()
+                )
+            }
+            .launchIn(this)
+    }
 
     serverCallStreamObserver.setOnCancelHandler { job.cancel() }
 
@@ -264,25 +263,24 @@ fun <T> grpcServerStream(
 ) {
     val serverCallStreamObserver = responseObserver as ServerCallStreamObserver<T>
 
-    val job =
-        scope.launch {
-            block()
-                .onEach { responseObserver.onNext(it) }
-                .onCompletion { error ->
-                    if (error == null) {
-                        responseObserver.onCompleted()
-                    }
+    val job = scope.launch {
+        block()
+            .onEach { responseObserver.onNext(it) }
+            .onCompletion { error ->
+                if (error == null) {
+                    responseObserver.onCompleted()
                 }
-                .catch {
-                    it.printStackTrace()
-                    val sw = StringWriter()
-                    it.printStackTrace(PrintWriter(sw))
-                    responseObserver.onError(
-                        Status.UNKNOWN.withCause(it).withDescription(sw.toString()).asException()
-                    )
-                }
-                .launchIn(this)
-        }
+            }
+            .catch {
+                it.printStackTrace()
+                val sw = StringWriter()
+                it.printStackTrace(PrintWriter(sw))
+                responseObserver.onError(
+                    Status.UNKNOWN.withCause(it).withDescription(sw.toString()).asException()
+                )
+            }
+            .launchIn(this)
+    }
 
     serverCallStreamObserver.setOnCancelHandler { job.cancel() }
 }

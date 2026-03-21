@@ -776,17 +776,16 @@ object Util {
      */
     @JvmStatic
     fun enforceCallingUidIsNotPcc(methodName: String) {
-        if (
-            SdkLevel.isAtLeastC() &&
-                com.android.bluetooth.jarjar.android.app.privatecompute.flags.Flags
-                    .enablePccFrameworkSupport()
-        ) {
-            val callingUid = Binder.getCallingUid()
-            if (Process.isPrivateComputeCoreUid(callingUid)) {
-                throw SecurityException(
-                    "PCC UIDs are not allowed to perform Bluetooth egress operation: $methodName"
-                )
-            }
+        if (!android.app.privatecompute.flags.Flags.enablePccFrameworkSupport()) {
+            return
+        }
+        if (!SdkLevel.isAtLeastC()) {
+            return
+        }
+        if (Process.isPrivateComputeCoreUid(Binder.getCallingUid())) {
+            throw SecurityException(
+                "PCC UIDs are not allowed to perform Bluetooth egress operation: $methodName"
+            )
         }
     }
 

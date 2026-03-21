@@ -2060,6 +2060,11 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
       log::warn("Peer {} : event={}: transitioning to Idle due to ACL Disconnect",
                 peer_.PeerAddress(), BtifAvEvent::EventName(event));
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::A2DP_CONNECTION_ACL_DISCONNECTED);
+      if (com_android_bluetooth_flags_a2dp_cleanup_on_acl_disconnect()) {
+        if (peer_.BtaHandle() != kBtaHandleUnknown) {
+          BTA_AvClose(peer_.BtaHandle());
+        }
+      }
       btif_report_connection_state(peer_.PeerAddress(), BTAV_CONNECTION_STATE_DISCONNECTED,
                                    BtifStatus(FAIL), BTA_AV_FAIL,
                                    peer_.IsSource() ? A2dpType::kSink : A2dpType::kSource);
@@ -2363,16 +2368,14 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
 
         // Invoke the started handler only when initiator.
         log::info("Peer should suspend: {}", should_suspend);
-
-        if (!should_suspend &&
-            btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
-          // Only clear pending flag after acknowledgement
-          peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
-        }
       }
 
       // Remain in Open state if status failed
       if (p_av->start.status != BTA_AV_SUCCESS) {
+        if (peer_.IsSink() && !should_suspend &&
+            btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
+          peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
+        }
         return false;
       }
 
@@ -2395,6 +2398,10 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
       }
 
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateStarted);
+
+      if (peer_.IsSink() && !should_suspend) {
+        btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource);
+      }
       break;
     }
 

@@ -62,6 +62,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.BluetoothEventLogger;
+import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.auracast.AuracastUtils;
 import com.android.bluetooth.auracast.BroadcastStreamInfo;
@@ -1788,7 +1789,9 @@ public class BassClientService extends ConnectableProfile {
         // If the other earbud succeeded, the Set would already be empty.
         if (mPendingNfcJoiningDevices.isEmpty()) {
             String streamName =
-                    source.getBroadcastName() != null ? source.getBroadcastName() : "Nearby";
+                    source.getBroadcastName() != null
+                            ? source.getBroadcastName()
+                            : getString(R.string.auracast_default_stream_name);
 
             RemoteDevices remoteDevices = getAdapterService().getRemoteDevices();
             String deviceName = remoteDevices.getAlias(sink);
@@ -1799,18 +1802,15 @@ public class BassClientService extends ConnectableProfile {
             }
             if (deviceName == null) {
                 // If name is null, fallback
-                deviceName = "devices";
+                deviceName = getString(R.string.auracast_default_device_name);
             }
 
             NotificationManager nm =
                     getAdapterService().getSystemService(NotificationManager.class);
+            String title = getString(R.string.auracast_notification_title, streamName);
             String text =
-                    "Failed to connect to "
-                            + streamName
-                            + " audio stream on your "
-                            + deviceName
-                            + ".";
-            AuracastUtils.showNotification(this, nm, streamName, text, null);
+                    getString(R.string.auracast_connection_failed_message, streamName, deviceName);
+            AuracastUtils.showNotification(this, nm, title, text, null);
         }
     }
 

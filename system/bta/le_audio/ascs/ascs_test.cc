@@ -105,20 +105,15 @@ TEST_F(AscsTestsBase, RegisterCallbacks) {
 
   // Check GATT server app registration
   Ascs::ServiceDescriptor service_descriptor;
-  void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if, const bluetooth::Uuid& uuid);
-  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _, _))
-          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb),
-                          SaveArg<3>(&p_reg_cb)));
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _))
+          .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb), Return(0xDE)));
   ascs_->RegisterGattService(service_descriptor, &asc_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
   ASSERT_EQ(uuid::kAudioStreamControlServiceUuid, uuid);
   Mock::VerifyAndClearExpectations(&gatt_server_interface_);
 
-  // Inject the registration success event
-  p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, uuid);
-
   // Ignore second call to register
-  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _, _))
+  EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _))
           .Times(0);
   ascs_->RegisterGattService(service_descriptor, &asc_callbacks_);
 
@@ -189,16 +184,8 @@ public:
     AscsTestsBase::SetUp();
 
     // Mock GATT application registration success
-    EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _, _))
-            .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_),
-                                  [](const bluetooth::Uuid& app_uuid,
-                                     const stack::tGATT_CBACK* /*p_cback*/, bool /* eatt_support */,
-                                     void (*p_reg_cb)(tGATT_STATUS status, tGATT_IF server_if,
-                                                      const bluetooth::Uuid& uuid)) {
-                                    if (p_reg_cb) {
-                                      p_reg_cb(tGATT_STATUS::GATT_SUCCESS, 0xDE, app_uuid);
-                                    }
-                                  }));
+    EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kAudioStreamControlServiceUuid, _, _))
+            .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_), Return(0xDE)));
 
     // Mock GATT service registration success
     EXPECT_CALL(gatt_server_interface_, AddService(0xDE, _, _))
