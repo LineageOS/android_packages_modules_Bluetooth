@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "stop_le_scan_system_suspend"
-    namespace: "bluetooth"
-    description: "Stop all LE scanners if the system is suspended"
-    bug: "438826539"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "treat_empty_filters_as_unfiltered"
     namespace: "bluetooth"
     description: "Treat scans with all-fields-empty filters as unfiltered"
