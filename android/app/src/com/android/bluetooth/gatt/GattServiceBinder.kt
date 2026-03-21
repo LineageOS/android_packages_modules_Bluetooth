@@ -61,9 +61,22 @@ class GattServiceBinder(private var gattService: GattService?) :
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
-    private fun gattEnforceConnect(source: AttributionSource): GattService? {
+    private fun gattEnforceConnect(
+        source: AttributionSource,
+        allowPccBypass: Boolean = false,
+    ): GattService? {
         val gatt = gatt() ?: return null
-        if (!Util.enforceConnectPermissionForDataDelivery(gatt, source, TAG)) return null
+        if (
+            !Util.enforceConnectPermissionForDataDelivery(
+                gatt,
+                source,
+                TAG,
+                method = null,
+                allowPccBypass,
+            )
+        ) {
+            return null
+        }
         return gatt
     }
 
@@ -90,7 +103,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         states: IntArray,
         source: AttributionSource,
     ): List<BluetoothDevice> {
-        val gatt = gattEnforceConnect(source) ?: return emptyList()
+        val gatt = gattEnforceConnect(source, allowPccBypass = true) ?: return emptyList()
         return gatt.runOrFetchOnGattThread(gatt, emptyList()) {
             getDevicesMatchingConnectionStates(states)
         }

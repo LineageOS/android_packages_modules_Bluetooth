@@ -50,6 +50,16 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
 
     @RequiresPermission(BLUETOOTH_CONNECT)
     private HearingAidService getService(AttributionSource source) {
+        return getServiceInternal(source, false);
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private HearingAidService getServiceAllowPcc(AttributionSource source) {
+        return getServiceInternal(source, true);
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private HearingAidService getServiceInternal(AttributionSource source, boolean allowPccBypass) {
         HearingAidService service = mService;
 
         if (Util.isInstrumentationTestMode()) {
@@ -58,7 +68,8 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
 
         if (!Util.checkProfileAvailable(service, TAG)
                 || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(
+                        service, source, TAG, null, allowPccBypass)) {
             return null;
         }
         return service;
@@ -88,7 +99,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
 
     @Override
     public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
-        HearingAidService service = getService(source);
+        HearingAidService service = getServiceAllowPcc(source);
         if (service == null) {
             return Collections.emptyList();
         }
@@ -130,7 +141,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
 
     @Override
     public List<BluetoothDevice> getActiveDevices(AttributionSource source) {
-        HearingAidService service = getService(source);
+        HearingAidService service = getServiceAllowPcc(source);
         if (service == null) {
             return Collections.emptyList();
         }
