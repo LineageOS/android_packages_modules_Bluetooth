@@ -109,6 +109,7 @@ TEST_F(PacsTestsBase, RegisterCallbacks) {
   service_descriptor.pac_sets.sink.push_back({});
   EXPECT_CALL(gatt_server_interface_, AppRegister(uuid::kPublishedAudioCapabilityServiceUuid, _, _))
           .WillOnce(DoAll(SaveArg<0>(&uuid), SaveArg<1>(&p_gatt_event_source_cb), Return(0xDE)));
+  EXPECT_CALL(gatt_server_interface_, AddService(_, _)).WillOnce(Return(GATT_SERVICE_STARTED));
   pacs_->RegisterGattService(service_descriptor, &pac_callbacks_);
   ASSERT_NE(nullptr, p_gatt_event_source_cb);
   ASSERT_EQ(uuid::kPublishedAudioCapabilityServiceUuid, uuid);
@@ -234,20 +235,19 @@ protected:
             .WillRepeatedly(DoAll(SaveArg<1>(&p_gatt_event_source_cb_), Return(0xDE)));
 
     // Mock GATT service registration success
-    EXPECT_CALL(gatt_server_interface_, AddService(0xDE, _, _))
-            .WillOnce(DoAll(SaveArg<0>(&server_if_),
-                            [this](tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                                   BTA_GATTS_AddServiceCb cb) {
-                              // Assign some ATT handles
-                              uint16_t handle_idx = 0x2000;
-                              service_db_ = service;  // Store for using it by mock GATT layer
-                              for (auto& el : service_db_) {
-                                el.attribute_handle = handle_idx++;
-                              }
-                              auto status = service.empty() ? tGATT_STATUS::GATT_ERROR
-                                                            : tGATT_STATUS::GATT_SUCCESS;
-                              std::move(cb).Run(status, server_if, service_db_);
-                            }));
+    EXPECT_CALL(gatt_server_interface_, AddService(0xDE, _))
+            .WillOnce(DoAll(
+                    SaveArg<0>(&server_if_),
+                    [this](tGATT_IF /*server_if*/, std::vector<btgatt_db_element_t>* service) {
+                      // Assign some ATT handles
+                      uint16_t handle_idx = 0x2000;
+                      for (auto& el : *service) {
+                        el.attribute_handle = handle_idx++;
+                      }
+                      service_db_ = *service;  // Store for using it by mock GATT layer
+                      return service->empty() ? tGATT_STATUS::GATT_ERROR
+                                              : tGATT_STATUS::GATT_SERVICE_STARTED;
+                    }));
 
     // Register GATT service instance providing the service descriptor
     EXPECT_CALL(pac_callbacks_, OnPacsRegistered());
@@ -1421,11 +1421,8 @@ TEST_F(PacsTests, UpdatePacSet) {
 
 TEST_F(PacsRegistrationFailureTests, AddServiceFailsDeathTest) {
   // Mock GATT service registration failure
-  ON_CALL(gatt_server_interface_, AddService(server_if_, _, _))
-          .WillByDefault([](tGATT_IF server_if, std::vector<btgatt_db_element_t> /* service */,
-                            BTA_GATTS_AddServiceCb cb) {
-            std::move(cb).Run(tGATT_STATUS::GATT_ERROR, server_if, {});
-          });
+  ON_CALL(gatt_server_interface_, AddService(server_if_, _))
+          .WillByDefault(Return(tGATT_STATUS::GATT_ERROR));
 
   // Register GATT service instance providing the service descriptor
   EXPECT_CALL(pac_callbacks_, OnPacsRegistered()).Times(0);
@@ -1454,15 +1451,15 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithSourcePacsOnly) {
   service_descriptor.pac_sets.sink.clear();
 
   // Mock GATT service registration success
-  EXPECT_CALL(gatt_server_interface_, AddService(server_if_, _, _))
-          .WillOnce([](tGATT_IF, std::vector<btgatt_db_element_t> service,
-                       BTA_GATTS_AddServiceCb cb) {
+  EXPECT_CALL(gatt_server_interface_, AddService(server_if_, _))
+          .WillOnce([](tGATT_IF /*server_if*/,
+                       std::vector<btgatt_db_element_t>* service) -> tGATT_STATUS {
             // Verify that no Sink PAC characteristics were added, but Source are there
             bool source_pac_found = false;
             bool source_loc_found = false;
-            for (const auto& el : service) {
-              ASSERT_NE(el.uuid, uuid::kSinkPublishedAudioCapabilityCharacteristicUuid);
-              ASSERT_NE(el.uuid, uuid::kSinkAudioLocationCharacteristicUuid);
+            for (const auto& el : *service) {
+              EXPECT_NE(el.uuid, uuid::kSinkPublishedAudioCapabilityCharacteristicUuid);
+              EXPECT_NE(el.uuid, uuid::kSinkAudioLocationCharacteristicUuid);
               if (el.uuid == uuid::kSourcePublishedAudioCapabilityCharacteristicUuid) {
                 source_pac_found = true;
               }
@@ -1470,15 +1467,15 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithSourcePacsOnly) {
                 source_loc_found = true;
               }
             }
-            ASSERT_TRUE(source_pac_found);
-            ASSERT_TRUE(source_loc_found);
+            EXPECT_TRUE(source_pac_found);
+            EXPECT_TRUE(source_loc_found);
 
             // Assign some dummy handles
             uint16_t handle_idx = 0x2000;
-            for (auto& el : service) {
+            for (auto& el : *service) {
               el.attribute_handle = handle_idx++;
             }
-            std::move(cb).Run(tGATT_STATUS::GATT_SUCCESS, 0xDE, service);
+            return GATT_SERVICE_STARTED;
           });
 
   // Register GATT service instance
@@ -1493,15 +1490,14 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithSinkPacsOnly) {
   service_descriptor.pac_sets.source.clear();
 
   // Mock GATT service registration success
-  EXPECT_CALL(gatt_server_interface_, AddService(server_if_, _, _))
-          .WillOnce([](tGATT_IF, std::vector<btgatt_db_element_t> service,
-                       BTA_GATTS_AddServiceCb cb) {
+  EXPECT_CALL(gatt_server_interface_, AddService(server_if_, _))
+          .WillOnce([](tGATT_IF, std::vector<btgatt_db_element_t>* service) -> tGATT_STATUS {
             // Verify that no Source PAC characteristics were added, but Sink are there
             bool sink_pac_found = false;
             bool sink_loc_found = false;
-            for (const auto& el : service) {
-              ASSERT_NE(el.uuid, uuid::kSourcePublishedAudioCapabilityCharacteristicUuid);
-              ASSERT_NE(el.uuid, uuid::kSourceAudioLocationCharacteristicUuid);
+            for (const auto& el : *service) {
+              EXPECT_NE(el.uuid, uuid::kSourcePublishedAudioCapabilityCharacteristicUuid);
+              EXPECT_NE(el.uuid, uuid::kSourceAudioLocationCharacteristicUuid);
               if (el.uuid == uuid::kSinkPublishedAudioCapabilityCharacteristicUuid) {
                 sink_pac_found = true;
               }
@@ -1509,15 +1505,15 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithSinkPacsOnly) {
                 sink_loc_found = true;
               }
             }
-            ASSERT_TRUE(sink_pac_found);
-            ASSERT_TRUE(sink_loc_found);
+            EXPECT_TRUE(sink_pac_found);
+            EXPECT_TRUE(sink_loc_found);
 
             // Assign some dummy handles
             uint16_t handle_idx = 0x2000;
-            for (auto& el : service) {
+            for (auto& el : *service) {
               el.attribute_handle = handle_idx++;
             }
-            std::move(cb).Run(tGATT_STATUS::GATT_SUCCESS, 0xDE, service);
+            return tGATT_STATUS::GATT_SERVICE_STARTED;
           });
 
   // Register GATT service instance

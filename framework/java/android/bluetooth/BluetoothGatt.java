@@ -1054,7 +1054,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void disconnect() {
-        Log.d(TAG, "cancelOpen() - device: " + mDevice);
+        Log.d(TAG, "disconnect() - device: " + mDevice);
         if (!mClientRegistered) return;
 
         try {

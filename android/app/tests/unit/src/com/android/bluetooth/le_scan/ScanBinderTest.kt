@@ -24,6 +24,7 @@ import android.bluetooth.State
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
+import android.bluetooth.le.ScanCallback.SCAN_FAILED_INTERNAL_ERROR
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
@@ -34,6 +35,8 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.WorkSource
 import android.permission.PermissionManager
+import android.permission.PermissionManager.PERMISSION_GRANTED
+import android.permission.PermissionManager.PERMISSION_SOFT_DENIED
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
@@ -206,6 +209,9 @@ class ScanBinderTest {
     @Test
     fun registerAndStartScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
         doReturn(State.BLE_ON).whenever(adapterService).state
+        doReturn(PERMISSION_GRANTED)
+            .whenever(adapterService)
+            .checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED)
         val callback = mock<IScannerCallback>()
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
@@ -215,6 +221,25 @@ class ScanBinderTest {
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         verify(scanController)
             .registerAndStartScan(callback, workSource, source, true, settings, filters)
+    }
+
+    @Test
+    fun registerAndStartScan_whenAdapterIsBleOn_failsWithoutPrivilegedPermission() {
+        doReturn(State.BLE_ON).whenever(adapterService).state
+        doReturn(PERMISSION_SOFT_DENIED)
+            .whenever(adapterService)
+            .checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED)
+        val callback = mock<IScannerCallback>()
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
+
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
+        verify(callback).onScannerRegistered(SCAN_FAILED_INTERNAL_ERROR, -1)
+        verify(adapterService, never())
+            .enforceCallingOrSelfPermission(eq(BLUETOOTH_PRIVILEGED), any())
+        verify(scanController, never())
+            .registerAndStartScan(any(), any(), any(), any(), any(), any())
     }
 
     @Test

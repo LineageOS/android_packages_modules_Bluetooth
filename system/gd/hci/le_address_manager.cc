@@ -114,12 +114,10 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
   supports_ble_privacy_ = supports_ble_privacy;
   log::info("New policy: {}", AddressPolicyText(address_policy));
 
-  if (com_android_bluetooth_flags_nrpa_for_non_connectable_adv()) {
-    minimum_rotation_time_ = minimum_rotation_time;
-    maximum_rotation_time_ = maximum_rotation_time;
-    log::info("minimum_rotation_time_={}ms, maximum_rotation_time_={}ms",
-              minimum_rotation_time_.count(), maximum_rotation_time_.count());
-  }
+  minimum_rotation_time_ = minimum_rotation_time;
+  maximum_rotation_time_ = maximum_rotation_time;
+  log::info("minimum_rotation_time_={}ms, maximum_rotation_time_={}ms",
+            minimum_rotation_time_.count(), maximum_rotation_time_.count());
 
   switch (address_policy_) {
     case AddressPolicy::USE_PUBLIC_ADDRESS:
@@ -147,12 +145,6 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
     case AddressPolicy::USE_RESOLVABLE_ADDRESS:
       le_address_ = fixed_address;
       rotation_irk_ = rotation_irk;
-      if (!com_android_bluetooth_flags_nrpa_for_non_connectable_adv()) {
-        minimum_rotation_time_ = minimum_rotation_time;
-        maximum_rotation_time_ = maximum_rotation_time;
-        log::info("minimum_rotation_time_={}ms, maximum_rotation_time_={}ms",
-                  minimum_rotation_time_.count(), maximum_rotation_time_.count());
-      }
       if (controller_->IsRpaGenerationSupported()) {
         auto min_seconds = std::chrono::duration_cast<std::chrono::seconds>(minimum_rotation_time_);
         auto max_seconds = std::chrono::duration_cast<std::chrono::seconds>(maximum_rotation_time_);
@@ -326,9 +318,6 @@ AddressWithType LeAddressManager::NewResolvableAddress() {
 }
 
 AddressWithType LeAddressManager::NewNonResolvableAddress() {
-  if (!com_android_bluetooth_flags_nrpa_for_non_connectable_adv()) {
-    log::assert_that(RotatingAddress(), "assert failed: RotatingAddress()");
-  }
   hci::Address address = generate_nrpa();
   auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
   return random_address;

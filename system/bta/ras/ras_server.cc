@@ -261,13 +261,8 @@ public:
       log::info("Push vendor_specific_characteristics uuid {}", characteristics.uuid);
     }
 
-    BTA_GATTS_AddService(server_if_, service,
-                         base::BindRepeating([](tGATT_STATUS status, int server_if,
-                                                std::vector<btgatt_db_element_t> service) {
-                           if (instance) {
-                             instance->OnServiceAdded(status, server_if, service);
-                           }
-                         }));
+    auto status = BTA_GATTS_AddService(server_if_, &service);
+    OnServiceAdded(status, server_if_, std::move(service));
   }
 
   void RegisterCallbacks(bluetooth::ras::RasServerCallbacks* callbacks) { callbacks_ = callbacks; }
