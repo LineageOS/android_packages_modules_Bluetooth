@@ -1,0 +1,74 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#pragma once
+
+#include <rust/cxx.h>
+
+#include <cstdint>
+#include <memory>
+
+namespace bluetooth::hci::iso_manager {
+
+namespace ffi {
+struct IsoCigCallbacks;
+}  // namespace ffi
+
+class IsoManagerShim {
+public:
+  IsoManagerShim();
+  ~IsoManagerShim();
+
+  void RegisterCallbacksNative(
+          rust::Box<::bluetooth::hci::iso_manager::ffi::IsoCigCallbacks> cig_callbacks);
+
+  void CreateCig(uint8_t cig_id, uint32_t sdu_interval_c_to_p, uint32_t sdu_interval_p_to_c,
+                 uint8_t worse_cast_sca, bool packing, bool framing,
+                 uint16_t max_transport_latency_c_to_p, uint16_t max_transport_latency_p_to_c,
+                 rust::Vec<uint8_t> cis_ids, rust::Vec<uint16_t> max_sdu_c_to_p,
+                 rust::Vec<uint16_t> max_sdu_p_to_c, rust::Vec<uint8_t> phy_c_to_p,
+                 rust::Vec<uint8_t> phy_p_to_c, rust::Vec<uint8_t> rtn_c_to_p,
+                 rust::Vec<uint8_t> rtn_p_to_c);
+
+  void ReconfigureCig(uint8_t cig_id, uint32_t sdu_interval_c_to_p, uint32_t sdu_interval_p_to_c,
+                      uint8_t worse_cast_sca, bool packing, bool framing,
+                      uint16_t max_transport_latency_c_to_p, uint16_t max_transport_latency_p_to_c,
+                      rust::Vec<uint8_t> cis_ids, rust::Vec<uint16_t> max_sdu_c_to_p,
+                      rust::Vec<uint16_t> max_sdu_p_to_c, rust::Vec<uint8_t> phy_c_to_p,
+                      rust::Vec<uint8_t> phy_p_to_c, rust::Vec<uint8_t> rtn_c_to_p,
+                      rust::Vec<uint8_t> rtn_p_to_c);
+
+  void RemoveCig(uint8_t cig_id, bool force);
+
+  void CreateCis(rust::Vec<uint16_t> cis_conn_handles, rust::Vec<uint16_t> acl_conn_handles);
+
+  void DisconnectCis(uint16_t conn_handle, uint8_t reason);
+
+  void SetupIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir, uint8_t data_path_id,
+                        uint8_t coding_format, uint16_t company_id,
+                        uint16_t vendor_specific_codec_id, uint32_t controller_delay,
+                        rust::Vec<uint8_t> codec_configuration);
+
+  void RemoveIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir);
+
+  void SendIsoData(uint16_t conn_handle, rust::Slice<const uint8_t> data);
+
+  void ReadIsoLinkQuality(uint16_t conn_handle);
+};
+
+std::unique_ptr<IsoManagerShim> GetIsoManagerShim();
+
+}  // namespace bluetooth::hci::iso_manager

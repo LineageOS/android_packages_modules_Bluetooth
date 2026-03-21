@@ -23,6 +23,9 @@ package {
 rust_defaults {
     name: "libbluetooth_rs_defaults",
     min_sdk_version: "36",
+    proc_macros: [
+        "libbluetooth_macros",
+    ],
     rustlibs: [
         "libbytes",
         "libcxx",

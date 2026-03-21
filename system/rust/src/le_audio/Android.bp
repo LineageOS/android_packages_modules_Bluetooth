@@ -21,6 +21,7 @@ package {
 filegroup {
     name: "libbluetooth_le_audio_rs_ffi",
     srcs: [
+        "iso_manager/ffi.rs",
         "periodic_sync/ffi.rs",
     ],
 }
