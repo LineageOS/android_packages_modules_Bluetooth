@@ -22,8 +22,6 @@
 #include <hardware/audio.h>
 #endif
 
-#include <com_android_bluetooth_flags.h>
-
 #include <functional>
 #include <optional>
 

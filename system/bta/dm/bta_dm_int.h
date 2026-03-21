@@ -24,11 +24,10 @@
 
 #pragma once
 
-#include <bluetooth/log.h>
 #include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
-#include <com_android_bluetooth_flags.h>
 
+#include <format>
 #include <list>
 #include <string>
 #include <vector>
