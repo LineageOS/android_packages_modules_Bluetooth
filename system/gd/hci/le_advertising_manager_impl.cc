@@ -526,7 +526,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       address_manager_registered = true;
     }
 
-    if (com_android_bluetooth_flags_nrpa_for_non_connectable_adv() && !config.connectable) {
+    if (!config.connectable) {
       advertising_sets_[id].address_type = GetAdvertiserAddressTypeNonConnectable(
               config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
     } else {
@@ -624,7 +624,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     advertising_sets_[id].duration = duration;
     advertising_sets_[id].max_extended_advertising_events = max_ext_adv_events;
     advertising_sets_[id].handler = handler;
-    if (com_android_bluetooth_flags_nrpa_for_non_connectable_adv() && !config.connectable) {
+    if (!config.connectable) {
       advertising_sets_[id].address_type = GetAdvertiserAddressTypeNonConnectable(
               config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
     } else {

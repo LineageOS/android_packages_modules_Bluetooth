@@ -1802,34 +1802,7 @@ TEST_F(LeExtendedAdvertisingManagerTest,
   EXPECT_EQ(set_parameters_command.GetOwnAddressType(), OwnAddressType::PUBLIC_DEVICE_ADDRESS);
 }
 
-TEST_F(LeExtendedAdvertisingManagerTest,
-       use_public_address_type_if_public_address_policy_non_connectable) {
-  TEST_BT::provider_->nrpa_for_non_connectable_adv(false);
-  // arrange: use PUBLIC address policy
-  test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
-
-  // act: start advertising set with RPA
-  AdvertisingConfig config{};
-  config.requested_advertiser_address_type = AdvertiserAddressType::RESOLVABLE_RANDOM;
-  config.channel_map = 1;
-
-  le_advertising_manager_->ExtendedCreateAdvertiser(kAdvertiserClientIdJni, 0x00, config, 0, 0,
-                                                    client_handler_);
-  auto command = LeAdvertisingCommandView::Create(test_hci_layer_->GetCommand());
-
-  // assert
-  ASSERT_TRUE(command.IsValid());
-  EXPECT_EQ(command.GetOpCode(), OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS);
-
-  auto set_parameters_command =
-          LeSetExtendedAdvertisingParametersView::Create(LeAdvertisingCommandView::Create(command));
-  ASSERT_TRUE(set_parameters_command.IsValid());
-  EXPECT_EQ(set_parameters_command.GetOwnAddressType(), OwnAddressType::PUBLIC_DEVICE_ADDRESS);
-}
-
 TEST_F(LeExtendedAdvertisingManagerTest, use_nrpa_if_public_address_policy_non_connectable) {
-  set_com_android_bluetooth_flags_nrpa_for_non_connectable_adv(true);
-
   // arrange: use PUBLIC address policy
   test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
@@ -1862,7 +1835,6 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_nrpa_if_public_address_policy_non_c
 
 TEST_F(LeExtendedAdvertisingManagerTest,
        use_public_if_requested_with_public_address_policy_non_connectable) {
-  set_com_android_bluetooth_flags_nrpa_for_non_connectable_adv(true);
   // arrange: use PUBLIC address policy
   test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
