@@ -138,25 +138,9 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
-  tBTA_GATTC_DATA data = {
-          .api_conn =
-                  {
-                          .hdr =
-                                  {
-                                          .event = BTA_GATTC_API_OPEN_EVT,
-                                  },
-                          .remote_bda = remote_bda,
-                          .client_if = client_if,
-                          .connection_type = connection_type,
-                          .transport = transport,
-                          .remote_addr_type = addr_type,
-                          .preferred_mtu = preferred_mtu,
-                          .prefer_relax_mode = prefer_relax_mode,
-                          .auto_mtu_enabled = auto_mtu_enabled,
-                  },
-  };
-
-  post_on_bt_main([data]() { bta_gattc_process_api_open(&data); });
+  do_in_main_thread(base::Bind(&bta_gattc_process_api_open, client_if, remote_bda, addr_type,
+                               connection_type, transport, preferred_mtu, prefer_relax_mode,
+                               auto_mtu_enabled));
 }
 
 /*******************************************************************************
@@ -177,24 +161,8 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                     uint16_t preferred_mtu, bool prefer_relax_mode) {
-  tBTA_GATTC_DATA data = {
-          .api_conn =
-                  {
-                          .hdr =
-                                  {
-                                          .event = BTA_GATTC_API_OPEN_EVT,
-                                  },
-                          .remote_bda = remote_bda,
-                          .client_if = client_if,
-                          .connection_type = connection_type,
-                          .transport = transport,
-                          .remote_addr_type = addr_type,
-                          .preferred_mtu = preferred_mtu,
-                          .prefer_relax_mode = prefer_relax_mode,
-                  },
-  };
-
-  post_on_bt_main([data]() { bta_gattc_process_api_open(&data); });
+  BTA_GATTC_Open(client_if, remote_bda, addr_type, connection_type, transport, preferred_mtu,
+                 prefer_relax_mode, false);
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
@@ -219,15 +187,8 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
  *
  ******************************************************************************/
 void BTA_GATTC_CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
-  tBTA_GATTC_API_CANCEL_OPEN* p_buf =
-          (tBTA_GATTC_API_CANCEL_OPEN*)osi_malloc(sizeof(tBTA_GATTC_API_CANCEL_OPEN));
-
-  p_buf->hdr.event = BTA_GATTC_API_CANCEL_OPEN_EVT;
-  p_buf->client_if = client_if;
-  p_buf->is_direct = is_direct;
-  p_buf->remote_bda = remote_bda;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_main_thread(
+          base::Bind(&bta_gattc_process_api_open_cancel, client_if, remote_bda, is_direct));
 }
 
 /*******************************************************************************

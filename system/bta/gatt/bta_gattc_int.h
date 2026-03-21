@@ -46,12 +46,7 @@
  *  Constants and data types
  ****************************************************************************/
 enum {
-  BTA_GATTC_API_OPEN_EVT = BTA_SYS_EVT_START(BTA_ID_GATTC),
-  BTA_GATTC_INT_OPEN_FAIL_EVT,
-  BTA_GATTC_API_CANCEL_OPEN_EVT,
-  BTA_GATTC_INT_CANCEL_OPEN_OK_EVT,
-
-  BTA_GATTC_API_READ_EVT,
+  BTA_GATTC_API_READ_EVT = BTA_SYS_EVT_START(BTA_ID_GATTC),
   BTA_GATTC_API_WRITE_EVT,
   BTA_GATTC_API_EXEC_EVT,
   BTA_GATTC_API_CFG_MTU_EVT,
@@ -62,7 +57,6 @@ enum {
   BTA_GATTC_API_CONFIRM_EVT,
   BTA_GATTC_API_READ_MULTI_EVT,
 
-  BTA_GATTC_INT_CONN_EVT,
   BTA_GATTC_INT_DISCOVER_EVT,
   BTA_GATTC_DISCOVER_CMPL_EVT,
   BTA_GATTC_OP_CMPL_EVT,
@@ -99,28 +93,6 @@ typedef enum : uint8_t {
   BTA_GATTC_SERV_DISC,
   BTA_GATTC_SERV_DISC_ACT
 } tBTA_GATTC_SERV_STATE;
-
-/* internal strucutre for GATTC register API  */
-typedef struct {
-  BT_HDR_RIGID hdr;
-  RawAddress remote_bda;
-  tGATT_IF client_if;
-  tBTM_BLE_CONN_TYPE connection_type;
-  tBT_TRANSPORT transport;
-  tBT_DEVICE_TYPE remote_addr_type;
-  uint16_t preferred_mtu;
-  bool prefer_relax_mode;
-  bool auto_mtu_enabled;
-} tBTA_GATTC_API_OPEN;
-
-typedef struct {
-  BT_HDR_RIGID hdr;
-  RawAddress remote_bda;
-  tGATT_IF client_if;
-  bool is_direct;
-  tBT_TRANSPORT transport;
-  uint8_t initiating_phys;
-} tBTA_GATTC_API_CANCEL_OPEN;
 
 typedef struct {
   BT_HDR_RIGID hdr;
@@ -212,8 +184,6 @@ typedef struct {
 
 typedef union {
   BT_HDR_RIGID hdr;
-  tBTA_GATTC_API_OPEN api_conn;
-  tBTA_GATTC_API_CANCEL_OPEN api_cancel_conn;
   tBTA_GATTC_API_READ api_read;
   tBTA_GATTC_API_SEARCH api_search;
   tBTA_GATTC_API_WRITE api_write;
@@ -226,10 +196,8 @@ typedef union {
 } tBTA_GATTC_DATA;
 
 typedef enum : uint8_t {
-  BTA_GATTC_IDLE_ST = 0, /* Idle  */
-  BTA_GATTC_W4_CONN_ST,  /* Wait for connection -  (optional) */
-  BTA_GATTC_CONN_ST,     /* connected state */
-  BTA_GATTC_DISCOVER_ST  /* discover is in progress */
+  BTA_GATTC_CONN_ST = 0, /* connected state */
+  BTA_GATTC_DISCOVER_ST, /* discover is in progress */
 } tBTA_GATTC_STATE;
 
 typedef struct {
@@ -279,6 +247,10 @@ typedef struct {
   bool dereg_pending;
   bluetooth::Uuid app_uuid;
   tBTA_GATTC_NOTIF_REG notif_reg[BTA_GATTC_NOTIF_REG_MAX];
+
+  /* TODO: connection_manager already tracks which client want to connect to which device, but sends
+   * callbacks to everybody. */
+  std::unordered_set<RawAddress> connecting_to;
 } tBTA_GATTC_RCB;
 
 /* client channel is a mapping between a BTA client(cl_id) and a remote BD
@@ -372,20 +344,16 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
 void bta_gattc_disable();
 void bta_gattc_register(const bluetooth::Uuid& app_uuid, const std::string& name,
                         tBTA_GATTC_CBACK* p_data, BtaAppRegisterCallback cb, bool eatt_support);
-void bta_gattc_process_api_open(const tBTA_GATTC_DATA* p_msg);
-void bta_gattc_process_api_open_cancel(const tBTA_GATTC_DATA* p_msg);
+void bta_gattc_process_api_open(tGATT_IF client_if, const RawAddress& remote_bda,
+                                tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
+                                tBT_TRANSPORT transport, uint16_t preferred_mtu,
+                                bool prefer_relax_mode, bool auto_mtu_enabled);
+void bta_gattc_process_api_open_cancel(tGATT_IF client_if, const RawAddress& remote_bda,
+                                       bool is_direct);
 void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg);
 
 /* function within state machine */
-void bta_gattc_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-void bta_gattc_open_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-void bta_gattc_open_error(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-
-void bta_gattc_cancel_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-void bta_gattc_cancel_open_ok(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-void bta_gattc_cancel_open_error(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-
-void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
+void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb);
 
 void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
@@ -407,7 +375,6 @@ void bta_gattc_ci_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_ci_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_restart_discover(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_msg);
-void bta_gattc_cancel_bk_conn(const tBTA_GATTC_API_CANCEL_OPEN* p_data);
 void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
                                const RawAddress& remote_bda, tCONN_ID conn_id,
                                tBT_TRANSPORT transport, uint16_t mtu);
@@ -505,8 +472,6 @@ void bta_gattc_cache_reset(const RawAddress& server_bda);
 
 inline std::string bta_clcb_state_text(const tBTA_GATTC_STATE& state) {
   switch (state) {
-    CASE_RETURN_TEXT(BTA_GATTC_IDLE_ST);
-    CASE_RETURN_TEXT(BTA_GATTC_W4_CONN_ST);
     CASE_RETURN_TEXT(BTA_GATTC_CONN_ST);
     CASE_RETURN_TEXT(BTA_GATTC_DISCOVER_ST);
     default:
@@ -539,10 +504,6 @@ inline std::string bta_gattc_state_text(const tBTA_GATTC_CB_STATE& state) {
 
 inline const std::string bta_gattc_evt_code_text(tBTA_GATTC_INT_EVT evt_code) {
   switch (evt_code) {
-    CASE_RETURN_TEXT(BTA_GATTC_API_OPEN_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_INT_OPEN_FAIL_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_API_CANCEL_OPEN_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_INT_CANCEL_OPEN_OK_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_READ_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_WRITE_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_EXEC_EVT);
@@ -550,7 +511,6 @@ inline const std::string bta_gattc_evt_code_text(tBTA_GATTC_INT_EVT evt_code) {
     CASE_RETURN_TEXT(BTA_GATTC_API_SEARCH_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_CONFIRM_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_READ_MULTI_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_INT_CONN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_INT_DISCOVER_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_DISCOVER_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_OP_CMPL_EVT);
