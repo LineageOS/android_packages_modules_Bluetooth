@@ -582,12 +582,10 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
   if (!privacy_mode) /* if privacy disabled, always use public address */
   {
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
-    /* This is a Floss only flag. Allow host use random address when privacy
+    /* Allow host use random address when privacy
      * mode is not enabled by setting the sysprop true */
-    if (com_android_bluetooth_flags_floss_separate_host_privacy_and_llprivacy()) {
-      if (osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, privacy_mode)) {
-        btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
-      }
+    if (osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, privacy_mode)) {
+      btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
     }
     btm_cb.ble_ctr_cb.privacy_mode = BTM_PRIVACY_NONE;
   } else /* privacy is turned on*/
@@ -595,13 +593,10 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
     /* always set host random address, used when privacy 1.1 or priavcy 1.2 is
      * disabled */
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
-    /* This is a Floss only flag. Allow host use public address when privacy
+    /* Allow host use public address when privacy
      * mode is enabled by setting the sysprop false */
-    if (com_android_bluetooth_flags_floss_separate_host_privacy_and_llprivacy()) {
-      /* use public address if own address privacy is false in sysprop */
-      if (!osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, privacy_mode)) {
-        btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
-      }
+    if (!osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, privacy_mode)) {
+      btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
     }
 
     /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private
