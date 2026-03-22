@@ -40,3 +40,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "rfcomm_handle_eagain_as_non_blocking"
+    namespace: "bluetooth"
+    description: "Handle EAGAIN by returning true to allow retries in rfcomm data transport"
+    bug: "494514008"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
