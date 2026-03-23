@@ -3881,7 +3881,7 @@ packet LeSetDefaultPhyComplete : CommandComplete (command_op_code = LE_SET_DEFAU
   status : ErrorCode,
 }
 
-enum PhyOptions : 8 {
+enum PhyOptions : 16 {
   NO_PREFERENCE = 0x00,
   S_2 = 0x01,
   S_8 = 0x02,
