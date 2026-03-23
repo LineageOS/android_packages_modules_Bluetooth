@@ -19,6 +19,8 @@ package com.android.bluetooth.storage
 import android.bluetooth.BluetoothAdapter.AUDIO_MODE_DUPLEX
 import android.bluetooth.BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothLeAudioCodecConfig
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
@@ -219,6 +221,17 @@ constructor(
                     Column("Value") { it.value.toStringUtf8() },
                 )
             appendLine(table.indent("  "))
+        }
+    }
+
+    fun onBondStateChanged(device: BluetoothDevice, fromState: Int, toState: Int) {
+        if (toState == BOND_NONE) {
+            removeDevice(device)
+        } else if (fromState == BOND_BONDED) {
+            // Remove the permissions for unbonded devices
+            setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
+            setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
+            setSimAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
         }
     }
 
@@ -823,7 +836,7 @@ constructor(
         }
 
     /** Removes a device from storage */
-    fun removeDevice(device: BluetoothDevice) = dataStore.blockingUpdateData { storage ->
+    private fun removeDevice(device: BluetoothDevice) = dataStore.blockingUpdateData { storage ->
         logEvent(device, "Remove from storage")
         val builder = storage.toBuilder()
 
