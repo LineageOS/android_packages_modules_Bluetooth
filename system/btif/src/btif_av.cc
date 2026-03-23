@@ -808,36 +808,28 @@ static void btif_av_sink_initiate_av_open_timer_timeout(void* data);
 static void bta_av_sink_media_callback(const RawAddress& peer_address, tBTA_AV_EVT event,
                                        tBTA_AV_MEDIA* p_data);
 
-static BtifAvPeer* btif_av_source_find_peer(const RawAddress& peer_address) {
-  return btif_av_source.FindPeer(peer_address);
-}
-
-static BtifAvPeer* btif_av_sink_find_peer(const RawAddress& peer_address) {
-  return btif_av_sink.FindPeer(peer_address);
-}
-
 static BtifAvPeer* btif_av_find_peer(const RawAddress& peer_address,
                                      const A2dpType local_a2dp_type) {
   if (btif_av_source.Enabled() && local_a2dp_type == A2dpType::kSource) {
-    BtifAvPeer* sourcePeer = btif_av_source_find_peer(peer_address);
+    BtifAvPeer* sourcePeer = btif_av_source.FindPeer(peer_address);
     if (sourcePeer != nullptr) {
       return sourcePeer;
     }
   }
   if (btif_av_sink.Enabled() && local_a2dp_type == A2dpType::kSink) {
-    BtifAvPeer* sinkPeer = btif_av_sink_find_peer(peer_address);
+    BtifAvPeer* sinkPeer = btif_av_sink.FindPeer(peer_address);
     if (sinkPeer != nullptr) {
       return sinkPeer;
     }
   }
   if (btif_av_source.Enabled()) {
-    BtifAvPeer* sourcePeer = btif_av_source_find_peer(peer_address);
+    BtifAvPeer* sourcePeer = btif_av_source.FindPeer(peer_address);
     if (sourcePeer != nullptr) {
       return sourcePeer;
     }
   }
   if (btif_av_sink.Enabled()) {
-    BtifAvPeer* sinkPeer = btif_av_sink_find_peer(peer_address);
+    BtifAvPeer* sinkPeer = btif_av_sink.FindPeer(peer_address);
     if (sinkPeer != nullptr) {
       return sinkPeer;
     }
@@ -848,10 +840,10 @@ static BtifAvPeer* btif_av_find_peer(const RawAddress& peer_address,
 
 static BtifAvPeer* btif_av_find_active_peer(const A2dpType local_a2dp_type) {
   if (btif_av_source.Enabled() && local_a2dp_type == A2dpType::kSource) {
-    return btif_av_source_find_peer(btif_av_source.ActivePeer());
+    return btif_av_source.FindPeer(btif_av_source.ActivePeer());
   }
   if (btif_av_sink.Enabled() && local_a2dp_type == A2dpType::kSink) {
-    return btif_av_sink_find_peer(btif_av_sink.ActivePeer());
+    return btif_av_sink.FindPeer(btif_av_sink.ActivePeer());
   }
   return nullptr;
 }
@@ -3489,7 +3481,7 @@ static void bta_av_sink_media_callback(const RawAddress& peer_address, tBTA_AV_E
 
   switch (event) {
     case BTA_AV_SINK_MEDIA_DATA_EVT: {
-      BtifAvPeer* peer = btif_av_sink_find_peer(peer_address);
+      BtifAvPeer* peer = btif_av_sink.FindPeer(peer_address);
       if (peer != nullptr && peer->IsActivePeer()) {
         int state = peer->StateMachine().StateId();
         if ((state == BtifAvStateMachine::kStateStarted) ||
@@ -4262,7 +4254,7 @@ bool btif_av_is_connected_addr(const RawAddress& peer_address, const A2dpType lo
 }
 
 bool btif_av_peer_is_connected_sink(const RawAddress& peer_address) {
-  BtifAvPeer* peer = btif_av_source_find_peer(peer_address);
+  BtifAvPeer* peer = btif_av_source.FindPeer(peer_address);
   if (peer == nullptr) {
     log::warn("No active peer found");
     return false;
@@ -4274,7 +4266,7 @@ bool btif_av_peer_is_connected_sink(const RawAddress& peer_address) {
 }
 
 bool btif_av_peer_is_connected_source(const RawAddress& peer_address) {
-  BtifAvPeer* peer = btif_av_sink_find_peer(peer_address);
+  BtifAvPeer* peer = btif_av_sink.FindPeer(peer_address);
   if (peer == nullptr) {
     log::warn("No active peer found");
     return false;
@@ -4286,7 +4278,7 @@ bool btif_av_peer_is_connected_source(const RawAddress& peer_address) {
 }
 
 bool btif_av_peer_is_sink(const RawAddress& peer_address) {
-  BtifAvPeer* peer = btif_av_source_find_peer(peer_address);
+  BtifAvPeer* peer = btif_av_source.FindPeer(peer_address);
   if (peer == nullptr) {
     log::warn("No active peer found");
     return false;
@@ -4296,7 +4288,7 @@ bool btif_av_peer_is_sink(const RawAddress& peer_address) {
 }
 
 bool btif_av_peer_is_source(const RawAddress& peer_address) {
-  BtifAvPeer* peer = btif_av_sink_find_peer(peer_address);
+  BtifAvPeer* peer = btif_av_sink.FindPeer(peer_address);
   if (peer == nullptr) {
     log::warn("No active peer found");
     return false;
