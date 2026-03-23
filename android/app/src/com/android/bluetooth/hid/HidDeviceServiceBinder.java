@@ -52,6 +52,16 @@ class HidDeviceServiceBinder extends IBluetoothHidDevice.Stub implements IProfil
 
     @RequiresPermission(BLUETOOTH_CONNECT)
     private HidDeviceService getService(AttributionSource source) {
+        return getServiceInternal(source, false);
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private HidDeviceService getServiceAllowPcc(AttributionSource source) {
+        return getServiceInternal(source, true);
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private HidDeviceService getServiceInternal(AttributionSource source, boolean allowPccBypass) {
         // Cache mService because it can change while getService is called
         HidDeviceService service = mService;
 
@@ -60,7 +70,8 @@ class HidDeviceServiceBinder extends IBluetoothHidDevice.Stub implements IProfil
         }
         if (!Util.checkProfileAvailable(service, TAG)
                 || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(
+                        service, source, TAG, null, allowPccBypass)) {
             return null;
         }
         return service;
@@ -182,7 +193,7 @@ class HidDeviceServiceBinder extends IBluetoothHidDevice.Stub implements IProfil
             int[] states, AttributionSource source) {
         Log.d(TAG, "getDevicesMatchingConnectionStates(): states=" + Arrays.toString(states));
 
-        HidDeviceService service = getService(source);
+        HidDeviceService service = getServiceAllowPcc(source);
         if (service == null) {
             return Collections.emptyList();
         }

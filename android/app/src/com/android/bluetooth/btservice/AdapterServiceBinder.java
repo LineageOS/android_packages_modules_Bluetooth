@@ -122,10 +122,23 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @RequiresPermission(BLUETOOTH_CONNECT)
     private AdapterService getServiceAndEnforceCallerUserAndConnect(
             AttributionSource source, String method) {
+        return getServiceAndEnforceCallerUserAndConnectInternal(source, method, false);
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private AdapterService getServiceAndEnforceCallerUserAndConnectAllowPcc(
+            AttributionSource source, String method) {
+        return getServiceAndEnforceCallerUserAndConnectInternal(source, method, true);
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private AdapterService getServiceAndEnforceCallerUserAndConnectInternal(
+            AttributionSource source, String method, boolean allowPccBypass) {
         var service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, method)
-                || !enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
+                || !enforceConnectPermissionForDataDelivery(
+                        service, source, TAG, method, allowPccBypass)) {
             return null;
         }
         return service;
@@ -619,7 +632,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public List<BluetoothDevice> getActiveDevices(
             @ActiveDeviceProfile int profile, AttributionSource source) {
-        var service = getServiceAndEnforceCallerUserAndConnect(source, "getActiveDevices");
+        var method = "getActiveDevices";
+        var service = getServiceAndEnforceCallerUserAndConnectAllowPcc(source, method);
         if (service == null) {
             return Collections.emptyList();
         }
