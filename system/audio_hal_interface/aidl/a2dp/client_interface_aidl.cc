@@ -79,8 +79,8 @@ std::vector<AudioCapabilities> BluetoothAudioClientInterface::GetAudioCapabiliti
 
   auto aidl_retval = provider_factory->getProviderCapabilities(session_type, &capabilities);
   if (!aidl_retval.isOk()) {
-    log::fatal("BluetoothAudioHal::getProviderCapabilities failure: {}",
-               aidl_retval.getDescription());
+    log::error("BluetoothAudioHal::getProviderCapabilities session_type: {}, failure: {}",
+               toString(session_type), aidl_retval.getDescription());
   }
   return capabilities;
 }
@@ -107,7 +107,8 @@ BluetoothAudioClientInterface::GetProviderInfo(
   auto aidl_retval = provider_factory->getProviderInfo(session_type, &provider_info);
 
   if (!aidl_retval.isOk()) {
-    log::error("BluetoothAudioHal::getProviderInfo failure: {}", aidl_retval.getDescription());
+    log::error("BluetoothAudioHal::getProviderInfo session_type: {}, failure: {}",
+               toString(session_type), aidl_retval.getDescription());
     return std::nullopt;
   }
 
