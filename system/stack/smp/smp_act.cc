@@ -1645,9 +1645,13 @@ void smp_br_send_pair_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
  * Description      This function is called to send the pairing complete
  *                  callback and remove the connection if needed.
  ******************************************************************************/
-void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
-  if (p_cb->total_tx_unacked == 0) {
+void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+  if (p_cb->total_tx_unacked == 0 && p_data != nullptr) {
     /* process the pairing complete */
+    if (p_cb->is_pair_cancel == true) {
+      log::verbose("Canceled pairing with p_data->status: {}", smp_status_text(p_data->status));
+      p_cb->status = p_data->status;
+    }
     smp_proc_pairing_cmpl(p_cb);
   }
 }
