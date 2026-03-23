@@ -106,7 +106,7 @@ impl PeriodicSyncManager for PeriodicSyncManagerImpl {
             let mut sync_registry = self.sync_registry.lock().unwrap();
             if sync_registry.pending_requests.start_sync.contains_key(&reg_id) {
                 warn!("Sync request for reg_id {} is already in progress", reg_id);
-                return Err(PeriodicSyncError::Internal);
+                return Err(PeriodicSyncError::AlreadyInProgress);
             }
             sync_registry.pending_requests.start_sync.insert(reg_id, sender);
         }
@@ -122,7 +122,7 @@ impl PeriodicSyncManager for PeriodicSyncManagerImpl {
 
         let result = match timeout(DEFAULT_TIMEOUT, receiver).await {
             Ok(Ok(res)) => res,
-            Ok(Err(_)) => Err(PeriodicSyncError::Internal),
+            Ok(Err(_)) => Err(PeriodicSyncError::ChannelClosed),
             Err(_) => Err(PeriodicSyncError::Timeout),
         };
 
@@ -299,7 +299,7 @@ mod test {
     #[tokio::test]
     async fn test_start_sync_fails_when_duplicate_broadcast_id_provided() {
         // Verify that attempting to start a second synchronization with the same broadcast ID
-        // while one is already in progress returns an internal error.
+        // while one is already in progress returns an `AlreadyInProgress` error.
         let manager = Arc::new(PeriodicSyncManagerImpl::new());
         let params = PaCreateSyncParams {
             broadcast_id: 1,
@@ -323,6 +323,6 @@ mod test {
         // Attempt a second sync with the same broadcast_id.
         let second_sync_result = timeout(DEFAULT_TIMEOUT, manager.start_sync(params)).await;
 
-        expect_that!(second_sync_result, ok(err(eq(&PeriodicSyncError::Internal))));
+        expect_that!(second_sync_result, ok(err(eq(&PeriodicSyncError::AlreadyInProgress))));
     }
 }

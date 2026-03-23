@@ -102,9 +102,12 @@ pub enum PeriodicSyncError {
     /// Operation timed out.
     #[error("operation timed out")]
     Timeout,
-    /// Internal error (e.g. channel closed unexpectedly).
-    #[error("internal error")]
-    Internal,
+    /// A communication channel (oneshot/mpsc) was closed unexpectedly.
+    #[error("channel closed")]
+    ChannelClosed,
+    /// A synchronization request for this source is already in progress.
+    #[error("already in progress")]
+    AlreadyInProgress,
     /// HCI Error status code.
     #[error("HCI error: {0:?}")]
     HciError(HciStatus),
