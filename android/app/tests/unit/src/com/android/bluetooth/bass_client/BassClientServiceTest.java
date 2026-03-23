@@ -9923,4 +9923,48 @@ public class BassClientServiceTest {
         BluetoothLeBroadcastMetadata metadata3 = (BluetoothLeBroadcastMetadata) addSourceMsg3.obj;
         assertThat(metadata3.getBroadcastCode()).isEqualTo(broadcastCode2);
     }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testDeviceDisconnection_clearsPendingNfcData() {
+        prepareConnectedDeviceGroup();
+
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        mBassClientService.addSourceByBroadcastName(mCurrentDevice, "Test", null);
+
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).contains(mCurrentDevice);
+
+        // Disconnect device
+        injectDeviceDisconnection(mCurrentDevice);
+
+        // Verify device is removed from NFC joining devices
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).doesNotContain(mCurrentDevice);
+
+        // Verify device is removed from pending sources by name.
+        // Re-connect the device to test that it doesn't process the stale pending source.
+        injectDeviceConnection(mCurrentDevice);
+
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID); // Hardcoded getScanRecord() has name "Test"
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        BassClientStateMachine sm = mStateMachines.get(mCurrentDevice);
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(sm, atLeast(0)).sendMessage(messageCaptor.capture());
+
+        boolean hasAddSource =
+                messageCaptor.getAllValues().stream()
+                        .anyMatch(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE);
+        assertThat(hasAddSource).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testCleanup_clearsPendingNfcData() {
+        prepareConnectedDeviceGroup();
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        mBassClientService.cleanup();
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
+    }
 }

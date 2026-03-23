@@ -1063,6 +1063,10 @@ public class BassClientService extends ConnectableProfile {
         mPausedBroadcastSinks.clear();
         mSinksToRestoreFromPeer.clear();
 
+        synchronized (mPendingSourcesToAddByName) {
+            mPendingSourcesToAddByName.clear();
+        }
+        mPendingNfcJoiningDevices.clear();
         mAudioActiveStates.clear();
         mIsUnicastAutoResuming = false;
     }
@@ -2249,6 +2253,10 @@ public class BassClientService extends ConnectableProfile {
                     stopSearchingForSources(/* foreground= */ false);
                 }
             }
+            synchronized (mPendingSourcesToAddByName) {
+                mPendingSourcesToAddByName.removeIf(pending -> pending.sink().equals(device));
+            }
+            mPendingNfcJoiningDevices.remove(device);
             synchronized (mPendingSourcesToAdd) {
                 mPendingSourcesToAdd.removeIf(
                         pendingSourcesToAdd -> pendingSourcesToAdd.sink.equals(device));
