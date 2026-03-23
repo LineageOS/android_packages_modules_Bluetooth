@@ -148,3 +148,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_setconfig_collision_resolution"
+    namespace: "bluetooth"
+    description: "Resolve collision during A2DP setconfig process"
+    bug: "495377494"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
