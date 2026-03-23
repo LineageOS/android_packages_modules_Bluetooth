@@ -22,6 +22,12 @@
 #include <iostream>
 #include <sstream>
 
+#include "bta/ag/bta_ag_int.h"
+#include "bta/dm/bta_dm_act.h"
+#include "bta/dm/bta_dm_sec_int.h"
+#include "bta/gatt/bta_gattc_int.h"
+#include "bta/include/bta_dm_acl.h"
+#include "bta/sys/bta_sys.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_layer_mock.h"
 #include "stack/btm/btm_dev.h"
@@ -48,6 +54,21 @@ using ::testing::Invoke;
 tL2C_CB l2cb;
 
 const std::string kBroadcastAudioConfigOptions("mock broadcast audio config options");
+
+// TODO: remove dependency on BTA symbols
+void BTA_dm_acl_up(const AclLinkSpec&, uint16_t, bool) { inc_func_call_count(__func__); }
+void BTA_dm_acl_up_failed(const AclLinkSpec&, tHCI_STATUS, bool) {}
+void BTA_dm_acl_down(const AclLinkSpec&) {}
+void BTA_dm_report_role_change(RawAddress, tHCI_ROLE, tHCI_STATUS) {}
+void BTA_dm_notify_remote_features_complete(RawAddress) {}
+void bta_dm_process_remove_device(const RawAddress&) {}
+void bta_dm_remote_key_missing(RawAddress, tBTM_KEY_MISSING_REASON) {}
+void bta_dm_on_encryption_change(bt_encryption_change_evt) {}
+void bta_dm_remove_device(const RawAddress&) {}
+void bta_gattc_continue_discovery_if_needed(const RawAddress&, uint16_t) {}
+void bta_sys_notify_collision(const RawAddress&) {}
+size_t bta_ag_sco_read(uint8_t*, uint32_t) { return 0; }
+size_t bta_ag_sco_write(const uint8_t*, uint32_t) { return 0; }
 
 void btm_inq_remote_name_timer_timeout(void*) {}
 

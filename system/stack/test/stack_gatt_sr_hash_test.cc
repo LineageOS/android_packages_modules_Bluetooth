@@ -19,11 +19,17 @@
 #include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
+#include "bta/ag/bta_ag_int.h"
+#include "bta/sys/bta_sys.h"
 #include "stack/gatt/gatt_int.h"
 
 using bluetooth::Uuid;
 
 tGATT_CB gatt_cb;
+
+// TODO: remove dependency on BTA symbols.
+bool bta_ag_get_swb_supported() { return false; }
+void bta_sys_add_uuid(uint16_t) {}
 
 static void add_item_to_list(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> srv_list_info,
                              tGATT_SVC_DB* db, bool is_primary) {
