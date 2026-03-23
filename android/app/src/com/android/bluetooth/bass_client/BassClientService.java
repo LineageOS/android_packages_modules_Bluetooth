@@ -194,7 +194,8 @@ public class BassClientService extends ConnectableProfile {
     private final HandlerThread mCallbackHandlerThread;
     private final Callbacks mCallbacks;
 
-    @VisibleForTesting final Set<BluetoothDevice> mPendingNfcJoiningDevices = new HashSet<>();
+    @VisibleForTesting
+    final Set<BluetoothDevice> mPendingNfcJoiningDevices = ConcurrentHashMap.newKeySet();
 
     private DialingOutTimeoutEvent mDialingOutTimeoutEvent = null;
     private final Map<Integer, ReactivateGroupMonitor> mReactivateGroupMonitors =
