@@ -63,10 +63,6 @@ bool BluetoothAudioClientInterface::is_aidl_available() {
   return AServiceManager_isDeclared(kDefaultAudioProviderFactoryInterface.c_str());
 }
 
-std::vector<AudioCapabilities> BluetoothAudioClientInterface::GetAudioCapabilities() const {
-  return capabilities_;
-}
-
 std::vector<AudioCapabilities> BluetoothAudioClientInterface::GetAudioCapabilities(
         SessionType session_type) {
   std::vector<AudioCapabilities> capabilities(0);
@@ -182,23 +178,7 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
       return;
     }
 
-    capabilities_.clear();
-    auto aidl_retval =
-            provider_factory->getProviderCapabilities(transport_->GetSessionType(), &capabilities_);
-    if (!aidl_retval.isOk()) {
-      log::error("BluetoothAudioHal::getProviderCapabilities failure: {}, retry number {}",
-                 aidl_retval.getDescription(), retry_no + 1);
-      continue;
-    }
-    if (capabilities_.empty()) {
-      log::warn("SessionType={} Not supported by BluetoothAudioHal",
-                toString(transport_->GetSessionType()));
-      return;
-    }
-    log::info("BluetoothAudioHal SessionType={} has {} AudioCapabilities",
-              toString(transport_->GetSessionType()), capabilities_.size());
-
-    aidl_retval = provider_factory->openProvider(transport_->GetSessionType(), &provider_);
+    auto aidl_retval = provider_factory->openProvider(transport_->GetSessionType(), &provider_);
     if (!aidl_retval.isOk() || provider_ == nullptr) {
       log::error("BluetoothAudioHal::openProvider failure: {}, retry number {}",
                  aidl_retval.getDescription(), retry_no + 1);
