@@ -25,13 +25,11 @@ import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
 import android.bluetooth.BluetoothSinkAudioPolicy
 import android.content.Context
 import android.content.pm.PackageManager
-import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.TestUtils.mockGetRemoteDevice
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
@@ -120,8 +118,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    @EnableFlags(Flags.FLAG_STORAGE_PREVENT_CUSTOM_METADATA_ON_UNBONDED_DEVICE)
-    fun setCustomMetadata_twice_refustToChangeDatabase() =
+    fun setCustomMetadata_twice_returnsFalse() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
             val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
@@ -131,21 +128,6 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
             assertThat(storageManager.setCustomMetadata(device1, key, value)).isTrue()
 
             assertThat(storageManager.setCustomMetadata(device1, key, value)).isFalse()
-        }
-
-    @Test
-    @EnableFlags(Flags.FLAG_STORAGE_PREVENT_CUSTOM_METADATA_ON_UNBONDED_DEVICE)
-    fun setCustomMetadata_onUnknownDevice_refuseToChangeDatabase() =
-        runTest(testDispatcher) {
-            doReturn(arrayOf<BluetoothDevice>()).whenever(adapterService).bondedDevices
-            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
-            val value = "Test Manufacturer".toByteArray()
-
-            assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
-
-            assertThat(storageManager.setCustomMetadata(device1, key, value)).isFalse()
-
-            assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
         }
 
     @Test
@@ -288,11 +270,6 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     companion object {
-        @JvmStatic
-        @Parameters(name = "{0}")
-        fun getParams() =
-            FlagsWrapper.progressionOf(
-                Flags.FLAG_STORAGE_PREVENT_CUSTOM_METADATA_ON_UNBONDED_DEVICE
-            )
+        @JvmStatic @Parameters(name = "{0}") fun getParams() = FlagsWrapper.progressionOf()
     }
 }

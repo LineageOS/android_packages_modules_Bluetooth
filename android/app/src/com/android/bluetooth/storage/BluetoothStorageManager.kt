@@ -37,7 +37,6 @@ import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import com.android.bluetooth.BluetoothEventLogger
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
 import com.android.bluetooth.storage.MediaProfile.Type as MediaProfile
 import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
@@ -337,21 +336,9 @@ constructor(
 
     fun setCustomMetadata(device: BluetoothDevice, key: Int, value: ByteArray): Boolean {
         validateMetadataKey(key)
-        val isDeviceBonded =
-            Flags.storagePreventCustomMetadataOnUnbondedDevice() &&
-                adapterService.bondedDevices.contains(device)
 
-        var status = !Flags.storagePreventCustomMetadataOnUnbondedDevice()
+        var status = true
         dataStore.blockingUpdateData { storage ->
-            if (
-                Flags.storagePreventCustomMetadataOnUnbondedDevice() &&
-                    !isDeviceBonded &&
-                    !storage.devicesMap.contains(device.address)
-            ) {
-                Log.d(TAG, "Device $device is unknown. Metadata $key will not be added")
-                return@blockingUpdateData storage
-            }
-
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
@@ -360,6 +347,7 @@ constructor(
             val oldByteString = deviceBuilder.customMetadataMap[key] ?: ByteString.EMPTY
 
             if (oldByteString == newByteString) {
+                status = false
                 return@blockingUpdateData storage
             }
 
@@ -375,7 +363,6 @@ constructor(
             deviceBuilder.clearCustomMetadata()
             deviceBuilder.putAllCustomMetadata(metadataBuilder)
 
-            status = true
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
         return status
