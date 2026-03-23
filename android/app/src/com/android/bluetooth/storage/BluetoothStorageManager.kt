@@ -69,20 +69,6 @@ private fun String.cleanProtoDump(): String {
         .joinToString("\n")
 }
 
-private fun UserStorage.Builder.getExistingOrNewDeviceBuilder(device: BluetoothDevice) =
-    this.devicesMap[device.address]?.toBuilder()
-        ?: run {
-            val newDevice = Device.newBuilder()
-            newDevice.connectionCounter = ++this.currentConnectionNumber
-            newDevice
-        }
-
-private fun Device.Builder.incrementConnectionCounter(storageBuilder: UserStorage.Builder) {
-    if (this.connectionCounter != storageBuilder.currentConnectionNumber) {
-        this.connectionCounter = ++storageBuilder.currentConnectionNumber
-    }
-}
-
 private fun String.anonymizeAddress() = this.replace(PATTERN_TO_OBFUSCATE, "XX:XX:XX:XX:$1")
 
 // The new storage manager for Bluetooth user data.
@@ -96,6 +82,21 @@ constructor(
     private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
     private val eventLog = BluetoothEventLogger(50, "$TAG.EventLog") // Dumpsys logger
+
+    // Represent current index of the connection.
+    // This is only relevant to track most recently active devices.
+    @Volatile private var currentConnectionCounter: Long = 0
+
+    private fun UserStorage.Builder.getExistingOrNewDeviceBuilder(
+        device: BluetoothDevice
+    ): Device.Builder {
+        return this.devicesMap[device.address]?.toBuilder()
+            ?: run {
+                val newDevice = Device.newBuilder()
+                newDevice.connectionCounter = ++currentConnectionCounter
+                newDevice
+            }
+    }
 
     // The DataStore instance that handles the UserStorage proto.
     // Data is stored in a file named "user_storage" in the app's device protected storage.
@@ -138,11 +139,13 @@ constructor(
     // constructor as the AdapterService doesn't have an attached context yet
     fun initialize() = ioScope.launch {
         val userStorage = dataStore.data.first()
+        currentConnectionCounter =
+            userStorage.devicesMap.values.maxOfOrNull { it.connectionCounter } ?: 0L
         userStorage.devicesMap.keys.forEach {
-            Log.v(TAG, "Put device in cache: ${it.anonymizeAddress()}")
+            Log.v(TAG, "Device loaded from disk and put in cache: ${it.anonymizeAddress()}")
         }
 
-        if (userStorage.currentConnectionNumber > COMPACTION_THRESHOLD) {
+        if (currentConnectionCounter > COMPACTION_THRESHOLD) {
             recompactConnectionCounter()
         }
         Log.v(TAG, "User storage ready")
@@ -156,7 +159,6 @@ constructor(
         sb.appendLine("\nBluetoothStorageManager.Database:")
 
         val databaseDump = StringBuilder()
-        databaseDump.appendLine("current_connection_number: ${storage.currentConnectionNumber}")
         databaseDump.appendLine(
             "active_a2dp_devices: ${storage.activeA2DpDevicesList.map { it.anonymizeAddress() }}"
         )
@@ -773,7 +775,9 @@ constructor(
         dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
-            deviceBuilder.incrementConnectionCounter(builder)
+            if (deviceBuilder.connectionCounter != currentConnectionCounter) {
+                deviceBuilder.connectionCounter = ++currentConnectionCounter
+            }
             val address = device.address
             builder.putDevices(address, deviceBuilder.build())
 
@@ -855,7 +859,7 @@ constructor(
             builder.putDevices(address, deviceBuilder.build())
         }
 
-        builder.currentConnectionNumber = newConnectionNumber
+        currentConnectionCounter = newConnectionNumber
         builder.build()
     }
 
