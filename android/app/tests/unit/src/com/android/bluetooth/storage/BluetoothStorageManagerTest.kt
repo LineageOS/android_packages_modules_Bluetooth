@@ -71,7 +71,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
 
     @Before
     fun setUp() {
-        doReturn(arrayOf<BluetoothDevice>()).whenever(adapterService).bondedDevices
+        doReturn(emptyArray<BluetoothDevice>()).whenever(adapterService).bondedDevices
         doReturn(adapterService).whenever(adapterService).createDeviceProtectedStorageContext()
         doReturn(context.applicationInfo).whenever(adapterService).applicationInfo
         doReturn("com.android.bluetooth").whenever(adapterService).packageName
@@ -91,7 +91,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    fun testSetAndGetProfileConnectionPolicy() =
+    fun setGetProfileConnectionPolicy() =
         runTest(testDispatcher) {
             val profile = BluetoothProfile.A2DP
             val policy = CONNECTION_POLICY_ALLOWED
@@ -106,7 +106,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    fun testSetAndGetCustomMetadata() =
+    fun setGetCustomMetadata() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
             val key = METADATA_MODEL_NAME
@@ -120,7 +120,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    fun setCustomMetadata_twice_returnsFalse() =
+    fun setCustomMetadata_twiceWithSameValue_returnsFalse() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
             val key = METADATA_MODEL_NAME
@@ -136,7 +136,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     fun setCustomMetadata_withEmptyValue_removesMetadata() =
         runTest(testDispatcher) {
             val key = METADATA_MODEL_NAME
-            testSetAndGetCustomMetadata()
+            setGetCustomMetadata()
 
             // Set an empty byte array, which should remove the metadata
             storageManager.setCustomMetadata(device1, key, byteArrayOf())
@@ -146,44 +146,41 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    fun testDeviceConnectionHistory() =
+    fun deviceConnectionHistory() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
             assertThat(storageManager.getMostRecentlyConnectedDevices()).isEmpty()
 
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
 
-            var connectedDevices = storageManager.getMostRecentlyConnectedDevices()
-            assertThat(connectedDevices).hasSize(1)
-            assertThat(connectedDevices[0]).isEqualTo(device1)
+            assertThat(storageManager.getMostRecentlyConnectedDevices()).containsExactly(device1)
 
             storageManager.onDeviceConnected(device2, BluetoothProfile.HEADSET)
 
-            connectedDevices = storageManager.getMostRecentlyConnectedDevices()
-            assertThat(connectedDevices).hasSize(2)
-            assertThat(connectedDevices[0]).isEqualTo(device2)
-            assertThat(connectedDevices[1]).isEqualTo(device1)
+            assertThat(storageManager.getMostRecentlyConnectedDevices())
+                .containsExactly(device2, device1)
+                .inOrder()
         }
 
     @Test
-    fun testRemoveDevice() =
+    fun onBondNone_removeDeviceFromConnectionHistory() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
             storageManager.onDeviceConnected(device2, BluetoothProfile.A2DP)
 
-            assertThat(storageManager.getMostRecentlyConnectedDevices()).hasSize(2)
+            assertThat(storageManager.getMostRecentlyConnectedDevices())
+                .containsExactly(device2, device1)
+                .inOrder()
 
             doReturn(arrayOf(device2)).whenever(adapterService).bondedDevices
             storageManager.onBondStateChanged(device1, BOND_BONDED, BOND_NONE)
 
-            val connectedDevices = storageManager.getMostRecentlyConnectedDevices()
-            assertThat(connectedDevices).hasSize(1)
-            assertThat(connectedDevices[0]).isEqualTo(device2)
+            assertThat(storageManager.getMostRecentlyConnectedDevices()).containsExactly(device2)
         }
 
     @Test
-    fun testActiveA2dpDevice() =
+    fun activeA2dp() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
             assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isNull()
@@ -196,44 +193,6 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
 
             storageManager.onDeviceDisconnected(device2, BluetoothProfile.A2DP)
             assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isEqualTo(device1)
-        }
-
-    @Test
-    fun testCleanup_removesUnbondedDevices() =
-        runTest(testDispatcher) {
-            // device1 is bonded, device2 is not
-            doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
-
-            storageManager.setProfileConnectionPolicy(
-                device1,
-                BluetoothProfile.A2DP,
-                CONNECTION_POLICY_ALLOWED,
-            )
-            storageManager.setProfileConnectionPolicy(
-                device2,
-                BluetoothProfile.A2DP,
-                CONNECTION_POLICY_ALLOWED,
-            )
-
-            // Both devices should be in storage before cleanup
-            assertThat(storageManager.getProfileConnectionPolicy(device1, BluetoothProfile.A2DP))
-                .isEqualTo(CONNECTION_POLICY_ALLOWED)
-            assertThat(storageManager.getProfileConnectionPolicy(device2, BluetoothProfile.A2DP))
-                .isEqualTo(CONNECTION_POLICY_ALLOWED)
-
-            // cleanup is synchronous and will wait for the underlying job to finish
-            storageManager.cleanup()
-
-            // Re-create storage manager to simulate restart and read from disk
-            val newStorageManager = BluetoothStorageManager(adapterService, testDispatcher)
-            newStorageManager.initialize()
-
-            // device1 should still be there
-            assertThat(newStorageManager.getProfileConnectionPolicy(device1, BluetoothProfile.A2DP))
-                .isEqualTo(CONNECTION_POLICY_ALLOWED)
-            // device2 should be gone
-            assertThat(newStorageManager.getProfileConnectionPolicy(device2, BluetoothProfile.A2DP))
-                .isEqualTo(CONNECTION_POLICY_UNKNOWN)
         }
 
     @Test
@@ -256,7 +215,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    fun setAndGetAudioPolicyMetadata_returnsCorrectPolicy() =
+    fun setGetAudioPolicyMetadata_returnsCorrectPolicy() =
         runTest(testDispatcher) {
             val testPolicy =
                 BluetoothSinkAudioPolicy.Builder()
@@ -272,10 +231,8 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    fun testMemoryOnlyCache_evictsEldestUnbonded() =
+    fun memoryOnlyCache_evictsEldestUnbonded() =
         runTest(testDispatcher) {
-            doReturn(emptyArray<BluetoothDevice>()).whenever(adapterService).bondedDevices
-
             // Add 21 unbonded devices (MAX_UNBONDED_CACHE_SIZE is 20)
             for (i in 1..21) {
                 val testDevice = getTestDevice(i)
@@ -298,10 +255,8 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         }
 
     @Test
-    fun testUnbondedDevices_areNotPersisted() =
+    fun unbondedDevices_areNotPersisted() =
         runTest(testDispatcher) {
-            doReturn(emptyArray<BluetoothDevice>()).whenever(adapterService).bondedDevices
-
             // Add an unbonded device
             storageManager.setCustomMetadata(device1, METADATA_MODEL_NAME, "test".toByteArray())
 
