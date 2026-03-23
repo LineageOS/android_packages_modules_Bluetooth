@@ -469,7 +469,6 @@ public class BassClientService extends ConnectableProfile {
                                             pending.name(),
                                             pending.code(),
                                             broadcastId));
-                            break;
                         }
                     }
                 }

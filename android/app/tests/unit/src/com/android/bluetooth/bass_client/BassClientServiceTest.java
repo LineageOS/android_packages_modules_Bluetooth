@@ -120,6 +120,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9854,5 +9855,72 @@ public class BassClientServiceTest {
             assertThat(metadata.getBroadcastCode()).isEqualTo(broadcastCode);
             assertThat(metadata.getBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
         }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByBroadcastName_MultiplePendingDifferentGroups() {
+        prepareConnectedDeviceGroup(); // Sets up mCurrentDevice and mCurrentDevice1 in Group 1
+
+        // Setup a third device in a different CSIP group
+        BluetoothDevice device3 = getTestDevice(2);
+        doReturn(Collections.singletonList(device3))
+                .when(mCsipService)
+                .getGroupDevicesOrdered(device3, BluetoothUuid.CAP);
+
+        assertThat(mBassClientService.connect(device3)).isTrue();
+
+        // Mock connection properties for device3
+        BassClientStateMachine sm3 = mStateMachines.get(device3);
+        doCallRealMethod().when(sm3).broadcastConnectionState(any(), anyInt(), anyInt());
+        sm3.mService = mBassClientService;
+        sm3.mDevice = device3;
+        sm3.broadcastConnectionState(device3, STATE_CONNECTING, STATE_CONNECTED);
+
+        doReturn(STATE_CONNECTED).when(sm3).getConnectionState();
+        doReturn(true).when(sm3).isConnected();
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(device3);
+
+        // Two brodcast codes only for test purposes
+        byte[] broadcastCode1 = new byte[] {1, 2, 3, 4};
+        byte[] broadcastCode2 = new byte[] {5, 6, 7, 8};
+        String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
+
+        // 1. Queue addSourceByBroadcastName for devices across two different groups
+        mBassClientService.addSourceByBroadcastName(mCurrentDevice, broadcastName, broadcastCode1);
+        mBassClientService.addSourceByBroadcastName(device3, broadcastName, broadcastCode2);
+
+        // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list.
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // 3. PA report triggers processPendingAddSourceByName
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        // Verify the first group receives the ADD_BCAST_SOURCE with the first broadcast code
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        ArgumentCaptor<Message> messageCaptor1 = ArgumentCaptor.forClass(Message.class);
+        verify(sm1, atLeast(1)).sendMessage(messageCaptor1.capture());
+        Message addSourceMsg1 =
+                messageCaptor1.getAllValues().stream()
+                        .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                        .findFirst()
+                        .orElse(null);
+        assertThat(addSourceMsg1).isNotNull();
+        BluetoothLeBroadcastMetadata metadata1 = (BluetoothLeBroadcastMetadata) addSourceMsg1.obj;
+        assertThat(metadata1.getBroadcastCode()).isEqualTo(broadcastCode1);
+
+        // Verify the second group receives the ADD_BCAST_SOURCE with the second broadcast code
+        ArgumentCaptor<Message> messageCaptor3 = ArgumentCaptor.forClass(Message.class);
+        verify(sm3, atLeast(1)).sendMessage(messageCaptor3.capture());
+        Message addSourceMsg3 =
+                messageCaptor3.getAllValues().stream()
+                        .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                        .findFirst()
+                        .orElse(null);
+        assertThat(addSourceMsg3).isNotNull();
+        BluetoothLeBroadcastMetadata metadata3 = (BluetoothLeBroadcastMetadata) addSourceMsg3.obj;
+        assertThat(metadata3.getBroadcastCode()).isEqualTo(broadcastCode2);
     }
 }
