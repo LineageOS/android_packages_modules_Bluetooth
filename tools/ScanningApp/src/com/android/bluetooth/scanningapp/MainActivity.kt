@@ -36,19 +36,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,6 +62,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,24 +74,107 @@ import androidx.core.content.ContextCompat
 import com.android.bluetooth.scanningapp.extensions.toScanErrorMessage
 import com.android.bluetooth.scanningapp.extensions.toScanModeString
 import com.android.bluetooth.scanningapp.extensions.toast
+import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
 
-class MainActivity : ComponentActivity() {
+@SuppressLint("MissingPermission")
+class ScanSession(val id: Int, val tag: String, private val activity: MainActivity) {
+    val scanResults = mutableStateListOf<ScanResult>()
+    var rssiThreshold by mutableFloatStateOf(-100f)
+    var batchScan by mutableStateOf(false)
+    var scanMode by mutableIntStateOf(ScanSettings.SCAN_MODE_LOW_POWER)
+    var isScanning by mutableStateOf(false)
+    var showScanModeMenu by mutableStateOf(false)
 
     private val leScanner: BluetoothLeScanner? by lazy {
-        val attributionContext = createAttributionContext(getString(R.string.attribution_tag))
+        val attributionContext = activity.createAttributionContext(tag)
         val bluetoothManager = attributionContext.getSystemService(BluetoothManager::class.java)
-        bluetoothManager.adapter.bluetoothLeScanner
+        bluetoothManager?.adapter?.bluetoothLeScanner
     }
 
-    private val REQUIRED_PERMISSIONS =
+    private val leScanCallback: ScanCallback =
+        object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                handleScanResult(result)
+            }
+
+            override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+                results?.forEach { handleScanResult(it) }
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                activity.runOnUiThread {
+                    activity.toast("Scan $id failed: ${errorCode.toScanErrorMessage()}")
+                    stopScan()
+                }
+            }
+        }
+
+    private fun handleScanResult(result: ScanResult) {
+        val index = scanResults.indexOfFirst { it.device?.address == result.device?.address }
+        if (index == -1) {
+            scanResults.add(result)
+        } else {
+            scanResults[index] = result
+        }
+    }
+
+    fun startScan() {
+        if (!activity.checkPermissions()) return
+
+        scanResults.clear()
+
+        val scanSettings =
+            ScanSettings.Builder()
+                .setReportDelay(if (batchScan) 5000 else 0)
+                .setRssiThreshold(rssiThreshold.toInt())
+                .setScanMode(scanMode)
+                .build()
+
+        isScanning = true
+        leScanner?.startScan(emptyList(), scanSettings, leScanCallback)
+    }
+
+    fun stopScan() {
+        if (!isScanning) return
+        if (!activity.checkPermissions()) return
+
+        activity.toast("Scan $id stopped")
+        isScanning = false
+        leScanner?.stopScan(leScanCallback)
+    }
+
+    fun toggleScan() {
+        if (isScanning) {
+            stopScan()
+        } else {
+            if (activity.checkPermissions()) {
+                startScan()
+            } else {
+                activity.requestPermissionsAndStartScan(this)
+            }
+        }
+    }
+
+    fun updateScanMode(mode: Int) {
+        scanMode = mode
+        showScanModeMenu = false
+        if (isScanning) stopScan()
+    }
+}
+
+class MainActivity : ComponentActivity() {
+
+    val requiredPermissions =
         arrayOf(
             Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.BLUETOOTH_SCAN,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
         )
+
+    private var pendingSession: ScanSession? = null
 
     private val requestBluetoothPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -96,19 +186,25 @@ class MainActivity : ComponentActivity() {
                     .isEmpty()
 
             if (allPermissionsGranted) {
-                startScan()
+                pendingSession?.startScan()
             }
+            pendingSession = null
         }
 
-    private val scanResults = mutableStateListOf<ScanResult>()
-    private var rssiThreshold by mutableFloatStateOf(-100f)
-    private var batchScan by mutableStateOf(false)
-    private var scanMode by mutableIntStateOf(ScanSettings.SCAN_MODE_LOW_POWER)
-    private var isScanning by mutableStateOf(false)
-    private var showScanModeMenu by mutableStateOf(false)
+    fun requestPermissionsAndStartScan(session: ScanSession) {
+        pendingSession = session
+        requestBluetoothPermissions.launch(requiredPermissions)
+    }
+
+    private val scanSessions = mutableStateListOf<ScanSession>()
+    private var nextSessionId = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (scanSessions.isEmpty()) {
+            addScanSession()
+        }
 
         setContent {
             MaterialTheme {
@@ -124,79 +220,180 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        stopScan()
+        scanSessions.forEach { it.stopScan() }
     }
 
-    @Composable
+    private fun addScanSession() {
+        if (scanSessions.size < 5) {
+            val tag = "scanning_app_$nextSessionId"
+            scanSessions.add(ScanSession(nextSessionId, tag, this))
+            nextSessionId++
+        } else {
+            toast("Maximum 5 scans allowed")
+        }
+    }
+
+    private fun removeScanSession(session: ScanSession) {
+        session.stopScan()
+        scanSessions.remove(session)
+        if (scanSessions.isEmpty()) {
+            addScanSession()
+        }
+    }
+
     @Preview
+    @Composable
     fun MainScreen() {
+        val pagerState = rememberPagerState(pageCount = { scanSessions.size })
+        val scope = rememberCoroutineScope()
+
         Scaffold(modifier = Modifier.fillMaxSize().systemBarsPadding()) { innerPadding ->
-            Column(modifier = Modifier.padding(innerPadding).padding(8.dp).fillMaxSize()) {
-                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    items(scanResults) { result ->
-                        ScanResultItem(result)
-                        HorizontalDivider()
+            Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PrimaryTabRow(
+                        selectedTabIndex = pagerState.currentPage,
+                        modifier = Modifier.weight(1f),
+                        divider = {},
+                    ) {
+                        scanSessions.forEachIndexed { index, session ->
+                            Tab(
+                                selected = pagerState.currentPage == index,
+                                onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                ) {
+                                    Text(
+                                        text = "Scan ${session.id}",
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(end = 4.dp),
+                                    )
+                                    if (scanSessions.size > 1) {
+                                        IconButton(
+                                            onClick = { removeScanSession(session) },
+                                            modifier = Modifier.size(18.dp),
+                                        ) {
+                                            Text(
+                                                text = "x",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (scanSessions.size < 5) {
+                        IconButton(
+                            onClick = {
+                                addScanSession()
+                                scope.launch {
+                                    pagerState.animateScrollToPage(scanSessions.size - 1)
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                        ) {
+                            Text(text = "+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(text = "RSSI threshold: ${rssiThreshold.toInt()} dBm")
-                    Slider(
-                        value = rssiThreshold,
-                        onValueChange = {
-                            rssiThreshold = it
-                            if (isScanning) stopScan()
-                        },
-                        valueRange = -120f..-50f,
-                        steps = 13, // Calculated from stepSize 5.0
-                    )
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    beyondViewportPageCount = 5,
+                ) { page ->
+                    if (page < scanSessions.size) {
+                        ScanContent(scanSessions[page])
+                    }
+                }
+            }
+        }
+    }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = batchScan, onCheckedChange = { batchScan = it })
-                            Text("Batch Scan")
-                        }
+    @Composable
+    fun ScanContent(session: ScanSession) {
+        Column(modifier = Modifier.padding(8.dp).fillMaxSize()) {
+            LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                items(session.scanResults) { result ->
+                    ScanResultItem(result)
+                    HorizontalDivider()
+                }
+            }
 
-                        Box {
-                            Button(
-                                onClick = { showScanModeMenu = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = Green),
-                            ) {
-                                Text(scanMode.toScanModeString())
-                            }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(text = "RSSI threshold: ${session.rssiThreshold.toInt()} dBm")
+                Slider(
+                    value = session.rssiThreshold,
+                    onValueChange = {
+                        session.rssiThreshold = it
+                        if (session.isScanning) session.stopScan()
+                    },
+                    valueRange = -120f..-50f,
+                    steps = 13, // Calculated from stepSize 5.0
+                )
 
-                            DropdownMenu(
-                                expanded = showScanModeMenu,
-                                onDismissRequest = { showScanModeMenu = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Low Power") },
-                                    onClick = { updateScanMode(ScanSettings.SCAN_MODE_LOW_POWER) },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Balanced") },
-                                    onClick = { updateScanMode(ScanSettings.SCAN_MODE_BALANCED) },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Low Latency") },
-                                    onClick = { updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) },
-                                )
-                            }
-                        }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = session.batchScan,
+                            onCheckedChange = { session.batchScan = it },
+                        )
+                        Text("Batch Scan")
+                    }
 
+                    Box {
                         Button(
-                            onClick = { toggleScan() },
-                            colors =
-                                ButtonDefaults.buttonColors(
-                                    containerColor = if (isScanning) Red else Blue
-                                ),
+                            onClick = { session.showScanModeMenu = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Green),
                         ) {
-                            Text(if (isScanning) "Stop Scan" else "Start Scan")
+                            Text(session.scanMode.toScanModeString())
                         }
+
+                        DropdownMenu(
+                            expanded = session.showScanModeMenu,
+                            onDismissRequest = { session.showScanModeMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Low Power") },
+                                onClick = {
+                                    session.updateScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Balanced") },
+                                onClick = {
+                                    session.updateScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Low Latency") },
+                                onClick = {
+                                    session.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                                },
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { session.toggleScan() },
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = if (session.isScanning) Red else Blue
+                            ),
+                    ) {
+                        Text(if (session.isScanning) "Stop Scan" else "Start Scan")
                     }
                 }
             }
@@ -217,79 +414,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun updateScanMode(mode: Int) {
-        scanMode = mode
-        showScanModeMenu = false
-        if (isScanning) stopScan()
-    }
-
-    private fun toggleScan() {
-        if (isScanning) {
-            stopScan()
-        } else {
-            if (checkPermissions()) {
-                startScan()
-            } else {
-                requestBluetoothPermissions.launch(REQUIRED_PERMISSIONS)
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startScan() {
-        if (!checkPermissions()) return
-
-        scanResults.clear()
-
-        val scanSettings =
-            ScanSettings.Builder()
-                .setReportDelay(if (batchScan) 5000 else 0)
-                .setRssiThreshold(rssiThreshold.toInt())
-                .setScanMode(scanMode)
-                .build()
-
-        isScanning = true
-        leScanner?.startScan(emptyList(), scanSettings, leScanCallback)
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun stopScan() {
-        if (!isScanning) return
-        if (!checkPermissions()) return
-
-        toast("Scan stopped")
-        isScanning = false
-        leScanner?.stopScan(leScanCallback)
-    }
-
-    private val leScanCallback: ScanCallback =
-        object : ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult) {
-                handleScanResult(result)
-            }
-
-            override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-                results?.forEach { handleScanResult(it) }
-            }
-
-            override fun onScanFailed(errorCode: Int) {
-                runOnUiThread {
-                    toast("Scan failed: ${errorCode.toScanErrorMessage()}")
-                    stopScan()
-                }
-            }
-        }
-
-    private fun handleScanResult(result: ScanResult) {
-        val index = scanResults.indexOfFirst { it.device?.address == result.device?.address }
-        if (index == -1) {
-            scanResults.add(result)
-        } else {
-            scanResults[index] = result
-        }
-    }
-
-    private fun checkPermissions() = REQUIRED_PERMISSIONS.all {
+    fun checkPermissions() = requiredPermissions.all {
         ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
     }
 }
