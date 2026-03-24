@@ -132,4 +132,13 @@
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth je znova vklopljen"</string>
     <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"To lahko kadar koli spremenite v nastavitvah."</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Samodejna sprememba stanja Bluetootha"</string>
+    <string name="auracast_notification_channel" msgid="5159181425358316696">"Auracast"</string>
+    <string name="auracast_notification_title" msgid="3101708313009368939">"Pretočno predvajanje zvoka <xliff:g id="STREAM_NAME">%1$s</xliff:g> je na voljo"</string>
+    <string name="auracast_notification_subtext" msgid="4696155233480316395">"LE zvok"</string>
+    <string name="auracast_connect_device_message" msgid="4461776363082532493">"Če želite začeti poslušati, povežite napravo za LE zvok"</string>
+    <string name="auracast_listen_on_device_message" msgid="3719491065367993094">"Poslušajte pretočno predvajanje zvoka <xliff:g id="STREAM_NAME">%1$s</xliff:g> v napravi <xliff:g id="DEVICE_NAME">%2$s</xliff:g>"</string>
+    <string name="auracast_connect_action" msgid="7157544449029291355">"Poveži"</string>
+    <string name="auracast_connection_failed_message" msgid="6490085541428198952">"Povezava s pretočnim predvajanjem zvoka <xliff:g id="STREAM_NAME">%1$s</xliff:g> v napravi <xliff:g id="DEVICE_NAME">%2$s</xliff:g> ni uspela."</string>
+    <string name="auracast_default_stream_name" msgid="2824625871526576239">"V bližini"</string>
+    <string name="auracast_default_device_name" msgid="15748131701036354">"naprave"</string>
 </resources>

@@ -132,4 +132,13 @@
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ବ୍ଲୁଟୁଥକୁ ପୁଣି ଚାଲୁ କରାଯାଇଛି"</string>
     <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"ଆପଣ ଯେ କୌଣସି ସମୟରେ ସେଟିଂସରେ ଏହାକୁ ପରିବର୍ତ୍ତନ କରିପାରିବେ"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"ବ୍ଲୁଟୁଥର ସ୍ୱତଃ ସ୍ଥିତି ପରିବର୍ତ୍ତନ"</string>
+    <string name="auracast_notification_channel" msgid="5159181425358316696">"Auracast"</string>
+    <string name="auracast_notification_title" msgid="3101708313009368939">"<xliff:g id="STREAM_NAME">%1$s</xliff:g> ଅଡିଓ ଷ୍ଟ୍ରିମ ଉପଲବ୍ଧ"</string>
+    <string name="auracast_notification_subtext" msgid="4696155233480316395">"LE ଅଡିଓ"</string>
+    <string name="auracast_connect_device_message" msgid="4461776363082532493">"ଶୁଣିବା ଆରମ୍ଭ କରିବାକୁ ଏକ LE ଅଡିଓ ଡିଭାଇସ କନେକ୍ଟ କରନ୍ତୁ"</string>
+    <string name="auracast_listen_on_device_message" msgid="3719491065367993094">"ଆପଣଙ୍କ <xliff:g id="DEVICE_NAME">%2$s</xliff:g>ରେ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ଅଡିଓ ଷ୍ଟ୍ରିମ ଶୁଣନ୍ତୁ"</string>
+    <string name="auracast_connect_action" msgid="7157544449029291355">"କନେକ୍ଟ କରନ୍ତୁ"</string>
+    <string name="auracast_connection_failed_message" msgid="6490085541428198952">"ଆପଣଙ୍କ <xliff:g id="DEVICE_NAME">%2$s</xliff:g>ରେ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ଅଡିଓ ଷ୍ଟ୍ରିମ ସହ କନେକ୍ଟ କରିବାରେ ବିଫଳ ହୋଇଛି।"</string>
+    <string name="auracast_default_stream_name" msgid="2824625871526576239">"ଆଖପାଖର"</string>
+    <string name="auracast_default_device_name" msgid="15748131701036354">"ଡିଭାଇସ"</string>
 </resources>
