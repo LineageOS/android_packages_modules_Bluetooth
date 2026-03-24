@@ -249,7 +249,8 @@ class MainActivity : ComponentActivity() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PrimaryTabRow(
-                        selectedTabIndex = pagerState.currentPage,
+                        selectedTabIndex =
+                            minOf(pagerState.currentPage, scanSessions.size - 1).coerceAtLeast(0),
                         modifier = Modifier.weight(1f),
                         divider = {},
                     ) {
@@ -305,6 +306,7 @@ class MainActivity : ComponentActivity() {
 
                 HorizontalPager(
                     state = pagerState,
+                    key = { if (it < scanSessions.size) scanSessions[it].id else it },
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     beyondViewportPageCount = 5,
                 ) { page ->
