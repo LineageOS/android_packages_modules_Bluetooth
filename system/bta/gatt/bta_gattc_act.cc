@@ -1413,6 +1413,26 @@ static void bta_gattc_conn_cback(tGATT_IF client_if, const RawAddress& remote_bd
     return;
   }
 
+  if (is_interested_in_connection(client_if, remote_bda)) {
+    tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
+    if (!p_clreg) {
+      return;
+    }
+
+    if (reason == GATT_CONN_TIMEOUT) {
+      log::warn(
+              "Connection timed out after 30 seconds. conn_id=0x{:x}. Return "
+              "GATT_CONNECTION_TIMEOUT({})",
+              conn_id, GATT_CONNECTION_TIMEOUT);
+      bta_gattc_send_open_cback(p_clreg, GATT_CONNECTION_TIMEOUT, remote_bda, conn_id, transport,
+                                0);
+    } else {
+      log::warn("Cannot establish Connection. conn_id=0x{:x}. Return GATT_ERROR({})", conn_id,
+                GATT_ERROR);
+      bta_gattc_send_open_cback(p_clreg, GATT_ERROR, remote_bda, conn_id, transport, 0);
+    }
+  }
+
   tBTA_GATTC_DATA* p_buf = (tBTA_GATTC_DATA*)osi_calloc(sizeof(tBTA_GATTC_DATA));
   p_buf->int_conn.hdr.event = BTA_GATTC_INT_DISCONN_EVT;
   p_buf->int_conn.hdr.layer_specific = static_cast<uint16_t>(conn_id);
