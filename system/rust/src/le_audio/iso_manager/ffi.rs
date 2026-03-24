@@ -23,7 +23,7 @@ use crate::le_audio::iso_manager::manager::{
     CisDisconnectedEvent, CisEstablishedEvent, CreateCigCmplEvent, IsoRegistry,
 };
 use crate::le_audio::iso_manager::traits::{
-    CigId, IsoConnectionHandle, IsoDataPacket, IsoLinkQuality, IsoManagerError,
+    CigId, IsoConnectionHandle, IsoLinkQuality, IsoManagerError,
 };
 use crate::pdl::hci::HciStatus;
 
@@ -344,13 +344,12 @@ impl IsoCigCallbacks {
 
         if let Some(state) = iso_registry.cis.get(&cis_conn_handle) {
             if !state.data_subscribers.is_empty() {
-                let packet = IsoDataPacket {
-                    time_stamp: Some(Duration::from_micros(time_stamp as u64)),
-
+                iso_registry.dispatch_cis_data(
+                    cis_conn_handle,
+                    Some(Duration::from_micros(time_stamp as u64)),
                     seq_nb,
-                    data: data.to_vec(),
-                };
-                iso_registry.dispatch_cis_data(cis_conn_handle, packet);
+                    data,
+                );
             }
         }
     }
@@ -443,6 +442,7 @@ mod test {
     use tokio::time::timeout;
 
     use crate::le_audio::iso_manager::manager::CisState;
+    use crate::le_audio::iso_manager::traits::IsoDataPacket;
 
     const TEST_TIMEOUT: Duration = Duration::from_secs(1);
     const SUBSCRIBER_EVENT_BUFFER: usize = 10;
@@ -596,6 +596,7 @@ mod test {
         let cis_conn_handle = IsoConnectionHandle::try_from(100).unwrap();
 
         let (subscriber_sender, mut subscriber_receiver) = mpsc::channel(SUBSCRIBER_EVENT_BUFFER);
+
         iso_registry.lock().unwrap().cis.insert(
             cis_conn_handle,
             CisState { data_subscribers: vec![subscriber_sender], ..Default::default() },
