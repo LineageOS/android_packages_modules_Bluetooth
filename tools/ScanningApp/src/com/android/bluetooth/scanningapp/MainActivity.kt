@@ -48,6 +48,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
@@ -66,6 +67,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -276,12 +278,12 @@ class MainActivity : ComponentActivity() {
                                     if (scanSessions.size > 1) {
                                         IconButton(
                                             onClick = { removeScanSession(session) },
-                                            modifier = Modifier.size(18.dp),
+                                            modifier = Modifier.size(24.dp),
                                         ) {
-                                            Text(
-                                                text = "x",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.close),
+                                                contentDescription = "Remove Scan",
+                                                modifier = Modifier.size(16.dp),
                                             )
                                         }
                                     }
@@ -300,7 +302,10 @@ class MainActivity : ComponentActivity() {
                             },
                             modifier = Modifier.padding(horizontal = 4.dp),
                         ) {
-                            Text(text = "+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            Icon(
+                                painter = painterResource(id = R.drawable.add),
+                                contentDescription = "Add Scan",
+                            )
                         }
                     }
                 }
