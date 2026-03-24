@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "storage_prevent_custom_metadata_on_unbonded_device"
-    namespace: "bluetooth"
-    description: "If the device is unbonded and unknown, do not write custom metadata in the database"
-    bug: "476474347"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "adapter_suspend_mgmt"
     namespace: "bluetooth"
     description: "Configure the BT adapter in a suspend state to avoid unexpected wake-up"
