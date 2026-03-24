@@ -47,41 +47,6 @@
 
 using bluetooth::Uuid;
 
-#define UUID_PARAMS(uuid) uuid_lsb(uuid), uuid_msb(uuid)
-
-static Uuid from_java_uuid(jlong uuid_msb, jlong uuid_lsb) {
-  std::array<uint8_t, Uuid::kNumBytes128> uu;
-  for (int i = 0; i < 8; i++) {
-    uu[7 - i] = (uuid_msb >> (8 * i)) & 0xFF;
-    uu[15 - i] = (uuid_lsb >> (8 * i)) & 0xFF;
-  }
-  return Uuid::From128BitBE(uu);
-}
-
-static uint64_t uuid_lsb(const Uuid& uuid) {
-  uint64_t lsb = 0;
-
-  auto uu = uuid.To128BitBE();
-  for (int i = 8; i <= 15; i++) {
-    lsb <<= 8;
-    lsb |= uu[i];
-  }
-
-  return lsb;
-}
-
-static uint64_t uuid_msb(const Uuid& uuid) {
-  uint64_t msb = 0;
-
-  auto uu = uuid.To128BitBE();
-  for (int i = 0; i <= 7; i++) {
-    msb <<= 8;
-    msb |= uu[i];
-  }
-
-  return msb;
-}
-
 static RawAddress str2addr(JNIEnv* env, jstring address) {
   const char* c_address = env->GetStringUTFChars(address, NULL);
   if (!c_address) {
@@ -146,7 +111,7 @@ public:
       return;
     }
     sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onScannerRegistered, status, scannerId,
-                                 UUID_PARAMS(app_uuid));
+                                 app_uuid.lsb(), app_uuid.msb());
   }
 
   void OnSetScannerParameterComplete(uint8_t scannerId, uint8_t status) {
@@ -330,7 +295,7 @@ static void registerScannerNative(JNIEnv* /* env */, jobject /* object */, jlong
     return;
   }
 
-  Uuid uuid = from_java_uuid(app_uuid_msb, app_uuid_lsb);
+  Uuid uuid(app_uuid_msb, app_uuid_lsb);
   sScanner->RegisterScanner(uuid);
 }
 
@@ -528,14 +493,14 @@ static void scanFilterAddNative(JNIEnv* env, jobject /* object */, jint client_i
     if (uuid.get() != NULL) {
       jlong uuid_msb = env->CallLongMethod(uuid.get(), uuidGetMsb);
       jlong uuid_lsb = env->CallLongMethod(uuid.get(), uuidGetLsb);
-      curr.uuid = from_java_uuid(uuid_msb, uuid_lsb);
+      curr.uuid = Uuid(uuid_msb, uuid_lsb);
     }
 
     ScopedLocalRef<jobject> uuid_mask(env, env->GetObjectField(current.get(), uuidMaskFid));
     if (uuid.get() != NULL) {
       jlong uuid_msb = env->CallLongMethod(uuid_mask.get(), uuidGetMsb);
       jlong uuid_lsb = env->CallLongMethod(uuid_mask.get(), uuidGetLsb);
-      curr.uuid_mask = from_java_uuid(uuid_msb, uuid_lsb);
+      curr.uuid_mask = Uuid(uuid_msb, uuid_lsb);
     }
 
     ScopedLocalRef<jstring> name(env, (jstring)env->GetObjectField(current.get(), nameFid));
