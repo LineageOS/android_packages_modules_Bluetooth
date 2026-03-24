@@ -19,6 +19,8 @@ package com.android.bluetooth.storage
 import android.bluetooth.BluetoothAdapter.AUDIO_MODE_DUPLEX
 import android.bluetooth.BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothLeAudioCodecConfig
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
@@ -135,18 +137,17 @@ constructor(
     // initial disk read, run migrations, and populate the in-memory cache on a background thread.
     // This operation require the Context to be ready, hence why it is not started during the
     // constructor as the AdapterService doesn't have an attached context yet
-    fun initialize() =
-        ioScope.launch {
-            val userStorage = dataStore.data.first()
-            userStorage.devicesMap.keys.forEach {
-                Log.v(TAG, "Put device in cache: ${it.anonymizeAddress()}")
-            }
-
-            if (userStorage.currentConnectionNumber > COMPACTION_THRESHOLD) {
-                recompactConnectionCounter()
-            }
-            Log.v(TAG, "User storage ready")
+    fun initialize() = ioScope.launch {
+        val userStorage = dataStore.data.first()
+        userStorage.devicesMap.keys.forEach {
+            Log.v(TAG, "Put device in cache: ${it.anonymizeAddress()}")
         }
+
+        if (userStorage.currentConnectionNumber > COMPACTION_THRESHOLD) {
+            recompactConnectionCounter()
+        }
+        Log.v(TAG, "User storage ready")
+    }
 
     /** Dump metadata changes for debugging purposes while keeping the address anonymized. */
     fun dump(sb: StringBuilder) {
@@ -220,6 +221,17 @@ constructor(
                     Column("Value") { it.value.toStringUtf8() },
                 )
             appendLine(table.indent("  "))
+        }
+    }
+
+    fun onBondStateChanged(device: BluetoothDevice, fromState: Int, toState: Int) {
+        if (toState == BOND_NONE) {
+            removeDevice(device)
+        } else if (fromState == BOND_BONDED) {
+            // Remove the permissions for unbonded devices
+            setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
+            setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
+            setSimAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN)
         }
     }
 
@@ -675,28 +687,27 @@ constructor(
     fun setLeAudioCodecPreferences(
         devices: List<BluetoothDevice>,
         codecPreferences: Map<Int, Pair<BluetoothLeAudioCodecConfig, BluetoothLeAudioCodecConfig>>,
-    ) =
-        dataStore.blockingUpdateData { storage ->
-            val builder = storage.toBuilder()
-            devices.forEach { device ->
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+    ) = dataStore.blockingUpdateData { storage ->
+        val builder = storage.toBuilder()
+        devices.forEach { device ->
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val settingsBuilder = deviceBuilder.leAudioSettings.toBuilder()
-                settingsBuilder.clearCodecPreferences()
-                codecPreferences.values.forEach { pair ->
-                    settingsBuilder.addCodecPreferences(
-                        LeAudioCodecPreference.newBuilder()
-                            .setInput(toProtoCodecConfig(pair.first))
-                            .setOutput(toProtoCodecConfig(pair.second))
-                            .build()
-                    )
-                }
-
-                deviceBuilder.setLeAudioSettings(settingsBuilder.build())
-                builder.putDevices(device.address, deviceBuilder.build())
+            val settingsBuilder = deviceBuilder.leAudioSettings.toBuilder()
+            settingsBuilder.clearCodecPreferences()
+            codecPreferences.values.forEach { pair ->
+                settingsBuilder.addCodecPreferences(
+                    LeAudioCodecPreference.newBuilder()
+                        .setInput(toProtoCodecConfig(pair.first))
+                        .setOutput(toProtoCodecConfig(pair.second))
+                        .build()
+                )
             }
-            builder.build()
+
+            deviceBuilder.setLeAudioSettings(settingsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build())
         }
+        builder.build()
+    }
 
     /**
      * Gets the most recently connected bluetooth devices in order with most recently connected
@@ -825,43 +836,41 @@ constructor(
         }
 
     /** Removes a device from storage */
-    fun removeDevice(device: BluetoothDevice) =
-        dataStore.blockingUpdateData { storage ->
-            logEvent(device, "Remove from storage")
-            val builder = storage.toBuilder()
+    private fun removeDevice(device: BluetoothDevice) = dataStore.blockingUpdateData { storage ->
+        logEvent(device, "Remove from storage")
+        val builder = storage.toBuilder()
 
-            builder.removeDevices(device.address)
+        builder.removeDevices(device.address)
 
-            val a2dpDevices = builder.activeA2DpDevicesList.filter { it != device.address }
-            builder.clearActiveA2DpDevices().addAllActiveA2DpDevices(a2dpDevices)
+        val a2dpDevices = builder.activeA2DpDevicesList.filter { it != device.address }
+        builder.clearActiveA2DpDevices().addAllActiveA2DpDevices(a2dpDevices)
 
-            val hfpDevices = builder.activeHfpDevicesList.filter { it != device.address }
-            builder.clearActiveHfpDevices().addAllActiveHfpDevices(hfpDevices)
+        val hfpDevices = builder.activeHfpDevicesList.filter { it != device.address }
+        builder.clearActiveHfpDevices().addAllActiveHfpDevices(hfpDevices)
 
-            builder.build()
+        builder.build()
+    }
+
+    private suspend fun recompactConnectionCounter() = dataStore.updateData { storage ->
+        Log.d(TAG, "Re-compacting the connection counter")
+
+        val sortedDevices = storage.devicesMap.entries.sortedBy { it.value.connectionCounter }
+
+        val builder = storage.toBuilder()
+
+        var newConnectionNumber = 0L
+        for (entry in sortedDevices) {
+            val address = entry.key
+            val proto = entry.value
+
+            val deviceBuilder = proto.toBuilder()
+            deviceBuilder.connectionCounter = ++newConnectionNumber
+            builder.putDevices(address, deviceBuilder.build())
         }
 
-    private suspend fun recompactConnectionCounter() =
-        dataStore.updateData { storage ->
-            Log.d(TAG, "Re-compacting the connection counter")
-
-            val sortedDevices = storage.devicesMap.entries.sortedBy { it.value.connectionCounter }
-
-            val builder = storage.toBuilder()
-
-            var newConnectionNumber = 0L
-            for (entry in sortedDevices) {
-                val address = entry.key
-                val proto = entry.value
-
-                val deviceBuilder = proto.toBuilder()
-                deviceBuilder.connectionCounter = ++newConnectionNumber
-                builder.putDevices(address, deviceBuilder.build())
-            }
-
-            builder.currentConnectionNumber = newConnectionNumber
-            builder.build()
-        }
+        builder.currentConnectionNumber = newConnectionNumber
+        builder.build()
+    }
 
     private suspend fun removeUnbondedDevices() {
         val bondedAddresses = adapterService.bondedDevices.map { it.address }.toSet()

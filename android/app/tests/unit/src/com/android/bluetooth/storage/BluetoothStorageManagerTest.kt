@@ -17,6 +17,8 @@
 package com.android.bluetooth.storage
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
@@ -186,7 +188,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
 
             assertThat(storageManager.getMostRecentlyConnectedDevices()).hasSize(2)
 
-            storageManager.removeDevice(device1)
+            storageManager.onBondStateChanged(device1, BOND_BONDED, BOND_NONE)
 
             val connectedDevices = storageManager.getMostRecentlyConnectedDevices()
             assertThat(connectedDevices).hasSize(1)
