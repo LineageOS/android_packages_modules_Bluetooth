@@ -97,8 +97,6 @@ public:
   bool IsValid() const;
   std::shared_ptr<A2dpTransport> GetTransportInstance() const { return transport_; }
 
-  std::vector<AudioCapabilities> GetAudioCapabilities() const;
-
   static std::vector<AudioCapabilities> GetAudioCapabilities(SessionType session_type);
   static std::optional<IBluetoothAudioProviderFactory::ProviderInfo> GetProviderInfo(
           SessionType session_type,

@@ -1457,11 +1457,16 @@ static bool bta_av_co_should_select_hardware_codec(
 
   // Check and prioritize user configuration
   if (com_android_bluetooth_flags_a2dp_offload_user_codec_selection() &&
-      user_codec_config.codec_type == hardware_config.codec_parameters.codec_type &&
       user_codec_config.codec_priority == BTAV_A2DP_CODEC_PRIORITY_HIGHEST) {
-    log::verbose("select hardware codec: {} - user config",
-                 A2DP_CodecIndexStr(hardware_offload_index));
-    return true;
+    if (user_codec_config.codec_type == hardware_config.codec_parameters.codec_type) {
+      log::verbose("select hardware codec: {} - user config",
+                   A2DP_CodecIndexStr(hardware_offload_index));
+      return true;
+    } else if (user_codec_config.codec_type == software_config.codecIndex()) {
+      log::verbose("select software codec: {} - user config",
+                   A2DP_CodecIndexStr(software_codec_index));
+      return false;
+    }
   }
 
   // Prioritize any offload codec except SBC and AAC
