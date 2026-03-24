@@ -282,6 +282,7 @@ public class BassClientService extends ConnectableProfile {
                     }
 
                     String bName = info.getName();
+                    int bId = info.getBroadcastId();
                     byte[] bCode = info.getCode();
 
                     final var leAudio = getAdapterService().getLeAudioService();
@@ -295,7 +296,7 @@ public class BassClientService extends ConnectableProfile {
                     for (BluetoothDevice sink : connectedSinks) {
                         // Only trigger the group operation on the primary device
                         if (leAudio.get().isPrimaryDevice(sink)) {
-                            addSourceByUri(sink, bName, bCode);
+                            addSourceByUri(sink, bName, bId, bCode);
                             mPendingNfcJoiningDevices.addAll(leAudio.get().getGroupDevices(sink));
                             break;
                         }
@@ -452,24 +453,21 @@ public class BassClientService extends ConnectableProfile {
             }
 
             String broadcastName = BassUtils.getBroadcastName(result.getScanRecord());
-            if (broadcastName != null) {
-                synchronized (mPendingSourcesToAddByUri) {
-                    ListIterator<PendingSourceToAddByUri> iterator =
-                            mPendingSourcesToAddByUri.listIterator();
-                    while (iterator.hasNext()) {
-                        PendingSourceToAddByUri pending = iterator.next();
-                        if (pending.broadcastId() == LeAudioConstants.INVALID_BROADCAST_ID
-                                && pending.name().equals(broadcastName)) {
-                            Log.i(
-                                    TAG,
-                                    "onScanResult: Matched pending name search: " + broadcastName);
-                            iterator.set(
-                                    new PendingSourceToAddByUri(
-                                            pending.sink(),
-                                            pending.name(),
-                                            pending.code(),
-                                            broadcastId));
-                        }
+            synchronized (mPendingSourcesToAddByUri) {
+                ListIterator<PendingSourceToAddByUri> iterator =
+                        mPendingSourcesToAddByUri.listIterator();
+                while (iterator.hasNext()) {
+                    PendingSourceToAddByUri pending = iterator.next();
+                    if (pending.broadcastId() == LeAudioConstants.INVALID_BROADCAST_ID
+                            && broadcastName != null
+                            && broadcastName.equals(pending.name())) {
+                        Log.i(TAG, "onScanResult: Matched pending name search: " + broadcastName);
+                        iterator.set(
+                                new PendingSourceToAddByUri(
+                                        pending.sink(),
+                                        pending.name(),
+                                        pending.code(),
+                                        broadcastId));
                     }
                 }
             }
@@ -4311,17 +4309,24 @@ public class BassClientService extends ConnectableProfile {
     }
 
     /**
-     * Add a Broadcast Source using only the Broadcast Name (e.g., from an incomplete URI). It scans
-     * for the name, retrieves the missing metadata, and completes the addSource operation.
+     * Add a Broadcast Source using the Broadcast Name and/or Broadcast ID (e.g., from a parsed
+     * URI). It scans for the matching broadcast, retrieves the missing metadata, and completes the
+     * addSource operation.
      */
     @VisibleForTesting
-    void addSourceByUri(BluetoothDevice sink, String broadcastName, byte[] broadcastCode) {
+    void addSourceByUri(
+            BluetoothDevice sink, String broadcastName, int broadcastId, byte[] broadcastCode) {
         if (broadcastName == null || broadcastName.isEmpty()) {
             Log.e(TAG, "addSourceByUri: broadcastName cannot be null or empty");
             return;
         }
 
-        Log.d(TAG, "addSourceByUri: Searching for name = " + broadcastName);
+        Log.d(
+                TAG,
+                "addSourceByUri: Searching for name = "
+                        + broadcastName
+                        + ", broadcastId = "
+                        + broadcastId);
 
         java.util.List<Byte> codeList = null;
         if (broadcastCode != null) {
@@ -4333,8 +4338,7 @@ public class BassClientService extends ConnectableProfile {
 
         synchronized (mPendingSourcesToAddByUri) {
             mPendingSourcesToAddByUri.add(
-                    new PendingSourceToAddByUri(
-                            sink, broadcastName, codeList, LeAudioConstants.INVALID_BROADCAST_ID));
+                    new PendingSourceToAddByUri(sink, broadcastName, codeList, broadcastId));
         }
 
         startSearchingForSources(Collections.emptyList(), /* foreground= */ false);
@@ -4362,7 +4366,12 @@ public class BassClientService extends ConnectableProfile {
                                         .build();
                     }
 
-                    Log.d(TAG, "processPendingAddSourceByUri: Adding source = " + pending.name());
+                    Log.d(
+                            TAG,
+                            "processPendingAddSourceByUri: Adding source = "
+                                    + pending.name()
+                                    + ", broadcastId = "
+                                    + pending.broadcastId());
                     addSource(pending.sink(), finalMetadata, true);
                     iterator.remove();
                 }

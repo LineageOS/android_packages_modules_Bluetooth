@@ -17,6 +17,7 @@
 package com.android.bluetooth.auracast
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.le_audio.LeAudioConstants
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -108,5 +109,47 @@ class AuracastUtilsTest {
         assertThat(info?.name).isEqualTo("TestName")
         // The code parse catches the IllegalArgumentException and ignores it, leaving code as null
         assertThat(info?.code).isNull()
+    }
+
+    @Test
+    fun parseBroadcastURI_withValidId_returnsNull() {
+        val uri = "BLUETOOTH:UUID:184F;BI:1A2B3C;;"
+        val info = AuracastUtils.parseBroadcastURI(uri)
+
+        assertThat(info).isNull()
+    }
+
+    @Test
+    fun parseBroadcastURI_withBothNameAndId() {
+        val uri = "BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;BI:1A2B3C;;"
+        val info = AuracastUtils.parseBroadcastURI(uri)
+
+        assertThat(info).isNotNull()
+        assertThat(info?.name).isEqualTo("TestName")
+        assertThat(info?.broadcastId).isEqualTo(0x1A2B3C)
+    }
+
+    @Test
+    fun parseBroadcastURI_broadcastIdOutOfRange_returnsInfoWithInvalidId() {
+        // "TestName" -> Base64: "VGVzdE5hbWU="
+        // Broadcast ID is > 0xFFFFFF
+        val uri = "BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;BI:1000000;;"
+        val info = AuracastUtils.parseBroadcastURI(uri)
+
+        assertThat(info).isNotNull()
+        assertThat(info?.name).isEqualTo("TestName")
+        assertThat(info?.broadcastId).isEqualTo(LeAudioConstants.INVALID_BROADCAST_ID)
+    }
+
+    @Test
+    fun parseBroadcastURI_malformedBroadcastId_returnsInfoWithInvalidId() {
+        // "TestName" -> Base64: "VGVzdE5hbWU="
+        // Broadcast ID is not a valid hex string
+        val uri = "BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;BI:NOT_HEX;;"
+        val info = AuracastUtils.parseBroadcastURI(uri)
+
+        assertThat(info).isNotNull()
+        assertThat(info?.name).isEqualTo("TestName")
+        assertThat(info?.broadcastId).isEqualTo(LeAudioConstants.INVALID_BROADCAST_ID)
     }
 }

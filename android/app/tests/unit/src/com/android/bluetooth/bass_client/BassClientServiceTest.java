@@ -679,7 +679,10 @@ public class BassClientServiceTest {
         }
 
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
-        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
+        doReturn(false).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
+        doReturn(Arrays.asList(mCurrentDevice, mCurrentDevice1))
+                .when(mLeAudioService)
+                .getGroupDevices(mCurrentDevice);
     }
 
     private void startSearchingForSources() {
@@ -9730,7 +9733,8 @@ public class BassClientServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
     public void testAddSourceByUri_emptyName() {
-        mBassClientService.addSourceByUri(mCurrentDevice, "", null);
+        mBassClientService.addSourceByUri(
+                mCurrentDevice, "", LeAudioConstants.INVALID_BROADCAST_ID, null);
         // Since the name is empty, it should return early and not add to the pending list
         assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
     }
@@ -9819,14 +9823,18 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
-    public void testAddSourceByUri_ProcessAndAddSource() {
+    public void testAddSourceByUri_matchByName_ProcessAndAddSource() {
         prepareConnectedDeviceGroup();
 
         byte[] broadcastCode = new byte[] {1, 2, 3, 4};
         String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
 
         // 1. addSourceByUri triggers the initial background scan and queues the source
-        mBassClientService.addSourceByUri(mCurrentDevice, broadcastName, broadcastCode);
+        mBassClientService.addSourceByUri(
+                mCurrentDevice,
+                broadcastName,
+                LeAudioConstants.INVALID_BROADCAST_ID,
+                broadcastCode);
 
         // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
@@ -9836,8 +9844,106 @@ public class BassClientServiceTest {
         onPeriodicAdvertisingReport();
         mLooper.dispatchAll();
 
-        // Verify the entire CSIP group receives the ADD_BCAST_SOURCE with combined metadata
-        for (BassClientStateMachine sm : mStateMachines.values()) {
+        verifyAddBroadcastSourceWithExpectedData(broadcastName, TEST_BROADCAST_ID, broadcastCode);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByUri_matchByBroadcastId_ProcessAndAddSource() {
+        prepareConnectedDeviceGroup();
+
+        byte[] broadcastCode = new byte[] {1, 2, 3, 4};
+        String correctBroadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
+        String wrongBroadcastName = "WrongName";
+
+        // 1. addSourceByUri triggers the initial background scan and queues the source
+        // We test with TEST_BROADCAST_ID to verify explicit ID matching instead of name matching
+        mBassClientService.addSourceByUri(
+                mCurrentDevice, wrongBroadcastName, TEST_BROADCAST_ID, broadcastCode);
+
+        // 2. Scan result matches the exact broadcast ID and registers sync
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // 3. PA report triggers processPendingAddSourceByUri -> ADD_BCAST_SOURCE
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        // Should add the source with the correct name from the broadcast metadata, not the wrong
+        // one we provided initially
+        verifyAddBroadcastSourceWithExpectedData(
+                correctBroadcastName, TEST_BROADCAST_ID, broadcastCode);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testNfcJoinReceiver_withValidUri() {
+        prepareConnectedDeviceGroup();
+
+        NotificationManager mockNm = mock(NotificationManager.class);
+        mockGetSystemService(mAdapterService, NotificationManager.class, mockNm);
+
+        // "Test" in base64 is "VGVzdA==" | "123456" in base64 is "MTIzNDU2"
+        // TEST_BROADCAST_ID is 42, which is 0x00002A in hex
+        String uriStr = "BLUETOOTH:UUID:184F;BN:VGVzdA==;BI:00002A;BC:MTIzNDU2;;";
+        Intent intent = new Intent(AuracastUtils.ACTION_CONNECT_STREAM);
+        intent.putExtra(AuracastUtils.EXTRA_METADATA, uriStr);
+
+        mBassClientService.mNfcJoinReceiver.onReceive(mAdapterService, intent);
+
+        verify(mockNm).cancel(AuracastUtils.NOTIFICATION_ID);
+
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        verifyAddBroadcastSourceWithExpectedData(
+                "Test",
+                TEST_BROADCAST_ID,
+                "123456".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testNfcJoinReceiver_withoutBroadcastId_fallsBackToNameMatch() {
+        prepareConnectedDeviceGroup();
+
+        NotificationManager mockNm = mock(NotificationManager.class);
+        mockGetSystemService(mAdapterService, NotificationManager.class, mockNm);
+
+        // URI without BI field
+        String uriStr = "BLUETOOTH:UUID:184F;BN:VGVzdA==;BC:MTIzNDU2;;";
+        Intent intent = new Intent(AuracastUtils.ACTION_CONNECT_STREAM);
+        intent.putExtra(AuracastUtils.EXTRA_METADATA, uriStr);
+
+        mBassClientService.mNfcJoinReceiver.onReceive(mAdapterService, intent);
+
+        verify(mockNm).cancel(AuracastUtils.NOTIFICATION_ID);
+
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        verifyAddBroadcastSourceWithExpectedData(
+                "Test",
+                TEST_BROADCAST_ID,
+                "123456".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private void verifyAddBroadcastSourceWithExpectedData(
+            String expectedName, int expectedId, byte[] expectedCode) {
+        verifyAddBroadcastSourceWithExpectedData(
+                mStateMachines.values(), expectedName, expectedId, expectedCode);
+    }
+
+    private static void verifyAddBroadcastSourceWithExpectedData(
+            Iterable<BassClientStateMachine> stateMachines,
+            String expectedName,
+            int expectedId,
+            byte[] expectedCode) {
+        for (BassClientStateMachine sm : stateMachines) {
             ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
             verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
 
@@ -9851,9 +9957,13 @@ public class BassClientServiceTest {
             assertThat(addSourceMsg.obj).isInstanceOf(BluetoothLeBroadcastMetadata.class);
 
             BluetoothLeBroadcastMetadata metadata = (BluetoothLeBroadcastMetadata) addSourceMsg.obj;
-            assertThat(metadata.getBroadcastName()).isEqualTo(broadcastName);
-            assertThat(metadata.getBroadcastCode()).isEqualTo(broadcastCode);
-            assertThat(metadata.getBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
+            assertThat(metadata.getBroadcastName()).isEqualTo(expectedName);
+            assertThat(metadata.getBroadcastId()).isEqualTo(expectedId);
+            if (expectedCode != null) {
+                assertThat(metadata.getBroadcastCode()).isEqualTo(expectedCode);
+            } else {
+                assertThat(metadata.getBroadcastCode()).isNull();
+            }
         }
     }
 
@@ -9887,8 +9997,13 @@ public class BassClientServiceTest {
         String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
 
         // 1. Queue addSourceByUri for devices across two different groups
-        mBassClientService.addSourceByUri(mCurrentDevice, broadcastName, broadcastCode1);
-        mBassClientService.addSourceByUri(device3, broadcastName, broadcastCode2);
+        mBassClientService.addSourceByUri(
+                mCurrentDevice,
+                broadcastName,
+                LeAudioConstants.INVALID_BROADCAST_ID,
+                broadcastCode1);
+        mBassClientService.addSourceByUri(
+                device3, broadcastName, LeAudioConstants.INVALID_BROADCAST_ID, broadcastCode2);
 
         // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list.
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
@@ -9900,28 +10015,13 @@ public class BassClientServiceTest {
 
         // Verify the first group receives the ADD_BCAST_SOURCE with the first broadcast code
         BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
-        ArgumentCaptor<Message> messageCaptor1 = ArgumentCaptor.forClass(Message.class);
-        verify(sm1, atLeast(1)).sendMessage(messageCaptor1.capture());
-        Message addSourceMsg1 =
-                messageCaptor1.getAllValues().stream()
-                        .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
-                        .findFirst()
-                        .orElse(null);
-        assertThat(addSourceMsg1).isNotNull();
-        BluetoothLeBroadcastMetadata metadata1 = (BluetoothLeBroadcastMetadata) addSourceMsg1.obj;
-        assertThat(metadata1.getBroadcastCode()).isEqualTo(broadcastCode1);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+        verifyAddBroadcastSourceWithExpectedData(
+                Arrays.asList(sm1, sm2), broadcastName, TEST_BROADCAST_ID, broadcastCode1);
 
         // Verify the second group receives the ADD_BCAST_SOURCE with the second broadcast code
-        ArgumentCaptor<Message> messageCaptor3 = ArgumentCaptor.forClass(Message.class);
-        verify(sm3, atLeast(1)).sendMessage(messageCaptor3.capture());
-        Message addSourceMsg3 =
-                messageCaptor3.getAllValues().stream()
-                        .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
-                        .findFirst()
-                        .orElse(null);
-        assertThat(addSourceMsg3).isNotNull();
-        BluetoothLeBroadcastMetadata metadata3 = (BluetoothLeBroadcastMetadata) addSourceMsg3.obj;
-        assertThat(metadata3.getBroadcastCode()).isEqualTo(broadcastCode2);
+        verifyAddBroadcastSourceWithExpectedData(
+                Collections.singletonList(sm3), broadcastName, TEST_BROADCAST_ID, broadcastCode2);
     }
 
     @Test
@@ -9930,7 +10030,8 @@ public class BassClientServiceTest {
         prepareConnectedDeviceGroup();
 
         mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
-        mBassClientService.addSourceByUri(mCurrentDevice, "Test", null);
+        mBassClientService.addSourceByUri(
+                mCurrentDevice, "Test", LeAudioConstants.INVALID_BROADCAST_ID, null);
 
         assertThat(mBassClientService.mPendingNfcJoiningDevices).contains(mCurrentDevice);
 
