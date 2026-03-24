@@ -240,17 +240,17 @@ impl IsoCigCallbacks {
         if let Some(sender) =
             self.iso_registry.lock().unwrap().pending_requests.create_cig.remove(&cig_id)
         {
-            let _ = sender.send(if status == HciStatus::Success {
-                Ok(CreateCigCmplEvent {
-                    cig_id,
-                    cis_conn_handles: cis_conn_handles_raw
-                        .into_iter()
-                        .map(|conn_handle| IsoConnectionHandle::try_from(conn_handle).unwrap())
-                        .collect(),
-                })
-            } else {
-                Err(IsoManagerError::HciError(status))
-            });
+            let _ = sender.send(
+                status
+                    .err_or_else(|| CreateCigCmplEvent {
+                        cig_id,
+                        cis_conn_handles: cis_conn_handles_raw
+                            .into_iter()
+                            .map(|conn_handle| IsoConnectionHandle::try_from(conn_handle).unwrap())
+                            .collect(),
+                    })
+                    .map_err(IsoManagerError::HciError),
+            );
         }
     }
 
@@ -261,11 +261,7 @@ impl IsoCigCallbacks {
         if let Some(sender) =
             self.iso_registry.lock().unwrap().pending_requests.remove_cig.remove(&cig_id)
         {
-            let _ = sender.send(if status == HciStatus::Success {
-                Ok(())
-            } else {
-                Err(IsoManagerError::HciError(status))
-            });
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
         }
     }
 
@@ -295,28 +291,28 @@ impl IsoCigCallbacks {
 
         let mut iso_registry = self.iso_registry.lock().unwrap();
         if let Some(sender) = iso_registry.pending_requests.create_cis.remove(&cis_conn_handle) {
-            let _ = sender.send(if status == HciStatus::Success {
-                Ok(CisEstablishedEvent {
-                    cig_id: CigId::try_from(cig_id).unwrap(),
-                    cis_conn_handle,
-                    cig_sync_delay,
-                    cis_sync_delay,
-                    transport_latency_c_to_p,
-                    transport_latency_p_to_c,
-                    phy_c_to_p,
-                    phy_p_to_c,
-                    nse,
-                    bn_c_to_p,
-                    bn_p_to_c,
-                    ft_c_to_p,
-                    ft_p_to_c,
-                    max_pdu_c_to_p,
-                    max_pdu_p_to_c,
-                    iso_interval,
-                })
-            } else {
-                Err(IsoManagerError::HciError(status))
-            });
+            let _ = sender.send(
+                status
+                    .err_or_else(|| CisEstablishedEvent {
+                        cig_id: CigId::try_from(cig_id).unwrap(),
+                        cis_conn_handle,
+                        cig_sync_delay,
+                        cis_sync_delay,
+                        transport_latency_c_to_p,
+                        transport_latency_p_to_c,
+                        phy_c_to_p,
+                        phy_p_to_c,
+                        nse,
+                        bn_c_to_p,
+                        bn_p_to_c,
+                        ft_c_to_p,
+                        ft_p_to_c,
+                        max_pdu_c_to_p,
+                        max_pdu_p_to_c,
+                        iso_interval,
+                    })
+                    .map_err(IsoManagerError::HciError),
+            );
         }
     }
     pub fn on_cis_disconnected(&self, reason_raw: u8, cig_id: u8, cis_conn_handle_raw: u16) {
@@ -376,11 +372,7 @@ impl IsoCigCallbacks {
             .setup_iso_data_path
             .remove(&cis_conn_handle)
         {
-            let _ = sender.send(if status == HciStatus::Success {
-                Ok(())
-            } else {
-                Err(IsoManagerError::HciError(status))
-            });
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
         }
     }
 
@@ -401,11 +393,7 @@ impl IsoCigCallbacks {
             .remove_iso_data_path
             .remove(&cis_conn_handle)
         {
-            let _ = sender.send(if status == HciStatus::Success {
-                Ok(())
-            } else {
-                Err(IsoManagerError::HciError(status))
-            });
+            let _ = sender.send(status.err_or(()).map_err(IsoManagerError::HciError));
         }
     }
 

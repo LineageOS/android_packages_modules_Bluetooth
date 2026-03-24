@@ -136,23 +136,23 @@ impl PeriodicSyncCallbacks {
 
         let mut sync_registry = self.sync_registry.lock().unwrap();
 
-        let result = if status == HciStatus::Success {
-            sync_registry.active_handles.insert(sync_handle);
-            Ok(PeriodicSyncInfo {
-                reg_id,
-                sync_handle,
-                advertising_sid,
-                advertiser_addr_type,
-                advertiser_addr,
-                advertiser_phy,
-                periodic_advertising_interval: Duration::from_micros(
-                    periodic_advertising_interval as u64
-                        * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
-                ),
+        let result = status
+            .err_or_else(|| {
+                sync_registry.active_handles.insert(sync_handle);
+                PeriodicSyncInfo {
+                    reg_id,
+                    sync_handle,
+                    advertising_sid,
+                    advertiser_addr_type,
+                    advertiser_addr,
+                    advertiser_phy,
+                    periodic_advertising_interval: Duration::from_micros(
+                        periodic_advertising_interval as u64
+                            * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
+                    ),
+                }
             })
-        } else {
-            Err(PeriodicSyncError::HciError(status))
-        };
+            .map_err(PeriodicSyncError::HciError);
 
         if let Some(sender) = sync_registry.pending_requests.start_sync.remove(&reg_id) {
             let _ = sender.send(result);
