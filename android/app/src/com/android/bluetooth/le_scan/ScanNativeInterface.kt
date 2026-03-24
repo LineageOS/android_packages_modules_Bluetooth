@@ -37,7 +37,7 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
     private external fun cleanupNative()
 
     /** ************************ Regular scan related native methods ************************* */
-    private external fun registerScannerNative(appUuidLsb: Long, appUuidMsb: Long)
+    private external fun registerScannerNative(appUuidMsb: Long, appUuidLsb: Long)
 
     private external fun unregisterScannerNative(scannerId: Int)
 
@@ -104,8 +104,8 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     private external fun readScanReportsNative(scannerId: Int, scanType: Int)
 
-    fun registerScanner(appUuidLsb: Long, appUuidMsb: Long) {
-        registerScannerNative(appUuidLsb, appUuidMsb)
+    fun registerScanner(appUuidMsb: Long, appUuidLsb: Long) {
+        registerScannerNative(appUuidMsb, appUuidLsb)
     }
 
     fun unregisterScanner(scannerId: Int) {

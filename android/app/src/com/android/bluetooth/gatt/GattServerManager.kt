@@ -522,8 +522,8 @@ class GattServerManager(
         val appName = adapterService.appNameOrUnknown(uid)
         serverMap.add(uid, appName, uuid, callback, transport, tag)
         nativeInterface.gattServerRegisterApp(
-            uuid.leastSignificantBits,
             uuid.mostSignificantBits,
+            uuid.leastSignificantBits,
             eattSupport,
         )
     }

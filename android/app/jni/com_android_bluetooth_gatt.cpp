@@ -191,7 +191,7 @@ static void btgattc_register_app_cb(int status, int clientIf, const Uuid& app_uu
     return;
   }
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onClientRegistered, status, clientIf,
-                               app_uuid.lsb(), app_uuid.msb());
+                               app_uuid.msb(), app_uuid.lsb());
 }
 
 static void btgattc_open_cb(int conn_id, int status, int clientIf, int transport,
@@ -536,7 +536,7 @@ static void btgatts_register_app_cb(int status, int server_if, const Uuid& uuid)
   }
   sPrivateGattServerManager->OpenServer(server_if);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServerRegistered, status, server_if,
-                               uuid.lsb(), uuid.msb());
+                               uuid.msb(), uuid.lsb());
 }
 
 static void btgatts_connection_cb(int conn_id, int server_if, int transport, int connected,
@@ -1048,8 +1048,8 @@ static int gattClientGetDeviceTypeNative(JNIEnv* env, jobject /* object */, jstr
   return sGattIf->client->get_device_type(str2addr(env, address));
 }
 
-static void gattClientRegisterAppNative(JNIEnv* env, jobject /* object */, jlong app_uuid_lsb,
-                                        jlong app_uuid_msb, jstring name, jboolean eatt_support) {
+static void gattClientRegisterAppNative(JNIEnv* env, jobject /* object */, jlong app_uuid_msb,
+                                        jlong app_uuid_lsb, jstring name, jboolean eatt_support) {
   if (!sGattIf) {
     return;
   }
@@ -1127,8 +1127,8 @@ static void gattClientRefreshNative(JNIEnv* env, jobject /* object */, jint clie
 }
 
 static void gattClientSearchServiceNative(JNIEnv* /* env */, jobject /* object */, jint conn_id,
-                                          jboolean search_all, jlong service_uuid_lsb,
-                                          jlong service_uuid_msb) {
+                                          jboolean search_all, jlong service_uuid_msb,
+                                          jlong service_uuid_lsb) {
   if (!sGattIf) {
     return;
   }
@@ -1138,8 +1138,8 @@ static void gattClientSearchServiceNative(JNIEnv* /* env */, jobject /* object *
 }
 
 static void gattClientDiscoverServiceByUuidNative(JNIEnv* /* env */, jobject /* object */,
-                                                  jint conn_id, jlong service_uuid_lsb,
-                                                  jlong service_uuid_msb) {
+                                                  jint conn_id, jlong service_uuid_msb,
+                                                  jlong service_uuid_lsb) {
   if (!sGattIf) {
     return;
   }
@@ -1158,8 +1158,8 @@ static void gattClientReadCharacteristicNative(JNIEnv* /* env */, jobject /* obj
 }
 
 static void gattClientReadUsingCharacteristicUuidNative(JNIEnv* /* env */, jobject /* object */,
-                                                        jint conn_id, jlong uuid_lsb,
-                                                        jlong uuid_msb, jint s_handle,
+                                                        jint conn_id, jlong uuid_msb,
+                                                        jlong uuid_lsb, jint s_handle,
                                                         jint e_handle, jint authReq) {
   if (!sGattIf) {
     return;
@@ -1318,8 +1318,8 @@ static int gattSubrateModeRequestNative(JNIEnv* env, jobject /* object */, jint 
  * Native server functions
  */
 
-static void gattServerRegisterAppNative(JNIEnv* /* env */, jobject /* object */, jlong app_uuid_lsb,
-                                        jlong app_uuid_msb, jboolean eatt_support) {
+static void gattServerRegisterAppNative(JNIEnv* /* env */, jobject /* object */, jlong app_uuid_msb,
+                                        jlong app_uuid_lsb, jboolean eatt_support) {
   if (!sGattIf) {
     return;
   }

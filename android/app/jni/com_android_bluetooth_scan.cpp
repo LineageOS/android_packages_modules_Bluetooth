@@ -111,7 +111,7 @@ public:
       return;
     }
     sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onScannerRegistered, status, scannerId,
-                                 app_uuid.lsb(), app_uuid.msb());
+                                 app_uuid.msb(), app_uuid.lsb());
   }
 
   void OnSetScannerParameterComplete(uint8_t scannerId, uint8_t status) {
@@ -289,12 +289,11 @@ public:
  * Native Client functions
  */
 
-static void registerScannerNative(JNIEnv* /* env */, jobject /* object */, jlong app_uuid_lsb,
-                                  jlong app_uuid_msb) {
+static void registerScannerNative(JNIEnv* /* env */, jobject /* object */, jlong app_uuid_msb,
+                                  jlong app_uuid_lsb) {
   if (!sScanner) {
     return;
   }
-
   Uuid uuid(app_uuid_msb, app_uuid_lsb);
   sScanner->RegisterScanner(uuid);
 }

@@ -81,8 +81,8 @@ public:
 
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, addr.get(),
-                                 (jint)group_id, (jint)group_size, (jint)rank, uuid.lsb(),
-                                 uuid.msb());
+                                 (jint)group_id, (jint)group_size, (jint)rank, uuid.msb(),
+                                 uuid.lsb());
   }
 
   void OnSetMemberAvailable(const RawAddress& bd_addr, int group_id) override {

@@ -332,8 +332,8 @@ class GattServiceTest(flags: FlagsWrapper) {
         service.registerClient(uuid, callback, eattSupport, transport, source)
         verify(nativeInterface)
             .gattClientRegisterApp(
-                uuid.leastSignificantBits,
                 uuid.mostSignificantBits,
+                uuid.leastSignificantBits,
                 context.packageName,
                 eattSupport,
             )
@@ -828,8 +828,8 @@ class GattServiceTest(flags: FlagsWrapper) {
         verify(nativeInterface)
             .gattClientReadUsingCharacteristicUuid(
                 CLIENT_CONN_ID,
-                uuid.leastSignificantBits,
                 uuid.mostSignificantBits,
+                uuid.leastSignificantBits,
                 startHandle,
                 endHandle,
                 authReq,
