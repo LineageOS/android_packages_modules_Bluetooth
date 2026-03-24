@@ -198,15 +198,11 @@ class MainActivity : ComponentActivity() {
         requestBluetoothPermissions.launch(requiredPermissions)
     }
 
-    private val scanSessions = mutableStateListOf<ScanSession>()
+    private val scanSessions = mutableStateListOf(ScanSession(0, "scanning_app_0", this))
     private var nextSessionId = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        if (scanSessions.isEmpty()) {
-            addScanSession()
-        }
 
         setContent {
             MaterialTheme {
@@ -238,9 +234,6 @@ class MainActivity : ComponentActivity() {
     private fun removeScanSession(session: ScanSession) {
         session.stopScan()
         scanSessions.remove(session)
-        if (scanSessions.isEmpty()) {
-            addScanSession()
-        }
     }
 
     @Preview
