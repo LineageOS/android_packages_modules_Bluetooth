@@ -9753,6 +9753,11 @@ public class BassClientServiceTest {
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
         doReturn(new ArrayList<>()).when(mLeAudioService).getConnectedDevices();
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        // Add a device to the pending list to ensure it actually gets cleared
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).isNotEmpty();
 
         // Simulate adding a broadcast receiver. This triggers the update logic twice.
         // The first call is from the setup, and the second from this action.
