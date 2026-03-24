@@ -1416,6 +1416,11 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
 
   BTM_BLE_SEC_CALLBACK(BTM_LE_COMPLT_EVT, bd_addr, p_data);
 
+  if (p_data->complt.smp_over_br) {
+    log::verbose("SMP over BR completed");
+    p_device->sec_rec.bredr_sc_enc_reason = BtmSecurityRecord::BrEdrScEncReason::OTHER;
+  }
+
   /* Reset BTM state if the callback address matches pairing address */
   if (bd_addr == BtmSecurity::Get().link_spec_.addrt.bda) {
     BtmSecurity::Get().change_pairing_state(BTM_PAIR_STATE_IDLE);

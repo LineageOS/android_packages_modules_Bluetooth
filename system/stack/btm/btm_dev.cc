@@ -620,7 +620,7 @@ static void consolidate_dev(BtmDevice* p_target, BtmDevice* p_device) {
   p_target->device_type |= temp_dev.device_type;
   p_target->sec_rec.sec_flags |= temp_dev.sec_rec.sec_flags;
 
-  p_target->sec_rec.new_encryption_key_is_p256 = temp_dev.sec_rec.new_encryption_key_is_p256;
+  p_target->sec_rec.bredr_sc_enc_reason = temp_dev.sec_rec.bredr_sc_enc_reason;
   p_target->sec_rec.bond_type = temp_dev.sec_rec.bond_type;
 
   /* remove the combined record */
@@ -875,6 +875,7 @@ BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& bd_addr) {
   // Initialize defaults
   p_device->sec_rec.sec_flags = BTM_SEC_IN_USE;
   p_device->sec_rec.bond_type = BOND_TYPE_UNKNOWN;
+  p_device->sec_rec.bredr_sc_enc_reason = BtmSecurityRecord::BrEdrScEncReason::OTHER;
   p_device->timestamp = BtmSecurity::Get().dev_rec_count_++;
   p_device->sec_rec.rmt_io_caps = BtIoCap::IO_CAP_UNKNOWN;
   p_device->suggested_tx_octets = 0;
