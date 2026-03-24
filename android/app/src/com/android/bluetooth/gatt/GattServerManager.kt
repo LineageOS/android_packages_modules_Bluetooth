@@ -521,11 +521,7 @@ class GattServerManager(
         val uid = if (Flags.gattThread()) source.uid else Binder.getCallingUid()
         val appName = adapterService.appNameOrUnknown(uid)
         serverMap.add(uid, appName, uuid, callback, transport, tag)
-        nativeInterface.gattServerRegisterApp(
-            uuid.mostSignificantBits,
-            uuid.leastSignificantBits,
-            eattSupport,
-        )
+        nativeInterface.gattServerRegisterApp(uuid, eattSupport)
     }
 
     fun unregisterServer(callback: IBluetoothGattServerCallback) {

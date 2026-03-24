@@ -330,13 +330,7 @@ class GattServiceTest(flags: FlagsWrapper) {
         val transport = BluetoothDevice.TRANSPORT_LE
 
         service.registerClient(uuid, callback, eattSupport, transport, source)
-        verify(nativeInterface)
-            .gattClientRegisterApp(
-                uuid.mostSignificantBits,
-                uuid.leastSignificantBits,
-                context.packageName,
-                eattSupport,
-            )
+        verify(nativeInterface).gattClientRegisterApp(uuid, context.packageName, eattSupport)
     }
 
     @Test
@@ -351,8 +345,7 @@ class GattServiceTest(flags: FlagsWrapper) {
 
         service.registerClient(uuid, callback, eattSupport, transport, source)
         verify(clientMap, never()).add(any<Int>(), any(), any(), any(), any<Int>(), any<String>())
-        verify(nativeInterface, never())
-            .gattClientRegisterApp(any<Long>(), any<Long>(), any(), any<Boolean>())
+        verify(nativeInterface, never()).gattClientRegisterApp(any<UUID>(), any(), any<Boolean>())
     }
 
     @Test
@@ -828,8 +821,7 @@ class GattServiceTest(flags: FlagsWrapper) {
         verify(nativeInterface)
             .gattClientReadUsingCharacteristicUuid(
                 CLIENT_CONN_ID,
-                uuid.mostSignificantBits,
-                uuid.leastSignificantBits,
+                uuid,
                 startHandle,
                 endHandle,
                 authReq,
