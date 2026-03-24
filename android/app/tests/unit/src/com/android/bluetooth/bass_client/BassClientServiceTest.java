@@ -120,6 +120,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9753,6 +9754,11 @@ public class BassClientServiceTest {
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
         doReturn(new ArrayList<>()).when(mLeAudioService).getConnectedDevices();
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        // Add a device to the pending list to ensure it actually gets cleared
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).isNotEmpty();
 
         // Simulate adding a broadcast receiver. This triggers the update logic twice.
         // The first call is from the setup, and the second from this action.
@@ -9809,5 +9815,156 @@ public class BassClientServiceTest {
         // Verify the exact text hits the Alias branch properly
         assertThat(text)
                 .isEqualTo("Failed to connect to TestName audio stream on your Test Alias.");
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByBroadcastName_ProcessAndAddSource() {
+        prepareConnectedDeviceGroup();
+
+        byte[] broadcastCode = new byte[] {1, 2, 3, 4};
+        String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
+
+        // 1. addSourceByBroadcastName triggers the initial background scan and queues the source
+        mBassClientService.addSourceByBroadcastName(mCurrentDevice, broadcastName, broadcastCode);
+
+        // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // 3. PA report triggers updateMetadata & processPendingAddSourceByName -> ADD_BCAST_SOURCE
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        // Verify the entire CSIP group receives the ADD_BCAST_SOURCE with combined metadata
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+            Message addSourceMsg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                            .findFirst()
+                            .orElse(null);
+
+            assertThat(addSourceMsg).isNotNull();
+            assertThat(addSourceMsg.obj).isInstanceOf(BluetoothLeBroadcastMetadata.class);
+
+            BluetoothLeBroadcastMetadata metadata = (BluetoothLeBroadcastMetadata) addSourceMsg.obj;
+            assertThat(metadata.getBroadcastName()).isEqualTo(broadcastName);
+            assertThat(metadata.getBroadcastCode()).isEqualTo(broadcastCode);
+            assertThat(metadata.getBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByBroadcastName_MultiplePendingDifferentGroups() {
+        prepareConnectedDeviceGroup(); // Sets up mCurrentDevice and mCurrentDevice1 in Group 1
+
+        // Setup a third device in a different CSIP group
+        BluetoothDevice device3 = getTestDevice(2);
+        doReturn(Collections.singletonList(device3))
+                .when(mCsipService)
+                .getGroupDevicesOrdered(device3, BluetoothUuid.CAP);
+
+        assertThat(mBassClientService.connect(device3)).isTrue();
+
+        // Mock connection properties for device3
+        BassClientStateMachine sm3 = mStateMachines.get(device3);
+        doCallRealMethod().when(sm3).broadcastConnectionState(any(), anyInt(), anyInt());
+        sm3.mService = mBassClientService;
+        sm3.mDevice = device3;
+        sm3.broadcastConnectionState(device3, STATE_CONNECTING, STATE_CONNECTED);
+
+        doReturn(STATE_CONNECTED).when(sm3).getConnectionState();
+        doReturn(true).when(sm3).isConnected();
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(device3);
+
+        // Two brodcast codes only for test purposes
+        byte[] broadcastCode1 = new byte[] {1, 2, 3, 4};
+        byte[] broadcastCode2 = new byte[] {5, 6, 7, 8};
+        String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
+
+        // 1. Queue addSourceByBroadcastName for devices across two different groups
+        mBassClientService.addSourceByBroadcastName(mCurrentDevice, broadcastName, broadcastCode1);
+        mBassClientService.addSourceByBroadcastName(device3, broadcastName, broadcastCode2);
+
+        // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list.
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // 3. PA report triggers processPendingAddSourceByName
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        // Verify the first group receives the ADD_BCAST_SOURCE with the first broadcast code
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        ArgumentCaptor<Message> messageCaptor1 = ArgumentCaptor.forClass(Message.class);
+        verify(sm1, atLeast(1)).sendMessage(messageCaptor1.capture());
+        Message addSourceMsg1 =
+                messageCaptor1.getAllValues().stream()
+                        .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                        .findFirst()
+                        .orElse(null);
+        assertThat(addSourceMsg1).isNotNull();
+        BluetoothLeBroadcastMetadata metadata1 = (BluetoothLeBroadcastMetadata) addSourceMsg1.obj;
+        assertThat(metadata1.getBroadcastCode()).isEqualTo(broadcastCode1);
+
+        // Verify the second group receives the ADD_BCAST_SOURCE with the second broadcast code
+        ArgumentCaptor<Message> messageCaptor3 = ArgumentCaptor.forClass(Message.class);
+        verify(sm3, atLeast(1)).sendMessage(messageCaptor3.capture());
+        Message addSourceMsg3 =
+                messageCaptor3.getAllValues().stream()
+                        .filter(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                        .findFirst()
+                        .orElse(null);
+        assertThat(addSourceMsg3).isNotNull();
+        BluetoothLeBroadcastMetadata metadata3 = (BluetoothLeBroadcastMetadata) addSourceMsg3.obj;
+        assertThat(metadata3.getBroadcastCode()).isEqualTo(broadcastCode2);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testDeviceDisconnection_clearsPendingNfcData() {
+        prepareConnectedDeviceGroup();
+
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        mBassClientService.addSourceByBroadcastName(mCurrentDevice, "Test", null);
+
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).contains(mCurrentDevice);
+
+        // Disconnect device
+        injectDeviceDisconnection(mCurrentDevice);
+
+        // Verify device is removed from NFC joining devices
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).doesNotContain(mCurrentDevice);
+
+        // Verify device is removed from pending sources by name.
+        // Re-connect the device to test that it doesn't process the stale pending source.
+        injectDeviceConnection(mCurrentDevice);
+
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID); // Hardcoded getScanRecord() has name "Test"
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        BassClientStateMachine sm = mStateMachines.get(mCurrentDevice);
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(sm, atLeast(0)).sendMessage(messageCaptor.capture());
+
+        boolean hasAddSource =
+                messageCaptor.getAllValues().stream()
+                        .anyMatch(m -> m.what == BassClientStateMachine.ADD_BCAST_SOURCE);
+        assertThat(hasAddSource).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testCleanup_clearsPendingNfcData() {
+        prepareConnectedDeviceGroup();
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        mBassClientService.cleanup();
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
     }
 }
