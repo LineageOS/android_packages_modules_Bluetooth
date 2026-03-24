@@ -1071,6 +1071,8 @@ static void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS statu
          * in sniff mode from host side.
          */
         bta_dm_pm_stop_timer(bd_addr);
+        log::debug("Sniff mode triggered by remote, Restart service check for peer:{}", bd_addr);
+        bta_dm_pm_set_mode(bd_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
       } else {
         bool is_sniff_command_sent = p_link->is_sniff_command_sent();
         p_link->reset_sniff_flags();
