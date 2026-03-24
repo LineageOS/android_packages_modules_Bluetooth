@@ -16,6 +16,7 @@
 
 //! Periodic sync manager traits and event definitions.
 
+use bluetooth_macros::bt_handle;
 #[cfg(test)]
 use mockall::automock;
 use std::future::Future;
@@ -27,6 +28,17 @@ use tokio_stream::wrappers::ReceiverStream;
 use crate::pdl::hci::{AddressType, DataStatus, HciStatus};
 use crate::Address;
 
+/// Sync handle for periodic advertising synchronization.
+#[bt_handle(mask = 0xeff)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SyncHandle(u16);
+
+/// Advertising Set ID (SID).
+#[bt_handle(mask = 0xf)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[repr(transparent)]
+pub struct AdvertisingSid(u8);
+
 /// Represents the parameters for starting PA sync.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaCreateSyncParams {
@@ -34,7 +46,7 @@ pub struct PaCreateSyncParams {
     /// It would be used as registration id for native gd periodic synchronization.
     pub broadcast_id: u32,
     /// The advertising SID.
-    pub advertising_sid: u8,
+    pub advertising_sid: AdvertisingSid,
     /// The address type of the broadcaster.
     pub advertiser_addr_type: AddressType,
     /// The address of the broadcaster.
@@ -53,9 +65,9 @@ pub struct PeriodicSyncInfo {
     /// Registration ID.
     pub reg_id: i32,
     /// Identify the periodic advertising train.
-    pub sync_handle: u16,
+    pub sync_handle: SyncHandle,
     /// Advertising SID.
-    pub advertising_sid: u8,
+    pub advertising_sid: AdvertisingSid,
     /// Address type.
     pub advertiser_addr_type: AddressType,
     /// Address.
@@ -72,7 +84,7 @@ pub enum PeriodicSyncEvent {
     /// Report carries periodic advertising data.
     PeriodicAdvertisingReport {
         /// Identify the periodic advertising train.
-        sync_handle: u16,
+        sync_handle: SyncHandle,
         /// TX power.
         tx_power: i8,
         /// RSSI.
@@ -85,12 +97,12 @@ pub enum PeriodicSyncEvent {
     /// Periodic advertising sync lost.
     PeriodicAdvertisingSyncLost {
         /// Identify the periodic advertising train.
-        sync_handle: u16,
+        sync_handle: SyncHandle,
     },
     /// Report carries BIG Info advertising data.
     BigInfoAdvertisingReport {
         /// Identify the periodic advertising train.
-        sync_handle: u16,
+        sync_handle: SyncHandle,
         /// Indicate whether BIG carries encrypted data.
         encryption: bool,
     },
@@ -144,7 +156,7 @@ pub trait PeriodicSyncManager: Send + Sync {
     /// This method only waits for the command status: it returns immediately once
     /// the Bluetooth stack has accepted the request to stop. It DOES NOT wait
     /// for a radio-level confirmation event.
-    fn stop_sync(&self, handle: u16) -> impl Future<Output = Result<()>> + Send;
+    fn stop_sync(&self, handle: SyncHandle) -> impl Future<Output = Result<()>> + Send;
 
     /// Subscribes to periodic sync events.
     fn subscribe_events(&self) -> Self::EventStream;

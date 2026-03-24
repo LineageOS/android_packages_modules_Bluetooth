@@ -21,7 +21,7 @@ use std::time::Duration;
 
 use crate::le_audio::periodic_sync::manager::SyncRegistry;
 use crate::le_audio::periodic_sync::traits::{
-    PeriodicSyncError, PeriodicSyncEvent, PeriodicSyncInfo,
+    AdvertisingSid, PeriodicSyncError, PeriodicSyncEvent, PeriodicSyncInfo, SyncHandle,
 };
 use crate::pdl::hci::{AddressType, DataStatus, HciStatus};
 use crate::Address;
@@ -123,8 +123,8 @@ impl PeriodicSyncCallbacks {
         &self,
         reg_id: i32,
         status_raw: u8,
-        sync_handle: u16,
-        advertising_sid: u8,
+        sync_handle_raw: u16,
+        advertising_sid_raw: u8,
         advertiser_addr_type_raw: u8,
         advertiser_addr: Address,
         advertiser_phy: u8,
@@ -136,23 +136,26 @@ impl PeriodicSyncCallbacks {
 
         let mut sync_registry = self.sync_registry.lock().unwrap();
 
-        let result = status
-            .err_or_else(|| {
-                sync_registry.active_handles.insert(sync_handle);
-                PeriodicSyncInfo {
-                    reg_id,
-                    sync_handle,
-                    advertising_sid,
-                    advertiser_addr_type,
-                    advertiser_addr,
-                    advertiser_phy,
-                    periodic_advertising_interval: Duration::from_micros(
-                        periodic_advertising_interval as u64
-                            * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
-                    ),
-                }
+        let result = status.err_or(()).map_err(PeriodicSyncError::HciError).and_then(|_| {
+            let sync_handle = SyncHandle::try_from(sync_handle_raw)
+                .map_err(|_| PeriodicSyncError::InvalidHandle)?;
+            let advertising_sid = AdvertisingSid::try_from(advertising_sid_raw)
+                .map_err(|_| PeriodicSyncError::InvalidHandle)?;
+
+            sync_registry.active_handles.insert(sync_handle);
+            Ok(PeriodicSyncInfo {
+                reg_id,
+                sync_handle,
+                advertising_sid,
+                advertiser_addr_type,
+                advertiser_addr,
+                advertiser_phy,
+                periodic_advertising_interval: Duration::from_micros(
+                    periodic_advertising_interval as u64
+                        * HCI_PERIODIC_ADVERTISING_INTERVAL_UNIT_US,
+                ),
             })
-            .map_err(PeriodicSyncError::HciError);
+        });
 
         if let Some(sender) = sync_registry.pending_requests.start_sync.remove(&reg_id) {
             let _ = sender.send(result);
@@ -161,12 +164,22 @@ impl PeriodicSyncCallbacks {
 
     pub fn on_periodic_advertising_report(
         &self,
-        sync_handle: u16,
+        sync_handle_raw: u16,
         tx_power: i8,
         rssi: i8,
         data_status_raw: u8,
         data: &[u8],
     ) {
+        let sync_handle = match SyncHandle::try_from(sync_handle_raw) {
+            Ok(h) => h,
+            Err(_) => {
+                log::warn!(
+                    "on_periodic_advertising_report: invalid sync handle {:#x}",
+                    sync_handle_raw
+                );
+                return;
+            }
+        };
         let data_status = DataStatus::try_from(data_status_raw).unwrap_or(DataStatus::Complete);
         let mut sync_registry = self.sync_registry.lock().unwrap();
         sync_registry.broadcast_event(PeriodicSyncEvent::PeriodicAdvertisingReport {
@@ -178,14 +191,31 @@ impl PeriodicSyncCallbacks {
         });
     }
 
-    pub fn on_periodic_sync_lost(&self, sync_handle: u16) {
+    pub fn on_periodic_sync_lost(&self, sync_handle_raw: u16) {
+        let sync_handle = match SyncHandle::try_from(sync_handle_raw) {
+            Ok(h) => h,
+            Err(_) => {
+                log::warn!("on_periodic_sync_lost: invalid sync handle {:#x}", sync_handle_raw);
+                return;
+            }
+        };
         let mut sync_registry = self.sync_registry.lock().unwrap();
         sync_registry.active_handles.remove(&sync_handle);
         sync_registry
             .broadcast_event(PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle });
     }
 
-    pub fn on_biginfo_advertising_report(&self, sync_handle: u16, encryption: bool) {
+    pub fn on_biginfo_advertising_report(&self, sync_handle_raw: u16, encryption: bool) {
+        let sync_handle = match SyncHandle::try_from(sync_handle_raw) {
+            Ok(h) => h,
+            Err(_) => {
+                log::warn!(
+                    "on_biginfo_advertising_report: invalid sync handle {:#x}",
+                    sync_handle_raw
+                );
+                return;
+            }
+        };
         let mut sync_registry = self.sync_registry.lock().unwrap();
         sync_registry.broadcast_event(PeriodicSyncEvent::BigInfoAdvertisingReport {
             sync_handle,
@@ -212,6 +242,8 @@ mod test {
         // active handle registry, fulfills the pending request, and broadcasts a notification event.
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+        let sync_handle = SyncHandle::from_masked(1);
+        let advertising_sid = AdvertisingSid::from_masked(2);
 
         let (sender, receiver) = oneshot::channel();
         sync_registry.lock().unwrap().pending_requests.start_sync.insert(123, sender);
@@ -220,8 +252,8 @@ mod test {
         callbacks.on_periodic_sync_started(
             123,
             HciStatus::Success.into(),
-            1, // handle
-            2, // sid
+            sync_handle.into(),
+            advertising_sid.into(),
             AddressType::RandomDeviceAddress.into(),
             address,
             3, // advertiser_phy
@@ -232,8 +264,8 @@ mod test {
             receiver.await,
             ok(ok(matches_pattern!(&PeriodicSyncInfo {
                 reg_id: eq(123),
-                sync_handle: eq(1),
-                advertising_sid: eq(2),
+                sync_handle: eq(sync_handle),
+                advertising_sid: eq(advertising_sid),
                 advertiser_addr_type: eq(AddressType::RandomDeviceAddress),
                 advertiser_addr: eq(address),
                 advertiser_phy: eq(3),
@@ -242,7 +274,10 @@ mod test {
                 )),
             })))
         );
-        expect_that!(sync_registry.lock().unwrap().active_handles.contains(&1), is_true());
+        expect_that!(
+            sync_registry.lock().unwrap().active_handles.contains(&sync_handle),
+            is_true()
+        );
     }
 
     #[googletest::test]
@@ -252,6 +287,7 @@ mod test {
         // requester and broadcasts a notification event without updating the active handles.
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+        let sync_handle = SyncHandle::from_masked(0);
 
         let (sender, receiver) = oneshot::channel();
         sync_registry.lock().unwrap().pending_requests.start_sync.insert(456, sender);
@@ -259,7 +295,7 @@ mod test {
         callbacks.on_periodic_sync_started(
             456,
             HciStatus::UnknownHciCommand.into(), // failure
-            0,
+            sync_handle.into(),
             0,
             AddressType::PublicDeviceAddress.into(),
             Address::default(),
@@ -283,17 +319,24 @@ mod test {
         // event containing the report's metadata and payload.
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+        let sync_handle = SyncHandle::from_masked(10);
 
         let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
         let data = vec![1, 2, 3];
-        callbacks.on_periodic_advertising_report(10, 20, -50, DataStatus::Complete.into(), &data);
+        callbacks.on_periodic_advertising_report(
+            sync_handle.into(),
+            20,
+            -50,
+            DataStatus::Complete.into(),
+            &data,
+        );
 
         expect_that!(
             timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
             ok(some(matches_pattern!(PeriodicSyncEvent::PeriodicAdvertisingReport {
-                sync_handle: eq(&10),
+                sync_handle: eq(&sync_handle),
                 tx_power: eq(&20),
                 rssi: eq(&-50),
                 data_status: eq(&DataStatus::Complete),
@@ -308,20 +351,23 @@ mod test {
         // Verify that when synchronization is lost, the manager removes the handle from it s
         // active set and broadcasts a lost event to all subscribers.
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
-        sync_registry.lock().unwrap().active_handles.insert(99);
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
+
+        let sync_handle = SyncHandle::from_masked(99);
+
+        sync_registry.lock().unwrap().active_handles.insert(sync_handle);
 
         let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
-        callbacks.on_periodic_sync_lost(99);
+        callbacks.on_periodic_sync_lost(sync_handle.into());
 
         expect_that!(sync_registry.lock().unwrap().active_handles.is_empty(), is_true());
 
         expect_that!(
             timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
             ok(some(matches_pattern!(&PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
-                sync_handle: eq(99)
+                sync_handle: eq(sync_handle)
             })))
         );
     }
@@ -334,6 +380,8 @@ mod test {
         let sync_registry = Arc::new(Mutex::new(SyncRegistry::default()));
         let callbacks = PeriodicSyncCallbacks::new(sync_registry.clone());
 
+        let sync_handle = SyncHandle::from_masked(88);
+
         let (subscriber_sender, mut subscriber_receiver) = mpsc::unbounded_channel();
         sync_registry.lock().unwrap().event_subscribers.push(subscriber_sender);
 
@@ -342,7 +390,7 @@ mod test {
         expect_that!(
             timeout(Duration::from_secs(2), subscriber_receiver.recv()).await,
             ok(some(matches_pattern!(&PeriodicSyncEvent::BigInfoAdvertisingReport {
-                sync_handle: eq(88),
+                sync_handle: eq(sync_handle),
                 encryption: eq(true)
             })))
         );

@@ -28,7 +28,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use crate::le_audio::periodic_sync::ffi::{inner_ffi as pa_ffi, PeriodicSyncCallbacks};
 use crate::le_audio::periodic_sync::traits::{
     PaCreateSyncParams, PeriodicSyncError, PeriodicSyncEvent, PeriodicSyncInfo,
-    PeriodicSyncManager, Result,
+    PeriodicSyncManager, Result, SyncHandle,
 };
 
 // Pending requests for the manager to process.
@@ -44,7 +44,7 @@ pub(super) struct SyncRegistry {
     // Ongoing PA sync requests.
     pub pending_requests: PendingRequests,
     // Currently established PA sync handles.
-    pub active_handles: HashSet<u16>,
+    pub active_handles: HashSet<SyncHandle>,
     // Active event subscribers.
     pub event_subscribers: Vec<mpsc::UnboundedSender<PeriodicSyncEvent>>,
 }
@@ -112,7 +112,7 @@ impl PeriodicSyncManager for PeriodicSyncManagerImpl {
         }
 
         self.shim.lock().unwrap().pin_mut().start_sync(
-            params.advertising_sid,
+            params.advertising_sid.into(),
             params.advertiser_addr,
             params.advertiser_addr_type.into(),
             params.skip,
@@ -134,14 +134,14 @@ impl PeriodicSyncManager for PeriodicSyncManagerImpl {
         result
     }
 
-    async fn stop_sync(&self, handle: u16) -> Result<()> {
+    async fn stop_sync(&self, handle: SyncHandle) -> Result<()> {
         info!("stop_sync: handle: {}", handle);
         let mut sync_registry = self.sync_registry.lock().unwrap();
         if !sync_registry.active_handles.remove(&handle) {
             error!("stop_sync failed: invalid handle: {}", handle);
             return Err(PeriodicSyncError::InvalidHandle);
         }
-        self.shim.lock().unwrap().pin_mut().stop_sync(handle);
+        self.shim.lock().unwrap().pin_mut().stop_sync(handle.into());
         Ok(())
     }
 
@@ -161,6 +161,7 @@ mod test {
     use tokio::spawn;
     use tokio::time::{sleep, timeout};
 
+    use crate::le_audio::periodic_sync::traits::AdvertisingSid;
     use crate::pdl::hci::AddressType;
     use crate::Address;
 
@@ -179,21 +180,23 @@ mod test {
         let mut stream1 = manager.subscribe_events();
         let mut stream2 = manager.subscribe_events();
 
+        let sync_handle = SyncHandle::from_masked(42);
+
         // Broadcast a simulated event.
-        let event = PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle: 42 };
+        let event = PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle };
         manager.sync_registry.lock().unwrap().broadcast_event(event);
 
         // Verify both subscribers receive it.
         expect_that!(
             timeout(DEFAULT_TIMEOUT, stream1.next()).await,
             ok(some(matches_pattern!(&PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
-                sync_handle: eq(42)
+                sync_handle: eq(sync_handle)
             })))
         );
         expect_that!(
             timeout(DEFAULT_TIMEOUT, stream2.next()).await,
             ok(some(matches_pattern!(&PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
-                sync_handle: eq(42)
+                sync_handle: eq(sync_handle)
             })))
         );
     }
@@ -212,11 +215,11 @@ mod test {
         }
 
         // Broadcast to trigger cleanup logic.
-        manager
-            .sync_registry
-            .lock()
-            .unwrap()
-            .broadcast_event(PeriodicSyncEvent::PeriodicAdvertisingSyncLost { sync_handle: 0 });
+        manager.sync_registry.lock().unwrap().broadcast_event(
+            PeriodicSyncEvent::PeriodicAdvertisingSyncLost {
+                sync_handle: SyncHandle::from_masked(0),
+            },
+        );
 
         // Verify dead subscriber is removed.
         expect_that!(manager.sync_registry.lock().unwrap().event_subscribers.len(), eq(0));
@@ -230,7 +233,7 @@ mod test {
         let manager = PeriodicSyncManagerImpl::new();
         let params = PaCreateSyncParams {
             broadcast_id: 99,
-            advertising_sid: 1,
+            advertising_sid: AdvertisingSid::from_masked(1),
             advertiser_addr_type: AddressType::PublicDeviceAddress,
             advertiser_addr: Address::default(),
             skip: 0,
@@ -254,9 +257,10 @@ mod test {
         // Verify that stopping a synchronization with a valid handle successfully removes it from
         // the active handles set.
         let manager = PeriodicSyncManagerImpl::new();
-        manager.sync_registry.lock().unwrap().active_handles.insert(123);
+        let sync_handle = SyncHandle::from_masked(123);
+        manager.sync_registry.lock().unwrap().active_handles.insert(sync_handle);
 
-        let result = timeout(DEFAULT_TIMEOUT, manager.stop_sync(123)).await;
+        let result = timeout(DEFAULT_TIMEOUT, manager.stop_sync(sync_handle)).await;
         expect_that!(result, ok(ok(anything())));
         expect_that!(manager.sync_registry.lock().unwrap().active_handles.is_empty(), is_true());
     }
@@ -268,7 +272,8 @@ mod test {
         // an invalid handle error.
         let manager = PeriodicSyncManagerImpl::new();
 
-        let result = timeout(DEFAULT_TIMEOUT, manager.stop_sync(456)).await;
+        let result =
+            timeout(DEFAULT_TIMEOUT, manager.stop_sync(SyncHandle::from_masked(123))).await;
         expect_that!(result, ok(err(eq(&PeriodicSyncError::InvalidHandle))));
     }
 
@@ -280,7 +285,7 @@ mod test {
         let manager = PeriodicSyncManagerImpl::new();
         let params = PaCreateSyncParams {
             broadcast_id: 1,
-            advertising_sid: 1,
+            advertising_sid: AdvertisingSid::from_masked(1),
             advertiser_addr_type: AddressType::PublicDeviceAddress,
             advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
             skip: 0,
@@ -303,7 +308,7 @@ mod test {
         let manager = Arc::new(PeriodicSyncManagerImpl::new());
         let params = PaCreateSyncParams {
             broadcast_id: 1,
-            advertising_sid: 1,
+            advertising_sid: AdvertisingSid::from_masked(1),
             advertiser_addr_type: AddressType::PublicDeviceAddress,
             advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
             skip: 0,
