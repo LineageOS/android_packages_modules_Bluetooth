@@ -35,9 +35,7 @@ void FragmentingInserter::insert_bits(uint8_t byte, size_t num_bits) {
   uint16_t new_value =
           static_cast<uint8_t>(saved_bits_) | (static_cast<uint16_t>(byte) << num_saved_bits_);
   if (total_bits >= 8) {
-    uint8_t new_byte = static_cast<uint8_t>(new_value);
-    on_byte(new_byte);
-    curr_packet_->AddOctets1(new_byte);
+    curr_packet_->AddOctets1(static_cast<uint8_t>(new_value));
     if (curr_packet_->size() >= mtu_) {
       iterator_ = std::move(curr_packet_);
       curr_packet_ = std::make_unique<RawBuilder>(mtu_);

@@ -21,8 +21,6 @@
 #include <memory>
 #include <vector>
 
-#include "packet/byte_observer.h"
-
 namespace bluetooth {
 namespace packet {
 
@@ -32,16 +30,6 @@ public:
   virtual ~ByteInserter();
 
   virtual void insert_byte(uint8_t byte);
-
-  void RegisterObserver(const ByteObserver& observer);
-
-  ByteObserver UnregisterObserver();
-
-protected:
-  void on_byte(uint8_t);
-
-private:
-  std::vector<ByteObserver> registered_observers_;
 };
 
 }  // namespace packet
