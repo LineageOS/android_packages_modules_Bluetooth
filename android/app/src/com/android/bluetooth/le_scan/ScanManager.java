@@ -326,8 +326,7 @@ public class ScanManager {
     }
 
     void registerScanner(UUID uuid) {
-        mNativeInterface.registerScanner(
-                uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+        mNativeInterface.registerScanner(uuid);
     }
 
     void unregisterScanner(int scannerId) {
