@@ -75,20 +75,20 @@ class RawAddress;
 // Default interval associated with AVRC_EVT_PLAY_POS_CHANGED
 #define DEFAULT_PLAY_POS_UPDATE_INTERVAL_SEC 2
 
-#define CHECK_RC_CONNECTED(p_dev)                              \
-  do {                                                         \
-    if ((p_dev) == NULL || !(p_dev)->rc_connected) {           \
-      bluetooth::log::warn("called when RC is not connected"); \
-      return BtifStatus(NOT_READY);                            \
-    }                                                          \
+#define CHECK_RC_CONNECTED(p_dev)                                                  \
+  do {                                                                             \
+    if ((p_dev) == NULL || (p_dev)->rc_state != BTRC_CONNECTION_STATE_CONNECTED) { \
+      bluetooth::log::warn("called when RC is not connected");                     \
+      return BtifStatus(NOT_READY);                                                \
+    }                                                                              \
   } while (0)
 
-#define CHECK_BR_CONNECTED(p_dev)                              \
-  do {                                                         \
-    if ((p_dev) == NULL || !(p_dev)->br_connected) {           \
-      bluetooth::log::warn("called when BR is not connected"); \
-      return BtifStatus(NOT_READY);                            \
-    }                                                          \
+#define CHECK_BR_CONNECTED(p_dev)                                                  \
+  do {                                                                             \
+    if ((p_dev) == NULL || (p_dev)->br_state != BTRC_CONNECTION_STATE_CONNECTED) { \
+      bluetooth::log::warn("called when BR is not connected");                     \
+      return BtifStatus(NOT_READY);                                                \
+    }                                                                              \
   } while (0)
 
 /*****************************************************************************
@@ -180,12 +180,11 @@ struct rc_transaction_set_t {
 /* TODO : Merge btif_rc_reg_notifications_t and btif_rc_cmd_ctxt_t to a single
  * struct */
 struct btif_rc_device_cb_t {
-  bool rc_connected;
-  bool br_connected;  // Browsing channel.
   uint8_t rc_handle;
   tBTA_AV_FEAT rc_features;
   uint16_t rc_cover_art_psm;  // AVRCP-BIP psm
   btrc_connection_state_t rc_state;
+  btrc_connection_state_t br_state;  // Browsing channel state.
   RawAddress rc_addr;
   btif_rc_cmd_ctxt_t rc_pdu_info[MAX_CMD_QUEUE_LEN];
   btif_rc_reg_notifications_t rc_notif[MAX_RC_NOTIFICATIONS];
