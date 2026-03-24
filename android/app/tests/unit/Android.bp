@@ -50,6 +50,7 @@ android_test {
         "framework-bluetooth-pre-jarjar",
         "gson",
         "guava-android-testlib",
+        "kotlin-reflect",
         "kotlinx_coroutines_test",
         "mmslib",
         "mockito-kotlin2",
