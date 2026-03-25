@@ -18,7 +18,6 @@ source_set("BluetoothPacketSources") {
   sources = [
     "bit_inserter.cc",
     "byte_inserter.cc",
-    "byte_observer.cc",
     "fragmenting_inserter.cc",
     "iterator.cc",
     "packet_view.cc",

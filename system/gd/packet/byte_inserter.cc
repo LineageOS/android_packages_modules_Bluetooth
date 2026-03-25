@@ -25,26 +25,9 @@ namespace packet {
 ByteInserter::ByteInserter(std::vector<uint8_t>& vector)
     : std::back_insert_iterator<std::vector<uint8_t>>(vector) {}
 
-ByteInserter::~ByteInserter() { assert(registered_observers_.empty()); }
-
-void ByteInserter::RegisterObserver(const ByteObserver& observer) {
-  registered_observers_.push_back(observer);
-}
-
-ByteObserver ByteInserter::UnregisterObserver() {
-  ByteObserver observer = registered_observers_.back();
-  registered_observers_.pop_back();
-  return observer;
-}
-
-void ByteInserter::on_byte(uint8_t byte) {
-  for (auto& observer : registered_observers_) {
-    observer.OnByte(byte);
-  }
-}
+ByteInserter::~ByteInserter() {}
 
 void ByteInserter::insert_byte(uint8_t byte) {
-  on_byte(byte);
   std::back_insert_iterator<std::vector<uint8_t>>::operator=(byte);
 }
 
