@@ -342,12 +342,13 @@ cc_test {
         ":LegacyStackSdp",
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
-        ":TestMockBtaAg",
-        ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
+        "gatt/bta_gattc_db_storage.cc",
+        "gatt/database.cc",
+        "gatt/database_builder.cc",
         "test/gatt/database_builder_sample_device_test.cc",
         "test/gatt/database_builder_test.cc",
         "test/gatt/database_test.cc",
@@ -368,7 +369,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_types",
         "libbt-audio-hal-interface",
-        "libbt-bta",
+        "libbt-bta-mock",
         "libbt-common",
         "libbt-stack-mock",
 
@@ -445,8 +446,6 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
-        ":TestMockBtaRfcMetrics",
-        ":TestMockBtaSys",
         ":TestMockBtif",
         "jv/bta_jv_act.cc",
         "rfcomm/bta_rfcomm_scn.cc",
@@ -466,6 +465,7 @@ cc_test {
         "libbluetooth_log",
         "libbluetooth_metrics",
         "libbluetooth_types",
+        "libbt-bta-mock",
         "libbt-common",
         "libbt-stack-mock",
 
@@ -882,7 +882,6 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
-        ":TestMockBtaLeAudioHalVerifier",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
         ":TestStubOsi",
@@ -918,6 +917,7 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbluetooth_types",
+        "libbt-bta-mock",
         "libbt-common",
         "libbt-stack-mock",
         "libchrome",
@@ -964,7 +964,6 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
-        ":TestMockBtaLeAudioHalVerifier",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
         ":TestStubOsi",
@@ -1061,7 +1060,6 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
-        ":TestMockBtaLeAudioHalVerifier",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
         ":TestStubOsi",
@@ -1119,6 +1117,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_types",
         "libbt-audio-hal-interface",
+        "libbt-bta-mock",
         "libbt-common",
         "libbt-stack-mock",
 
@@ -1497,7 +1496,6 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
-        ":TestMockBtaHearingAidAudioSource",
         ":TestMockDevice",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -1524,6 +1522,7 @@ cc_test {
         "libbluetooth_log",
         "libbluetooth_types",
         "libbt-audio-asrc",
+        "libbt-bta-mock",
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-stack-mock",
@@ -1564,10 +1563,6 @@ cc_test {
         ":BtaDmSources",
         ":TestCommonMockFunctions",
         ":TestCommonSyncMainHandler",
-        ":TestMockBtaGatt",
-        ":TestMockBtaLeAudio",
-        ":TestMockBtaSdp",
-        ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
@@ -1595,6 +1590,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_private_gatt_rs_bridge",
         "libbluetooth_types",
+        "libbt-bta-mock",
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-stack-mock",
@@ -1637,10 +1633,6 @@ cc_test {
         ":BtaDmSources",
         ":TestCommonMockFunctions",
         ":TestCommonSyncMainHandler",
-        ":TestMockBtaGatt",
-        ":TestMockBtaLeAudio",
-        ":TestMockBtaSdp",
-        ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
@@ -1672,6 +1664,7 @@ cc_test {
         "libbluetooth_metrics_mock",
         "libbluetooth_private_gatt_rs_bridge",
         "libbluetooth_types",
+        "libbt-bta-mock",
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-stack-mock",
@@ -1712,12 +1705,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestCommonSyncMainHandler",
         ":TestFakeOsi",
-        ":TestMockBtaGatt",
-        ":TestMockBtaLeAudio",
-        ":TestMockBtaRfcMetrics",
-        ":TestMockBtaScn",
-        ":TestMockBtaSdp",
-        ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
@@ -1741,6 +1728,7 @@ cc_test {
         "libbluetooth_metrics",
         "libbluetooth_private_gatt_rs_bridge",
         "libbluetooth_types",
+        "libbt-bta-mock",
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-stack-mock",
@@ -1886,207 +1874,26 @@ cc_test {
     ],
 }
 
-filegroup {
-    name: "TestMockBtaAg",
+cc_library_static {
+    name: "libbt-bta-mock",
+    defaults: ["fluoride_bta_defaults"],
+    apex_available: ["com.android.bt"],
+    host_supported: true,
+    min_sdk_version: "36",
     srcs: [
-        "mock/mock_bta_ag_*.cc",
+        "mock/*.cc",
     ],
-}
-
-filegroup {
-    name: "TestMockBtaAr",
-    srcs: [
-        "mock/mock_bta_ar.cc",
+    export_include_dirs: [
+        ".",
     ],
-}
-
-filegroup {
-    name: "TestMockBtaAv",
-    srcs: [
-        "mock/mock_bta_av_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaCsis",
-    srcs: [
-        "mock/mock_bta_csis*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaDm",
-    srcs: [
-        "mock/mock_bta_dm_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaGatt",
-    srcs: [
-        "mock/mock_bta_gatt*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaGroups",
-    srcs: [
-        "mock/mock_bta_groups*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaHas",
-    srcs: [
-        "mock/mock_bta_has.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaHd",
-    srcs: [
-        "mock/mock_bta_hd*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaHearingAid",
-    srcs: [
-        "mock/mock_bta_hearing_aid.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaHearingAidAudioSource",
-    srcs: [
-        "mock/mock_bta_hearing_aid_audio_source.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaHf",
-    srcs: [
-        "mock/mock_bta_hf*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaHh",
-    srcs: [
-        "mock/mock_bta_hh*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaJv",
-    srcs: [
-        "mock/mock_bta_jv_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaLeAudio",
-    srcs: [
-        "mock/mock_bta_leaudio*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaMcp",
-    srcs: [
-        "mock/mock_bta_mcp_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaPan",
-    srcs: [
-        "mock/mock_bta_pan_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaRas",
-    srcs: [
-        "mock/mock_bta_ras*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaRfcMetrics",
-    srcs: [
-        "mock/mock_bta_rfc_metrics.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaScn",
-    srcs: [
-        "mock/mock_bta_scn.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaSdp",
-    srcs: [
-        "mock/mock_bta_sdp_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaSys",
-    srcs: [
-        "mock/mock_bta_sys_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaVap",
-    srcs: [
-        "mock/mock_bta_vap_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaVcp",
-    srcs: [
-        "mock/mock_bta_vcp_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBtaLeAudioHalVerifier",
-    srcs: [
-        "mock/mock_le_audio_hal_verifier.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockBta",
-    srcs: [
-        ":TestMockBtaAg",
-        ":TestMockBtaAr",
-        ":TestMockBtaAv",
-        ":TestMockBtaCsis",
-        ":TestMockBtaDm",
-        ":TestMockBtaGatt",
-        ":TestMockBtaGroups",
-        ":TestMockBtaHas",
-        ":TestMockBtaHd",
-        ":TestMockBtaHearingAid",
-        ":TestMockBtaHearingAidAudioSource",
-        ":TestMockBtaHf",
-        ":TestMockBtaHh",
-        ":TestMockBtaJv",
-        ":TestMockBtaLeAudio",
-        ":TestMockBtaLeAudioHalVerifier",
-        ":TestMockBtaMcp",
-        ":TestMockBtaPan",
-        ":TestMockBtaRas",
-        ":TestMockBtaRfcMetrics",
-        ":TestMockBtaSdp",
-        ":TestMockBtaSys",
-        ":TestMockBtaVap",
-        ":TestMockBtaVcp",
+    static_libs: [
+        "bluetooth_constants-cpp",
+        "libbase",
+        "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
+        "libbluetooth_pacs_pdl",
+        "libbluetooth_types",
+        "libgmock",
     ],
 }

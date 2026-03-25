@@ -66,6 +66,31 @@ uint32_t Uuid::As32Bit() const {
   return (((uint32_t)uu[0]) << 24) + (((uint32_t)uu[1]) << 16) + (((uint32_t)uu[2]) << 8) + uu[3];
 }
 
+Uuid::Uuid(uint64_t msb, uint64_t lsb) {
+  for (int i = 0; i < 8; i++) {
+    uu[7 - i] = (msb >> (8 * i)) & 0xFF;
+    uu[15 - i] = (lsb >> (8 * i)) & 0xFF;
+  }
+}
+
+uint64_t Uuid::msb() const {
+  uint64_t msb_val = 0;
+  for (int i = 0; i <= 7; i++) {
+    msb_val <<= 8;
+    msb_val |= uu[i];
+  }
+  return msb_val;
+}
+
+uint64_t Uuid::lsb() const {
+  uint64_t lsb_val = 0;
+  for (int i = 8; i <= 15; i++) {
+    lsb_val <<= 8;
+    lsb_val |= uu[i];
+  }
+  return lsb_val;
+}
+
 std::optional<Uuid> Uuid::FromString(const std::string& uuid) {
   if (uuid.empty()) {
     return std::nullopt;

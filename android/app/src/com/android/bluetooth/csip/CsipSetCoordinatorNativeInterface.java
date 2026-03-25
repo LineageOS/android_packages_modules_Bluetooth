@@ -89,7 +89,7 @@ public class CsipSetCoordinatorNativeInterface {
     /** Device availability */
     @VisibleForTesting
     public void onDeviceAvailable(
-            byte[] address, int groupId, int groupSize, int rank, long uuidLsb, long uuidMsb) {
+            byte[] address, int groupId, int groupSize, int rank, long uuidMsb, long uuidLsb) {
         UUID uuid = new UUID(uuidMsb, uuidLsb);
         CsipSetCoordinatorStackEvent event =
                 new CsipSetCoordinatorStackEvent(

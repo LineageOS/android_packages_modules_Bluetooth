@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.util.Log
 import com.android.bluetooth.profile.NativeInterface
+import java.util.UUID
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanNativeInterface"
 
@@ -37,7 +38,7 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
     private external fun cleanupNative()
 
     /** ************************ Regular scan related native methods ************************* */
-    private external fun registerScannerNative(appUuidLsb: Long, appUuidMsb: Long)
+    private external fun registerScannerNative(appUuidMsb: Long, appUuidLsb: Long)
 
     private external fun unregisterScannerNative(scannerId: Int)
 
@@ -104,8 +105,8 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     private external fun readScanReportsNative(scannerId: Int, scanType: Int)
 
-    fun registerScanner(appUuidLsb: Long, appUuidMsb: Long) {
-        registerScannerNative(appUuidLsb, appUuidMsb)
+    fun registerScanner(uuid: UUID) {
+        registerScannerNative(uuid.mostSignificantBits, uuid.leastSignificantBits)
     }
 
     fun unregisterScanner(scannerId: Int) {

@@ -25,6 +25,7 @@
 
 // Original included files, if any
 
+#include "hci/hci_packets.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_ble_privacy.h"
 #include "test/common/mock_functions.h"
@@ -51,21 +52,21 @@ struct btm_ble_resolving_list_init btm_ble_resolving_list_init;
 }  // namespace test
 
 // Mocked functions, if any
-void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
+void btm_ble_clear_resolving_list_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_privacy::btm_ble_clear_resolving_list_complete(p, evt_len);
+  test::mock::stack_btm_ble_privacy::btm_ble_clear_resolving_list_complete(std::move(view));
 }
-void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
+void btm_ble_add_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_privacy::btm_ble_add_resolving_list_entry_complete(p, evt_len);
+  test::mock::stack_btm_ble_privacy::btm_ble_add_resolving_list_entry_complete(std::move(view));
 }
-void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
+void btm_ble_remove_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_privacy::btm_ble_remove_resolving_list_entry_complete(p, evt_len);
+  test::mock::stack_btm_ble_privacy::btm_ble_remove_resolving_list_entry_complete(std::move(view));
 }
-void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_len) {
+void btm_ble_read_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry_complete(p, evt_len);
+  test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry_complete(std::move(view));
 }
 bool btm_ble_read_resolving_list_entry(BtmDevice* p_device) {
   inc_func_call_count(__func__);
