@@ -273,7 +273,7 @@ static void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   ASSERTC(status, "Context transfer failed!", status);
 }
 
-void btm_read_rssi_cb(tBTM_STATUS status, uint8_t rssi, RawAddress address) {
+void btm_read_rssi_cb(tBTM_STATUS status, int8_t rssi, RawAddress address) {
   if (status != tBTM_STATUS::BTM_SUCCESS) {
     log::error("Read RSSI failed with status {}", status);
   }
@@ -672,7 +672,6 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
         !acl_peer_supports_ble_connection_subrating(bd_addr) ||
         !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
       return BtifStatus(UNSUPPORTED);
-      ;
     }
   }
   return do_in_main_thread(BindOnce(base::IgnoreResult(&stack::leConnectionSubrateRequest), bd_addr,

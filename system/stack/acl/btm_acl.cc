@@ -1497,7 +1497,7 @@ void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
     auto read_rssi_complete = bluetooth::hci::ReadRssiCompleteView::Create(view);
     RawAddress address = RawAddress::kEmpty;
     tBTM_STATUS status = tBTM_STATUS::BTM_SUCCESS;
-    uint8_t rssi = 0;
+    int8_t rssi = 0;
 
     if (read_rssi_complete.IsValid()) {
       if (read_rssi_complete.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
@@ -1506,7 +1506,7 @@ void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
         if (p_acl_cb != nullptr) {
           address = p_acl_cb->link_spec.addrt.bda;
         }
-        rssi = read_rssi_complete.GetRssi();
+        rssi = static_cast<int8_t>(read_rssi_complete.GetRssi());
       } else {
         status = tBTM_STATUS::BTM_ERR_PROCESSING;
       }
