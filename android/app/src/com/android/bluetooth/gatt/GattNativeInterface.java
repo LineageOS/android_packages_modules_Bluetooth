@@ -18,12 +18,14 @@ package com.android.bluetooth.gatt;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.GattOffloadSession;
 
 import com.android.bluetooth.profile.NativeInterface;
 
 import java.util.List;
+import java.util.UUID;
 
 public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
 
@@ -38,7 +40,7 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
     private native int gattClientGetDeviceTypeNative(String address);
 
     private native void gattClientRegisterAppNative(
-            long appUuidLsb, long appUuidMsb, String name, boolean eattSupport);
+            long appUuidMsb, long appUuidLsb, String name, boolean eattSupport);
 
     private native void gattClientUnregisterAppNative(int clientIf);
 
@@ -63,10 +65,10 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
     private native void gattClientRefreshNative(int clientIf, String address);
 
     private native void gattClientSearchServiceNative(
-            int connId, boolean searchAll, long serviceUuidLsb, long serviceUuidMsb);
+            int connId, boolean searchAll, long serviceUuidMsb, long serviceUuidLsb);
 
     private native void gattClientDiscoverServiceByUuidNative(
-            int connId, long serviceUuidLsb, long serviceUuidMsb);
+            int connId, long serviceUuidMsb, long serviceUuidLsb);
 
     private native void gattClientReadCharacteristicNative(int connId, int handle, int authReq);
 
@@ -101,7 +103,7 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             int maxConnectionEventLen);
 
     private native void gattServerRegisterAppNative(
-            long appUuidLsb, long appUuidMsb, boolean eattSupport);
+            long appUuidMsb, long appUuidLsb, boolean eattSupport);
 
     private native void gattServerUnregisterAppNative(int serverIf);
 
@@ -187,8 +189,9 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
      * Register the given client It will invoke {@link GattNativeCallback#onClientRegistered(int,
      * int, long, long)}.
      */
-    void gattClientRegisterApp(long appUuidLsb, long appUuidMsb, String name, boolean eattSupport) {
-        gattClientRegisterAppNative(appUuidLsb, appUuidMsb, name, eattSupport);
+    void gattClientRegisterApp(@NonNull UUID uuid, String name, boolean eattSupport) {
+        gattClientRegisterAppNative(
+                uuid.getMostSignificantBits(), uuid.getLeastSignificantBits(), name, eattSupport);
     }
 
     /** Unregister the client */
@@ -245,14 +248,15 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
     }
 
     /** Discover GATT services */
-    void gattClientSearchService(
-            int connId, boolean searchAll, long serviceUuidLsb, long serviceUuidMsb) {
-        gattClientSearchServiceNative(connId, searchAll, serviceUuidLsb, serviceUuidMsb);
+    void gattClientSearchService(int connId, boolean searchAll, @NonNull UUID uuid) {
+        gattClientSearchServiceNative(
+                connId, searchAll, uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 
     /** Discover the GATT service by the given UUID */
-    void gattClientDiscoverServiceByUuid(int connId, long serviceUuidLsb, long serviceUuidMsb) {
-        gattClientDiscoverServiceByUuidNative(connId, serviceUuidLsb, serviceUuidMsb);
+    void gattClientDiscoverServiceByUuid(int connId, @NonNull UUID uuid) {
+        gattClientDiscoverServiceByUuidNative(
+                connId, uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 
     /** Read a characteristic by the given handle */
@@ -262,9 +266,14 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
 
     /** Read a characteristic by the given UUID */
     void gattClientReadUsingCharacteristicUuid(
-            int connId, long uuidMsb, long uuidLsb, int sHandle, int eHandle, int authReq) {
+            int connId, @NonNull UUID uuid, int sHandle, int eHandle, int authReq) {
         gattClientReadUsingCharacteristicUuidNative(
-                connId, uuidMsb, uuidLsb, sHandle, eHandle, authReq);
+                connId,
+                uuid.getMostSignificantBits(),
+                uuid.getLeastSignificantBits(),
+                sHandle,
+                eHandle,
+                authReq);
     }
 
     /** Read a descriptor by the given handle */
@@ -350,8 +359,9 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
     }
 
     /** Register GATT server */
-    void gattServerRegisterApp(long appUuidLsb, long appUuidMsb, boolean eattSupport) {
-        gattServerRegisterAppNative(appUuidLsb, appUuidMsb, eattSupport);
+    void gattServerRegisterApp(@NonNull UUID uuid, boolean eattSupport) {
+        gattServerRegisterAppNative(
+                uuid.getMostSignificantBits(), uuid.getLeastSignificantBits(), eattSupport);
     }
 
     /** Unregister GATT server */

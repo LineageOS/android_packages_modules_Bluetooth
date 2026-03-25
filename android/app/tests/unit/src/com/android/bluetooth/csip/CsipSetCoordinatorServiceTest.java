@@ -195,7 +195,7 @@ public class CsipSetCoordinatorServiceTest {
         UUID uuid = new UUID(uuidMsb, uuidLsb);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidMsb, uuidLsb);
         mService.bondStateChanged(mDevice1, BluetoothDevice.BOND_BONDED);
         // First intent - ACTION_CSIS_DEVICE_AVAILABLE with device1
         verifyOrderedIntentSent(
@@ -224,7 +224,7 @@ public class CsipSetCoordinatorServiceTest {
         // Bonded with another device
         mService.bondStateChanged(mDevice3, BluetoothDevice.BOND_BONDED);
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice3), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice3), group_id, group_size, 0x02, uuidMsb, uuidLsb);
         // Third intent - ACTION_CSIS_DEVICE_AVAILABLE with device3
         verifyOrderedIntentSent(
                 hasAction(ACTION_CSIS_DEVICE_AVAILABLE),
@@ -248,7 +248,7 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = 0x01;
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 1, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 1, uuidMsb, uuidLsb);
         assertThat(mService.isGroupLocked(group_id)).isFalse();
 
         UUID lock_uuid = mService.lockGroup(group_id, mCsipSetCoordinatorLockCallback);
@@ -282,7 +282,7 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = 0x01;
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 1, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 1, uuidMsb, uuidLsb);
         assertThat(mService.isGroupLocked(group_id)).isFalse();
 
         UUID lock_uuid = mService.lockGroup(group_id, mCsipSetCoordinatorLockCallback);
@@ -339,7 +339,7 @@ public class CsipSetCoordinatorServiceTest {
         UUID uuid = new UUID(uuidMsb, uuidLsb);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidMsb, uuidLsb);
 
         verifyOrderedIntentSent(
                 hasAction(ACTION_CSIS_DEVICE_AVAILABLE),
@@ -350,7 +350,7 @@ public class CsipSetCoordinatorServiceTest {
 
         // Another device with the highest rank
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice2), group_id, group_size, 0x01, uuidLsb, uuidMsb);
+                getByteAddress(mDevice2), group_id, group_size, 0x01, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(
                 hasAction(ACTION_CSIS_DEVICE_AVAILABLE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice2),
@@ -360,7 +360,7 @@ public class CsipSetCoordinatorServiceTest {
 
         // Yet another device with the lowest rank
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice3), group_id, group_size, 0x03, uuidLsb, uuidMsb);
+                getByteAddress(mDevice3), group_id, group_size, 0x03, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(
                 hasAction(ACTION_CSIS_DEVICE_AVAILABLE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice3),
@@ -382,7 +382,7 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidMsb, uuidLsb);
 
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
 
@@ -406,7 +406,7 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
@@ -451,7 +451,7 @@ public class CsipSetCoordinatorServiceTest {
         verifyConnectionStateIntent(mDevice1, STATE_CONNECTING, STATE_DISCONNECTED);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
@@ -481,7 +481,7 @@ public class CsipSetCoordinatorServiceTest {
         verifyConnectionStateIntent(mDevice2, STATE_CONNECTING, STATE_DISCONNECTED);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice2), STATE_CONNECTED);
         mService.connectionStateChanged(mDevice2, STATE_CONNECTING, STATE_CONNECTED);
@@ -529,7 +529,7 @@ public class CsipSetCoordinatorServiceTest {
 
         // Device 1 supports UUID 1
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidLsb_1, uuidMsb_1);
+                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidMsb_1, uuidLsb_1);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
         /* Remote device has 2 advertising instances for the second set member */
@@ -557,12 +557,12 @@ public class CsipSetCoordinatorServiceTest {
 
         // Device 2 is part of two groups.
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidLsb_1, uuidMsb_1);
+                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidMsb_1, uuidLsb_1);
         mLooper.dispatchAll();
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice2), group_id_2, group_size, 0x01, uuidLsb_2, uuidMsb_2);
+                getByteAddress(mDevice2), group_id_2, group_size, 0x01, uuidMsb_2, uuidLsb_2);
         mLooper.dispatchAll();
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
@@ -588,7 +588,7 @@ public class CsipSetCoordinatorServiceTest {
         verifyConnectionStateIntent(mDevice3, STATE_CONNECTING, STATE_DISCONNECTED);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice3), group_id_2, group_size, 0x02, uuidLsb_2, uuidMsb_2);
+                getByteAddress(mDevice3), group_id_2, group_size, 0x02, uuidMsb_2, uuidLsb_2);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice3), STATE_CONNECTED);
@@ -632,7 +632,7 @@ public class CsipSetCoordinatorServiceTest {
         verifyConnectionStateIntent(mDevice1, STATE_CONNECTING, STATE_DISCONNECTED);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x01, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
@@ -649,7 +649,7 @@ public class CsipSetCoordinatorServiceTest {
         verifyConnectionStateIntent(mDevice2, STATE_CONNECTING, STATE_DISCONNECTED);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice2), group_id, group_size, 0x02, uuidMsb, uuidLsb);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
         mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice2), STATE_CONNECTED);
         mService.connectionStateChanged(mDevice2, STATE_CONNECTING, STATE_CONNECTED);
@@ -700,12 +700,12 @@ public class CsipSetCoordinatorServiceTest {
 
         // Make first set device available and connected
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidMsb, uuidLsb);
         mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
 
         // Another device with the highest rank
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice2), group_id, group_size, 0x01, uuidLsb, uuidMsb);
+                getByteAddress(mDevice2), group_id, group_size, 0x01, uuidMsb, uuidLsb);
 
         // When LEA is FORBIDDEN, verify we don't disable CSIP until all set devices are available
         verify(mAdapterService, never())

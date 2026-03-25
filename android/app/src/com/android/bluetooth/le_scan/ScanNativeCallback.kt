@@ -57,7 +57,7 @@ class ScanNativeCallback(
         )
     }
 
-    fun onScannerRegistered(status: Int, scannerId: Int, uuidLsb: Long, uuidMsb: Long) =
+    fun onScannerRegistered(status: Int, scannerId: Int, uuidMsb: Long, uuidLsb: Long) =
         doOnScanThread {
             onScannerRegistered(status, scannerId, UUID(uuidMsb, uuidLsb))
         }

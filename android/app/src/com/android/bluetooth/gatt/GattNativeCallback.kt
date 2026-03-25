@@ -29,7 +29,7 @@ class GattNativeCallback(
     private val gattServer: GattServerManager,
 ) : NativeCallback(adapterService) {
 
-    fun onClientRegistered(status: Int, clientIf: Int, uuidLsb: Long, uuidMsb: Long) {
+    fun onClientRegistered(status: Int, clientIf: Int, uuidMsb: Long, uuidLsb: Long) {
         doOnGattThread { onClientRegisteredFromNative(status, clientIf, UUID(uuidMsb, uuidLsb)) }
     }
 
@@ -175,7 +175,7 @@ class GattNativeCallback(
 
     /* Server callbacks */
 
-    fun onServerRegistered(status: Int, serverIf: Int, uuidLsb: Long, uuidMsb: Long) {
+    fun onServerRegistered(status: Int, serverIf: Int, uuidMsb: Long, uuidLsb: Long) {
         serverDoOnGattThread {
             onServerRegisteredFromNative(status, serverIf, UUID(uuidMsb, uuidLsb))
         }
