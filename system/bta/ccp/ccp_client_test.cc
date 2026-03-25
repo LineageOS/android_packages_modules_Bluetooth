@@ -241,7 +241,7 @@ TEST_F(CcpClientTest, connection_connect_and_discover) {
               OnConnectionState(kTestAddress, le_audio::ConnectionState::CONNECTED));
   EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
-  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
+  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId));
   SimulateGattConnect(kTestAddress, kTestConnId);
 
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);

@@ -711,7 +711,7 @@ protected:
             }));
 
     // default action for ServiceSearchRequest function call
-    ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _))
+    ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_))
             .WillByDefault(WithArg<0>(
                     Invoke([&](uint16_t conn_id) { InjectSearchCompleteEvent(conn_id); })));
 
@@ -4646,8 +4646,8 @@ TEST_F(UnicastTestNoInit, LoadStoredEarbudsBroakenStorage) {
   Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
 
   /* Stack should rediscover services as storage is broken */
-  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(2, _)).Times(1);
-  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(1, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(2)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(1)).Times(1);
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnConnectionState(ConnectionState::CONNECTED, test_address0))
@@ -5026,8 +5026,8 @@ TEST_F(UnicastTestNoInit, ServiceChangedBeforeServiceIsConnected) {
   InjectServiceChangedEvent(test_address0, 0xffff);
   SyncOnMainLoop();
   /* Stack should rediscover services as storage is broken */
-  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(2, _)).Times(1);
-  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(1, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(2)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(1)).Times(1);
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnConnectionState(ConnectionState::CONNECTED, test_address0))
@@ -6194,7 +6194,7 @@ TEST_F(UnicastTest, HandleDeviceReconfiguredToSinkOnlyAseRemoved) {
           default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
   peer_devices.at(1)->connected = true;
 
-  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(_)).Times(1);
   expected_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
   std::optional<std::bitset<32>> expected_src_location = std::nullopt;
   EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(0, _, _, _, _));
@@ -6927,7 +6927,7 @@ TEST_F(UnicastTest, RemoveDeviceWhenGettingConnectionReady) {
   uint16_t conn_id = 1;
 
   /* Prepare  mock to not inject Service Search Complete*/
-  ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _)).WillByDefault(DoAll(Return()));
+  ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_)).WillByDefault(DoAll(Return()));
 
   SetSampleDatabaseEarbudsValid(
           conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
@@ -7044,7 +7044,7 @@ TEST_F(UnicastTest, DisconnectDeviceWhenGettingConnectionReady) {
   uint16_t conn_id = global_conn_id;
 
   /* Prepare  mock to not inject Service Search Complete*/
-  ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _)).WillByDefault(DoAll(Return()));
+  ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_)).WillByDefault(DoAll(Return()));
 
   SetSampleDatabaseEarbudsValid(
           conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
@@ -13746,8 +13746,8 @@ TEST_F(UnicastTest, HandleDatabaseOutOfSync) {
   gatt_read_ctp_ccc_status_ = GATT_DATABASE_OUT_OF_SYNC;
 
   EXPECT_CALL(mock_gatt_queue_, WriteDescriptor(_, _, _, _, _, _)).Times(0);
-  ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _)).WillByDefault(Return());
-  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _));
+  ON_CALL(mock_gatt_interface_, ServiceSearchRequest(_)).WillByDefault(Return());
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(_));
 
   InjectConnectedEvent(test_address0, 1);
   SyncOnMainLoop();

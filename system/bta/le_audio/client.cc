@@ -3000,8 +3000,7 @@ public:
       return;
     }
 
-    BTA_GATTC_ServiceSearchRequest(leAudioDevice->conn_id_,
-                                   bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid);
+    BTA_GATTC_ServiceSearchRequest(leAudioDevice->conn_id_);
   }
 
   void checkGroupConnectionStateAfterMemberDisconnect(int group_id) {
@@ -3314,9 +3313,7 @@ public:
 
     btif_storage_leaudio_clear_service_data(leAudioDevice->address_);
     if (search_request) {
-      BTA_GATTC_ServiceSearchRequest(
-              leAudioDevice->conn_id_,
-              bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(leAudioDevice->conn_id_);
     }
   }
 
@@ -3414,9 +3411,7 @@ public:
     }
 
     if (!leAudioDevice->known_service_handles_) {
-      BTA_GATTC_ServiceSearchRequest(
-              leAudioDevice->conn_id_,
-              bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(leAudioDevice->conn_id_);
     }
   }
 

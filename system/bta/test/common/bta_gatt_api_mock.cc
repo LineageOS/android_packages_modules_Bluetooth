@@ -57,14 +57,9 @@ void BTA_GATTC_Close(uint16_t conn_id) {
   gatt_interface->Close(conn_id);
 }
 
-void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, bluetooth::Uuid p_srvc_uuid) {
+void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id) {
   log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  gatt_interface->ServiceSearchRequest(conn_id, &p_srvc_uuid);
-}
-
-void BTA_GATTC_ServiceSearchAllRequest(uint16_t conn_id) {
-  log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  gatt_interface->ServiceSearchRequest(conn_id, nullptr);
+  gatt_interface->ServiceSearchRequest(conn_id);
 }
 
 void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t cid) {

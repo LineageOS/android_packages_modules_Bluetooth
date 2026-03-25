@@ -137,10 +137,7 @@ void BTA_GATTC_Refresh(tGATT_IF /*client_if*/, const RawAddress& /* remote_bda *
 void BTA_GATTC_SendIndConfirm(uint16_t /* conn_id */, uint16_t /* cid */) {
   inc_func_call_count(__func__);
 }
-void BTA_GATTC_ServiceSearchAllRequest(uint16_t /* conn_id */) { inc_func_call_count(__func__); }
-void BTA_GATTC_ServiceSearchRequest(uint16_t /* conn_id */, bluetooth::Uuid /* p_srvc_uuid */) {
-  inc_func_call_count(__func__);
-}
+void BTA_GATTC_ServiceSearchRequest(uint16_t /* conn_id */) { inc_func_call_count(__func__); }
 void BTA_GATTC_WriteCharDescr(uint16_t /* conn_id */, uint16_t /* handle */,
                               std::vector<uint8_t> /* value */, tGATT_AUTH_REQ /* auth_req */,
                               GATT_WRITE_OP_CB /* callback */, void* /* cb_data */) {

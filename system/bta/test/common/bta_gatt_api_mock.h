@@ -37,7 +37,7 @@ public:
                     tBTM_BLE_CONN_TYPE connection_type) = 0;
   virtual void CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) = 0;
   virtual void Close(uint16_t conn_id) = 0;
-  virtual void ServiceSearchRequest(uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) = 0;
+  virtual void ServiceSearchRequest(uint16_t conn_id) = 0;
   virtual void SendIndConfirm(uint16_t conn_id, uint16_t cid) = 0;
   virtual const std::list<Service>* GetServices(uint16_t conn_id) = 0;
   virtual const Characteristic* GetCharacteristic(uint16_t conn_id, uint16_t handle) = 0;
@@ -75,7 +75,7 @@ public:
   MOCK_METHOD((void), CancelOpen, (tGATT_IF client_if, const RawAddress& remote_bda,
                bool is_direct));
   MOCK_METHOD((void), Close, (uint16_t conn_id));
-  MOCK_METHOD((void), ServiceSearchRequest, (uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid));
+  MOCK_METHOD((void), ServiceSearchRequest, (uint16_t conn_id));
   MOCK_METHOD((void), SendIndConfirm, (uint16_t conn_id, uint16_t cid), (override));
   MOCK_METHOD((std::list<Service>*), GetServices, (uint16_t conn_id));
   MOCK_METHOD((const Characteristic*), GetCharacteristic, (uint16_t conn_id, uint16_t handle));

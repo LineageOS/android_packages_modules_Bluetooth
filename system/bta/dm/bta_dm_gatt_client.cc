@@ -79,14 +79,10 @@ static gatt_interface_t default_gatt_interface = {
                   BTA_GATTC_Close(conn_id);
                 },
         .BTA_GATTC_ServiceSearchRequest =
-                [](tCONN_ID conn_id, const bluetooth::Uuid* p_srvc_uuid) {
+                [](tCONN_ID conn_id) {
                   gatt_history_.Push(
                           std::format("{:<32s} conn_id:{}", "GATTC_ServiceSearchRequest", conn_id));
-                  if (p_srvc_uuid) {
-                    BTA_GATTC_ServiceSearchRequest(conn_id, *p_srvc_uuid);
-                  } else {
-                    BTA_GATTC_ServiceSearchAllRequest(conn_id);
-                  }
+                  BTA_GATTC_ServiceSearchRequest(conn_id);
                 },
         .BTA_GATTC_Open =
                 [](tGATT_IF client_if, const RawAddress& remote_bda,

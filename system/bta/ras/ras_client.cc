@@ -301,7 +301,7 @@ public:
             bluetooth::stack::l2cap::get_interface().L2CA_GetBleConnInterval(tracker->address_);
     log::debug("The initial conn interval {}", tracker->conn_interval_);
     log::info("Search service");
-    BTA_GATTC_ServiceSearchRequest(tracker->conn_id_, kRangingService);
+    BTA_GATTC_ServiceSearchRequest(tracker->conn_id_);
   }
 
   void OnGattDisconnected(const tBTA_GATTC_CLOSE& evt) {

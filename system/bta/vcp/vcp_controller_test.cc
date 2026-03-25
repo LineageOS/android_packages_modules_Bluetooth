@@ -857,12 +857,9 @@ TEST_F(VolumeControlTest, test_reconnect_after_interrupted_discovery) {
   Mock::VerifyAndClearExpectations(&callbacks);
 
   // This time let the service discovery pass
-  ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
-          .WillByDefault(Invoke([&](uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) -> void {
-            if (*p_srvc_uuid == kVolumeControlServiceUuid) {
-              GetSearchCompleteEvent(conn_id);
-            }
-          }));
+  ON_CALL(gatt_interface, ServiceSearchRequest(_))
+          .WillByDefault(
+                  Invoke([&](uint16_t conn_id) -> void { GetSearchCompleteEvent(conn_id); }));
 
   // Remote is being connected by another GATT client
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
@@ -921,12 +918,9 @@ TEST_F(VolumeControlTest, test_reconnect_after_timeout) {
   // upper layer - it means it has timed-out but still wants to connect, thus
   // native is still doing background or opportunistic connect. Let the remote
   // device reconnect now.
-  ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
-          .WillByDefault(Invoke([&](uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) -> void {
-            if (*p_srvc_uuid == kVolumeControlServiceUuid) {
-              GetSearchCompleteEvent(conn_id);
-            }
-          }));
+  ON_CALL(gatt_interface, ServiceSearchRequest(_))
+          .WillByDefault(
+                  Invoke([&](uint16_t conn_id) -> void { GetSearchCompleteEvent(conn_id); }));
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, address));
   EXPECT_CALL(callbacks, OnDeviceAvailable(address, group_id, 2, _));
   GetConnectedEvent(address, 1);
@@ -1055,7 +1049,7 @@ TEST_F(VolumeControlTest, test_service_discovery_completed_before_encryption) {
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
 
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(true)));
-  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _));
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_));
 
   GetEncryptionCompleteEvt(test_address);
   GetSearchCompleteEvent(conn_id);
@@ -1248,8 +1242,8 @@ TEST_F(VolumeControlTest, test_read_vcs_database_out_of_sync) {
             }
           }));
 
-  ON_CALL(gatt_interface, ServiceSearchRequest(_, _)).WillByDefault(Return());
-  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _));
+  ON_CALL(gatt_interface, ServiceSearchRequest(_)).WillByDefault(Return());
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_));
   VolumeController::Get()->SetVolume(test_address, 15);
   Mock::VerifyAndClearExpectations(&gatt_interface);
   TestAppUnregister();

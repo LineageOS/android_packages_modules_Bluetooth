@@ -983,7 +983,7 @@ TEST_F(CsisClientTest, test_search_complete_before_encryption) {
   EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _, _, _, _)).Times(1);
 
   ON_CALL(mock_btm_security_, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(true)));
-  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _)).Times(1);
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_)).Times(1);
 
   InjectEncryptionEvent(test_address, 1);
   GetSearchCompleteEvent(1);
@@ -1767,8 +1767,8 @@ TEST_F(CsisClientTest, test_database_out_of_sync) {
             }
           }));
 
-  ON_CALL(gatt_interface, ServiceSearchRequest(_, _)).WillByDefault(Return());
-  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _));
+  ON_CALL(gatt_interface, ServiceSearchRequest(_)).WillByDefault(Return());
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_));
   CsisClient::Get()->LockGroup(
           1, true, base::BindOnce([](int group_id, bool locked, CsisGroupLockStatus status) {
             csis_lock_callback_mock->CsisGroupLockCb(group_id, locked, status);
