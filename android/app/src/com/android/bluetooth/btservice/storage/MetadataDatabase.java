@@ -38,8 +38,6 @@ public abstract class MetadataDatabase extends RoomDatabase {
     /** The metadata database file name */
     public static final String DATABASE_NAME = "bluetooth_db";
 
-    static int sCurrentConnectionNumber = 0;
-
     protected abstract MetadataDao mMetadataDao();
 
     /**
@@ -73,23 +71,8 @@ public abstract class MetadataDatabase extends RoomDatabase {
                 .addMigrations(MIGRATION_120_121)
                 .addMigrations(MIGRATION_121_122)
                 .addMigrations(MIGRATION_122_123)
-                .addMigrations(ROLLBACK_MIGRATION_123_122)
                 .addMigrations(MIGRATION_123_124)
                 .addMigrations(MIGRATION_124_125)
-                .allowMainThreadQueries()
-                .build();
-    }
-
-    /**
-     * Create a {@link MetadataDatabase} database without migration, database would be reset if any
-     * load failure happens
-     *
-     * @param context the Context to create database
-     * @return the created {@link MetadataDatabase}
-     */
-    public static MetadataDatabase createDatabaseWithoutMigration(Context context) {
-        return Room.databaseBuilder(context, MetadataDatabase.class, DATABASE_NAME)
-                .fallbackToDestructiveMigration()
                 .allowMainThreadQueries()
                 .build();
     }
@@ -110,20 +93,6 @@ public abstract class MetadataDatabase extends RoomDatabase {
      */
     public List<Metadata> load() {
         return mMetadataDao().load();
-    }
-
-    /**
-     * Delete one of the {@link Metadata} contained in the metadata table
-     *
-     * @param address the address of Metadata to delete
-     */
-    public void delete(String address) {
-        mMetadataDao().delete(address);
-    }
-
-    /** Clear metadata table. */
-    public void deleteAll() {
-        mMetadataDao().deleteAll();
     }
 
     @VisibleForTesting
@@ -731,25 +700,6 @@ public abstract class MetadataDatabase extends RoomDatabase {
                         // Check if user has new schema, but is just missing the version update
                         Cursor cursor = database.query("SELECT * FROM metadata");
                         if (cursor == null || cursor.getColumnIndex("migrated") != -1) {
-                            throw ex;
-                        }
-                    }
-                }
-            };
-
-    @VisibleForTesting
-    static final Migration ROLLBACK_MIGRATION_123_122 =
-            new Migration(123, 122) {
-                @Override
-                public void migrate(SupportSQLiteDatabase database) {
-                    try {
-                        database.execSQL(
-                                "ALTER TABLE metadata ADD COLUMN `migrated` INTEGER NOT NULL"
-                                        + " DEFAULT 0");
-                    } catch (SQLException ex) {
-                        // Check if user has new schema, but is just missing the version update
-                        Cursor cursor = database.query("SELECT * FROM metadata");
-                        if (cursor == null || cursor.getColumnIndex("migrated") == -1) {
                             throw ex;
                         }
                     }
