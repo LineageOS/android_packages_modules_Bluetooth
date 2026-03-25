@@ -31,7 +31,7 @@ flag {
 flag {
     name: "concurrent_user_instances"
     namespace: "bluetooth"
-    description: "Allow concurent stack instances given multiple published hci instances"
+    description: "Allow concurrent stack instances given multiple published hci instances"
     bug: "444519431"
 }
 

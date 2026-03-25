@@ -92,7 +92,7 @@ flag {
 flag {
     name: "fix_sco_type_mask_check"
     namespace: "bluetooth"
-    description: "Masking for excepting sco pakcets correctly"
+    description: "Masking for excepting sco packets correctly"
     bug: "467252341"
     metadata {
         purpose: PURPOSE_BUGFIX
