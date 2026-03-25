@@ -132,6 +132,9 @@ public class BassClientService extends ConnectableProfile {
     // 2 seconds timeout for autonomous inactivation monitor
     @VisibleForTesting static final Duration sAutoInactiveMonitorTimeout = Duration.ofSeconds(2);
 
+    // 15 seconds timeout for adding source by URI
+    @VisibleForTesting static final Duration sAddSourceByUriTimeout = Duration.ofSeconds(15);
+
     private enum PauseReason {
         SUSPENDED_BY_HOST, // Broadcast suspended by host; monitoring is blocked.
         BIG_MONITORING, // BIG monitoring is activated.
@@ -204,7 +207,11 @@ public class BassClientService extends ConnectableProfile {
     private final Map<BluetoothDevice, Boolean> mEncryptionStates = new ConcurrentHashMap<>();
 
     private record PendingSourceToAddByUri(
-            BluetoothDevice sink, String name, List<Byte> code, int broadcastId) {}
+            BluetoothDevice sink,
+            String name,
+            List<Byte> code,
+            int broadcastId,
+            Runnable timeout) {}
 
     @VisibleForTesting
     final BroadcastReceiver mEncryptionStateReceiver =
@@ -467,7 +474,8 @@ public class BassClientService extends ConnectableProfile {
                                         pending.sink(),
                                         pending.name(),
                                         pending.code(),
-                                        broadcastId));
+                                        broadcastId,
+                                        pending.timeout()));
                     }
                 }
             }
@@ -1062,6 +1070,9 @@ public class BassClientService extends ConnectableProfile {
         mSinksToRestoreFromPeer.clear();
 
         synchronized (mPendingSourcesToAddByUri) {
+            for (PendingSourceToAddByUri pending : mPendingSourcesToAddByUri) {
+                mHandler.removeCallbacks(pending.timeout());
+            }
             mPendingSourcesToAddByUri.clear();
         }
         mPendingNfcJoiningDevices.clear();
@@ -1782,30 +1793,33 @@ public class BassClientService extends ConnectableProfile {
         // Only show the error notification if ALL connected devices failed.
         // If the other earbud succeeded, the Set would already be empty.
         if (mPendingNfcJoiningDevices.isEmpty()) {
-            String streamName =
-                    source.getBroadcastName() != null
-                            ? source.getBroadcastName()
-                            : getString(R.string.auracast_default_stream_name);
-
-            RemoteDevices remoteDevices = getAdapterService().getRemoteDevices();
-            String deviceName = remoteDevices.getAlias(sink);
-
-            if (deviceName == null) {
-                // If alias is null, try to get name
-                deviceName = remoteDevices.getName(sink);
-            }
-            if (deviceName == null) {
-                // If name is null, fallback
-                deviceName = getString(R.string.auracast_default_device_name);
-            }
-
-            NotificationManager nm =
-                    getAdapterService().getSystemService(NotificationManager.class);
-            String title = getString(R.string.auracast_notification_title, streamName);
-            String text =
-                    getString(R.string.auracast_connection_failed_message, streamName, deviceName);
-            AuracastUtils.showNotification(this, nm, title, text, null);
+            showNfcJoiningFailureNotification(sink, source.getBroadcastName());
         }
+    }
+
+    private void showNfcJoiningFailureNotification(BluetoothDevice sink, String broadcastName) {
+        String streamName =
+                broadcastName != null
+                        ? broadcastName
+                        : getString(R.string.auracast_default_stream_name);
+
+        RemoteDevices remoteDevices = getAdapterService().getRemoteDevices();
+        String deviceName = remoteDevices.getAlias(sink);
+
+        if (deviceName == null) {
+            // If alias is null, try to get name
+            deviceName = remoteDevices.getName(sink);
+        }
+        if (deviceName == null) {
+            // If name is null, fallback
+            deviceName = getString(R.string.auracast_default_device_name);
+        }
+
+        NotificationManager nm = getAdapterService().getSystemService(NotificationManager.class);
+        String title = getString(R.string.auracast_notification_title, streamName);
+        String text =
+                getString(R.string.auracast_connection_failed_message, streamName, deviceName);
+        AuracastUtils.showNotification(this, nm, title, text, null);
     }
 
     private void setSourceGroupManaged(BluetoothDevice sink, int sourceId, boolean isGroupOp) {
@@ -2252,7 +2266,14 @@ public class BassClientService extends ConnectableProfile {
                 }
             }
             synchronized (mPendingSourcesToAddByUri) {
-                mPendingSourcesToAddByUri.removeIf(pending -> pending.sink().equals(device));
+                Iterator<PendingSourceToAddByUri> iterator = mPendingSourcesToAddByUri.iterator();
+                while (iterator.hasNext()) {
+                    PendingSourceToAddByUri pending = iterator.next();
+                    if (pending.sink().equals(device)) {
+                        mHandler.removeCallbacks(pending.timeout());
+                        iterator.remove();
+                    }
+                }
             }
             mPendingNfcJoiningDevices.remove(device);
             synchronized (mPendingSourcesToAdd) {
@@ -4336,9 +4357,43 @@ public class BassClientService extends ConnectableProfile {
             }
         }
 
+        Runnable timeout =
+                () -> {
+                    Log.w(TAG, "addSourceByUri: timeout expired for broadcast: " + broadcastName);
+                    synchronized (mPendingSourcesToAddByUri) {
+                        boolean removed = false;
+                        Iterator<PendingSourceToAddByUri> iterator =
+                                mPendingSourcesToAddByUri.iterator();
+                        while (iterator.hasNext()) {
+                            PendingSourceToAddByUri pending = iterator.next();
+                            if (pending.sink().equals(sink)
+                                    && pending.name().equals(broadcastName)) {
+                                mHandler.removeCallbacks(pending.timeout());
+                                iterator.remove();
+                                removed = true;
+                            }
+                        }
+                        if (removed) {
+                            stopBackgroundSearching();
+                            getAdapterService()
+                                    .getLeAudioService()
+                                    .ifPresent(
+                                            leAudio -> {
+                                                for (BluetoothDevice device :
+                                                        leAudio.getGroupDevices(sink)) {
+                                                    mPendingNfcJoiningDevices.remove(device);
+                                                }
+                                            });
+                            showNfcJoiningFailureNotification(sink, broadcastName);
+                        }
+                    }
+                };
+        mHandler.postDelayed(timeout, sAddSourceByUriTimeout.toMillis());
+
         synchronized (mPendingSourcesToAddByUri) {
             mPendingSourcesToAddByUri.add(
-                    new PendingSourceToAddByUri(sink, broadcastName, codeList, broadcastId));
+                    new PendingSourceToAddByUri(
+                            sink, broadcastName, codeList, broadcastId, timeout));
         }
 
         startSearchingForSources(Collections.emptyList(), /* foreground= */ false);
@@ -4373,6 +4428,7 @@ public class BassClientService extends ConnectableProfile {
                                     + ", broadcastId = "
                                     + pending.broadcastId());
                     addSource(pending.sink(), finalMetadata, true);
+                    mHandler.removeCallbacks(pending.timeout());
                     iterator.remove();
                 }
             }

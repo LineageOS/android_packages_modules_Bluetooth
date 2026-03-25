@@ -10068,4 +10068,71 @@ public class BassClientServiceTest {
         mBassClientService.cleanup();
         assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
     }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByUri_timeoutExpires_removesPendingAndShowsNotification() {
+        prepareConnectedDeviceGroup();
+
+        NotificationManager mockNm = mock(NotificationManager.class);
+        RemoteDevices mockRemoteDevices = mock(RemoteDevices.class);
+
+        mockGetSystemService(mAdapterService, NotificationManager.class, mockNm);
+        doReturn(ApplicationProvider.getApplicationContext().getResources())
+                .when(mAdapterService)
+                .getResources();
+        doReturn(ApplicationProvider.getApplicationContext().getApplicationInfo())
+                .when(mBassClientService.getBaseContext())
+                .getApplicationInfo();
+        doReturn(mockRemoteDevices).when(mAdapterService).getRemoteDevices();
+        doReturn("Test Alias").when(mockRemoteDevices).getAlias(mCurrentDevice);
+
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice1);
+
+        String broadcastName = "TestBroadcast";
+        mBassClientService.addSourceByUri(
+                mCurrentDevice, broadcastName, LeAudioConstants.INVALID_BROADCAST_ID, null);
+
+        if (Flags.leaudioBroadcastAlwaysUseBackgroundScanner()) {
+            assertThat(mBassClientService.isAnySearchInProgress()).isTrue();
+        }
+
+        // Fast-forward time to trigger the timeout
+        mLooper.moveTimeForward(BassClientService.sAddSourceByUriTimeout.toMillis());
+        mLooper.dispatchAll();
+
+        assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
+        assertThat(mBassClientService.isAnySearchInProgress()).isFalse();
+        verify(mockNm).notify(eq(AuracastUtils.NOTIFICATION_ID), any(Notification.class));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
+    public void testAddSourceByUri_sourceFoundBeforeTimeout_cancelsTimeout() {
+        prepareConnectedDeviceGroup();
+
+        NotificationManager mockNm = mock(NotificationManager.class);
+        mockGetSystemService(mAdapterService, NotificationManager.class, mockNm);
+
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
+        mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice1);
+
+        String broadcastName = "Test"; // Matches getScanRecord()
+        mBassClientService.addSourceByUri(
+                mCurrentDevice, broadcastName, LeAudioConstants.INVALID_BROADCAST_ID, null);
+
+        // Simulate broadcast found and synced before timeout
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        mLooper.dispatchAll();
+
+        // Now fast-forward time past the timeout duration
+        mLooper.moveTimeForward(BassClientService.sAddSourceByUriTimeout.toMillis());
+        mLooper.dispatchAll();
+
+        // Notification should NOT be shown because the timeout was canceled
+        verify(mockNm, never()).notify(eq(AuracastUtils.NOTIFICATION_ID), any(Notification.class));
+    }
 }
