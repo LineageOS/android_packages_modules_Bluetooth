@@ -408,6 +408,8 @@ enum tCONN_UPDATE_MASK : uint8_t {
   L2C_BLE_AGGRESSIVE_INITIAL_PARAM = (1u << 4),
   /* Connection parameters are used for LE Audio subrate*/
   L2C_BLE_AUDIO_PARAM_SUBRATE = (1u << 5),
+  /* reset connection parameter for subrating*/
+  L2C_BLE_UPDATE_FOR_SUBRATE_RESET_PENDING = (1u << 6)
 };
 
 /* Define a link control block. There is one link control block between

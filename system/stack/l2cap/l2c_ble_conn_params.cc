@@ -52,6 +52,11 @@ using namespace bluetooth;
 void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 static void l2cble_start_subrate_change(tL2C_LCB* p_lcb);
 
+static uint16_t calculate_subrate_timeout_bond(uint16_t latency, uint16_t subrate_factor,
+                                               uint16_t max_int) {
+  return (1 + latency) * subrate_factor * max_int * 1.25 * 2;
+}
+
 /*******************************************************************************
  *
  *  Function        L2CA_UpdateBleConnParams
@@ -82,6 +87,34 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int, uint1
 
   log::verbose("BD_ADDR={}, min_int={}, max_int={}, min_ce_len={}, max_ce_len={}", rem_bda, min_int,
                max_int, min_ce_len, max_ce_len);
+
+  if (p_lcb->SubrateFactor() > 1) {
+    uint16_t timeout_bond =
+            calculate_subrate_timeout_bond(latency, p_lcb->SubrateFactor(), max_int);
+    log::info("timeout: {}, timeout_bond: {}", timeout, timeout_bond);
+    if (timeout < timeout_bond) {
+      // Only requesting subrate side could update subrate to 1 and update subrate factor again.
+      // when connection update with same interval as current
+      if (p_lcb->ConnInterval() >= min_int && p_lcb->ConnInterval() <= max_int) {
+        if (p_lcb->subrate_min == 0 || p_lcb->subrate_max == 0) {
+          log::verbose("Subrate parameters not set for {}", rem_bda);
+          log::error(
+                  "Reject to do connection update to same interval with invalid parameters in "
+                  "subrating mode set by remote");
+          return false;
+        }
+        if (p_lcb->SubrateFactor() < p_lcb->subrate_min ||
+            p_lcb->SubrateFactor() > p_lcb->subrate_max) {
+          log::verbose("Subrate factor {} out of range [{}, {}] for {}", p_lcb->SubrateFactor(),
+                       p_lcb->subrate_min, p_lcb->subrate_max, rem_bda);
+          log::error(
+                  "Reject to do connection update to same interval with invalid parameters in "
+                  "subrating mode set by remote");
+          return false;
+        }
+      }
+    }
+  }
 
   p_lcb->min_interval = min_int;
   p_lcb->max_interval = max_int;
@@ -274,7 +307,8 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   btm_find_or_alloc_dev(p_lcb->remote_bd_addr);
 
   if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) ||
-      (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_PENDING)) {
+      (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_PENDING) ||
+      (p_lcb->conn_update_mask & L2C_BLE_UPDATE_FOR_SUBRATE_RESET_PENDING)) {
     return;
   }
 
@@ -336,16 +370,27 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       // subrate factor, reset the subrate first
       if (com_android_bluetooth_flags_le_subrate_manager()) {
         if (p_lcb->SubrateFactor() > 1) {
-          uint16_t timeout_bond =
-              (1 + p_lcb->latency) * p_lcb->SubrateFactor() * p_lcb->max_interval * 1.25 * 2;
+          uint16_t timeout_bond = calculate_subrate_timeout_bond(
+                  p_lcb->latency, p_lcb->SubrateFactor(), p_lcb->max_interval);
           log::info("timeout: {}, timeout_bond: {}", p_lcb->timeout, timeout_bond);
           if (p_lcb->timeout < timeout_bond) {
+            if (p_lcb->ConnInterval() >= p_lcb->min_interval &&
+                p_lcb->ConnInterval() <= p_lcb->max_interval) {
               log::verbose("Sending HCI cmd for subrate req to reset first");
               bluetooth::shim::ACL_LeSubrateRequest(
-                p_lcb->Handle(), 1, 1, p_lcb->PeriphLatency(), 0, p_lcb->timeout);
+                  p_lcb->Handle(), 1, 1, p_lcb->PeriphLatency(), 0, p_lcb->timeout);
               p_lcb->subrate_req_mask |= L2C_BLE_SUBRATE_REQ_PENDING;
               p_lcb->conn_update_mask |= L2C_BLE_NOT_DEFAULT_PARAM;
               return;
+            } else {
+              log::verbose("Sending HCI cmd for conn req to reset subrate first");
+              acl_ble_connection_parameters_request(p_lcb->Handle(), p_lcb->min_interval,
+                                                    p_lcb->max_interval, 0, p_lcb->timeout,
+                                                    p_lcb->min_ce_len, p_lcb->max_ce_len);
+              p_lcb->conn_update_mask |= L2C_BLE_UPDATE_FOR_SUBRATE_RESET_PENDING;
+              p_lcb->conn_update_mask |= L2C_BLE_NOT_DEFAULT_PARAM;
+              return;
+            }
           }
         }
       }
@@ -412,6 +457,12 @@ void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status, uint16_t in
   p_lcb->SetPeriphLatency(latency);
   p_lcb->SetSupervisionTimeout(timeout);
   p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
+
+  if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_FOR_SUBRATE_RESET_PENDING) &&
+      (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM)) {
+    log::info("Connection update for subrating reset finished with status: {}", status);
+    p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_FOR_SUBRATE_RESET_PENDING;
+  }
 
   if (status != HCI_SUCCESS) {
     log::warn("Error status: {}", status);
