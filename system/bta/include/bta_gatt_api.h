@@ -58,7 +58,6 @@ typedef struct {
 
 /* Client callback function events */
 typedef enum : uint8_t {
-  BTA_GATTC_DEREG_EVT = 1,                        /* GATT client deregistered event */
   BTA_GATTC_OPEN_EVT = 2,                         /* GATTC open request status  event */
   BTA_GATTC_CLOSE_EVT = 5,                        /* GATTC  close request status event */
   BTA_GATTC_SEARCH_CMPL_EVT = 6,                  /* GATT discovery complete event */
@@ -77,7 +76,6 @@ typedef enum : uint8_t {
 
 inline std::string gatt_client_event_text(const tBTA_GATTC_EVT& event) {
   switch (event) {
-    CASE_RETURN_TEXT(BTA_GATTC_DEREG_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_OPEN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_CLOSE_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_SEARCH_CMPL_EVT);

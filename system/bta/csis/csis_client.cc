@@ -2059,9 +2059,6 @@ private:
     }
 
     switch (event) {
-      case BTA_GATTC_DEREG_EVT:
-        break;
-
       case BTA_GATTC_OPEN_EVT:
         OnGattConnected(p_data->open);
         break;

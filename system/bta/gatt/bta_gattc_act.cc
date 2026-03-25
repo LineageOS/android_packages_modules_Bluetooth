@@ -974,21 +974,10 @@ void bta_gattc_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /* p_data */
 /* De-Register a GATT client application with BTA completed */
 void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg) {
   tGATT_IF client_if = p_clreg->client_if;
-  tBTA_GATTC cb_data;
-  tBTA_GATTC_CBACK* p_cback = p_clreg->p_cback;
 
-  memset(&cb_data, 0, sizeof(tBTA_GATTC));
-
-  stack::appDeregister(p_clreg->client_if);
-  if (bta_gattc_cb.cl_rcb_map.erase(p_clreg->client_if) == 0) {
-    log::warn("deregistered unknown rcb client_if={}", p_clreg->client_if);
-  }
-
-  cb_data.reg_oper.client_if = client_if;
-  cb_data.reg_oper.status = GATT_SUCCESS;
-
-  if (p_cback) { /* callback with de-register event */
-    (*p_cback)(BTA_GATTC_DEREG_EVT, &cb_data);
+  stack::appDeregister(client_if);
+  if (bta_gattc_cb.cl_rcb_map.erase(client_if) == 0) {
+    log::warn("deregistered unknown rcb client_if={}", client_if);
   }
 
   if (bta_gattc_num_reg_app() == 0 && bta_gattc_cb.state == BTA_GATTC_STATE_DISABLING) {

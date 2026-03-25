@@ -212,7 +212,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       break;
     }
 
-    case BTA_GATTC_DEREG_EVT:
     case BTA_GATTC_SRVC_DISC_DONE_EVT:
       log::debug("Ignoring event ({})", event);
       break;
