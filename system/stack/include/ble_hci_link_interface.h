@@ -28,10 +28,10 @@
 void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length);
 void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv);
 void btm_ble_test_command_complete(bluetooth::hci::CommandCompleteView view);
-void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_len);
-void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len);
-void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len);
-void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len);
+void btm_ble_read_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view);
+void btm_ble_remove_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view);
+void btm_ble_add_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view);
+void btm_ble_clear_resolving_list_complete(bluetooth::hci::CommandCompleteView view);
 tBTM_STATUS btm_ble_read_remote_cod(const RawAddress& remote_bda);
 tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda, tBTM_NAME_CMPL_CB* p_cb);
 bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);

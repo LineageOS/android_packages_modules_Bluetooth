@@ -236,27 +236,39 @@ static bool clear_resolving_list_bit(void* data, void* /* context */) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
-  uint8_t status = 0;
-
-  if (evt_len < 1) {
-    log::error("malformatted event packet: containing zero bytes");
+void btm_ble_clear_resolving_list_complete(bluetooth::hci::CommandCompleteView view) {
+  if (!view.IsValid()) {
+    log::error("Invalid command complete view");
     return;
   }
-
-  STREAM_TO_UINT8(status, p);
+  uint8_t status = static_cast<uint8_t>(bluetooth::hci::ErrorCode::SUCCESS);
+  auto payload = view.GetPayload();
+  auto clear_device_from_resolving_list_complete_view =
+          bluetooth::hci::LeClearResolvingListCompleteView::Create(view);
+  if (clear_device_from_resolving_list_complete_view.IsValid()) {
+    status = static_cast<uint8_t>(clear_device_from_resolving_list_complete_view.GetStatus());
+  } else {
+    // If it's not a standard Clear Device From Resolving List complete, it might be a VSC.
+    // Parse status manually from the payload (first byte).
+    if (payload.size() > 0) {
+      status = *payload.begin();
+    } else {
+      log::error("Invalid command complete view: payload empty");
+      return;
+    }
+  }
 
   log::verbose("status={}", status);
 
   if (status == HCI_SUCCESS) {
-    if (evt_len >= 3) {
+    if (payload.size() >= 3) {
       /* VSC complete has one extra byte for op code and list size, skip it here
        */
-      p++;
+      auto it = payload.begin();
+      std::advance(it, 2);  // one extra for status
 
       /* updated the available list size, and current list size */
-      uint8_t irk_list_sz_max = 0;
-      STREAM_TO_UINT8(irk_list_sz_max, p);
+      uint8_t irk_list_sz_max = *it;
 
       if (bluetooth::shim::GetController()->GetLeResolvingListSize() == 0) {
         btm_ble_resolving_list_init(irk_list_sz_max);
@@ -290,16 +302,27 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
-  uint8_t status;
-
-  if (evt_len < 1) {
-    log::error("malformatted event packet: containing zero byte");
+void btm_ble_add_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view) {
+  if (!view.IsValid()) {
+    log::error("Invalid command complete view");
     return;
   }
-
-  STREAM_TO_UINT8(status, p);
-
+  uint8_t status = static_cast<uint8_t>(bluetooth::hci::ErrorCode::SUCCESS);
+  auto payload = view.GetPayload();
+  auto add_device_to_resolving_list_complete_view =
+          bluetooth::hci::LeAddDeviceToResolvingListCompleteView::Create(view);
+  if (add_device_to_resolving_list_complete_view.IsValid()) {
+    status = static_cast<uint8_t>(add_device_to_resolving_list_complete_view.GetStatus());
+  } else {
+    // If it's not a standard LE Add Device To Resolving List complete, it might be a VSC.
+    // Parse status manually from the payload (first byte).
+    if (payload.size() > 0) {
+      status = *payload.begin();
+    } else {
+      log::error("Invalid command complete view: payload empty");
+      return;
+    }
+  }
   log::verbose("status={}", status);
 
   RawAddress pseudo_bda;
@@ -311,10 +334,11 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
   if (status == HCI_SUCCESS) {
     btm_ble_update_resolving_list(pseudo_bda, true);
     /* privacy 1.2 command complete does not have these extra byte */
-    if (evt_len > 2) {
+    if (payload.size() > 2) {
       /* VSC complete has one extra byte for op code, skip it here */
-      p++;
-      STREAM_TO_UINT8(btm_cb.ble_ctr_cb.resolving_list_avail_size, p);
+      auto it = payload.begin();
+      std::advance(it, 2);  // one extra for status
+      btm_cb.ble_ctr_cb.resolving_list_avail_size = *it;
     } else {
       btm_cb.ble_ctr_cb.resolving_list_avail_size--;
     }
@@ -335,11 +359,28 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
+void btm_ble_remove_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view) {
+  if (!view.IsValid()) {
+    log::error("Invalid command complete view");
+    return;
+  }
   RawAddress pseudo_bda;
-  uint8_t status;
-
-  STREAM_TO_UINT8(status, p);
+  uint8_t status = static_cast<uint8_t>(bluetooth::hci::ErrorCode::SUCCESS);
+  auto payload = view.GetPayload();
+  auto remove_device_from_resolving_list_complete_view =
+          bluetooth::hci::LeRemoveDeviceFromResolvingListCompleteView::Create(view);
+  if (remove_device_from_resolving_list_complete_view.IsValid()) {
+    status = static_cast<uint8_t>(remove_device_from_resolving_list_complete_view.GetStatus());
+  } else {
+    // If it's not a standard Remove Device From Resolving List complete, it might be a VSC.
+    // Parse status manually from the payload (first byte).
+    if (payload.size() > 0) {
+      status = *payload.begin();
+    } else {
+      log::error("Invalid command complete view: payload empty");
+      return;
+    }
+  }
 
   log::verbose("status={}", status);
 
@@ -350,9 +391,10 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) 
 
   if (status == HCI_SUCCESS) {
     /* proprietary: spec does not have these extra bytes */
-    if (evt_len > 2) {
-      p++; /* skip opcode */
-      STREAM_TO_UINT8(btm_cb.ble_ctr_cb.resolving_list_avail_size, p);
+    if (payload.size() > 2) {
+      auto it = payload.begin();
+      std::advance(it, 2);  // one extra for status
+      btm_cb.ble_ctr_cb.resolving_list_avail_size = *it;
     } else {
       btm_cb.ble_ctr_cb.resolving_list_avail_size++;
     }
@@ -364,16 +406,38 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) 
  * Function         btm_ble_read_resolving_list_entry_complete
  *
  * Description      This function is called when command complete for
- *                  remove resolving list entry
+ *                  read resolving list entry
  *
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_len) {
+void btm_ble_read_resolving_list_entry_complete(bluetooth::hci::CommandCompleteView view) {
+  if (!view.IsValid()) {
+    log::error("Invalid command complete view");
+    return;
+  }
   uint8_t status;
   RawAddress rra, pseudo_bda;
+  auto payload = view.GetPayload();
 
-  STREAM_TO_UINT8(status, p);
+  auto read_resolvable_address_complete_view =
+          bluetooth::hci::LeReadPeerResolvableAddressCompleteView::Create(view);
+  if (read_resolvable_address_complete_view.IsValid()) {
+    status = static_cast<uint8_t>(read_resolvable_address_complete_view.GetStatus());
+    if (status == HCI_SUCCESS) {
+      auto addr = read_resolvable_address_complete_view.GetPeerResolvableAddress();
+      rra = RawAddress(addr.address);
+    }
+  } else {
+    // If it's not a standard Read Resolvable Address complete, it might be a
+    // VSC. Parse status manually from the payload (first byte).
+    if (payload.size() > 0) {
+      status = *payload.begin();
+    } else {
+      log::error("Invalid command complete view: payload empty");
+      return;
+    }
+  }
 
   log::verbose("status={}", status);
 
@@ -383,15 +447,33 @@ void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_l
   }
 
   if (status == HCI_SUCCESS) {
-    /* proprietary spec has extra bytes */
-    if (evt_len > 8) {
-      /* skip subcode, index, IRK value, address type, identity addr type */
-      p += (2 + 16 + 1 + 6);
-      STREAM_TO_BDADDR(rra, p);
+    // If it was a standard command, rra is already populated.
+    // If it was VSC, we need to populate it now.
+    if (!read_resolvable_address_complete_view.IsValid()) {
+      auto it = payload.begin();
+      if (payload.size() > 8) {
+        // status(1) + subcode(1) + index(1) + IRK(16) + addr type(1) + identity addr type(6)
+        // We need to skip 1 + 2 + 16 + 1 + 6 = 26 bytes to get to Peer Resolvable Address
+        std::advance(it, 26);
+      } else {
+        // Skip status (1 byte)
+        std::advance(it, 1);
+      }
 
-      log::info("peer_addr:{}", rra);
-    } else {
-      STREAM_TO_BDADDR(rra, p);
+      uint8_t addr[6];
+      for (int i = 0; i < 6; i++) {
+        if (it != payload.end()) {
+          addr[5 - i] = *it;
+          ++it;
+        } else {
+          log::error("Invalid command complete view: payload too short");
+          return;
+        }
+      }
+      rra = RawAddress::FromOctets(addr);
+      if (payload.size() > 8) {
+        log::info("peer_addr:{}", rra);
+      }
     }
     btm_ble_refresh_peer_resolvable_private_addr(pseudo_bda, rra,
                                                  tBLE_RAND_ADDR_TYPE::BTM_BLE_ADDR_PSEUDO);
@@ -420,13 +502,69 @@ static void btm_ble_resolving_list_vsc_op_cmpl(tBTM_VSC_CMPL* p_params) {
   log::verbose("op_subcode={}", op_subcode);
 
   if (op_subcode == BTM_BLE_META_CLEAR_IRK_LIST) {
-    btm_ble_clear_resolving_list_complete(p, evt_len);
+    std::vector<uint8_t> packet = {
+            (uint8_t)bluetooth::hci::EventCode::COMMAND_COMPLETE,
+            (uint8_t)(evt_len + 3),  // +3 for NumPackets(1) + OpCode(2)
+            1,                       // Num Packets
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_CLEAR_RESOLVING_LIST),
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_CLEAR_RESOLVING_LIST) >> 8,
+    };
+    packet.insert(packet.end(), p, p + evt_len);
+    auto packet_ptr = std::make_shared<std::vector<uint8_t>>(std::move(packet));
+    auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet_ptr);
+    auto event_view = bluetooth::hci::EventView::Create(packet_view);
+    auto command_complete_view = bluetooth::hci::CommandCompleteView::Create(event_view);
+    if (command_complete_view.IsValid()) {
+      btm_ble_clear_resolving_list_complete(std::move(command_complete_view));
+    }
   } else if (op_subcode == BTM_BLE_META_ADD_IRK_ENTRY) {
-    btm_ble_add_resolving_list_entry_complete(p, evt_len);
+    std::vector<uint8_t> packet = {
+            (uint8_t)bluetooth::hci::EventCode::COMMAND_COMPLETE,
+            (uint8_t)(evt_len + 3),  // +3 for NumPackets(1) + OpCode(2)
+            1,                       // Num Packets
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST),
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST) >> 8,
+    };
+    packet.insert(packet.end(), p, p + evt_len);
+    auto packet_ptr = std::make_shared<std::vector<uint8_t>>(std::move(packet));
+    auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet_ptr);
+    auto event_view = bluetooth::hci::EventView::Create(packet_view);
+    auto command_complete_view = bluetooth::hci::CommandCompleteView::Create(event_view);
+    if (command_complete_view.IsValid()) {
+      btm_ble_add_resolving_list_entry_complete(std::move(command_complete_view));
+    }
   } else if (op_subcode == BTM_BLE_META_REMOVE_IRK_ENTRY) {
-    btm_ble_remove_resolving_list_entry_complete(p, evt_len);
+    std::vector<uint8_t> packet = {
+            (uint8_t)bluetooth::hci::EventCode::COMMAND_COMPLETE,
+            (uint8_t)(evt_len + 3),  // +3 for NumPackets(1) + OpCode(2)
+            1,                       // Num Packets
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST),
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) >> 8,
+    };
+    packet.insert(packet.end(), p, p + evt_len);
+    auto packet_ptr = std::make_shared<std::vector<uint8_t>>(std::move(packet));
+    auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet_ptr);
+    auto event_view = bluetooth::hci::EventView::Create(packet_view);
+    auto command_complete_view = bluetooth::hci::CommandCompleteView::Create(event_view);
+    if (command_complete_view.IsValid()) {
+      btm_ble_remove_resolving_list_entry_complete(std::move(command_complete_view));
+    }
   } else if (op_subcode == BTM_BLE_META_READ_IRK_ENTRY) {
-    btm_ble_read_resolving_list_entry_complete(p, evt_len);
+    std::vector<uint8_t> packet = {
+            (uint8_t)bluetooth::hci::EventCode::COMMAND_COMPLETE,
+            (uint8_t)(evt_len + 3),  // +3 for NumPackets(1) + OpCode(2)
+            1,                       // Num Packets
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_READ_PEER_RESOLVABLE_ADDRESS),
+            static_cast<uint8_t>(bluetooth::hci::OpCode::LE_READ_PEER_RESOLVABLE_ADDRESS) >> 8,
+    };
+    packet.insert(packet.end(), p, p + evt_len);
+    auto packet_ptr = std::make_shared<std::vector<uint8_t>>(std::move(packet));
+    auto packet_view = bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>(packet_ptr);
+    auto event_view = bluetooth::hci::EventView::Create(packet_view);
+    auto command_complete_view = bluetooth::hci::CommandCompleteView::Create(event_view);
+    if (command_complete_view.IsValid()) {
+      btm_ble_read_resolving_list_entry_complete(std::move(command_complete_view));
+    }
   } else if (op_subcode == BTM_BLE_META_IRK_ENABLE) {
     /* RPA offloading enable/disabled */
   }

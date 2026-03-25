@@ -1549,7 +1549,7 @@ void btm_read_automatic_flush_timeout_complete(bluetooth::hci::CommandCompleteVi
         }
       }
     }
-    (*p_cb)(view, address);
+    (*p_cb)(address);
   }
 }
 

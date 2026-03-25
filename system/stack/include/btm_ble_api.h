@@ -35,6 +35,7 @@
 
 #include "btm_ble_api_types.h"
 #include "stack/btm/neighbor_inquiry.h"
+#include "stack/include/btm_api_types.h"
 
 void btm_ble_init();
 void btm_ble_free();
