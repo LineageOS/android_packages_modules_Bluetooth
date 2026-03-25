@@ -19,6 +19,7 @@ package com.android.bluetooth.storage
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.BOND_BONDED
 import android.bluetooth.BluetoothDevice.BOND_NONE
+import android.bluetooth.BluetoothDevice.METADATA_MODEL_NAME
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
@@ -70,6 +71,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
 
     @Before
     fun setUp() {
+        doReturn(arrayOf<BluetoothDevice>()).whenever(adapterService).bondedDevices
         doReturn(adapterService).whenever(adapterService).createDeviceProtectedStorageContext()
         doReturn(context.applicationInfo).whenever(adapterService).applicationInfo
         doReturn("com.android.bluetooth").whenever(adapterService).packageName
@@ -107,7 +109,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     fun testSetAndGetCustomMetadata() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
-            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+            val key = METADATA_MODEL_NAME
             val value = "Test Manufacturer".toByteArray()
 
             assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
@@ -121,7 +123,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     fun setCustomMetadata_twice_returnsFalse() =
         runTest(testDispatcher) {
             doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
-            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+            val key = METADATA_MODEL_NAME
             val value = "Test Manufacturer".toByteArray()
 
             assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
@@ -133,7 +135,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @Test
     fun setCustomMetadata_withEmptyValue_removesMetadata() =
         runTest(testDispatcher) {
-            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+            val key = METADATA_MODEL_NAME
             testSetAndGetCustomMetadata()
 
             // Set an empty byte array, which should remove the metadata
@@ -146,6 +148,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @Test
     fun testDeviceConnectionHistory() =
         runTest(testDispatcher) {
+            doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
             assertThat(storageManager.getMostRecentlyConnectedDevices()).isEmpty()
 
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
@@ -165,11 +168,13 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @Test
     fun testRemoveDevice() =
         runTest(testDispatcher) {
+            doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
             storageManager.onDeviceConnected(device2, BluetoothProfile.A2DP)
 
             assertThat(storageManager.getMostRecentlyConnectedDevices()).hasSize(2)
 
+            doReturn(arrayOf(device2)).whenever(adapterService).bondedDevices
             storageManager.onBondStateChanged(device1, BOND_BONDED, BOND_NONE)
 
             val connectedDevices = storageManager.getMostRecentlyConnectedDevices()
@@ -180,6 +185,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @Test
     fun testActiveA2dpDevice() =
         runTest(testDispatcher) {
+            doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
             assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isNull()
 
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
@@ -243,11 +249,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
             doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
             // Scenario: The device is present in storage, but has no HFP settings.
             // We add it to storage by setting some other metadata.
-            storageManager.setCustomMetadata(
-                device1,
-                BluetoothDevice.METADATA_MANUFACTURER_NAME,
-                "test".toByteArray(),
-            )
+            storageManager.setCustomMetadata(device1, METADATA_MODEL_NAME, "test".toByteArray())
 
             assertThat(storageManager.getAudioPolicyMetadata(device1))
                 .isEqualTo(BluetoothSinkAudioPolicy.Builder().build())
@@ -267,6 +269,55 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
             val retrievedPolicy = storageManager.getAudioPolicyMetadata(device1)
 
             assertThat(retrievedPolicy).isEqualTo(testPolicy)
+        }
+
+    @Test
+    fun testMemoryOnlyCache_evictsEldestUnbonded() =
+        runTest(testDispatcher) {
+            doReturn(emptyArray<BluetoothDevice>()).whenever(adapterService).bondedDevices
+
+            // Add 21 unbonded devices (MAX_UNBONDED_CACHE_SIZE is 20)
+            for (i in 1..21) {
+                val testDevice = getTestDevice(i)
+                storageManager.setCustomMetadata(
+                    testDevice,
+                    METADATA_MODEL_NAME,
+                    "test$i".toByteArray(),
+                )
+            }
+
+            // The first device (getTestDevice(1)) should have been evicted from the memory-only
+            // cache
+            val firstDevice = getTestDevice(1)
+            assertThat(storageManager.getCustomMetadata(firstDevice, METADATA_MODEL_NAME)).isNull()
+
+            // The last device (getTestDevice(21)) should still be in the cache
+            val lastDevice = getTestDevice(21)
+            assertThat(storageManager.getCustomMetadata(lastDevice, METADATA_MODEL_NAME))
+                .isEqualTo("test21".toByteArray())
+        }
+
+    @Test
+    fun testUnbondedDevices_areNotPersisted() =
+        runTest(testDispatcher) {
+            doReturn(emptyArray<BluetoothDevice>()).whenever(adapterService).bondedDevices
+
+            // Add an unbonded device
+            storageManager.setCustomMetadata(device1, METADATA_MODEL_NAME, "test".toByteArray())
+
+            // Ensure it is accessible from the current memory cache
+            assertThat(storageManager.getCustomMetadata(device1, METADATA_MODEL_NAME))
+                .isEqualTo("test".toByteArray())
+
+            // cleanup cancels the scope allowing DataStore to release the file lock
+            storageManager.cleanup()
+
+            // Create a new storage manager to simulate a restart
+            val newStorageManager = BluetoothStorageManager(adapterService, testDispatcher)
+            newStorageManager.initialize()
+
+            // The unbonded device should not be loaded from disk
+            assertThat(newStorageManager.getCustomMetadata(device1, METADATA_MODEL_NAME)).isNull()
         }
 
     companion object {
