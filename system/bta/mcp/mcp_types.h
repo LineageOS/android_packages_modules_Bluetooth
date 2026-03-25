@@ -22,27 +22,28 @@ namespace bluetooth {
 namespace mcp {
 
 // Service UUID for the Media Control Service
-static const bluetooth::Uuid kMediaControlServiceUuid = bluetooth::Uuid::From16Bit(0x1848);
-static const bluetooth::Uuid kGenericMediaControlServiceUuid = bluetooth::Uuid::From16Bit(0x1849);
+static constexpr bluetooth::Uuid kMediaControlServiceUuid = bluetooth::Uuid::From16Bit(0x1848);
+static constexpr bluetooth::Uuid kGenericMediaControlServiceUuid =
+        bluetooth::Uuid::From16Bit(0x1849);
 
 /* Media Control Service Characteristics */
-static const bluetooth::Uuid kMediaPlayerNameUuid = bluetooth::Uuid::From16Bit(0x2B93);
-static const bluetooth::Uuid kMediaPlayerIconObjIdUuid = bluetooth::Uuid::From16Bit(0x2B94);
-static const bluetooth::Uuid kMediaPlayerIconUrlUuid = bluetooth::Uuid::From16Bit(0x2B95);
-static const bluetooth::Uuid kTrackChangedUuid = bluetooth::Uuid::From16Bit(0x2B96);
-static const bluetooth::Uuid kTrackTitleUuid = bluetooth::Uuid::From16Bit(0x2B97);
-static const bluetooth::Uuid kTrackDurationUuid = bluetooth::Uuid::From16Bit(0x2B98);
-static const bluetooth::Uuid kTrackPositionUuid = bluetooth::Uuid::From16Bit(0x2B99);
-static const bluetooth::Uuid kPlaybackSpeedUuid = bluetooth::Uuid::From16Bit(0x2B9A);
-static const bluetooth::Uuid kSeekingSpeedUuid = bluetooth::Uuid::From16Bit(0x2B9B);
-static const bluetooth::Uuid kPlayingOrderUuid = bluetooth::Uuid::From16Bit(0x2BA1);
-static const bluetooth::Uuid kPlayingOrderSupportedUuid = bluetooth::Uuid::From16Bit(0x2BA2);
-static const bluetooth::Uuid kMediaStateUuid = bluetooth::Uuid::From16Bit(0x2BA3);
-static const bluetooth::Uuid kMediaControlPointUuid = bluetooth::Uuid::From16Bit(0x2BA4);
-static const bluetooth::Uuid kMediaControlPointOpcodesSupportedUuid =
+static constexpr bluetooth::Uuid kMediaPlayerNameUuid = bluetooth::Uuid::From16Bit(0x2B93);
+static constexpr bluetooth::Uuid kMediaPlayerIconObjIdUuid = bluetooth::Uuid::From16Bit(0x2B94);
+static constexpr bluetooth::Uuid kMediaPlayerIconUrlUuid = bluetooth::Uuid::From16Bit(0x2B95);
+static constexpr bluetooth::Uuid kTrackChangedUuid = bluetooth::Uuid::From16Bit(0x2B96);
+static constexpr bluetooth::Uuid kTrackTitleUuid = bluetooth::Uuid::From16Bit(0x2B97);
+static constexpr bluetooth::Uuid kTrackDurationUuid = bluetooth::Uuid::From16Bit(0x2B98);
+static constexpr bluetooth::Uuid kTrackPositionUuid = bluetooth::Uuid::From16Bit(0x2B99);
+static constexpr bluetooth::Uuid kPlaybackSpeedUuid = bluetooth::Uuid::From16Bit(0x2B9A);
+static constexpr bluetooth::Uuid kSeekingSpeedUuid = bluetooth::Uuid::From16Bit(0x2B9B);
+static constexpr bluetooth::Uuid kPlayingOrderUuid = bluetooth::Uuid::From16Bit(0x2BA1);
+static constexpr bluetooth::Uuid kPlayingOrderSupportedUuid = bluetooth::Uuid::From16Bit(0x2BA2);
+static constexpr bluetooth::Uuid kMediaStateUuid = bluetooth::Uuid::From16Bit(0x2BA3);
+static constexpr bluetooth::Uuid kMediaControlPointUuid = bluetooth::Uuid::From16Bit(0x2BA4);
+static constexpr bluetooth::Uuid kMediaControlPointOpcodesSupportedUuid =
         bluetooth::Uuid::From16Bit(0x2BA5);
-static const bluetooth::Uuid kSearchResultsObjIdUuid = bluetooth::Uuid::From16Bit(0x2BA6);
-static const bluetooth::Uuid kContentControlIdUuid = bluetooth::Uuid::From16Bit(0x2BBA);
+static constexpr bluetooth::Uuid kSearchResultsObjIdUuid = bluetooth::Uuid::From16Bit(0x2BA6);
+static constexpr bluetooth::Uuid kContentControlIdUuid = bluetooth::Uuid::From16Bit(0x2BBA);
 
 static const uint16_t kInvalidGattHandle = 0x0000;
 

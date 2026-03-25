@@ -49,19 +49,19 @@ static constexpr uint8_t kVolumeInputControlPointOpcodeMute                 = 0x
 static constexpr uint8_t kVolumeInputControlPointOpcodeSetManualGainMode    = 0x04;
 static constexpr uint8_t kVolumeInputControlPointOpcodeSetAutoGainMode      = 0x05;
 
-static const Uuid kVolumeOffsetUuid                          = Uuid::From16Bit(0x1845);
-static const Uuid kVolumeOffsetStateUuid                     = Uuid::From16Bit(0x2B80);
-static const Uuid kVolumeOffsetLocationUuid                  = Uuid::From16Bit(0x2B81);
-static const Uuid kVolumeOffsetControlPointUuid              = Uuid::From16Bit(0x2B82);
-static const Uuid kVolumeOffsetOutputDescriptionUuid         = Uuid::From16Bit(0x2B83);
+static constexpr Uuid kVolumeOffsetUuid                          = Uuid::From16Bit(0x1845);
+static constexpr Uuid kVolumeOffsetStateUuid                     = Uuid::From16Bit(0x2B80);
+static constexpr Uuid kVolumeOffsetLocationUuid                  = Uuid::From16Bit(0x2B81);
+static constexpr Uuid kVolumeOffsetControlPointUuid              = Uuid::From16Bit(0x2B82);
+static constexpr Uuid kVolumeOffsetOutputDescriptionUuid         = Uuid::From16Bit(0x2B83);
 
-static const Uuid kVolumeAudioInputUuid                      = Uuid::From16Bit(0x1843);
-static const Uuid kVolumeAudioInputStateUuid                 = Uuid::From16Bit(0x2B77);
-static const Uuid kVolumeAudioInputGainSettingPropertiesUuid = Uuid::From16Bit(0x2B78);
-static const Uuid kVolumeAudioInputTypeUuid                  = Uuid::From16Bit(0x2B79);
-static const Uuid kVolumeAudioInputStatusUuid                = Uuid::From16Bit(0x2B7A);
-static const Uuid kVolumeAudioInputControlPointUuid          = Uuid::From16Bit(0x2B7B);
-static const Uuid kVolumeAudioInputDescriptionUuid           = Uuid::From16Bit(0x2B7C);
+static constexpr Uuid kVolumeAudioInputUuid                      = Uuid::From16Bit(0x1843);
+static constexpr Uuid kVolumeAudioInputStateUuid                 = Uuid::From16Bit(0x2B77);
+static constexpr Uuid kVolumeAudioInputGainSettingPropertiesUuid = Uuid::From16Bit(0x2B78);
+static constexpr Uuid kVolumeAudioInputTypeUuid                  = Uuid::From16Bit(0x2B79);
+static constexpr Uuid kVolumeAudioInputStatusUuid                = Uuid::From16Bit(0x2B7A);
+static constexpr Uuid kVolumeAudioInputControlPointUuid          = Uuid::From16Bit(0x2B7B);
+static constexpr Uuid kVolumeAudioInputDescriptionUuid           = Uuid::From16Bit(0x2B7C);
 
 /* clang-format on */
 

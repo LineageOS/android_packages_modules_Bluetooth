@@ -34,20 +34,21 @@
  static const uint16_t kClientCharacteristicConfiguration16bit = 0x2902;
  static const uint16_t kDefaultGattMtu = 23;
 
- static const bluetooth::Uuid kGenericVasService = bluetooth::Uuid::From16Bit(kGenericVasService16Bit);
- static const bluetooth::Uuid kVaNameCharacteristic =
+ static constexpr bluetooth::Uuid kGenericVasService =
+         bluetooth::Uuid::From16Bit(kGenericVasService16Bit);
+ static constexpr bluetooth::Uuid kVaNameCharacteristic =
          bluetooth::Uuid::From16Bit(kVaNameCharacteristic16bit);
- static const bluetooth::Uuid kVaUuidCharacteristic =
+ static constexpr bluetooth::Uuid kVaUuidCharacteristic =
          bluetooth::Uuid::From16Bit(kVaUuidCharacteristic16bit);
- static const bluetooth::Uuid kVasControlPointCharacteristic =
+ static constexpr bluetooth::Uuid kVasControlPointCharacteristic =
          bluetooth::Uuid::From16Bit(kVasControlPointCharacteristic16bit);
- static const bluetooth::Uuid kVaCcidCharacteristic =
+ static constexpr bluetooth::Uuid kVaCcidCharacteristic =
          bluetooth::Uuid::From16Bit(kVaCcidCharacteristic16bit);
- static const bluetooth::Uuid kVaSessionStateCharacteristic =
+ static constexpr bluetooth::Uuid kVaSessionStateCharacteristic =
          bluetooth::Uuid::From16Bit(kVaSessionStateCharacteristic16bit);
- static const bluetooth::Uuid kVaSupportedFeaturesCharacteristic =
+ static constexpr bluetooth::Uuid kVaSupportedFeaturesCharacteristic =
          bluetooth::Uuid::From16Bit(kVaSupportedFeaturesCharacteristic16bit);
- static const bluetooth::Uuid kClientCharacteristicConfiguration =
+ static constexpr bluetooth::Uuid kClientCharacteristicConfiguration =
          bluetooth::Uuid::From16Bit(kClientCharacteristicConfiguration16bit);
 
  std::string getUuidName(const bluetooth::Uuid& uuid);

@@ -27,14 +27,14 @@ using bluetooth::Uuid;
 namespace {
 uint32_t handle1 = 1;
 uint32_t handle2 = 2;
-static const Uuid uuid1 =
+static constexpr Uuid uuid1 =
         Uuid::From128BitBE(Uuid::UUID128Bit{{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
                                              0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}});
-static const Uuid uuid2 =
+static constexpr Uuid uuid2 =
         Uuid::From128BitBE(Uuid::UUID128Bit{{0x00, 0x00, 0x00, 0x00, 0x22, 0x22, 0x22, 0x22, 0x33,
                                              0x33, 0x55, 0x55, 0x55, 0x55, 0x55, 0x59}});
 // Test constants for 16-bit and 32-bit UUIDs
-static const Uuid valid_uuid16 = Uuid::From16Bit(0x1800);      // Generic Access
+static constexpr Uuid valid_uuid16 = Uuid::From16Bit(0x1800);  // Generic Access
 static const Uuid valid_uuid32 = Uuid::From32Bit(0x00001801);  // Generic Attribute
 }  // namespace
 

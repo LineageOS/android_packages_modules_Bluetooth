@@ -24,14 +24,14 @@
 #include <stdint.h>
 #include <string.h>
 
-static const bluetooth::Uuid UUID_OBEX_OBJECT_PUSH = bluetooth::Uuid::From16Bit(0x1105);
-static const bluetooth::Uuid UUID_PBAP_PCE = bluetooth::Uuid::From16Bit(0x112E);
-static const bluetooth::Uuid UUID_PBAP_PSE = bluetooth::Uuid::From16Bit(0x112F);
-static const bluetooth::Uuid UUID_MAP_MAS = bluetooth::Uuid::From16Bit(0x1132);
-static const bluetooth::Uuid UUID_SAP = bluetooth::Uuid::From16Bit(0x112D);
-static const bluetooth::Uuid UUID_SPP = bluetooth::Uuid::From16Bit(0x1101);
-static const bluetooth::Uuid UUID_DIP = bluetooth::Uuid::From16Bit(0x1200);
-static const bluetooth::Uuid UUID_MAP_MNS = bluetooth::Uuid::From16Bit(0x1133);
+static constexpr bluetooth::Uuid UUID_OBEX_OBJECT_PUSH = bluetooth::Uuid::From16Bit(0x1105);
+static constexpr bluetooth::Uuid UUID_PBAP_PCE = bluetooth::Uuid::From16Bit(0x112E);
+static constexpr bluetooth::Uuid UUID_PBAP_PSE = bluetooth::Uuid::From16Bit(0x112F);
+static constexpr bluetooth::Uuid UUID_MAP_MAS = bluetooth::Uuid::From16Bit(0x1132);
+static constexpr bluetooth::Uuid UUID_SAP = bluetooth::Uuid::From16Bit(0x112D);
+static constexpr bluetooth::Uuid UUID_SPP = bluetooth::Uuid::From16Bit(0x1101);
+static constexpr bluetooth::Uuid UUID_DIP = bluetooth::Uuid::From16Bit(0x1200);
+static constexpr bluetooth::Uuid UUID_MAP_MNS = bluetooth::Uuid::From16Bit(0x1133);
 
 int add_rfc_sdp_rec(const char* name, bluetooth::Uuid uuid, int scn);
 void del_rfc_sdp_rec(int handle);

@@ -23,10 +23,10 @@
 namespace bluetooth::vcs {
 
 namespace uuid {
-static const Uuid kVolumeControlServiceUuid = Uuid::From16Bit(0x1844);
-static const Uuid kVolumeStateUuid = Uuid::From16Bit(0x2B7D);
-static const Uuid kVolumeControlPointUuid = Uuid::From16Bit(0x2B7E);
-static const Uuid kVolumeFlagsUuid = Uuid::From16Bit(0x2B7F);
+static constexpr Uuid kVolumeControlServiceUuid = Uuid::From16Bit(0x1844);
+static constexpr Uuid kVolumeStateUuid = Uuid::From16Bit(0x2B7D);
+static constexpr Uuid kVolumeControlPointUuid = Uuid::From16Bit(0x2B7E);
+static constexpr Uuid kVolumeFlagsUuid = Uuid::From16Bit(0x2B7F);
 }  // namespace uuid
 
 static const uint16_t kGattInvalidHandle = 0x0000;

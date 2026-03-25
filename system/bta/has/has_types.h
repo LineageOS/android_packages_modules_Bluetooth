@@ -72,10 +72,10 @@ public:
 static_assert(sizeof(HasGattOpContext) <= sizeof(void*));
 
 /* Service UUIDs */
-static const bluetooth::Uuid kUuidHearingAccessService = bluetooth::Uuid::From16Bit(0x1854);
-static const bluetooth::Uuid kUuidHearingAidFeatures = bluetooth::Uuid::From16Bit(0x2BDA);
-static const bluetooth::Uuid kUuidHearingAidPresetControlPoint = bluetooth::Uuid::From16Bit(0x2BDB);
-static const bluetooth::Uuid kUuidActivePresetIndex = bluetooth::Uuid::From16Bit(0x2BDC);
+static constexpr Uuid kUuidHearingAccessService = Uuid::From16Bit(0x1854);
+static constexpr Uuid kUuidHearingAidFeatures = Uuid::From16Bit(0x2BDA);
+static constexpr Uuid kUuidHearingAidPresetControlPoint = Uuid::From16Bit(0x2BDB);
+static constexpr Uuid kUuidActivePresetIndex = Uuid::From16Bit(0x2BDC);
 
 static const uint8_t kStartPresetIndex = 1;
 static const uint8_t kMaxNumOfPresets = 255;

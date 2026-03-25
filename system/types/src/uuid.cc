@@ -117,14 +117,6 @@ std::optional<Uuid> Uuid::FromString(const std::string& uuid) {
   return ret;
 }
 
-Uuid Uuid::From16Bit(uint16_t uuid16) {
-  Uuid u = kBase;
-
-  u.uu[2] = (uint8_t)((0xFF00 & uuid16) >> 8);
-  u.uu[3] = (uint8_t)(0x00FF & uuid16);
-  return u;
-}
-
 Uuid Uuid::From32Bit(uint32_t uuid32) {
   Uuid u = kBase;
 
