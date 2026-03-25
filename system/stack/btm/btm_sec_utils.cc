@@ -80,9 +80,6 @@ void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_sc_supported
  ******************************************************************************/
 bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_sc_supported,
                                    bool controller_sc_supported) {
-  if (!com_android_bluetooth_flags_btsec_check_controller_sc_support()) {
-    return false;
-  }
 
   const BtmDevice* p_device = btm_find_dev_by_handle(hci_handle);
   if (p_device == nullptr) {
