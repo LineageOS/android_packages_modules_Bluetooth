@@ -462,7 +462,7 @@ TEST_F(HfpClientInterfaceTest, EncodeConfirmStreamingRequest) {
   // Test case: pending_cmd is HFP_CTRL_CMD_NONE
   SetEncodingPendingCmd(bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
   encode_->ConfirmStreamingRequest();
-  ASSERT_TRUE(stream_started_called);
+  ASSERT_FALSE(stream_started_called);
   ASSERT_EQ(bluetooth::audio::aidl::hfp::hfp_encoding_transport_pending_cmd,
             bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
 
@@ -493,7 +493,7 @@ TEST_F(HfpClientInterfaceTest, EncodeCancelStreamingRequest) {
   stream_started_called = false;
   SetEncodingPendingCmd(bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
   encode_->CancelStreamingRequest();
-  ASSERT_TRUE(stream_suspended_called);
+  ASSERT_FALSE(stream_suspended_called);
   ASSERT_EQ(bluetooth::audio::aidl::hfp::hfp_encoding_transport_pending_cmd,
             bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
 
@@ -586,7 +586,7 @@ TEST_F(HfpClientInterfaceTest, DecodeConfirmStreamingRequest) {
   // Test case: pending_cmd is HFP_CTRL_CMD_NONE
   SetDecodingPendingCmd(bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
   decode_->ConfirmStreamingRequest();
-  ASSERT_TRUE(stream_started_called);
+  ASSERT_FALSE(stream_started_called);
   ASSERT_EQ(bluetooth::audio::aidl::hfp::hfp_decoding_transport_pending_cmd,
             bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
 
@@ -617,7 +617,7 @@ TEST_F(HfpClientInterfaceTest, DecodeCancelStreamingRequest) {
   stream_started_called = false;
   SetDecodingPendingCmd(bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
   decode_->CancelStreamingRequest();
-  ASSERT_TRUE(stream_suspended_called);
+  ASSERT_FALSE(stream_suspended_called);
   ASSERT_EQ(bluetooth::audio::aidl::hfp::hfp_decoding_transport_pending_cmd,
             bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
 
@@ -718,7 +718,7 @@ TEST_F(HfpClientInterfaceTest, OffloadCancelStreamingRequest) {
   stream_started_called = false;
   SetEncodingPendingCmd(bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
   offload_->CancelStreamingRequest();
-  ASSERT_TRUE(stream_suspended_called);
+  ASSERT_FALSE(stream_suspended_called);
   ASSERT_EQ(bluetooth::audio::aidl::hfp::hfp_encoding_transport_pending_cmd,
             bluetooth::audio::aidl::hfp::HFP_CTRL_CMD_NONE);
 

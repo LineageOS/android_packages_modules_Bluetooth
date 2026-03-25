@@ -211,7 +211,7 @@ void HfpClientInterface::Decode::ConfirmStreamingRequest() {
   switch (pending_cmd) {
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       log::warn("no pending start stream request");
-      FALLTHROUGH_INTENDED;
+      return;
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpDecodingTransport::software_hal_interface->StreamStarted(
               aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
@@ -233,7 +233,7 @@ void HfpClientInterface::Decode::CancelStreamingRequest() {
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       log::warn("no pending start stream request");
-      FALLTHROUGH_INTENDED;
+      return;
     case aidl::hfp::HFP_CTRL_CMD_SUSPEND:
       log::info("suspends");
       aidl::hfp::HfpDecodingTransport::software_hal_interface->StreamSuspended(
@@ -380,7 +380,7 @@ void HfpClientInterface::Encode::ConfirmStreamingRequest() {
   switch (pending_cmd) {
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       log::warn("no pending start stream request");
-      FALLTHROUGH_INTENDED;
+      return;
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpEncodingTransport::software_hal_interface->StreamStarted(
               aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
@@ -402,7 +402,7 @@ void HfpClientInterface::Encode::CancelStreamingRequest() {
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       log::warn("no pending start stream request");
-      FALLTHROUGH_INTENDED;
+      return;
     case aidl::hfp::HFP_CTRL_CMD_SUSPEND:
       log::info("suspends");
       aidl::hfp::HfpEncodingTransport::software_hal_interface->StreamSuspended(
@@ -558,7 +558,7 @@ void HfpClientInterface::Offload::CancelStreamingRequest() {
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       log::info("no pending start stream request");
-      [[fallthrough]];
+      return;
     case aidl::hfp::HFP_CTRL_CMD_SUSPEND:
       log::info("suspends");
       aidl::hfp::HfpEncodingTransport::offloading_hal_interface->StreamSuspended(
