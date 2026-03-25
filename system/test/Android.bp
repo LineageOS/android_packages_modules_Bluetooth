@@ -161,20 +161,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestFakeThread",
-    srcs: [
-        "fake/fake_thread.cc",
-    ],
-}
-
-filegroup {
-    name: "TestFakeLooper",
-    srcs: [
-        "fake/fake_looper.cc",
-    ],
-}
-
-filegroup {
     name: "mts_defaults_map",
     srcs: ["mts_defaults.map"],
 }
