@@ -93,7 +93,7 @@ void BTA_GATTC_AppRegister(const std::string& name, tBTA_GATTC_CBACK* p_client_c
                                    eatt_support));
 }
 
-static void app_deregister_impl(tGATT_IF client_if) {
+void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
 
   if (p_clreg != nullptr) {
@@ -101,21 +101,6 @@ static void app_deregister_impl(tGATT_IF client_if) {
   } else {
     log::error("Unknown GATT ID: {}, state: {}", client_if, bta_gattc_cb.state);
   }
-}
-/*******************************************************************************
- *
- * Function         BTA_GATTC_AppDeregister
- *
- * Description      This function is called to deregister an application
- *                  from BTA GATTC module.
- *
- * Parameters       client_if - client interface identifier.
- *
- * Returns          None
- *
- ******************************************************************************/
-void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
-  do_in_main_thread(base::BindOnce(&app_deregister_impl, client_if));
 }
 
 /*******************************************************************************

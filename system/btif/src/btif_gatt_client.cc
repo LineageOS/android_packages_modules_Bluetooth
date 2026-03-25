@@ -310,7 +310,7 @@ static void btif_gattc_unregister_app_impl(int client_if) { BTA_GATTC_AppDeregis
 
 static BtStatus btif_gattc_unregister_app(int client_if) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&btif_gattc_unregister_app_impl, client_if));
+  return do_in_main_thread(BindOnce(&btif_gattc_unregister_app_impl, client_if));
 }
 
 void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr_type,
