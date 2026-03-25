@@ -168,7 +168,7 @@ public class BassClientService extends ConnectableProfile {
     private final Map<Integer, Integer> mBisDiscoveryCounterMap = new HashMap<>();
     private final List<AddSourceData> mPendingSourcesToAdd = new ArrayList<>();
 
-    private final List<AddSourceByNameData> mPendingSourcesToAddByName = new ArrayList<>();
+    private final List<PendingSourceToAddByUri> mPendingSourcesToAddByUri = new ArrayList<>();
 
     private final Map<BluetoothDevice, List<Pair<Integer, Object>>> mPendingGroupOp =
             new ConcurrentHashMap<>();
@@ -203,7 +203,7 @@ public class BassClientService extends ConnectableProfile {
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Boolean> mEncryptionStates = new ConcurrentHashMap<>();
 
-    private record AddSourceByNameData(
+    private record PendingSourceToAddByUri(
             BluetoothDevice sink, String name, List<Byte> code, int broadcastId) {}
 
     @VisibleForTesting
@@ -270,11 +270,11 @@ public class BassClientService extends ConnectableProfile {
                         return;
                     }
 
-                    String metadataStr = intent.getStringExtra(AuracastUtils.EXTRA_METADATA);
-                    if (metadataStr == null) return;
+                    String uriStr = intent.getStringExtra(AuracastUtils.EXTRA_METADATA);
+                    if (uriStr == null) return;
 
-                    // Directly parse the string for Name (BN) and Code (BC)
-                    BroadcastStreamInfo info = AuracastUtils.parseBroadcastNameAndCode(metadataStr);
+                    // Directly parse the URI
+                    BroadcastStreamInfo info = AuracastUtils.parseBroadcastURI(uriStr);
 
                     if (info == null) {
                         Log.e(TAG, "URI is missing Broadcast_Name. Cannot join.");
@@ -295,7 +295,7 @@ public class BassClientService extends ConnectableProfile {
                     for (BluetoothDevice sink : connectedSinks) {
                         // Only trigger the group operation on the primary device
                         if (leAudio.get().isPrimaryDevice(sink)) {
-                            addSourceByBroadcastName(sink, bName, bCode);
+                            addSourceByUri(sink, bName, bCode);
                             mPendingNfcJoiningDevices.addAll(leAudio.get().getGroupDevices(sink));
                             break;
                         }
@@ -453,18 +453,18 @@ public class BassClientService extends ConnectableProfile {
 
             String broadcastName = BassUtils.getBroadcastName(result.getScanRecord());
             if (broadcastName != null) {
-                synchronized (mPendingSourcesToAddByName) {
-                    ListIterator<AddSourceByNameData> iterator =
-                            mPendingSourcesToAddByName.listIterator();
+                synchronized (mPendingSourcesToAddByUri) {
+                    ListIterator<PendingSourceToAddByUri> iterator =
+                            mPendingSourcesToAddByUri.listIterator();
                     while (iterator.hasNext()) {
-                        AddSourceByNameData pending = iterator.next();
+                        PendingSourceToAddByUri pending = iterator.next();
                         if (pending.broadcastId() == LeAudioConstants.INVALID_BROADCAST_ID
                                 && pending.name().equals(broadcastName)) {
                             Log.i(
                                     TAG,
                                     "onScanResult: Matched pending name search: " + broadcastName);
                             iterator.set(
-                                    new AddSourceByNameData(
+                                    new PendingSourceToAddByUri(
                                             pending.sink(),
                                             pending.name(),
                                             pending.code(),
@@ -486,7 +486,7 @@ public class BassClientService extends ConnectableProfile {
                             && (!mIsBackgroundScan
                                     || (!isWaitingForMetadata(broadcastId)
                                             && !isOorMonitoringPauseReason(broadcastId)
-                                            && !isPendingSourceToAddByName(broadcastId)))) {
+                                            && !isPendingSourceToAddByUri(broadcastId)))) {
                         return;
                     }
                 }
@@ -514,7 +514,7 @@ public class BassClientService extends ConnectableProfile {
                             && isWaitingForMetadata(broadcastId))
                     || isWaitingForPast(broadcastId)
                     || isAnnouncementMonitored(broadcastId)
-                    || isPendingSourceToAddByName(broadcastId);
+                    || isPendingSourceToAddByUri(broadcastId);
         }
 
         @Override
@@ -1063,8 +1063,8 @@ public class BassClientService extends ConnectableProfile {
         mPausedBroadcastSinks.clear();
         mSinksToRestoreFromPeer.clear();
 
-        synchronized (mPendingSourcesToAddByName) {
-            mPendingSourcesToAddByName.clear();
+        synchronized (mPendingSourcesToAddByUri) {
+            mPendingSourcesToAddByUri.clear();
         }
         mPendingNfcJoiningDevices.clear();
         mAudioActiveStates.clear();
@@ -2253,8 +2253,8 @@ public class BassClientService extends ConnectableProfile {
                     stopSearchingForSources(/* foreground= */ false);
                 }
             }
-            synchronized (mPendingSourcesToAddByName) {
-                mPendingSourcesToAddByName.removeIf(pending -> pending.sink().equals(device));
+            synchronized (mPendingSourcesToAddByUri) {
+                mPendingSourcesToAddByUri.removeIf(pending -> pending.sink().equals(device));
             }
             mPendingNfcJoiningDevices.remove(device);
             synchronized (mPendingSourcesToAdd) {
@@ -2615,8 +2615,8 @@ public class BassClientService extends ConnectableProfile {
                 // Sync to the broadcasts waiting for adding source (could be by resume too).
                 broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSource());
 
-                // Sync to the broadcasts waiting for adding source by name
-                broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSourceByName());
+                // Sync to the broadcasts waiting for adding source by URI
+                broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSourceByUri());
 
                 // Sync to the paused broadcasts
                 broadcastsToSync.addAll(mPausedBroadcastIds.keySet());
@@ -2814,8 +2814,8 @@ public class BassClientService extends ConnectableProfile {
                 // Keep broadcasts waiting for adding source (could be by resume too)
                 broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSource());
 
-                // Keep broadcasts waiting for adding source by name
-                broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSourceByName());
+                // Keep broadcasts waiting for adding source by URI
+                broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSourceByUri());
 
                 // Keep broadcast monitored or during resuming
                 broadcastsToKeepSynced.addAll(getMonitoredOrResumingBroadcastIds());
@@ -3264,12 +3264,12 @@ public class BassClientService extends ConnectableProfile {
             }
             if (!result.isNotified()
                     || !mSinksWaitingForMetadata.isEmpty()
-                    || !mPendingSourcesToAddByName.isEmpty()) {
+                    || !mPendingSourcesToAddByUri.isEmpty()) {
                 BluetoothLeBroadcastMetadata metaData =
                         getBroadcastMetadataFromBaseData(
                                 baseData, srcDevice, syncHandle, pbData.isEncrypted());
                 updateMetadata(metaData);
-                processPendingAddSourceByName(metaData);
+                processPendingAddSourceByUri(metaData);
                 if (!result.isNotified()) {
                     result.setNotified(true);
                     Log.d(TAG, "Notify broadcast source found");
@@ -3337,12 +3337,12 @@ public class BassClientService extends ConnectableProfile {
             }
             if (!result.isNotified()
                     || !mSinksWaitingForMetadata.isEmpty()
-                    || !mPendingSourcesToAddByName.isEmpty()) {
+                    || !mPendingSourcesToAddByUri.isEmpty()) {
                 BluetoothLeBroadcastMetadata metaData =
                         getBroadcastMetadataFromBaseData(
                                 baseData, srcDevice, syncHandle, encrypted);
                 updateMetadata(metaData);
-                processPendingAddSourceByName(metaData);
+                processPendingAddSourceByUri(metaData);
                 if (!result.isNotified()) {
                     result.setNotified(true);
                     Log.d(TAG, "Notify broadcast source found");
@@ -4315,14 +4315,13 @@ public class BassClientService extends ConnectableProfile {
      * for the name, retrieves the missing metadata, and completes the addSource operation.
      */
     @VisibleForTesting
-    void addSourceByBroadcastName(
-            BluetoothDevice sink, String broadcastName, byte[] broadcastCode) {
+    void addSourceByUri(BluetoothDevice sink, String broadcastName, byte[] broadcastCode) {
         if (broadcastName == null || broadcastName.isEmpty()) {
-            Log.e(TAG, "addSourceByBroadcastName: broadcastName cannot be null or empty");
+            Log.e(TAG, "addSourceByUri: broadcastName cannot be null or empty");
             return;
         }
 
-        Log.d(TAG, "addSourceByBroadcastName: Searching for name = " + broadcastName);
+        Log.d(TAG, "addSourceByUri: Searching for name = " + broadcastName);
 
         java.util.List<Byte> codeList = null;
         if (broadcastCode != null) {
@@ -4332,20 +4331,20 @@ public class BassClientService extends ConnectableProfile {
             }
         }
 
-        synchronized (mPendingSourcesToAddByName) {
-            mPendingSourcesToAddByName.add(
-                    new AddSourceByNameData(
+        synchronized (mPendingSourcesToAddByUri) {
+            mPendingSourcesToAddByUri.add(
+                    new PendingSourceToAddByUri(
                             sink, broadcastName, codeList, LeAudioConstants.INVALID_BROADCAST_ID));
         }
 
         startSearchingForSources(Collections.emptyList(), /* foreground= */ false);
     }
 
-    private void processPendingAddSourceByName(BluetoothLeBroadcastMetadata metadata) {
-        synchronized (mPendingSourcesToAddByName) {
-            Iterator<AddSourceByNameData> iterator = mPendingSourcesToAddByName.iterator();
+    private void processPendingAddSourceByUri(BluetoothLeBroadcastMetadata metadata) {
+        synchronized (mPendingSourcesToAddByUri) {
+            Iterator<PendingSourceToAddByUri> iterator = mPendingSourcesToAddByUri.iterator();
             while (iterator.hasNext()) {
-                AddSourceByNameData pending = iterator.next();
+                PendingSourceToAddByUri pending = iterator.next();
                 if (pending.broadcastId() == metadata.getBroadcastId()) {
                     BluetoothLeBroadcastMetadata finalMetadata = metadata;
 
@@ -4363,7 +4362,7 @@ public class BassClientService extends ConnectableProfile {
                                         .build();
                     }
 
-                    Log.d(TAG, "processPendingAddSourceByName: Adding source = " + pending.name());
+                    Log.d(TAG, "processPendingAddSourceByUri: Adding source = " + pending.name());
                     addSource(pending.sink(), finalMetadata, true);
                     iterator.remove();
                 }
@@ -4371,9 +4370,9 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    private boolean isPendingSourceToAddByName(int broadcastId) {
-        synchronized (mPendingSourcesToAddByName) {
-            for (AddSourceByNameData data : mPendingSourcesToAddByName) {
+    private boolean isPendingSourceToAddByUri(int broadcastId) {
+        synchronized (mPendingSourcesToAddByUri) {
+            for (PendingSourceToAddByUri data : mPendingSourcesToAddByUri) {
                 if (data.broadcastId() == broadcastId) {
                     return true;
                 }
@@ -5666,10 +5665,10 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    private Set<Integer> getBroadcastIdsWaitingForAddSourceByName() {
-        synchronized (mPendingSourcesToAddByName) {
-            return mPendingSourcesToAddByName.stream()
-                    .map(AddSourceByNameData::broadcastId)
+    private Set<Integer> getBroadcastIdsWaitingForAddSourceByUri() {
+        synchronized (mPendingSourcesToAddByUri) {
+            return mPendingSourcesToAddByUri.stream()
+                    .map(PendingSourceToAddByUri::broadcastId)
                     .filter(id -> id != LeAudioConstants.INVALID_BROADCAST_ID)
                     .collect(Collectors.toCollection(HashSet::new));
         }
@@ -5716,8 +5715,8 @@ public class BassClientService extends ConnectableProfile {
         // Sync to the broadcasts waiting for adding source (could be by resume too).
         broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSource());
 
-        // Sync to the broadcasts waiting for adding source by name
-        broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSourceByName());
+        // Sync to the broadcasts waiting for adding source by URI
+        broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSourceByUri());
 
         // Sync to the broadcasts with pending source operation to guard switch
         // procedure
@@ -5748,7 +5747,7 @@ public class BassClientService extends ConnectableProfile {
         broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSource());
 
         // Keep broadcasts waiting for adding source by name
-        broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSourceByName());
+        broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSourceByUri());
 
         // Keep broadcast with pending source operation to guard switch procedure
         broadcastsToKeepSynced.addAll(getBroadcastIdsOfPendingSourceOperation());

@@ -25,11 +25,11 @@ import org.junit.runner.RunWith
 class AuracastUtilsTest {
 
     @Test
-    fun parseBroadcastNameAndCode_withValidNameAndCode_returnsInfo() {
+    fun parseBroadcastURI_withValidNameAndCode_returnsInfo() {
         // "TestName" -> Base64: "VGVzdE5hbWU="
         // "123456" -> Base64: "MTIzNDU2"
         val uri = "BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;BC:MTIzNDU2;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNotNull()
         assertThat(info?.name).isEqualTo("TestName")
@@ -37,10 +37,10 @@ class AuracastUtilsTest {
     }
 
     @Test
-    fun parseBroadcastNameAndCode_withNameOnly_returnsInfoWithNullCode() {
+    fun parseBroadcastURI_withNameOnly_returnsInfoWithNullCode() {
         // "TestName" -> Base64: "VGVzdE5hbWU="
         val uri = "BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNotNull()
         assertThat(info?.name).isEqualTo("TestName")
@@ -48,10 +48,10 @@ class AuracastUtilsTest {
     }
 
     @Test
-    fun parseBroadcastNameAndCode_withoutPrefixAndSuffix_returnsInfo() {
+    fun parseBroadcastURI_withoutPrefixAndSuffix_returnsInfo() {
         // Just the raw elements without "BLUETOOTH:UUID:184F;" or ";;"
         val uri = "BN:VGVzdE5hbWU=;BC:MTIzNDU2"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNotNull()
         assertThat(info?.name).isEqualTo("TestName")
@@ -59,29 +59,29 @@ class AuracastUtilsTest {
     }
 
     @Test
-    fun parseBroadcastNameAndCode_missingName_returnsNull() {
+    fun parseBroadcastURI_missingName_returnsNull() {
         // Contains code but no broadcast name
         val uri = "BLUETOOTH:UUID:184F;BC:MTIzNDU2;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNull()
     }
 
     @Test
-    fun parseBroadcastNameAndCode_emptyName_returnsNull() {
+    fun parseBroadcastURI_emptyName_returnsNull() {
         // BN prefix is present but empty
         val uri = "BLUETOOTH:UUID:184F;BN:;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNull()
     }
 
     @Test
-    fun parseBroadcastNameAndCode_invalidBase64Name_fallsBackToRawString() {
+    fun parseBroadcastURI_invalidBase64Name_fallsBackToRawString() {
         // "Invalid-Base64-!!!" is not proper base64 padding/characters,
         // it should trigger the exception and fallback to returning the raw string.
         val uri = "BLUETOOTH:UUID:184F;BN:Invalid-Base64-!!!;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNotNull()
         assertThat(info?.name).isEqualTo("Invalid-Base64-!!!")
@@ -89,10 +89,10 @@ class AuracastUtilsTest {
     }
 
     @Test
-    fun parseBroadcastNameAndCode_withExtraElements_ignoresExtraAndReturnsInfo() {
+    fun parseBroadcastURI_withExtraElements_ignoresExtraAndReturnsInfo() {
         // Includes arbitrary other fields like AT, AD, XX
         val uri = "BLUETOOTH:UUID:184F;AT:1;BN:VGVzdE5hbWU=;XX:YYY;BC:MTIzNDU2;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNotNull()
         assertThat(info?.name).isEqualTo("TestName")
@@ -100,9 +100,9 @@ class AuracastUtilsTest {
     }
 
     @Test
-    fun parseBroadcastNameAndCode_invalidBase64Code_returnsNullCode() {
+    fun parseBroadcastURI_invalidBase64Code_returnsNullCode() {
         val uri = "BLUETOOTH:UUID:184F;BN:VGVzdE5hbWU=;BC:Invalid-Base64-!!!;;"
-        val info = AuracastUtils.parseBroadcastNameAndCode(uri)
+        val info = AuracastUtils.parseBroadcastURI(uri)
 
         assertThat(info).isNotNull()
         assertThat(info?.name).isEqualTo("TestName")

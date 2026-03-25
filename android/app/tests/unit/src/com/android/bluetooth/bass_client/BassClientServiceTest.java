@@ -9729,8 +9729,8 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
-    public void testAddSourceByBroadcastName_emptyName() {
-        mBassClientService.addSourceByBroadcastName(mCurrentDevice, "", null);
+    public void testAddSourceByUri_emptyName() {
+        mBassClientService.addSourceByUri(mCurrentDevice, "", null);
         // Since the name is empty, it should return early and not add to the pending list
         assertThat(mBassClientService.mPendingNfcJoiningDevices).isEmpty();
     }
@@ -9819,20 +9819,20 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
-    public void testAddSourceByBroadcastName_ProcessAndAddSource() {
+    public void testAddSourceByUri_ProcessAndAddSource() {
         prepareConnectedDeviceGroup();
 
         byte[] broadcastCode = new byte[] {1, 2, 3, 4};
         String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
 
-        // 1. addSourceByBroadcastName triggers the initial background scan and queues the source
-        mBassClientService.addSourceByBroadcastName(mCurrentDevice, broadcastName, broadcastCode);
+        // 1. addSourceByUri triggers the initial background scan and queues the source
+        mBassClientService.addSourceByUri(mCurrentDevice, broadcastName, broadcastCode);
 
         // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
 
-        // 3. PA report triggers updateMetadata & processPendingAddSourceByName -> ADD_BCAST_SOURCE
+        // 3. PA report triggers updateMetadata & processPendingAddSourceByUri -> ADD_BCAST_SOURCE
         onPeriodicAdvertisingReport();
         mLooper.dispatchAll();
 
@@ -9859,7 +9859,7 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_AURACAST_CREDENTIAL_EXTENSION)
-    public void testAddSourceByBroadcastName_MultiplePendingDifferentGroups() {
+    public void testAddSourceByUri_MultiplePendingDifferentGroups() {
         prepareConnectedDeviceGroup(); // Sets up mCurrentDevice and mCurrentDevice1 in Group 1
 
         // Setup a third device in a different CSIP group
@@ -9886,15 +9886,15 @@ public class BassClientServiceTest {
         byte[] broadcastCode2 = new byte[] {5, 6, 7, 8};
         String broadcastName = "Test"; // "Test" is hardcoded in getScanRecord()
 
-        // 1. Queue addSourceByBroadcastName for devices across two different groups
-        mBassClientService.addSourceByBroadcastName(mCurrentDevice, broadcastName, broadcastCode1);
-        mBassClientService.addSourceByBroadcastName(device3, broadcastName, broadcastCode2);
+        // 1. Queue addSourceByUri for devices across two different groups
+        mBassClientService.addSourceByUri(mCurrentDevice, broadcastName, broadcastCode1);
+        mBassClientService.addSourceByUri(device3, broadcastName, broadcastCode2);
 
         // 2. Scan result matches the broadcast name and updates the broadcast ID in pending list.
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
 
-        // 3. PA report triggers processPendingAddSourceByName
+        // 3. PA report triggers processPendingAddSourceByUri
         onPeriodicAdvertisingReport();
         mLooper.dispatchAll();
 
@@ -9930,7 +9930,7 @@ public class BassClientServiceTest {
         prepareConnectedDeviceGroup();
 
         mBassClientService.mPendingNfcJoiningDevices.add(mCurrentDevice);
-        mBassClientService.addSourceByBroadcastName(mCurrentDevice, "Test", null);
+        mBassClientService.addSourceByUri(mCurrentDevice, "Test", null);
 
         assertThat(mBassClientService.mPendingNfcJoiningDevices).contains(mCurrentDevice);
 

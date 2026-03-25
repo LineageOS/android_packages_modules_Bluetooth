@@ -44,18 +44,18 @@ object AuracastUtils {
      * Parses the broadcast metadata string to extract the Broadcast Name (BN) and Broadcast Code
      * (BC).
      *
-     * @param metadataStr The raw or stripped metadata string from the NFC NDEF record.
+     * @param uriString The raw or stripped URI string
      * @return A [BroadcastStreamInfo] object containing the parsed name and code, or null if the
      *   name is missing.
      */
     @JvmStatic
-    fun parseBroadcastNameAndCode(metadataStr: String): BroadcastStreamInfo? {
+    fun parseBroadcastURI(uriString: String): BroadcastStreamInfo? {
         var bName: String? = null
         var bCode: ByteArray? = null
 
         // Safely strip the scheme and suffix if they are present in the string
         val strippedString =
-            metadataStr.removePrefix(SCHEME_BT_BROADCAST_METADATA).removeSuffix(SUFFIX_QR_CODE)
+            uriString.removePrefix(SCHEME_BT_BROADCAST_METADATA).removeSuffix(SUFFIX_QR_CODE)
 
         val parts = strippedString.split(DELIMITER_ELEMENT)
         for (part in parts) {
