@@ -196,7 +196,6 @@ class MigrationFromRoomDatabaseTest {
 
         // Verify Connection Counter and Active Devices
         assertThat(deviceProto.connectionCounter).isEqualTo(123L)
-        assertThat(migratedStorage.currentConnectionNumber).isEqualTo(123L)
         assertThat(migratedStorage.activeA2DpDevicesList).containsExactly(device.address)
         assertThat(migratedStorage.activeHfpDevicesList).containsExactly(device.address)
     }
@@ -228,8 +227,5 @@ class MigrationFromRoomDatabaseTest {
         assertThat(migratedStorage.devicesMap).hasSize(1)
         assertThat(migratedStorage.devicesMap).containsKey(device.address)
         assertThat(migratedStorage.devicesMap).doesNotContainKey("LocalStorage")
-
-        // Also assert that the connection number is from the regular device, not local storage
-        assertThat(migratedStorage.currentConnectionNumber).isEqualTo(123L)
     }
 }

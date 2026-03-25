@@ -161,7 +161,6 @@ class MigrationFromRoomDatabase(private val adapterService: AdapterService) :
             builder.putDevices(metadata.address, deviceBuilder.build())
         }
 
-        builder.currentConnectionNumber = maxConnectionNumber
         builder.addAllActiveA2DpDevices(activeA2dpDevices)
         builder.addAllActiveHfpDevices(activeHfpDevices)
 

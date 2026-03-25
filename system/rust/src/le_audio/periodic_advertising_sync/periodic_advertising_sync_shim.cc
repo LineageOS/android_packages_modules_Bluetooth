@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "periodic_sync/periodic_sync_shim.h"
+#include "periodic_advertising_sync/periodic_advertising_sync_shim.h"
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
@@ -27,13 +27,13 @@
 
 #include "hardware/ble_scanner.h"
 #include "main/shim/le_scanning_manager.h"
-#include "periodic_sync/ffi.rs.h"
+#include "periodic_advertising_sync/ffi.rs.h"
 
 namespace bluetooth::shim {
 namespace {
 
 using ::bluetooth::Uuid;
-using ::bluetooth::shim::ffi::PeriodicSyncCallbacks;
+using ::bluetooth::shim::ffi::PeriodicAdvertisingSyncCallbacks;
 using ::ffi::Address;
 
 namespace shim_ffi = ::bluetooth::shim::ffi;
@@ -73,19 +73,19 @@ void BleScannerInterfaceShim::StopSync(uint16_t handle) {
   ble_scanner_interface_->StopSync(handle);
 }
 
-void BleScannerInterfaceShim::RegisterCallbacksNative(rust::Box<PeriodicSyncCallbacks> cb,
-                                                      uint8_t client_id) {
+void BleScannerInterfaceShim::RegisterCallbacksNative(
+        rust::Box<PeriodicAdvertisingSyncCallbacks> callback, uint8_t client_id) {
   if (!ble_scanner_interface_) {
     log::warn("ble_scanner_interface_ is null.");
     return;
   }
 
-  callback_shim_ = std::make_unique<ScanningCallbackShim>(std::move(cb));
+  callback_shim_ = std::make_unique<ScanningCallbackShim>(std::move(callback));
   ble_scanner_interface_->RegisterCallbacksNative(callback_shim_.get(), client_id);
 }
 
-ScanningCallbackShim::ScanningCallbackShim(rust::Box<PeriodicSyncCallbacks> cb)
-    : callbacks_(std::move(cb)) {}
+ScanningCallbackShim::ScanningCallbackShim(rust::Box<PeriodicAdvertisingSyncCallbacks> callback)
+    : callbacks_(std::move(callback)) {}
 
 void ScanningCallbackShim::OnScannerRegistered(const Uuid, uint8_t, uint8_t) {
   // Ignored: Not used by the periodic sync manager.
@@ -121,9 +121,9 @@ void ScanningCallbackShim::OnPeriodicSyncStarted(int reg_id, uint8_t status, uin
                                                  uint8_t advertiser_addr_type,
                                                  RawAddress advertiser_addr, uint8_t advertiser_phy,
                                                  uint16_t periodic_advertising_interval) {
-  callbacks_->OnPeriodicSyncStarted(reg_id, status, sync_handle, advertising_sid,
-                                    advertiser_addr_type, FromRawAddress(advertiser_addr),
-                                    advertiser_phy, periodic_advertising_interval);
+  callbacks_->OnPeriodicAdvertisingSyncStarted(
+          reg_id, status, sync_handle, advertising_sid, advertiser_addr_type,
+          FromRawAddress(advertiser_addr), advertiser_phy, periodic_advertising_interval);
 }
 
 void ScanningCallbackShim::OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power, int8_t rssi,
@@ -133,7 +133,7 @@ void ScanningCallbackShim::OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_
 }
 
 void ScanningCallbackShim::OnPeriodicSyncLost(uint16_t sync_handle) {
-  callbacks_->OnPeriodicSyncLost(sync_handle);
+  callbacks_->OnPeriodicAdvertisingSyncLost(sync_handle);
 }
 
 void ScanningCallbackShim::OnBigInfoReport(uint16_t sync_handle, bool encryption) {

@@ -87,6 +87,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -194,14 +195,16 @@ public class BassClientService extends ConnectableProfile {
     private final HandlerThread mCallbackHandlerThread;
     private final Callbacks mCallbacks;
 
-    @VisibleForTesting final Set<BluetoothDevice> mPendingNfcJoiningDevices = new HashSet<>();
+    @VisibleForTesting
+    final Set<BluetoothDevice> mPendingNfcJoiningDevices = ConcurrentHashMap.newKeySet();
 
     private DialingOutTimeoutEvent mDialingOutTimeoutEvent = null;
     private final Map<Integer, ReactivateGroupMonitor> mReactivateGroupMonitors =
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Boolean> mEncryptionStates = new ConcurrentHashMap<>();
 
-    private record AddSourceByNameData(BluetoothDevice sink, String name, List<Byte> code) {}
+    private record AddSourceByNameData(
+            BluetoothDevice sink, String name, List<Byte> code, int broadcastId) {}
 
     @VisibleForTesting
     final BroadcastReceiver mEncryptionStateReceiver =
@@ -448,33 +451,24 @@ public class BassClientService extends ConnectableProfile {
                 return;
             }
 
-            BluetoothDevice targetDeviceFound = null;
-            BluetoothLeBroadcastMetadata basicMetadata = null;
             String broadcastName = BassUtils.getBroadcastName(result.getScanRecord());
             if (broadcastName != null) {
                 synchronized (mPendingSourcesToAddByName) {
-                    Iterator<AddSourceByNameData> iterator = mPendingSourcesToAddByName.iterator();
+                    ListIterator<AddSourceByNameData> iterator =
+                            mPendingSourcesToAddByName.listIterator();
                     while (iterator.hasNext()) {
                         AddSourceByNameData pending = iterator.next();
-                        if (pending.name().equals(broadcastName)) {
+                        if (pending.broadcastId() == LeAudioConstants.INVALID_BROADCAST_ID
+                                && pending.name().equals(broadcastName)) {
                             Log.i(
                                     TAG,
                                     "onScanResult: Matched pending name search: " + broadcastName);
-
-                            byte[] codeArray = null;
-                            if (pending.code() != null) {
-                                codeArray = new byte[pending.code().size()];
-                                for (int i = 0; i < pending.code().size(); i++) {
-                                    codeArray[i] = pending.code().get(i);
-                                }
-                            }
-                            targetDeviceFound = pending.sink();
-                            // Build the basic metadata from the scan
-                            basicMetadata =
-                                    buildBasicMetadataFromScanResult(
-                                            result, pending.name(), codeArray);
-                            iterator.remove();
-                            break;
+                            iterator.set(
+                                    new AddSourceByNameData(
+                                            pending.sink(),
+                                            pending.name(),
+                                            pending.code(),
+                                            broadcastId));
                         }
                     }
                 }
@@ -491,7 +485,8 @@ public class BassClientService extends ConnectableProfile {
                     if (!mIsForegroundScan
                             && (!mIsBackgroundScan
                                     || (!isWaitingForMetadata(broadcastId)
-                                            && !isOorMonitoringPauseReason(broadcastId)))) {
+                                            && !isOorMonitoringPauseReason(broadcastId)
+                                            && !isPendingSourceToAddByName(broadcastId)))) {
                         return;
                     }
                 }
@@ -510,10 +505,6 @@ public class BassClientService extends ConnectableProfile {
                         addSelectSourceRequest(broadcastId, /* hasPriority */ true);
                     }
                 }
-
-                if (targetDeviceFound != null && basicMetadata != null) {
-                    addSource(targetDeviceFound, basicMetadata, true);
-                }
             }
         }
 
@@ -522,7 +513,8 @@ public class BassClientService extends ConnectableProfile {
                     || (Flags.leaudioBroadcastAlwaysUseBackgroundScanner()
                             && isWaitingForMetadata(broadcastId))
                     || isWaitingForPast(broadcastId)
-                    || isAnnouncementMonitored(broadcastId);
+                    || isAnnouncementMonitored(broadcastId)
+                    || isPendingSourceToAddByName(broadcastId);
         }
 
         @Override
@@ -1071,6 +1063,10 @@ public class BassClientService extends ConnectableProfile {
         mPausedBroadcastSinks.clear();
         mSinksToRestoreFromPeer.clear();
 
+        synchronized (mPendingSourcesToAddByName) {
+            mPendingSourcesToAddByName.clear();
+        }
+        mPendingNfcJoiningDevices.clear();
         mAudioActiveStates.clear();
         mIsUnicastAutoResuming = false;
     }
@@ -2257,6 +2253,10 @@ public class BassClientService extends ConnectableProfile {
                     stopSearchingForSources(/* foreground= */ false);
                 }
             }
+            synchronized (mPendingSourcesToAddByName) {
+                mPendingSourcesToAddByName.removeIf(pending -> pending.sink().equals(device));
+            }
+            mPendingNfcJoiningDevices.remove(device);
             synchronized (mPendingSourcesToAdd) {
                 mPendingSourcesToAdd.removeIf(
                         pendingSourcesToAdd -> pendingSourcesToAdd.sink.equals(device));
@@ -2615,6 +2615,9 @@ public class BassClientService extends ConnectableProfile {
                 // Sync to the broadcasts waiting for adding source (could be by resume too).
                 broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSource());
 
+                // Sync to the broadcasts waiting for adding source by name
+                broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSourceByName());
+
                 // Sync to the paused broadcasts
                 broadcastsToSync.addAll(mPausedBroadcastIds.keySet());
 
@@ -2810,6 +2813,9 @@ public class BassClientService extends ConnectableProfile {
 
                 // Keep broadcasts waiting for adding source (could be by resume too)
                 broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSource());
+
+                // Keep broadcasts waiting for adding source by name
+                broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSourceByName());
 
                 // Keep broadcast monitored or during resuming
                 broadcastsToKeepSynced.addAll(getMonitoredOrResumingBroadcastIds());
@@ -3256,11 +3262,14 @@ public class BassClientService extends ConnectableProfile {
                 Log.d(TAG, "No public broadcast data found, wait for BIG");
                 return;
             }
-            if (!result.isNotified() || !mSinksWaitingForMetadata.isEmpty()) {
+            if (!result.isNotified()
+                    || !mSinksWaitingForMetadata.isEmpty()
+                    || !mPendingSourcesToAddByName.isEmpty()) {
                 BluetoothLeBroadcastMetadata metaData =
                         getBroadcastMetadataFromBaseData(
                                 baseData, srcDevice, syncHandle, pbData.isEncrypted());
                 updateMetadata(metaData);
+                processPendingAddSourceByName(metaData);
                 if (!result.isNotified()) {
                     result.setNotified(true);
                     Log.d(TAG, "Notify broadcast source found");
@@ -3326,11 +3335,14 @@ public class BassClientService extends ConnectableProfile {
                 Log.d(TAG, "No BaseData found");
                 return;
             }
-            if (!result.isNotified() || !mSinksWaitingForMetadata.isEmpty()) {
+            if (!result.isNotified()
+                    || !mSinksWaitingForMetadata.isEmpty()
+                    || !mPendingSourcesToAddByName.isEmpty()) {
                 BluetoothLeBroadcastMetadata metaData =
                         getBroadcastMetadataFromBaseData(
                                 baseData, srcDevice, syncHandle, encrypted);
                 updateMetadata(metaData);
+                processPendingAddSourceByName(metaData);
                 if (!result.isNotified()) {
                     result.setNotified(true);
                     Log.d(TAG, "Notify broadcast source found");
@@ -4321,57 +4333,53 @@ public class BassClientService extends ConnectableProfile {
         }
 
         synchronized (mPendingSourcesToAddByName) {
-            mPendingSourcesToAddByName.add(new AddSourceByNameData(sink, broadcastName, codeList));
+            mPendingSourcesToAddByName.add(
+                    new AddSourceByNameData(
+                            sink, broadcastName, codeList, LeAudioConstants.INVALID_BROADCAST_ID));
         }
 
-        synchronized (mSearchScanCallbackLock) {
-            Log.i(TAG, "addSourceByBroadcastName: Starting scanner.");
-            startSearchingForSources(Collections.emptyList(), /* foreground= */ true);
+        startSearchingForSources(Collections.emptyList(), /* foreground= */ false);
+    }
+
+    private void processPendingAddSourceByName(BluetoothLeBroadcastMetadata metadata) {
+        synchronized (mPendingSourcesToAddByName) {
+            Iterator<AddSourceByNameData> iterator = mPendingSourcesToAddByName.iterator();
+            while (iterator.hasNext()) {
+                AddSourceByNameData pending = iterator.next();
+                if (pending.broadcastId() == metadata.getBroadcastId()) {
+                    BluetoothLeBroadcastMetadata finalMetadata = metadata;
+
+                    if (metadata.isEncrypted()
+                            && pending.code() != null
+                            && !pending.code().isEmpty()) {
+                        byte[] codeArray = new byte[pending.code().size()];
+                        for (int i = 0; i < pending.code().size(); i++) {
+                            codeArray[i] = pending.code().get(i);
+                        }
+
+                        finalMetadata =
+                                new BluetoothLeBroadcastMetadata.Builder(metadata)
+                                        .setBroadcastCode(codeArray)
+                                        .build();
+                    }
+
+                    Log.d(TAG, "processPendingAddSourceByName: Adding source = " + pending.name());
+                    addSource(pending.sink(), finalMetadata, true);
+                    iterator.remove();
+                }
+            }
         }
     }
 
-    private static BluetoothLeBroadcastMetadata buildBasicMetadataFromScanResult(
-            ScanResult scanResult, String name, byte[] code) {
-        BluetoothDevice device = scanResult.getDevice();
-        int broadcastId = LeAudioUtils.getBroadcastId(scanResult.getScanRecord());
-
-        BluetoothLeBroadcastMetadata.Builder builder =
-                new BluetoothLeBroadcastMetadata.Builder()
-                        .setBroadcastName(name)
-                        .setBroadcastId(broadcastId)
-                        .setSourceDevice(device, device.getAddressType())
-                        .setSourceAdvertisingSid(scanResult.getAdvertisingSid())
-                        .setPaSyncInterval(scanResult.getPeriodicAdvertisingInterval())
-                        .setPresentationDelayMicros(0xFFFF);
-
-        if (code != null && code.length > 0) {
-            builder.setEncrypted(true);
-            builder.setBroadcastCode(code);
-        } else {
-            builder.setEncrypted(false);
+    private boolean isPendingSourceToAddByName(int broadcastId) {
+        synchronized (mPendingSourcesToAddByName) {
+            for (AddSourceByNameData data : mPendingSourcesToAddByName) {
+                if (data.broadcastId() == broadcastId) {
+                    return true;
+                }
+            }
+            return false;
         }
-
-        // Create a Dummy Channel (Index 1 is standard for the first channel)
-        BluetoothLeBroadcastChannel dummyChannel =
-                new BluetoothLeBroadcastChannel.Builder()
-                        .setChannelIndex(1)
-                        .setCodecMetadata(new BluetoothLeAudioCodecConfigMetadata.Builder().build())
-                        .build();
-
-        // Create a Dummy Subgroup and attach the Dummy Channel
-        BluetoothLeBroadcastSubgroup dummySubgroup =
-                new BluetoothLeBroadcastSubgroup.Builder()
-                        .setCodecId(0x06)
-                        .setCodecSpecificConfig(
-                                new BluetoothLeAudioCodecConfigMetadata.Builder().build())
-                        .setContentMetadata(
-                                BluetoothLeAudioContentMetadata.fromRawBytes(new byte[0]))
-                        .addChannel(dummyChannel)
-                        .build();
-
-        // Add the Dummy Subgroup to the main Metadata Builder
-        builder.addSubgroup(dummySubgroup);
-        return builder.build();
     }
 
     private static boolean isAnyChannelSelected(BluetoothLeBroadcastMetadata metadata) {
@@ -5658,6 +5666,15 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
+    private Set<Integer> getBroadcastIdsWaitingForAddSourceByName() {
+        synchronized (mPendingSourcesToAddByName) {
+            return mPendingSourcesToAddByName.stream()
+                    .map(AddSourceByNameData::broadcastId)
+                    .filter(id -> id != LeAudioConstants.INVALID_BROADCAST_ID)
+                    .collect(Collectors.toCollection(HashSet::new));
+        }
+    }
+
     private Set<Integer> getBroadcastIdsOfPendingSourceOperation() {
         HashSet<Integer> pendingBroadcastIds = new HashSet<>();
         synchronized (mStateMachines) {
@@ -5699,6 +5716,9 @@ public class BassClientService extends ConnectableProfile {
         // Sync to the broadcasts waiting for adding source (could be by resume too).
         broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSource());
 
+        // Sync to the broadcasts waiting for adding source by name
+        broadcastsToSync.addAll(getBroadcastIdsWaitingForAddSourceByName());
+
         // Sync to the broadcasts with pending source operation to guard switch
         // procedure
         broadcastsToSync.addAll(getBroadcastIdsOfPendingSourceOperation());
@@ -5726,6 +5746,9 @@ public class BassClientService extends ConnectableProfile {
 
         // Keep broadcasts waiting for adding source (could be by resume too)
         broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSource());
+
+        // Keep broadcasts waiting for adding source by name
+        broadcastsToKeepSynced.addAll(getBroadcastIdsWaitingForAddSourceByName());
 
         // Keep broadcast with pending source operation to guard switch procedure
         broadcastsToKeepSynced.addAll(getBroadcastIdsOfPendingSourceOperation());

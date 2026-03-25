@@ -148,3 +148,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_setconfig_collision_resolution"
+    namespace: "bluetooth"
+    description: "Resolve collision during A2DP setconfig process"
+    bug: "495377494"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_increase_accept_signalling_timeout"
+    namespace: "bluetooth"
+    description: "Increase BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS from 2s to 5s"
+    bug: "495377710"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

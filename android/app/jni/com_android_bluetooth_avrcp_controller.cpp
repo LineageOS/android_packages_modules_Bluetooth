@@ -73,9 +73,10 @@ static void btavrcp_groupnavigation_response_callback(int id, int pressed) {
   log::verbose("id: {}, pressed: {} --- Not implemented", id, pressed);
 }
 
-static void btavrcp_connection_state_callback(bool rc_connect, bool br_connect,
-                                              const RawAddress& bd_addr) {
-  log::info("conn state: rc: {} br: {}", rc_connect, br_connect);
+static void btavrcp_connection_state_callback(const RawAddress& bd_addr,
+                                              btrc_connection_state_t rc_state,
+                                              btrc_connection_state_t br_state) {
+  log::info("conn state: rc: {} br: {}", rc_state, br_state);
   std::shared_lock<std::shared_timed_mutex> lock(sCallbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) {
@@ -87,8 +88,9 @@ static void btavrcp_connection_state_callback(bool rc_connect, bool br_connect,
   }
 
   ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv, bd_addr);
-  sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onConnectionStateChanged, (jboolean)rc_connect,
-                               (jboolean)br_connect, addr.get());
+  sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onConnectionStateChanged,
+                               (jboolean)(rc_state == BTRC_CONNECTION_STATE_CONNECTED),
+                               (jboolean)(br_state == BTRC_CONNECTION_STATE_CONNECTED), addr.get());
 }
 
 static void btavrcp_get_rcfeatures_callback(const RawAddress& bd_addr, int features) {

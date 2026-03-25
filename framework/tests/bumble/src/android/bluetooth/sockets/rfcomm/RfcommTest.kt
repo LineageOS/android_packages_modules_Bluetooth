@@ -99,9 +99,9 @@ class RfcommTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
+    private lateinit var inOrder: InOrder
     private lateinit var bumbleDevice: BluetoothDevice
     private lateinit var host: Host
-    private lateinit var inOrder: InOrder
 
     private var connectionCounter = 1
 
@@ -124,7 +124,7 @@ class RfcommTest {
     fun setUp() {
         Log.d(TAG, "start setUp")
         inOrder = inOrder(receiver)
-
+        bumbleDevice = bumble.remoteDevice
         val filter =
             IntentFilter().apply {
                 addAction(ACTION_PAIRING_REQUEST)
@@ -132,8 +132,6 @@ class RfcommTest {
             }
         context.registerReceiver(receiver, filter)
         receiver.setupIntentLogger(TAG)
-
-        bumbleDevice = bumble.remoteDevice
         host = Host(context)
 
         val bluetoothA2dp = connectToProfile(BluetoothProfile.A2DP) as BluetoothA2dp

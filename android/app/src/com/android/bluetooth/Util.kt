@@ -676,7 +676,11 @@ object Util {
         source: AttributionSource,
         tagOrMessage: String,
         method: String? = null,
+        allowPccBypass: Boolean = false,
     ): Boolean {
+        if (isPccUid() && !allowPccBypass) {
+            throw SecurityException("PCC UIDs are blocked by default from Bluetooth APIs.")
+        }
         val message = if (method == null) tagOrMessage else "$tagOrMessage.$method()"
         return enforcePermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message)
     }
@@ -705,10 +709,19 @@ object Util {
      *
      * Should be used in situations where the app op should not be noted.
      */
+    @JvmOverloads
     @JvmStatic
     @RequiresPermission(BLUETOOTH_CONNECT)
-    fun enforceConnectPermissionForPreflight(context: Context, source: AttributionSource) =
-        enforcePermissionForPreflight(context, BLUETOOTH_CONNECT, source)
+    fun enforceConnectPermissionForPreflight(
+        context: Context,
+        source: AttributionSource,
+        allowPccBypass: Boolean = false,
+    ): Boolean {
+        if (isPccUid() && !allowPccBypass) {
+            throw SecurityException("PCC UIDs are blocked by default from Bluetooth APIs.")
+        }
+        return enforcePermissionForPreflight(context, BLUETOOTH_CONNECT, source)
+    }
 
     @PermissionMethod
     fun enforcePermissionForDataDelivery(
@@ -765,6 +778,18 @@ object Util {
         }
     }
 
+    /** Checks if the calling UID is a Private Compute Core (PCC) UID. */
+    @JvmStatic
+    fun isPccUid(): Boolean {
+        if (!android.app.privatecompute.flags.Flags.enablePccFrameworkSupport()) {
+            return false
+        }
+        if (!SdkLevel.isAtLeastC()) {
+            return false
+        }
+        return Process.isPrivateComputeCoreUid(Binder.getCallingUid())
+    }
+
     /**
      * Checks if the calling UID is a Private Compute Core (PCC) UID.
      *
@@ -776,13 +801,7 @@ object Util {
      */
     @JvmStatic
     fun enforceCallingUidIsNotPcc(methodName: String) {
-        if (!android.app.privatecompute.flags.Flags.enablePccFrameworkSupport()) {
-            return
-        }
-        if (!SdkLevel.isAtLeastC()) {
-            return
-        }
-        if (Process.isPrivateComputeCoreUid(Binder.getCallingUid())) {
+        if (isPccUid()) {
             throw SecurityException(
                 "PCC UIDs are not allowed to perform Bluetooth egress operation: $methodName"
             )

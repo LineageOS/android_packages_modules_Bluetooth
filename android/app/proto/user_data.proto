@@ -15,7 +15,7 @@
  */
 
 //
-// This file defines the data structure for user-specific Bluetooth data storage.
+// This file defines the data structure for user-specific Bluetooth storage.
 // It uses Protocol Buffers (proto3) to ensure data consistency and backward
 // compatibility. The serialized data is stored on disk using Jetpack DataStore.
 //
@@ -57,12 +57,11 @@
 syntax = "proto3";
 
 option java_package = "com.android.bluetooth.storage";
-
 option java_multiple_files = true;
 
 message UserStorage {
   map<string /* address */, Device> devices = 1;
-  uint64 current_connection_number = 2;
+  reserved 2;  // previously current_connection_number
   repeated string active_a2dp_devices = 3;
   repeated string active_hfp_devices = 4;
 }

@@ -22,7 +22,7 @@ filegroup {
     name: "libbluetooth_le_audio_rs_ffi",
     srcs: [
         "iso_manager/ffi.rs",
-        "periodic_sync/ffi.rs",
+        "periodic_advertising_sync/ffi.rs",
     ],
 }
 
@@ -52,7 +52,7 @@ cc_library_static {
         "-Wno-missing-prototypes",
     ],
     srcs: [
-        "periodic_sync/periodic_sync_shim.cc",
+        "periodic_advertising_sync/periodic_advertising_sync_shim.cc",
     ],
     static_libs: [
         "libbase",

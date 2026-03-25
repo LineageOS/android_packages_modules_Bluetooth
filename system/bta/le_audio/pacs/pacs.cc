@@ -180,7 +180,75 @@ struct Pacs::service_impl {
 
     log::info("Adding LE Audio Service {} service to GATT database.", gatt_db.begin()->uuid);
     auto status = BTA_GATTS_AddService(server_if_, &gatt_db);
-    OnGattServiceAdded(status, server_if_, std::move(gatt_db));
+    log::info("GATT Service Add status: {}, server_if: {}", gatt_status_text(status), server_if_);
+
+    log::assert_that(status == GATT_SERVICE_STARTED, "Unable to add GATT service");
+    log::assert_that(gatt_db.size() != 0, "Service is empty");
+    log::assert_that(gatt_db.begin()->uuid == uuid::kPublishedAudioCapabilityServiceUuid,
+                     "Service not mine!");
+    log::assert_that(pending_gatt_svc_descriptor_.has_value(), "Empty service descriptor!");
+
+    GattCharacteristicMetadata* last_char_metadata = nullptr;
+
+    for (const auto& element : gatt_db) {
+      if (element.type == BTGATT_DB_CHARACTERISTIC) {
+        log::info("Characteristic added: UUID {}, handle:0x{:04x}", element.uuid.ToString(),
+                  element.attribute_handle);
+        char_metadata_by_value_handle_[element.attribute_handle] = {.uuid = element.uuid.As16Bit()};
+        // Keep the pointer to the last discovered characteristic metadata to add CCCD handle info
+        last_char_metadata = &char_metadata_by_value_handle_.at(element.attribute_handle);
+
+        // Store the PAC set for this particular PAC characteristic, there is an equal
+        // number of both since each PAC set maps to one PAC characteristic.
+        if (element.uuid == uuid::kSinkPublishedAudioCapabilityCharacteristicUuid) {
+          global_char_values_.pac_sets_by_char_handle.sink[element.attribute_handle] =
+                  pending_gatt_svc_descriptor_->pac_sets.sink.at(
+                          global_char_values_.pac_sets_by_char_handle.sink.size());
+        } else if (element.uuid == uuid::kSourcePublishedAudioCapabilityCharacteristicUuid) {
+          global_char_values_.pac_sets_by_char_handle.source[element.attribute_handle] =
+                  pending_gatt_svc_descriptor_->pac_sets.source.at(
+                          global_char_values_.pac_sets_by_char_handle.source.size());
+        } else if (element.uuid == uuid::kAvailableAudioContextsCharacteristicUuid) {
+          // Note: The value will be provided dynamically for each remote device -
+          //       we need to keep the ATT handle for that.
+          available_audio_context_handle_ = element.attribute_handle;
+        } else if (element.uuid == uuid::kSupportedAudioContextsCharacteristicUuid) {
+          global_char_values_.supported_audio_contexts =
+                  pending_gatt_svc_descriptor_->supported_audio_contexts;
+        } else if (element.uuid == uuid::kSinkAudioLocationCharacteristicUuid) {
+          audio_channel_allocation_handle_.sink = element.attribute_handle;
+          global_char_values_.audio_locations.sink =
+                  pending_gatt_svc_descriptor_->audio_locations.sink;
+        } else if (element.uuid == uuid::kSourceAudioLocationCharacteristicUuid) {
+          audio_channel_allocation_handle_.source = element.attribute_handle;
+          global_char_values_.audio_locations.source =
+                  pending_gatt_svc_descriptor_->audio_locations.source;
+        } else {
+          log::assert_that(false, "Unknown characteristic uuid: {} found", element.uuid.ToString());
+        }
+
+      } else if (element.type == BTGATT_DB_DESCRIPTOR) {
+        log::assert_that(element.uuid == Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG),
+                         "Unknown descriptor uuid: {} found at handle: 0x{:04x}",
+                         element.uuid.ToString(), element.attribute_handle);
+
+        // Match the descriptor with the previous characteristic declaration
+        log::assert_that(last_char_metadata, "No known characteristic for the added descriptor");
+        last_char_metadata->cccd_handle = element.attribute_handle;
+
+      } else if (element.type == BTGATT_DB_PRIMARY_SERVICE) {
+        log::info("Service handle:0x{:04x}, UUID: {}", element.attribute_handle,
+                  element.uuid.ToString());
+        if (element.uuid == uuid::kPublishedAudioCapabilityServiceUuid) {
+          service_handle_ = element.attribute_handle;
+        }
+      }
+    }
+
+    // We are done with service creation - any data from the descriptor if needed, were already
+    // repacked to service data containers for the more optimal access.
+    pending_gatt_svc_descriptor_.reset();
+    callbacks_->OnPacsRegistered();
   }
 
   static void OnGattConnStatic(tGATT_IF /*server_if*/, const RawAddress& remote_bda,
@@ -350,79 +418,6 @@ struct Pacs::service_impl {
     };
     service_db.insert(service_db.end(), contexts_db_section.begin(), contexts_db_section.end());
     return service_db;
-  }
-
-  void OnGattServiceAdded(tGATT_STATUS status, int server_if,
-                          std::vector<btgatt_db_element_t> service_elements) {
-    log::info("GATT Service Add status: {}, server_if: {}", gatt_status_text(status), server_if);
-
-    log::assert_that(status == GATT_SERVICE_STARTED, "Unable to add GATT service");
-    log::assert_that(service_elements.size() != 0, "Service is empty");
-    log::assert_that(service_elements.begin()->uuid == uuid::kPublishedAudioCapabilityServiceUuid,
-                     "Service not mine!");
-    log::assert_that(pending_gatt_svc_descriptor_.has_value(), "Empty service descriptor!");
-
-    GattCharacteristicMetadata* last_char_metadata = nullptr;
-
-    for (const auto& element : service_elements) {
-      if (element.type == BTGATT_DB_CHARACTERISTIC) {
-        log::info("Characteristic added: UUID {}, handle:0x{:04x}", element.uuid.ToString(),
-                  element.attribute_handle);
-        char_metadata_by_value_handle_[element.attribute_handle] = {.uuid = element.uuid.As16Bit()};
-        // Keep the pointer to the last discovered characteristic metadata to add CCCD handle info
-        last_char_metadata = &char_metadata_by_value_handle_.at(element.attribute_handle);
-
-        // Store the PAC set for this particular PAC characteristic, there is an equal
-        // number of both since each PAC set maps to one PAC characteristic.
-        if (element.uuid == uuid::kSinkPublishedAudioCapabilityCharacteristicUuid) {
-          global_char_values_.pac_sets_by_char_handle.sink[element.attribute_handle] =
-                  pending_gatt_svc_descriptor_->pac_sets.sink.at(
-                          global_char_values_.pac_sets_by_char_handle.sink.size());
-        } else if (element.uuid == uuid::kSourcePublishedAudioCapabilityCharacteristicUuid) {
-          global_char_values_.pac_sets_by_char_handle.source[element.attribute_handle] =
-                  pending_gatt_svc_descriptor_->pac_sets.source.at(
-                          global_char_values_.pac_sets_by_char_handle.source.size());
-        } else if (element.uuid == uuid::kAvailableAudioContextsCharacteristicUuid) {
-          // Note: The value will be provided dynamically for each remote device -
-          //       we need to keep the ATT handle for that.
-          available_audio_context_handle_ = element.attribute_handle;
-        } else if (element.uuid == uuid::kSupportedAudioContextsCharacteristicUuid) {
-          global_char_values_.supported_audio_contexts =
-                  pending_gatt_svc_descriptor_->supported_audio_contexts;
-        } else if (element.uuid == uuid::kSinkAudioLocationCharacteristicUuid) {
-          audio_channel_allocation_handle_.sink = element.attribute_handle;
-          global_char_values_.audio_locations.sink =
-                  pending_gatt_svc_descriptor_->audio_locations.sink;
-        } else if (element.uuid == uuid::kSourceAudioLocationCharacteristicUuid) {
-          audio_channel_allocation_handle_.source = element.attribute_handle;
-          global_char_values_.audio_locations.source =
-                  pending_gatt_svc_descriptor_->audio_locations.source;
-        } else {
-          log::assert_that(false, "Unknown characteristic uuid: {} found", element.uuid.ToString());
-        }
-
-      } else if (element.type == BTGATT_DB_DESCRIPTOR) {
-        log::assert_that(element.uuid == Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG),
-                         "Unknown descriptor uuid: {} found at handle: 0x{:04x}",
-                         element.uuid.ToString(), element.attribute_handle);
-
-        // Match the descriptor with the previous characteristic declaration
-        log::assert_that(last_char_metadata, "No known characteristic for the added descriptor");
-        last_char_metadata->cccd_handle = element.attribute_handle;
-
-      } else if (element.type == BTGATT_DB_PRIMARY_SERVICE) {
-        log::info("Service handle:0x{:04x}, UUID: {}", element.attribute_handle,
-                  element.uuid.ToString());
-        if (element.uuid == uuid::kPublishedAudioCapabilityServiceUuid) {
-          service_handle_ = element.attribute_handle;
-        }
-      }
-    }
-
-    // We are done with service creation - any data from the descriptor if needed, were already
-    // repacked to service data containers for the more optimal access.
-    pending_gatt_svc_descriptor_.reset();
-    callbacks_->OnPacsRegistered();
   }
 
   static inline GattStatus FillGattReadReqRspValue(tGATT_VALUE& dest, uint16_t att_handle,

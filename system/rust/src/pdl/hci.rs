@@ -22,4 +22,41 @@
 
 include!(concat!(env!("OUT_DIR"), "/hci_packets.rs"));
 
+impl ErrorCode {
+    /// Converts the `ErrorCode` into a `Result<T, Self>`.
+    ///
+    /// Returns `Ok(v)` if the error code is `Success`.
+    /// Otherwise, returns `Err(self)` containing the specific error code.
+    ///
+    /// # Examples
+    /// ```
+    /// let status = ErrorCode::Success;
+    /// assert_eq!(status.err_or(42), Ok(42));
+    /// ```
+    pub fn err_or<T>(self, v: T) -> Result<T, Self> {
+        if self == Self::Success {
+            Ok(v)
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Converts the `ErrorCode` into a `Result<T, Self>` using a closure for lazy evaluation.
+    ///
+    /// Returns `Ok(f())` if the error code is `Success`.
+    /// Otherwise, returns `Err(self)`.
+    ///
+    /// This is preferred over `err_or` when the value `T` is expensive to compute.
+    pub fn err_or_else<F, T>(self, f: F) -> Result<T, Self>
+    where
+        F: FnOnce() -> T,
+    {
+        if self == Self::Success {
+            Ok(f())
+        } else {
+            Err(self)
+        }
+    }
+}
+
 pub use ErrorCode as HciStatus;

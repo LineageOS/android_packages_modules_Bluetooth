@@ -164,10 +164,23 @@ struct BtmSecurityRecord {
                                       name */
   BtIoCap rmt_io_caps;             /* IO capability of the peer device */
   tBTM_AUTH_REQ rmt_auth_req;      /* the auth_req flag as in the IO caps rsp evt */
-  bool new_encryption_key_is_p256; /* Set to true when the newly generated LK
-                                   ** is generated from P-256.
-                                   ** Link encrypted with such LK can be used
-                                   ** for SM over BR/EDR. */
+
+  /* Whether BR/EDR pairing succeeded recently. Helps decide whether to perform CTKD or not */
+  enum class BrEdrScEncReason : uint8_t {
+    OTHER = 0,    /* Requested by services or apps on reconnection */
+    PAIRED = 1,   /* Requested after first time pairing */
+    REPAIRED = 2, /* Requested after repairing */
+  } bredr_sc_enc_reason;
+
+  static constexpr std::string bredr_sc_enc_reason_text(const BrEdrScEncReason& reason) {
+    switch (reason) {
+      CASE_RETURN_STRING(BrEdrScEncReason::OTHER);
+      CASE_RETURN_STRING(BrEdrScEncReason::PAIRED);
+      CASE_RETURN_STRING(BrEdrScEncReason::REPAIRED);
+      default:
+        RETURN_UNKNOWN_TYPE_STRING(BrEdrScEncReason, reason);
+    }
+  }
 
   // BREDR Link Key Info
   LinkKey link_key;                   /* Device link key */

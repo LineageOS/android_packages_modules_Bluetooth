@@ -68,7 +68,12 @@ constexpr RawAddress kDummyAddr("11:22:33:44:55:66");
 constexpr uint16_t kMaxPacketSize = 1024;
 namespace {
 
-tL2CAP_FIXED_CHNL_REG fixed_chnl_reg;
+// Set up default callback structure
+tL2CAP_FIXED_CHNL_REG fixed_chnl_reg = {
+        .pL2CA_FixedConn_Cb = [](uint16_t, const RawAddress&, bool, uint16_t, tBT_TRANSPORT) {},
+        .pL2CA_FixedData_Cb = [](uint16_t, const RawAddress&, BT_HDR*) {},
+};
+
 tL2CAP_APPL_INFO appl_info;
 BtmDevice btm_device;
 

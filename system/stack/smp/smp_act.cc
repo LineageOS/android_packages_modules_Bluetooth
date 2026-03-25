@@ -859,7 +859,8 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   /* rejecting BR pairing request over non-SC BR link */
-  if (!p_device->sec_rec.new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_PERIPHERAL) {
+  if (p_device->sec_rec.bredr_sc_enc_reason == BtmSecurityRecord::BrEdrScEncReason::OTHER &&
+      p_cb->role == HCI_ROLE_PERIPHERAL) {
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_XTRANS_DERIVE_NOT_ALLOW;
     smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
@@ -914,7 +915,7 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   p_cb->local_r_key = p_cb->peer_r_key;
 
   if (p_cb->role == HCI_ROLE_PERIPHERAL) {
-    p_device->sec_rec.new_encryption_key_is_p256 = false;
+    p_device->sec_rec.bredr_sc_enc_reason = BtmSecurityRecord::BrEdrScEncReason::OTHER;
     /* shortcut to skip Security Grant step */
     p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
   } else {
@@ -1645,9 +1646,13 @@ void smp_br_send_pair_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
  * Description      This function is called to send the pairing complete
  *                  callback and remove the connection if needed.
  ******************************************************************************/
-void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
-  if (p_cb->total_tx_unacked == 0) {
+void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+  if (p_cb->total_tx_unacked == 0 && p_data != nullptr) {
     /* process the pairing complete */
+    if (p_cb->is_pair_cancel == true) {
+      log::verbose("Canceled pairing with p_data->status: {}", smp_status_text(p_data->status));
+      p_cb->status = p_data->status;
+    }
     smp_proc_pairing_cmpl(p_cb);
   }
 }

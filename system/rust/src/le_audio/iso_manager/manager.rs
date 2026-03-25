@@ -22,6 +22,7 @@ use log::warn;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, Weak};
+use std::time::Duration;
 use tokio::sync::{broadcast, mpsc, oneshot};
 
 use crate::le_audio::iso_manager::traits::{
@@ -161,15 +162,20 @@ impl IsoRegistry {
     pub fn dispatch_cis_data(
         &mut self,
         cis_conn_handle: IsoConnectionHandle,
-        packet: IsoDataPacket,
+        time_stamp: Option<Duration>,
+        seq_nb: u16,
+        data: &[u8],
     ) {
         if let Some(state) = self.cis.get_mut(&cis_conn_handle) {
-            state.data_subscribers.retain(|sender| match sender.try_send(packet.clone()) {
-                Ok(_) => true,
-                Err(mpsc::error::TrySendError::Closed(_)) => false,
-                Err(mpsc::error::TrySendError::Full(_)) => {
-                    warn!("CIS {} data buffer full, skipping.", cis_conn_handle);
-                    true
+            state.data_subscribers.retain(|sender| {
+                let packet = IsoDataPacket { time_stamp, seq_nb, data: data.to_vec() };
+                match sender.try_send(packet) {
+                    Ok(_) => true,
+                    Err(mpsc::error::TrySendError::Closed(_)) => false,
+                    Err(mpsc::error::TrySendError::Full(_)) => {
+                        warn!("CIS {} data buffer full, skipping.", cis_conn_handle);
+                        true
+                    }
                 }
             });
         }

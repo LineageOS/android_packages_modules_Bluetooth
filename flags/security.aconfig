@@ -90,3 +90,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "btsec_check_implicit_encryption_downgrade"
+    namespace: "bluetooth"
+    description: "Prevent implicit downgrade avoiding BLUFFS mitigation after forcing legacy pairing"
+    bug: "494009564"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
