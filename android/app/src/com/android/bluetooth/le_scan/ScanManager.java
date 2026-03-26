@@ -1508,7 +1508,7 @@ public class ScanManager {
             MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
 
             if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_INVALID) {
-                Log.d(TAG, "No MSFT monitor was translated from client filter: " + filter);
+                Log.e(TAG, "No MSFT monitor was translated from client filter: " + filter);
                 continue;
             }
 

@@ -36,11 +36,39 @@ class MsftAdvMonitorTest {
 
         assertMonitorConstants(monitor, CONDITION_TYPE_PATTERNS)
         assertThat(monitor.patterns).hasLength(1)
-        val mPattern = monitor.patterns[0]
-        assertThat(mPattern.ad_type)
+        val pattern = monitor.patterns[0]
+        assertThat(pattern.ad_type)
             .isEqualTo(0x16.toByte()) // Bluetooth Core Spec Part A, Section 1
-        assertThat(mPattern.start_byte).isEqualTo(FILTER_PATTERN_START_POSITION)
-        assertThat(mPattern.pattern).isEqualTo(byteArrayOf(0x2c.toByte(), 0xfe.toByte()))
+        assertThat(pattern.start_byte).isEqualTo(FILTER_PATTERN_START_POSITION)
+        assertThat(pattern.pattern)
+            .isEqualTo(
+                byteArrayOf(
+                    0x2c.toByte(),
+                    0xfe.toByte(),
+                    0xfc.toByte(),
+                    0x12.toByte(),
+                    0x8e.toByte(),
+                )
+            )
+    }
+
+    @Test
+    fun testServiceDataWithMaskScanFilter() {
+        val mask = byteArrayOf(1, 0, 0)
+        val filter =
+            ScanFilter.Builder()
+                .setServiceData(FAST_PAIR_SERVICE_DATA_UUID, FAST_PAIR_SERVICE_DATA, mask)
+                .build()
+        val monitor = MsftAdvMonitor(filter)
+
+        assertMonitorConstants(monitor, CONDITION_TYPE_PATTERNS)
+        assertThat(monitor.patterns).hasLength(1)
+        val pattern = monitor.patterns[0]
+        assertThat(pattern.ad_type)
+            .isEqualTo(0x16.toByte()) // Bluetooth Core Spec Part A, Section 1
+        assertThat(pattern.start_byte).isEqualTo(FILTER_PATTERN_START_POSITION)
+        // Since there is a mask, the service data should not be appended, only the UUID.
+        assertThat(pattern.pattern).isEqualTo(byteArrayOf(0x2c.toByte(), 0xfe.toByte()))
     }
 
     @Test
