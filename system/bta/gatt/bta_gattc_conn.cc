@@ -362,25 +362,6 @@ void BTA_GATTC_Close(tCONN_ID conn_id) {
   bta_sys_sendmsg(p_buf);
 }
 
-/** close a  connection */
-void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
-  tBTA_GATTC cb_data;
-
-  if (p_clcb->p_rcb->p_cback) {
-    memset(&cb_data, 0, sizeof(tBTA_GATTC));
-    cb_data.close.client_if = p_clcb->p_rcb->client_if;
-    cb_data.close.conn_id = static_cast<tCONN_ID>(p_data->hdr.layer_specific);
-    cb_data.close.remote_bda = p_clcb->bda;
-    cb_data.close.transport = p_clcb->transport;
-    cb_data.close.reason = BTA_GATT_CONN_NONE;
-    cb_data.close.status = GATT_ERROR;
-
-    log::warn("conn_id=0x{:x}. Returns GATT_ERROR({}).", cb_data.close.conn_id, GATT_ERROR);
-
-    (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CLOSE_EVT, &cb_data);
-  }
-}
-
 /** close a GATTC connection */
 void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   tBTA_GATTC_CBACK* p_cback = p_clcb->p_rcb->p_cback;

@@ -358,7 +358,6 @@ void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg);
 void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb);
 
 void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 
 void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
