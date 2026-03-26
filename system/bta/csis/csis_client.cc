@@ -57,7 +57,6 @@
 #include "main/shim/le_scanning_manager.h"
 #include "neighbor_inquiry.h"
 #include "osi/include/osi.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/advertise_data_parser.h"
@@ -1548,7 +1547,6 @@ private:
       }
 
       if (event == BTA_DM_OBSERVE_CMPL_EVT) {
-        power_telemetry::GetInstance().LogBleScan(static_cast<int>(p_data->observe_cmpl.num_resps));
         log::info("BLE observe complete. Num Resp: {}", p_data->observe_cmpl.num_resps);
         csis_ad_type_filter_set(false);
         instance->OnCsisObserveCompleted();
@@ -1668,7 +1666,6 @@ private:
       }
 
       if (event == BTA_DM_OBSERVE_CMPL_EVT) {
-        power_telemetry::GetInstance().LogBleScan(static_cast<int>(p_data->observe_cmpl.num_resps));
         log::verbose("BLE observe complete. Num Resp: {}", p_data->observe_cmpl.num_resps);
         return;
       }

@@ -42,7 +42,6 @@
 #include "hci/le_scanning_manager.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
@@ -652,10 +651,6 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle, tHCI_M
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
     l2c_OnHciModeChangeSendPendingPackets(p_cb->bda_);
   }
-
-  (mode != BTM_PM_ST_ACTIVE)
-          ? power_telemetry::GetInstance().LogSniffStarted(hci_handle, p_cb->bda_)
-          : power_telemetry::GetInstance().LogSniffStopped(hci_handle, p_cb->bda_);
 
   /* new request has been made. - post a message to BTU task */
   if (old_state & BTM_PM_STORED_MASK) {

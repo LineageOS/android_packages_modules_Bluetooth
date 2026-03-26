@@ -48,7 +48,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "osi/include/properties.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/btm/internal/btm_api.h"
@@ -996,7 +995,6 @@ void btm_sco_connected(const RawAddress& bda, uint16_t hci_handle, tBTM_ESCO_DAT
         link.rem_bd_known && link.esco.data.bd_addr == bda) {
       BTM_LogHistory(kBtmLogTag, bda, "Connection created",
                      std::format("sco_idx:{} handle:0x{:04x}", sco_index, hci_handle));
-      power_telemetry::GetInstance().LogLinkDetails(hci_handle, bda, true, false);
 
       if (link.state == SCO_ST_LISTENING) {
         spt = true;
@@ -1218,7 +1216,6 @@ static bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
     auto& link = btm_cb.sco_cb.sco_db[sco_index];
     if (link.state != SCO_ST_UNUSED && link.state != SCO_ST_LISTENING &&
         link.hci_handle == hci_handle) {
-      power_telemetry::GetInstance().LogLinkDetails(hci_handle, RawAddress::kEmpty, false, false);
       RawAddress bda(link.esco.data.bd_addr);
       link.state = SCO_ST_UNUSED;
       link.hci_handle = HCI_INVALID_HANDLE;
