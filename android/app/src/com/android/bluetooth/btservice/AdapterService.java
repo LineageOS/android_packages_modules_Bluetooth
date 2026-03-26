@@ -2295,7 +2295,7 @@ public class AdapterService extends Service {
     }
 
     /**
-     * Wrapper to provide the bons loss status directly through {@link
+     * Wrapper to provide the bond loss status directly through {@link
      * AdapterService#getKeyMissingCount}
      *
      * @param device is the remote device whose bond state we want to check

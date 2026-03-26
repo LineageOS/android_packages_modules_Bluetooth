@@ -344,6 +344,10 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
 void bta_gattc_disable();
 void bta_gattc_register(const bluetooth::Uuid& app_uuid, const std::string& name,
                         tBTA_GATTC_CBACK* p_data, BtaAppRegisterCallback cb, bool eatt_support);
+void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bda, tCONN_ID conn_id,
+                          bool connected, tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
+void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg);
+
 void bta_gattc_process_api_open(tGATT_IF client_if, const RawAddress& remote_bda,
                                 tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
                                 tBT_TRANSPORT transport, uint16_t preferred_mtu,
@@ -375,9 +379,6 @@ void bta_gattc_ci_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_ci_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_restart_discover(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_msg);
-void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
-                               const RawAddress& remote_bda, tCONN_ID conn_id,
-                               tBT_TRANSPORT transport, uint16_t mtu);
 void bta_gattc_process_api_refresh(tGATT_IF client_if, const RawAddress& remote_bda);
 void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_listen(tBTA_GATTC_DATA* p_msg);
@@ -514,7 +515,6 @@ inline const std::string bta_gattc_evt_code_text(tBTA_GATTC_INT_EVT evt_code) {
     CASE_RETURN_TEXT(BTA_GATTC_INT_DISCOVER_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_DISCOVER_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_OP_CMPL_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_INT_DISCONN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_CFG_MTU_EVT);
     default:
       return std::format("UNKNOWN GATTC event code[{}]", static_cast<int>(evt_code));

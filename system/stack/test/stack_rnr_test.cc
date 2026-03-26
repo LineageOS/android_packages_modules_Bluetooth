@@ -24,7 +24,6 @@
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/test/btm/btm_test_fixtures.h"
-#include "test/fake/fake_looper.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_thread.h"
 

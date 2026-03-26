@@ -66,7 +66,6 @@ typedef enum : uint8_t {
   BTA_GATTC_SRVC_DISC_DONE_EVT = 8,               /* GATT service discovery done event */
   BTA_GATTC_NOTIF_EVT = 10,                       /* GATT attribute notification event */
   BTA_GATTC_EXEC_EVT = 12,                        /* execute write complete event */
-  BTA_GATTC_CANCEL_OPEN_EVT = 14,                 /* cancel open event */
   BTA_GATTC_SRVC_CHG_EVT = 15,                    /* service change event */
   BTA_GATTC_ENC_CMPL_CB_EVT = 17,                 /* encryption complete callback event */
   BTA_GATTC_CFG_MTU_EVT = 18,                     /* configure MTU complete event */
@@ -87,7 +86,6 @@ inline std::string gatt_client_event_text(const tBTA_GATTC_EVT& event) {
     CASE_RETURN_TEXT(BTA_GATTC_SRVC_DISC_DONE_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_NOTIF_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_EXEC_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_CANCEL_OPEN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_SRVC_CHG_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_ENC_CMPL_CB_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_CFG_MTU_EVT);
@@ -344,16 +342,18 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  * Parameters       client_if: server interface.
  *                  remote_bda: remote device BD address.
  *                  connection_type: connection type used for the peer device
+ *                  transport: Transport to be used for GATT connection
+ *                             (BREDR/LE)
+ *                  opportunistic: whether the connection shall be opportunistic and
+ *                                 don't impact the disconnection timer
+ *                  auto_mtu_enabled: triggers mtu exchange with default mtu on connection
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type);
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
-                    uint16_t preferred_mtu, bool prefer_relax_mode);
-void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
-                    uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled);
+                    uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled = false);
 
 /*******************************************************************************
  *

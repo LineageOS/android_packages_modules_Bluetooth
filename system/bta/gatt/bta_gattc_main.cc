@@ -104,9 +104,6 @@ static const uint8_t bta_gattc_st_connected[][BTA_GATTC_NUM_COLS] = {
         /* BTA_GATTC_INT_DISCOVER_EVT       */ {BTA_GATTC_START_DISCOVER, BTA_GATTC_DISCOVER_ST},
         /* BTA_GATTC_DISCOVER_CMPL_EVT       */ {BTA_GATTC_IGNORE, BTA_GATTC_CONN_ST},
         /* BTA_GATTC_OP_CMPL_EVT            */ {BTA_GATTC_OP_CMPL, BTA_GATTC_CONN_ST},
-
-        /* CLCB will be deleted, next state is not important*/
-        /* BTA_GATTC_INT_DISCONN_EVT        */ {BTA_GATTC_CLOSE, BTA_GATTC_CONN_ST},
 };
 
 /* state table for discover state */
@@ -127,8 +124,6 @@ static const uint8_t bta_gattc_st_discover[][BTA_GATTC_NUM_COLS] = {
         /* BTA_GATTC_DISCOVER_CMPL_EVT      */ {BTA_GATTC_DISC_CMPL, BTA_GATTC_CONN_ST},
         /* BTA_GATTC_OP_CMPL_EVT            */
         {BTA_GATTC_OP_CMPL_DURING_DISCOVERY, BTA_GATTC_DISCOVER_ST},
-        /* CLCB will be deleted, next state is not important*/
-        /* BTA_GATTC_INT_DISCONN_EVT        */ {BTA_GATTC_CLOSE, BTA_GATTC_DISCOVER_ST},
 };
 
 /* type for state table */
@@ -212,15 +207,9 @@ bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg) {
   bool rt = true;
   const auto p = (tBTA_GATTC_DATA*)p_msg;
 
-  if (p_msg->event == BTA_GATTC_INT_DISCONN_EVT) {
-    log::verbose("Event:{}, conn_id: {:#x} ", bta_gattc_evt_code_text(p_msg->event),
-                 p->int_conn.hdr.layer_specific);
-    p_clcb = bta_gattc_find_int_disconn_clcb(p);
-  } else {
-    log::verbose("Event:{}, conn_id: {:#x} ", bta_gattc_evt_code_text(p_msg->event),
-                 p->int_conn.hdr.layer_specific);
-    p_clcb = bta_gattc_find_clcb_by_conn_id(static_cast<tCONN_ID>(p_msg->layer_specific));
-  }
+  log::verbose("Event:{}, conn_id: {:#x} ", bta_gattc_evt_code_text(p_msg->event),
+               p->int_conn.hdr.layer_specific);
+  p_clcb = bta_gattc_find_clcb_by_conn_id(static_cast<tCONN_ID>(p_msg->layer_specific));
 
   if (p_clcb != nullptr) {
     rt = bta_gattc_sm_execute(p_clcb, p_msg->event, p);

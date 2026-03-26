@@ -744,6 +744,7 @@ public class ActiveDeviceManagerTest {
      * </pre>
      */
     @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
     public void hfpActiveAudioDeviceRemovedNoFallbackSearch() {
         headsetConnected(mHeadsetDevice, false);
         mTestLooper.dispatchAll();

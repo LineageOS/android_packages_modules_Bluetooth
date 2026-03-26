@@ -25,6 +25,7 @@ namespace bluetooth::hci::iso_manager {
 
 namespace ffi {
 struct IsoCigCallbacks;
+struct IsoBigCallbacks;
 }  // namespace ffi
 
 class IsoManagerShim {
@@ -33,7 +34,8 @@ public:
   ~IsoManagerShim();
 
   void RegisterCallbacksNative(
-          rust::Box<::bluetooth::hci::iso_manager::ffi::IsoCigCallbacks> cig_callbacks);
+          rust::Box<::bluetooth::hci::iso_manager::ffi::IsoCigCallbacks> cig_callbacks,
+          rust::Box<::bluetooth::hci::iso_manager::ffi::IsoBigCallbacks> big_callbacks);
 
   void CreateCig(uint8_t cig_id, uint32_t sdu_interval_c_to_p, uint32_t sdu_interval_p_to_c,
                  uint8_t worse_cast_sca, bool packing, bool framing,
@@ -56,6 +58,19 @@ public:
   void CreateCis(rust::Vec<uint16_t> cis_conn_handles, rust::Vec<uint16_t> acl_conn_handles);
 
   void DisconnectCis(uint16_t conn_handle, uint8_t reason);
+
+  void CreateBig(uint8_t big_handle, uint8_t advertising_handle, uint8_t num_bis, uint32_t sdu_itv,
+                 uint16_t max_sdu_size, uint16_t max_transport_latency, uint8_t rtn, uint8_t phy,
+                 bool packing, bool framing, bool encryption,
+                 std::array<uint8_t, 16> broadcast_code);
+
+  void TerminateBig(uint8_t big_handle, uint8_t reason);
+
+  void BigCreateSync(uint8_t big_handle, uint16_t sync_handle, bool encryption,
+                     std::array<uint8_t, 16> broadcast_code, uint8_t mse, uint16_t big_sync_timeout,
+                     rust::Vec<uint8_t> bis_indices);
+
+  void BigTerminateSync(uint8_t big_handle);
 
   void SetupIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir, uint8_t data_path_id,
                         uint8_t coding_format, uint16_t company_id,
