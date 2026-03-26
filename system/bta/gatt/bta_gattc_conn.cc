@@ -496,6 +496,23 @@ void bta_gattc_conn_cback(tGATT_IF client_if, const RawAddress& remote_bda, tCON
     return;
   }
 
+  tBTA_GATTC_DATA data;
+  tBTA_GATTC_DATA* p_buf = &data;
+  p_buf->int_conn.hdr.event = BTA_GATTC_INT_DISCONN_EVT;
+  p_buf->int_conn.hdr.layer_specific = static_cast<uint16_t>(conn_id);
+  p_buf->int_conn.client_if = client_if;
+  p_buf->int_conn.role = bluetooth::stack::l2cap::get_interface().L2CA_GetBleConnRole(remote_bda);
+  p_buf->int_conn.reason = reason;
+  p_buf->int_conn.transport = transport;
+  p_buf->int_conn.remote_bda = remote_bda;
+
+  auto p_clcb = bta_gattc_find_int_disconn_clcb(p_buf);
+  bool have_conn_id = (p_clcb && p_clcb->bta_conn_id != 0);
+  if (have_conn_id) {
+    bta_gattc_close(p_clcb, p_buf);
+    return;
+  }
+
   if (is_interested_in_connection(client_if, remote_bda)) {
     tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
     if (!p_clreg) {
@@ -515,15 +532,4 @@ void bta_gattc_conn_cback(tGATT_IF client_if, const RawAddress& remote_bda, tCON
       bta_gattc_send_open_cback(p_clreg, GATT_ERROR, remote_bda, conn_id, transport, 0);
     }
   }
-
-  tBTA_GATTC_DATA* p_buf = (tBTA_GATTC_DATA*)osi_calloc(sizeof(tBTA_GATTC_DATA));
-  p_buf->int_conn.hdr.event = BTA_GATTC_INT_DISCONN_EVT;
-  p_buf->int_conn.hdr.layer_specific = static_cast<uint16_t>(conn_id);
-  p_buf->int_conn.client_if = client_if;
-  p_buf->int_conn.role = bluetooth::stack::l2cap::get_interface().L2CA_GetBleConnRole(remote_bda);
-  p_buf->int_conn.reason = reason;
-  p_buf->int_conn.transport = transport;
-  p_buf->int_conn.remote_bda = remote_bda;
-
-  bta_sys_sendmsg(p_buf);
 }

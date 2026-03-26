@@ -515,7 +515,6 @@ inline const std::string bta_gattc_evt_code_text(tBTA_GATTC_INT_EVT evt_code) {
     CASE_RETURN_TEXT(BTA_GATTC_INT_DISCOVER_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_DISCOVER_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_OP_CMPL_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_INT_DISCONN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_API_CFG_MTU_EVT);
     default:
       return std::format("UNKNOWN GATTC event code[{}]", static_cast<int>(evt_code));
