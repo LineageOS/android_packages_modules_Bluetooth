@@ -64,48 +64,36 @@ namespace uuid {
  * and to wrap CSIS service as this is required to understand the context of the
  * CSIS
  */
-static const bluetooth::Uuid kCapServiceUuid =
-        bluetooth::Uuid::From16Bit(UUID_COMMON_AUDIO_SERVICE);
+static constexpr Uuid kCapServiceUuid = Uuid::From16Bit(UUID_COMMON_AUDIO_SERVICE);
 
 /* Assigned numbers for attributes */
-static const bluetooth::Uuid kPublishedAudioCapabilityServiceUuid =
-        bluetooth::Uuid::From16Bit(0x1850);
-static const bluetooth::Uuid kAudioStreamControlServiceUuid = bluetooth::Uuid::From16Bit(0x184E);
+static constexpr Uuid kPublishedAudioCapabilityServiceUuid = Uuid::From16Bit(0x1850);
+static constexpr Uuid kAudioStreamControlServiceUuid = Uuid::From16Bit(0x184E);
 
-static const bluetooth::Uuid kTelephonyMediaAudioServiceUuid = bluetooth::Uuid::From16Bit(0x1855);
+static constexpr Uuid kTelephonyMediaAudioServiceUuid = Uuid::From16Bit(0x1855);
 
-static const bluetooth::Uuid kGamingAudioServiceUuid = bluetooth::Uuid::From16Bit(0x1858);
+static constexpr Uuid kGamingAudioServiceUuid = Uuid::From16Bit(0x1858);
 
 /* Published Audio Capabilities Service Characteristics */
-static const bluetooth::Uuid kSinkPublishedAudioCapabilityCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BC9);
-static const bluetooth::Uuid kSourcePublishedAudioCapabilityCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BCB);
-static const bluetooth::Uuid kSinkAudioLocationCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BCA);
-static const bluetooth::Uuid kSourceAudioLocationCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BCC);
-static const bluetooth::Uuid kAvailableAudioContextsCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BCD);
-static const bluetooth::Uuid kSupportedAudioContextsCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BCE);
+static constexpr Uuid kSinkPublishedAudioCapabilityCharacteristicUuid = Uuid::From16Bit(0x2BC9);
+static constexpr Uuid kSourcePublishedAudioCapabilityCharacteristicUuid = Uuid::From16Bit(0x2BCB);
+static constexpr Uuid kSinkAudioLocationCharacteristicUuid = Uuid::From16Bit(0x2BCA);
+static constexpr Uuid kSourceAudioLocationCharacteristicUuid = Uuid::From16Bit(0x2BCC);
+static constexpr Uuid kAvailableAudioContextsCharacteristicUuid = Uuid::From16Bit(0x2BCD);
+static constexpr Uuid kSupportedAudioContextsCharacteristicUuid = Uuid::From16Bit(0x2BCE);
 
 /* Audio Stream Control Service Characteristics */
-static const bluetooth::Uuid kSinkAudioStreamEndpointUuid = bluetooth::Uuid::From16Bit(0x2BC4);
-static const bluetooth::Uuid kSourceAudioStreamEndpointUuid = bluetooth::Uuid::From16Bit(0x2BC5);
-static const bluetooth::Uuid kAudioStreamEndpointControlPointCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2BC6);
+static constexpr Uuid kSinkAudioStreamEndpointUuid = Uuid::From16Bit(0x2BC4);
+static constexpr Uuid kSourceAudioStreamEndpointUuid = Uuid::From16Bit(0x2BC5);
+static constexpr Uuid kAudioStreamEndpointControlPointCharacteristicUuid = Uuid::From16Bit(0x2BC6);
 
 /* Telephony and Media Audio Service Characteristics */
-static const bluetooth::Uuid kTelephonyMediaAudioProfileRoleCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2B51);
+static constexpr Uuid kTelephonyMediaAudioProfileRoleCharacteristicUuid = Uuid::From16Bit(0x2B51);
 
 /* Gaming Audio Service Characteristics */
-static const bluetooth::Uuid kRoleCharacteristicUuid = bluetooth::Uuid::From16Bit(0x2C00);
-static const bluetooth::Uuid kUnicastGameGatewayCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2C01);
-static const bluetooth::Uuid kUnicastGameTerminalCharacteristicUuid =
-        bluetooth::Uuid::From16Bit(0x2C02);
+static constexpr Uuid kRoleCharacteristicUuid = Uuid::From16Bit(0x2C00);
+static constexpr Uuid kUnicastGameGatewayCharacteristicUuid = Uuid::From16Bit(0x2C01);
+static constexpr Uuid kUnicastGameTerminalCharacteristicUuid = Uuid::From16Bit(0x2C02);
 }  // namespace uuid
 
 namespace codec_spec_conf {

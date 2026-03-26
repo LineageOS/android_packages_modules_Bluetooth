@@ -34,20 +34,20 @@ static const uint16_t kRasRangingDataOverWrittenCharacteristic16bit = 0x2C19;
 static const uint16_t kClientCharacteristicConfiguration16bit = 0x2902;
 static const uint16_t kDefaultGattMtu = 23;
 
-static const bluetooth::Uuid kRangingService = bluetooth::Uuid::From16Bit(kRangingService16Bit);
-static const bluetooth::Uuid kRasFeaturesCharacteristic =
+static constexpr bluetooth::Uuid kRangingService = bluetooth::Uuid::From16Bit(kRangingService16Bit);
+static constexpr bluetooth::Uuid kRasFeaturesCharacteristic =
         bluetooth::Uuid::From16Bit(kRasFeaturesCharacteristic16bit);
-static const bluetooth::Uuid kRasRealTimeRangingDataCharacteristic =
+static constexpr bluetooth::Uuid kRasRealTimeRangingDataCharacteristic =
         bluetooth::Uuid::From16Bit(kRasRealTimeRangingDataCharacteristic16bit);
-static const bluetooth::Uuid kRasOnDemandDataCharacteristic =
+static constexpr bluetooth::Uuid kRasOnDemandDataCharacteristic =
         bluetooth::Uuid::From16Bit(kRasOnDemandDataCharacteristic16bit);
-static const bluetooth::Uuid kRasControlPointCharacteristic =
+static constexpr bluetooth::Uuid kRasControlPointCharacteristic =
         bluetooth::Uuid::From16Bit(kRasControlPointCharacteristic16bit);
-static const bluetooth::Uuid kRasRangingDataReadyCharacteristic =
+static constexpr bluetooth::Uuid kRasRangingDataReadyCharacteristic =
         bluetooth::Uuid::From16Bit(kRasRangingDataReadyCharacteristic16bit);
-static const bluetooth::Uuid kRasRangingDataOverWrittenCharacteristic =
+static constexpr bluetooth::Uuid kRasRangingDataOverWrittenCharacteristic =
         bluetooth::Uuid::From16Bit(kRasRangingDataOverWrittenCharacteristic16bit);
-static const bluetooth::Uuid kClientCharacteristicConfiguration =
+static constexpr bluetooth::Uuid kClientCharacteristicConfiguration =
         bluetooth::Uuid::From16Bit(kClientCharacteristicConfiguration16bit);
 
 std::string getUuidName(const bluetooth::Uuid& uuid);

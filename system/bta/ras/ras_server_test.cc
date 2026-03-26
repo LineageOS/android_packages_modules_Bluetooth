@@ -55,9 +55,9 @@ using namespace bluetooth;
 
 static const uint16_t kVendorSpecificCharacteristic16Bit1 = 0x5566;
 static const uint16_t kVendorSpecificCharacteristic16Bit2 = 0x5567;
-static const bluetooth::Uuid kVendorSpecificCharacteristic1 =
+static constexpr bluetooth::Uuid kVendorSpecificCharacteristic1 =
         bluetooth::Uuid::From16Bit(kVendorSpecificCharacteristic16Bit1);
-static const bluetooth::Uuid kVendorSpecificCharacteristic2 =
+static constexpr bluetooth::Uuid kVendorSpecificCharacteristic2 =
         bluetooth::Uuid::From16Bit(kVendorSpecificCharacteristic16Bit2);
 
 static uint16_t GetCharacteristicHandle(const bluetooth::Uuid& uuid) {
