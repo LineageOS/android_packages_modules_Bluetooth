@@ -150,25 +150,12 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu, GATT_CONFIGURE_MTU_O
   bta_sys_sendmsg(p_buf);
 }
 
-void BTA_GATTC_ServiceSearchAllRequest(tCONN_ID conn_id) {
+void BTA_GATTC_ServiceSearchRequest(tCONN_ID conn_id) {
   const size_t len = sizeof(tBTA_GATTC_API_SEARCH);
   tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
 
   p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
   p_buf->hdr.layer_specific = static_cast<uint16_t>(conn_id);
-  p_buf->p_srvc_uuid = NULL;
-
-  bta_sys_sendmsg(p_buf);
-}
-
-void BTA_GATTC_ServiceSearchRequest(tCONN_ID conn_id, Uuid p_srvc_uuid) {
-  const size_t len = sizeof(tBTA_GATTC_API_SEARCH) + sizeof(Uuid);
-  tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
-
-  p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
-  p_buf->hdr.layer_specific = static_cast<uint16_t>(conn_id);
-  p_buf->p_srvc_uuid = (Uuid*)(p_buf + 1);
-  *p_buf->p_srvc_uuid = p_srvc_uuid;
 
   bta_sys_sendmsg(p_buf);
 }

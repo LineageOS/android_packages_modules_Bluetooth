@@ -935,8 +935,6 @@ void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   log::verbose("conn_id=0x{:x} {}", p_clcb->bta_conn_id, p_clcb->p_srcb->server_bda);
   if (p_clcb->p_srcb && !p_clcb->p_srcb->gatt_database.IsEmpty()) {
     status = GATT_SUCCESS;
-    /* search the local cache of a server device */
-    bta_gattc_search_service(p_clcb, p_data->api_search.p_srvc_uuid);
   }
 
   if (p_clcb->p_srcb && p_clcb->p_srcb->gatt_database.IsEmpty() &&

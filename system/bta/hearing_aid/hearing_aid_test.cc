@@ -257,7 +257,7 @@ protected:
                       return nullptr;
                     }));
 
-    ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
+    ON_CALL(gatt_interface, ServiceSearchRequest(_))
             .WillByDefault(WithArg<0>(
                     Invoke([&](uint16_t conn_id) { InjectSearchCompleteEvent(conn_id); })));
 

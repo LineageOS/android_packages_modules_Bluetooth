@@ -38,7 +38,7 @@ struct gatt_interface_t {
   void (*BTA_GATTC_AppRegister)(const std::string& name, tBTA_GATTC_CBACK* p_client_cb,
                                 BtaAppRegisterCallback cb, bool eatt_support);
   void (*BTA_GATTC_Close)(tCONN_ID conn_id);
-  void (*BTA_GATTC_ServiceSearchRequest)(tCONN_ID conn_id, const bluetooth::Uuid* p_srvc_uuid);
+  void (*BTA_GATTC_ServiceSearchRequest)(tCONN_ID conn_id);
   void (*BTA_GATTC_Open)(tGATT_IF client_if, const RawAddress& remote_bda,
                          tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                          bool prefer_relax_mode);

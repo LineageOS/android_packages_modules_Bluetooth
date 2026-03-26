@@ -62,7 +62,6 @@ typedef enum : uint8_t {
   BTA_GATTC_OPEN_EVT = 2,                         /* GATTC open request status  event */
   BTA_GATTC_CLOSE_EVT = 5,                        /* GATTC  close request status event */
   BTA_GATTC_SEARCH_CMPL_EVT = 6,                  /* GATT discovery complete event */
-  BTA_GATTC_SEARCH_RES_EVT = 7,                   /* GATT discovery result event */
   BTA_GATTC_SRVC_DISC_DONE_EVT = 8,               /* GATT service discovery done event */
   BTA_GATTC_NOTIF_EVT = 10,                       /* GATT attribute notification event */
   BTA_GATTC_EXEC_EVT = 12,                        /* execute write complete event */
@@ -82,7 +81,6 @@ inline std::string gatt_client_event_text(const tBTA_GATTC_EVT& event) {
     CASE_RETURN_TEXT(BTA_GATTC_OPEN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_CLOSE_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_SEARCH_CMPL_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_SEARCH_RES_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_SRVC_DISC_DONE_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_NOTIF_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_EXEC_EVT);
@@ -154,11 +152,6 @@ typedef struct {
   tCONN_ID conn_id;
   tGATT_STATUS status;
 } tBTA_GATTC_SEARCH_CMPL;
-
-typedef struct {
-  tCONN_ID conn_id;
-  tBTA_GATT_ID service_uuid;
-} tBTA_GATTC_SRVC_RES;
 
 typedef struct {
   tCONN_ID conn_id;
@@ -258,7 +251,6 @@ typedef union {
   tGATT_STATUS status;
 
   tBTA_GATTC_SEARCH_CMPL search_cmpl; /* discovery complete */
-  tBTA_GATTC_SRVC_RES srvc_res;       /* discovery result */
   tBTA_GATTC_REG reg_oper;            /* registration data */
   tBTA_GATTC_OPEN open;
   tBTA_GATTC_CLOSE close;
@@ -386,22 +378,6 @@ void BTA_GATTC_Close(tCONN_ID conn_id);
 
 /*******************************************************************************
  *
- * Function         BTA_GATTC_ServiceSearchAllRequest
- *
- * Description      This function is called to request a GATT service discovery
- *                  of all services on a GATT server. This function report
- *                  service search result by a callback event, and followed by a
- *                  service search complete event.
- *
- * Parameters       conn_id: connection ID.
- *
- * Returns          None
- *
- ******************************************************************************/
-void BTA_GATTC_ServiceSearchAllRequest(tCONN_ID conn_id);
-
-/*******************************************************************************
- *
  * Function         BTA_GATTC_ServiceSearchRequest
  *
  * Description      This function is called to request a GATT service discovery
@@ -410,12 +386,11 @@ void BTA_GATTC_ServiceSearchAllRequest(tCONN_ID conn_id);
  *                  complete event.
  *
  * Parameters       conn_id: connection ID.
- *                  p_srvc_uuid: a UUID of the service application is interested
- *                               in.
+ *
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTC_ServiceSearchRequest(tCONN_ID conn_id, bluetooth::Uuid p_srvc_uuid);
+void BTA_GATTC_ServiceSearchRequest(tCONN_ID conn_id);
 
 /**
  * This function is called to send "Find service by UUID" request. Used only for

@@ -213,7 +213,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_DEREG_EVT:
-    case BTA_GATTC_SEARCH_RES_EVT:
     case BTA_GATTC_SRVC_DISC_DONE_EVT:
       log::debug("Ignoring event ({})", event);
       break;
@@ -404,16 +403,11 @@ static BtStatus btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
   return do_in_jni_thread(BindOnce(&BTA_GATTC_Refresh, static_cast<tGATT_IF>(client_if), bd_addr));
 }
 
-static BtStatus btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {
+static BtStatus btif_gattc_search_service(int conn_id, const Uuid*) {
   CHECK_BTGATT_INIT();
 
-  if (filter_uuid) {
-    return do_in_jni_thread(BindOnce(&BTA_GATTC_ServiceSearchRequest,
-                                     static_cast<tCONN_ID>(conn_id), *filter_uuid));
-  } else {
-    return do_in_jni_thread(
-            BindOnce(&BTA_GATTC_ServiceSearchAllRequest, static_cast<tCONN_ID>(conn_id)));
-  }
+  return do_in_jni_thread(
+          BindOnce(&BTA_GATTC_ServiceSearchRequest, static_cast<tCONN_ID>(conn_id)));
 }
 
 static void btif_gattc_discover_service_by_uuid(int conn_id, const Uuid& uuid) {

@@ -991,7 +991,7 @@ private:
     if (device->is_gatt_service_valid) {
       NotifyCsisDeviceValidAndStoreIfNeeded(device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -2303,7 +2303,7 @@ private:
     if (device->is_gatt_service_valid) {
       instance->OnEncrypted(device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -2320,7 +2320,7 @@ private:
     DeregisterNotifications(device);
     device->ClearSvcData();
     if (search_request) {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -2345,7 +2345,7 @@ private:
     log::debug("address={}", address);
 
     if (!device->is_gatt_service_valid) {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 

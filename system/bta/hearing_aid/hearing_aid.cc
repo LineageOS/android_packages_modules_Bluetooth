@@ -743,7 +743,7 @@ public:
 
     log::info("encryption successful: bd_addr={}", address);
     log::info("starting service search request for ASHA: bd_addr={}", address);
-    BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
+    BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id);
   }
 
   void OnPhyUpdateEvent(tCONN_ID conn_id, uint8_t tx_phys, uint8_t rx_phys, tGATT_STATUS status) {
@@ -812,7 +812,7 @@ public:
           hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
           hearingDevice->read_psm_handle)) {
       log::info("starting service search request for ASHA: bd_addr={}", address);
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id);
     }
   }
 

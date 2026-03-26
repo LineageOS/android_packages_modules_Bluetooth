@@ -472,30 +472,6 @@ void bta_gattc_disc_cmpl_cback(tCONN_ID conn_id, tGATT_DISC_TYPE disc_type, tGAT
   }
 }
 
-/** search local cache for matching service record */
-void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb, Uuid* p_uuid) {
-  for (const Service& service : p_clcb->p_srcb->gatt_database.Services()) {
-    if (p_uuid && *p_uuid != service.uuid) {
-      continue;
-    }
-
-#if (BTA_GATT_DEBUG == TRUE)
-    log::verbose("found service {} handle:{}", service.uuid, service.handle);
-#endif
-    if (!p_clcb->p_rcb->p_cback) {
-      continue;
-    }
-
-    tBTA_GATTC cb_data;
-    memset(&cb_data, 0, sizeof(tBTA_GATTC));
-    cb_data.srvc_res.conn_id = p_clcb->bta_conn_id;
-    cb_data.srvc_res.service_uuid.inst_id = service.handle;
-    cb_data.srvc_res.service_uuid.uuid = service.uuid;
-
-    (*p_clcb->p_rcb->p_cback)(BTA_GATTC_SEARCH_RES_EVT, &cb_data);
-  }
-}
-
 static const std::list<Service>* bta_gattc_get_services_srcb(tBTA_GATTC_SERV* p_srcb) {
   if (!p_srcb || p_srcb->gatt_database.IsEmpty()) {
     return NULL;

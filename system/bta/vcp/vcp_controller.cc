@@ -249,7 +249,7 @@ public:
       device->EnqueueInitialRequests(gatt_if_, chrc_read_callback_static, OnGattWriteCccStatic);
 
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->connection_id);
     }
   }
 
@@ -273,7 +273,7 @@ public:
 
     device->ResetHandles();
     if (search_request) {
-      BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->connection_id);
     }
   }
 
@@ -304,7 +304,7 @@ public:
     }
 
     if (device->known_service_handles_ == false) {
-      BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->connection_id);
     }
   }
 
