@@ -132,22 +132,13 @@
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth-г буцааж асаасан"</string>
     <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Та үүнийг Тохиргоонд хүссэн үедээ өөрчлөх боломжтой"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth-н автомат төлөвийн өөрчлөлт"</string>
-    <!-- no translation found for auracast_notification_channel (5159181425358316696) -->
-    <skip />
-    <!-- no translation found for auracast_notification_title (3101708313009368939) -->
-    <skip />
-    <!-- no translation found for auracast_notification_subtext (4696155233480316395) -->
-    <skip />
-    <!-- no translation found for auracast_connect_device_message (4461776363082532493) -->
-    <skip />
-    <!-- no translation found for auracast_listen_on_device_message (3719491065367993094) -->
-    <skip />
-    <!-- no translation found for auracast_connect_action (7157544449029291355) -->
-    <skip />
-    <!-- no translation found for auracast_connection_failed_message (6490085541428198952) -->
-    <skip />
-    <!-- no translation found for auracast_default_stream_name (2824625871526576239) -->
-    <skip />
-    <!-- no translation found for auracast_default_device_name (15748131701036354) -->
-    <skip />
+    <string name="auracast_notification_channel" msgid="5159181425358316696">"Auracast"</string>
+    <string name="auracast_notification_title" msgid="3101708313009368939">"<xliff:g id="STREAM_NAME">%1$s</xliff:g>-н аудио дамжуулалт боломжтой байна"</string>
+    <string name="auracast_notification_subtext" msgid="4696155233480316395">"LE Аудио"</string>
+    <string name="auracast_connect_device_message" msgid="4461776363082532493">"Сонсож эхлэхийн тулд LE Аудио төхөөрөмж холбоно уу"</string>
+    <string name="auracast_listen_on_device_message" msgid="3719491065367993094">"<xliff:g id="STREAM_NAME">%1$s</xliff:g>-н аудио дамжуулалтыг <xliff:g id="DEVICE_NAME">%2$s</xliff:g> дээрээ сонсоорой"</string>
+    <string name="auracast_connect_action" msgid="7157544449029291355">"Холбогдох"</string>
+    <string name="auracast_connection_failed_message" msgid="6490085541428198952">"Таны <xliff:g id="DEVICE_NAME">%2$s</xliff:g> дээрх <xliff:g id="STREAM_NAME">%1$s</xliff:g>-н аудио дамжуулалтад холбогдож чадсангүй."</string>
+    <string name="auracast_default_stream_name" msgid="2824625871526576239">"Ойролцоо"</string>
+    <string name="auracast_default_device_name" msgid="15748131701036354">"төхөөрөмжүүд"</string>
 </resources>
