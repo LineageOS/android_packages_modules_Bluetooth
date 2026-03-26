@@ -21,12 +21,12 @@
 use log::warn;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Mutex, Weak};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 use tokio::sync::{broadcast, mpsc, oneshot};
 
 use crate::le_audio::iso_manager::traits::{
-    CigId, IsoConnectionHandle, IsoDataPacket, IsoLinkQuality, Result,
+    BigHandle, CigId, IsoConnectionHandle, IsoDataPacket, IsoLinkQuality, Result,
 };
 use crate::pdl::hci::HciStatus;
 
@@ -87,6 +87,56 @@ pub(super) struct CreateCigCmplEvent {
     pub cis_conn_handles: Vec<IsoConnectionHandle>,
 }
 
+// Event data for BIG creation completion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct CreateBigCmplEvent {
+    // BIG handle.
+    pub big_handle: BigHandle,
+    // Sync delay.
+    pub big_sync_delay: u32,
+    // Transport latency.
+    pub transport_latency_big: u32,
+    // PHY.
+    pub phy: u8,
+    // Number of subevents.
+    pub nse: u8,
+    // Burst number.
+    pub bn: u8,
+    // Pre-transmission offset.
+    pub pto: u8,
+    // Immediate repetition count.
+    pub irc: u8,
+    // Maximum PDU.
+    pub max_pdu: u16,
+    // ISO interval.
+    pub iso_interval: u16,
+    // Connection handles.
+    pub bis_conn_handles: Vec<IsoConnectionHandle>,
+}
+
+// Event data for BIG sync establishment.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct BigSyncEstablishedEvent {
+    // BIG handle.
+    pub big_handle: BigHandle,
+    // Transport latency.
+    pub transport_latency_big: u32,
+    // Number of subevents.
+    pub nse: u8,
+    // Burst number.
+    pub bn: u8,
+    // Pre-transmission offset.
+    pub pto: u8,
+    // Immediate repetition count.
+    pub irc: u8,
+    // Maximum PDU.
+    pub max_pdu: u16,
+    // ISO interval.
+    pub iso_interval: u16,
+    // Connection handles.
+    pub bis_conn_handles: Vec<IsoConnectionHandle>,
+}
+
 // Internal state for tracking asynchronous pending requests.
 #[derive(Default)]
 pub(super) struct PendingRequests {
@@ -98,6 +148,14 @@ pub(super) struct PendingRequests {
     pub create_cis: HashMap<IsoConnectionHandle, oneshot::Sender<Result<CisEstablishedEvent>>>,
     // Maps CIS connection handle to a sender for CIS disconnection results.
     pub disconnect_cis: HashMap<IsoConnectionHandle, oneshot::Sender<Result<CisDisconnectedEvent>>>,
+    // Maps BIG handle to a sender for BIG creation completion results.
+    pub create_big: HashMap<BigHandle, oneshot::Sender<Result<CreateBigCmplEvent>>>,
+    // Maps BIG handle to a sender for BIG termination completion results.
+    pub terminate_big: HashMap<BigHandle, oneshot::Sender<Result<()>>>,
+    // Maps BIG handle to a sender for BIG sync establishment results.
+    pub big_create_sync: HashMap<BigHandle, oneshot::Sender<Result<BigSyncEstablishedEvent>>>,
+    // Maps BIG handle to a sender for BIG sync termination completion results.
+    pub big_terminate_sync: HashMap<BigHandle, oneshot::Sender<Result<()>>>,
     // Maps connection handle to a sender for ISO data path setup results.
     pub setup_iso_data_path: HashMap<IsoConnectionHandle, oneshot::Sender<Result<()>>>,
     // Maps connection handle to a sender for ISO data path removal results.
@@ -125,6 +183,22 @@ pub(super) struct CigState {
     pub inner: Option<Weak<CigInner>>,
 }
 
+// Internal state and subscribers for a Broadcast Isochronous Stream (BIS).
+#[derive(Default)]
+pub(super) struct BisState {
+    // Shared termination flag used to synchronize resource state.
+    pub data_subscribers: Vec<mpsc::Sender<IsoDataPacket>>,
+}
+
+// Internal state and signals for a Broadcast Isochronous Group (BIG).
+#[derive(Default)]
+pub(super) struct BigState {
+    // Reference to the internal BIG state for synchronization.
+    pub inner: Option<Weak<BigInner>>,
+    // Sender used to notify listeners when the stream is lost externally.
+    pub lost_sender: Option<broadcast::Sender<HciStatus>>,
+}
+
 // --- Inner structs for RAII and proper resource management ---
 
 #[derive(Debug)]
@@ -147,6 +221,20 @@ pub(super) struct CigInner {
     pub terminated: AtomicBool,
 }
 
+#[derive(Debug)]
+pub(super) struct BigInner {
+    // BIG handle.
+    pub big_handle: BigHandle,
+    // Whether the group has been terminated.
+    pub terminated: Arc<AtomicBool>,
+    // Broadcast sender to notify asynchronous listeners when the group is lost.
+    pub lost_sender: broadcast::Sender<HciStatus>,
+    // The reason why the group was lost.
+    pub lost_reason: Mutex<Option<HciStatus>>,
+    // Whether this BIG is a source or a sync.
+    pub is_source: bool,
+}
+
 // Registry for tracking pending requests and active event subscribers.
 #[derive(Default)]
 pub(super) struct IsoRegistry {
@@ -156,6 +244,10 @@ pub(super) struct IsoRegistry {
     pub cigs: HashMap<CigId, CigState>,
     // Active CIS states.
     pub cis: HashMap<IsoConnectionHandle, CisState>,
+    // Active BIG states.
+    pub bigs: HashMap<BigHandle, BigState>,
+    // Active BIS states.
+    pub bis: HashMap<IsoConnectionHandle, BisState>,
 }
 
 impl IsoRegistry {
@@ -181,6 +273,28 @@ impl IsoRegistry {
         }
     }
 
+    pub fn dispatch_bis_data(
+        &mut self,
+        bis_conn_handle: IsoConnectionHandle,
+        time_stamp: Option<Duration>,
+        seq_nb: u16,
+        data: &[u8],
+    ) {
+        if let Some(state) = self.bis.get_mut(&bis_conn_handle) {
+            state.data_subscribers.retain(|sender| {
+                let packet = IsoDataPacket { time_stamp, seq_nb, data: data.to_vec() };
+                match sender.try_send(packet) {
+                    Ok(_) => true,
+                    Err(mpsc::error::TrySendError::Closed(_)) => false,
+                    Err(mpsc::error::TrySendError::Full(_)) => {
+                        warn!("BIS {} data buffer full, skipping.", bis_conn_handle);
+                        true
+                    }
+                }
+            });
+        }
+    }
+
     pub fn dispatch_cis_disconnected(
         &mut self,
         cis_conn_handle: IsoConnectionHandle,
@@ -197,6 +311,23 @@ impl IsoRegistry {
         if !inner.terminated.swap(true, Ordering::SeqCst) {
             *inner.disconnect_reason.lock().unwrap() = Some(reason);
             if let Some(sender) = state.disconnected_sender {
+                let _ = sender.send(reason);
+            }
+        }
+    }
+
+    pub fn dispatch_big_sync_event(&mut self, big_handle: BigHandle, reason: HciStatus) {
+        let Some(state) = self.bigs.remove(&big_handle) else {
+            return;
+        };
+
+        let Some(inner) = state.inner.and_then(|weak_inner| weak_inner.upgrade()) else {
+            return;
+        };
+
+        if !inner.terminated.swap(true, Ordering::SeqCst) {
+            *inner.lost_reason.lock().unwrap() = Some(reason);
+            if let Some(sender) = state.lost_sender {
                 let _ = sender.send(reason);
             }
         }
