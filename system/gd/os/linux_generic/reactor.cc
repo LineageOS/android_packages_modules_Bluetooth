@@ -41,8 +41,8 @@ namespace os {
 
 struct Reactor::Event::impl {
   impl() {
-    fd_ = eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK);
-    log::assert_that(fd_ != -1, "Unable to create nonblocking event file descriptor semaphore");
+    fd_ = eventfd(0, EFD_NONBLOCK);
+    log::assert_that(fd_ != -1, "Unable to create nonblocking event file descriptor");
   }
   ~impl() {
     if (fd_ != -1) {
