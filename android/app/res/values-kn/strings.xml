@@ -132,22 +132,13 @@
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ಬ್ಲೂಟೂತ್ ಅನ್ನು ಮರಳಿ ಆನ್ ಮಾಡಲಾಗಿದೆ"</string>
     <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"ನೀವು ಇದನ್ನು ಯಾವಾಗ ಬೇಕಾದರೂ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಬದಲಾಯಿಸಬಹುದು"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"ಬ್ಲೂಟೂತ್ ಸ್ವಯಂಚಾಲಿತ ಸ್ಥಿತಿಯ ಬದಲಾವಣೆ"</string>
-    <!-- no translation found for auracast_notification_channel (5159181425358316696) -->
-    <skip />
-    <!-- no translation found for auracast_notification_title (3101708313009368939) -->
-    <skip />
-    <!-- no translation found for auracast_notification_subtext (4696155233480316395) -->
-    <skip />
-    <!-- no translation found for auracast_connect_device_message (4461776363082532493) -->
-    <skip />
-    <!-- no translation found for auracast_listen_on_device_message (3719491065367993094) -->
-    <skip />
-    <!-- no translation found for auracast_connect_action (7157544449029291355) -->
-    <skip />
-    <!-- no translation found for auracast_connection_failed_message (6490085541428198952) -->
-    <skip />
-    <!-- no translation found for auracast_default_stream_name (2824625871526576239) -->
-    <skip />
-    <!-- no translation found for auracast_default_device_name (15748131701036354) -->
-    <skip />
+    <string name="auracast_notification_channel" msgid="5159181425358316696">"Auracast"</string>
+    <string name="auracast_notification_title" msgid="3101708313009368939">"<xliff:g id="STREAM_NAME">%1$s</xliff:g> ಆಡಿಯೋ ಸ್ಟ್ರೀಮ್ ಲಭ್ಯವಿದೆ"</string>
+    <string name="auracast_notification_subtext" msgid="4696155233480316395">"LE ಆಡಿಯೋ"</string>
+    <string name="auracast_connect_device_message" msgid="4461776363082532493">"ಕೇಳಲು ಪ್ರಾರಂಭಿಸಲು LE ಆಡಿಯೋ ಸಾಧನವನ್ನು ಕನೆಕ್ಟ್ ಮಾಡಿ"</string>
+    <string name="auracast_listen_on_device_message" msgid="3719491065367993094">"ನಿಮ್ಮ <xliff:g id="DEVICE_NAME">%2$s</xliff:g> ಸಾಧನದಲ್ಲಿ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ಆಡಿಯೋ ಸ್ಟ್ರೀಮ್ ಅನ್ನು ಆಲಿಸಿ"</string>
+    <string name="auracast_connect_action" msgid="7157544449029291355">"ಕನೆಕ್ಟ್ ಮಾಡಿ"</string>
+    <string name="auracast_connection_failed_message" msgid="6490085541428198952">"ನಿಮ್ಮ <xliff:g id="DEVICE_NAME">%2$s</xliff:g> ಸಾಧನದಲ್ಲಿ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ಆಡಿಯೋ ಸ್ಟ್ರೀಮ್‌ಗೆ ಕನೆಕ್ಟ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ."</string>
+    <string name="auracast_default_stream_name" msgid="2824625871526576239">"ಸಮೀಪದಲ್ಲಿರುವುದು"</string>
+    <string name="auracast_default_device_name" msgid="15748131701036354">"ಸಾಧನಗಳು"</string>
 </resources>
