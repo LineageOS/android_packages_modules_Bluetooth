@@ -2427,6 +2427,58 @@ TEST_F(BtifRcTest, btif_debug_rc_dump_test) {
   bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->initialize_device(p_dev);
 }
 
+TEST_F(BtifRcTest, cleanup_ctrl_resets_device) {
+  btif_rc_device_cb_t* p_dev =
+          bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
+
+  // Set some fields to non-default values to verify they get reset
+  p_dev->rc_connected = true;
+  p_dev->br_connected = true;
+  p_dev->rc_handle = 123;
+  p_dev->rc_features = 0x1234;
+  p_dev->rc_cover_art_psm = 0x5678;
+  p_dev->rc_state = BTRC_CONNECTION_STATE_CONNECTED;
+  p_dev->rc_addr = kDeviceAddress;
+  p_dev->rc_volume = 50;
+  p_dev->rc_vol_label = 5;
+  p_dev->rc_features_processed = true;
+  p_dev->rc_playing_uid = 0x11223344;
+  p_dev->rc_procedure_complete = true;
+  p_dev->peer_ct_features = 0x1111;
+  p_dev->peer_tg_features = 0x2222;
+  p_dev->launch_cmd_pending = 1;
+
+  // Allocate a list to ensure it gets freed
+  p_dev->rc_supported_event_list = list_new(osi_free);
+
+  // Set up a transaction
+  p_dev->transaction_set.transaction[0].in_use = true;
+  p_dev->transaction_set.transaction[0].label = 10;
+
+  // Call cleanup, which internally calls reset_device for all connections
+  btif_rc_ctrl_get_interface()->cleanup();
+
+  // Verify fields are safely reset to their default states
+  EXPECT_FALSE(p_dev->rc_connected);
+  EXPECT_FALSE(p_dev->br_connected);
+  EXPECT_EQ(p_dev->rc_handle, 0);
+  EXPECT_EQ(p_dev->rc_features, 0u);
+  EXPECT_EQ(p_dev->rc_cover_art_psm, 0);
+  EXPECT_EQ(p_dev->rc_state, BTRC_CONNECTION_STATE_DISCONNECTED);
+  EXPECT_EQ(p_dev->rc_addr, RawAddress::kEmpty);
+  EXPECT_EQ(p_dev->rc_volume, static_cast<unsigned int>(MAX_VOLUME));
+  EXPECT_EQ(p_dev->rc_vol_label, MAX_LABEL);
+  EXPECT_EQ(p_dev->rc_supported_event_list, nullptr);
+  EXPECT_FALSE(p_dev->rc_features_processed);
+  EXPECT_EQ(p_dev->rc_playing_uid, 0u);
+  EXPECT_FALSE(p_dev->rc_procedure_complete);
+  EXPECT_EQ(p_dev->peer_ct_features, 0u);
+  EXPECT_EQ(p_dev->peer_tg_features, 0u);
+  EXPECT_EQ(p_dev->launch_cmd_pending, 0u);
+  EXPECT_FALSE(p_dev->transaction_set.transaction[0].in_use);
+  EXPECT_EQ(p_dev->transaction_set.transaction[0].label, 0);
+}
+
 TEST_F(BtifRcWithCallbacksTest, register_for_event_notification_test) {
   btif_rc_device_cb_t* p_dev =
           bluetooth::testing::avrc::btif_rc_ctrl_get_interface()->get_device_cb(0);
