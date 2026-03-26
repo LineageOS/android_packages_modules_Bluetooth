@@ -108,12 +108,7 @@ class ScanBinderTest {
             .whenever(scanController)
             .fetchOnScanThread<Any>(any(), any())
         doReturn(State.ON).whenever(adapterService).state
-        binder =
-            ScanBinder(
-                adapterService,
-                scanController,
-                testModeEnabled = false, // TODO(b/491969072) Remove unused
-            )
+        binder = ScanBinder(adapterService, scanController, testModeEnabled = false)
     }
 
     @Test
