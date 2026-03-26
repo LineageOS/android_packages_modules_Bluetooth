@@ -307,43 +307,9 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                 return PermissionHolder()
             }
 
-            // 1. Try standard UAST / Evaluator first
-            var targetAnnotation =
-                actionField.toUElementOfType<UField>()?.uAnnotations?.firstOrNull {
-                    it.qualifiedName == ANNOTATION_REQUIRES_PERMISSION
-                }
-            if (targetAnnotation == null) {
-                targetAnnotation =
-                    context.evaluator.getAnnotation(
-                        actionField as? com.intellij.psi.PsiModifierListOwner,
-                        ANNOTATION_REQUIRES_PERMISSION,
-                    )
-            }
-            // 2. Fallback for Kotlin properties where the annotation is on the property itself
-            if (targetAnnotation == null) {
-                val sourcePsi = actionField.navigationElement ?: actionField
-                sourcePsi.accept(
-                    object : com.intellij.psi.PsiRecursiveElementWalkingVisitor() {
-                        override fun visitElement(element: PsiElement) {
-                            if (targetAnnotation != null) return
-
-                            // Manually check for Kotlin annotation entries directly
-                            if (element.javaClass.simpleName == "KtAnnotationEntry") {
-                                element.toUElementOfType<UAnnotation>()?.let { uAnn ->
-                                    if (
-                                        uAnn.qualifiedName == ANNOTATION_REQUIRES_PERMISSION ||
-                                            element.text.contains("RequiresPermission")
-                                    ) {
-                                        targetAnnotation = uAnn
-                                    }
-                                }
-                            }
-                            super.visitElement(element)
-                        }
-                    }
-                )
-            }
-            return targetAnnotation?.let { parseAnnotation(context, it) } ?: PermissionHolder()
+            return actionField.toUElementOfType<UField>()?.getRequiresPermissionAnnotation()?.let {
+                parseAnnotation(context, it)
+            } ?: PermissionHolder()
         }
 
         private fun parseBroadcastTargetPermission(
