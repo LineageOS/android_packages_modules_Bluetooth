@@ -188,17 +188,7 @@ void bta_gattc_process_api_open_cancel(tGATT_IF client_if, const RawAddress& rem
   }
   p_clreg->connecting_to.erase(remote_bda);
 
-  if (stack::leConnectionCancelConnect(p_clreg->client_if, remote_bda, true)) {
-    if (p_clreg && p_clreg->p_cback) {
-      tBTA_GATTC cb_data{.status = GATT_SUCCESS};
-      (*p_clreg->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
-    }
-  } else {
-    if (p_clreg && p_clreg->p_cback) {
-      tBTA_GATTC cb_data{.status = GATT_ERROR};
-      (*p_clreg->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
-    }
-  }
+  std::ignore = stack::leConnectionCancelConnect(p_clreg->client_if, remote_bda, true);
 }
 
 /** Process API Open for a background connection */
@@ -248,23 +238,12 @@ static void bta_gattc_init_bk_conn(tGATT_IF client_if, const RawAddress& remote_
 
 /** Process API Cancel Open for a background connection */
 static void bta_gattc_cancel_bk_conn(tGATT_IF client_if, const RawAddress& remote_bda) {
-  tBTA_GATTC_RCB* p_clreg;
-  tBTA_GATTC cb_data;
-  cb_data.status = GATT_ERROR;
-
   /* remove the device from the bg connection mask */
   if (bta_gattc_mark_bg_conn(client_if, remote_bda, false)) {
-    if (stack::leConnectionCancelConnect(client_if, remote_bda, false)) {
-      cb_data.status = GATT_SUCCESS;
-    } else {
+    if (!stack::leConnectionCancelConnect(client_if, remote_bda, false)) {
       log::error("failed for client_if={}, remote_bda={}, is_direct=false",
                  static_cast<int>(client_if), remote_bda);
     }
-  }
-  p_clreg = bta_gattc_cl_get_regcb(client_if);
-
-  if (p_clreg && p_clreg->p_cback) {
-    (*p_clreg->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
   }
 }
 
