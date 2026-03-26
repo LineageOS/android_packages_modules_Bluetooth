@@ -30,7 +30,9 @@ import com.android.tools.lint.detector.api.getUMethod
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiReferenceExpression
+import java.util.regex.Pattern
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
@@ -38,6 +40,7 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UField
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParenthesizedExpression
+import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.tryResolve
@@ -248,7 +251,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
         }
 
         private fun checkBroadcastPermission(node: UCallExpression, isAsUser: Boolean) {
-            val sourcePerm = parseBroadcastSourcePermission(node) ?: return
+            val sourcePerm = parseBroadcastSourcePermission(node)
             val targetPerm = parseBroadcastTargetPermission(node, isAsUser)
 
             if (sourcePerm != targetPerm) {
@@ -263,8 +266,8 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
 
         private fun parseBroadcastSourcePermission(
             broadcastCall: UCallExpression
-        ): PermissionHolder? {
-            val enclosingMethod = broadcastCall.getContainingUMethod() ?: return null
+        ): PermissionHolder {
+            val enclosingMethod = broadcastCall.getContainingUMethod() ?: return PermissionHolder()
 
             class IntentActionScanner : AbstractUastVisitor() {
                 var lastSeenActionField: PsiElement? = null
@@ -300,16 +303,53 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             val scanner = IntentActionScanner().apply { enclosingMethod.accept(this) }
 
             val actionField = scanner.lastSeenActionField
-
             if (!scanner.foundBroadcastCall || actionField == null) {
                 // Couldn't find broadcast call or track Intent action. This can happen if the
                 // intent is passed as a parameter or if 'new Intent()' was called with no action.
                 return PermissionHolder()
             }
 
-            return actionField.toUElementOfType<UField>()?.getRequiresPermissionAnnotation()?.let {
-                parseAnnotation(context, it)
-            } ?: PermissionHolder()
+            var ann: UAnnotation? =
+                actionField.toUElementOfType<UField>()?.getRequiresPermissionAnnotation()
+            if (ann == null) {
+                val sourcePsi = UastFacade.convertElementWithParent(actionField, null)?.sourcePsi
+                val uAnnotated = sourcePsi?.let {
+                    UastFacade.convertElementWithParent(it, null) as? org.jetbrains.uast.UAnnotated
+                }
+                ann =
+                    uAnnotated?.uAnnotations?.firstOrNull {
+                        it.qualifiedName == ANNOTATION_REQUIRES_PERMISSION
+                    }
+            }
+
+            if (ann == null) {
+                val owner = actionField as? PsiModifierListOwner
+                if (owner != null) {
+                    ann = context.evaluator.getAnnotation(owner, ANNOTATION_REQUIRES_PERMISSION)
+                }
+            }
+
+            if (ann != null) {
+                return parseAnnotation(context, ann)
+            }
+
+            val holder = PermissionHolder()
+            val sourcePsi = UastFacade.convertElementWithParent(actionField, null)?.sourcePsi
+            if (sourcePsi is org.jetbrains.kotlin.psi.KtAnnotated) {
+                val found =
+                    sourcePsi.annotationEntries.find {
+                        it.shortName?.asString() == "RequiresPermission"
+                    }
+                if (found != null) {
+                    val text = found.text
+                    val m =
+                        Pattern.compile("android\\.Manifest\\.permission\\.([A-Z_]+)").matcher(text)
+                    while (m.find()) {
+                        holder.allOf.add("android.permission." + m.group(1))
+                    }
+                }
+            }
+            return holder
         }
 
         private fun parseBroadcastTargetPermission(
