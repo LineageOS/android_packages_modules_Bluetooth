@@ -1368,7 +1368,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                                                         deviceInfo.isSource()));
                     }
                     case AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
-                        profileActiveDeviceChanged(BluetoothProfile.HEADSET, null);
                         mAdapterService
                                 .getHeadsetService()
                                 .ifPresent(s -> s.handleAudioDeviceRemoved(device));
