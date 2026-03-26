@@ -231,29 +231,35 @@ void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg) {
     }
   }
 
-  if (p_clreg->num_clcb == 0) {
-    bta_gattc_deregister_cmpl(p_clreg);
-    return;
-  }
-
-  /* close all CLCB related to this app */
-  for (auto& p_clcb : bta_gattc_cb.clcb_set) {
-    if (!p_clcb->in_use || p_clcb->p_rcb != p_clreg) {
-      continue;
+  if (p_clreg->num_clcb > 0) {
+    /* close all CLCB related to this app */
+    for (auto& p_clcb : bta_gattc_cb.clcb_set) {
+      if (!p_clcb->in_use || p_clcb->p_rcb != p_clreg) {
+        continue;
+      }
+      tBTA_GATTC_DATA gattc_data = {
+              .hdr =
+                      {
+                              .event = BTA_GATTC_API_CLOSE_EVT,
+                              .layer_specific = static_cast<uint16_t>(p_clcb->bta_conn_id),
+                      },
+      };
+      bta_gattc_close(p_clcb.get(), &gattc_data);
     }
-    p_clreg->dereg_pending = true;
-
-    tBTA_GATTC_DATA gattc_data = {
-            .hdr =
-                    {
-                            .event = BTA_GATTC_API_CLOSE_EVT,
-                            .layer_specific = static_cast<uint16_t>(p_clcb->bta_conn_id),
-                    },
-    };
-    bta_gattc_close(p_clcb.get(), &gattc_data);
+    // deallocated clcbs will not be accessed. Let them be cleaned up.
+    bta_gattc_cleanup_clcb();
   }
-  // deallocated clcbs will not be accessed. Let them be cleaned up.
-  bta_gattc_cleanup_clcb();
+
+  tGATT_IF client_if = p_clreg->client_if;
+
+  stack::appDeregister(client_if);
+  if (bta_gattc_cb.cl_rcb_map.erase(client_if) == 0) {
+    log::warn("deregistered unknown rcb client_if={}", client_if);
+  }
+
+  if (bta_gattc_num_reg_app() == 0 && bta_gattc_cb.state == BTA_GATTC_STATE_DISABLING) {
+    bta_gattc_cb.state = BTA_GATTC_STATE_DISABLED;
+  }
 }
 
 /** process encryption complete message */
@@ -968,20 +974,6 @@ void bta_gattc_q_cmd(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 void bta_gattc_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /* p_data */) {
   if (p_clcb->status == GATT_SUCCESS) {
     log::error("operation not supported at current state {}", p_clcb->state);
-  }
-}
-
-/* De-Register a GATT client application with BTA completed */
-void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg) {
-  tGATT_IF client_if = p_clreg->client_if;
-
-  stack::appDeregister(client_if);
-  if (bta_gattc_cb.cl_rcb_map.erase(client_if) == 0) {
-    log::warn("deregistered unknown rcb client_if={}", client_if);
-  }
-
-  if (bta_gattc_num_reg_app() == 0 && bta_gattc_cb.state == BTA_GATTC_STATE_DISABLING) {
-    bta_gattc_cb.state = BTA_GATTC_STATE_DISABLED;
   }
 }
 

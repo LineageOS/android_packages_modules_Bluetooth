@@ -243,7 +243,6 @@ typedef struct {
   bool in_use;
   tGATT_IF client_if; /* client interface with BTE stack for this application */
   uint8_t num_clcb;   /* number of associated CLCB */
-  bool dereg_pending;
   bluetooth::Uuid app_uuid;
   tBTA_GATTC_NOTIF_REG notif_reg[BTA_GATTC_NOTIF_REG_MAX];
 

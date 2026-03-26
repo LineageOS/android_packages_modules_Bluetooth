@@ -442,10 +442,6 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (p_cback) {
     (*p_cback)(BTA_GATTC_CLOSE_EVT, &cb_data);
   }
-
-  if (p_clreg->num_clcb == 0 && p_clreg->dereg_pending) {
-    bta_gattc_deregister_cmpl(p_clreg);
-  }
 }
 
 static bool is_interested_in_connection(tGATT_IF client_if, const RawAddress& remote_bda) {
