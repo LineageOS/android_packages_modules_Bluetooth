@@ -86,7 +86,9 @@ class ScanBinderTest {
     @Before
     fun setUp() {
         adapterService.mockPackageManager(context.packageManager)
-        doReturn(adapterService).whenever(adapterService).createContextAsUser(any(), any())
+        doReturn(adapterService)
+            .whenever(adapterService)
+            .createPackageContextAsUser(any(), any(), any())
         doReturn(context.attributionSource).whenever(adapterService).attributionSource
         doReturn(context.packageName).whenever(source).packageName
         adapterService.mockGetSystemService(locationManager)

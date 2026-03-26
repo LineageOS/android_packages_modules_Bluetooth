@@ -297,13 +297,11 @@ object Util {
         val packageName = currentAttrib.packageName
 
         // Previous check must have enforced isSameProfileGroup(currentAttrib.uid, myUserHandle)
-        val packageManager =
-            context
-                .createContextAsUser(UserHandle.getUserHandleForUid(currentAttrib.uid), 0)
-                .packageManager
         val packageInfo =
             try {
-                packageManager.getPackageInfo(packageName!!, GET_PERMISSIONS)
+                val userHandle = UserHandle.getUserHandleForUid(currentAttrib.uid)
+                val contextAsUser = context.createPackageContextAsUser(packageName!!, 0, userHandle)
+                contextAsUser.packageManager.getPackageInfo(packageName, GET_PERMISSIONS)
             } catch (e: PackageManager.NameNotFoundException) {
                 Log.w(TAG, "Could not find package for disavowal check: $packageName")
                 return false
