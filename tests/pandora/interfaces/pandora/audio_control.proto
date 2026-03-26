@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option java_outer_classname = "AudioControlProto";
+package pandora;
+
+import "google/protobuf/empty.proto";
+
+service AudioControl {
+  rpc VolumeUp(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc VolumeDown(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
