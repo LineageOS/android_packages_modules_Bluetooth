@@ -912,17 +912,6 @@ constructor(
 
             Log.i(TAG, "Removing ${unbondedAddresses.size} unbonded devices from storage")
 
-            // Dispatch metadata cleared notifications for each unbonded device.
-            unbondedAddresses.forEach { address ->
-                val device = storage.devicesMap[address]!!
-                val bluetoothDevice = adapterService.getRemoteDevice(address)
-                logEvent(bluetoothDevice, "Remove from storage because it is unbonded")
-                device.customMetadataMap
-                    .filter { (_, value) -> value != ByteString.EMPTY }
-                    .keys
-                    .forEach { adapterService.onMetadataChanged(bluetoothDevice, it, null) }
-            }
-
             // Remove the devices from the map in a single batch operation.
             val newBuilder = storage.toBuilder()
             unbondedAddresses.forEach { address -> newBuilder.removeDevices(address) }
