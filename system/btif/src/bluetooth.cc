@@ -110,7 +110,6 @@
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "osi/include/wakelock.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
@@ -961,7 +960,6 @@ static void dump(int fd, const char** /*arguments*/) {
   L2CA_Dumpsys(fd);
   DumpsysBtm(fd);
   bluetooth::shim::Dump(fd);
-  power_telemetry::GetInstance().Dumpsys(fd);
   log::debug("Finished bluetooth dumpsys");
 }
 
