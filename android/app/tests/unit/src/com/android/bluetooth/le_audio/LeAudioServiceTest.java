@@ -1104,6 +1104,25 @@ public class LeAudioServiceTest {
         }
     }
 
+    private void setTestDeviceIntoConnectingState(BluetoothDevice device, int groupId) {
+        assertThat(mService.connect(device)).isTrue();
+        mLooper.dispatchAll();
+
+        // Make device bonded
+        mBondedDevices.add(device);
+
+        LeAudioStackEvent nodeGroupAdded =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_GROUP_NODE_STATUS_CHANGED);
+        nodeGroupAdded.device = device;
+        nodeGroupAdded.valueInt1 = groupId;
+        nodeGroupAdded.valueInt2 = LeAudioStackEvent.GROUP_NODE_ADDED;
+        mService.messageFromNative(nodeGroupAdded);
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(device, STATE_CONNECTING, STATE_DISCONNECTED);
+        assertThat(mService.getConnectionState(device)).isEqualTo(STATE_CONNECTING);
+    }
+
     private void connectTestDevice(BluetoothDevice device, int GroupId) {
         List<BluetoothDevice> prevConnectedDevices = mService.getConnectedDevices();
 
@@ -2878,6 +2897,17 @@ public class LeAudioServiceTest {
         connectTestDevice(mRightDevice, TEST_GROUP_ID);
 
         assertThat(mService.isAutoActiveModeEnabled(TEST_GROUP_ID)).isTrue();
+    }
+
+    @Test
+    public void testAutoActiveMode_whenDeviceIsConnecting_failToDisableIt() {
+        /* Test scenario:
+         * 1. Connecting device
+         * 2. Verify that Auto Active Mode cannot be set.
+         */
+
+        setTestDeviceIntoConnectingState(mSingleDevice, TEST_GROUP_ID);
+        assertThat(mService.setAutoActiveModeState(TEST_GROUP_ID, false)).isFalse();
     }
 
     @Test

@@ -3351,6 +3351,7 @@ public class AdapterService extends Service {
          * LeAudio shall be automatically connected to Audio Framework when
          * 1. Remote device expects that - Targeted Announcements are used
          * 2. User is connecting device from Settings application.
+         * 3. Device has been just bonded.
          *
          * Above conditions are tracked by LeAudioService. In here, there is need to notify
          * LeAudioService that connection is made for GATT purposes, so LeAudioService can
