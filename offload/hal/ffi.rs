@@ -92,6 +92,7 @@ impl Ffi {
 
 impl HciHal for Ffi {
     fn initialize(&self, client: HciProxyCallbacks) {
+        log::debug!("Ffi::initialize");
         let intf = self.intf.lock().unwrap();
         self.set_client(client);
 
@@ -143,6 +144,7 @@ impl HciHal for Ffi {
     }
 
     fn close(&self) {
+        log::debug!("Ffi::close");
         let intf = self.intf.lock().unwrap();
 
         // SAFETY: The C Code has initialized the `CInterface` with a valid
@@ -154,6 +156,7 @@ impl HciHal for Ffi {
     }
 
     fn client_died(&self) {
+        log::debug!("Ffi::client_died");
         let intf = self.intf.lock().unwrap();
 
         if let Some(client_died) = intf.client_died {
@@ -219,6 +222,11 @@ impl CCallbacks {
     ///
     /// The C Interface requires that `handle` is a copy of the value given in `CCallbacks.handle`
     unsafe extern "C" fn initialization_complete(handle: *mut c_void, status: CStatus) {
+        log::debug!(
+            "CCallbacks::initialization_complete: handle: {:?}, status: {:?}",
+            handle,
+            status
+        );
         // SAFETY: The vendor HAL returns `handle` pointing `wrapper` object which has
         //         the same lifetime as the base `Ffi` instance.
         unsafe {

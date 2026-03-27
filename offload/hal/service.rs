@@ -67,6 +67,7 @@ impl<T: HciHal + 'static> Interface for HciProxy<T> {
 
 impl<T: HciHal + 'static> IBluetoothHci for HciProxy<T> {
     fn initialize(&self, callbacks: &Strong<dyn IBluetoothHciCallbacks>) -> BinderResult<()> {
+        log::debug!("HciProxy::initialize");
         let (ffi, callbacks) = {
             let mut state = self.state.write().unwrap();
 
@@ -104,6 +105,7 @@ impl<T: HciHal + 'static> IBluetoothHci for HciProxy<T> {
     }
 
     fn close(&self) -> BinderResult<()> {
+        log::debug!("HciProxy::close");
         *self.state.write().unwrap() = State::Closed;
         self.ffi.close();
         Ok(())
@@ -172,22 +174,22 @@ impl<T: HciHal> Module for SinkModule<T> {
 
     fn in_evt(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.hciEventReceived(data) {
-            log::error!("Cannot send event to client: {e:?}");
+            log::error!("SinkModule::in_evt: Cannot send event to client: {e:?}");
         }
     }
     fn in_acl(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.aclDataReceived(data) {
-            log::error!("Cannot send ACL to client: {e:?}");
+            log::error!("SinkModule::in_acl: Cannot send ACL to client: {e:?}");
         }
     }
     fn in_sco(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.scoDataReceived(data) {
-            log::error!("Cannot send SCO to client: {e:?}");
+            log::error!("SinkModule::in_sco: Cannot send SCO to client: {e:?}");
         }
     }
     fn in_iso(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.isoDataReceived(data) {
-            log::error!("Cannot send ISO to client: {e:?}");
+            log::error!("SinkModule::in_iso: Cannot send ISO to client: {e:?}");
         }
     }
 }
@@ -203,12 +205,15 @@ impl HciProxyCallbacks {
     }
 
     pub fn initialization_complete(&self, status: HciHalStatus) {
+        log::debug!("HciProxyCallbacks::initialization_complete: status: {:?}", status);
         let mut state = self.state.write().unwrap();
         if status != HciHalStatus::Success {
             *state = State::Closed;
         }
         if let Err(e) = self.callbacks.initializationComplete(status.into()) {
-            log::error!("Cannot call-back client: {e:?}");
+            log::error!(
+                "HciProxyCallbacks::initialization_complete: Cannot call-back client: {e:?}"
+            );
             *state = State::Closed;
         }
     }

@@ -17,7 +17,7 @@ use crate::reader::{Read, Reader};
 use crate::writer::{Write, Writer};
 
 /// Status / Error codes, as defined in Part F
-#[derive(Debug, PartialEq, Read, Write)]
+#[derive(Clone, Copy, Debug, PartialEq, Read, Write)]
 #[allow(missing_docs)]
 pub enum Status {
     Success = 0x00,

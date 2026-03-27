@@ -12,8 +12,95 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::reader::{unpack, Reader};
+use crate::reader::{unpack, Read, Reader};
 use crate::writer::{pack, Write, Writer};
+
+/// Bluetooth Address
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BluetoothAddress([u8; 6]);
+
+/// Bluetooth address, represented in Big Endian format.
+impl BluetoothAddress {
+    /// Create new Bluetooth Address from bytes in Big Endian order
+    pub const fn from_be_bytes(bytes: [u8; 6]) -> Self {
+        Self(bytes)
+    }
+
+    /// Convert to bytes
+    pub fn to_bytes(&self) -> [u8; 6] {
+        self.0
+    }
+
+    /// Convert to bytes reference
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl From<[u8; 6]> for BluetoothAddress {
+    fn from(bytes: [u8; 6]) -> Self {
+        Self(bytes)
+    }
+}
+
+impl From<BluetoothAddress> for [u8; 6] {
+    fn from(addr: BluetoothAddress) -> Self {
+        addr.0
+    }
+}
+
+impl std::fmt::Display for BluetoothAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let b = self.0;
+        write!(f, "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", b[0], b[1], b[2], b[3], b[4], b[5])
+    }
+}
+
+impl Write for BluetoothAddress {
+    fn write(&self, w: &mut Writer) {
+        let mut b = self.0;
+        // Reverse bytes to Little Endian order
+        b.reverse();
+        w.put(&b);
+    }
+}
+
+impl Read for BluetoothAddress {
+    fn read(r: &mut Reader) -> Option<Self> {
+        let mut b: [u8; 6] = r.get(6)?.try_into().ok()?;
+        // Reverse bytes to Big Endian order
+        b.reverse();
+        Some(Self(b))
+    }
+}
+
+#[test]
+fn test_bluetooth_address() {
+    let dump = [0x06, 0x05, 0x04, 0x03, 0x02, 0x01];
+    let mut reader = Reader::new(&dump);
+    let Some(addr) = BluetoothAddress::read(&mut reader) else { panic!() };
+
+    assert_eq!(addr.to_bytes(), [0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
+    assert_eq!(format!("{addr}"), "01:02:03:04:05:06");
+
+    let mut w = Writer::new(Vec::new());
+    w.write(&addr);
+    assert_eq!(w.into_vec(), &dump[..]);
+}
+
+#[test]
+fn test_bluetooth_address_methods() {
+    let bytes = [0x11, 0x22, 0x33, 0x44, 0x55, 0x66];
+    let addr = BluetoothAddress::from_be_bytes(bytes);
+
+    assert_eq!(addr.as_bytes(), &bytes);
+
+    let addr_from = BluetoothAddress::from(bytes);
+    assert_eq!(addr, addr_from);
+
+    let bytes_into: [u8; 6] = addr.into();
+    assert_eq!(bytes, bytes_into);
+}
 
 /// 5.4.2 ACL Data packets
 
