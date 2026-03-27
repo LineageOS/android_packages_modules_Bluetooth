@@ -7065,9 +7065,6 @@ void le_audio_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   log::info("event = {}", gatt_client_event_text(event));
 
   switch (event) {
-    case BTA_GATTC_DEREG_EVT:
-      break;
-
     case BTA_GATTC_NOTIF_EVT:
       instance->LeAudioCharValueHandle(p_data->notify.conn_id, p_data->notify.handle,
                                        p_data->notify.len,

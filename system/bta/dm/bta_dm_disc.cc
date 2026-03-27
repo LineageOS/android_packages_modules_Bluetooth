@@ -664,7 +664,6 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     case BTA_GATTC_CFG_MTU_EVT:
     case BTA_GATTC_CONGEST_EVT:
     case BTA_GATTC_CONN_UPDATE_EVT:
-    case BTA_GATTC_DEREG_EVT:
     case BTA_GATTC_ENC_CMPL_CB_EVT:
     case BTA_GATTC_EXEC_EVT:
     case BTA_GATTC_NOTIF_EVT:

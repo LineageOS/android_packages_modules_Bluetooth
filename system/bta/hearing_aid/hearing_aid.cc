@@ -2131,10 +2131,6 @@ static void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) 
   }
 
   switch (event) {
-    case BTA_GATTC_DEREG_EVT:
-      log::info("");
-      break;
-
     case BTA_GATTC_OPEN_EVT: {
       if (!instance) {
         return;
