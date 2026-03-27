@@ -1037,6 +1037,7 @@ bool BTM_IsPhy2mSupported(const RawAddress& remote_bda, tBT_TRANSPORT transport)
 
   if (!p->peer_le_features_valid) {
     log::warn("Checking remote features but remote feature read is incomplete");
+    return false;
   }
   return HCI_LE_2M_PHY_SUPPORTED(p->peer_le_features);
 }
@@ -1665,6 +1666,7 @@ bool acl_peer_supports_ble_connection_parameters_request(const RawAddress& remot
   }
   if (!p_acl->peer_le_features_valid) {
     log::warn("Checking remote features but remote feature read is incomplete");
+    return false;
   }
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
@@ -1697,6 +1699,7 @@ bool acl_peer_supports_ble_connection_subrating(const RawAddress& remote_bda) {
   }
   if (!p_acl->peer_le_features_valid) {
     log::warn("Checking remote features but remote feature read is incomplete");
+    return false;
   }
   return HCI_LE_CONN_SUBRATING_SUPPORT(p_acl->peer_le_features);
 }
@@ -1709,6 +1712,7 @@ bool acl_peer_supports_ble_connection_subrating_host(const RawAddress& remote_bd
   }
   if (!p_acl->peer_le_features_valid) {
     log::warn("Checking remote features but remote feature read is incomplete");
+    return false;
   }
   return HCI_LE_CONN_SUBRATING_HOST_SUPPORT(p_acl->peer_le_features);
 }
@@ -1825,6 +1829,7 @@ bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle) {
   }
   if (!p_acl->peer_le_features_valid) {
     log::warn("Checking remote features but remote feature read is incomplete");
+    return false;
   }
   return HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features);
 }
@@ -1836,6 +1841,7 @@ bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle) {
   }
   if (!p_acl->peer_le_features_valid) {
     log::warn("Checking remote features but remote feature read is incomplete");
+    return false;
   }
   return HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features);
 }
