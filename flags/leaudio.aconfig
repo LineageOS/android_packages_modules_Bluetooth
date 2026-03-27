@@ -119,7 +119,7 @@ flag {
 flag {
     name: "leaudio_fix_allocation_in_codec_config"
     namespace: "bluetooth"
-    description: "Fix not setting allocation LTV in CodecConfig for mono allication"
+    description: "Fix not setting allocation LTV in CodecConfig for mono allocation"
     bug: "454311602"
     metadata {
         purpose: PURPOSE_BUGFIX
