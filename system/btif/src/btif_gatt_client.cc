@@ -336,24 +336,6 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
     transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
   }
 
-  // Check for background connections
-  if (!is_direct) {
-    // Check for privacy 1.0 and 1.1 controller and do not start background
-    // connection if RPA offloading is not supported, since it will not
-    // connect after change of random address
-    if (!bluetooth::shim::GetController()->SupportsBlePrivacy() && (addr_type == BLE_ADDR_RANDOM) &&
-        BTM_BLE_IS_RESOLVE_BDA(address)) {
-      tBTM_BLE_VSC_CB vnd_capabilities;
-      BTM_BleGetVendorCapabilities(&vnd_capabilities);
-      if (!vnd_capabilities.rpa_offloading) {
-        auto callbacks = bt_gatt_callbacks;
-        HAL_CBACK(callbacks, client->open_cb, to_java_transport(transport), 0,
-                  BtifStatus(UNSUPPORTED), client_if, address);
-        return;
-      }
-    }
-  }
-
   // Connect!
   log::info("Transport={}, device type={}, address={}, address type={}, auto_mtu_enabled={}",
             bt_transport_text(transport), DeviceTypeText(device_type), address, addr_type,
