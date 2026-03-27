@@ -142,6 +142,7 @@ typedef uint8_t tBTA_AV_ERR;
 #define BTA_AV_RC_PSM_EVT 25            /* cover art psm update */
 /* Max BTA event */
 #define BTA_AV_MAX_EVT 26
+#define BTA_AV_INVALID_EVT 0xff /* invalid event */
 
 typedef uint8_t tBTA_AV_EVT;
 
