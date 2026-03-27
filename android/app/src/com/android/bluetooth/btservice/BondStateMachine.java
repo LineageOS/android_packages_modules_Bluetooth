@@ -198,8 +198,8 @@ public final class BondStateMachine extends StateMachine {
                                 dev,
                                 transport,
                                 newState,
-                                0,
-                                0,
+                                null,
+                                null,
                                 AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
                                 reason,
                                 hciReason);
@@ -270,8 +270,15 @@ public final class BondStateMachine extends StateMachine {
                     int newState = msg.arg1;
                     int reason = convertBondStateChangeReason(msg.arg2);
                     int transport = msg.getData().getInt(KEY_BOND_TRANSPORT);
-                    int pairingAlgorithm = msg.getData().getInt(KEY_PAIRING_ALGORITHM);
-                    int pairingVariant = msg.getData().getInt(KEY_PAIRING_VARIANT);
+
+                    Integer pairingAlgorithm = null;
+                    Integer pairingVariant = null;
+                    if (msg.getData().containsKey(KEY_PAIRING_ALGORITHM)
+                            && msg.getData().containsKey(KEY_PAIRING_VARIANT)) {
+                        pairingAlgorithm = msg.getData().getInt(KEY_PAIRING_ALGORITHM);
+                        pairingVariant = msg.getData().getInt(KEY_PAIRING_VARIANT);
+                    }
+
                     int pairingInitiator = msg.getData().getInt(KEY_PAIRING_INITIATOR);
                     int bondingHciReason = msg.getData().getInt(KEY_HCI_REASON, 0);
 
@@ -517,8 +524,8 @@ public final class BondStateMachine extends StateMachine {
                         dev,
                         BluetoothDevice.TRANSPORT_AUTO,
                         BluetoothDevice.BOND_NONE,
-                        0,
-                        0,
+                        null,
+                        null,
                         AbstractionLayer.BT_PAIRING_INITIATOR_APP /* default */,
                         BluetoothDevice.UNBOND_REASON_REMOVED,
                         -1);
@@ -583,8 +590,8 @@ public final class BondStateMachine extends StateMachine {
             BluetoothDevice device,
             int transport,
             int newState,
-            int pairingAlgorithm,
-            int pairingVariant,
+            Integer pairingAlgorithm,
+            Integer pairingVariant,
             int pairingInitiator,
             int reason,
             int hciReason) {
@@ -791,24 +798,33 @@ public final class BondStateMachine extends StateMachine {
             logD("bondStateChangeCallback: Unknown device:" + device);
         }
 
-        int pairingAlgorithm = getPairingAlgorithm(transport, nativePairingAlgorithm);
-        int pairingVariant = getPairingVariant(transport, pairingAlgorithm, nativePairingVariant);
-
+        Integer pairingAlgorithm = null;
+        Integer pairingVariant = null;
         Message msg = obtainMessage(MESSAGE_BOND_STATE_CHANGE);
         msg.obj = device;
 
         // Convert from native bond state to Java bond state
         if (newState == AbstractionLayer.BT_BOND_STATE_BONDED) {
             msg.arg1 = BluetoothDevice.BOND_BONDED;
+            pairingAlgorithm = getPairingAlgorithm(transport, nativePairingAlgorithm);
+            pairingVariant = getPairingVariant(transport, pairingAlgorithm, nativePairingVariant);
         } else if (newState == AbstractionLayer.BT_BOND_STATE_BONDING) {
             msg.arg1 = BluetoothDevice.BOND_BONDING;
+            pairingAlgorithm = convertNativePairingAlgorithm(transport, nativePairingAlgorithm);
+            if (pairingAlgorithm != null) {
+                pairingVariant =
+                        convertNativePairingVariant(
+                                transport, pairingAlgorithm, nativePairingVariant);
+            }
         } else {
             msg.arg1 = BluetoothDevice.BOND_NONE;
         }
         msg.arg2 = status;
         msg.getData().putInt(KEY_BOND_TRANSPORT, transport);
-        msg.getData().putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
-        msg.getData().putInt(KEY_PAIRING_VARIANT, pairingVariant);
+        if (pairingAlgorithm != null && pairingVariant != null) {
+            msg.getData().putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
+            msg.getData().putInt(KEY_PAIRING_VARIANT, pairingVariant);
+        }
         msg.getData().putInt(KEY_PAIRING_INITIATOR, pairingInitiator);
         msg.getData().putInt(KEY_HCI_REASON, hciReason);
 

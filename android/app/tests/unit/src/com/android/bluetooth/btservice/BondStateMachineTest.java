@@ -253,8 +253,8 @@ public class BondStateMachineTest {
                 pendingDevice,
                 BluetoothDevice.TRANSPORT_BREDR,
                 BOND_BONDED,
-                0,
-                0,
+                null,
+                null,
                 AbstractionLayer.BT_PAIRING_INITIATOR_APP,
                 TEST_BOND_REASON,
                 0);
@@ -605,8 +605,8 @@ public class BondStateMachineTest {
                 mDevice,
                 BluetoothDevice.TRANSPORT_BREDR,
                 BOND_NONE,
-                0, // pairingAlgorithm
-                0, // pairingVariant
+                null, // pairingAlgorithm
+                null, // pairingVariant
                 AbstractionLayer.BT_PAIRING_INITIATOR_APP, // pairingInitiator
                 TEST_BOND_REASON,
                 0); // hciReason
@@ -693,8 +693,8 @@ public class BondStateMachineTest {
                         mDevice,
                         BluetoothDevice.TRANSPORT_BREDR,
                         newState,
-                        0,
-                        0,
+                        null,
+                        null,
                         AbstractionLayer.BT_PAIRING_INITIATOR_APP,
                         TEST_BOND_REASON,
                         0);
