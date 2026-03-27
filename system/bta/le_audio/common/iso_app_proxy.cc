@@ -108,7 +108,7 @@ public:
     iso_app_callbacks_.cig_callbacks->OnRemoveIsoDataPath(status, conn_handle, cig_id);
   }
 
-  void OnIsoLinkQualityRead(uint8_t conn_handle, uint8_t cig_id, uint32_t tx_unacked_packets,
+  void OnIsoLinkQualityRead(uint16_t conn_handle, uint8_t cig_id, uint32_t tx_unacked_packets,
                             uint32_t tx_flushed_packets, uint32_t tx_last_subevent_packets,
                             uint32_t retransmitted_packets, uint32_t crc_error_packets,
                             uint32_t rx_unreceived_packets, uint32_t duplicate_packets) override {

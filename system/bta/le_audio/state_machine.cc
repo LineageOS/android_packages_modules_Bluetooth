@@ -952,7 +952,7 @@ public:
   }
 
   void ProcessHciNotifIsoLinkQualityRead(LeAudioDeviceGroup* /*group*/,
-                                         LeAudioDevice* /*leAudioDevice*/, uint8_t conn_handle,
+                                         LeAudioDevice* /*leAudioDevice*/, uint16_t conn_handle,
                                          uint32_t tx_unacked_packets, uint32_t tx_flushed_packets,
                                          uint32_t tx_last_subevent_packets,
                                          uint32_t retransmitted_packets, uint32_t crc_error_packets,
