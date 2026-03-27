@@ -80,15 +80,15 @@ class NfcAuracastActivity : Activity() {
                 val payload = String(record.payload, Charsets.UTF_8)
                 if (payload.contains(AuracastUtils.AURACAST_PREFIX)) {
                     val startIndex = payload.indexOf(AuracastUtils.AURACAST_PREFIX)
-                    processMetadata(payload.substring(startIndex))
+                    processUri(payload.substring(startIndex))
                     return
                 }
             }
         }
     }
 
-    private fun processMetadata(metadataStr: String) {
-        val info = AuracastUtils.parseBroadcastNameAndCode(metadataStr)
+    private fun processUri(uriString: String) {
+        val info = AuracastUtils.parseBroadcastURI(uriString)
         val streamName = info?.name
 
         if (streamName.isNullOrBlank()) {
@@ -96,20 +96,20 @@ class NfcAuracastActivity : Activity() {
             return
         }
 
-        showJoinPromptNotificationAsync(metadataStr, streamName)
+        showJoinPromptNotificationAsync(uriString, streamName)
     }
 
-    private fun showJoinPromptNotificationAsync(metadataStr: String, streamName: String) {
+    private fun showJoinPromptNotificationAsync(uriString: String, streamName: String) {
         val appContext = applicationContext
 
         // Check if Bluetooth is missing or turned off
         if (bluetoothAdapter == null || !bluetoothAdapter!!.isEnabled) {
             Log.w(TAG, "BluetoothAdapter is null or disabled. Posting fallback notification.")
-            postNotification(appContext, metadataStr, streamName, null)
+            postNotification(appContext, uriString, streamName, null)
             return
         }
 
-        val listener = ProxyListener(metadataStr, streamName)
+        val listener = ProxyListener(uriString, streamName)
 
         val success =
             bluetoothAdapter!!.getProfileProxy(
@@ -120,12 +120,12 @@ class NfcAuracastActivity : Activity() {
 
         if (!success) {
             Log.w(TAG, "Failed to get BASS profile proxy")
-            postNotification(appContext, metadataStr, streamName, null)
+            postNotification(appContext, uriString, streamName, null)
         }
     }
 
     private inner class ProxyListener(
-        private val metadataStr: String,
+        private val uriString: String,
         private val streamName: String,
     ) : BluetoothProfile.ServiceListener {
 
@@ -139,7 +139,7 @@ class NfcAuracastActivity : Activity() {
                 val defaultDeviceName =
                     applicationContext.getString(R.string.auracast_default_device_name)
                 val deviceName = connectedDevice?.let { it.alias ?: it.name ?: defaultDeviceName }
-                postNotification(applicationContext, metadataStr, streamName, deviceName)
+                postNotification(applicationContext, uriString, streamName, deviceName)
 
                 bluetoothAdapter?.closeProfileProxy(
                     BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
@@ -155,7 +155,7 @@ class NfcAuracastActivity : Activity() {
 
     private fun postNotification(
         context: Context,
-        metadataStr: String,
+        uriString: String,
         streamName: String,
         deviceName: String?,
     ) {
@@ -182,7 +182,7 @@ class NfcAuracastActivity : Activity() {
         val connectIntent =
             Intent(AuracastUtils.ACTION_CONNECT_STREAM).apply {
                 setPackage(context.packageName)
-                putExtra(AuracastUtils.EXTRA_METADATA, metadataStr)
+                putExtra(AuracastUtils.EXTRA_METADATA, uriString)
             }
 
         val connectPending =
