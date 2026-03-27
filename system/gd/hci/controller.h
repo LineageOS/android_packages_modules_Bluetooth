@@ -214,6 +214,7 @@ public:
     uint16_t big_set_channel_map_classification_support_;
     uint16_t vendor_connection_handle_min_;
     uint16_t vendor_connection_handle_max_;
+    uint8_t connection_proximity_threshold_support_;
   };
 
   virtual uint32_t GetDabSupportedCodecs() const = 0;

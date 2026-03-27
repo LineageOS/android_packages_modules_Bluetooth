@@ -513,7 +513,8 @@ protected:
             /*sniff_offload_support=*/1,
             /*big_set_channel_map_classification_support=*/0x0001,
             /*vendor_connection_handle_min=*/0x0000,
-            /*vendor_connection_handle_max=*/0x0000, std::make_unique<RawBuilder>());
+            /*vendor_connection_handle_max=*/0x0000,
+            /*connection_proximity_threshold_support=*/0x01, std::make_unique<RawBuilder>());
     ControllerTest::SetUp();
   }
 };
@@ -741,6 +742,9 @@ TEST_F(Controller106Test, feature_spec_version_106_test) {
   ASSERT_EQ(controller_->GetDabSupportedCodecs(), kDynamicAudioBufferSupport);
   ASSERT_EQ(controller_->GetVendorCapabilities().big_set_channel_map_classification_support_,
             0x0001);
+  ASSERT_EQ(controller_->GetVendorCapabilities().connection_proximity_threshold_support_, 0x01);
+  ASSERT_TRUE(controller_->IsSupported(
+          OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_WITH_PROXIMITY_THRESHOLD));
 
   for (size_t bit = 0; bit < 32; bit++) {
     if (kDynamicAudioBufferSupport & (1u << bit)) {

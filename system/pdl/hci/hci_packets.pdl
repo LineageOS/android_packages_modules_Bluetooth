@@ -459,6 +459,7 @@ enum OpCode : 16 {
   CONTROLLER_BQR = 0xFD5E,
   DYNAMIC_AUDIO_BUFFER = 0xFD5F,
   LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION = 0xFD65,
+  LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_WITH_PROXIMITY_THRESHOLD = 0xFD66,
   // MSFT_OPCODE_xxxx below are needed for the tests.
   MSFT_OPCODE_MEDIATEK = 0xFD30,
   MSFT_OPCODE_QUALCOMM = 0xFD70,
@@ -5392,6 +5393,7 @@ packet LeGetVendorCapabilitiesComplete106 : LeGetVendorCapabilitiesComplete105 {
   big_set_channel_map_classification_support : 16,
   vendor_connection_handle_min : 16,
   vendor_connection_handle_max : 16,
+  connection_proximity_threshold_support : 8,
   _payload_,
 }
 
@@ -7586,4 +7588,15 @@ packet LeSetBigChannelMapClassificationComplete : CommandComplete(command_op_cod
   sub_opcode: LeSetBigChannelMapClassificationSubOpcode,
   action: LeSetBigChannelMapClassificationAction,
   big_handle: 8,
+}
+
+packet LeAddDeviceToFilterAcceptListWithProximityThreshold : VendorCommand (op_code = LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_WITH_PROXIMITY_THRESHOLD) {
+  address_type : FilterAcceptListAddressType,
+  address : Address,
+  connection_path_loss_threshold : 8,
+  connection_rssi_threshold : 8,
+}
+
+packet LeAddDeviceToFilterAcceptListWithProximityThresholdComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_WITH_PROXIMITY_THRESHOLD) {
+  status : ErrorCode,
 }
