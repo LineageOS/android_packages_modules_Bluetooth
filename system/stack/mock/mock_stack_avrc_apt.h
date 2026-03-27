@@ -37,32 +37,6 @@ namespace mock {
 namespace stack_avrc_apt {
 
 // Shared state between mocked functions and tests
-// Name: AVRC_SubCmd
-// Params: uint8_t handle, uint8_t label, uint8_t page
-// Return: uint16_t
-struct AVRC_SubCmd {
-  static uint16_t return_value;
-  std::function<uint16_t(uint8_t handle, uint8_t label, uint8_t page)> body{
-          [](uint8_t /* handle */, uint8_t /* label */, uint8_t /* page */) {
-            return return_value;
-          }};
-  uint16_t operator()(uint8_t handle, uint8_t label, uint8_t page) {
-    return body(handle, label, page);
-  }
-};
-extern struct AVRC_SubCmd AVRC_SubCmd;
-
-// Name: AVRC_UnitCmd
-// Params: uint8_t handle, uint8_t label
-// Return: uint16_t
-struct AVRC_UnitCmd {
-  static uint16_t return_value;
-  std::function<uint16_t(uint8_t handle, uint8_t label)> body{
-          [](uint8_t /* handle */, uint8_t /* label */) { return return_value; }};
-  uint16_t operator()(uint8_t handle, uint8_t label) { return body(handle, label); }
-};
-extern struct AVRC_UnitCmd AVRC_UnitCmd;
-
 // Name: AVRC_VendorCmd
 // Params: uint8_t handle, uint8_t label, tAVRC_MSG_VENDOR* p_msg
 // Return: uint16_t

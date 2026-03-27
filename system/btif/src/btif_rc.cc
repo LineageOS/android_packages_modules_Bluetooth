@@ -215,11 +215,6 @@ static void initialize_device(btif_rc_device_cb_t* p_dev) {
 
   dealloc_device(p_dev);
   p_dev->rc_cover_art_psm = 0;
-  for (int i = 0; i < MAX_CMD_QUEUE_LEN; ++i) {
-    p_dev->rc_pdu_info[i].ctype = 0;
-    p_dev->rc_pdu_info[i].label = 0;
-    p_dev->rc_pdu_info[i].is_rsp_pending = false;
-  }
   if (p_dev->rc_supported_event_list != nullptr) {
     list_clear(p_dev->rc_supported_event_list);
   }
@@ -2340,12 +2335,6 @@ static void reset_device(btif_rc_device_cb_t& dev) {
   dev.rc_state = BTRC_CONNECTION_STATE_DISCONNECTED;
   dev.br_state = BTRC_CONNECTION_STATE_DISCONNECTED;
   dev.rc_addr = RawAddress::kEmpty;
-  for (int i = 0; i < MAX_CMD_QUEUE_LEN; ++i) {
-    dev.rc_pdu_info[i] = {};
-  }
-  for (int i = 0; i < MAX_RC_NOTIFICATIONS; ++i) {
-    dev.rc_notif[i] = {};
-  }
   if (dev.rc_supported_event_list != nullptr) {
     list_free(dev.rc_supported_event_list);
     dev.rc_supported_event_list = nullptr;
