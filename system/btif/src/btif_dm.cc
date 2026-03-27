@@ -3392,6 +3392,9 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   pairing_cb.is_ssp = false;
   cod = COD_UNCLASSIFIED;
 
+  pairing_cb.is_le_only = true;
+  pairing_cb.is_le_nc = false;
+
   BTM_LogHistory(
       kBtmLogTagCallback, bd_addr, "Ssp request",
       base::StringPrintf("name:\"%s\" passkey:%u", PRIVATE_NAME(bd_name.name),
