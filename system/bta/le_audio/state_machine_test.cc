@@ -27,7 +27,7 @@
 #include <utility>
 
 #include "bta/le_audio/content_control_id_keeper.h"
-#include "bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "btm_api_mock.h"
 #include "client_parser.h"

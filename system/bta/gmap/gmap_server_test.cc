@@ -22,7 +22,7 @@
 #include <hardware/bluetooth.h>
 
 #include "bta/le_audio/le_audio_types.h"
-#include "bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "test/common/mock_functions.h"
 
 using ::testing::_;

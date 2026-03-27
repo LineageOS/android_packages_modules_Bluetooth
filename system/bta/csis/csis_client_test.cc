@@ -26,9 +26,9 @@
 #include <vector>
 
 #include "bind_helpers.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta_csis_api.h"
 #include "bta_dm_api_mock.h"
-#include "bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "bta_le_audio_uuids.h"
 #include "btif/include/btif_profile_storage.h"
