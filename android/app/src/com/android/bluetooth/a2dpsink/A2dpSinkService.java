@@ -279,9 +279,8 @@ public class A2dpSinkService extends ConnectableProfile {
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
-        for (BluetoothDevice device : bondedDevices) {
+        for (BluetoothDevice device : getAdapterService().getBondedDevices()) {
             connectionState = getConnectionState(device);
             for (int i = 0; i < states.length; i++) {
                 if (connectionState == states[i]) {

@@ -199,9 +199,8 @@ public class MapClientService extends ConnectableProfile {
     public synchronized List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.d(TAG, "getDevicesMatchingConnectionStates" + Arrays.toString(states));
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
-        for (BluetoothDevice device : bondedDevices) {
+        for (BluetoothDevice device : getAdapterService().getBondedDevices()) {
             connectionState = getConnectionState(device);
             Log.d(TAG, "Device: " + device + "State: " + connectionState);
             for (int i = 0; i < states.length; i++) {

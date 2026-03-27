@@ -54,6 +54,7 @@ import org.mockito.Mock;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public class MediaControlGattServiceTest {
         }
 
         doReturn(true).when(mGattServer).addService(any(BluetoothGattService.class));
-        doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
+        doReturn(Collections.emptySet()).when(mAdapterService).getBondedDevices();
         doReturn(BluetoothDevice.ACCESS_ALLOWED).when(mMcpService).getDeviceAuthorization(any());
 
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();

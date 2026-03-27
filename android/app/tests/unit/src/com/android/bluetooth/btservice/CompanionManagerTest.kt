@@ -92,8 +92,7 @@ class CompanionManagerTest {
     fun testLoadCompanionInfo_noCompanionDeviceInPrefs_checksMetadataOfBondedDevices() {
         val device1 = mock<BluetoothDevice>()
         val device2 = mock<BluetoothDevice>()
-        val devices = arrayOf(device1, device2)
-        doReturn(devices).whenever(adapterService).bondedDevices
+        doReturn(setOf(device1, device2)).whenever(adapterService).bondedDevices
 
         doReturn("")
             .whenever(sharedPreferences)

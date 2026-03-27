@@ -128,6 +128,7 @@ import platform.test.runner.parameterized.Parameters;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -294,9 +295,7 @@ public class LeAudioServiceTest {
 
         doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 
-        doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
-                .when(mAdapterService)
-                .getBondedDevices();
+        doAnswer(invocation -> mBondedDevices).when(mAdapterService).getBondedDevices();
         doAnswer(
                         invocation -> {
                             Runnable runnable = invocation.getArgument(0);
@@ -306,9 +305,6 @@ public class LeAudioServiceTest {
                 .when(mScanController)
                 .doOnScanThread(any(Runnable.class));
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
-        doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
-                .when(mAdapterService)
-                .getBondedDevices();
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any(BluetoothDevice.class));
         doReturn(
                         new ParcelUuid[] {
@@ -2558,10 +2554,10 @@ public class LeAudioServiceTest {
         assertThat(mService.getDevicesMatchingConnectionStates(null)).isEmpty();
 
         int[] states = new int[] {STATE_CONNECTED};
-        doReturn(new BluetoothDevice[] {}).when(mAdapterService).getBondedDevices();
+        doReturn(Collections.emptySet()).when(mAdapterService).getBondedDevices();
         assertThat(mService.getDevicesMatchingConnectionStates(states)).isEmpty();
 
-        doReturn(new BluetoothDevice[] {mSingleDevice}).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mSingleDevice)).when(mAdapterService).getBondedDevices();
         assertThat(mService.getDevicesMatchingConnectionStates(states)).isEmpty();
     }
 
@@ -2602,7 +2598,7 @@ public class LeAudioServiceTest {
         doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
-        doReturn(new BluetoothDevice[] {mSingleDevice}).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mSingleDevice)).when(mAdapterService).getBondedDevices();
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mAdapterService)
                 .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);

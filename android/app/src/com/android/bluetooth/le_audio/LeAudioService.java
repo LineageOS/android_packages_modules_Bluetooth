@@ -1152,7 +1152,7 @@ public class LeAudioService extends ConnectableProfile {
         if (states == null) {
             return devices;
         }
-        final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
+        final var bondedDevices = getAdapterService().getBondedDevices();
         mGroupReadLock.lock();
         try {
             for (BluetoothDevice device : bondedDevices) {

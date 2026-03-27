@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /** Test cases for {@link AvrcpControllerService}. */
 @MediumTest
@@ -123,7 +124,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void getConnectedDevices() {
-        doReturn(new BluetoothDevice[] {mDevice1}).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1)).when(mAdapterService).getBondedDevices();
         doReturn(STATE_CONNECTED).when(mStateMachine).getState();
 
         assertThat(mService.getConnectedDevices()).contains(mDevice1);

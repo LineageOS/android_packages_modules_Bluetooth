@@ -711,7 +711,7 @@ public class HeadsetService extends ConnectableProfile {
             if (states == null) {
                 return devices;
             }
-            final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
+            final var bondedDevices = getAdapterService().getBondedDevices();
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
                 if (!BluetoothUuid.containsAnyUuid(featureUuids, HEADSET_UUIDS)) {

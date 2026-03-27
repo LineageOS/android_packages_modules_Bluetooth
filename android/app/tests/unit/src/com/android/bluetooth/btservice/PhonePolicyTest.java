@@ -83,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /** Test cases for {@link PhonePolicy}. */
 @MediumTest
@@ -134,7 +135,7 @@ public class PhonePolicyTest {
                 .when(mAdapterService)
                 .getDatabasePath(anyString());
 
-        doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
+        doReturn(Collections.emptySet()).when(mAdapterService).getBondedDevices();
         doReturn(mAdapterService).when(mAdapterService).createDeviceProtectedStorageContext();
         doReturn(State.ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
@@ -785,8 +786,7 @@ public class PhonePolicyTest {
      */
     @Test
     public void testReconnectOnPartialConnect() {
-        BluetoothDevice[] bondedDevices = {mDevice1};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1)).when(mAdapterService).getBondedDevices();
 
         doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
         doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
@@ -820,8 +820,7 @@ public class PhonePolicyTest {
      */
     @Test
     public void testConnectOtherProfileWhileDeviceIsDisconnected() {
-        BluetoothDevice[] bondedDevices = {mDevice1};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1)).when(mAdapterService).getBondedDevices();
 
         doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
         doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
@@ -1004,7 +1003,7 @@ public class PhonePolicyTest {
         BluetoothDevice a2dpNotConnectedDevice1 = hsConnectedDevices.get(kMaxTestDevices - 1);
         BluetoothDevice a2dpNotConnectedDevice2 = hsConnectedDevices.get(kMaxTestDevices - 2);
 
-        doReturn(testDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(testDevices)).when(mAdapterService).getBondedDevices();
         doReturn(hsConnectedDevices).when(mHeadsetService).getConnectedDevices();
         doReturn(a2dpConnectedDevices).when(mA2dpService).getConnectedDevices();
         // Two of the A2DP devices are not connected
@@ -1096,7 +1095,7 @@ public class PhonePolicyTest {
                         .getConnectionPolicy(testDevice);
             }
         }
-        doReturn(testDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(testDevices)).when(mAdapterService).getBondedDevices();
         doReturn(hsConnectedDevices).when(mHeadsetService).getConnectedDevices();
         doReturn(a2dpConnectedDevices).when(mA2dpService).getConnectedDevices();
         // Some of the devices are not connected
@@ -1183,8 +1182,7 @@ public class PhonePolicyTest {
     /** Test that we will not try to reconnect on a profile if all the connections failed */
     @Test
     public void testNoReconnectOnNoConnect() {
-        BluetoothDevice[] bondedDevices = {mDevice1};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1)).when(mAdapterService).getBondedDevices();
 
         doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
         doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
@@ -1202,8 +1200,7 @@ public class PhonePolicyTest {
      */
     @Test
     public void testNoReconnectOnNoConnect_MultiDevice() {
-        BluetoothDevice[] bondedDevices = {mDevice1, mDevice2};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1, mDevice2)).when(mAdapterService).getBondedDevices();
 
         doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
         doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
@@ -1230,8 +1227,7 @@ public class PhonePolicyTest {
      */
     @Test
     public void testReconnectOnPartialConnect_MultiDevice() {
-        BluetoothDevice[] bondedDevices = {mDevice1, mDevice2};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1, mDevice2)).when(mAdapterService).getBondedDevices();
 
         doReturn(List.of(mDevice2)).when(mHeadsetService).getConnectedDevices();
 

@@ -53,6 +53,7 @@ import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /** Test cases for {@link A2dpSinkService}. */
 @MediumTest
@@ -76,9 +77,7 @@ public class A2dpSinkServiceTest {
     // This creates issues with the TestLooper, as it overrides Looper.myLooper for the current
     // thread only.
     public void initTest() {
-        BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mDevice1, mDevice2};
-
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mDevice1, mDevice2)).when(mAdapterService).getBondedDevices();
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class);
 

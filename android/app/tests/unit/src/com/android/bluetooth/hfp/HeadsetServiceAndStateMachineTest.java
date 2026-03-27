@@ -185,9 +185,7 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(FAKE_HEADSET_UUID)
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
-        doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
-                .when(mAdapterService)
-                .getBondedDevices();
+        doAnswer(invocation -> mBondedDevices).when(mAdapterService).getBondedDevices();
         doReturn(new BluetoothSinkAudioPolicy.Builder().build())
                 .when(mAdapterService)
                 .getRequestedAudioPolicyAsSink(any(BluetoothDevice.class));

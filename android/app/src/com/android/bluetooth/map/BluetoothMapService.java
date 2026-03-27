@@ -542,7 +542,7 @@ public class BluetoothMapService extends ConnectableProfile {
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
+        var bondedDevices = getAdapterService().getBondedDevices();
         synchronized (this) {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
