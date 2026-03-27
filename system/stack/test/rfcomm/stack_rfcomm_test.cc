@@ -29,6 +29,7 @@
 #include "stack/rfcomm/rfc_int.h"
 #include "stack/test/common/stack_test_packet_utils.h"
 #include "stack/test/rfcomm/stack_rfcomm_test_utils.h"
+#include "test/mock/mock_main_shim_entry.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -185,10 +186,21 @@ protected:
     rfcomm_callback = &rfcomm_callback_;
     EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_Register(BT_PSM_RFCOMM, _, _, _, _, _, _))
             .WillOnce(Return(BT_PSM_RFCOMM));
+
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockController>();
+    hci::Address mac_address;
+    hci::Address::FromString("11:22:33:44:55:66", mac_address);
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetMacAddress())
+            .WillByDefault(Return(mac_address));
+
     RFCOMM_Init();
     l2cap_appl_info_ = rfc_cb.rfc.reg_info;
   }
-  void TearDown() override { bluetooth::testing::stack::l2cap::reset_interface(); }
+  void TearDown() override {
+    bluetooth::hci::testing::mock_controller_.reset();
+    bluetooth::testing::stack::l2cap::reset_interface();
+  }
 };
 
 TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
@@ -500,7 +512,60 @@ TEST_F(StackRfcommTest, collide_then_close_outgoing_after_timeout) {
   ASSERT_EQ(p_mcb->state, RFC_MX_STATE_IDLE);
 }
 
+/*
+ * Test steps:
+ * 1. Open a server port
+ * 2. Send a connection request to a lower-addressed peer (Local wins)
+ * 3. Receive ConnectInd from peer
+ * 4. Verify incoming connection is rejected (L2CA_DisconnectReq)
+ * 5. Verify outgoing connection continues
+ */
+TEST_F(StackRfcommTest, collide_local_wins) {
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
+  // Use a peer address smaller than local address (11:22:33:44:55:66)
+  RawAddress peer_addr = kRawAddress2;
+
+  log::verbose("Step 1 and 2");
+  StartConnecting(test_scn, test_mtu, outgoing_lcid, peer_addr, server_handle, client_handle);
+  tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].p_mcb;
+  ASSERT_EQ(p_mcb->state, RFC_MX_STATE_WAIT_CONN_CNF);
+
+  log::verbose("Step 3 and 4");
+  // Mux collision: we receive a ConnectInd after sending our own ConnectReq
+  // Since local address > peer address, local wins. We should reject the incoming connection.
+  EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_DisconnectReq(incoming_lcid))
+          .Times(1)
+          .WillOnce(Return(true));
+
+  l2cap_appl_info_.pL2CA_ConnectInd_Cb(peer_addr, incoming_lcid, BT_PSM_RFCOMM,
+                                       L2CAP_CMD_CONFIG_RSP);
+
+  log::verbose("Step 5");
+  // Outgoing connection should remain in WAIT_CONN_CNF
+  ASSERT_EQ(p_mcb->state, RFC_MX_STATE_WAIT_CONN_CNF);
+
+  // Verify that the outgoing connection can successfully complete.
+  l2cap_appl_info_.pL2CA_ConnectCfm_Cb(outgoing_lcid, tL2CAP_CONN::L2CAP_CONN_OK);
+  ASSERT_EQ(p_mcb->state, RFC_MX_STATE_CONFIGURE);
+
+  tL2CAP_CFG_INFO local_cfg_req = {.mtu_present = true, .mtu = test_mtu};
+  l2cap_appl_info_.pL2CA_ConfigInd_Cb(outgoing_lcid, &local_cfg_req);
+  ASSERT_EQ(p_mcb->state, RFC_MX_STATE_CONFIGURE);
+
+  BT_HDR* sabm_channel_0 = AllocateWrappedOutgoingL2capAclPacket(
+          CreateQuickSabmPacket(RFCOMM_MX_DLCI, outgoing_lcid, acl_handle));
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_DataWrite(outgoing_lcid, BtHdrEqual(sabm_channel_0)))
+          .WillOnce(Return(tL2CAP_DW_RESULT::SUCCESS));
+
+  l2cap_appl_info_.pL2CA_ConfigCfm_Cb(outgoing_lcid, 1, &local_cfg_req);
+  osi_free(sabm_channel_0);
+
+  // Since it's the initiator, it sends SABME and waits for UA
+  ASSERT_EQ(p_mcb->state, RFC_MX_STATE_SABME_WAIT_UA);
+}
 
 TEST_F(StackRfcommTest, rfc_port_sm_state_closed_RFC_PORT_EVENT_TIMEOUT) {
   uint8_t server_handle = 0;
