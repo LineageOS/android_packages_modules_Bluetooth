@@ -121,6 +121,10 @@ private:
     return tasks_ == nullptr || delayed_tasks_ == nullptr;
   }
   std::queue<base::OnceClosure>* tasks_ GUARDED_BY(mutex_);
+  // Flag to track whether this handler is currently draining tasks on its thread.
+  // This is used to avoid redundant eventfd notifications when new tasks are posted
+  // while the handler is already in its dispatch loop.
+  bool is_active_ GUARDED_BY(mutex_){false};
 
   Thread* thread_;
   std::unique_ptr<Reactor::Event> event_;
@@ -135,7 +139,7 @@ private:
   // The alarm used to schedule delayed tasks.
   Alarm* alarm_ GUARDED_BY(mutex_);
 
-  void handle_next_event();
+  void handle_all_queued_events();
   void handle_delayed_event();
   void reschedule_delayed_tasks();
 
