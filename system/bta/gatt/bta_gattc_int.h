@@ -243,7 +243,6 @@ typedef struct {
   bool in_use;
   tGATT_IF client_if; /* client interface with BTE stack for this application */
   uint8_t num_clcb;   /* number of associated CLCB */
-  bool dereg_pending;
   bluetooth::Uuid app_uuid;
   tBTA_GATTC_NOTIF_REG notif_reg[BTA_GATTC_NOTIF_REG_MAX];
 
@@ -359,7 +358,6 @@ void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg);
 void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb);
 
 void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
-void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 
 void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
