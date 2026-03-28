@@ -68,9 +68,7 @@ impl Arbiter {
         let (state, cvar) = &*self.state_cvar;
         let mut state = state.lock().unwrap();
         for q in state.queues.iter_mut() {
-            while let Some(idx) = q.iter().position(|&(h, _)| h == handle) {
-                q.remove(idx);
-            }
+            q.retain(|(h, _)| *h != handle);
         }
         if state.in_transit.remove(&handle).is_some() {
             cvar.notify_one();

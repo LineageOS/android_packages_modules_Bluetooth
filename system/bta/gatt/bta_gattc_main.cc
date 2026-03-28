@@ -41,7 +41,6 @@ enum {
   BTA_GATTC_DISC_CMPL,
   BTA_GATTC_Q_CMD,
   BTA_GATTC_CLOSE,
-  BTA_GATTC_CLOSE_FAIL,
   BTA_GATTC_READ,
   BTA_GATTC_WRITE,
   BTA_GATTC_OP_CMPL,
@@ -66,7 +65,6 @@ const tBTA_GATTC_ACTION bta_gattc_action[] = {
         bta_gattc_disc_cmpl,                /* BTA_GATTC_DISC_CMPL */
         bta_gattc_q_cmd,                    /* BTA_GATTC_Q_CMD */
         bta_gattc_close,                    /* BTA_GATTC_CLOSE */
-        bta_gattc_close_fail,               /* BTA_GATTC_CLOSE_FAIL */
         bta_gattc_read,                     /* BTA_GATTC_READ */
         bta_gattc_write,                    /* BTA_GATTC_WRITE */
         bta_gattc_op_cmpl,                  /* BTA_GATTC_OP_CMPL */

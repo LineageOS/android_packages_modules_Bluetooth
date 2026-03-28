@@ -333,7 +333,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return Collections.emptyList();
         }
 
-        return Arrays.asList(service.getBondedDevices());
+        return List.copyOf(service.getBondedDevices());
     }
 
     @Override
@@ -1878,7 +1878,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        if (!Util.arrayContains(service.getBondedDevices(), device)) {
+        if (!service.getBondedDevices().contains(device)) {
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
         }
         service.setActiveAudioPolicy(device, policy);
@@ -1923,7 +1923,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        if (!Util.arrayContains(service.getBondedDevices(), device)) {
+        if (!service.getBondedDevices().contains(device)) {
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
         }
         service.setMicrophonePreferredForCalls(device, enabled);

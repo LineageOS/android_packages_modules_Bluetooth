@@ -82,7 +82,9 @@ class UtilTest {
         val sourceStart = mock<AttributionSource>()
         val sourceEnd = mock<AttributionSource>()
         doReturn(packageManager).whenever(adapterService).packageManager
-        doReturn(adapterService).whenever(adapterService).createContextAsUser(any(), any())
+        doReturn(adapterService)
+            .whenever(adapterService)
+            .createPackageContextAsUser(any(), any(), any())
 
         // We create a chain: SourceStart -> SourceEnd -> null
         doReturn(sourceEnd).whenever(sourceStart).next

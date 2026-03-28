@@ -1875,10 +1875,6 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
       }
     } break;
 
-    case BTA_AV_RC_BROWSE_OPEN_EVT:
-      btif_rc_handler(event, reinterpret_cast<tBTA_AV*>(p_data));
-      break;
-
     // In case Signalling channel is not down and remote started Streaming
     // Procedure, we have to handle Config and Open event in Idle state.
     // We hit these scenarios while running PTS test case for AVRCP Controller.
@@ -1974,6 +1970,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
       btif_queue_advance();
     } break;
 
+    case BTA_AV_RC_BROWSE_OPEN_EVT:
     case BTA_AV_REMOTE_CMD_EVT:
     case BTA_AV_VENDOR_CMD_EVT:
     case BTA_AV_META_MSG_EVT:
@@ -2878,12 +2875,7 @@ bool BtifAvStateMachine::StateClosing::ProcessEvent(uint32_t event, void* p_data
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateIdle);
       break;
 
-    // Handle the RC_CLOSE event for the cleanup
     case BTA_AV_RC_CLOSE_EVT:
-      btif_rc_handler(event, reinterpret_cast<tBTA_AV*>(p_data));
-      break;
-
-    // Handle the RC_BROWSE_CLOSE event for testing
     case BTA_AV_RC_BROWSE_CLOSE_EVT:
       btif_rc_handler(event, reinterpret_cast<tBTA_AV*>(p_data));
       break;

@@ -30,7 +30,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
@@ -96,14 +99,34 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm
   if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state != RFC_MX_STATE_IDLE) {
     /* Collision: We received a ConnectInd from L2CAP after sending our own L2CAP connection req.
      *
-     * The outgoing connection is cached and the incoming connection is processed.  If the
-     * current state is RFC_MX_STATE_WAIT_CONN_CNF, the collision event will effectively
-     * reset the state machine.
+     * To avoid deadlock when both sides behave mirror-like, compare Local and Remote BD_ADDR.
+     * Only the device with the lower address will swap roles to become an Acceptor.
+     * The device with the higher address stays as an Initiator, rejects the incoming
+     * colliding connection, and waits for its own outgoing connection to complete.
+     *
+     * For lower address device, the outgoing connection is cached and the incoming connection
+     * is processed.  If the current state is RFC_MX_STATE_WAIT_CONN_CNF, the collision event
+     * will effectively reset the state machine.
      */
+
+    RawAddress local_addr =
+            bluetooth::ToRawAddress(bluetooth::shim::GetController()->GetMacAddress());
+
+    if (local_addr > bd_addr) {
+      log::info(
+              "RFCOMM MUX Collision - Local wins ({} > {}), rejecting incoming connection "
+              "incoming lcid:{:x}",
+              local_addr, bd_addr, lcid);
+      if (!stack::l2cap::get_interface().L2CA_DisconnectReq(lcid)) {
+        log::warn("Unable to disconnect L2CAP cid:{}", lcid);
+      }
+      return;
+    }
+
     log::info(
-            "RFCOMM MUX Collision - accepting incoming connection. incoming lcid:{0:x}, cached "
-            "lcid:{0:x}",
-            lcid, p_mcb->lcid);
+            "RFCOMM MUX Collision - Local loses ({} < {}), accepting incoming connection. "
+            "incoming lcid:{:x}, cached lcid:{:x}",
+            local_addr, bd_addr, lcid, p_mcb->lcid);
     bluetooth::metrics::LogRfcommMxEvent(
             p_mcb->bd_addr, bluetooth::metrics::State::COLLISION_DETECTED_ACCEPT_INCOMING);
     p_mcb->collision_outgoing_lcid = p_mcb->lcid;

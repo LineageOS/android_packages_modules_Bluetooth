@@ -2580,6 +2580,16 @@
         "AVRCP/TG/CA/BI-10-C",
         "AVRCP/TG/CA/BV-16-C"
       ]
+    },
+    {
+      "flags": [
+        "a2dp_offload_user_codec_selection"
+      ],
+      "tests": [
+        "A2DP",
+        "AVDTP",
+        "AVRCP"
+      ]
     }
   ],
   "system_properties": [

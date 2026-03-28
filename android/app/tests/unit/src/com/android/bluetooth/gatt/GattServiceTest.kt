@@ -640,9 +640,7 @@ class GattServiceTest(flags: FlagsWrapper) {
     fun clientGetDevicesMatchingConnectionStates() {
         val states = intArrayOf(BluetoothProfile.STATE_CONNECTED)
 
-        val testDevice = getTestDevice(90)
-        val bluetoothDevices = arrayOf<BluetoothDevice>(testDevice)
-        doReturn(bluetoothDevices).whenever(adapterService).bondedDevices
+        doReturn(setOf(getTestDevice(90))).whenever(adapterService).bondedDevices
 
         val connectedDevices = setOf(device)
         doReturn(connectedDevices).whenever(clientMap).getConnectedDevices()

@@ -44,6 +44,7 @@ rust_defaults {
 rust_library {
     name: "libbluetooth_offload_hci",
     defaults: ["bluetooth_offload_hci_defaults"],
+    host_supported: true,
     vendor_available: true,
 }
 

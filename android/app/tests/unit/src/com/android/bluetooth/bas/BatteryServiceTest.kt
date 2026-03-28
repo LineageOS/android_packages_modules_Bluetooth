@@ -158,7 +158,7 @@ class BatteryServiceTest {
 
     @Test
     fun getDevicesMatchingConnectionStates() {
-        doReturn(arrayOf(device)).whenever(adapterService).bondedDevices
+        doReturn(setOf(device)).whenever(adapterService).bondedDevices
         val states = intArrayOf(STATE_DISCONNECTED)
 
         assertThat(service.getDevicesMatchingConnectionStates(states)).containsExactly(device)

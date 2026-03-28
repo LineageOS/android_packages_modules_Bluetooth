@@ -2042,13 +2042,21 @@ public class RemoteDevices {
             BluetoothDevice device,
             int transport,
             int newState,
-            int pairingAlgorithm,
-            int pairingVariant) {
+            Integer pairingAlgorithm,
+            Integer pairingVariant) {
         String address = device.getAddress();
 
         if (newState == BluetoothDevice.BOND_NONE) {
             removeDeviceProperties(address);
         } else if (newState == BluetoothDevice.BOND_BONDED) {
+            if (pairingAlgorithm == null || pairingVariant == null) {
+                Log.e(
+                        TAG,
+                        "onBondStateChange: pairingAlgorithm or pairingVariant is null, device="
+                                + device);
+                return;
+            }
+
             Log.i(
                     TAG,
                     "onBondStateChange: device="

@@ -4027,7 +4027,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_passkey_req) {
   bd_name_copy(bd_name.name, p_passkey_req->bd_name);
 
   pairing_cb.pairing_type = {.algorithm = p_passkey_req->pairing_algorithm,
-                             .variant = PairingVariant::PASSKEY_CONFIRMATION};
+                             .variant = PairingVariant::PASSKEY_ENTRY};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
   pairing_cb.is_le_only = true;

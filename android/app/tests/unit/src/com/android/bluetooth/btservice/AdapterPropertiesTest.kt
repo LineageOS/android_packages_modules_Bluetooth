@@ -112,9 +112,7 @@ class AdapterPropertiesTest(flags: FlagsWrapper) {
         // as they are same device (have same identity address)
         adapterProperties.onBondStateChanged(device1, BluetoothDevice.BOND_BONDED)
         adapterProperties.onBondStateChanged(device2, BluetoothDevice.BOND_BONDED)
-        assertThat(adapterProperties.getBondedDevices().size).isEqualTo(1)
-        assertThat(adapterProperties.getBondedDevices()[0].address)
-            .isEqualTo(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2))
+        assertThat(adapterProperties.getBondedDevices()).containsExactly(device2)
     }
 
     @Test

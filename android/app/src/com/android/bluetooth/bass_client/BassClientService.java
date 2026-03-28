@@ -748,9 +748,7 @@ public class BassClientService extends ConnectableProfile {
     }
 
     private record SourceSyncRequest(
-            PeriodicAdvertisementResult paResult,
-            boolean hasPriority,
-            int syncFailureCounter) {
+            PeriodicAdvertisementResult paResult, boolean hasPriority, int syncFailureCounter) {
         int getRssi() {
             return paResult.getRssi();
         }
@@ -2436,7 +2434,7 @@ public class BassClientService extends ConnectableProfile {
         if (states == null) {
             return devices;
         }
-        final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
+        final var bondedDevices = getAdapterService().getBondedDevices();
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);

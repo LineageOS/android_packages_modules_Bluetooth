@@ -414,13 +414,7 @@ public class BassClientServiceTest {
         doReturn(BluetoothDevice.BOND_BONDED)
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
-        doAnswer(
-                        invocation -> {
-                            Set<BluetoothDevice> keys = mStateMachines.keySet();
-                            return keys.toArray(new BluetoothDevice[keys.size()]);
-                        })
-                .when(mAdapterService)
-                .getBondedDevices();
+        doAnswer(invocation -> mStateMachines.keySet()).when(mAdapterService).getBondedDevices();
         mockGetSystemService(mAdapterService, BluetoothManager.class, mBluetoothManager);
         doReturn(mAdapter).when(mBluetoothManager).getAdapter();
         doAnswer(
