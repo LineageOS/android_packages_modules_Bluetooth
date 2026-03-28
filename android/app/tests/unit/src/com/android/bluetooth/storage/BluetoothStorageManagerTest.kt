@@ -73,7 +73,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
 
     @Before
     fun setUp() {
-        doReturn(emptyArray<BluetoothDevice>()).whenever(adapterService).bondedDevices
+        doReturn(emptySet<BluetoothDevice>()).whenever(adapterService).bondedDevices
         doReturn(adapterService).whenever(adapterService).createDeviceProtectedStorageContext()
         doReturn(context.applicationInfo).whenever(adapterService).applicationInfo
         doReturn("com.android.bluetooth").whenever(adapterService).packageName
@@ -147,7 +147,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @Test
     fun deviceConnectionHistory() =
         runTest(testDispatcher) {
-            doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
+            doReturn(setOf(device1, device2)).whenever(adapterService).bondedDevices
             assertThat(storageManager.getMostRecentlyConnectedDevices()).isEmpty()
 
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
@@ -164,7 +164,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
         runTest(testDispatcher) {
             deviceConnectionHistory()
 
-            doReturn(arrayOf(device2)).whenever(adapterService).bondedDevices
+            doReturn(setOf(device2)).whenever(adapterService).bondedDevices
             storageManager.onBondStateChanged(device1, BOND_BONDED, BOND_NONE)
 
             assertThat(storageManager.getMostRecentlyConnectedDevices()).containsExactly(device2)
@@ -173,7 +173,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
     @Test
     fun activeA2dp() =
         runTest(testDispatcher) {
-            doReturn(arrayOf(device1, device2)).whenever(adapterService).bondedDevices
+            doReturn(setOf(device1, device2)).whenever(adapterService).bondedDevices
             assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isNull()
 
             storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
@@ -259,7 +259,7 @@ class BluetoothStorageManagerTest(flags: FlagsWrapper) {
             storageManager.setCustomMetadata(device1, key, value)
 
             // Bond it after the ma device
-            doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
+            doReturn(setOf(device1)).whenever(adapterService).bondedDevices
             storageManager.onBondStateChanged(device1, BOND_NONE, BOND_BONDED)
 
             emulateBluetoothRestart()

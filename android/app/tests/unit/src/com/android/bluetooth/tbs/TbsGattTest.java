@@ -1376,9 +1376,6 @@ public class TbsGattTest {
 
         doReturn(null).when(mGattServer).getService(TbsGatt.UUID_GTBS);
 
-        BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mFirstDevice};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
-
         mTbsGatt.mGattServerCallback.onServiceAdded(BluetoothGatt.GATT_SUCCESS, null);
 
         verify(mGattServer).getService(TbsGatt.UUID_GTBS);

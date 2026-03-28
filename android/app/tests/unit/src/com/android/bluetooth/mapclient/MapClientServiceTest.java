@@ -62,6 +62,7 @@ import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /** Test cases for {@link MapClientService}. */
 @MediumTest
@@ -181,8 +182,7 @@ public class MapClientServiceTest {
     public void getConnectedDevices() {
         int connectionState = STATE_CONNECTED;
         MceStateMachine sm = mock(MceStateMachine.class);
-        BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mRemoteDevice};
-        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+        doReturn(Set.of(mRemoteDevice)).when(mAdapterService).getBondedDevices();
         mService.getInstanceMap().put(mRemoteDevice, sm);
         doReturn(connectionState).when(sm).getState();
 

@@ -2903,12 +2903,9 @@ public class AdapterService extends Service {
     }
 
     /**
-     * Same as API method {@link BluetoothAdapter#getBondedDevices()}
-     *
-     * @return array of bonded {@link BluetoothDevice}
+     * @return set of bonded {@link BluetoothDevice}
      */
-    @NonNull
-    public BluetoothDevice[] getBondedDevices() {
+    public @NonNull Set<BluetoothDevice> getBondedDevices() {
         return mAdapterProperties.getBondedDevices();
     }
 
@@ -3232,8 +3229,7 @@ public class AdapterService extends Service {
 
     private void refreshBondedDeviceUuids() {
         Log.d(TAG, "refreshBondedDeviceUuids() - Retrieving UUIDs for bonded devices");
-        BluetoothDevice[] bondedDevices = getBondedDevices();
-        for (BluetoothDevice device : bondedDevices) {
+        for (BluetoothDevice device : getBondedDevices()) {
             mRemoteDevices.triggerUuidNotification(device);
         }
     }

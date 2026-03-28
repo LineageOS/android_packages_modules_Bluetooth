@@ -69,7 +69,7 @@ class BluetoothMapServiceTest {
 
     @Test
     fun getDevicesMatchingConnectionStates_whenNoDeviceIsConnected_returnsEmptyList() {
-        doReturn(arrayOf(device)).whenever(adapterService).bondedDevices
+        doReturn(setOf(device)).whenever(adapterService).bondedDevices
 
         assertThat(service.getDevicesMatchingConnectionStates(intArrayOf(STATE_CONNECTED)))
             .isEmpty()

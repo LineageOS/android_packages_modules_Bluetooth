@@ -144,13 +144,7 @@ public class HeadsetServiceTest {
                 .getBondState(any(BluetoothDevice.class));
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        doAnswer(
-                        invocation -> {
-                            Set<BluetoothDevice> keys = mStateMachines.keySet();
-                            return keys.toArray(new BluetoothDevice[keys.size()]);
-                        })
-                .when(mAdapterService)
-                .getBondedDevices();
+        doAnswer(invocation -> mStateMachines.keySet()).when(mAdapterService).getBondedDevices();
         doReturn(new BluetoothSinkAudioPolicy.Builder().build())
                 .when(mAdapterService)
                 .getRequestedAudioPolicyAsSink(any(BluetoothDevice.class));
@@ -716,12 +710,7 @@ public class HeadsetServiceTest {
                 .when(mAdapterService)
                 .getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET));
-        doAnswer(
-                        invocation -> {
-                            BluetoothDevice[] devicesArray =
-                                    new BluetoothDevice[connectedDevices.size()];
-                            return connectedDevices.toArray(devicesArray);
-                        })
+        doAnswer(invocation -> Set.copyOf(connectedDevices))
                 .when(mAdapterService)
                 .getBondedDevices();
         for (int i = 0; i < MAX_HEADSET_CONNECTIONS; ++i) {
