@@ -13,254 +13,253 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Generated mock file from original source file
- *   Functions generated:47
- *
- *  mockcify.pl ver 0.6.1
- */
 
-// Mock include file to share data between tests and mock
 #include "mock_bta_dm_api.h"
 
 #include <cstdint>
+#include <vector>
 
-#include "bta/include/bta_api.h"
-#include "bta/include/bta_sec_api.h"
-#include "hci/le_rand_callback.h"
-#include "test/common/mock_functions.h"
+namespace {
+MockBtaDmApi* instance;
+}
 
-// Original usings
+void MockBtaDmApi::SetInstance(MockBtaDmApi* ptr) { instance = ptr; }
 
-// Mocked internal structures, if any
-
-namespace test {
-namespace mock {
-namespace bta_dm_api {
-
-// Function state capture and return values, if needed
-struct BTA_DmAddBleDevice BTA_DmAddBleDevice;
-struct BTA_DmAddBleKey BTA_DmAddBleKey;
-struct BTA_DmAddDevice BTA_DmAddDevice;
-struct BTA_DmAllowWakeByHid BTA_DmAllowWakeByHid;
-struct BTA_DmBleConfigLocalPrivacy BTA_DmBleConfigLocalPrivacy;
-struct BTA_DmBleConfirmReply BTA_DmBleConfirmReply;
-struct BTA_DmBleCsisObserve BTA_DmBleCsisObserve;
-struct BTA_DmBleGetEnergyInfo BTA_DmBleGetEnergyInfo;
-struct BTA_DmBlePasskeyReply BTA_DmBlePasskeyReply;
-struct BTA_DmBleRequestMaxTxDataLength BTA_DmBleRequestMaxTxDataLength;
-struct BTA_DmBleResetId BTA_DmBleResetId;
-struct BTA_DmBleScan BTA_DmBleScan;
-struct BTA_DmBleSecurityGrant BTA_DmBleSecurityGrant;
-struct BTA_DmBond BTA_DmBond;
-struct BTA_DmBondCancel BTA_DmBondCancel;
-struct BTA_DmCheckLeAudioCapable BTA_DmCheckLeAudioCapable;
-struct BTA_DmClearEventFilter BTA_DmClearEventFilter;
-struct BTA_DmClearEventMask BTA_DmClearEventMask;
-struct BTA_DmClearFilterAcceptList BTA_DmClearFilterAcceptList;
-struct BTA_DmConfirm BTA_DmConfirm;
-struct BTA_DmDisconnectAllAcls BTA_DmDisconnectAllAcls;
-struct BTA_DmDiscover BTA_DmDiscover;
-struct BTA_DmGetConnectionState BTA_DmGetConnectionState;
-struct BTA_DmLeRand BTA_DmLeRand;
-struct BTA_DmLocalOob BTA_DmLocalOob;
-struct BTA_DmPinReply BTA_DmPinReply;
-struct BTA_DmRemoveDevice BTA_DmRemoveDevice;
-struct BTA_DmRestoreFilterAcceptList BTA_DmRestoreFilterAcceptList;
-struct BTA_DmSearch BTA_DmSearch;
-struct BTA_DmSearchCancel BTA_DmSearchCancel;
-struct BTA_DmSetDefaultEventMaskExcept BTA_DmSetDefaultEventMaskExcept;
-struct BTA_DmSetDeviceName BTA_DmSetDeviceName;
-struct BTA_DmSetEncryption BTA_DmSetEncryption;
-struct BTA_DmSetEventFilterConnectionSetupAllDevices BTA_DmSetEventFilterConnectionSetupAllDevices;
-struct BTA_DmSetEventFilterInquiryResultAllDevices BTA_DmSetEventFilterInquiryResultAllDevices;
-struct BTA_DmSetLocalDiRecord BTA_DmSetLocalDiRecord;
-struct BTA_DmSirkConfirmDeviceReply BTA_DmSirkConfirmDeviceReply;
-struct BTA_DmSirkSecCbRegister BTA_DmSirkSecCbRegister;
-struct BTA_dm_init BTA_dm_init;
-
-}  // namespace bta_dm_api
-}  // namespace mock
-}  // namespace test
-
-// Mocked function return values, if any
-namespace test {
-namespace mock {
-namespace bta_dm_api {
-
-bool BTA_DmCheckLeAudioCapable::return_value = false;
-bool BTA_DmGetConnectionState::return_value = false;
-tBTA_STATUS BTA_DmRemoveDevice::return_value = BTA_SUCCESS;
-bool BTA_DmSetLocalDiRecord::return_value = true;
-
-}  // namespace bta_dm_api
-}  // namespace mock
-}  // namespace test
-
-// Mocked functions, if any
 void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_DEVICE_TYPE dev_type) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmAddBleDevice(bd_addr, addr_type, dev_type);
+  if (instance) {
+    instance->BTA_DmAddBleDevice(bd_addr, addr_type, dev_type);
+  }
 }
+
 void BTA_DmAddBleKey(const RawAddress& bd_addr, const PairingType& pairing_type,
                      tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmAddBleKey(bd_addr, pairing_type, key_type, le_key);
+  if (instance) {
+    instance->BTA_DmAddBleKey(bd_addr, pairing_type, key_type, le_key);
+  }
 }
+
 void BTA_DmAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
                      const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
                      uint8_t pin_length) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmAddDevice(bd_addr, dev_class, pairing_type, link_key, key_type,
-                                          pin_length);
+  if (instance) {
+    instance->BTA_DmAddDevice(bd_addr, dev_class, pairing_type, link_key, key_type, pin_length);
+  }
 }
+
 void BTA_DmAllowWakeByHid(std::vector<RawAddress> classic_hid_devices,
                           std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmAllowWakeByHid(classic_hid_devices, le_hid_devices);
+  if (instance) {
+    instance->BTA_DmAllowWakeByHid(classic_hid_devices, le_hid_devices);
+  }
 }
+
+void BTA_DmBleAuthCmplCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
+  if (instance) {
+    instance->BTA_DmBleAuthCmplCbRegister(p_cback);
+  }
+}
+
 void BTA_DmBleConfigLocalPrivacy(bool privacy_enable) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleConfigLocalPrivacy(privacy_enable);
+  if (instance) {
+    instance->BTA_DmBleConfigLocalPrivacy(privacy_enable);
+  }
 }
+
 void BTA_DmBleConfirmReply(const RawAddress& bd_addr, bool accept) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleConfirmReply(bd_addr, accept);
+  if (instance) {
+    instance->BTA_DmBleConfirmReply(bd_addr, accept);
+  }
 }
+
 void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleCsisObserve(observe, p_results_cb);
+  if (instance) {
+    instance->BTA_DmBleCsisObserve(observe, p_results_cb);
+  }
 }
+
 void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleGetEnergyInfo(p_cmpl_cback);
+  if (instance) {
+    instance->BTA_DmBleGetEnergyInfo(p_cmpl_cback);
+  }
 }
+
 void BTA_DmBlePasskeyReply(const RawAddress& bd_addr, bool accept, uint32_t passkey) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBlePasskeyReply(bd_addr, accept, passkey);
+  if (instance) {
+    instance->BTA_DmBlePasskeyReply(bd_addr, accept, passkey);
+  }
 }
+
 void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleRequestMaxTxDataLength(remote_device);
+  if (instance) {
+    instance->BTA_DmBleRequestMaxTxDataLength(remote_device);
+  }
 }
+
 void BTA_DmBleResetId(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleResetId();
+  if (instance) {
+    instance->BTA_DmBleResetId();
+  }
 }
+
 void BTA_DmBleScan(bool start, uint8_t duration_sec) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleScan(start, duration_sec);
+  if (instance) {
+    instance->BTA_DmBleScan(start, duration_sec);
+  }
 }
+
 void BTA_DmBleSecurityGrant(const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBleSecurityGrant(bd_addr, res);
+  if (instance) {
+    instance->BTA_DmBleSecurityGrant(bd_addr, res);
+  }
 }
+
 void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBond(bd_addr, addr_type, transport);
+  if (instance) {
+    instance->BTA_DmBond(bd_addr, addr_type, transport);
+  }
 }
+
 void BTA_DmBondCancel(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmBondCancel(bd_addr);
+  if (instance) {
+    instance->BTA_DmBondCancel(bd_addr);
+  }
 }
+
 bool BTA_DmCheckLeAudioCapable(const RawAddress& address) {
-  inc_func_call_count(__func__);
-  return test::mock::bta_dm_api::BTA_DmCheckLeAudioCapable(address);
+  return instance ? instance->BTA_DmCheckLeAudioCapable(address) : false;
 }
+
 void BTA_DmClearEventFilter(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmClearEventFilter();
+  if (instance) {
+    instance->BTA_DmClearEventFilter();
+  }
 }
+
 void BTA_DmClearEventMask(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmClearEventMask();
+  if (instance) {
+    instance->BTA_DmClearEventMask();
+  }
 }
+
 void BTA_DmClearFilterAcceptList(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmClearFilterAcceptList();
+  if (instance) {
+    instance->BTA_DmClearFilterAcceptList();
+  }
 }
+
 void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmConfirm(bd_addr, accept);
+  if (instance) {
+    instance->BTA_DmConfirm(bd_addr, accept);
+  }
 }
+
 void BTA_DmDisconnectAllAcls() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmDisconnectAllAcls();
+  if (instance) {
+    instance->BTA_DmDisconnectAllAcls();
+  }
 }
+
 void BTA_DmDiscover(const RawAddress& bd_addr, service_discovery_callbacks cbacks,
                     tBT_TRANSPORT transport) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmDiscover(bd_addr, cbacks, transport);
+  if (instance) {
+    instance->BTA_DmDiscover(bd_addr, cbacks, transport);
+  }
 }
+
 bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  return test::mock::bta_dm_api::BTA_DmGetConnectionState(bd_addr);
+  return instance ? instance->BTA_DmGetConnectionState(bd_addr) : false;
 }
+
 void BTA_DmLeRand(bluetooth::hci::LeRandCallback cb) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmLeRand(std::move(cb));
+  if (instance) {
+    instance->BTA_DmLeRand(std::move(cb));
+  }
 }
+
 void BTA_DmLocalOob(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmLocalOob();
+  if (instance) {
+    instance->BTA_DmLocalOob();
+  }
 }
+
 void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len, uint8_t* p_pin) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmPinReply(bd_addr, accept, pin_len, p_pin);
+  if (instance) {
+    instance->BTA_DmPinReply(bd_addr, accept, pin_len, p_pin);
+  }
 }
+
 tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  return test::mock::bta_dm_api::BTA_DmRemoveDevice(bd_addr);
+  return instance ? instance->BTA_DmRemoveDevice(bd_addr) : BTA_SUCCESS;
 }
+
 void BTA_DmRestoreFilterAcceptList(std::vector<std::pair<RawAddress, uint8_t>> le_devices) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmRestoreFilterAcceptList(le_devices);
+  if (instance) {
+    instance->BTA_DmRestoreFilterAcceptList(le_devices);
+  }
 }
+
 void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSearch(p_cback);
+  if (instance) {
+    instance->BTA_DmSearch(p_cback);
+  }
 }
+
 void BTA_DmSearchCancel(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSearchCancel();
+  if (instance) {
+    instance->BTA_DmSearchCancel();
+  }
 }
+
 void BTA_DmSetDefaultEventMaskExcept(uint64_t mask, uint64_t le_mask) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSetDefaultEventMaskExcept(mask, le_mask);
+  if (instance) {
+    instance->BTA_DmSetDefaultEventMaskExcept(mask, le_mask);
+  }
 }
+
 void BTA_DmSetDeviceName(const char* p_name) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSetDeviceName(p_name);
+  if (instance) {
+    instance->BTA_DmSetDeviceName(p_name);
+  }
 }
+
 void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                          tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSetEncryption(bd_addr, transport, p_callback, sec_act);
+  if (instance) {
+    instance->BTA_DmSetEncryption(bd_addr, transport, p_callback, sec_act);
+  }
 }
+
 void BTA_DmSetEventFilterConnectionSetupAllDevices() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSetEventFilterConnectionSetupAllDevices();
+  if (instance) {
+    instance->BTA_DmSetEventFilterConnectionSetupAllDevices();
+  }
 }
+
 void BTA_DmSetEventFilterInquiryResultAllDevices() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSetEventFilterInquiryResultAllDevices();
+  if (instance) {
+    instance->BTA_DmSetEventFilterInquiryResultAllDevices();
+  }
 }
+
 bool BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info) {
-  inc_func_call_count(__func__);
-  return test::mock::bta_dm_api::BTA_DmSetLocalDiRecord(p_device_info);
+  return instance ? instance->BTA_DmSetLocalDiRecord(p_device_info) : true;
 }
+
 void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSirkConfirmDeviceReply(bd_addr, accept);
+  if (instance) {
+    instance->BTA_DmSirkConfirmDeviceReply(bd_addr, accept);
+  }
 }
+
 void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmSirkSecCbRegister(p_cback);
+  if (instance) {
+    instance->BTA_DmSirkSecCbRegister(p_cback);
+  }
 }
+
 void BTA_dm_init() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_dm_init();
+  if (instance) {
+    instance->BTA_dm_init();
+  }
 }
-// Mocked functions complete
-// END mockcify generation

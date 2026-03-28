@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-/*
- * Generated mock file from original source file
- *   Functions generated:47
- *
- *  mockcify.pl ver 0.6.1
- */
-
-#include <cstdint>
-#include <functional>
-
-// Original included files, if any
-#include <base/functional/bind.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
-#include <bluetooth/types/bt_octets.h>
+#include <gmock/gmock.h>
 
+#include <cstdint>
 #include <vector>
 
 #include "bta/include/bta_api.h"
@@ -38,444 +28,69 @@
 #include "hci/le_rand_callback.h"
 #include "stack/include/bt_device_type.h"
 
-// Original usings
+// Alias used to circumvent gmock macro expansion issues.
+typedef std::pair<RawAddress, uint8_t> LeAddressWithType;
 
-// Mocked compile conditionals, if any
+class MockBtaDmApi {
+public:
+  // clang-format off
+  MOCK_METHOD(void, BTA_DmAddBleDevice,
+              (const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE dev_type));
+  MOCK_METHOD(void, BTA_DmAddBleKey,
+              (const RawAddress& bd_addr, const PairingType& pairing_type,
+               tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key));
+  MOCK_METHOD(void, BTA_DmAddDevice,
+              (const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+               const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
+               uint8_t pin_length));
+  MOCK_METHOD(void, BTA_DmAllowWakeByHid,
+              (std::vector<RawAddress> classic_hid_devices,
+               std::vector<LeAddressWithType> le_hid_devices));
+  MOCK_METHOD(void, BTA_DmBleAuthCmplCbRegister, (tBTA_DM_SEC_CBACK * p_cback));
+  MOCK_METHOD(void, BTA_DmBleConfigLocalPrivacy, (bool privacy_enable));
+  MOCK_METHOD(void, BTA_DmBleConfirmReply, (const RawAddress& bd_addr, bool accept));
+  MOCK_METHOD(void, BTA_DmBleCsisObserve, (bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb));
+  MOCK_METHOD(void, BTA_DmBleGetEnergyInfo, (tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback));
+  MOCK_METHOD(void, BTA_DmBlePasskeyReply,
+              (const RawAddress& bd_addr, bool accept, uint32_t passkey));
+  MOCK_METHOD(void, BTA_DmBleRequestMaxTxDataLength, (const RawAddress& remote_device));
+  MOCK_METHOD(void, BTA_DmBleResetId, ());
+  MOCK_METHOD(void, BTA_DmBleScan, (bool start, uint8_t duration_sec));
+  MOCK_METHOD(void, BTA_DmBleSecurityGrant,
+              (const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res));
+  MOCK_METHOD(void, BTA_DmBond,
+              (const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport));
+  MOCK_METHOD(void, BTA_DmBondCancel, (const RawAddress& bd_addr));
+  MOCK_METHOD(bool, BTA_DmCheckLeAudioCapable, (const RawAddress& address));
+  MOCK_METHOD(void, BTA_DmClearEventFilter, ());
+  MOCK_METHOD(void, BTA_DmClearEventMask, ());
+  MOCK_METHOD(void, BTA_DmClearFilterAcceptList, ());
+  MOCK_METHOD(void, BTA_DmConfirm, (const RawAddress& bd_addr, bool accept));
+  MOCK_METHOD(void, BTA_DmDisconnectAllAcls, ());
+  MOCK_METHOD(void, BTA_DmDiscover,
+              (const RawAddress& bd_addr, service_discovery_callbacks cbacks,
+               tBT_TRANSPORT transport));
+  MOCK_METHOD(bool, BTA_DmGetConnectionState, (const RawAddress& bd_addr));
+  MOCK_METHOD(void, BTA_DmLeRand, (bluetooth::hci::LeRandCallback cb));
+  MOCK_METHOD(void, BTA_DmLocalOob, ());
+  MOCK_METHOD(void, BTA_DmPinReply,
+              (const RawAddress& bd_addr, bool accept, uint8_t pin_len, uint8_t* p_pin));
+  MOCK_METHOD(tBTA_STATUS, BTA_DmRemoveDevice, (const RawAddress& bd_addr));
+  MOCK_METHOD(void, BTA_DmRestoreFilterAcceptList, (std::vector<LeAddressWithType> le_devices));
+  MOCK_METHOD(void, BTA_DmSearch, (tBTA_DM_SEARCH_CBACK* p_cback));
+  MOCK_METHOD(void, BTA_DmSearchCancel, ());
+  MOCK_METHOD(void, BTA_DmSetDefaultEventMaskExcept, (uint64_t mask, uint64_t le_mask));
+  MOCK_METHOD(void, BTA_DmSetDeviceName, (const char* p_name));
+  MOCK_METHOD(void, BTA_DmSetEncryption,
+              (const RawAddress& bd_addr, tBT_TRANSPORT transport,
+               tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act));
+  MOCK_METHOD(void, BTA_DmSetEventFilterConnectionSetupAllDevices, ());
+  MOCK_METHOD(void, BTA_DmSetEventFilterInquiryResultAllDevices, ());
+  MOCK_METHOD(bool, BTA_DmSetLocalDiRecord, (tSDP_DI_RECORD* p_device_info));
+  MOCK_METHOD(void, BTA_DmSirkConfirmDeviceReply, (const RawAddress& bd_addr, bool accept));
+  MOCK_METHOD(void, BTA_DmSirkSecCbRegister, (tBTA_DM_SEC_CBACK* p_cback));
+  MOCK_METHOD(void, BTA_dm_init, ());
+  // clang-format on
 
-namespace test {
-namespace mock {
-namespace bta_dm_api {
-
-// Shared state between mocked functions and tests
-// Name: BTA_DmAddBleDevice
-// Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE
-// dev_type Return: void
-struct BTA_DmAddBleDevice {
-  std::function<void(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE dev_type)>
-          body{[](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-                  tBT_DEVICE_TYPE /* dev_type */) {}};
-  void operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE dev_type) {
-    body(bd_addr, addr_type, dev_type);
-  }
+  static void SetInstance(MockBtaDmApi* ptr);
 };
-extern struct BTA_DmAddBleDevice BTA_DmAddBleDevice;
-
-// Name: BTA_DmAddBleKey
-// Params: const RawAddress& bd_addr, const PairingType& pairing_type, tBTM_LE_KEY_TYPE key_type,
-// const tBTA_LE_KEY_VALUE& le_key
-// Return: void
-struct BTA_DmAddBleKey {
-  std::function<void(const RawAddress& bd_addr, const PairingType& pairing_type,
-                     tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key)>
-          body{[](const RawAddress& /* bd_addr */, const PairingType& /* pairing_type */,
-                  tBTM_LE_KEY_TYPE /* key_type */, const tBTA_LE_KEY_VALUE& /* le_key */) {}};
-  void operator()(const RawAddress& bd_addr, const PairingType& pairing_type,
-                  tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& le_key) {
-    body(bd_addr, pairing_type, key_type, le_key);
-  }
-};
-extern struct BTA_DmAddBleKey BTA_DmAddBleKey;
-
-// Name: BTA_DmAddDevice
-// Params: const RawAddress& bd_addr, const DEV_CLASS& dev_class, const LinkKey&, const PairingType&
-// pairing_type, link_key, uint8_t key_type, uint8_t pin_length
-// Return: void
-struct BTA_DmAddDevice {
-  std::function<void(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
-                     const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
-                     uint8_t pin_length)>
-          body{[](const RawAddress& /* bd_addr */, const DEV_CLASS& /* dev_class */,
-                  const PairingType& /* pairing_type */, const LinkKey& /* link_key */,
-                  uint8_t /* key_type */, uint8_t /* pin_length */) {}};
-  void operator()(const RawAddress& bd_addr, const DEV_CLASS dev_class,
-                  const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
-                  uint8_t pin_length) {
-    body(bd_addr, dev_class, pairing_type, link_key, key_type, pin_length);
-  }
-};
-extern struct BTA_DmAddDevice BTA_DmAddDevice;
-
-// Name: BTA_DmAllowWakeByHid
-// Params:  std::vector<RawAddress> classic_hid_devices,
-// std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices Return: void
-struct BTA_DmAllowWakeByHid {
-  std::function<void(std::vector<RawAddress> classic_hid_devices,
-                     std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices)>
-          body{[](std::vector<RawAddress> /* classic_hid_devices */,
-                  std::vector<std::pair<RawAddress, uint8_t>> /* le_hid_devices */) {}};
-  void operator()(std::vector<RawAddress> classic_hid_devices,
-                  std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices) {
-    body(classic_hid_devices, le_hid_devices);
-  }
-};
-extern struct BTA_DmAllowWakeByHid BTA_DmAllowWakeByHid;
-
-// Name: BTA_DmBleConfigLocalPrivacy
-// Params: bool privacy_enable
-// Return: void
-struct BTA_DmBleConfigLocalPrivacy {
-  std::function<void(bool privacy_enable)> body{[](bool /* privacy_enable */) {}};
-  void operator()(bool privacy_enable) { body(privacy_enable); }
-};
-extern struct BTA_DmBleConfigLocalPrivacy BTA_DmBleConfigLocalPrivacy;
-
-// Name: BTA_DmBleConfirmReply
-// Params: const RawAddress& bd_addr, bool accept
-// Return: void
-struct BTA_DmBleConfirmReply {
-  std::function<void(const RawAddress& bd_addr, bool accept)> body{
-          [](const RawAddress& /* bd_addr */, bool /* accept */) {}};
-  void operator()(const RawAddress& bd_addr, bool accept) { body(bd_addr, accept); }
-};
-extern struct BTA_DmBleConfirmReply BTA_DmBleConfirmReply;
-
-// Name: BTA_DmBleCsisObserve
-// Params: bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb
-// Return: void
-struct BTA_DmBleCsisObserve {
-  std::function<void(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb)> body{
-          [](bool /* observe */, tBTA_DM_SEARCH_CBACK* /* p_results_cb */) {}};
-  void operator()(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) { body(observe, p_results_cb); }
-};
-extern struct BTA_DmBleCsisObserve BTA_DmBleCsisObserve;
-
-// Name: BTA_DmBleGetEnergyInfo
-// Params: tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback
-// Return: void
-struct BTA_DmBleGetEnergyInfo {
-  std::function<void(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback)> body{
-          [](tBTA_BLE_ENERGY_INFO_CBACK* /* p_cmpl_cback */) {}};
-  void operator()(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback) { body(p_cmpl_cback); }
-};
-extern struct BTA_DmBleGetEnergyInfo BTA_DmBleGetEnergyInfo;
-
-// Name: BTA_DmBlePasskeyReply
-// Params: const RawAddress& bd_addr, bool accept, uint32_t passkey
-// Return: void
-struct BTA_DmBlePasskeyReply {
-  std::function<void(const RawAddress& bd_addr, bool accept, uint32_t passkey)> body{
-          [](const RawAddress& /* bd_addr */, bool /* accept */, uint32_t /* passkey */) {}};
-  void operator()(const RawAddress& bd_addr, bool accept, uint32_t passkey) {
-    body(bd_addr, accept, passkey);
-  }
-};
-extern struct BTA_DmBlePasskeyReply BTA_DmBlePasskeyReply;
-
-// Name: BTA_DmBleRequestMaxTxDataLength
-// Params: const RawAddress& remote_device
-// Return: void
-struct BTA_DmBleRequestMaxTxDataLength {
-  std::function<void(const RawAddress& remote_device)> body{
-          [](const RawAddress& /* remote_device */) {}};
-  void operator()(const RawAddress& remote_device) { body(remote_device); }
-};
-extern struct BTA_DmBleRequestMaxTxDataLength BTA_DmBleRequestMaxTxDataLength;
-
-// Name: BTA_DmBleResetId
-// Params: void
-// Return: void
-struct BTA_DmBleResetId {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_DmBleResetId BTA_DmBleResetId;
-
-// Name: BTA_DmBleScan
-// Params: bool start, uint8_t duration_sec
-// Return: void
-struct BTA_DmBleScan {
-  std::function<void(bool start, uint8_t duration_sec)> body{
-          [](bool /* start */, uint8_t /* duration_sec */) {}};
-  void operator()(bool start, uint8_t duration_sec) { body(start, duration_sec); }
-};
-extern struct BTA_DmBleScan BTA_DmBleScan;
-
-// Name: BTA_DmBleSecurityGrant
-// Params: const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res
-// Return: void
-struct BTA_DmBleSecurityGrant {
-  std::function<void(const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res)> body{
-          [](const RawAddress& /* bd_addr */, tBTA_DM_BLE_SEC_GRANT /* res */) {}};
-  void operator()(const RawAddress& bd_addr, tBTA_DM_BLE_SEC_GRANT res) { body(bd_addr, res); }
-};
-extern struct BTA_DmBleSecurityGrant BTA_DmBleSecurityGrant;
-
-// Name: BTA_DmBond
-// Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport
-// Return: void
-struct BTA_DmBond {
-  std::function<void(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport)>
-          body{[](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-                  tBT_TRANSPORT /* transport */) {}};
-  void operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
-    body(bd_addr, addr_type, transport);
-  }
-};
-extern struct BTA_DmBond BTA_DmBond;
-
-// Name: BTA_DmBondCancel
-// Params: const RawAddress& bd_addr
-// Return: void
-struct BTA_DmBondCancel {
-  std::function<void(const RawAddress& bd_addr)> body{[](const RawAddress& /* bd_addr */) {}};
-  void operator()(const RawAddress& bd_addr) { body(bd_addr); }
-};
-extern struct BTA_DmBondCancel BTA_DmBondCancel;
-
-// Name: BTA_DmCheckLeAudioCapable
-// Params: const RawAddress& address
-// Return: bool
-struct BTA_DmCheckLeAudioCapable {
-  static bool return_value;
-  std::function<bool(const RawAddress& address)> body{
-          [](const RawAddress& /* address */) { return return_value; }};
-  bool operator()(const RawAddress& address) { return body(address); }
-};
-extern struct BTA_DmCheckLeAudioCapable BTA_DmCheckLeAudioCapable;
-
-// Name: BTA_DmClearEventFilter
-// Params: void
-// Return: void
-struct BTA_DmClearEventFilter {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_DmClearEventFilter BTA_DmClearEventFilter;
-
-// Name: BTA_DmClearEventMask
-// Params: void
-// Return: void
-struct BTA_DmClearEventMask {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_DmClearEventMask BTA_DmClearEventMask;
-
-// Name: BTA_DmClearFilterAcceptList
-// Params: void
-// Return: void
-struct BTA_DmClearFilterAcceptList {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_DmClearFilterAcceptList BTA_DmClearFilterAcceptList;
-
-// Name: BTA_DmConfirm
-// Params: const RawAddress& bd_addr, bool accept
-// Return: void
-struct BTA_DmConfirm {
-  std::function<void(const RawAddress& bd_addr, bool accept)> body{
-          [](const RawAddress& /* bd_addr */, bool /* accept */) {}};
-  void operator()(const RawAddress& bd_addr, bool accept) { body(bd_addr, accept); }
-};
-extern struct BTA_DmConfirm BTA_DmConfirm;
-
-// Name: BTA_DmDisconnectAllAcls
-// Params:
-// Return: void
-struct BTA_DmDisconnectAllAcls {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
-};
-extern struct BTA_DmDisconnectAllAcls BTA_DmDisconnectAllAcls;
-
-// Name: BTA_DmDiscover
-// Params: const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
-// tBT_TRANSPORT transport Return: void
-struct BTA_DmDiscover {
-  std::function<void(const RawAddress& bd_addr, service_discovery_callbacks cbacks,
-                     tBT_TRANSPORT transport)>
-          body{[](const RawAddress& /* bd_addr */, service_discovery_callbacks /* cbacks */,
-                  tBT_TRANSPORT /* transport */) {}};
-  void operator()(const RawAddress& bd_addr, service_discovery_callbacks cbacks,
-                  tBT_TRANSPORT transport) {
-    body(bd_addr, cbacks, transport);
-  }
-};
-extern struct BTA_DmDiscover BTA_DmDiscover;
-
-// Name: BTA_DmGetConnectionState
-// Params: const RawAddress& bd_addr
-// Return: bool
-struct BTA_DmGetConnectionState {
-  static bool return_value;
-  std::function<bool(const RawAddress& bd_addr)> body{
-          [](const RawAddress& /* bd_addr */) { return return_value; }};
-  bool operator()(const RawAddress& bd_addr) { return body(bd_addr); }
-};
-extern struct BTA_DmGetConnectionState BTA_DmGetConnectionState;
-
-// Name: BTA_DmLeRand
-// Params: bluetooth::hci::LeRandCallback cb
-// Return: void
-struct BTA_DmLeRand {
-  std::function<void(bluetooth::hci::LeRandCallback cb)> body{
-          [](bluetooth::hci::LeRandCallback /* cb */) {}};
-  void operator()(bluetooth::hci::LeRandCallback cb) { body(std::move(cb)); }
-};
-extern struct BTA_DmLeRand BTA_DmLeRand;
-
-// Name: BTA_DmLocalOob
-// Params: void
-// Return: void
-struct BTA_DmLocalOob {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_DmLocalOob BTA_DmLocalOob;
-
-// Name: BTA_DmPinReply
-// Params: const RawAddress& bd_addr, bool accept, uint8_t pin_len, uint8_t*
-// p_pin Return: void
-struct BTA_DmPinReply {
-  std::function<void(const RawAddress& bd_addr, bool accept, uint8_t pin_len, uint8_t* p_pin)> body{
-          [](const RawAddress& /* bd_addr */, bool /* accept */, uint8_t /* pin_len */,
-             uint8_t* /* p_pin */) {}};
-  void operator()(const RawAddress& bd_addr, bool accept, uint8_t pin_len, uint8_t* p_pin) {
-    body(bd_addr, accept, pin_len, p_pin);
-  }
-};
-extern struct BTA_DmPinReply BTA_DmPinReply;
-
-// Name: BTA_DmRemoveDevice
-// Params: const RawAddress& bd_addr
-// Return: tBTA_STATUS
-struct BTA_DmRemoveDevice {
-  static tBTA_STATUS return_value;
-  std::function<tBTA_STATUS(const RawAddress& bd_addr)> body{
-          [](const RawAddress& /* bd_addr */) { return return_value; }};
-  tBTA_STATUS operator()(const RawAddress& bd_addr) { return body(bd_addr); }
-};
-extern struct BTA_DmRemoveDevice BTA_DmRemoveDevice;
-
-// Name: BTA_DmRestoreFilterAcceptList
-// Params:  std::vector<std::pair<RawAddress, uint8_t>> le_devices
-// Return: void
-struct BTA_DmRestoreFilterAcceptList {
-  std::function<void(std::vector<std::pair<RawAddress, uint8_t>> le_devices)> body{
-          [](std::vector<std::pair<RawAddress, uint8_t>> /* le_devices */) {}};
-  void operator()(std::vector<std::pair<RawAddress, uint8_t>> le_devices) { body(le_devices); }
-};
-extern struct BTA_DmRestoreFilterAcceptList BTA_DmRestoreFilterAcceptList;
-
-// Name: BTA_DmSearch
-// Params: tBTA_DM_SEARCH_CBACK* p_cback
-// Return: void
-struct BTA_DmSearch {
-  std::function<void(tBTA_DM_SEARCH_CBACK* p_cback)> body{
-          [](tBTA_DM_SEARCH_CBACK* /* p_cback */) {}};
-  void operator()(tBTA_DM_SEARCH_CBACK* p_cback) { body(p_cback); }
-};
-extern struct BTA_DmSearch BTA_DmSearch;
-
-// Name: BTA_DmSearchCancel
-// Params: void
-// Return: void
-struct BTA_DmSearchCancel {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_DmSearchCancel BTA_DmSearchCancel;
-
-// Name: BTA_DmSetDefaultEventMaskExcept
-// Params: uint64_t mask, uint64_t le_mask
-// Return: void
-struct BTA_DmSetDefaultEventMaskExcept {
-  std::function<void(uint64_t mask, uint64_t le_mask)> body{
-          [](uint64_t /* mask */, uint64_t /* le_mask */) {}};
-  void operator()(uint64_t mask, uint64_t le_mask) { body(mask, le_mask); }
-};
-extern struct BTA_DmSetDefaultEventMaskExcept BTA_DmSetDefaultEventMaskExcept;
-
-// Name: BTA_DmSetDeviceName
-// Params: const char* p_name
-// Return: void
-struct BTA_DmSetDeviceName {
-  std::function<void(const char* p_name)> body{[](const char* /* p_name */) {}};
-  void operator()(const char* p_name) { body(p_name); }
-};
-extern struct BTA_DmSetDeviceName BTA_DmSetDeviceName;
-
-// Name: BTA_DmSetEncryption
-// Params: const RawAddress& bd_addr, tBT_TRANSPORT transport,
-// tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act Return: void
-struct BTA_DmSetEncryption {
-  std::function<void(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                     tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act)>
-          body{[](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */,
-                  tBTA_DM_ENCRYPT_CBACK* /* p_callback */, tBTM_BLE_SEC_ACT /* sec_act */) {}};
-  void operator()(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                  tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act) {
-    body(bd_addr, transport, p_callback, sec_act);
-  }
-};
-extern struct BTA_DmSetEncryption BTA_DmSetEncryption;
-
-// Name: BTA_DmSetEventFilterConnectionSetupAllDevices
-// Params:
-// Return: void
-struct BTA_DmSetEventFilterConnectionSetupAllDevices {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
-};
-extern struct BTA_DmSetEventFilterConnectionSetupAllDevices
-        BTA_DmSetEventFilterConnectionSetupAllDevices;
-
-// Name: BTA_DmSetEventFilterInquiryResultAllDevices
-// Params:
-// Return: void
-struct BTA_DmSetEventFilterInquiryResultAllDevices {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
-};
-extern struct BTA_DmSetEventFilterInquiryResultAllDevices
-        BTA_DmSetEventFilterInquiryResultAllDevices;
-
-// Name: BTA_DmSetLocalDiRecord
-// Params: tSDP_DI_RECORD* p_device_info
-// Return: bool
-struct BTA_DmSetLocalDiRecord {
-  static bool return_value;
-  std::function<bool(tSDP_DI_RECORD* p_device_info)> body{
-          [](tSDP_DI_RECORD* /* p_device_info */) {
-            return return_value;
-          }};
-  bool operator()(tSDP_DI_RECORD* p_device_info) {
-    return body(p_device_info);
-  }
-};
-extern struct BTA_DmSetLocalDiRecord BTA_DmSetLocalDiRecord;
-
-// Name: BTA_DmSirkConfirmDeviceReply
-// Params: const RawAddress& bd_addr, bool accept
-// Return: void
-struct BTA_DmSirkConfirmDeviceReply {
-  std::function<void(const RawAddress& bd_addr, bool accept)> body{
-          [](const RawAddress& /* bd_addr */, bool /* accept */) {}};
-  void operator()(const RawAddress& bd_addr, bool accept) { body(bd_addr, accept); }
-};
-extern struct BTA_DmSirkConfirmDeviceReply BTA_DmSirkConfirmDeviceReply;
-
-// Name: BTA_DmSirkSecCbRegister
-// Params: tBTA_DM_SEC_CBACK* p_cback
-// Return: void
-struct BTA_DmSirkSecCbRegister {
-  std::function<void(tBTA_DM_SEC_CBACK* p_cback)> body{[](tBTA_DM_SEC_CBACK* /* p_cback */) {}};
-  void operator()(tBTA_DM_SEC_CBACK* p_cback) { body(p_cback); }
-};
-extern struct BTA_DmSirkSecCbRegister BTA_DmSirkSecCbRegister;
-
-// Name: BTA_dm_init
-// Params:
-// Return: void
-struct BTA_dm_init {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
-};
-extern struct BTA_dm_init BTA_dm_init;
-
-}  // namespace bta_dm_api
-}  // namespace mock
-}  // namespace test
-
-// END mockcify generation
