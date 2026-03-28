@@ -105,8 +105,9 @@ class ScanControllerTest(flags: FlagsWrapper) {
         adapterService.mockGetRemoteDevice(device)
         adapterService.mockGetSystemService<LocationManager>()
         adapterService.mockGetSystemService<AppOpsManager>()
-        doReturn(adapterService).whenever(adapterService).createContextAsUser(any(), any())
-
+        doReturn(adapterService)
+            .whenever(adapterService)
+            .createPackageContextAsUser(any(), any(), any())
         doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
             .whenever(adapterService)
             .getSharedPreferences(any<String>(), any<Int>())
