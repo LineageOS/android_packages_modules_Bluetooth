@@ -37,7 +37,6 @@
 #include "os/alarm.h"
 #include "os/queue.h"
 #include "os/system_properties.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "packet/raw_builder.h"
 #include "storage/storage_module.h"
 
@@ -373,7 +372,6 @@ struct HciLayer::impl {
     auto cmd_view = CommandView::Create(PacketView<kLittleEndian>(bytes));
     log::assert_that(cmd_view.IsValid(), "assert failed: cmd_view.IsValid()");
     OpCode op_code = cmd_view.GetOpCode();
-    power_telemetry::GetInstance().LogHciCmdDetail();
     command_queue_.front().command_view = std::make_unique<CommandView>(std::move(cmd_view));
     log_link_layer_connection_command(command_queue_.front().command_view);
     log_classic_pairing_command_status(command_queue_.front().command_view,
@@ -511,7 +509,6 @@ struct HciLayer::impl {
     } else {
       log_hci_event(command_queue_.front().command_view, event, storage_);
     }
-    power_telemetry::GetInstance().LogHciEvtDetail();
     EventCode event_code = event.GetEventCode();
     // Root Inflammation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {

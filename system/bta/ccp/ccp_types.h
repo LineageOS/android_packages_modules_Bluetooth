@@ -40,30 +40,26 @@ struct Call {
 };
 
 // Service UUID for the Telephony Bearer Service (TBS) which CCP interacts with.
-static const bluetooth::Uuid kTelephonyBearerServiceUuid = bluetooth::Uuid::From16Bit(0x184B);
-static const bluetooth::Uuid kGenericTelephonyBearerServiceUuid =
-        bluetooth::Uuid::From16Bit(0x184C);
+static constexpr Uuid kTelephonyBearerServiceUuid = Uuid::From16Bit(0x184B);
+static constexpr Uuid kGenericTelephonyBearerServiceUuid = Uuid::From16Bit(0x184C);
 
 // Telephony Bearer Service Characteristics.
-static const bluetooth::Uuid kBearerProviderNameUuid = bluetooth::Uuid::From16Bit(0x2BB3);
-static const bluetooth::Uuid kBearerUciUuid = bluetooth::Uuid::From16Bit(0x2BB4);
-static const bluetooth::Uuid kBearerTechnologyUuid = bluetooth::Uuid::From16Bit(0x2BB5);
-static const bluetooth::Uuid kBearerUriSchemesSupportedListUuid =
-        bluetooth::Uuid::From16Bit(0x2BB6);
-static const bluetooth::Uuid kBearerSignalStrengthUuid = bluetooth::Uuid::From16Bit(0x2BB7);
-static const bluetooth::Uuid kBearerSignalStrengthReportingIntervalUuid =
-        bluetooth::Uuid::From16Bit(0x2BB8);
-static const bluetooth::Uuid kBearerListCurrentCallsUuid = bluetooth::Uuid::From16Bit(0x2BB9);
-static const bluetooth::Uuid kStatusFlagsUuid = bluetooth::Uuid::From16Bit(0x2BBB);
-static const bluetooth::Uuid kIncomingCallTargetBearerUriUuid = bluetooth::Uuid::From16Bit(0x2BBC);
-static const bluetooth::Uuid kCallStateUuid = bluetooth::Uuid::From16Bit(0x2BBD);
-static const bluetooth::Uuid kCallControlPointUuid = bluetooth::Uuid::From16Bit(0x2BBE);
-static const bluetooth::Uuid kCallControlPointOptionalOpcodesUuid =
-        bluetooth::Uuid::From16Bit(0x2BBF);
-static const bluetooth::Uuid kTerminationReasonUuid = bluetooth::Uuid::From16Bit(0x2BC0);
-static const bluetooth::Uuid kIncomingCallUuid = bluetooth::Uuid::From16Bit(0x2BC1);
-static const bluetooth::Uuid kCallFriendlyNameUuid = bluetooth::Uuid::From16Bit(0x2BC2);
-static const bluetooth::Uuid kContentControlIdUuid = bluetooth::Uuid::From16Bit(0x2BBA);
+static constexpr Uuid kBearerProviderNameUuid = Uuid::From16Bit(0x2BB3);
+static constexpr Uuid kBearerUciUuid = Uuid::From16Bit(0x2BB4);
+static constexpr Uuid kBearerTechnologyUuid = Uuid::From16Bit(0x2BB5);
+static constexpr Uuid kBearerUriSchemesSupportedListUuid = Uuid::From16Bit(0x2BB6);
+static constexpr Uuid kBearerSignalStrengthUuid = Uuid::From16Bit(0x2BB7);
+static constexpr Uuid kBearerSignalStrengthReportingIntervalUuid = Uuid::From16Bit(0x2BB8);
+static constexpr Uuid kBearerListCurrentCallsUuid = Uuid::From16Bit(0x2BB9);
+static constexpr Uuid kStatusFlagsUuid = Uuid::From16Bit(0x2BBB);
+static constexpr Uuid kIncomingCallTargetBearerUriUuid = Uuid::From16Bit(0x2BBC);
+static constexpr Uuid kCallStateUuid = Uuid::From16Bit(0x2BBD);
+static constexpr Uuid kCallControlPointUuid = Uuid::From16Bit(0x2BBE);
+static constexpr Uuid kCallControlPointOptionalOpcodesUuid = Uuid::From16Bit(0x2BBF);
+static constexpr Uuid kTerminationReasonUuid = Uuid::From16Bit(0x2BC0);
+static constexpr Uuid kIncomingCallUuid = Uuid::From16Bit(0x2BC1);
+static constexpr Uuid kCallFriendlyNameUuid = Uuid::From16Bit(0x2BC2);
+static constexpr Uuid kContentControlIdUuid = Uuid::From16Bit(0x2BBA);
 
 // Opcodes for the Call Control Point characteristic.
 static constexpr uint8_t kCallControlPointOpcodeAcceptCall = 0x00;

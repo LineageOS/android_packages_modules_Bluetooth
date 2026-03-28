@@ -78,7 +78,6 @@
 #include "main/shim/le_advertising_manager.h"
 #include "os/system_properties.h"
 #include "osi/include/properties.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_utils.h"
@@ -2756,7 +2755,6 @@ void btif_dm_start_discovery(void) {
   btif_dm_inquiry_in_progress = false;
   /* find nearby devices */
   BTA_DmSearch(btif_dm_search_devices_evt);
-  power_telemetry::GetInstance().LogScanStarted();
 }
 
 /*******************************************************************************

@@ -131,7 +131,13 @@ public:
   static std::optional<Uuid> FromString(const std::string& uuid);
 
   // Converts 16bit Little Endian representation of UUID to UUID
-  static Uuid From16Bit(uint16_t uuid16bit);
+  static constexpr Uuid From16Bit(uint16_t uuid16bit) {
+    Uuid u = From128BitBE({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
+                           0x5f, 0x9b, 0x34, 0xfb});
+    u.uu[2] = (uint8_t)((0xFF00 & uuid16bit) >> 8);
+    u.uu[3] = (uint8_t)(0x00FF & uuid16bit);
+    return u;
+  }
 
   // Converts 32bit Little Endian representation of UUID to UUID
   static Uuid From32Bit(uint32_t uuid32bit);

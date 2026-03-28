@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 #include <log/log.h>
 
-#include "bta/test/common/bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "btif_storage_mock.h"
 #include "btm_api_mock.h"
 #include "common/le_conn_params.h"

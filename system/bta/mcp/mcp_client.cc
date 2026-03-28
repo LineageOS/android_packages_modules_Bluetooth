@@ -239,8 +239,6 @@ public:
     log::verbose("event: {}", gatt_client_event_text(event));
 
     switch (event) {
-      case BTA_GATTC_DEREG_EVT:
-        break;
       case BTA_GATTC_OPEN_EVT:
         OnGattConnected(p_data->open);
         break;
@@ -397,7 +395,7 @@ private:
     } else {
       log::debug("Initiating service search for {}", device->addr);
       device->ClearHandles();
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kMediaControlServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -409,7 +407,7 @@ private:
 
     log::info("Service changed for {}", device->addr);
     device->ClearHandles();
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, kMediaControlServiceUuid);
+    BTA_GATTC_ServiceSearchRequest(device->conn_id);
   }
 
   void OnServiceDiscoveryDoneEvent(const RawAddress& bda) {
@@ -422,7 +420,7 @@ private:
     if (!device->service_found) {
       log::debug("Initiating service search for {}", device->addr);
       device->ClearHandles();
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kMediaControlServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -475,7 +473,7 @@ private:
       }
       device->ClearHandles();
       device->searching_for_gmcs = true;
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kGenericMediaControlServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
       return;
     }
     device->searching_for_gmcs = false;

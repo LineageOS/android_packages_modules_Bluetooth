@@ -24,11 +24,11 @@
 
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_mcp_client_api.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "gatt/database_builder.h"
 #include "mcp/mcp_types.h"
 #include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_security_client_interface.h"
-#include "test/common/bta_gatt_api_mock.h"
 #include "test/common/bta_gatt_queue_mock.h"
 #include "test/common/btm_api_mock.h"
 #include "test/common/mock_functions.h"
@@ -250,7 +250,7 @@ TEST_F(McpClientTest, connect_and_discover_flow) {
   EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
   EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
           .WillRepeatedly(Return(true));
-  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
+  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId));
   SimulateGattConnect(kTestAddress, kTestConnId);
 
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
@@ -465,10 +465,7 @@ TEST_F(McpClientTest, discover_fallback_to_gmcs) {
           .WillOnce(Return(&mcs_only_services));
 
   // Expect a NEW search request for GMCS
-  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, _))
-          .WillOnce(Invoke([](uint16_t /* conn_id */, const bluetooth::Uuid* p_srvc_uuid) {
-            EXPECT_EQ(*p_srvc_uuid, kGenericMediaControlServiceUuid);
-          }));
+  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId));
 
   (*gatt_callback_)(BTA_GATTC_SEARCH_CMPL_EVT, &p_data_1);
 
@@ -727,7 +724,7 @@ TEST_F(McpClientTest, reconnect_after_disconnect) {
   EXPECT_CALL(*mock_callbacks_, OnConnectionState(kTestAddress, ConnectionState::CONNECTED));
   EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
           .WillRepeatedly(Return(true));
-  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
+  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId));
   SimulateGattConnect(kTestAddress, kTestConnId);
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);
 

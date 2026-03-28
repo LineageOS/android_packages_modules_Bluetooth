@@ -57,7 +57,6 @@
 #include "os/parameter_provider.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "stack/acl/acl.h"
 #include "stack/acl/peer_packet_types.h"
 #include "stack/btm/btm_ble_int.h"
@@ -1497,7 +1496,7 @@ void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
     auto read_rssi_complete = bluetooth::hci::ReadRssiCompleteView::Create(view);
     RawAddress address = RawAddress::kEmpty;
     tBTM_STATUS status = tBTM_STATUS::BTM_SUCCESS;
-    uint8_t rssi = 0;
+    int8_t rssi = 0;
 
     if (read_rssi_complete.IsValid()) {
       if (read_rssi_complete.GetStatus() == bluetooth::hci::ErrorCode::SUCCESS) {
@@ -1506,7 +1505,7 @@ void btm_read_rssi_complete(bluetooth::hci::CommandCompleteView view) {
         if (p_acl_cb != nullptr) {
           address = p_acl_cb->link_spec.addrt.bda;
         }
-        rssi = read_rssi_complete.GetRssi();
+        rssi = static_cast<int8_t>(read_rssi_complete.GetRssi());
       } else {
         status = tBTM_STATUS::BTM_ERR_PROCESSING;
       }
@@ -1880,7 +1879,6 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc
                              bool locally_initiated, tHCI_ROLE role) {
   log::verbose("{}, handle:{}, role:{}, enc_mode:{}, locally_initiated:{}", bda, handle,
                hci_role_text(role), enc_mode, locally_initiated);
-  power_telemetry::GetInstance().LogLinkDetails(handle, bda, true, true);
 
   btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode, locally_initiated, role);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
@@ -1918,7 +1916,7 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle, tHCI_REASON reaso
   if (status != HCI_SUCCESS) {
     log::warn("Received disconnect with error:{}", hci_error_code_text(status));
   }
-  power_telemetry::GetInstance().LogLinkDetails(handle, RawAddress::kEmpty, false, true);
+
   /* There can be a case when we rejected PIN code authentication */
   /* otherwise save a new reason */
   if (btm_get_acl_disc_reason_code() != HCI_ERR_HOST_REJECT_SECURITY) {
@@ -2010,7 +2008,6 @@ void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
     osi_free(p_buf);
     return;
   }
-  power_telemetry::GetInstance().LogTxAclPktData(p_buf->len);
   return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
 }
 
@@ -2021,7 +2018,6 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
     osi_free(p_buf);
     return;
   }
-  power_telemetry::GetInstance().LogTxAclPktData(p_buf->len);
   return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
 }
 
@@ -2052,7 +2048,6 @@ void acl_rcv_acl_data(BT_HDR* p_msg) {
   STREAM_TO_UINT16(acl_header.handle, p);
   acl_header.handle = HCID_GET_HANDLE(acl_header.handle);
 
-  power_telemetry::GetInstance().LogRxAclPktData(p_msg->len);
   STREAM_TO_UINT16(acl_header.hci_len, p);
   if (acl_header.hci_len < L2CAP_PKT_OVERHEAD ||
       acl_header.hci_len != p_msg->len - sizeof(acl_header)) {

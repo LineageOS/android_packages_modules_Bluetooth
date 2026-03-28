@@ -27,7 +27,7 @@
 #include <list>
 #include <map>
 
-#include "bta/test/common/bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta/test/common/bta_gatt_queue_mock.h"
 #include "gatt/database_builder.h"
 #include "stack/include/bt_uuid16.h"

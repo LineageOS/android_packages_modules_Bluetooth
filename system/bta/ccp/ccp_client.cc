@@ -175,8 +175,6 @@ public:
     log::verbose("event: {}", gatt_client_event_text(event));
 
     switch (event) {
-      case BTA_GATTC_DEREG_EVT:
-        break;
       case BTA_GATTC_OPEN_EVT:
         OnGattConnected(p_data->open);
         break;
@@ -283,7 +281,7 @@ private:
       RegisterForNotifications(device);
     } else {
       log::debug("Initiating service search for {}", device->addr);
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kGenericTelephonyBearerServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -295,7 +293,7 @@ private:
 
     log::info("Service changed for {}", device->addr);
     device->ClearHandles();
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, kGenericTelephonyBearerServiceUuid);
+    BTA_GATTC_ServiceSearchRequest(device->conn_id);
   }
 
   void OnServiceDiscoveryDoneEvent(const RawAddress& bda) {
@@ -307,7 +305,7 @@ private:
     log::info("Service discovery done for {}", device->addr);
 
     if (!device->service_found) {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kGenericTelephonyBearerServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 

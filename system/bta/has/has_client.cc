@@ -1037,7 +1037,7 @@ private:
       callbacks_->OnActivePresetSelected(device.addr, device.currently_active_preset);
       WriteAllNeededCcc(device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device.conn_id, kUuidHearingAccessService);
+      BTA_GATTC_ServiceSearchRequest(device.conn_id);
     }
   }
 
@@ -1888,9 +1888,6 @@ private:
     log::debug("event = {}", static_cast<int>(event));
 
     switch (event) {
-      case BTA_GATTC_DEREG_EVT:
-        break;
-
       case BTA_GATTC_OPEN_EVT:
         OnGattConnected(p_data->open);
         break;
@@ -2085,7 +2082,7 @@ private:
     if (device->isGattServiceValid()) {
       instance->OnEncrypted(*device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kUuidHearingAccessService);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -2109,7 +2106,7 @@ private:
     btif_storage_remove_leaudio_has(device->addr);
 
     if (search_request) {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kUuidHearingAccessService);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 
@@ -2133,7 +2130,7 @@ private:
     log::debug("address={}", address);
 
     if (!device->isGattServiceValid()) {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, kUuidHearingAccessService);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id);
     }
   }
 

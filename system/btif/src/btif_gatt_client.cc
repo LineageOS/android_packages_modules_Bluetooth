@@ -212,8 +212,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       break;
     }
 
-    case BTA_GATTC_DEREG_EVT:
-    case BTA_GATTC_SEARCH_RES_EVT:
     case BTA_GATTC_SRVC_DISC_DONE_EVT:
       log::debug("Ignoring event ({})", event);
       break;
@@ -272,7 +270,7 @@ static void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   ASSERTC(status, "Context transfer failed!", status);
 }
 
-void btm_read_rssi_cb(tBTM_STATUS status, uint8_t rssi, RawAddress address) {
+void btm_read_rssi_cb(tBTM_STATUS status, int8_t rssi, RawAddress address) {
   if (status != tBTM_STATUS::BTM_SUCCESS) {
     log::error("Read RSSI failed with status {}", status);
   }
@@ -311,7 +309,7 @@ static void btif_gattc_unregister_app_impl(int client_if) { BTA_GATTC_AppDeregis
 
 static BtStatus btif_gattc_unregister_app(int client_if) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&btif_gattc_unregister_app_impl, client_if));
+  return do_in_main_thread(BindOnce(&btif_gattc_unregister_app_impl, client_if));
 }
 
 void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr_type,
@@ -335,24 +333,6 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
   if (transport == BT_TRANSPORT_AUTO) {
     // Prefer LE transport when LE is supported
     transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
-  }
-
-  // Check for background connections
-  if (!is_direct) {
-    // Check for privacy 1.0 and 1.1 controller and do not start background
-    // connection if RPA offloading is not supported, since it will not
-    // connect after change of random address
-    if (!bluetooth::shim::GetController()->SupportsBlePrivacy() && (addr_type == BLE_ADDR_RANDOM) &&
-        BTM_BLE_IS_RESOLVE_BDA(address)) {
-      tBTM_BLE_VSC_CB vnd_capabilities;
-      BTM_BleGetVendorCapabilities(&vnd_capabilities);
-      if (!vnd_capabilities.rpa_offloading) {
-        auto callbacks = bt_gatt_callbacks;
-        HAL_CBACK(callbacks, client->open_cb, to_java_transport(transport), 0,
-                  BtifStatus(UNSUPPORTED), client_if, address);
-        return;
-      }
-    }
   }
 
   // Connect!
@@ -404,16 +384,11 @@ static BtStatus btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
   return do_in_jni_thread(BindOnce(&BTA_GATTC_Refresh, static_cast<tGATT_IF>(client_if), bd_addr));
 }
 
-static BtStatus btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {
+static BtStatus btif_gattc_search_service(int conn_id, const Uuid*) {
   CHECK_BTGATT_INIT();
 
-  if (filter_uuid) {
-    return do_in_jni_thread(BindOnce(&BTA_GATTC_ServiceSearchRequest,
-                                     static_cast<tCONN_ID>(conn_id), *filter_uuid));
-  } else {
-    return do_in_jni_thread(
-            BindOnce(&BTA_GATTC_ServiceSearchAllRequest, static_cast<tCONN_ID>(conn_id)));
-  }
+  return do_in_jni_thread(
+          BindOnce(&BTA_GATTC_ServiceSearchRequest, static_cast<tCONN_ID>(conn_id)));
 }
 
 static void btif_gattc_discover_service_by_uuid(int conn_id, const Uuid& uuid) {
@@ -671,7 +646,6 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
         !acl_peer_supports_ble_connection_subrating(bd_addr) ||
         !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
       return BtifStatus(UNSUPPORTED);
-      ;
     }
   }
   return do_in_main_thread(BindOnce(base::IgnoreResult(&stack::leConnectionSubrateRequest), bd_addr,

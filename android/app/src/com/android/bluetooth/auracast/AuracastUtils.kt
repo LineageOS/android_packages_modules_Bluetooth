@@ -23,6 +23,7 @@ import android.content.Context
 import android.util.Base64
 import android.util.Log
 import com.android.bluetooth.R
+import com.android.bluetooth.le_audio.LeAudioConstants
 
 object AuracastUtils {
     const val CHANNEL_ID = "auracast_nfc_channel"
@@ -42,20 +43,21 @@ object AuracastUtils {
 
     /**
      * Parses the broadcast metadata string to extract the Broadcast Name (BN) and Broadcast Code
-     * (BC).
+     * (BC) and Broadcast ID (BI).
      *
-     * @param metadataStr The raw or stripped metadata string from the NFC NDEF record.
-     * @return A [BroadcastStreamInfo] object containing the parsed name and code, or null if the
-     *   name is missing.
+     * @param uriString The raw or stripped URI string
+     * @return A [BroadcastStreamInfo] object containing the parsed name, code and broadcast ID, or
+     *   null if the name is missing.
      */
     @JvmStatic
-    fun parseBroadcastNameAndCode(metadataStr: String): BroadcastStreamInfo? {
+    fun parseBroadcastURI(uriString: String): BroadcastStreamInfo? {
         var bName: String? = null
         var bCode: ByteArray? = null
+        var bId: Int = LeAudioConstants.INVALID_BROADCAST_ID
 
         // Safely strip the scheme and suffix if they are present in the string
         val strippedString =
-            metadataStr.removePrefix(SCHEME_BT_BROADCAST_METADATA).removeSuffix(SUFFIX_QR_CODE)
+            uriString.removePrefix(SCHEME_BT_BROADCAST_METADATA).removeSuffix(SUFFIX_QR_CODE)
 
         val parts = strippedString.split(DELIMITER_ELEMENT)
         for (part in parts) {
@@ -74,13 +76,24 @@ object AuracastUtils {
                 } catch (e: IllegalArgumentException) {
                     Log.w(TAG, "Failed to decode broadcast code")
                 }
+            } else if (part.startsWith("BI$DELIMITER_KEY_VALUE")) {
+                try {
+                    val parsedId = part.substring(3).toInt(16)
+                    if (parsedId in 0..0xFFFFFF) {
+                        bId = parsedId
+                    } else {
+                        Log.w(TAG, "Broadcast ID is out of valid 24-bit range")
+                    }
+                } catch (e: NumberFormatException) {
+                    Log.w(TAG, "Failed to decode broadcast ID")
+                }
             }
         }
 
         if (bName.isNullOrEmpty()) {
             return null
         }
-        return BroadcastStreamInfo(bName, bCode)
+        return BroadcastStreamInfo(bName, bCode, bId)
     }
 
     /**
@@ -125,5 +138,5 @@ object AuracastUtils {
     }
 }
 
-// Simple data class to hold the parsed Name and Code
-class BroadcastStreamInfo(val name: String, val code: ByteArray?)
+// Simple data class to hold the parsed Name, Code and Broadcast ID
+class BroadcastStreamInfo(val name: String, val code: ByteArray?, val broadcastId: Int)

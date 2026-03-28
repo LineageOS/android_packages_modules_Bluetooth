@@ -41,11 +41,11 @@ using bluetooth::csis::CsisLockCb;
 
 // CSIP additions
 /* Generic UUID is used when CSIS is not included in any context */
-static const bluetooth::Uuid kCsisServiceUuid = bluetooth::Uuid::From16Bit(0x1846);
-static const bluetooth::Uuid kCsisSirkUuid = bluetooth::Uuid::From16Bit(0x2B84);
-static const bluetooth::Uuid kCsisSizeUuid = bluetooth::Uuid::From16Bit(0x2B85);
-static const bluetooth::Uuid kCsisLockUuid = bluetooth::Uuid::From16Bit(0x2B86);
-static const bluetooth::Uuid kCsisRankUuid = bluetooth::Uuid::From16Bit(0x2B87);
+static constexpr bluetooth::Uuid kCsisServiceUuid = bluetooth::Uuid::From16Bit(0x1846);
+static constexpr bluetooth::Uuid kCsisSirkUuid = bluetooth::Uuid::From16Bit(0x2B84);
+static constexpr bluetooth::Uuid kCsisSizeUuid = bluetooth::Uuid::From16Bit(0x2B85);
+static constexpr bluetooth::Uuid kCsisLockUuid = bluetooth::Uuid::From16Bit(0x2B86);
+static constexpr bluetooth::Uuid kCsisRankUuid = bluetooth::Uuid::From16Bit(0x2B87);
 
 static constexpr uint8_t kCsisErrorCodeLockDenied = 0x80;
 static constexpr uint8_t kCsisErrorCodeReleaseNotAllowed = 0x81;

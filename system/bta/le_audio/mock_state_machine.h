@@ -92,7 +92,7 @@ public:
   MOCK_METHOD((void), Cleanup, ());
   MOCK_METHOD((void), ProcessHciNotifIsoLinkQualityRead,
               (bluetooth::le_audio::LeAudioDeviceGroup * group,
-               bluetooth::le_audio::LeAudioDevice* leAudioDevice, uint8_t conn_handle,
+               bluetooth::le_audio::LeAudioDevice* leAudioDevice, uint16_t conn_handle,
                uint32_t tx_unacked_packets, uint32_t tx_flushed_packets,
                uint32_t tx_last_subevent_packets, uint32_t retransmitted_packets,
                uint32_t crc_error_packets, uint32_t rx_unreceived_packets,

@@ -22,12 +22,12 @@
 
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_gatt_api.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "ccp/ccp_types.h"
 #include "gatt/database_builder.h"
 #include "hardware/bt_le_audio.h"
 #include "stack/mock/mock_stack_btm_interface.h"
 #include "stack/mock/mock_stack_security_client_interface.h"
-#include "test/common/bta_gatt_api_mock.h"
 #include "test/common/bta_gatt_queue_mock.h"
 #include "test/common/btm_api_mock.h"
 #include "test/common/mock_functions.h"
@@ -241,7 +241,7 @@ TEST_F(CcpClientTest, connection_connect_and_discover) {
               OnConnectionState(kTestAddress, le_audio::ConnectionState::CONNECTED));
   EXPECT_CALL(mock_btm_security_, BTM_IsEncrypted(kTestAddress, BT_TRANSPORT_LE))
           .WillOnce(Return(true));
-  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId, NotNull()));
+  EXPECT_CALL(gatt_client_interface_, ServiceSearchRequest(kTestConnId));
   SimulateGattConnect(kTestAddress, kTestConnId);
 
   SimulateSearchCompleteAndDiscover(kTestAddress, kTestConnId);

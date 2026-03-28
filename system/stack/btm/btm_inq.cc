@@ -48,7 +48,6 @@
 #include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
-#include "osi/include/stack_power_telemetry.h"
 #include "packet/bit_inserter.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_device_record.h"
@@ -273,8 +272,6 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
 
   /* If the window and/or interval is '0', set to default values */
   log::verbose("mode {} [NonDisc-0, Lim-1, Gen-2]", inq_mode);
-  (inq_mode != BTM_NON_DISCOVERABLE) ? power_telemetry::GetInstance().LogInqScanStarted()
-                                     : power_telemetry::GetInstance().LogInqScanStopped();
 
   /* Set the IAC if needed */
   if (inq_mode != BTM_NON_DISCOVERABLE) {

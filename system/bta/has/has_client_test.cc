@@ -30,8 +30,8 @@
 #include <variant>
 
 #include "bta/le_audio/le_audio_types.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta_csis_api.h"
-#include "bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "bta_has_api.h"
 #include "btif_storage_mock.h"
@@ -678,7 +678,7 @@ protected:
               return nullptr;
             }));
 
-    ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
+    ON_CALL(gatt_interface, ServiceSearchRequest(_))
             .WillByDefault(WithArg<0>(
                     Invoke([&](uint16_t conn_id) { InjectSearchCompleteEvent(conn_id); })));
 
@@ -3091,8 +3091,8 @@ TEST_F(HasClientTest, test_connect_database_out_of_sync) {
             }
           }));
 
-  ON_CALL(gatt_interface, ServiceSearchRequest(_, _)).WillByDefault(Return());
-  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _));
+  ON_CALL(gatt_interface, ServiceSearchRequest(_)).WillByDefault(Return());
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_));
   HasClient::Get()->GetPresetInfo(test_address, 1);
 }
 

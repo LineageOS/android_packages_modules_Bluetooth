@@ -26,7 +26,7 @@ namespace bluetooth {
 namespace groups {
 
 static constexpr int kGroupUnknown = -1;
-static const bluetooth::Uuid kGenericContextUuid = bluetooth::Uuid::From16Bit(0x0000);
+static constexpr bluetooth::Uuid kGenericContextUuid = bluetooth::Uuid::From16Bit(0x0000);
 
 class DeviceGroupsCallbacks {
 public:

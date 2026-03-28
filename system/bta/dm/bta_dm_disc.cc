@@ -106,7 +106,7 @@ struct gatt_interface_t {
   void (*BTA_GATTC_AppRegister)(const std::string& name, tBTA_GATTC_CBACK* p_client_cb,
                                 BtaAppRegisterCallback cb, bool eatt_support);
   void (*BTA_GATTC_Close)(tCONN_ID conn_id);
-  void (*BTA_GATTC_ServiceSearchRequest)(tCONN_ID conn_id, const bluetooth::Uuid* p_srvc_uuid);
+  void (*BTA_GATTC_ServiceSearchRequest)(tCONN_ID conn_id);
   void (*BTA_GATTC_Open)(tGATT_IF client_if, const RawAddress& remote_bda,
                          tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                          bool prefer_relax_mode);
@@ -128,13 +128,7 @@ struct gatt_interface_t {
                 },
         .BTA_GATTC_Close = [](tCONN_ID conn_id) { BTA_GATTC_Close(conn_id); },
         .BTA_GATTC_ServiceSearchRequest =
-                [](tCONN_ID conn_id, const bluetooth::Uuid* p_srvc_uuid) {
-                  if (p_srvc_uuid) {
-                    BTA_GATTC_ServiceSearchRequest(conn_id, *p_srvc_uuid);
-                  } else {
-                    BTA_GATTC_ServiceSearchAllRequest(conn_id);
-                  }
-                },
+                [](tCONN_ID conn_id) { BTA_GATTC_ServiceSearchRequest(conn_id); },
         .BTA_GATTC_Open =
                 [](tGATT_IF client_if, const RawAddress& remote_bda,
                    tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
@@ -594,7 +588,7 @@ static void bta_dm_start_gatt_discovery(const RawAddress& bd_addr) {
       bta_dm_discovery_cb.conn_id != GATT_INVALID_CONN_ID) {
     bta_dm_discovery_cb.pending_close_bda = RawAddress::kEmpty;
     alarm_cancel(bta_dm_discovery_cb.gatt_close_timer);
-    get_gatt_interface().BTA_GATTC_ServiceSearchRequest(bta_dm_discovery_cb.conn_id, nullptr);
+    get_gatt_interface().BTA_GATTC_ServiceSearchRequest(bta_dm_discovery_cb.conn_id);
     return;
   }
 
@@ -623,7 +617,7 @@ static void bta_dm_proc_open_evt(tBTA_GATTC_OPEN* p_data) {
   bta_dm_discovery_cb.conn_id = p_data->conn_id;
 
   if (p_data->status == GATT_SUCCESS) {
-    get_gatt_interface().BTA_GATTC_ServiceSearchRequest(p_data->conn_id, nullptr);
+    get_gatt_interface().BTA_GATTC_ServiceSearchRequest(p_data->conn_id);
   } else {
     bta_dm_gatt_disc_complete(GATT_INVALID_CONN_ID, p_data->status);
   }
@@ -670,12 +664,10 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     case BTA_GATTC_CFG_MTU_EVT:
     case BTA_GATTC_CONGEST_EVT:
     case BTA_GATTC_CONN_UPDATE_EVT:
-    case BTA_GATTC_DEREG_EVT:
     case BTA_GATTC_ENC_CMPL_CB_EVT:
     case BTA_GATTC_EXEC_EVT:
     case BTA_GATTC_NOTIF_EVT:
     case BTA_GATTC_PHY_UPDATE_EVT:
-    case BTA_GATTC_SEARCH_RES_EVT:
     case BTA_GATTC_SRVC_CHG_EVT:
     case BTA_GATTC_SRVC_DISC_DONE_EVT:
     case BTA_GATTC_SUBRATE_CHG_EVT:

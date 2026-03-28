@@ -36,8 +36,6 @@ namespace mock {
 namespace stack_avrc_apt {
 
 // Function state capture and return values, if needed
-struct AVRC_SubCmd AVRC_SubCmd;
-struct AVRC_UnitCmd AVRC_UnitCmd;
 struct AVRC_VendorCmd AVRC_VendorCmd;
 struct AVRC_VendorRsp AVRC_VendorRsp;
 
@@ -50,8 +48,6 @@ namespace test {
 namespace mock {
 namespace stack_avrc_apt {
 
-uint16_t AVRC_SubCmd::return_value = 0;
-uint16_t AVRC_UnitCmd::return_value = 0;
 uint16_t AVRC_VendorCmd::return_value = 0;
 uint16_t AVRC_VendorRsp::return_value = 0;
 
@@ -60,14 +56,6 @@ uint16_t AVRC_VendorRsp::return_value = 0;
 }  // namespace test
 
 // Mocked functions, if any
-uint16_t AVRC_SubCmd(uint8_t handle, uint8_t label, uint8_t page) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_avrc_apt::AVRC_SubCmd(handle, label, page);
-}
-uint16_t AVRC_UnitCmd(uint8_t handle, uint8_t label) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_avrc_apt::AVRC_UnitCmd(handle, label);
-}
 uint16_t AVRC_VendorCmd(uint8_t handle, uint8_t label, tAVRC_MSG_VENDOR* p_msg) {
   inc_func_call_count(__func__);
   return test::mock::stack_avrc_apt::AVRC_VendorCmd(handle, label, p_msg);

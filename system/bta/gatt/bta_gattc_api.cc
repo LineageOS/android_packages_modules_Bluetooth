@@ -93,7 +93,7 @@ void BTA_GATTC_AppRegister(const std::string& name, tBTA_GATTC_CBACK* p_client_c
                                    eatt_support));
 }
 
-static void app_deregister_impl(tGATT_IF client_if) {
+void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
 
   if (p_clreg != nullptr) {
@@ -101,21 +101,6 @@ static void app_deregister_impl(tGATT_IF client_if) {
   } else {
     log::error("Unknown GATT ID: {}, state: {}", client_if, bta_gattc_cb.state);
   }
-}
-/*******************************************************************************
- *
- * Function         BTA_GATTC_AppDeregister
- *
- * Description      This function is called to deregister an application
- *                  from BTA GATTC module.
- *
- * Parameters       client_if - client interface identifier.
- *
- * Returns          None
- *
- ******************************************************************************/
-void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
-  do_in_main_thread(base::BindOnce(&app_deregister_impl, client_if));
 }
 
 /*******************************************************************************
@@ -150,25 +135,12 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu, GATT_CONFIGURE_MTU_O
   bta_sys_sendmsg(p_buf);
 }
 
-void BTA_GATTC_ServiceSearchAllRequest(tCONN_ID conn_id) {
+void BTA_GATTC_ServiceSearchRequest(tCONN_ID conn_id) {
   const size_t len = sizeof(tBTA_GATTC_API_SEARCH);
   tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
 
   p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
   p_buf->hdr.layer_specific = static_cast<uint16_t>(conn_id);
-  p_buf->p_srvc_uuid = NULL;
-
-  bta_sys_sendmsg(p_buf);
-}
-
-void BTA_GATTC_ServiceSearchRequest(tCONN_ID conn_id, Uuid p_srvc_uuid) {
-  const size_t len = sizeof(tBTA_GATTC_API_SEARCH) + sizeof(Uuid);
-  tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
-
-  p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
-  p_buf->hdr.layer_specific = static_cast<uint16_t>(conn_id);
-  p_buf->p_srvc_uuid = (Uuid*)(p_buf + 1);
-  *p_buf->p_srvc_uuid = p_srvc_uuid;
 
   bta_sys_sendmsg(p_buf);
 }

@@ -142,7 +142,7 @@ flag {
 flag {
     name: "a2dp_cleanup_on_acl_disconnect"
     namespace: "bluetooth"
-    description: "Force BTA_AvClose when ACL disconnects during AVDTP Openning"
+    description: "Force BTA_AvClose when ACL disconnects during AVDTP Opening"
     bug: "492065812"
     metadata {
         purpose: PURPOSE_BUGFIX

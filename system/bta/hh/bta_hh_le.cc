@@ -236,7 +236,10 @@ void bta_hh_le_enable(void) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_hh_le_deregister(void) { BTA_GATTC_AppDeregister(bta_hh_cb.gatt_if); }
+void bta_hh_le_deregister(void) {
+  BTA_GATTC_AppDeregister(bta_hh_cb.gatt_if);
+  bta_hh_cleanup_disable(static_cast<bthh_status_t>(GATT_SUCCESS));
+}
 
 /******************************************************************************
  *
@@ -930,8 +933,7 @@ static void bta_hh_le_dis_cback(const RawAddress& addr, tDIS_VALUE* p_dis_value)
     p_cb->dscp_info.version = p_dis_value->pnp_id.product_version;
   }
 
-  Uuid pri_srvc = Uuid::From16Bit(UUID_SERVCLASS_LE_HID);
-  BTA_GATTC_ServiceSearchRequest(p_cb->conn_id, pri_srvc);
+  BTA_GATTC_ServiceSearchRequest(p_cb->conn_id);
 }
 
 /*******************************************************************************
@@ -953,8 +955,7 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
   if (!DIS_ReadDISInfo(p_cb->link_spec.addrt.bda, bta_hh_le_dis_cback, DIS_ATTR_PNP_ID_BIT)) {
     log::error("read DIS failed");
     p_cb->disc_active &= ~BTA_HH_LE_DISC_DIS;
-    Uuid pri_srvc = Uuid::From16Bit(UUID_SERVCLASS_LE_HID);
-    BTA_GATTC_ServiceSearchRequest(p_cb->conn_id, pri_srvc);
+    BTA_GATTC_ServiceSearchRequest(p_cb->conn_id);
     return;
   }
 
@@ -2270,10 +2271,6 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   }
 
   switch (event) {
-    case BTA_GATTC_DEREG_EVT: /* 1 */
-      bta_hh_cleanup_disable(static_cast<bthh_status_t>(p_data->reg_oper.status));
-      break;
-
     case BTA_GATTC_OPEN_EVT: /* 2 */
       link_spec.addrt.bda = p_data->open.remote_bda;
       link_spec.transport = p_data->open.transport;

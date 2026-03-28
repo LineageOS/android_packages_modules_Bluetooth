@@ -23,7 +23,7 @@
 #include <thread>
 
 #include "bta/include/bta_vap_server_api.h"
-#include "bta/test/common/bta_gatt_api_mock.h"
+#include "bta/mock/bta_gatt_api_mock.h"
 #include "bta/test/common/mock_csis_client.h"
 #include "bta/vap/vap_server_types.h"
 #include "bta_csis_api.h"
