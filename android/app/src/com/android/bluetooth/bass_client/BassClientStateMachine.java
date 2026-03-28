@@ -827,7 +827,12 @@ class BassClientStateMachine extends StateMachine {
             return;
         }
 
-        Log.d(TAG, "processBroadcastReceiverState: Updated receiver state: " + recvState);
+        Log.d(
+                TAG,
+                "processBroadcastReceiverState: device="
+                        + mDevice
+                        + ", updated receiver state: "
+                        + recvState);
         mBluetoothLeBroadcastReceiveStates.put(characteristic.getInstanceId(), recvState);
         int sourceId = recvState.getSourceId();
 
