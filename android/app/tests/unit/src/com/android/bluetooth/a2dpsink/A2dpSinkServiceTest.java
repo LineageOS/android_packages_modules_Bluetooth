@@ -336,7 +336,7 @@ public class A2dpSinkServiceTest {
 
         List<BluetoothDevice> devices =
                 mService.getDevicesMatchingConnectionStates(new int[] {STATE_DISCONNECTED});
-        assertThat(devices).isEqualTo(expected);
+        assertThat(devices).containsExactlyElementsIn(expected);
         assertThat(mLooper.nextMessage()).isNull();
     }
 
