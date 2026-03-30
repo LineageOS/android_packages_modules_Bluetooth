@@ -1412,19 +1412,36 @@ int bta_co_rfc_data_outgoing(uint32_t id, uint8_t* buf, uint16_t size) {
   rfc_slot_t* slot = find_rfc_slot_by_id(id);
   if (!slot) {
     log::error("RFCOMM slot_id {} not found.", id);
-    return false;
+    return -1;
   }
 
   ssize_t received;
-  OSI_NO_INTR(received = recv(slot->fd, buf, size, 0));
+  OSI_NO_INTR(received = recv(slot->fd, buf, size, MSG_DONTWAIT));
 
-  if (received != size) {
-    log::error("error receiving RFCOMM data from app: {}", strerror(errno));
-    cleanup_rfc_slot(slot, BTSOCK_ERROR_RECEIVE_DATA_FAILURE);
-    return false;
+  if (received > 0) {
+    if (received < size) {
+      log::info("Received less data than requested: {} < {}, which is normal.", received, size);
+    }
+    // Return actual bytes read.
+    return received;
   }
 
-  return true;
+  if (received == 0) {
+    log::info("App gracefully closed the RFCOMM socket.");
+    // Cleanup the slot on graceful closure
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_NONE);
+    return -1;
+  }
+
+  if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    log::info("App is not ready for RFCOMM data (EAGAIN/EWOULDBLOCK).");
+    // Normal non-blocking state: No data right now.
+    return 0;
+  }
+
+  log::error("error receiving RFCOMM data from app: {}", strerror(errno));
+  cleanup_rfc_slot(slot, BTSOCK_ERROR_RECEIVE_DATA_FAILURE);
+  return -1;
 }
 
 BtStatus btsock_rfc_disconnect(RawAddress bd_addr) {
