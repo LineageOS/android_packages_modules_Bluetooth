@@ -1666,7 +1666,8 @@ public class HeadsetStateMachineTest {
                         HeadsetHalConstants.AUDIO_STATE_CONNECTED,
                         mDevice));
 
-        verify(mAudioManager, times(0)).setParameters(any());
+        //Should set nrec and wbs properties when AMSCO enabled
+        verify(mAudioManager, times(1)).setParameters(any());
     }
 
     /**

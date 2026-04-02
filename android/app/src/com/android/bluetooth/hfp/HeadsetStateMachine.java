@@ -1815,11 +1815,22 @@ class HeadsetStateMachine extends StateMachine {
     }
 
     private void setAudioParameters() {
+        AudioManager am = mSystemInterface.getAudioManager();
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
-            Log.i(TAG, "isScoManagedByAudio enabled, do not setAudioParameters");
+            //TODO: to be removed once AHAL implements these
+            // parameters based on AHAL communications
+            Log.i(
+                    TAG,
+                    ("setAudioParameters for " + mDevice + ":")
+                            + (" Name=" + getCurrentDeviceName())
+                            + (" mHasSwbLc3Enabled=" + mHasSwbLc3Enabled)
+                            + (" hasNrecEnabled=" + mHasNrecEnabled)
+                            + (" hasWbsEnabled=" + mHasWbsEnabled));
+            am.setParameters("bt_lc3_swb=" + (mHasSwbLc3Enabled ? "on" : "off"));
+            am.setBluetoothHeadsetProperties(getCurrentDeviceName(), mHasNrecEnabled,
+             mHasWbsEnabled);
             return;
         }
-        AudioManager am = mSystemInterface.getAudioManager();
         Log.i(
                 TAG,
                 ("setAudioParameters for " + mDevice + ":")
