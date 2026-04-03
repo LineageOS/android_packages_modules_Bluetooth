@@ -317,7 +317,10 @@ bool background_connect_add(uint8_t app_id, const RawAddress& address) {
     if (it->second.doing_bg_conn.count(app_id)) {
       log::debug("app_id={}, already doing background connection to address={}",
                  static_cast<int>(app_id), address);
-      return true;
+      // if the device is not in the accept list, retry
+      if (it->second.is_in_accept_list) {
+        return true;
+      }
     }
 
     // Already in acceptlist ?
