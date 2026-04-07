@@ -20,6 +20,7 @@
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_av_api.h"
 #include "bta/include/bta_hfp_api.h"
+#include "bta/include/bta_sec_api.h"
 #include "main/shim/helpers.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/btm_api_types.h"
@@ -770,9 +771,19 @@ void LogRfcommMxEvent(hci::Address address, State state) {
   LogBluetoothEvent(address, EventType::RFCOMM_MX_EVENT, state);
 }
 
-void LogBondRepairComplete(hci::Address address, bt_bond_state_t state) {
-  LogBluetoothEvent(address, EventType::BOND_REPAIR,
-                    state == BT_BOND_STATE_BONDED ? State::SUCCESS : State::FAIL);
+void LogBondRepairComplete(hci::Address address, bt_bond_state_t state, uint8_t fail_reason) {
+  if (state == BT_BOND_STATE_BONDED) {
+    LogBluetoothEvent(address, EventType::BOND_REPAIR, State::SUCCESS);
+  } else {
+    State mapped_state = State::STATE_UNKNOWN;
+    if (fail_reason >= BTA_DM_AUTH_FAIL_BASE) {
+      mapped_state = MapSmpStatusCodeToState(
+              static_cast<tSMP_STATUS>(fail_reason - BTA_DM_AUTH_FAIL_BASE));
+    } else {
+      mapped_state = MapHCIStatusToState(static_cast<tHCI_STATUS>(fail_reason));
+    }
+    LogBluetoothEvent(address, EventType::BOND_REPAIR_FAIL, mapped_state);
+  }
 }
 
 }  // namespace bluetooth::metrics
