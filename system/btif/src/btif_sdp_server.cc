@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <mutex>
+#include <vector>
 
 #include "bta/include/bta_sdp_api.h"
 #include "bta/sys/bta_sys.h"
@@ -56,14 +57,12 @@ using namespace bluetooth;
 
 // Protects the sdp_slots array from concurrent access.
 static std::recursive_mutex sdp_lock;
+static std::vector<int> sdp_record_creation_pending_ids;
 
-/**
- * The need for a state variable have been reduced to two states.
- * The remaining state control is handled by program flow
- */
 typedef enum {
   SDP_RECORD_FREE = 0,
   SDP_RECORD_ALLOCED,
+  SDP_RECORD_CREATE_INITIATED,
 } sdp_state_t;
 
 typedef struct {
@@ -263,12 +262,14 @@ static const sdp_slot_t* start_create_sdp(int id) {
   }
 
   std::unique_lock<std::recursive_mutex> lock(sdp_lock);
-  if (sdp_slots[id].state != SDP_RECORD_ALLOCED) {
+  if (sdp_slots[id].state == SDP_RECORD_FREE) {
     /* The record have been removed before this event occurred - e.g. deinit */
     log::error("failed - state for id {} is sdp_slots[id].state = {} expected {}", id,
                sdp_slots[id].state, SDP_RECORD_ALLOCED);
     return NULL;
   }
+
+  sdp_slots[id].state = SDP_RECORD_CREATE_INITIATED;
 
   return &(sdp_slots[id]);
 }
@@ -304,14 +305,27 @@ bt_status_t remove_sdp_record(int record_id) {
 
   bluetooth_sdp_record* record;
   bluetooth_sdp_types sdp_type = SDP_TYPE_RAW;
+
   {
     std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+
+    if (sdp_slots[record_id].state == SDP_RECORD_CREATE_INITIATED) {
+      sdp_record_creation_pending_ids.push_back(record_id);
+      return BT_STATUS_SUCCESS;
+    }
+    if (sdp_slots[record_id].state == SDP_RECORD_FREE) {
+      log::warn("Sdp Server attempted to remove record already removed or never "
+                         "created");
+      return BT_STATUS_DONE;
+    }
     record = sdp_slots[record_id].record_data;
     if (record != NULL) {
       sdp_type = record->hdr.type;
     }
   }
+
   tBTA_SERVICE_ID service_id = 0;
+
   switch (sdp_type) {
     case SDP_TYPE_MAP_MAS:
       service_id = BTA_MAP_SERVICE_ID;
@@ -343,8 +357,21 @@ bt_status_t remove_sdp_record(int record_id) {
     BTA_SdpRemoveRecordByUser(INT_TO_PTR(handle));
     return BT_STATUS_SUCCESS;
   }
-  log::verbose("Sdp Server - record already removed - or never created");
+
   return BT_STATUS_DONE;
+}
+
+static void sdp_check_pending_records() {
+  std::vector<int> pending_ids;
+  {
+    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    pending_ids = sdp_record_creation_pending_ids;
+    sdp_record_creation_pending_ids.clear();
+  }
+
+  for (int id : pending_ids) {
+    remove_sdp_record(id);
+  }
 }
 
 /******************************************************************************
@@ -415,6 +442,19 @@ void on_create_record_event(int id) {
          *       btif_dm_enable_service}.
          */
         btif_enable_service(service_id);
+      }
+
+      bool has_pending = false;
+
+      {
+        std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+        sdp_slots[id].state = SDP_RECORD_ALLOCED;
+        has_pending = !sdp_record_creation_pending_ids.empty();
+      }
+
+      /* Check if any records were pending removal */
+      if (has_pending) {
+        sdp_check_pending_records();
       }
     }
   }
