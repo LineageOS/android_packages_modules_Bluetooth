@@ -133,7 +133,7 @@
     <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"ທ່ານສາມາດປ່ຽນສິ່ງນີ້ຕອນໃດກໍໄດ້ໃນການຕັ້ງຄ່າ"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"ການປ່ຽນສະຖານະ Bluetooth ອັດຕະໂນມັດ"</string>
     <string name="auracast_notification_channel" msgid="5159181425358316696">"Auracast"</string>
-    <string name="auracast_notification_title" msgid="3101708313009368939">"ການສະຕຣີມສຽງ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ລາຍການພ້ອມນຳໃຊ້"</string>
+    <string name="auracast_notification_title" msgid="3101708313009368939">"ການສະຕຣີມສຽງ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ພ້ອມນຳໃຊ້"</string>
     <string name="auracast_notification_subtext" msgid="4696155233480316395">"ສຽງ LE"</string>
     <string name="auracast_connect_device_message" msgid="4461776363082532493">"ເຊື່ອມຕໍ່ອຸປະກອນສຽງ LE ເພື່ອເລີ່ມຟັງ"</string>
     <string name="auracast_listen_on_device_message" msgid="3719491065367993094">"ຟັງການສະຕຣີມສຽງ <xliff:g id="STREAM_NAME">%1$s</xliff:g> ຢູ່ <xliff:g id="DEVICE_NAME">%2$s</xliff:g> ຂອງທ່ານ"</string>
