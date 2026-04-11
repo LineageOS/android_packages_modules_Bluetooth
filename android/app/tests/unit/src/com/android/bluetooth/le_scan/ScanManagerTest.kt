@@ -2682,6 +2682,37 @@ class ScanManagerTest() {
         verify(nativeInterface, never()).msftAdvMonitorEnable(any<Boolean>())
     }
 
+    @Test
+    fun testRestartScan_noRegularClients() {
+        // Verifies that when there are no regular scan clients, the scan is only stopped
+        // and not started again.
+        scanManager.restartScan("testCaller")
+
+        verify(nativeInterface).scan(false, "testCaller")
+        verify(nativeInterface, never()).scan(eq(true), any())
+    }
+
+    @Test
+    fun testRestartScan_withRegularClients() {
+        // Turn on screen to allow regular scan to start
+        setScreenOn(true)
+
+        // Create and start a regular scan client
+        val client =
+            createScanClient(isFiltered = false, scanMode = ScanSettings.SCAN_MODE_LOW_POWER)
+        startScan(client)
+
+        // Clear invocations from the initial startScan call
+        clearInvocations(nativeInterface)
+
+        // Verifies that when there are regular scan clients, the scan is stopped and then started
+        // again.
+        scanManager.restartScan("testCaller")
+
+        verify(nativeInterface).scan(false, "testCaller")
+        verify(nativeInterface).scan(true, "testCaller")
+    }
+
     private fun createScanClient(
         isFiltered: Boolean,
         scanMode: Int,

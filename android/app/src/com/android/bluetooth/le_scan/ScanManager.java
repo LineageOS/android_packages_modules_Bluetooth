@@ -1581,14 +1581,15 @@ public class ScanManager {
         if (mScanEnabledMsft != shouldEnableScanMsft) {
             mNativeInterface.msftAdvMonitorEnable(shouldEnableScanMsft);
             mScanEnabledMsft = shouldEnableScanMsft;
+            // Restart LE scan in callback to apply filter policy change.
+        }
+    }
 
-            // Restart scanning, since enabling/disabling may have changed
-            // the filter policy
-            Log.d(TAG, "Restarting MSFT scan");
-            mNativeInterface.scan(false, "updateScanMsft");
-            if (numRegularScanClients() > 0) {
-                mNativeInterface.scan(true, "updateScanMsft");
-            }
+    void restartScan(String caller) {
+        Log.d(TAG, "restartScan(" + caller + ")");
+        mNativeInterface.scan(false, caller);
+        if (numRegularScanClients() > 0) {
+            mNativeInterface.scan(true, caller);
         }
     }
 
