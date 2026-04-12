@@ -113,8 +113,8 @@ tBTM_SEC_SERV_REC* BtmSecurity::find_first_serv_rec(bool outgoing, uint16_t psm)
   return NULL;
 }
 
-BtmSecurityRecord* BtmSecurity::getSecRec(const RawAddress bd_addr) {
-  BtmDevice* p_device = btm_get_dev(bd_addr);
+const BtmSecurityRecord* BtmSecurity::findSecRec(const RawAddress bd_addr) {
+  const BtmDevice* p_device = btm_find_dev(bd_addr);
   if (p_device != nullptr) {
     return &p_device->sec_rec;
   }
@@ -122,7 +122,7 @@ BtmSecurityRecord* BtmSecurity::getSecRec(const RawAddress bd_addr) {
 }
 
 bool BtmSecurity::IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport) {
-  BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
+  const BtmSecurityRecord* sec_rec = findSecRec(bd_addr);
   if (sec_rec) {
     if (transport == BT_TRANSPORT_BR_EDR) {
       return sec_rec->is_device_encrypted();
@@ -138,7 +138,7 @@ bool BtmSecurity::IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT tran
 }
 
 bool BtmSecurity::IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport) {
-  BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
+  const BtmSecurityRecord* sec_rec = findSecRec(bd_addr);
   if (sec_rec) {
     if (transport == BT_TRANSPORT_BR_EDR) {
       return sec_rec->is_link_key_authenticated();
@@ -154,7 +154,7 @@ bool BtmSecurity::IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT
 }
 
 bool BtmSecurity::IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport) {
-  BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
+  const BtmSecurityRecord* sec_rec = findSecRec(bd_addr);
   if (sec_rec) {
     if (transport == BT_TRANSPORT_BR_EDR) {
       return sec_rec->is_device_authenticated();
@@ -170,7 +170,7 @@ bool BtmSecurity::IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT 
 }
 
 bool BtmSecurity::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transport) {
-  BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
+  const BtmSecurityRecord* sec_rec = findSecRec(bd_addr);
   if (sec_rec == nullptr) {
     log::verbose("No record for {}", bd_addr);
     return false;

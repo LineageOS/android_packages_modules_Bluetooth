@@ -114,7 +114,7 @@ public:
     return sec_collision_timer_ != nullptr; /* re-using the timer as init indicator */
   }
 
-  BtmSecurityRecord* getSecRec(const RawAddress bd_addr);
+  const BtmSecurityRecord* findSecRec(const RawAddress bd_addr);
 
   bool AddService(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
                   uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id);

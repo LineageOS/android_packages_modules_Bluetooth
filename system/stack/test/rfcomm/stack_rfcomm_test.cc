@@ -54,6 +54,13 @@ const RawAddress kRawAddress2 = RawAddress("01:02:03:04:05:06");
 
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
 
+class MockCoCallback {
+ public:
+  MOCK_METHOD(int, Callback, (uint8_t handle, uint8_t* p_buf, uint16_t len, int type));
+};
+
+static MockCoCallback* mock_co_callback = nullptr;
+
 void port_mgmt_cback_0(const tPORT_RESULT code, uint8_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 0);
 }
@@ -622,3 +629,114 @@ TEST_F(StackRfcommTest, test_rfc_check_mcb_active_last_dlci) {
   // State should not change because the MX is not closed
   ASSERT_EQ(mcb.state, RFC_MX_STATE_CONNECTED);
 }
+
+static int test_co_callback(uint8_t handle, uint8_t* p_buf, uint16_t len, int type) {
+  if (mock_co_callback) {
+    return mock_co_callback->Callback(handle, p_buf, len, type);
+  }
+  return -1;
+}
+
+TEST_F(StackRfcommTest, test_PORT_WriteDataCO_PartialRead) {
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
+
+  StartConnecting(test_scn, test_mtu, outgoing_lcid, test_peer_addr, server_handle, client_handle);
+  tPORT* p_port = &rfc_cb.port.port[client_handle - 1];
+
+  MockCoCallback local_mock;
+  mock_co_callback = &local_mock;
+
+  // Set the callback!
+  int status = PORT_SetDataCOCallback(client_handle, test_co_callback);
+  ASSERT_EQ(status, PORT_SUCCESS);
+
+  // 1. Mock OUTGOING_SIZE call
+  EXPECT_CALL(local_mock, Callback(client_handle, _, _, DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE))
+          .WillOnce([](uint8_t /* handle */, uint8_t* p_buf, uint16_t /* len */, int /* type */) {
+            int* p_size = (int*)p_buf;
+            *p_size = 100; // Say we have 100 bytes available
+            return 1; // Success
+          });
+
+  // 2. Mock OUTGOING call
+  // We simulate a situation where we request reading 100 bytes (or up to MTU),
+  // but callback returns only 10!
+  EXPECT_CALL(local_mock, Callback(client_handle, _, _, DATA_CO_CALLBACK_TYPE_OUTGOING))
+          .WillOnce([](uint8_t /* handle */, uint8_t* /* p_buf */,
+                       uint16_t /* len */, int /* type */) {
+            // Assume len is what it requested. We return less!
+            // Let's say we read 10 bytes!
+            return 10;
+          })
+          .WillRepeatedly(::testing::Return(0));
+  // Subsequent calls return 0 (no more data or handled)
+
+  int written_len = 0;
+  status = PORT_WriteDataCO(client_handle, &written_len);
+
+  ASSERT_EQ(status, PORT_SUCCESS);
+  ASSERT_EQ(written_len, 10); // Since we only returned 10 in the first call and 0 in the second!
+
+  // Clean up
+  mock_co_callback = nullptr;
+}
+
+TEST_F(StackRfcommTest, test_PORT_WriteDataCO_AppendToLastBuffer) {
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
+
+  StartConnecting(test_scn, test_mtu, outgoing_lcid, test_peer_addr, server_handle, client_handle);
+
+  MockCoCallback local_mock;
+  mock_co_callback = &local_mock;
+
+  int status = PORT_SetDataCOCallback(client_handle, test_co_callback);
+  ASSERT_EQ(status, PORT_SUCCESS);
+
+  uint8_t* first_call_ptr = nullptr;
+
+  // 1. First call: Write 10 bytes
+  EXPECT_CALL(local_mock, Callback(client_handle, _, _, DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE))
+          .WillOnce([](uint8_t /* handle */, uint8_t* p_buf, uint16_t /* len */, int /* type */) {
+            int* p_size = (int*)p_buf;
+            *p_size = 10;
+            return 1; // Success
+          });
+
+  EXPECT_CALL(local_mock, Callback(client_handle, _, _, DATA_CO_CALLBACK_TYPE_OUTGOING))
+          .WillOnce([&first_call_ptr](uint8_t /* handle */, uint8_t* p_buf,
+                                      uint16_t /* len */, int /* type */) {
+            first_call_ptr = p_buf;
+            return 10;
+          });
+
+  int written_len = 0;
+  status = PORT_WriteDataCO(client_handle, &written_len);
+  ASSERT_EQ(status, PORT_SUCCESS);
+  ASSERT_EQ(written_len, 10);
+
+  // 2. Second call: Write 20 bytes. It should append to the last buffer!
+  EXPECT_CALL(local_mock, Callback(client_handle, _, _, DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE))
+          .WillOnce([](uint8_t /* handle */, uint8_t* p_buf, uint16_t /* len */, int /* type */) {
+            int* p_size = (int*)p_buf;
+            *p_size = 20;
+            return 1; // Success
+          });
+
+  EXPECT_CALL(local_mock, Callback(client_handle, _, _, DATA_CO_CALLBACK_TYPE_OUTGOING))
+          .WillOnce([&first_call_ptr](uint8_t /* handle */, uint8_t* p_buf,
+                                      uint16_t /* len */, int /* type */) {
+            // Verify that the pointer is shifted by 10!
+            EXPECT_EQ(p_buf, first_call_ptr + 10);
+            return 20;
+          });
+
+  status = PORT_WriteDataCO(client_handle, &written_len);
+  ASSERT_EQ(status, PORT_SUCCESS);
+  ASSERT_EQ(written_len, 20);
+
+  // Clean up
+  mock_co_callback = nullptr;
+}
+

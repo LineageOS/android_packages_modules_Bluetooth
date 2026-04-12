@@ -910,6 +910,7 @@ int PORT_WriteDataCO(uint8_t handle, int* p_len) {
   // Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len
   length = RFCOMM_DATA_BUF_SIZE -
            (uint16_t)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
+  const uint16_t max_payload_len = length;
 
   // If there are buffers scheduled for transmission, check if requested
   // data fits into the end of the queue
@@ -918,18 +919,25 @@ int PORT_WriteDataCO(uint8_t handle, int* p_len) {
   p_buf = (BT_HDR*)fixed_queue_try_peek_last(p_port->tx.queue);
   if ((p_buf != NULL) && (((int)p_buf->len + available) <= (int)p_port->peer_mtu) &&
       (((int)p_buf->len + available) <= (int)length)) {
-    if (!p_port->p_data_co_callback ||
-        !p_port->p_data_co_callback(handle, (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len,
-                                    available, DATA_CO_CALLBACK_TYPE_OUTGOING)) {
+    int read_bytes = p_port->p_data_co_callback
+                             ? p_port->p_data_co_callback(
+                                       handle,
+                                       (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len,
+                                       available, DATA_CO_CALLBACK_TYPE_OUTGOING)
+                             : -1;
+    if (read_bytes < 0) {
       log::error("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, available:{}",
                  available);
       mutex_global_unlock();
       return PORT_UNKNOWN_ERROR;
     }
-    p_port->tx.queue_size += (uint16_t)available;
-
-    *p_len = available;
-    p_buf->len += (uint16_t)available;
+    if (read_bytes > 0) {
+      p_port->tx.queue_size += (uint16_t)read_bytes;
+      *p_len = read_bytes;
+      p_buf->len += (uint16_t)read_bytes;
+    } else {
+      *p_len = 0;
+    }
 
     mutex_global_unlock();
 
@@ -939,6 +947,7 @@ int PORT_WriteDataCO(uint8_t handle, int* p_len) {
   mutex_global_unlock();
 
   while (available) {
+    length = max_payload_len;
     // if we're over buffer high water mark, we're done
     if ((p_port->tx.queue_size > PORT_TX_HIGH_WM) ||
         (fixed_queue_length(p_port->tx.queue) > PORT_TX_BUF_HIGH_WM)) {
@@ -963,14 +972,24 @@ int PORT_WriteDataCO(uint8_t handle, int* p_len) {
     p_buf->len = length;
     p_buf->event = BT_EVT_TO_BTU_SP_DATA;
 
-    if (!p_port->p_data_co_callback ||
-        !p_port->p_data_co_callback(handle, (uint8_t*)(p_buf + 1) + p_buf->offset, length,
-                                    DATA_CO_CALLBACK_TYPE_OUTGOING)) {
+    int read_bytes = p_port->p_data_co_callback
+                             ? p_port->p_data_co_callback(
+                                       handle, (uint8_t*)(p_buf + 1) + p_buf->offset, length,
+                                       DATA_CO_CALLBACK_TYPE_OUTGOING)
+                             : -1;
+    if (read_bytes < 0) {
       log::error("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, length:{}", length);
+      osi_free(p_buf);
       return PORT_UNKNOWN_ERROR;
     }
+    if (read_bytes == 0) {
+      log::verbose("No data read (EAGAIN), breaking loop.");
+      osi_free(p_buf);
+      break;
+    }
+    p_buf->len = read_bytes;
 
-    log::verbose("{} bytes", length);
+    log::verbose("{} bytes", read_bytes);
 
     rc = port_write(p_port, p_buf);
 
@@ -985,8 +1004,8 @@ int PORT_WriteDataCO(uint8_t handle, int* p_len) {
       break;
     }
 
-    *p_len += length;
-    available -= (int)length;
+    *p_len += read_bytes;
+    available -= read_bytes;
   }
   if (!available && (rc != PORT_CMD_PENDING) && (rc != PORT_TX_QUEUE_DISABLED)) {
     event |= PORT_EV_TXEMPTY;

@@ -1924,6 +1924,10 @@ public class BassClientStateMachineTest {
         mLooper.dispatchAll();
         assertThat(mStateMachine.hasDeferredMessagesSuper(ADD_BCAST_SOURCE)).isTrue();
 
+        mStateMachine.sendMessage(UPDATE_BCAST_SOURCE);
+        mLooper.dispatchAll();
+        assertThat(mStateMachine.hasDeferredMessagesSuper(UPDATE_BCAST_SOURCE)).isTrue();
+
         mStateMachine.sendMessage(SET_BCAST_CODE);
         mLooper.dispatchAll();
         assertThat(mStateMachine.hasDeferredMessagesSuper(SET_BCAST_CODE)).isTrue();
