@@ -543,8 +543,8 @@ public:
           hearingDevices.Remove(address);
           callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
         }
-        return;
       }
+      return;
     }
 
     hearingDevice->conn_id = conn_id;
