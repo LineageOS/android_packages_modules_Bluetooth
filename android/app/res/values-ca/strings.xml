@@ -138,7 +138,7 @@
     <string name="auracast_connect_device_message" msgid="4461776363082532493">"Connecta un dispositiu LE Audio per començar a escoltar"</string>
     <string name="auracast_listen_on_device_message" msgid="3719491065367993094">"Escolta el flux d\'àudio de <xliff:g id="STREAM_NAME">%1$s</xliff:g> al teu dispositiu <xliff:g id="DEVICE_NAME">%2$s</xliff:g>"</string>
     <string name="auracast_connect_action" msgid="7157544449029291355">"Connecta"</string>
-    <string name="auracast_connection_failed_message" msgid="6490085541428198952">"No s\'ha pogut connectar al flxtux d\'àudio de <xliff:g id="STREAM_NAME">%1$s</xliff:g> al teu dispositiu <xliff:g id="DEVICE_NAME">%2$s</xliff:g>."</string>
+    <string name="auracast_connection_failed_message" msgid="6490085541428198952">"No s\'ha pogut connectar al flux d\'àudio de <xliff:g id="STREAM_NAME">%1$s</xliff:g> al teu dispositiu <xliff:g id="DEVICE_NAME">%2$s</xliff:g>."</string>
     <string name="auracast_default_stream_name" msgid="2824625871526576239">"A prop"</string>
     <string name="auracast_default_device_name" msgid="15748131701036354">"dispositius"</string>
 </resources>
