@@ -3402,17 +3402,6 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   }
 }
 
-constexpr int MIN_KEY_SIZE = 7;
-constexpr int MIN_KEY_SIZE_DEFAULT = MIN_KEY_SIZE;
-constexpr int MAX_KEY_SIZE = 16;
-static uint8_t get_min_enc_key_size() {
-  static uint8_t min_key_size = (uint8_t)std::min(
-          std::max(android::sysprop::bluetooth::Gap::min_key_size().value_or(MIN_KEY_SIZE_DEFAULT),
-                   MIN_KEY_SIZE),
-          MAX_KEY_SIZE);
-  return min_key_size;
-}
-
 static void read_encryption_key_size_complete_after_encryption_change(uint8_t status,
                                                                       uint16_t handle,
                                                                       uint8_t key_size) {
@@ -3432,7 +3421,7 @@ static void read_encryption_key_size_complete_after_encryption_change(uint8_t st
     return;
   }
 
-  if (key_size < get_min_enc_key_size()) {
+  if (key_size < btm_sec_get_min_enc_key_size()) {
     log::error("encryption key too short, disconnecting. handle:0x{:x},key_size:{}", handle,
                key_size);
 
@@ -4010,7 +3999,7 @@ static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, 
     return;
   }
 
-  if (key_size < get_min_enc_key_size()) {
+  if (key_size < btm_sec_get_min_enc_key_size()) {
     log::error("encryption key too short, disconnecting. handle: 0x{:x} key_size {}", handle,
                key_size);
 
@@ -5166,4 +5155,12 @@ void BTM_update_version_info(const RawAddress& bd_addr,
   }
 
   p_dev_rec->remote_version_info = remote_version_info;
+}
+
+uint8_t btm_sec_get_min_enc_key_size() {
+  static uint8_t min_key_size = (uint8_t)std::min(
+          std::max(android::sysprop::bluetooth::Gap::min_key_size().value_or(MIN_KEY_SIZE_DEFAULT),
+                   MIN_KEY_SIZE),
+          MAX_KEY_SIZE);
+  return min_key_size;
 }
