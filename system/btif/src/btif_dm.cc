@@ -168,6 +168,7 @@ struct btif_dm_pairing_cb_t {
   btif_dm_ble_cb_t ble;
   uint8_t fail_reason;
   bool is_ctkd;
+  bool is_le_to_bredr_ctkd;  // This is a temp field, will be merged into is_ctkd later.
   PairingType pairing_type;
 
   enum ServiceDiscoveryState { NOT_STARTED, SCHEDULED, FINISHED };
@@ -615,7 +616,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
 
   if (bond_loss_scenario) {
     if (state == BT_BOND_STATE_BONDED || state == BT_BOND_STATE_NONE) {
-      bluetooth::metrics::LogBondRepairComplete(bd_addr, state);
+      bluetooth::metrics::LogBondRepairComplete(bd_addr, state, pairing_cb.fail_reason);
     }
     if (state == BT_BOND_STATE_BONDED) {
       bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_SUCCESS);
@@ -651,6 +652,23 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
           status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason,
           pairing_initiator);
+
+  if (pairing_cb.is_le_to_bredr_ctkd && transport == BT_TRANSPORT_LE &&
+      state == BT_BOND_STATE_BONDED) {
+    // For LE to BREDR CTKD, we need to notify Java regarding the bond_state update.
+    // This is required separately because we cannot reset the pairing_cb (gets reset once we report
+    // BOND_BONDED), and in our stack code LE auth always gets completed post BREDR pairing (in
+    // CTKD). So, we should post the BREDR bond update to Java without resetting pairing_cb, hence
+    // doing it here.
+
+    log::debug("LE to BREDR CTKD success, sending bond state changes for BREDR transport.");
+    GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+            status, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING, pairing_type,
+            pairing_cb.fail_reason, pairing_initiator);
+    GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+            status, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDED, pairing_type,
+            pairing_cb.fail_reason, pairing_initiator);
+  }
 
   if ((state == BT_BOND_STATE_NONE) && (pairing_cb.bd_addr != bd_addr) && is_bonding_or_sdp()) {
     log::warn("Ignoring bond state changed for unexpected device: {} pairing: {}", bd_addr,
@@ -1192,6 +1210,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
             p_auth_cmpl->success, p_auth_cmpl->key_present);
 
   if (p_auth_cmpl->success) {
+    pairing_cb.is_le_to_bredr_ctkd = p_auth_cmpl->is_ctkd; // Update the flag for BR/EDR to LE CTKD
     btm_set_bond_type_dev(bd_addr, pairing_cb.bond_type);
     if (p_auth_cmpl->key_present) {
       if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
@@ -2913,7 +2932,7 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, tBT_TRANSPORT tra
       }
       pairing_cb.is_local_initiated = true;
       get_security_client_interface().BTM_SecAddBleDevice(bd_addr, BT_DEVICE_TYPE_BLE,
-                                                              address_type);
+                                                          address_type);
       BTA_DmBond(bd_addr, address_type, transport);
       break;
     }

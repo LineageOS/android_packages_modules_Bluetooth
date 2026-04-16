@@ -317,7 +317,8 @@ void LogRfcommMxEvent(hci::Address address, State state);
  * Logs the result of a bond repair attempt.
  * @param address address of the remote device
  * @param state the resulting bond state
+ * @param fail_reason the reason for the failure
  */
-void LogBondRepairComplete(hci::Address address, bt_bond_state_t state);
+void LogBondRepairComplete(hci::Address address, bt_bond_state_t state, uint8_t fail_reason);
 
 }  // namespace bluetooth::metrics

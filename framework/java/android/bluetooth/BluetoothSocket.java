@@ -28,6 +28,7 @@ import android.annotation.SystemApi;
 import android.app.compat.CompatChanges;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.compat.annotation.ChangeId;
+import android.compat.annotation.EnabledSince;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
 import android.net.LocalSocket;
@@ -198,6 +199,7 @@ public final class BluetoothSocket implements Closeable {
      * Starting with Android C (CINNAMON_BUN), RFCOMM Sockets will return -1 on EOF to be consistent
      * with IOStream documentation and with LE CoC sockets behavior
      */
+    @EnabledSince(targetSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
     @ChangeId static final long MAKE_SOCKET_READ_BEHAVIOR_CONSISTENT = 383671392L;
 
     /** prevents all native calls after destroyNative() */
