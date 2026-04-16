@@ -41,6 +41,10 @@
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
+constexpr int MIN_KEY_SIZE = 7;
+constexpr int MIN_KEY_SIZE_DEFAULT = MIN_KEY_SIZE;
+constexpr int MAX_KEY_SIZE = 16;
+
 /*******************************************************************************
  *
  * Function         BTM_SecRegister
@@ -775,3 +779,14 @@ void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
 
 // Return DEV_CLASS of bda. If record doesn't exist, create one.
 DEV_CLASS btm_get_dev_class(const RawAddress& bda);
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_get_min_enc_key_size
+ *
+ * Description      Get the minimum encryption key size allowed by the system.
+ *
+ * Returns          The minimum encryption key size.
+ *
+ ******************************************************************************/
+uint8_t btm_sec_get_min_enc_key_size();

@@ -3486,8 +3486,6 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
     btm_sec_dev_rec_cback_event(p_dev_rec, btm_status, false);
 }
 
-constexpr uint8_t MIN_KEY_SIZE = 7;
-
 static void read_encryption_key_size_complete_after_encryption_change(
     uint8_t status, uint16_t handle, uint8_t key_size) {
   if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
@@ -3506,10 +3504,9 @@ static void read_encryption_key_size_complete_after_encryption_change(
     return;
   }
 
-  if (key_size < MIN_KEY_SIZE) {
-    log::error(
-        "encryption key too short, disconnecting. handle:0x{:x},key_size:{}",
-        handle, key_size);
+  if (key_size < btm_sec_get_min_enc_key_size()) {
+    log::error("encryption key too short, disconnecting. handle:0x{:x},key_size:{}", handle,
+               key_size);
 
     acl_disconnect_from_handle(
         handle, HCI_ERR_HOST_REJECT_SECURITY,
@@ -4078,10 +4075,9 @@ static void read_encryption_key_size_complete_after_key_refresh(
     return;
   }
 
-  if (key_size < MIN_KEY_SIZE) {
-    log::error(
-        "encryption key too short, disconnecting. handle: 0x{:x} key_size {}",
-        handle, key_size);
+  if (key_size < btm_sec_get_min_enc_key_size()) {
+    log::error("encryption key too short, disconnecting. handle: 0x{:x} key_size {}", handle,
+               key_size);
 
     acl_disconnect_from_handle(handle, HCI_ERR_HOST_REJECT_SECURITY,
                                "stack::btu::btu_hcif::read_encryption_key_size_"
@@ -5269,4 +5265,9 @@ void BTM_update_version_info(const RawAddress& bd_addr,
   if (p_dev_rec == NULL) return;
 
   p_dev_rec->remote_version_info = remote_version_info;
+}
+
+uint8_t btm_sec_get_min_enc_key_size() {
+  static uint8_t min_key_size = MIN_KEY_SIZE;
+  return min_key_size;
 }
