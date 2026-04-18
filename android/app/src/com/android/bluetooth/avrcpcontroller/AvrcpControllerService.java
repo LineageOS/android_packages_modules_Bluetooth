@@ -410,8 +410,14 @@ public class AvrcpControllerService extends ConnectableProfile {
         // commands get routed to the correct device
         synchronized (mActiveDeviceLock) {
             switch (state) {
-                case AudioManager.AUDIOFOCUS_GAIN -> BluetoothMediaBrowserService.setActive(true);
-                case AudioManager.AUDIOFOCUS_LOSS -> BluetoothMediaBrowserService.setActive(false);
+                case AudioManager.AUDIOFOCUS_GAIN -> {
+                    BluetoothMediaBrowserService.setActive(true);
+                    BluetoothMediaBrowserService.onAudioFocusStateChanged(state);
+                }
+                case AudioManager.AUDIOFOCUS_LOSS -> {
+                    BluetoothMediaBrowserService.setActive(false);
+                    BluetoothMediaBrowserService.onAudioFocusStateChanged(state);
+                }
                 default -> {} // Nothing to do
             }
             BluetoothDevice device = getActiveDevice();
@@ -425,6 +431,7 @@ public class AvrcpControllerService extends ConnectableProfile {
                 Log.w(TAG, "No state machine for active device.");
                 return;
             }
+            BluetoothMediaBrowserService.setActiveStateMachine(stateMachine);
             stateMachine.sendMessage(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE, state);
         }
     }

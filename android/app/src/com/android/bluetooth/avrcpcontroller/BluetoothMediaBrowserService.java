@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -57,13 +59,56 @@ import java.util.Optional;
  */
 public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     private static final String TAG = BluetoothMediaBrowserService.class.getSimpleName();
+    private static final String CHANNEL_ID = "bt_a2dp_sink_media";
+    private static final int NOTIFICATION_ID = 0xA2D0;
 
     private static final Object INSTANCE_LOCK = new Object();
 
     @GuardedBy("INSTANCE_LOCK")
     private static BluetoothMediaBrowserService sBluetoothMediaBrowserService;
 
+    private static volatile AvrcpControllerStateMachine sActiveStateMachine;
+
+    static void setActiveStateMachine(AvrcpControllerStateMachine sm) {
+        sActiveStateMachine = sm;
+    }
+
     private MediaSessionCompat mSession;
+
+    private final MediaSessionCompat.Callback mTransportCallback =
+            new MediaSessionCompat.Callback() {
+                private void sendPassThru(int cmd) {
+                    AvrcpControllerStateMachine sm = sActiveStateMachine;
+                    if (sm != null) {
+                        sm.sendMessage(AvrcpControllerStateMachine.MSG_AVRCP_PASSTHRU, cmd);
+                    }
+                }
+
+                @Override
+                public void onPlay() {
+                    sendPassThru(AvrcpControllerService.PASS_THRU_CMD_ID_PLAY);
+                }
+
+                @Override
+                public void onPause() {
+                    sendPassThru(AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE);
+                }
+
+                @Override
+                public void onSkipToNext() {
+                    sendPassThru(AvrcpControllerService.PASS_THRU_CMD_ID_FORWARD);
+                }
+
+                @Override
+                public void onSkipToPrevious() {
+                    sendPassThru(AvrcpControllerService.PASS_THRU_CMD_ID_BACKWARD);
+                }
+
+                @Override
+                public void onStop() {
+                    sendPassThru(AvrcpControllerService.PASS_THRU_CMD_ID_STOP);
+                }
+            };
 
     // Browsing related structures.
     private final List<MediaSessionCompat.QueueItem> mMediaQueue = new ArrayList<>();
@@ -154,7 +199,22 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                         | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mSession.setQueueTitle(getString(R.string.bluetooth_a2dp_sink_queue_name));
         mSession.setQueue(mMediaQueue);
+        mSession.setCallback(mTransportCallback);
+
+        // Media button receiver for lock screen transport controls.
+        // Without this, A16 SystemUI can't dispatch button taps.
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        mediaButtonIntent.setPackage(getPackageName());
+        PendingIntent mbr = PendingIntent.getBroadcast(this, 0, mediaButtonIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        mSession.setMediaButtonReceiver(mbr);
         setErrorPlaybackState();
+
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
+                getString(R.string.bluetooth_a2dp_sink_queue_name),
+                NotificationManager.IMPORTANCE_LOW);
+        channel.setShowBadge(false);
+        getSystemService(NotificationManager.class).createNotificationChannel(channel);
 
         mReceiver = new LocaleChangedReceiver();
         IntentFilter filter = new IntentFilter();
@@ -353,6 +413,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         if (callback == null) {
             service.setErrorPlaybackState();
             service.clearNowPlayingQueue();
+            // Keep our transport callback when AVRCP sends null
+            callback = service.mTransportCallback;
         }
         service.mSession.setCallback(callback);
     }
@@ -399,45 +461,91 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      * in the UI while we wait on the remote device to accept our playback command.
      */
     static synchronized void onAudioFocusStateChanged(int state) {
-        if (state != AudioManager.AUDIOFOCUS_GAIN) {
-            return;
-        }
-
         BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
         if (service == null) {
             Log.w(TAG, "onAudioFocusStateChanged(state=" + state + "): Service not available");
             return;
         }
 
-        Log.i(
-                TAG,
-                "onAudioFocusStateChanged(state="
-                        + state
-                        + "): Focus gained, briefly signal connecting");
+        // Update playback state based on audio focus. When the AVRCP
+        // Controller doesn't receive play status notifications from
+        // the remote device, this is the only signal that audio is
+        // streaming via A2DP Sink.
+        PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY
+                        | PlaybackStateCompat.ACTION_PAUSE
+                        | PlaybackStateCompat.ACTION_STOP
+                        | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                        | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
 
-        MediaSessionCompat session = service.getSession();
-        MediaControllerCompat controller = session.getController();
-        PlaybackStateCompat currentState =
-                controller == null ? null : controller.getPlaybackState();
+        if (state == AudioManager.AUDIOFOCUS_GAIN) {
+            Log.i(TAG, "onAudioFocusStateChanged: Focus gained, setting PLAYING");
+            builder.setState(PlaybackStateCompat.STATE_PLAYING, -1, 1.0f);
 
-        PlaybackStateCompat connectingState = null;
-        if (currentState != null) {
-            connectingState =
-                    new PlaybackStateCompat.Builder(currentState)
-                            .setState(
-                                    PlaybackStateCompat.STATE_CONNECTING,
-                                    currentState.getPosition(),
-                                    currentState.getPlaybackSpeed())
-                            .build();
-            service.mSession.setPlaybackState(connectingState);
-            service.mSession.setPlaybackState(currentState);
+            // Set default metadata if AVRCP didn't provide track info
+            MediaControllerCompat controller = service.mSession.getController();
+            if (controller == null || controller.getMetadata() == null) {
+                service.mSession.setMetadata(new MediaMetadataCompat.Builder()
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "Bluetooth Audio")
+                        .build());
+            }
+
+            service.postMediaNotification();
         } else {
-            Log.w(
-                    TAG,
-                    "onAudioFocusStateChanged(state="
-                            + state
-                            + "): current playback state is null");
+            Log.i(TAG, "onAudioFocusStateChanged: Focus lost, setting PAUSED");
+            builder.setState(PlaybackStateCompat.STATE_PAUSED, -1, 0f);
+            service.removeMediaNotification();
         }
+
+        service.mSession.setPlaybackState(builder.build());
+    }
+
+    private void postMediaNotification() {
+        String title = "Bluetooth Audio";
+        MediaControllerCompat controller = mSession.getController();
+        if (controller != null && controller.getMetadata() != null) {
+            String t = controller.getMetadata().getString(
+                    MediaMetadataCompat.METADATA_KEY_TITLE);
+            if (t != null && !t.isEmpty()) title = t;
+        }
+
+        androidx.core.app.NotificationCompat.Builder builder =
+                new androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+                .setContentTitle(title)
+                .setOngoing(true)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mSession.getSessionToken())
+                        .setShowActionsInCompactView(0, 1, 2))
+                .addAction(android.R.drawable.ic_media_previous, "Previous",
+                        buildMediaAction(PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS))
+                .addAction(android.R.drawable.ic_media_pause, "Pause",
+                        buildMediaAction(PlaybackStateCompat.ACTION_PAUSE))
+                .addAction(android.R.drawable.ic_media_next, "Next",
+                        buildMediaAction(PlaybackStateCompat.ACTION_SKIP_TO_NEXT));
+        getSystemService(NotificationManager.class)
+                .notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private PendingIntent buildMediaAction(long action) {
+        int keyCode;
+        if (action == PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS) {
+            keyCode = android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS;
+        } else if (action == PlaybackStateCompat.ACTION_SKIP_TO_NEXT) {
+            keyCode = android.view.KeyEvent.KEYCODE_MEDIA_NEXT;
+        } else {
+            keyCode = android.view.KeyEvent.KEYCODE_MEDIA_PAUSE;
+        }
+        Intent intent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        intent.putExtra(Intent.EXTRA_KEY_EVENT,
+                new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, keyCode));
+        intent.setPackage(getPackageName());
+        return PendingIntent.getBroadcast(this, keyCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private void removeMediaNotification() {
+        getSystemService(NotificationManager.class).cancel(NOTIFICATION_ID);
     }
 
     /** Get playback state */
