@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b3d05e1_5d1f847f",
+        "filename": "system/bta/av/bta_av_aact.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 3103,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-04-25T18:37:03Z",
+      "side": 1,
+      "message": "I would personally suggest to just use same amount as stock Bluetooth stack does (wouldn\u0027t really write it as comment too), as the whole coexistence thing exists due to insufficient memory in BT chip and allocating less buffers than stock would perhaps cause some buffers to be reused or something. Though I don\u0027t have BT chip firmware code to confirm whether this might be a problem or not.",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be6dbcb8_568711d5",
+        "filename": "system/bta/av/bta_av_aact.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 3106,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-04-25T18:37:03Z",
+      "side": 1,
+      "message": "Also, why bother with min/max? The prop can only be set with at least shell access, we can assume it\u0027s valid",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "577ea2c8_0dccb2c9",
+        "filename": "system/bta/av/bta_av_int.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 661,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-04-25T18:37:03Z",
+      "side": 1,
+      "message": "I believe it should be read from a prop as it\u0027s not stable API from https://source.android.com/docs/core/connect/bluetooth/hci_requirements#a2dp-hardware-offload-support",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed06085e_bb299dd9",
+        "filename": "system/stack/l2cap/l2c_link.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 765,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-04-25T18:37:03Z",
+      "side": 1,
+      "message": "I think it\u0027s a layering violation to check this here",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
