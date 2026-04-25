@@ -344,18 +344,6 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
     }
   } else {
     if (p_tcb->app_hold_link.empty()) {
-      if (p_tcb->transport == BT_TRANSPORT_LE) {
-        tHCI_ROLE role;
-        auto status = get_btm_client_interface().link_policy.BTM_GetRole(p_tcb->peer_bda,
-                                                                         BT_TRANSPORT_LE, &role);
-        if (status == tBTM_STATUS::BTM_SUCCESS && role == tHCI_ROLE::HCI_ROLE_PERIPHERAL) {
-          log::info(
-                  "{} is peripheral and the central device is responsible to disconnect if needed "
-                  "or ACL link should be disconnected.",
-                  p_tcb->peer_bda);
-          return;
-        }
-      }
       if (com_android_bluetooth_flags_gatt_offload_api()) {
         gatt_offload_clear_sessions_by_conn_id(gatt_create_conn_id(p_tcb->tcb_idx, gatt_if));
       }
