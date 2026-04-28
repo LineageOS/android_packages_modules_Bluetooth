@@ -137,8 +137,8 @@ public class ScanManager {
     private Runnable mClearConnectingStateRunnable;
 
     // List of merged MSFT patterns
-    private final MsftAdvMonitorMergedPatternList mMsftAdvMonitorMergedPatternList =
-            new MsftAdvMonitorMergedPatternList();
+    private final MsftAdvMonitorMergedFilterList mMsftAdvMonitorMergedFilterList =
+            new MsftAdvMonitorMergedFilterList();
 
     private final AdapterService mAdapterService;
     private final ScanController mScanController;
@@ -1512,27 +1512,24 @@ public class ScanManager {
                 continue;
             }
 
-            if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_ADDRESS
-                    || monitor.getMonitor().condition_type
-                            == MsftAdvMonitor.MSFT_CONDITION_TYPE_UUID) {
-                int filterIndex = mFilterIndexStack.pop();
-
-                mNativeInterface.msftAdvMonitorAdd(
-                        monitor.getMonitor(),
-                        monitor.getPatterns(),
-                        monitor.getUuid(),
-                        monitor.getAddress(),
-                        filterIndex);
-
-                clientFilterIndices.add(filterIndex);
-                continue;
-            }
-
+            int filterIndex = mFilterIndexStack.pop();
+            int existingFilterIndex = filterIndex;
             // Some chipsets don't support multiple monitors with the same pattern. Skip
             // creating a new monitor if the pattern has already been registered
-            int filterIndex = mFilterIndexStack.pop();
-            int existingFilterIndex =
-                    mMsftAdvMonitorMergedPatternList.add(filterIndex, monitor.getPatterns());
+            if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_ADDRESS) {
+                existingFilterIndex =
+                        mMsftAdvMonitorMergedFilterList.addAddress(
+                                filterIndex, monitor.getAddress());
+            } else if (monitor.getMonitor().condition_type
+                    == MsftAdvMonitor.MSFT_CONDITION_TYPE_UUID) {
+                existingFilterIndex =
+                        mMsftAdvMonitorMergedFilterList.addUuid(filterIndex, monitor.getUuid());
+            } else {
+                existingFilterIndex =
+                        mMsftAdvMonitorMergedFilterList.addPattern(
+                                filterIndex, monitor.getPatterns());
+            }
+
             if (filterIndex == existingFilterIndex) {
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
@@ -1555,7 +1552,7 @@ public class ScanManager {
         Deque<Integer> clientFilterIndices = mClientFilterIndexMap.remove(client.getScannerId());
         if (clientFilterIndices != null) {
             for (int filterIndex : clientFilterIndices) {
-                if (mMsftAdvMonitorMergedPatternList.remove(filterIndex)) {
+                if (mMsftAdvMonitorMergedFilterList.remove(filterIndex)) {
                     final int monitorHandle =
                             mScanController.msftMonitorHandleFromFilterIndex(filterIndex);
                     if (monitorHandle >= 0) {
@@ -1581,14 +1578,15 @@ public class ScanManager {
         if (mScanEnabledMsft != shouldEnableScanMsft) {
             mNativeInterface.msftAdvMonitorEnable(shouldEnableScanMsft);
             mScanEnabledMsft = shouldEnableScanMsft;
+            // Restart LE scan in callback to apply filter policy change.
+        }
+    }
 
-            // Restart scanning, since enabling/disabling may have changed
-            // the filter policy
-            Log.d(TAG, "Restarting MSFT scan");
-            mNativeInterface.scan(false, "updateScanMsft");
-            if (numRegularScanClients() > 0) {
-                mNativeInterface.scan(true, "updateScanMsft");
-            }
+    void restartScan(String caller) {
+        Log.d(TAG, "restartScan(" + caller + ")");
+        mNativeInterface.scan(false, caller);
+        if (numRegularScanClients() > 0) {
+            mNativeInterface.scan(true, caller);
         }
     }
 
