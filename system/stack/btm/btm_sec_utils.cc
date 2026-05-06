@@ -91,9 +91,6 @@ void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_secure_conne
  ******************************************************************************/
 bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connections_supported,
                                    bool controller_secure_connections_supported) {
-  if (!com_android_bluetooth_flags_btsec_check_controller_sc_support()) {
-    return false;
-  }
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) {
