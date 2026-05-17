@@ -624,7 +624,7 @@ public:
         }
       }
 
-      broadcast_config.bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16;
+      broadcast_config.bits_per_sample = adsp_config.codec.GetBitsPerSample();
       broadcast_config.sampling_rate = core_config.GetSamplingFrequencyHz();
       broadcast_config.frame_duration = core_config.GetFrameDurationUs();
       broadcast_config.octets_per_frame = *(core_config.octets_per_codec_frame);
@@ -736,6 +736,7 @@ public:
     auto const& subgroup = config.subgroups.at(0);
     auto subgroup_config = subgroup.GetCommonBisCodecSpecData().GetAsCoreCodecConfig();
 
+    offload_cfg.bits_per_sample = subgroup.GetBitsPerSample();
     offload_cfg.sampling_rate = subgroup_config.GetSamplingFrequencyHz();
     offload_cfg.frame_duration = subgroup_config.GetFrameDurationUs();
     offload_cfg.octets_per_frame = subgroup_config.GetOctetsPerFrame();

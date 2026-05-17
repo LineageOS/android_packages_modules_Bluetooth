@@ -240,8 +240,8 @@ le_audio::LeAudioCodecConfiguration BroadcastConfiguration::GetAudioHalClientCon
           .num_channels = GetNumChannelsMax(),
           // Get the max sampling frequency
           .sample_rate = GetSamplingFrequencyHzMax(),
-          // Use the default 16 bits per sample resolution in the audio framework
-          .bits_per_sample = 16,
+          // Use the codec/offloader-requested source sample resolution
+          .bits_per_sample = GetBitsPerSampleMax(),
           // Get the data interval
           .data_interval_us = GetSduIntervalUs(),
   };

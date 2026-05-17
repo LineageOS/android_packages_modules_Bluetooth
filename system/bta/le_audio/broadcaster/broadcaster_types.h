@@ -361,6 +361,16 @@ struct BroadcastConfiguration {
     return value;
   }
 
+  uint8_t GetBitsPerSampleMax() const {
+    uint8_t value = 0;
+    for (auto const& cfg : subgroups) {
+      if (cfg.GetBitsPerSample() > value) {
+        value = cfg.GetBitsPerSample();
+      }
+    }
+    return value;
+  }
+
   uint32_t GetSduIntervalUs() const { return sduIntervalUs; }
 
   uint16_t GetMaxSduOctets() const { return maxSduOctets; }
