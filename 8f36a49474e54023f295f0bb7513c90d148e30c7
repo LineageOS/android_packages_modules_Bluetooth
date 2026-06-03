@@ -16,6 +16,23 @@
       "message": "A fuller explanation is available at https://gitlab.com/LineageOS/issues/android/-/work_items/7433#note_3401514427",
       "revId": "8f36a49474e54023f295f0bb7513c90d148e30c7",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "339c8557_93d72951",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2026-06-03T21:17:25Z",
+      "side": 1,
+      "message": "is this verified and ready? Leave votes if so @amriksadhra@gmail.com",
+      "revId": "8f36a49474e54023f295f0bb7513c90d148e30c7",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
