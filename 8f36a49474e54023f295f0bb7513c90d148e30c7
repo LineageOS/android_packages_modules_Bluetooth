@@ -51,6 +51,23 @@
       "parentUuid": "339c8557_93d72951",
       "revId": "8f36a49474e54023f295f0bb7513c90d148e30c7",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "71d16689_2d927a18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 19979
+      },
+      "writtenOn": "2026-06-03T22:30:24Z",
+      "side": 1,
+      "message": "Maybe update the commit message to address the issue it fixes",
+      "revId": "8f36a49474e54023f295f0bb7513c90d148e30c7",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
