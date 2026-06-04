@@ -16,6 +16,23 @@
       "message": "Need to check it for V+",
       "revId": "cd14bd1a2a782635ba99c97e3cf080f75ed51590",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7141f2c9_74631937",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 11883
+      },
+      "writtenOn": "2026-06-04T20:27:55Z",
+      "side": 1,
+      "message": "https://cs.android.com/android/_/android/platform/packages/modules/Bluetooth/+/a30a908dbc58b8568205917a4b30e9b6e54d4d73\n\nAlready fixed",
+      "revId": "cd14bd1a2a782635ba99c97e3cf080f75ed51590",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
