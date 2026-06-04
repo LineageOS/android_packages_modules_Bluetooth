@@ -223,25 +223,16 @@ private:
     void execute(uint16_t handle,
                  std::function<void(LeConnectionManagementCallbacks* callbacks)> execute,
                  bool remove_afterwards = false) {
-      // Destroy any extracted connection after the lock is released:
-      // ~LeAclConnection invokes invalidate(), which re-locks the same mutex.
-      decltype(le_acl_connections_)::node_type extracted;
-      {
-        std::unique_lock<std::mutex> lock(le_acl_connections_guard_);
-        auto callbacks = find_callbacks(handle);
-        if (callbacks != nullptr) {
-          execute(callbacks);
-        } else {
-          log::assert_that(!crash_on_unknown_handle_, "Received command for unknown handle:0x{:x}",
-                           handle);
-        }
-        if (remove_afterwards) {
-          auto it = le_acl_connections_.find(handle);
-          if (it != le_acl_connections_.end()) {
-            it->second.le_connection_management_callbacks_ = nullptr;
-            extracted = le_acl_connections_.extract(it);
-          }
-        }
+      std::unique_lock<std::mutex> lock(le_acl_connections_guard_);
+      auto callbacks = find_callbacks(handle);
+      if (callbacks != nullptr) {
+        execute(callbacks);
+      } else {
+        log::assert_that(!crash_on_unknown_handle_, "Received command for unknown handle:0x{:x}",
+                         handle);
+      }
+      if (remove_afterwards) {
+        remove(handle);
       }
     }
     bool send_packet_upward(uint16_t handle,
