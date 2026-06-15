@@ -433,6 +433,22 @@ struct tBTM_SEC_DEV_REC {
     return bond_type == BOND_TYPE_TEMPORARY;
   }
 
+  bool is_bonded(tBT_TRANSPORT transport = BT_TRANSPORT_AUTO) const {
+    bool bonded = false;
+
+    // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
+    if (transport != BT_TRANSPORT_LE) {
+      bonded = is_bond_type_persistent() && is_link_key_known();
+    }
+
+    // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO
+    if (transport != BT_TRANSPORT_BR_EDR) {
+      bonded |= (ble.key_type != BTM_LE_KEY_NONE && is_le_link_key_known());
+    }
+
+    return bonded;
+  }
+
   tBTM_SEC_BLE ble;
   tBTM_LE_CONN_PRAMS conn_params;
 

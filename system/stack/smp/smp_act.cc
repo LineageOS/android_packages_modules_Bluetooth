@@ -840,24 +840,47 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
 
   SMP_TRACE_DEBUG("%s", __func__);
-  /* rejecting BR pairing request over non-SC BR link */
-  if (!p_dev_rec->new_encryption_key_is_p256 &&
-      p_cb->role == HCI_ROLE_PERIPHERAL) {
-    tSMP_INT_DATA smp_int_data;
+
+  if (smp_command_has_invalid_length(p_cb)) {
+    tSMP_INT_DATA smp_int_data{};
+    smp_int_data.status = SMP_INVALID_PARAMETERS;
+    smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
+
+  if (p_dev_rec == nullptr) {
+    SMP_TRACE_ERROR("Device not found for %s",
+            p_cb->pairing_bda.ToStringForLogging().c_str());
+    return;
+  }
+
+  if (!p_dev_rec->is_bonded(BT_TRANSPORT_BR_EDR) ||
+      (p_dev_rec->link_key_type != BTM_LKEY_TYPE_UNAUTH_COMB_P_256 &&
+       p_dev_rec->link_key_type != BTM_LKEY_TYPE_AUTH_COMB_P_256)) {
+    SMP_TRACE_WARNING("Not bonded over BR/EDR transport with SC %s",
+                      p_dev_rec->bd_addr.ToStringForLogging().c_str());
+    tSMP_INT_DATA smp_int_data{};
     smp_int_data.status = SMP_XTRANS_DERIVE_NOT_ALLOW;
     smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
     return;
   }
 
-  /* erase all keys if it is peripheral proc pairing req*/
-  if (p_dev_rec && (p_cb->role == HCI_ROLE_PERIPHERAL))
-    btm_sec_clear_ble_keys(p_dev_rec);
+  if (!p_dev_rec->is_device_encrypted()) {
+    SMP_TRACE_WARNING("CKTD not allowed over unencrypted link %s",
+                      p_dev_rec->bd_addr.ToStringForLogging().c_str());
+    tSMP_INT_DATA smp_int_data{};
+    smp_int_data.status = SMP_XTRANS_DERIVE_NOT_ALLOW;
+    smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
 
-  p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
-
-  if (smp_command_has_invalid_length(p_cb)) {
-    tSMP_INT_DATA smp_int_data;
-    smp_int_data.status = SMP_INVALID_PARAMETERS;
+  if (p_dev_rec->is_bonded(BT_TRANSPORT_LE) &&
+      ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
+       !(p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED))) {
+    SMP_TRACE_WARNING("Already bonded over LE with higher security %s",
+                      p_dev_rec->bd_addr.ToStringForLogging().c_str());
+    tSMP_INT_DATA smp_int_data{};
+    smp_int_data.status = SMP_XTRANS_DERIVE_NOT_ALLOW;
     smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
     return;
   }
@@ -870,34 +893,32 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   STREAM_TO_UINT8(p_cb->peer_r_key, p);
 
   if (smp_command_has_invalid_parameters(p_cb)) {
-    tSMP_INT_DATA smp_int_data;
+    tSMP_INT_DATA smp_int_data{};
     smp_int_data.status = SMP_INVALID_PARAMETERS;
     smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
     return;
   }
 
-  /* peer (central) started pairing sending Pairing Request */
-  /* or being central device always use received i/r key as keys to distribute
-   */
-  p_cb->local_i_key = p_cb->peer_i_key;
-  p_cb->local_r_key = p_cb->peer_r_key;
+  SMP_TRACE_DEBUG(
+          "%s peer_io_caps: %d peer_oob_flag: %d peer_auth_req: %d peer_enc_size: %d peer_i_key: "
+          "%d peer_r_key: %d",
+          p_cb->pairing_bda.ToStringForLogging().c_str(), p_cb->peer_io_caps,
+          p_cb->peer_oob_flag, p_cb->peer_auth_req,
+          p_cb->peer_enc_size, p_cb->peer_i_key, p_cb->peer_r_key);
 
   if (p_cb->role == HCI_ROLE_PERIPHERAL) {
-    p_dev_rec->new_encryption_key_is_p256 = false;
-    /* shortcut to skip Security Grant step */
-    p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
-  } else {
-    /* Central receives pairing response */
-    SMP_TRACE_DEBUG(
-        "%s central rcvs valid PAIRING RESPONSE."
-        " Supposed to move to key distribution phase. ",
-        __func__);
+    btm_sec_clear_ble_keys(p_dev_rec);   /* Erase all prior LE keys */
+    p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;  /* Shortcut to skip Security Grant step */
   }
 
-  /* auth_req received via BR/EDR SM channel is set to 0,
-     but everything derived/exchanged has to be saved */
-  p_cb->peer_auth_req |= SMP_AUTH_BOND;
-  p_cb->loc_auth_req |= SMP_AUTH_BOND;
+  p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
+  p_cb->local_i_key = p_cb->peer_i_key;  /* Distribute same keys as requested by peer */
+  p_cb->local_r_key = p_cb->peer_r_key;  /* Distribute same keys as requested by peer */
+  p_cb->peer_auth_req |= SMP_AUTH_BOND;  /* CTKD keys have to be persisted */
+  p_cb->loc_auth_req |= SMP_AUTH_BOND;   /* CTKD keys have to be persisted */
+
+  /* Block CTKD on reconnect */
+  p_dev_rec->new_encryption_key_is_p256 = false;
 }
 
 /*******************************************************************************
