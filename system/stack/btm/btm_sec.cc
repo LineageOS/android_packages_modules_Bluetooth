@@ -3564,6 +3564,10 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
     btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
                            encr_enable);
   } else {
+    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
+    if (p_dev_rec != nullptr) {
+      p_dev_rec->sec_rec.set_device_encrypted();
+    }
     btsnd_hcic_read_encryption_key_size(
         handle,
         base::Bind(

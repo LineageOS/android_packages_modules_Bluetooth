@@ -816,6 +816,8 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       else
         sec_event.auth_cmpl.bd_name[0] = 0;
 
+      sec_event.auth_cmpl.is_ctkd = p_data->complt.smp_over_br;
+
       if (p_data->complt.reason != HCI_SUCCESS) {
         // TODO This is not a proper use of this type
         sec_event.auth_cmpl.fail_reason =

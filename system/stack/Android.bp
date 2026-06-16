@@ -922,6 +922,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "libprotobuf-cpp-lite",
         "libstatslog_bt",
     ],
     target: {
@@ -1057,6 +1058,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "libprotobuf-cpp-lite",
         "libstatslog_bt",
     ],
     target: {
@@ -1361,6 +1363,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "libprotobuf-cpp-lite",
         "libstatslog_bt",
     ],
     target: {
@@ -1670,6 +1673,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "libprotobuf-cpp-lite",
     ],
     shared_libs: [
         "libcrypto",
@@ -1810,6 +1814,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "libprotobuf-cpp-lite",
     ],
     shared_libs: [
         "libbinder_ndk",
@@ -2084,6 +2089,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "libprotobuf-cpp-lite",
         "libstatslog_bt",
     ],
     shared_libs: [
@@ -2156,6 +2162,7 @@ cc_test {
         "libchrome",
         "libgmock",
         "liblog",
+        "libprotobuf-cpp-lite",
     ],
     header_libs: ["libbluetooth_headers"],
     cflags: ["-Wno-unused-parameter"],

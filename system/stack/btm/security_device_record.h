@@ -405,6 +405,22 @@ class tBTM_SEC_DEV_REC {
     return remote_supports_secure_connections;
   }
 
+  bool is_bonded(tBT_TRANSPORT transport = BT_TRANSPORT_AUTO) const {
+    bool bonded = false;
+
+    // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
+    if (transport != BT_TRANSPORT_LE) {
+      bonded = sec_rec.is_bond_type_persistent() && sec_rec.is_link_key_known();
+    }
+
+    // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO
+    if (transport != BT_TRANSPORT_BR_EDR) {
+      bonded |= (sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE && sec_rec.is_le_link_key_known());
+    }
+
+    return bonded;
+  }
+
   std::string ToString() const {
     return base::StringPrintf(
         "%s %6s cod:%s remote_info:%-14s sm4:0x%02x SecureConn:%c name:\"%s\""
