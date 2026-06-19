@@ -28,6 +28,7 @@
 #include <bluetooth/log.h>
 #include <string.h>
 
+#include <algorithm>
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
@@ -456,6 +457,7 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
 bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id,
                               uint8_t attr_type, uint32_t attr_len,
                               uint8_t* p_val) {
+
   uint16_t xx, yy;
   tSDP_ATTRIBUTE* p_attr = &p_rec->attribute[0];
 
@@ -484,7 +486,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id,
   p_attr->type = attr_type;
   p_attr->len = attr_len;
 
-  if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN) {
+  if (attr_len > SDP_MAX_ATTR_LEN || p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN) {
     if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
       log::error(
           "SDP_AddAttributeToRecord failed: free pad {} equals or exceeds max "
@@ -493,14 +495,16 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id,
       return (false);
     }
 
+    uint32_t max_allowed_len =
+            std::min<uint32_t>(SDP_MAX_ATTR_LEN, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr);
     /* do truncate only for text string type descriptor */
     if (attr_type == TEXT_STR_DESC_TYPE) {
       log::warn(
           "SDP_AddAttributeToRecord: attr_len:{} too long. truncate to ({})",
-          attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr);
+          attr_len, max_allowed_len);
 
-      attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-      p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr - 1] = '\0';
+      attr_len = max_allowed_len;
+      p_val[max_allowed_len - 1] = '\0';
     } else
       attr_len = 0;
   }
