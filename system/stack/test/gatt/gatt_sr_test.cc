@@ -93,8 +93,9 @@ tGATT_STATUS gatts_db_read_attr_value_by_type(
 }
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {}
 Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db) { return nullptr; }
-tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
-                                         uint16_t val_len, uint8_t* p_val) {
+tGATT_STATUS gatts_notify_attr_perm_check(tGATT_SVC_DB* p_db, uint16_t handle,
+                                          tGATT_SEC_FLAG sec_flag,
+                                          uint8_t key_size) {
   return GATT_SUCCESS;
 }
 tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,

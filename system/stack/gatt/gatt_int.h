@@ -23,9 +23,12 @@
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
+#include <cstdint>
 #include <deque>
 #include <list>
+#include <map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 #include "common/init_flags.h"
@@ -42,6 +45,9 @@
 #define GATT_GET_TCB_IDX(conn_id) ((uint8_t)(((uint16_t)(conn_id)) >> 8))
 #define GATT_GET_GATT_IF(conn_id) ((tGATT_IF)((uint8_t)(conn_id)))
 
+using tGATT_PENDING_NOTIF = std::variant<tGATT_VALUE, std::vector<tGATT_VALUE>>;
+
+#define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
 
 /* security action for GATT write and read request */
@@ -310,7 +316,8 @@ typedef struct {
   /* server response data */
   tGATT_SR_CMD sr_cmd;
   uint16_t indicate_handle;
-  fixed_queue_t* pending_ind_q;
+  std::list<tGATT_VALUE> pending_ind_q;
+  std::list<tGATT_PENDING_NOTIF> pending_notif_q;
 
   alarm_t* conf_timer; /* peer confirm to indication timer */
 
@@ -549,6 +556,8 @@ bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
 void gatt_set_srv_chg(void);
 void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
 void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
+void gatt_add_pending_notif(tGATT_TCB* p_tcb, tGATT_VALUE* p_notif);
+void gatt_add_pending_multi_notif(tGATT_TCB* p_tcb, std::vector<tGATT_VALUE>* p_notif);
 void gatt_free_srvc_db_buffer_app_id(const bluetooth::Uuid& app_id);
 bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 
@@ -682,11 +691,17 @@ tGATT_STATUS gatts_write_attr_perm_check(tGATT_SVC_DB* p_db, uint8_t op_code,
                                          uint8_t* p_data, uint16_t len,
                                          tGATT_SEC_FLAG sec_flag,
                                          uint8_t key_size);
+extern tGATT_STATUS gatts_notify_attr_perm_check(tGATT_SVC_DB* p_db, uint16_t handle,
+                                                 tGATT_SEC_FLAG sec_flag,
+                                                 uint8_t key_size);
 tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,
                                         uint16_t handle,
                                         tGATT_SEC_FLAG sec_flag,
                                         uint8_t key_size);
 bluetooth::Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
+
+void gatts_chk_pending_ind(tGATT_TCB& tcb);
+void gatts_chk_pending_notif(tGATT_TCB& tcb);
 
 /* gatt_sr_hash.cc */
 Octet16 gatts_calculate_database_hash(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr);
