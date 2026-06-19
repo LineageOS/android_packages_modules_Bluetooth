@@ -944,6 +944,9 @@ extern tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 extern tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
                                tGATT_READ_PARAM* p_read);
 
+[[nodiscard]] tGATT_STATUS GATTS_HandleMultipleValueNotification(
+        uint16_t conn_id, std::vector<tGATT_VALUE> gatt_notif_vector);
+
 /*******************************************************************************
  *
  * Function         GATTC_Write
