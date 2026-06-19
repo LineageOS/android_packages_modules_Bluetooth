@@ -179,8 +179,8 @@ void gatt_free(void) {
   for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
     gatt_cb.tcb[i].pending_enc_clcb = std::deque<tGATT_CLCB*>();
 
-    fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
-    gatt_cb.tcb[i].pending_ind_q = NULL;
+    gatt_cb.tcb[i].pending_ind_q.clear();
+    gatt_cb.tcb[i].pending_notif_q.clear();
 
     alarm_free(gatt_cb.tcb[i].conf_timer);
     gatt_cb.tcb[i].conf_timer = NULL;
@@ -491,7 +491,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
 
   if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, initiating_phys, p_reg->gatt_if)) {
     log::error("gatt_connect failed");
-    fixed_queue_free(p_tcb->pending_ind_q, NULL);
+    p_tcb->pending_ind_q.clear();
     *p_tcb = tGATT_TCB();
     return false;
   }

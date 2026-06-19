@@ -165,6 +165,39 @@ static void gatt_enc_cmpl_cback(RawAddress bd_addr, tBT_TRANSPORT transport, voi
     return;
   }
 
+  if (result == tBTM_STATUS::BTM_SUCCESS) {
+    gatts_chk_pending_ind(*p_tcb);
+    gatts_chk_pending_notif(*p_tcb);
+  } else {
+    while (!p_tcb->pending_ind_q.empty()) {
+      tGATT_VALUE buf = p_tcb->pending_ind_q.front();
+      p_tcb->pending_ind_q.pop_front();
+      tGATTS_DATA gatts_data;
+      gatts_data.handle = buf.handle;
+      gatt_sr_send_req_callback(buf.conn_id, GATT_INSUF_ENCRYPTION, GATTS_REQ_TYPE_CONF,
+                                &gatts_data);
+    }
+    while (!p_tcb->pending_notif_q.empty()) {
+      tGATT_PENDING_NOTIF notif = p_tcb->pending_notif_q.front();
+      p_tcb->pending_notif_q.pop_front();
+      uint16_t conn_id;
+      if (std::holds_alternative<tGATT_VALUE>(notif)) {
+        conn_id = std::get<tGATT_VALUE>(notif).conn_id;
+      } else {
+        conn_id = std::get<std::vector<tGATT_VALUE>>(notif).front().conn_id;
+      }
+      uint16_t handle;
+      if (std::holds_alternative<tGATT_VALUE>(notif)) {
+        handle = std::get<tGATT_VALUE>(notif).handle;
+      } else {
+        handle = std::get<std::vector<tGATT_VALUE>>(notif).front().handle;
+      }
+      tGATTS_DATA gatts_data;
+      gatts_data.handle = handle;
+      gatt_sr_send_req_callback(conn_id, GATT_INSUF_ENCRYPTION, GATTS_REQ_TYPE_CONF, &gatts_data);
+    }
+  }
+
   if (p_tcb->pending_enc_clcb.empty()) {
     log::error("no operation waiting for encrypting");
     return;
@@ -234,6 +267,9 @@ void gatt_notify_enc_cmpl(const RawAddress& bd_addr) {
     }
     p_tcb->pending_enc_clcb = new_pending_clcbs;
   }
+
+  gatts_chk_pending_ind(*p_tcb);
+  gatts_chk_pending_notif(*p_tcb);
 }
 /*******************************************************************************
  *

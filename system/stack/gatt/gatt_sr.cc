@@ -1277,16 +1277,56 @@ void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb) {
  * Returns          void
  *
  ******************************************************************************/
-static void gatts_chk_pending_ind(tGATT_TCB& tcb) {
+void gatts_chk_pending_ind(tGATT_TCB& tcb) {
+  log::verbose("");
+  if (tcb.pending_ind_q.empty()) {
+    return;
+  }
+  tGATT_VALUE buf = tcb.pending_ind_q.front();
+  tcb.pending_ind_q.pop_front();
+  tGATT_STATUS status = GATTS_HandleValueIndication(buf.conn_id, buf.handle, buf.len, buf.value);
+  if (status != GATT_SUCCESS && status != GATT_PENDING) {
+    log::warn("Unable to send GATT server handle value conn_id:{}", buf.conn_id);
+  }
+}
+
+void gatts_chk_pending_notif(tGATT_TCB& tcb) {
   log::verbose("");
 
-  tGATT_VALUE* p_buf = (tGATT_VALUE*)fixed_queue_try_peek_first(tcb.pending_ind_q);
-  if (p_buf != NULL) {
-    if (GATTS_HandleValueIndication(p_buf->conn_id, p_buf->handle, p_buf->len, p_buf->value) !=
-        GATT_SUCCESS) {
-      log::warn("Unable to send GATT server handle value conn_id:{}", p_buf->conn_id);
+  size_t count = tcb.pending_notif_q.size();
+  while (count > 0) {
+    count--;
+    tGATT_PENDING_NOTIF buf = tcb.pending_notif_q.front();
+    tcb.pending_notif_q.pop_front();
+
+    if (std::holds_alternative<tGATT_VALUE>(buf)) {
+      tGATT_VALUE& notif = std::get<tGATT_VALUE>(buf);
+      tGATT_STATUS status =
+              GATTS_HandleValueNotification(notif.conn_id, notif.handle, notif.len, notif.value);
+      if (status != GATT_SUCCESS && status != GATT_PENDING) {
+        log::warn("Unable to send GATT server handle value conn_id:{} status: {}", notif.conn_id,
+                  status);
+      }
+      if (status != GATT_PENDING) {
+        tGATTS_DATA gatts_data;
+        gatts_data.handle = notif.handle;
+        gatt_sr_send_req_callback(notif.conn_id, status, GATTS_REQ_TYPE_CONF, &gatts_data);
+      }
+    } else {
+      std::vector<tGATT_VALUE>& multi_notif = std::get<std::vector<tGATT_VALUE>>(buf);
+      tGATT_STATUS status =
+              GATTS_HandleMultipleValueNotification(multi_notif.front().conn_id, multi_notif);
+      if (status != GATT_SUCCESS && status != GATT_PENDING) {
+        log::warn("Unable to send GATT server handle multiple value notif conn_id:{} status: {}",
+                  multi_notif.front().conn_id, status);
+      }
+      if (status != GATT_PENDING) {
+        tGATTS_DATA gatts_data;
+        gatts_data.handle = multi_notif.front().handle;
+        gatt_sr_send_req_callback(multi_notif.front().conn_id, status, GATTS_REQ_TYPE_CONF,
+                                  &gatts_data);
+      }
     }
-    osi_free(fixed_queue_try_remove_from_queue(tcb.pending_ind_q, p_buf));
   }
 }
 

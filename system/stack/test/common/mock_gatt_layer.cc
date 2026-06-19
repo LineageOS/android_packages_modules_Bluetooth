@@ -38,3 +38,18 @@ bool gatt_cl_read_sr_supp_feat_req(const RawAddress& peer_bda,
                                    base::OnceCallback<void(const RawAddress&, uint8_t)> cb) {
   return gatt_interface->ClientReadSupportedFeatures(peer_bda, std::move(cb));
 }
+
+tGATT_STATUS GATTS_HandleValueIndication(tCONN_ID /*conn_id*/, uint16_t /*attr_handle*/,
+                                         uint16_t /*val_len*/, uint8_t* /*p_val*/) {
+  return GATT_SUCCESS;
+}
+
+tGATT_STATUS GATTS_HandleValueNotification(tCONN_ID /*conn_id*/, uint16_t /*attr_handle*/,
+                                           uint16_t /*val_len*/, uint8_t* /*p_val*/) {
+  return GATT_SUCCESS;
+}
+
+tGATT_STATUS GATTS_HandleMultipleValueNotification(tCONN_ID /*conn_id*/,
+                                                   std::vector<tGATT_VALUE> /*gatt_notif_vector*/) {
+  return GATT_SUCCESS;
+}
