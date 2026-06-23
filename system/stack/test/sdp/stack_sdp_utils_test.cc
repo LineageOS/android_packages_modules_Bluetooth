@@ -25,6 +25,7 @@
 #include "stack/include/sdp_api.h"
 #include "stack/sdp/sdpint.h"
 #include "test/mock/mock_btif_config.h"
+#include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_properties.h"
 
 using testing::_;
@@ -99,6 +100,12 @@ class StackSdpUtilsTest : public ::testing::Test {
         };
     test::mock::osi_properties::osi_property_get_bool.body =
         [](const char* key, bool default_value) { return true; };
+    test::mock::osi_allocator::osi_malloc.body = [](size_t size) {
+      return malloc(size);
+    };
+    test::mock::osi_allocator::osi_free.body = [](void* ptr) {
+      free(ptr);
+    };
 
     localIopMock = std::make_unique<IopMock>();
     set_avrcp_attr(8, ATTR_ID_BT_PROFILE_DESC_LIST,
@@ -109,6 +116,8 @@ class StackSdpUtilsTest : public ::testing::Test {
     test::mock::btif_config::btif_config_get_bin_length = {};
     test::mock::btif_config::btif_config_get_bin = {};
     test::mock::osi_properties::osi_property_get_bool = {};
+    test::mock::osi_allocator::osi_malloc = {};
+    test::mock::osi_allocator::osi_free = {};
 
     localIopMock.reset();
   }
@@ -265,4 +274,33 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_config_value_not_valid) {
                 Return(true)));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
   ASSERT_EQ(get_avrc_target_version(&avrcp_attr), AVRC_REV_1_5);
+}
+
+TEST_F(StackSdpUtilsTest, sdpu_build_partial_attrib_entry_exceeds_max_attr_len) {
+  uint8_t dummy_value[500] = {0};
+  tSDP_ATTRIBUTE attr = {
+          .len = 500,
+          .value_ptr = dummy_value,
+          .id = 1,
+          .type = TEXT_STR_DESC_TYPE,
+  };
+  uint8_t out_buf[100] = {0};
+  uint16_t offset = 0;
+  uint8_t* p_ret = sdpu_build_partial_attrib_entry(out_buf, &attr, 50, &offset);
+  ASSERT_EQ(p_ret, out_buf);
+}
+
+TEST_F(StackSdpUtilsTest, sdpu_build_partial_attrib_entry_within_bounds) {
+  uint8_t dummy_value[10] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa};
+  tSDP_ATTRIBUTE attr = {
+          .len = 10,
+          .value_ptr = dummy_value,
+          .id = 1,
+          .type = TEXT_STR_DESC_TYPE,
+  };
+  uint8_t out_buf[100] = {0};
+  uint16_t offset = 0;
+  uint8_t* p_ret = sdpu_build_partial_attrib_entry(out_buf, &attr, 5, &offset);
+  ASSERT_EQ(p_ret, out_buf + 5);
+  ASSERT_EQ(offset, 5);
 }
