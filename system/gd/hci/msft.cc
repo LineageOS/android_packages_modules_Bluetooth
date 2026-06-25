@@ -80,18 +80,25 @@ struct MsftExtensionManager::impl {
   void handle_le_monitor_device_event(MsftLeMonitorDeviceEventPayloadView view) {
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
 
+    if (scanning_callbacks_ == nullptr) {
+      log::warn("scanning_callbacks_ is null, dropping Microsoft vendor event.");
+      return;
+    }
+
     // The monitor state is 0x00 when the controller stops monitoring the device.
-    if (view.GetMonitorState() == 0x00 || view.GetMonitorState() == 0x01) {
-      AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info;
-      on_found_on_lost_info.advertiser_address_type = view.GetAddressType();
-      on_found_on_lost_info.advertiser_address = view.GetBdAddr();
-      on_found_on_lost_info.advertiser_state = view.GetMonitorState();
-      on_found_on_lost_info.monitor_handle = view.GetMonitorHandle();
-      scanning_callbacks_->OnTrackAdvFoundLost(on_found_on_lost_info);
-    } else {
+    // The monitor state is 0x01 when the controller starts monitoring the device.
+    if (view.GetMonitorState() != 0x00 && view.GetMonitorState() != 0x01) {
       log::warn("The Microsoft vendor event monitor state is invalid.");
       return;
     }
+
+    AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info;
+    on_found_on_lost_info.advertiser_address_type = view.GetAddressType();
+    on_found_on_lost_info.advertiser_address = view.GetBdAddr();
+    on_found_on_lost_info.advertiser_state = view.GetMonitorState();
+    on_found_on_lost_info.monitor_handle = view.GetMonitorHandle();
+
+    scanning_callbacks_->OnTrackAdvFoundLost(on_found_on_lost_info);
   }
 
   void handle_msft_events(VendorSpecificEventView view) {
@@ -304,7 +311,7 @@ struct MsftExtensionManager::impl {
   MsftAdvMonitorAddCallback msft_adv_monitor_add_cb_;
   MsftAdvMonitorRemoveCallback msft_adv_monitor_remove_cb_;
   MsftAdvMonitorEnableCallback msft_adv_monitor_enable_cb_;
-  ScanningCallback* scanning_callbacks_;
+  ScanningCallback* scanning_callbacks_{nullptr};
 };
 
 MsftExtensionManager::MsftExtensionManager(os::Handler* handler, hal::HciHal* hal,
