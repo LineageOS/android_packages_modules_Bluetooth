@@ -100,7 +100,11 @@ std::vector<bluetooth::hal::HciPacket> kTestData = {
         {0x02, 0x20, 0x11, 0x00, 0x0d, 0x00, 0x41, 0x00, 0x9d, 0xef, 0x43,
          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
         {0x02, 0x00, 0x12, 0x00, 0x0e, 0x00, 0x40, 0x00, 0x9f, 0xff, 0x11,
-         0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+         0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        // Short packet (incoming) - L2CAP CID: 0x0041 (local_cid)
+        {0x02, 0x20, 0x04, 0x00, 0x00, 0x00, 0x41, 0x00},
+        // Short packet (outgoing) - L2CAP CID: 0x0040 (remote_cid)
+        {0x02, 0x00, 0x04, 0x00, 0x00, 0x00, 0x40, 0x00}};
 
 }  // namespace
 
@@ -1035,7 +1039,7 @@ TEST_F(SnoopLoggerModuleTest, profiles_filtered_pbap_magic_test) {
                std::string::npos));
 
   auto* snoop_logger =
-          new TestSnoopLoggerModule(temp_snoop_log_.string(), temp_snooz_log_.string(), 15,
+          new TestSnoopLoggerModule(temp_snoop_log_.string(), temp_snooz_log_.string(), 20,
                                     SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   TestModuleRegistry test_registry;
@@ -1105,7 +1109,7 @@ TEST_F(SnoopLoggerModuleTest, profiles_filtered_pbap_header_test) {
                std::string::npos));
 
   auto* snoop_logger =
-          new TestSnoopLoggerModule(temp_snoop_log_.string(), temp_snooz_log_.string(), 15,
+          new TestSnoopLoggerModule(temp_snoop_log_.string(), temp_snooz_log_.string(), 20,
                                     SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   TestModuleRegistry test_registry;
@@ -1174,7 +1178,7 @@ TEST_F(SnoopLoggerModuleTest, profiles_filtered_pbap_fullfilter_test) {
                std::string::npos));
 
   auto* snoop_logger =
-          new TestSnoopLoggerModule(temp_snoop_log_.string(), temp_snooz_log_.string(), 15,
+          new TestSnoopLoggerModule(temp_snoop_log_.string(), temp_snooz_log_.string(), 20,
                                     SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   TestModuleRegistry test_registry;
