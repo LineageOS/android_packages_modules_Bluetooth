@@ -3337,7 +3337,7 @@ static void handle_app_val_response(tBTA_AV_META_MSG* pmeta_msg, tAVRC_LIST_APP_
       get_player_app_setting_cmd(p_app_settings->num_attrs, attrs, p_dev);
       do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->playerapplicationsetting_cb,
                                       p_dev->rc_addr, p_app_settings->num_attrs,
-                                      p_app_settings->attrs, 0, nullptr));
+                                      p_app_settings->attrs));
     }
   } else if (p_app_settings->ext_attr_index < p_app_settings->num_ext_attrs) {
     attr_index = p_app_settings->ext_attr_index;
@@ -3455,7 +3455,7 @@ static void handle_app_attr_txt_response(tBTA_AV_META_MSG* pmeta_msg,
 
     do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->playerapplicationsetting_cb,
                                     p_dev->rc_addr, p_app_settings->num_attrs,
-                                    p_app_settings->attrs, 0, nullptr));
+                                    p_app_settings->attrs));
     get_player_app_setting_cmd(xx, attrs, p_dev);
 
     return;
@@ -3532,7 +3532,7 @@ static void handle_app_attr_val_txt_response(tBTA_AV_META_MSG* pmeta_msg,
     }
     do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->playerapplicationsetting_cb,
                                     p_dev->rc_addr, p_app_settings->num_attrs,
-                                    p_app_settings->attrs, 0, nullptr));
+                                    p_app_settings->attrs));
 
     get_player_app_setting_cmd(xx, attrs, p_dev);
     return;
@@ -3575,14 +3575,13 @@ static void handle_app_attr_val_txt_response(tBTA_AV_META_MSG* pmeta_msg,
     }
     do_in_jni_thread(base::BindOnce(bt_rc_ctrl_callbacks->playerapplicationsetting_cb,
                                     p_dev->rc_addr, p_app_settings->num_attrs,
-                                    p_app_settings->attrs, p_app_settings->num_ext_attrs,
-                                    p_app_settings->ext_attrs));
+                                    p_app_settings->attrs));
     get_player_app_setting_cmd(xx + x, attrs, p_dev);
 
     /* Free the application settings information after sending to
      * application.
      */
-    do_in_jni_thread(base::BindOnce(cleanup_app_attr_val_txt_response, p_app_settings));
+    cleanup_app_attr_val_txt_response(p_app_settings);
     p_app_settings->num_attrs = 0;
   }
 }
