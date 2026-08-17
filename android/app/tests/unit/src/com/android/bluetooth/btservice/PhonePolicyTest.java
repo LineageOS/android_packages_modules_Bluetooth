@@ -144,6 +144,13 @@ public class PhonePolicyTest {
 
         mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3, mDevice4);
 
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getContentResolver())
+                .when(mAdapterService)
+                .getContentResolver();
+        // Default to the most permissive auto-connect mode so the existing tests keep exercising
+        // the pre-existing behavior. Individual tests override the mode to exercise the gates.
+        setAutoConnectMode(mDevice1, AutoConnectMode.ALWAYS);
+
         mPhonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper());
         mOriginalDualModeState = Utils.isDualModeAudioEnabled();
     }
@@ -163,6 +170,10 @@ public class PhonePolicyTest {
     boolean setLeAudioAllowedConnectionPolicy(BluetoothDevice dev) {
         mLeAudioAllowedConnectionPolicyList.add(dev);
         return true;
+    }
+
+    private void setAutoConnectMode(BluetoothDevice device, int mode) {
+        AutoConnectMode.setMode(mAdapterService, device, mode);
     }
 
     /**
@@ -317,6 +328,40 @@ public class PhonePolicyTest {
         // Check auto connect
         verify(mA2dpService).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
         verify(mHeadsetService).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
+    }
+
+    /** Test that post-pairing auto-connect is skipped in manual-only mode. */
+    @Test
+    public void testProcessInitProfilePriorities_manualOnly_usesDatabaseManager() {
+        mPhonePolicy.mAutoConnectProfilesSupported = true;
+        setAutoConnectMode(mDevice1, AutoConnectMode.MANUAL_ONLY);
+
+        ParcelUuid[] uuids = {BluetoothUuid.HFP, BluetoothUuid.A2DP_SINK};
+        mPhonePolicy.onUuidsDiscovered(mDevice1, uuids);
+
+        // With manual-only mode the profile policies are stored but the services must not be
+        // asked to auto-connect right after pairing.
+        verify(mAdapterService)
+                .setProfileConnectionPolicy(
+                        mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_ALLOWED);
+        verify(mAdapterService)
+                .setProfileConnectionPolicy(
+                        mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_ALLOWED);
+        verify(mHeadsetService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mA2dpService, never()).setConnectionPolicy(any(), anyInt());
+    }
+
+    /** Test that post-pairing auto-connect is enabled from the AFTER_PAIRING mode on. */
+    @Test
+    public void testProcessInitProfilePriorities_afterPairing_autoConnects() {
+        mPhonePolicy.mAutoConnectProfilesSupported = true;
+        setAutoConnectMode(mDevice1, AutoConnectMode.AFTER_PAIRING);
+
+        ParcelUuid[] uuids = {BluetoothUuid.HFP, BluetoothUuid.A2DP_SINK};
+        mPhonePolicy.onUuidsDiscovered(mDevice1, uuids);
+
+        verify(mHeadsetService).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
+        verify(mA2dpService).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
     }
 
     @Test
@@ -661,6 +706,42 @@ public class PhonePolicyTest {
         verify(mHeadsetService).connect(eq(mDevice1));
     }
 
+    /** Test that the auto-connect on Bluetooth ON is skipped in manual-only mode. */
+    @Test
+    public void testAdapterOnAutoConnect_manualOnly_skipsAutoConnect() {
+        when(mAdapterService.isQuietModeEnabled()).thenReturn(false);
+        when(mDatabaseManager.getMostRecentlyConnectedA2dpDevice()).thenReturn(mDevice1);
+        when(mAdapterService.getBondState(mDevice1)).thenReturn(BluetoothDevice.BOND_BONDED);
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
+
+        setAutoConnectMode(mDevice1, AutoConnectMode.MANUAL_ONLY);
+
+        // Inject an event that the adapter is turned on.
+        mPhonePolicy.onBluetoothStateChange(BluetoothAdapter.STATE_OFF, BluetoothAdapter.STATE_ON);
+
+        verify(mA2dpService, never()).connect(eq(mDevice1));
+        verify(mHeadsetService, never()).connect(eq(mDevice1));
+    }
+
+    /** Test that the auto-connect on Bluetooth ON is enabled in ALWAYS mode. */
+    @Test
+    public void testAdapterOnAutoConnect_always_autoConnects() {
+        when(mAdapterService.isQuietModeEnabled()).thenReturn(false);
+        when(mDatabaseManager.getMostRecentlyConnectedA2dpDevice()).thenReturn(mDevice1);
+        when(mAdapterService.getBondState(mDevice1)).thenReturn(BluetoothDevice.BOND_BONDED);
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
+
+        setAutoConnectMode(mDevice1, AutoConnectMode.ALWAYS);
+
+        // Inject an event that the adapter is turned on.
+        mPhonePolicy.onBluetoothStateChange(BluetoothAdapter.STATE_OFF, BluetoothAdapter.STATE_ON);
+
+        verify(mA2dpService).connect(eq(mDevice1));
+        verify(mHeadsetService).connect(eq(mDevice1));
+    }
+
     /** Test that when an active device is disconnected, we will not auto connect it */
     @Test
     public void testDisconnectNoAutoConnect() {
@@ -815,6 +896,42 @@ public class PhonePolicyTest {
 
         // Check that there will be no A2DP connect
         verify(mA2dpService, never()).connect(eq(mDevice1));
+    }
+
+    /** Test that connecting other profiles is skipped in manual-only mode. */
+    @Test
+    public void testConnectOtherProfile_manualOnly_skips() {
+        doReturn(STATE_CONNECTED).when(mAdapterService).getConnectionState(mDevice1);
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
+        doReturn(List.of(mDevice1)).when(mHeadsetService).getConnectedDevices();
+
+        setAutoConnectMode(mDevice1, AutoConnectMode.MANUAL_ONLY);
+
+        // We send a connection success for one profile since the re-connect *only* works if we
+        // have already connected successfully over one of the profiles
+        updateProfileConnectionStateHelper(
+                mDevice1, BluetoothProfile.HEADSET, STATE_DISCONNECTED, STATE_CONNECTED);
+
+        verify(mA2dpService, never()).connect(eq(mDevice1));
+    }
+
+    /** Test that connecting other profiles is enabled from the ON_RANGE mode on. */
+    @Test
+    public void testConnectOtherProfile_onRange_connects() {
+        doReturn(STATE_CONNECTED).when(mAdapterService).getConnectionState(mDevice1);
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
+        doReturn(List.of(mDevice1)).when(mHeadsetService).getConnectedDevices();
+
+        setAutoConnectMode(mDevice1, AutoConnectMode.ON_RANGE);
+
+        // We send a connection success for one profile since the re-connect *only* works if we
+        // have already connected successfully over one of the profiles
+        updateProfileConnectionStateHelper(
+                mDevice1, BluetoothProfile.HEADSET, STATE_DISCONNECTED, STATE_CONNECTED);
+
+        verify(mA2dpService).connect(eq(mDevice1));
     }
 
     /**

@@ -36,8 +36,10 @@ import android.os.Looper;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AutoConnectMode;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -71,6 +73,13 @@ public class HidHostServiceTest {
 
         mService = new HidHostService(mAdapterService, mNativeInterface);
         mService.setAvailable(true);
+
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getContentResolver())
+                .when(mAdapterService)
+                .getContentResolver();
+        // Default to the most permissive auto-connect mode so the existing tests keep exercising
+        // the pre-existing behavior. Individual tests override the mode to exercise the gates.
+        AutoConnectMode.setMode(mAdapterService, mDevice, AutoConnectMode.ALWAYS);
     }
 
     @After
@@ -114,6 +123,28 @@ public class HidHostServiceTest {
             doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice)).isTrue();
         }
+    }
+
+    @Test
+    public void okToConnect_manualOnly_returnFalse() {
+        doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(any(), anyInt());
+        AutoConnectMode.setMode(mAdapterService, mDevice, AutoConnectMode.MANUAL_ONLY);
+
+        assertThat(mService.okToConnect(mDevice)).isFalse();
+    }
+
+    @Test
+    public void okToConnect_onRange_returnTrue() {
+        doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(any(), anyInt());
+        AutoConnectMode.setMode(mAdapterService, mDevice, AutoConnectMode.ON_RANGE);
+
+        assertThat(mService.okToConnect(mDevice)).isTrue();
     }
 
     @Test

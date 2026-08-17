@@ -63,6 +63,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AutoConnectMode;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.tests.bluetooth.FlagsWrapper;
@@ -145,6 +146,12 @@ public class A2dpServiceTest {
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getContentResolver())
+                .when(mAdapterService)
+                .getContentResolver();
+        // Default to the most permissive auto-connect mode so the existing tests keep exercising
+        // the pre-existing behavior. Individual tests override the mode to exercise the gates.
+        AutoConnectMode.setMode(mAdapterService, mDevice, AutoConnectMode.ALWAYS);
 
         mA2dpService =
                 new A2dpService(
@@ -242,6 +249,30 @@ public class A2dpServiceTest {
         testOkToConnectCase(mDevice, badBondState, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToConnectCase(mDevice, badBondState, CONNECTION_POLICY_ALLOWED, true);
         testOkToConnectCase(mDevice, badBondState, badPriorityValue, false);
+    }
+
+    /** Test that incoming connections are rejected when the device auto-connect mode is manual only. */
+    @Test
+    public void testOkToConnect_manualOnly_rejectsIncoming() {
+        when(mAdapterService.getProfileConnectionPolicy(mDevice, BluetoothProfile.A2DP))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        AutoConnectMode.setMode(mAdapterService, mDevice, AutoConnectMode.MANUAL_ONLY);
+
+        // Manual (outgoing) connections are always allowed.
+        assertThat(mA2dpService.okToConnect(mDevice, true)).isTrue();
+        // Incoming connections are rejected when the device may not auto-connect.
+        assertThat(mA2dpService.okToConnect(mDevice, false)).isFalse();
+    }
+
+    /** Test that incoming connections are allowed when the device auto-connect mode is on range. */
+    @Test
+    public void testOkToConnect_onRange_allowsIncoming() {
+        when(mAdapterService.getProfileConnectionPolicy(mDevice, BluetoothProfile.A2DP))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        AutoConnectMode.setMode(mAdapterService, mDevice, AutoConnectMode.ON_RANGE);
+
+        assertThat(mA2dpService.okToConnect(mDevice, true)).isTrue();
+        assertThat(mA2dpService.okToConnect(mDevice, false)).isTrue();
     }
 
     /** Test that an outgoing connection to device that does not have A2DP Sink UUID is rejected */

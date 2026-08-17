@@ -74,6 +74,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AutoConnectMode;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -149,6 +150,10 @@ public class HeadsetServiceTest {
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
+        doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        // Default to the most permissive auto-connect mode so the existing tests keep exercising
+        // the pre-existing behavior. Individual tests override the mode to exercise the gates.
+        AutoConnectMode.setMode(mAdapterService, getTestDevice(0), AutoConnectMode.ALWAYS);
         doAnswer(
                         invocation -> {
                             Set<BluetoothDevice> keys = mStateMachines.keySet();
@@ -249,6 +254,28 @@ public class HeadsetServiceTest {
                 mCurrentDevice, badBondState, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToAcceptConnectionCase(mCurrentDevice, badBondState, CONNECTION_POLICY_ALLOWED, true);
         testOkToAcceptConnectionCase(mCurrentDevice, badBondState, badPriorityValue, false);
+    }
+
+    /** Test that incoming connections are rejected when the device auto-connect mode is manual only. */
+    @Test
+    public void testOkToAcceptConnection_manualOnly_rejectsIncoming() {
+        mCurrentDevice = getTestDevice(0);
+        when(mAdapterService.getProfileConnectionPolicy(mCurrentDevice, BluetoothProfile.HEADSET))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        AutoConnectMode.setMode(mAdapterService, mCurrentDevice, AutoConnectMode.MANUAL_ONLY);
+
+        assertThat(mHeadsetService.okToAcceptConnection(mCurrentDevice, false)).isFalse();
+    }
+
+    /** Test that incoming connections are allowed when the device auto-connect mode is on range. */
+    @Test
+    public void testOkToAcceptConnection_onRange_allowsIncoming() {
+        mCurrentDevice = getTestDevice(0);
+        when(mAdapterService.getProfileConnectionPolicy(mCurrentDevice, BluetoothProfile.HEADSET))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        AutoConnectMode.setMode(mAdapterService, mCurrentDevice, AutoConnectMode.ON_RANGE);
+
+        assertThat(mHeadsetService.okToAcceptConnection(mCurrentDevice, false)).isTrue();
     }
 
     /**
