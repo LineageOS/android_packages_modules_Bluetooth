@@ -48,6 +48,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AutoConnectMode;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
@@ -1092,6 +1093,16 @@ public class HidHostService extends ConnectableProfile {
         // Check if this is an incoming connection in Quiet mode.
         if (mAdapterService.isQuietModeEnabled()) {
             Log.w(TAG, "okToConnect: return false because of quiet mode enabled. device=" + device);
+            return false;
+        }
+        // Reject incoming connections for devices that are not allowed to reconnect
+        // automatically when in range. Manual connections are not affected.
+        if (!AutoConnectMode.canAutoConnectOnRange(mAdapterService, device)) {
+            Log.w(
+                    TAG,
+                    "okToConnect: return false because auto-connect is disabled for this device. "
+                            + "device="
+                            + device);
             return false;
         }
         // Check connection policy and accept or reject the connection.

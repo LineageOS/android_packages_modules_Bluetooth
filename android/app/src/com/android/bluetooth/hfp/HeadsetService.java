@@ -62,6 +62,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AutoConnectMode;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
@@ -2461,6 +2462,12 @@ public class HeadsetService extends ConnectableProfile {
         // Check if this is an incoming connection in Quiet mode.
         if (mAdapterService.isQuietModeEnabled()) {
             Log.w(TAG, "okToAcceptConnection: return false as quiet mode enabled");
+            return false;
+        }
+        // Reject incoming connections for devices that are not allowed to reconnect
+        // automatically when in range. Manual (outgoing) connections are not affected.
+        if (!isOutgoingRequest && !AutoConnectMode.canAutoConnectOnRange(mAdapterService, device)) {
+            Log.w(TAG, "okToAcceptConnection: return false, auto-connect disabled for " + device);
             return false;
         }
         // Check connection policy and accept or reject the connection.
