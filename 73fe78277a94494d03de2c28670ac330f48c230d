@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "920afa9a_8378a571",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2026-08-26T20:59:49Z",
+      "side": 1,
+      "message": "Tegra is no longer using this, but I don\u0027t know if any other targets started using it in the meantime.",
+      "revId": "73fe78277a94494d03de2c28670ac330f48c230d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
