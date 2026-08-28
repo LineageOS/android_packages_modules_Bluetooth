@@ -16,6 +16,24 @@
       "message": "Please remove this unused include line as well.",
       "revId": "429596b5ae1edfbef50912ecbedb9da6cef7a525",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "02dc92ca_f63f6303",
+        "filename": "system/bta/le_audio/le_audio_types.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2026-08-28T16:34:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "363f3e35_1d6cbaa5",
+      "revId": "429596b5ae1edfbef50912ecbedb9da6cef7a525",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
