@@ -18,6 +18,24 @@
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd4d8df0_12726091",
+        "filename": "system/bta/av/bta_av_aact.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 3103,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-09-10T20:08:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b3d05e1_5d1f847f",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be6dbcb8_568711d5",
@@ -31,6 +49,24 @@
       "writtenOn": "2026-04-25T18:37:03Z",
       "side": 1,
       "message": "Also, why bother with min/max? The prop can only be set with at least shell access, we can assume it\u0027s valid",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "90dcedc4_98d47eef",
+        "filename": "system/bta/av/bta_av_aact.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 3106,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-09-10T20:08:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be6dbcb8_568711d5",
       "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     },
@@ -52,6 +88,24 @@
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "861cdb90_88934af9",
+        "filename": "system/bta/av/bta_av_int.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 661,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-09-10T20:08:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "577ea2c8_0dccb2c9",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ed06085e_bb299dd9",
@@ -65,6 +119,24 @@
       "writtenOn": "2026-04-25T18:37:03Z",
       "side": 1,
       "message": "I think it\u0027s a layering violation to check this here",
+      "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91adcd4d_75236f54",
+        "filename": "system/stack/l2cap/l2c_link.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 765,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2026-09-10T20:08:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed06085e_bb299dd9",
       "revId": "ad098f8b92a5b5642feec40e2cbb7f53b96e7055",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
