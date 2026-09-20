@@ -63,6 +63,10 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectInputFilter.Config;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -80,6 +84,33 @@ import java.util.function.Predicate;
 /** Remote device manager. This class is currently mostly used for HF and AG remote devices. */
 public class RemoteDevices {
     private static final String TAG = Utils.BT_PREFIX + RemoteDevices.class.getSimpleName();
+
+    private static final String RC_NAMES_FILE = "/vendor/etc/bluetooth/bt_rc_name.conf";
+    // Peripheral remote control. Google TV SetupWraith only offers devices whose CoD identifies
+    // them as input peripherals. Some Xiaomi BLE remotes advertise the uncategorized CoD 0x1f00.
+    private static final int REMOTE_CONTROL_BLUETOOTH_CLASS =
+            BluetoothClass.Device.Major.PERIPHERAL | 0x0c;
+    private static final Set<String> REMOTE_CONTROL_NAMES = loadRemoteControlNames();
+
+    private static Set<String> loadRemoteControlNames() {
+        Set<String> names = new HashSet<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(RC_NAMES_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                int separator = line.indexOf('=');
+                if (separator < 0 || line.startsWith("RcCount=")) {
+                    continue;
+                }
+                String name = line.substring(separator + 1).trim();
+                if (!name.isEmpty()) {
+                    names.add(name);
+                }
+            }
+        } catch (IOException e) {
+            Log.d(TAG, "No remote-control name configuration", e);
+        }
+        return Collections.unmodifiableSet(names);
+    }
 
     // Maximum number of device properties to remember
     private static final int MAX_DEVICE_QUEUE_SIZE = 200;
@@ -525,6 +556,9 @@ public class RemoteDevices {
          */
         int getBluetoothClass() {
             synchronized (mObject) {
+                if (REMOTE_CONTROL_NAMES.contains(mName)) {
+                    return REMOTE_CONTROL_BLUETOOTH_CLASS;
+                }
                 return mBluetoothClass;
             }
         }
