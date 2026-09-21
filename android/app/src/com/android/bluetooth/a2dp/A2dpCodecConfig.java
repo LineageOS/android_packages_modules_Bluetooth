@@ -62,6 +62,9 @@ class A2dpCodecConfig {
     private @CodecPriority int mA2dpSourceCodecPriorityLhdcv5 =
             BluetoothCodecConfig.CODEC_PRIORITY_DISABLED;
 
+    private @CodecPriority int mA2dpSourceCodecPriorityLhdcv3 =
+            BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT;
+
     private BluetoothCodecConfig[] mCodecConfigOffloading = new BluetoothCodecConfig[0];
 
     A2dpCodecConfig(
@@ -319,8 +322,22 @@ class A2dpCodecConfig {
             mA2dpSourceCodecPriorityLhdcv5 = value;
         }
 
+        // LHDC V3 sinks advertise a different codec id from V5 and will not
+        // accept a V5 configuration, so they are offered their own endpoint. It
+        // sits one below V5 so a sink that speaks both is given V5.
+        value =
+                SystemProperties.getInt(
+                        "bluetooth.a2dp.source.lhdcv3_priority.config",
+                        SdkLevel.isAtLeastC()
+                                ? 5001
+                                : BluetoothCodecConfig.CODEC_PRIORITY_DISABLED);
+        if ((value >= BluetoothCodecConfig.CODEC_PRIORITY_DISABLED)
+                && (value < BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST)) {
+            mA2dpSourceCodecPriorityLhdcv3 = value;
+        }
+
         BluetoothCodecConfig codecConfig;
-        BluetoothCodecConfig[] codecConfigArray = new BluetoothCodecConfig[7];
+        BluetoothCodecConfig[] codecConfigArray = new BluetoothCodecConfig[8];
         codecConfig =
                 new BluetoothCodecConfig.Builder()
                         .setCodecType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC)
@@ -365,6 +382,14 @@ class A2dpCodecConfig {
                         .setCodecPriority(mA2dpSourceCodecPriorityLhdcv5)
                         .build();
         codecConfigArray[6] = codecConfig;
+        codecConfig =
+                new BluetoothCodecConfig.Builder()
+                        .setExtendedCodecType(
+                                new BluetoothCodecType(
+                                        8, BluetoothCodecType.CODEC_ID_LHDCV3, "LHDCV3"))
+                        .setCodecPriority(mA2dpSourceCodecPriorityLhdcv3)
+                        .build();
+        codecConfigArray[7] = codecConfig;
 
         return codecConfigArray;
     }

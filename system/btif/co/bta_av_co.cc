@@ -1478,7 +1478,8 @@ static bool bta_av_co_should_select_hardware_codec(
   if (software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC ||
       software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD ||
       software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX ||
-      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5) {
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5 ||
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV3) {
     log::debug("select software codec: {}", A2DP_CodecIndexStr(software_codec_index));
     return false;
   }
