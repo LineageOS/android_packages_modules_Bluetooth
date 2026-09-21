@@ -1,0 +1,6 @@
+# The codec asks for fused multiply-add where the format needs one rounding,
+# not two. Arm64 has the instruction in its base set; x86-64 does not, so a
+# host build without this calls a software fma and spends most of its time
+# there. Results are the same either way.
+[target.'cfg(target_arch = "x86_64")']
+rustflags = ["-C", "target-feature=+fma"]

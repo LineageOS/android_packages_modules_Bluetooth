@@ -1,0 +1,17 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+rust_library_rlib {
+    name: "liblhdcv3_format",
+    crate_name: "lhdcv3_format",
+    crate_root: "src/lib.rs",
+    edition: "2021",
+    vendor_available: true,
+    host_supported: true,
+    lints: "none",
+    min_sdk_version: "36",
+    apex_available: [
+        "com.android.bt",
+    ],
+}
