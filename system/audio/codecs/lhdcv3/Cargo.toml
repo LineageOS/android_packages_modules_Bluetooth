@@ -1,0 +1,20 @@
+[package]
+name = "lhdcv3"
+version = "0.1.0"
+rust-version = "1.82"
+edition = "2021"
+
+[dependencies]
+lhdcv3-format = { path = "../lhdcv3-format" }
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[profile.dev]
+overflow-checks = false
+opt-level = 0
+
+[profile.release]
+overflow-checks = false
+opt-level = 3
+

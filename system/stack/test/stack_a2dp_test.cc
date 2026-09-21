@@ -264,6 +264,7 @@ protected:
           supported = true;
           break;
         case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5:
+        case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV3:
           supported = true;
           break;
         case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
