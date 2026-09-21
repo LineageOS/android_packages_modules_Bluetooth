@@ -18,6 +18,25 @@ cc_defaults {
     ],
 }
 
+filegroup {
+    name: "audio_bluetooth_hw_srcs",
+    srcs: [
+        "audio_bluetooth_hw.cc",
+        "device_port_proxy.cc",
+        "device_port_proxy_hidl.cc",
+        "stream_apis.cc",
+        "utils.cc",
+    ],
+    visibility: ["//hardware/lineage/compat/libbluetooth_audio_session_adapter"],
+}
+
+cc_library_headers {
+    name: "audio_bluetooth_hw_headers",
+    export_include_dirs: ["."],
+    vendor_available: true,
+    visibility: ["//hardware/lineage/compat/libbluetooth_audio_session_adapter"],
+}
+
 cc_library_shared {
     name: "audio.bluetooth.default",
     defaults: [
