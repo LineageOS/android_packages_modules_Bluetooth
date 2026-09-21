@@ -1,0 +1,48 @@
+package {
+    default_applicable_licenses: ["lhdcv3_license"],
+}
+
+// src/lpc.rs is derived from libFLAC, so this crate is not Apache-2.0 alone
+// and carries libFLAC's notice alongside its own.
+license {
+    name: "lhdcv3_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-Apache-2.0",
+        "SPDX-license-identifier-BSD",
+    ],
+    license_text: ["NOTICE"],
+}
+
+rust_ffi_static {
+    name: "liblhdcv3_encoder_rust",
+    crate_name: "lhdcv3",
+    crate_root: "src/lib.rs",
+    edition: "2021",
+    vendor_available: true,
+    host_supported: true,
+    lints: "none",
+    rustlibs: [
+        "liblhdcv3_format",
+    ],
+    min_sdk_version: "36",
+    apex_available: [
+        "com.android.bt",
+    ],
+}
+
+cc_library_static {
+    name: "liblhdcv3_encoder",
+    vendor_available: true,
+    host_supported: true,
+    export_include_dirs: [
+        "include",
+    ],
+    whole_static_libs: [
+        "liblhdcv3_encoder_rust",
+    ],
+    min_sdk_version: "36",
+    apex_available: [
+        "com.android.bt",
+    ],
+}

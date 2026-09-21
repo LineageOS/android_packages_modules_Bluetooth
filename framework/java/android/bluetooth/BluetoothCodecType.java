@@ -82,6 +82,10 @@ public final class BluetoothCodecType implements Parcelable {
     /** LHDC codec identifier. See {@link BluetoothCodecType#getCodecId}. */
     public static final long CODEC_ID_LHDCV5 = 0x4c35_053a_ffL;
 
+    /** LHDC V3 codec identifier. See {@link BluetoothCodecType#getCodecId}. */
+    @Hide
+    public static final long CODEC_ID_LHDCV3 = 0x4c33_053a_ffL;
+
     @Hide
     @Retention(RetentionPolicy.SOURCE)
     @LongDef({
@@ -93,6 +97,7 @@ public final class BluetoothCodecType implements Parcelable {
         CODEC_ID_SONY_LDAC,
         CODEC_ID_OPUS,
         CODEC_ID_LHDCV5,
+        CODEC_ID_LHDCV3,
     })
     public @interface CodecId {}
 
@@ -284,6 +289,10 @@ public final class BluetoothCodecType implements Parcelable {
         if (codecId == CODEC_ID_LHDCV5) {
             return new BluetoothCodecType(
                     BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID, CODEC_ID_LHDCV5, "LHDCV5");
+        }
+        if (codecId == CODEC_ID_LHDCV3) {
+            return new BluetoothCodecType(
+                    BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID, CODEC_ID_LHDCV3, "LHDCV3");
         }
         return null;
     }
