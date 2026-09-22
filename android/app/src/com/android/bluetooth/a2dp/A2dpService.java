@@ -680,6 +680,11 @@ public class A2dpService extends ConnectableProfile {
             Log.e(TAG, "setCodecConfigPreference: Codec status is null");
             return;
         }
+        BluetoothCodecType codecType = codecConfig.getExtendedCodecType();
+        if (codecType != null
+                && codecConfig.getCodecPriority() == BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST) {
+            getStorage().setA2dpCodecIdPreference(device, codecType.getCodecId());
+        }
         mA2dpCodecConfig.setCodecConfigPreference(device, codecStatus, codecConfig);
     }
 
@@ -1229,7 +1234,52 @@ public class A2dpService extends ConnectableProfile {
                     enableOptionalCodecs(device);
                 }
             }
+            applyCodecIdPreference(device);
         }
+    }
+
+    /**
+     * Re-selects the codec the user last chose for a device, if the peer still offers it. Codec
+     * priorities do not survive a disconnection, so the choice has to be applied again every time
+     * the peer reports its capabilities.
+     *
+     * @param device is the remote bluetooth device
+     */
+    private void applyCodecIdPreference(BluetoothDevice device) {
+        long codecId = getStorage().getA2dpCodecIdPreference(device);
+        if (codecId == BluetoothStorageManager.CODEC_ID_PREFERENCE_NONE) {
+            return;
+        }
+        BluetoothCodecStatus codecStatus = getCodecStatus(device);
+        if (codecStatus == null) {
+            return;
+        }
+        BluetoothCodecConfig current = codecStatus.getCodecConfig();
+        if (current != null && hasCodecId(current, codecId)) {
+            return;
+        }
+        BluetoothCodecConfig selectable =
+                codecStatus.getCodecsSelectableCapabilities().stream()
+                        .filter(config -> hasCodecId(config, codecId))
+                        .findFirst()
+                        .orElse(null);
+        if (selectable == null) {
+            Log.i(TAG, "applyCodecIdPreference: codec " + codecId + " is not selectable");
+            return;
+        }
+        Log.i(TAG, "applyCodecIdPreference(" + device + "): codec " + codecId);
+        mA2dpCodecConfig.setCodecConfigPreference(
+                device,
+                codecStatus,
+                new BluetoothCodecConfig.Builder()
+                        .setExtendedCodecType(selectable.getExtendedCodecType())
+                        .setCodecPriority(BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST)
+                        .build());
+    }
+
+    private static boolean hasCodecId(BluetoothCodecConfig config, long codecId) {
+        BluetoothCodecType codecType = config.getExtendedCodecType();
+        return codecType != null && codecType.getCodecId() == codecId;
     }
 
     /**
