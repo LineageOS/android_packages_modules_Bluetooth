@@ -518,6 +518,33 @@ constructor(
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
 
+    /** Returns CODEC_ID_PREFERENCE_NONE when the user has never chosen a codec for [device]. */
+    fun getA2dpCodecIdPreference(device: BluetoothDevice): Long {
+        val a2dpSettings = currentStorage.devicesMap[device.address]?.a2DpSettings
+        return if (a2dpSettings?.hasCodecIdPreference() == true) {
+            a2dpSettings.codecIdPreference
+        } else {
+            CODEC_ID_PREFERENCE_NONE
+        }
+    }
+
+    fun setA2dpCodecIdPreference(device: BluetoothDevice, value: Long) =
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+
+            val settingsBuilder = deviceBuilder.a2DpSettings.toBuilder()
+            if (value == CODEC_ID_PREFERENCE_NONE) {
+                settingsBuilder.clearCodecIdPreference()
+            } else {
+                settingsBuilder.codecIdPreference = value
+            }
+            logEvent(device, "a2dp codec id preference is $value")
+
+            deviceBuilder.setA2DpSettings(settingsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build()).build()
+        }
+
     fun getPhonebookAccessPermission(device: BluetoothDevice): Int {
         val permissions = currentStorage.devicesMap[device.address]?.permissions
         val status = if (permissions?.hasPhonebook() == true) permissions.phonebook else null
@@ -997,6 +1024,11 @@ constructor(
     /** Logs a metadata change event for dumpsys. */
     private fun logEvent(device: BluetoothDevice, log: String) {
         eventLog.logi(TAG, "$device: ${log.anonymizeAddress()}")
+    }
+
+    companion object {
+        /** Returned by [getA2dpCodecIdPreference] when the user has chosen no codec. */
+        const val CODEC_ID_PREFERENCE_NONE = -1L
     }
 
     // Serializer for the UserStorage proto to tells DataStore how to read and write the data.
