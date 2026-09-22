@@ -121,6 +121,10 @@ message AccessPermission {
 message A2dpSettings {
   optional bool optional_codecs_supported = 1;
   optional bool optional_codecs_enabled = 2;
+  // BluetoothCodecType codec id last chosen by the user for this device.
+  // Absent when the user has never chosen one. Numbered out of the range this
+  // file allocates from, so that a field added upstream cannot land on it.
+  optional int64 codec_id_preference = 1000;
 }
 
 message HfpClientSettings {
