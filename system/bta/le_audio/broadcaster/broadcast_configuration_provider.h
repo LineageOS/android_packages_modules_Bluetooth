@@ -59,7 +59,7 @@ static const BroadcastSubgroupCodecConfig lc3_mono_48_4 = BroadcastSubgroupCodec
                 }),
         }},
         // bits_per_sample
-        16);
+        BLE_LC3_DEFAULT_BIT);
 
 static const BroadcastSubgroupCodecConfig lc3_stereo_16_2 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
