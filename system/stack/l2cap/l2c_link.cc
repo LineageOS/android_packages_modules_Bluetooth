@@ -767,8 +767,25 @@ void l2c_pin_code_request(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void l2c_link_set_br_coex_buf_cap(uint16_t bufs_to_reserve, tL2C_COEX_READY cb) {
+  /* No cap active and none requested: leave the window accounting untouched */
+  if (bufs_to_reserve == 0 && l2cb.num_lm_acl_bufs == l2cb.full_num_lm_acl_bufs &&
+      l2cb.pending_acks_until_coex_cb == 0) {
+    std::move(cb).Run(/* success= */ true);
+    return;
+  }
+
+  if (bufs_to_reserve > l2cb.full_num_lm_acl_bufs) {
+    bufs_to_reserve = l2cb.full_num_lm_acl_bufs;
+  }
   uint16_t new_bufs_count = l2cb.full_num_lm_acl_bufs - bufs_to_reserve;
-  uint16_t pending_acks = l2cb.num_lm_acl_bufs - l2cb.controller_xmit_window + l2cb.pending_acks_until_coex_cb;
+  /* controller_xmit_window may exceed num_lm_acl_bufs, avoid wrapping around */
+  uint16_t pending_acks = l2cb.pending_acks_until_coex_cb;
+  if (l2cb.num_lm_acl_bufs > l2cb.controller_xmit_window) {
+    pending_acks += l2cb.num_lm_acl_bufs - l2cb.controller_xmit_window;
+  } else if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs) {
+    log::warn("xmit_window={} exceeds acl bufs={}", l2cb.controller_xmit_window,
+              l2cb.num_lm_acl_bufs);
+  }
 
   log::debug(
       "coex buf cap: total={} reserving={} available={} pending_acks={} xmit_window={}",
