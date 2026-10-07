@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8eed2007_84cf9e1d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2026-10-07T22:47:02Z",
+      "side": 1,
+      "message": "For the record, this broke A2DP offload on Qualcomm devices. @johnsonnolen@gmail.com next time don\u0027t merge this kind of critical changes without broad testing.",
+      "revId": "326d67508ecfc0d6d39212b3f22f1a5980c09bde",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
