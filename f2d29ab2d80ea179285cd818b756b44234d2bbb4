@@ -16,6 +16,23 @@
       "message": "Please verify on your end. This solves broken A2DP on Qualcomm devices after your patch.\n\nI\u0027ll keep running some stress tests over the next couple of days.",
       "revId": "f2d29ab2d80ea179285cd818b756b44234d2bbb4",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8800a0e_08d1c414",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2026-10-08T02:18:58Z",
+      "side": 1,
+      "message": "Leaving CR, but want mashopys v+",
+      "revId": "f2d29ab2d80ea179285cd818b756b44234d2bbb4",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
