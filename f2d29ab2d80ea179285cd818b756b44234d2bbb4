@@ -50,6 +50,24 @@
       "message": "Doesn\u0027t this needs to be Assisted-by: LLM instead of mentioning the agent:model format as per charter?\nand also verified on QCOM sm8250 where A2DP now works fine",
       "revId": "f2d29ab2d80ea179285cd818b756b44234d2bbb4",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b77cbef_93b5cf8d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2026-10-08T08:35:56Z",
+      "side": 1,
+      "message": "You also faced broken A2DP on sm8250?",
+      "parentUuid": "8cd5784b_c7608dd4",
+      "revId": "f2d29ab2d80ea179285cd818b756b44234d2bbb4",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
