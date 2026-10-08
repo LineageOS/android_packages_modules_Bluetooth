@@ -121,6 +121,23 @@
       "message": "That\u0027s quite strange, I don\u0027t understand how controller_xmit_window (count of buffers that are not used and hence ready to send) would ever exceed the total buffer count? You can see it\u0027s initialized with buffer count, reduced when we send something and increased when the controller reports back a buffer has been sent. What value of controller_xmit_window and num_lm_acl_bufs did you see?",
       "revId": "f2d29ab2d80ea179285cd818b756b44234d2bbb4",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8592942_13b315c2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 24442
+      },
+      "writtenOn": "2026-10-08T11:57:15Z",
+      "side": 1,
+      "message": "Doesn\u0027t see any regression on MT6886 with A2DP offload hw session enabled",
+      "revId": "f2d29ab2d80ea179285cd818b756b44234d2bbb4",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
