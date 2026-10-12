@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38bd8820_f5896603",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2026-10-12T15:33:00Z",
+      "side": 1,
+      "message": "yolo\u0027ing as code is nearly identical surrounding this.\n\nIt builds, code looks identical in most places.",
+      "revId": "5c26d7ce82593a7448e7476284e9922bbd2010a5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
