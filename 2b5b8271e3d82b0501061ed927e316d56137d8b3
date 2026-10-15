@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49ce3aa5_b38578d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 38336
+      },
+      "writtenOn": "2026-10-15T10:43:50Z",
+      "side": 1,
+      "message": "Tested on gold (Redmi Note 13 5G), lineage-24.0, AAC headphones: four switches between game and media usages, no session restart, the HAL port stayed started.",
+      "revId": "2b5b8271e3d82b0501061ed927e316d56137d8b3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
