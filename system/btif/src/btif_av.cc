@@ -2522,6 +2522,12 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
         return false;
       }
 
+      if (!bluetooth::audio::a2dp::provider::supports_codec(current_codec->codecIndex())) {
+        log::info("codec {} does not use the audio context, not reconfiguring",
+                  current_codec->name());
+        break;
+      }
+
       btav_a2dp_codec_config_t codec_config{
               .codec_type = current_codec->codecIndex(),
               .codec_priority = BTAV_A2DP_CODEC_PRIORITY_HIGHEST,
@@ -2793,6 +2799,12 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event, void* p_data
         A2dpCodecConfig* current_codec = bta_av_get_a2dp_current_codec();
         if (current_codec == nullptr) {
           return false;
+        }
+
+        if (!bluetooth::audio::a2dp::provider::supports_codec(current_codec->codecIndex())) {
+          log::info("codec {} does not use the audio context, not reconfiguring",
+                    current_codec->name());
+          break;
         }
 
         btav_a2dp_codec_config_t codec_config{
