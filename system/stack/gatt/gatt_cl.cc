@@ -1257,7 +1257,14 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not count
    * op_code */
-  if (len >= payload_size) {
+  /* Some BLE remotes ignore the negotiated MTU in read responses */
+  bool oversized_read = op_code == GATT_RSP_READ && len >= payload_size && len < GATT_MAX_MTU_SIZE;
+  if (oversized_read) {
+    log::warn("oversized read response pkt size: {}, PDU size: {}, accepting", len + 1,
+              payload_size);
+  }
+
+  if (len >= payload_size && !oversized_read) {
     log::error("invalid response pkt size: {}, PDU size: {}", len + 1, payload_size);
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   } else {
