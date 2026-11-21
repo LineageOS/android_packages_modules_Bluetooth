@@ -678,6 +678,11 @@ static void btm_apply_link_policy(tACL_CONN* conn) {
       interop_match_addr(INTEROP_DISABLE_SNIFF, conn->link_spec.addrt.bda)) {
     conn->link_policy.sniff_mode = false;
   }
+  if (conn->link_policy.role_switch &&
+      interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH_DURING_CONNECTION,
+                         conn->link_spec.addrt.bda)) {
+    conn->link_policy.role_switch = false;
+  }
   btsnd_hcic_write_policy_set(conn->hci_handle, static_cast<uint16_t>(conn->link_policy));
 }
 
