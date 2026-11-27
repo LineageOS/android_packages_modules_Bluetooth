@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d6e2477_188ce02f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 23878
+      },
+      "writtenOn": "2026-11-27T21:19:30Z",
+      "side": 1,
+      "message": "LE link, readRemoteRssi() every 3 s, screen off, ~3 min per phase\n\n    Device  Build      Phase     Suspend OK/fail  -16 aborts  alarmtimer holds  BT timer blamed\n    ------  ---------  --------  ---------------  ----------  ----------------  ---------------\n    nairo   unpatched  baseline  +322 / +14       0           +1                0\n    nairo   unpatched  RSSI 3s   +87  / +11       10          +10 (20.8 s)      27\n    nairo   patched    RSSI 3s   +121 / +5        3 *         +3  (6.4 s)       0\n    berlna  unpatched  baseline  +112 / +7        0           0                 0\n    berlna  unpatched  RSSI 3s   +1   / +16       15          +15 (31.3 s)      30\n    berlna  patched    RSSI 3s   +36  / +1        0           0                 1 (first arm)\n\n    * AlarmManager alarms, also seen in the baseline; not Bluetooth\n    nairo \u003d sm7250 / 4.19, berlna \u003d sm7325 / 5.4, both LOS 24.0",
+      "revId": "156e5628144acb22e744c3d94adde8eb7dcad5d5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
