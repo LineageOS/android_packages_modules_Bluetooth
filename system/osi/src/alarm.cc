@@ -117,6 +117,7 @@ static std::mutex alarms_mutex;
 static list_t* alarms;
 static timer_t timer;
 static timer_t wakeup_timer;
+static bool wakeup_timer_armed;
 static bool timer_set;
 
 // All alarm callbacks are dispatched from |dispatcher_thread|
@@ -302,6 +303,7 @@ void alarm_cleanup(void) {
   default_callback_thread = NULL;
 
   timer_delete(wakeup_timer);
+  wakeup_timer_armed = false;
   timer_delete(timer);
   semaphore_free(alarm_expired);
   alarm_expired = NULL;
@@ -390,6 +392,7 @@ error:
 
   if (wakeup_timer_initialized) {
     timer_delete(wakeup_timer);
+    wakeup_timer_armed = false;
   }
 
   if (timer_initialized) {
@@ -468,6 +471,25 @@ static void schedule_next_instance(alarm_t* alarm) {
   }
 }
 
+// It is entirely unsafe to call timer_settime(2) with a zeroed timerspec for
+// timers with *_ALARM clock IDs. Although the man page states that the timer
+// would be canceled, the current behavior (as of Linux kernel 3.17) is that
+// the callback is issued immediately. The only way to cancel an *_ALARM timer
+// is to delete the timer. But unfortunately, deleting and re-creating a timer
+// is rather expensive; every timer_create(2) spawns a new thread. So we simply
+// set the timer to fire at the largest possible time.
+static void disarm_wakeup_timer(void) {
+  if (!wakeup_timer_armed) {
+    return;
+  }
+
+  struct itimerspec end_of_time;
+  memset(&end_of_time, 0, sizeof(end_of_time));
+  end_of_time.it_value.tv_sec = (time_t)(1LL << (sizeof(time_t) * 8 - 2));
+  timer_settime(wakeup_timer, TIMER_ABSTIME, &end_of_time, NULL);
+  wakeup_timer_armed = false;
+}
+
 // NOTE: must be called with |alarms_mutex| held
 static void reschedule_root_alarm(void) {
   log::assert_that(alarms != NULL, "assert failed: alarms != NULL");
@@ -481,6 +503,11 @@ static void reschedule_root_alarm(void) {
   memset(&timer_time, 0, sizeof(timer_time));
 
   if (list_is_empty(alarms)) {
+    // Nothing is scheduled anymore: don't leave a wakeup timer armed for an
+    // alarm that was canceled. Its deadline would still keep the system from
+    // suspending (alarmtimer refuses to suspend when an alarm expires within
+    // 2 seconds) and wake it up for nothing.
+    disarm_wakeup_timer();
     goto done;
   }
 
@@ -496,22 +523,10 @@ static void reschedule_root_alarm(void) {
     timer_time.it_value.tv_sec = (next->deadline_ms / 1000);
     timer_time.it_value.tv_nsec = (next->deadline_ms % 1000) * 1000000LL;
 
-    // It is entirely unsafe to call timer_settime(2) with a zeroed timerspec
-    // for timers with *_ALARM clock IDs. Although the man page states that the
-    // timer would be canceled, the current behavior (as of Linux kernel 3.17)
-    // is that the callback is issued immediately. The only way to cancel an
-    // *_ALARM timer is to delete the timer. But unfortunately, deleting and
-    // re-creating a timer is rather expensive; every timer_create(2) spawns a
-    // new thread. So we simply set the timer to fire at the largest possible
-    // time.
-    //
     // If we've reached this code path, we're going to grab a wake lock and
     // wait for the next timer to fire. In that case, there's no reason to
     // have a pending wakeup timer so we simply cancel it.
-    struct itimerspec end_of_time;
-    memset(&end_of_time, 0, sizeof(end_of_time));
-    end_of_time.it_value.tv_sec = (time_t)(1LL << (sizeof(time_t) * 8 - 2));
-    timer_settime(wakeup_timer, TIMER_ABSTIME, &end_of_time, NULL);
+    disarm_wakeup_timer();
   } else {
     // WARNING: do not attempt to use relative timers with *_ALARM clock IDs
     // in kernels before 3.17 unless you have the following patch:
@@ -523,6 +538,8 @@ static void reschedule_root_alarm(void) {
     wakeup_time.it_value.tv_nsec = (next->deadline_ms % 1000) * 1000000LL;
     if (timer_settime(wakeup_timer, TIMER_ABSTIME, &wakeup_time, NULL) == -1) {
       log::error("unable to set wakeup timer: {}", strerror(errno));
+    } else {
+      wakeup_timer_armed = true;
     }
   }
 
